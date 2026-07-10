@@ -10,16 +10,19 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 ## Modules (each = a set of minigames)
 
-| id | Topic | Status |
-|---|---|---|
-| `note_values` | Notenwerte & Pausen (durations) | 2 games: Symbol Quiz, Duration Duel; SRI review flow |
-| `note_reading` | Noten lesen (Violin-/Bassschlüssel) | 2 games: Treble/Bass reading quiz on partitura StaffView |
-| `measures` | Takte & Taktarten | locked |
-| `scales` | Tonleitern, Dur/Moll | locked |
-| `chords` | Akkorde & Intervalle | locked |
-| `harmony` | Harmonik (Tonika/Subdominante/Dominante) | locked |
+See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-Later candidates: Kadenzen, Stimmführung, Kompositionstechnik.
+| id | Topic | Games |
+|---|---|---|
+| `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel |
+| `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 • Place the Note ×2 |
+| `measures` | Takte & Taktarten | Measure Filler |
+| `scales` | Tonleitern, Dur/Moll | Scale Detective |
+| `chords` | Akkorde & Intervalle | Chord Quiz |
+| `harmony` | Harmonik (T/S/D) | Function Quiz |
+
+Later: audio/ear training, Kadenzen, Kompositionstechnik (see plan).
+Live web build: https://mus-theta.vercel.app
 
 ## Architecture notes
 
