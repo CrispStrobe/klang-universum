@@ -500,6 +500,42 @@ abstract class AppLocalizations {
   /// **'Dominant'**
   String get harmonicDominant;
 
+  /// No description provided for @gameMajorMinorEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Major or Minor?'**
+  String get gameMajorMinorEar;
+
+  /// No description provided for @gameMajorMinorEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen closely and decide'**
+  String get gameMajorMinorEarSubtitle;
+
+  /// No description provided for @listenMajorMinorPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen! Does it sound major or minor?'**
+  String get listenMajorMinorPrompt;
+
+  /// No description provided for @listenAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear it again'**
+  String get listenAgain;
+
+  /// No description provided for @majorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Major'**
+  String get majorLabel;
+
+  /// No description provided for @minorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor'**
+  String get minorLabel;
+
   /// No description provided for @whatIsThisSymbol.
   ///
   /// In en, this message translates to:

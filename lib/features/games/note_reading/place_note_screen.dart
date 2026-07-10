@@ -14,6 +14,7 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/audio_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../widgets/game_widgets.dart';
@@ -39,6 +40,10 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
   @override
   int get totalRounds => 10;
 
+  // The tapped pitch itself is the audio feedback here.
+  @override
+  bool get playFeedbackSounds => false;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +68,8 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
     if (_lastAnswer == true) return; // round already resolved
     final pitch = target.pitchFor(widget.clef);
     final correct = pitch.step == _targetStep;
+    // Hear every placement — immediate pitch feedback.
+    context.read<AudioService>().playMidiNote(pitch.midiNumber, ms: 500);
 
     if (_lastAnswer == null || !answeredWrong) {
       context.read<SriService>().recordResponse(

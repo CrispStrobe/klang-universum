@@ -119,6 +119,12 @@
   "harmonicTonic": "Tonic",
   "harmonicSubdominant": "Subdominant",
   "harmonicDominant": "Dominant",
+  "gameMajorMinorEar": "Major or Minor?",
+  "gameMajorMinorEarSubtitle": "Listen closely and decide",
+  "listenMajorMinorPrompt": "Listen! Does it sound major or minor?",
+  "listenAgain": "Hear it again",
+  "majorLabel": "Major",
+  "minorLabel": "Minor",
   "whatIsThisSymbol": "What is this symbol called?",
   "roundOf": "Round {current} of {total}",
   "@roundOf": {

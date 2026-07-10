@@ -235,6 +235,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get harmonicDominant => 'Dominante';
 
   @override
+  String get gameMajorMinorEar => 'Dur oder Moll?';
+
+  @override
+  String get gameMajorMinorEarSubtitle => 'Hör genau hin und entscheide';
+
+  @override
+  String get listenMajorMinorPrompt => 'Hör zu! Klingt das nach Dur oder Moll?';
+
+  @override
+  String get listenAgain => 'Nochmal anhören';
+
+  @override
+  String get majorLabel => 'Dur';
+
+  @override
+  String get minorLabel => 'Moll';
+
+  @override
   String get whatIsThisSymbol => 'Wie heißt dieses Zeichen?';
 
   @override

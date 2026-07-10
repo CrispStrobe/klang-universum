@@ -1,0 +1,147 @@
+// lib/core/audio/synth.dart
+//
+// Pure-Dart additive synthesizer: renders pitches, chords and sequences to
+// 16-bit mono PCM WAV bytes. No assets, no licensing, works on every
+// platform (playback happens in AudioService). Piano-ish timbre: a few
+// decaying harmonics with a fast attack and exponential decay.
+
+import 'dart:math';
+import 'dart:typed_data';
+
+const kSampleRate = 44100;
+
+/// One playable segment: simultaneous frequencies for a duration.
+/// A single-element [freqs] is a note; several are a chord.
+typedef Segment = ({List<double> freqs, int ms});
+
+double midiToFrequency(int midi) => 440.0 * pow(2.0, (midi - 69) / 12.0);
+
+/// Relative amplitudes of the harmonics (fundamental first).
+const _harmonics = [1.0, 0.45, 0.22, 0.1, 0.05];
+
+/// Renders [segments] back-to-back into normalized PCM16 samples.
+Int16List renderSegments(List<Segment> segments,
+    {int sampleRate = kSampleRate}) {
+  final totalSamples = segments.fold<int>(
+      0, (sum, s) => sum + (s.ms * sampleRate) ~/ 1000);
+  final buffer = Float64List(totalSamples);
+
+  var offset = 0;
+  for (final segment in segments) {
+    final n = (segment.ms * sampleRate) ~/ 1000;
+    final seconds = segment.ms / 1000;
+    for (var i = 0; i < n; i++) {
+      final t = i / sampleRate;
+      // Fast attack (8 ms), exponential decay over the segment.
+      final attack = t < 0.008 ? t / 0.008 : 1.0;
+      final envelope = attack * exp(-3.0 * t / seconds);
+      var sample = 0.0;
+      for (final freq in segment.freqs) {
+        for (var h = 0; h < _harmonics.length; h++) {
+          sample += _harmonics[h] * sin(2 * pi * freq * (h + 1) * t);
+        }
+      }
+      buffer[offset + i] = sample * envelope;
+    }
+    offset += n;
+  }
+
+  // Normalize to 80% full scale.
+  var peak = 0.0;
+  for (final v in buffer) {
+    if (v.abs() > peak) peak = v.abs();
+  }
+  final scale = peak > 0 ? 0.8 * 32767 / peak : 0.0;
+  final samples = Int16List(totalSamples);
+  for (var i = 0; i < totalSamples; i++) {
+    samples[i] = (buffer[i] * scale).round();
+  }
+  return samples;
+}
+
+/// Wraps PCM16 mono samples into a WAV container.
+Uint8List wavBytes(Int16List samples, {int sampleRate = kSampleRate}) {
+  final dataLength = samples.length * 2;
+  final bytes = ByteData(44 + dataLength);
+
+  void writeString(int offset, String s) {
+    for (var i = 0; i < s.length; i++) {
+      bytes.setUint8(offset + i, s.codeUnitAt(i));
+    }
+  }
+
+  writeString(0, 'RIFF');
+  bytes.setUint32(4, 36 + dataLength, Endian.little);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  bytes.setUint32(16, 16, Endian.little); // fmt chunk size
+  bytes.setUint16(20, 1, Endian.little); // PCM
+  bytes.setUint16(22, 1, Endian.little); // mono
+  bytes.setUint32(24, sampleRate, Endian.little);
+  bytes.setUint32(28, sampleRate * 2, Endian.little); // byte rate
+  bytes.setUint16(32, 2, Endian.little); // block align
+  bytes.setUint16(34, 16, Endian.little); // bits per sample
+  writeString(36, 'data');
+  bytes.setUint32(40, dataLength, Endian.little);
+  for (var i = 0; i < samples.length; i++) {
+    bytes.setInt16(44 + i * 2, samples[i], Endian.little);
+  }
+  return bytes.buffer.asUint8List();
+}
+
+/// Convenience: render [segments] straight to WAV bytes.
+Uint8List renderWav(List<Segment> segments) =>
+    wavBytes(renderSegments(segments));
+
+// --- Retro game SFX (CrispFXR-style: square waves, pitch sweeps) ---
+//
+// Procedural feedback sounds in the spirit of the maintainer's CrispFXR
+// (sfxr-like 8-bit synthesizer): no assets, instantly recognizable.
+
+/// A square-wave segment sweeping from [startFreq] to [endFreq].
+Float64List _squareSweep(double startFreq, double endFreq, int ms,
+    {int sampleRate = kSampleRate}) {
+  final n = (ms * sampleRate) ~/ 1000;
+  final out = Float64List(n);
+  final seconds = ms / 1000;
+  var phase = 0.0;
+  for (var i = 0; i < n; i++) {
+    final t = i / sampleRate;
+    final freq = startFreq + (endFreq - startFreq) * (t / seconds);
+    phase += freq / sampleRate;
+    final attack = t < 0.005 ? t / 0.005 : 1.0;
+    final envelope = attack * exp(-2.5 * t / seconds);
+    out[i] = (phase % 1.0 < 0.5 ? 1.0 : -1.0) * envelope;
+  }
+  return out;
+}
+
+Uint8List _sfxWav(List<Float64List> parts) {
+  final total = parts.fold<int>(0, (sum, p) => sum + p.length);
+  final samples = Int16List(total);
+  var offset = 0;
+  for (final part in parts) {
+    for (var i = 0; i < part.length; i++) {
+      samples[offset + i] = (part[i] * 0.35 * 32767).round();
+    }
+    offset += part.length;
+  }
+  return wavBytes(samples);
+}
+
+/// "Correct!" — the classic two-blip pickup coin (B5 → E6).
+Uint8List renderSfxCorrect() => _sfxWav([
+      _squareSweep(988, 988, 80),
+      _squareSweep(1319, 1319, 220),
+    ]);
+
+/// "Wrong" — a short, soft descending buzz.
+Uint8List renderSfxWrong() => _sfxWav([_squareSweep(220, 150, 250)]);
+
+/// Game finished — an ascending power-up arpeggio with a final sweep.
+Uint8List renderSfxFanfare() => _sfxWav([
+      _squareSweep(523, 523, 110), // C5
+      _squareSweep(659, 659, 110), // E5
+      _squareSweep(784, 784, 110), // G5
+      _squareSweep(1047, 1319, 450), // C6 sweeping up
+    ]);

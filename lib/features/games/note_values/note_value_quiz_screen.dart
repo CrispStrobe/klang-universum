@@ -12,6 +12,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/audio_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
@@ -76,6 +77,13 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen> {
     // First tap decides the SRI outcome; retries don't count as new answers.
     if (_tapped == null || !_answeredWrong) {
       context.read<SriService>().recordResponse(_target.sriId, correct);
+    }
+
+    final audio = context.read<AudioService>();
+    if (correct && _round + 1 >= _sequence.length) {
+      audio.playFanfare();
+    } else {
+      correct ? audio.playCorrect() : audio.playWrong();
     }
 
     setState(() {

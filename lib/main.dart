@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'core/services/audio_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/services/sri_service.dart';
+import 'features/games/game_registry.dart';
 import 'features/home/screens/home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'shared/theme.dart';
@@ -26,6 +28,10 @@ class KlangUniversumApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => SettingsService()..load(),
         ),
+        Provider<AudioService>(
+          create: (_) => AudioService(),
+          dispose: (_, service) => service.dispose(),
+        ),
       ],
       child: Consumer<SettingsService>(
         builder: (context, settings, _) => MaterialApp(
@@ -41,9 +47,41 @@ class KlangUniversumApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: const [Locale('en'), Locale('de')],
-          home: const HomeScreen(),
+          home: const _StartupRouter(),
         ),
       ),
     );
   }
+}
+
+/// Shows the home screen; on web, a `?game=<gameId>` query parameter opens
+/// that game directly — deep links for testing and sharing.
+class _StartupRouter extends StatefulWidget {
+  const _StartupRouter();
+
+  @override
+  State<_StartupRouter> createState() => _StartupRouterState();
+}
+
+class _StartupRouterState extends State<_StartupRouter> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final gameId = Uri.base.queryParameters['game'];
+      if (gameId == null || !mounted) return;
+      for (final games in kGamesByModule.values) {
+        for (final game in games) {
+          if (game.id == gameId) {
+            Navigator.of(context)
+                .push(MaterialPageRoute(builder: game.builder));
+            return;
+          }
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const HomeScreen();
 }

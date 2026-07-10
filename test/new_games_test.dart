@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
@@ -13,8 +14,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _wrap(Widget child, SriService sri) {
-  return ChangeNotifierProvider<SriService>.value(
-    value: sri,
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<SriService>.value(value: sri),
+      Provider<AudioService>(create: (_) => AudioService()),
+    ],
     child: MaterialApp(
       localizationsDelegates: const [
         AppLocalizations.delegate,

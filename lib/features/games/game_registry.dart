@@ -15,6 +15,7 @@ import 'note_reading/note_reading_quiz_screen.dart';
 import 'note_reading/place_note_screen.dart';
 import 'note_values/duration_duel_screen.dart';
 import 'note_values/note_value_quiz_screen.dart';
+import 'scales/major_minor_ear_screen.dart';
 import 'scales/scale_detective_screen.dart';
 
 class GameInfo {
@@ -97,6 +98,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameScaleDetective,
       subtitle: (l) => l.gameScaleDetectiveSubtitle,
       builder: (_) => const ScaleDetectiveScreen(),
+    ),
+    GameInfo(
+      id: 'major_minor_ear',
+      icon: Icons.hearing,
+      title: (l) => l.gameMajorMinorEar,
+      subtitle: (l) => l.gameMajorMinorEarSubtitle,
+      builder: (_) => const MajorMinorEarScreen(),
     ),
   ],
   'chords': [

@@ -54,12 +54,19 @@ For now all modules with games are unlocked (testing phase). Planned gating
 reaches ≥50% mastery in the SRI breakdown — visible on the Progress screen,
 so the child always knows why something is locked and what to practice.
 
-## Audio roadmap (the one missing subsystem)
+## Audio (v1 shipped)
 
-Ear training is essential for Dur/Moll, intervals and meter. Plan: bundle a
-small set of MIT/CC0 piano note samples (or synthesize with `flutter_soloud`,
-zlib-licensed engine), an `AudioService` in core mirroring voc's, then:
-Rhythm Tap-Back, Major-or-Minor by ear, Interval Detective, Meter Detective.
+`core/audio/synth.dart` synthesizes everything in pure Dart — no assets, no
+licensing: piano-ish additive tones (pitches, chords, arpeggios, sequences)
+rendered to WAV and played via `audioplayers` (data-URI source on web), plus
+CrispFXR-style retro square-wave SFX (correct blip, wrong buzz, fanfare —
+same procedural approach as the maintainer's
+[CrispFXR](https://github.com/CrispStrobe/CrispFXR-web) /
+[crispaudio](https://github.com/CrispStrobe/crispaudio) projects, in Dart).
+`AudioService` wires it app-wide; feedback sounds run centrally through
+`QuizRoundMixin`. Shipped ear game: Major-or-Minor. Next: Rhythm Tap-Back,
+Interval Detective, Meter Detective; option to graduate to `flutter_soloud`
+(zlib) if latency demands it.
 
 ## Delivery
 

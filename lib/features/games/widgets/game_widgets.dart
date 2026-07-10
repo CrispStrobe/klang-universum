@@ -4,7 +4,9 @@
 // prompt) and the end-of-game result view (stars, score, replay).
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/services/audio_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -133,6 +135,10 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
   int get totalRounds;
   int get pointsPerRound => 100;
 
+  /// Retro correct/wrong blips on every answer. Games that play their own
+  /// pitch/chord feedback (place-the-note, chord quiz) override to false.
+  bool get playFeedbackSounds => true;
+
   /// Set up the next round's data. Called once initially and after each
   /// advance; also on restart.
   void prepareRound();
@@ -140,6 +146,12 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
   /// Handle a resolved answer. Returns true if the round advances.
   /// Call from the tap handler AFTER recording SRI.
   bool resolveAnswer({required bool correct}) {
+    final audio = context.read<AudioService>();
+    if (correct && round + 1 >= totalRounds) {
+      audio.playFanfare();
+    } else if (playFeedbackSounds) {
+      correct ? audio.playCorrect() : audio.playWrong();
+    }
     setState(() {
       if (correct) {
         if (!answeredWrong) score += pointsPerRound;

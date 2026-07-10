@@ -12,6 +12,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/audio_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
@@ -64,6 +65,13 @@ class _DurationDuelScreenState extends State<DurationDuelScreen> {
       final sri = context.read<SriService>();
       sri.recordResponse(_left.sriId, correct);
       sri.recordResponse(_right.sriId, correct);
+    }
+
+    final audio = context.read<AudioService>();
+    if (correct && _round + 1 >= DurationDuelScreen.totalRounds) {
+      audio.playFanfare();
+    } else {
+      correct ? audio.playCorrect() : audio.playWrong();
     }
 
     setState(() {

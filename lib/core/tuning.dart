@@ -53,6 +53,7 @@ const Map<String, List<int>> kStarThresholds = {
   'scale_detective': [100, 500, 750],
   'chord_quiz': [100, 600, 900],
   'harmony_quiz': [100, 600, 900],
+  'major_minor_ear': [100, 600, 900],
 };
 
 /// Convert a raw game score to 1-3 stars. Returns 0 if the game was lost.

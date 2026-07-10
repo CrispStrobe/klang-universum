@@ -12,6 +12,7 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/audio_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../note_reading/note_names.dart';
@@ -38,6 +39,10 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
 
   @override
   int get totalRounds => 10;
+
+  // The chord itself plays on a correct answer.
+  @override
+  bool get playFeedbackSounds => false;
 
   @override
   void initState() {
@@ -66,9 +71,18 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
     return Score.simple(notes: '${pitches.map(_token).join('+')}:w');
   }
 
+  void _playChord() {
+    final midis = Triad(Pitch(_root), ChordQuality.major)
+        .pitches
+        .map((p) => p.midiNumber)
+        .toList();
+    context.read<AudioService>().playMidiChord(midis);
+  }
+
   void _onAnswer(Step choice) {
     if (_lastAnswer == true) return; // round already resolved
     final correct = choice == _root;
+    if (correct) _playChord();
 
     if (_tapped == null || !answeredWrong) {
       context
@@ -88,7 +102,16 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameChordQuiz)),
+      appBar: AppBar(
+        title: Text(l10n.gameChordQuiz),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.volume_up),
+            tooltip: l10n.listenAgain,
+            onPressed: _playChord,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(

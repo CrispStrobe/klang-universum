@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/audio_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
@@ -67,6 +68,11 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
   void _onAnswer(Step choice) {
     if (_tapped == _target.step) return; // round already resolved
     final correct = choice == _target.step;
+    if (correct) {
+      context.read<AudioService>().playMidiNote(_target.midiNumber);
+    } else {
+      context.read<AudioService>().playWrong();
+    }
 
     if (_tapped == null || !_answeredWrong) {
       context.read<SriService>().recordResponse(_sriId, correct);

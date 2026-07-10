@@ -233,6 +233,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get harmonicDominant => 'Dominant';
 
   @override
+  String get gameMajorMinorEar => 'Major or Minor?';
+
+  @override
+  String get gameMajorMinorEarSubtitle => 'Listen closely and decide';
+
+  @override
+  String get listenMajorMinorPrompt => 'Listen! Does it sound major or minor?';
+
+  @override
+  String get listenAgain => 'Hear it again';
+
+  @override
+  String get majorLabel => 'Major';
+
+  @override
+  String get minorLabel => 'Minor';
+
+  @override
   String get whatIsThisSymbol => 'What is this symbol called?';
 
   @override
