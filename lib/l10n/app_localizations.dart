@@ -596,6 +596,42 @@ abstract class AppLocalizations {
   /// **'Build the {name} major triad!'**
   String triadBuilderPrompt(String name);
 
+  /// No description provided for @gameScaleBuilder.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale Builder'**
+  String get gameScaleBuilder;
+
+  /// No description provided for @gameScaleBuilderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build the scale step by step'**
+  String get gameScaleBuilderSubtitle;
+
+  /// No description provided for @scaleBuilderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Build the {name} major scale — tap the next note!'**
+  String scaleBuilderPrompt(String name);
+
+  /// No description provided for @gameCadenceWorkshop.
+  ///
+  /// In en, this message translates to:
+  /// **'Cadence Workshop'**
+  String get gameCadenceWorkshop;
+
+  /// No description provided for @gameCadenceWorkshopSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build T–S–D–T cadences'**
+  String get gameCadenceWorkshopSubtitle;
+
+  /// No description provided for @cadencePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the {function} in {key}!'**
+  String cadencePrompt(String function, String key);
+
   /// No description provided for @gameRhythmTap.
   ///
   /// In en, this message translates to:

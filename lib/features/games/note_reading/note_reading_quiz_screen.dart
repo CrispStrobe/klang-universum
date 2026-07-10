@@ -22,7 +22,15 @@ import 'note_names.dart';
 class NoteReadingQuizScreen extends StatefulWidget {
   final Clef clef;
 
-  const NoteReadingQuizScreen({super.key, required this.clef});
+  /// Review mode: full SRI item IDs (`note_reading.<clef>.<pitch>`) to
+  /// drill. Null = normal game with [totalRounds] random staff notes.
+  final List<String>? reviewItemIds;
+
+  const NoteReadingQuizScreen({
+    super.key,
+    required this.clef,
+    this.reviewItemIds,
+  });
 
   static const totalRounds = 10;
   static const pointsPerRound = 100;
@@ -34,6 +42,7 @@ class NoteReadingQuizScreen extends StatefulWidget {
 class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
   final _random = Random();
 
+  List<Pitch>? _reviewSequence; // null = random rounds
   int _round = 0;
   int _score = 0;
   late Pitch _target;
@@ -42,17 +51,33 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
   Step? _tapped;
   bool _finished = false;
 
+  bool get _isReview => _reviewSequence != null;
+  int get _totalRounds =>
+      _reviewSequence?.length ?? NoteReadingQuizScreen.totalRounds;
+
   @override
   void initState() {
     super.initState();
+    final parsed = widget.reviewItemIds
+        ?.map((id) {
+          try {
+            return Pitch.parse(id.split('.').last);
+          } on FormatException {
+            return null;
+          }
+        })
+        .whereType<Pitch>()
+        .toList();
+    _reviewSequence = (parsed == null || parsed.isEmpty) ? null : parsed;
     _prepareRound();
   }
 
   void _prepareRound() {
     // Naturals on the staff (bottom line..top line), no ledger lines yet —
     // the right starting range for beginners in both clefs.
-    final position = _random.nextInt(9); // staff positions 0..8
-    _target = widget.clef.pitchAt(position);
+    _target = _reviewSequence != null
+        ? _reviewSequence![_round]
+        : widget.clef.pitchAt(_random.nextInt(9)); // staff positions 0..8
 
     final distractors = [...Step.values]
       ..remove(_target.step)
@@ -84,7 +109,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
         if (!_answeredWrong) {
           _score += NoteReadingQuizScreen.pointsPerRound;
         }
-        if (_round + 1 >= NoteReadingQuizScreen.totalRounds) {
+        if (_round + 1 >= _totalRounds) {
           _finished = true;
         }
       } else {
@@ -115,22 +140,27 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final title = widget.clef == Clef.treble
-        ? l10n.gameNoteReadingTreble
-        : l10n.gameNoteReadingBass;
+    final title = _isReview
+        ? l10n.reviewTitle
+        : widget.clef == Clef.treble
+            ? l10n.gameNoteReadingTreble
+            : l10n.gameNoteReadingBass;
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: SafeArea(
         child: _finished
-            ? _ResultView(score: _score, onRestart: _restart)
+            ? _ResultView(
+                score: _score,
+                rounds: _totalRounds,
+                onRestart: _isReview ? null : _restart,
+              )
             : Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
                     Text(
-                      l10n.roundOf(
-                          _round + 1, NoteReadingQuizScreen.totalRounds),
+                      l10n.roundOf(_round + 1, _totalRounds),
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     const SizedBox(height: 8),
@@ -218,14 +248,24 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
 
 class _ResultView extends StatelessWidget {
   final int score;
-  final VoidCallback onRestart;
+  final int rounds;
+  final VoidCallback? onRestart;
 
-  const _ResultView({required this.score, required this.onRestart});
+  const _ResultView({
+    required this.score,
+    required this.rounds,
+    required this.onRestart,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final stars = scoreToStars('note_reading_quiz', score, true);
+    // Normalize to a 10-round-equivalent score so the same star bracket
+    // works for review sessions of any length.
+    final normalized = rounds > 0
+        ? (score * NoteReadingQuizScreen.totalRounds / rounds).round()
+        : 0;
+    final stars = scoreToStars('note_reading_quiz', normalized, true);
 
     return Center(
       child: Column(
@@ -248,11 +288,12 @@ class _ResultView extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: onRestart,
-            icon: const Icon(Icons.replay),
-            label: Text(l10n.playAgain),
-          ),
+          if (onRestart != null)
+            FilledButton.icon(
+              onPressed: onRestart,
+              icon: const Icon(Icons.replay),
+              label: Text(l10n.playAgain),
+            ),
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

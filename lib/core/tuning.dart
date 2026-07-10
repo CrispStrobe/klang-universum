@@ -58,6 +58,10 @@ const Map<String, List<int>> kStarThresholds = {
   // 8 rounds: max 800.
   'triad_builder': [100, 500, 750],
   'rhythm_tap': [100, 500, 750],
+  // 6 rounds: max 600.
+  'scale_builder': [100, 400, 550],
+  // 4 rounds: max 400.
+  'cadence_workshop': [100, 300, 400],
 };
 
 /// Convert a raw game score to 1-3 stars. Returns 0 if the game was lost.

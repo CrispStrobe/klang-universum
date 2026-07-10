@@ -142,6 +142,29 @@
       }
     }
   },
+  "gameScaleBuilder": "Scale Builder",
+  "gameScaleBuilderSubtitle": "Build the scale step by step",
+  "scaleBuilderPrompt": "Build the {name} major scale — tap the next note!",
+  "@scaleBuilderPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameCadenceWorkshop": "Cadence Workshop",
+  "gameCadenceWorkshopSubtitle": "Build T–S–D–T cadences",
+  "cadencePrompt": "Tap the {function} in {key}!",
+  "@cadencePrompt": {
+    "placeholders": {
+      "function": {
+        "type": "String"
+      },
+      "key": {
+        "type": "String"
+      }
+    }
+  },
   "gameRhythmTap": "Rhythm Echo",
   "gameRhythmTapSubtitle": "Listen and tap it back",
   "rhythmTapPrompt": "Listen, then tap the rhythm!",

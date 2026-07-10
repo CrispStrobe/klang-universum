@@ -286,6 +286,29 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get gameScaleBuilder => 'Tonleiter-Baumeister';
+
+  @override
+  String get gameScaleBuilderSubtitle =>
+      'Baue die Tonleiter Schritt für Schritt';
+
+  @override
+  String scaleBuilderPrompt(String name) {
+    return 'Baue die $name-Dur-Tonleiter — tippe auf den nächsten Ton!';
+  }
+
+  @override
+  String get gameCadenceWorkshop => 'Kadenzen-Werkstatt';
+
+  @override
+  String get gameCadenceWorkshopSubtitle => 'Baue Kadenzen: T–S–D–T';
+
+  @override
+  String cadencePrompt(String function, String key) {
+    return 'Tippe auf die $function in $key!';
+  }
+
+  @override
   String get gameRhythmTap => 'Rhythmus-Echo';
 
   @override

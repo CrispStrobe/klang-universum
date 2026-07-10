@@ -1,0 +1,198 @@
+// lib/features/games/scales/scale_builder_screen.dart
+//
+// "Tonleiter-Baumeister" — the tonic is given (with the key signature); the
+// child builds the major scale by tapping the next line/space, note by note,
+// up to the octave. Every placed note sounds with its correct pitch (the key
+// signature supplies the accidentals); the finished scale plays through.
+//
+// SRI: 'scales.build.<tonic>_major' (correct = built without a wrong tap).
+
+import 'dart:math';
+
+// Material also exports `Step` (Stepper) and `Key`; partitura's win here.
+import 'package:flutter/material.dart' hide Step, Key;
+import 'package:partitura/partitura.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/services/audio_service.dart';
+import '../../../core/services/sri_service.dart';
+import '../../../l10n/app_localizations.dart';
+import '../note_reading/note_names.dart';
+import '../widgets/game_widgets.dart';
+
+class ScaleBuilderScreen extends StatefulWidget {
+  const ScaleBuilderScreen({super.key});
+
+  @override
+  State<ScaleBuilderScreen> createState() => _ScaleBuilderScreenState();
+}
+
+class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
+    with QuizRoundMixin {
+  final _random = Random();
+
+  // Beginner keys; more via difficulty progression (see docs/PLAN.md).
+  static const _tonics = [Step.c, Step.f, Step.g];
+
+  late Step _tonic;
+  late Key _key;
+  late List<Pitch> _scale; // 8 ascending pitches
+  late int _tonicPosition;
+  int _placedCount = 1; // the tonic is pre-placed
+  bool? _lastAnswer;
+  bool _sriRecorded = false;
+
+  @override
+  int get totalRounds => 6;
+
+  // Placed pitches and the finished scale are the audio feedback.
+  @override
+  bool get playFeedbackSounds => false;
+
+  @override
+  void initState() {
+    super.initState();
+    prepareRound();
+  }
+
+  @override
+  void prepareRound() {
+    _tonic = _tonics[_random.nextInt(_tonics.length)];
+    _key = Key.major(Pitch(_tonic));
+    _scale = Scale(Pitch(_tonic), ScaleType.major).pitches;
+    _tonicPosition = Pitch(_tonic).staffPosition(Clef.treble);
+    _placedCount = 1;
+    _lastAnswer = null;
+    _sriRecorded = false;
+  }
+
+  bool get _complete => _placedCount >= _scale.length;
+
+  Score get _score => Score(
+        clef: Clef.treble,
+        keySignature: _key.signature,
+        measures: [
+          Measure([
+            for (var i = 0; i < _placedCount; i++)
+              NoteElement(
+                pitches: [_scale[i]],
+                duration: const NoteDuration(DurationBase.quarter),
+                id: 'n$i',
+              ),
+          ]),
+          // Whole-rest measure keeps the tappable staff wide while the
+          // scale is still short.
+          if (_placedCount < 5)
+            Measure(const [RestElement(NoteDuration(DurationBase.whole))]),
+        ],
+      );
+
+  void _record(bool correct) {
+    if (_sriRecorded) return;
+    _sriRecorded = true;
+    context
+        .read<SriService>()
+        .recordResponse('scales.build.${_tonic.name}_major', correct);
+  }
+
+  void _onStaffTap(StaffTarget target) {
+    if (_complete) return; // round already resolved
+    final audio = context.read<AudioService>();
+    final expectedPosition = _tonicPosition + _placedCount;
+
+    if (target.staffPosition == expectedPosition) {
+      final pitch = _scale[_placedCount];
+      audio.playMidiNote(pitch.midiNumber, ms: 450);
+      setState(() {
+        _placedCount++;
+        _lastAnswer = true;
+      });
+      if (_complete) {
+        _record(!answeredWrong);
+        audio.playSequence([
+          for (final p in _scale) (p.midiNumber, 320),
+        ]);
+        resolveAnswer(correct: true);
+      }
+    } else {
+      _record(false);
+      audio.playWrong();
+      setState(() => _lastAnswer = false);
+      resolveAnswer(correct: false);
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted || _complete) return;
+        setState(() => _lastAnswer = null);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.gameScaleBuilder)),
+      body: SafeArea(
+        child: finished
+            ? GameResultView(
+                gameType: 'scale_builder',
+                score: score,
+                onRestart: restartGame,
+              )
+            : Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    RoundHeader(
+                      round: round + 1,
+                      totalRounds: totalRounds,
+                      prompt: l10n
+                          .scaleBuilderPrompt(noteName(l10n, _tonic)),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: Card(
+                        child: Center(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: InteractiveStaff(
+                              score: _score,
+                              theme: PartituraTheme.kids,
+                              staffSpace: 13,
+                              ghostDuration:
+                                  const NoteDuration(DurationBase.quarter),
+                              onStaffTap: _onStaffTap,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < _scale.length; i++)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 3),
+                            child: Icon(
+                              i < _placedCount
+                                  ? Icons.circle
+                                  : Icons.circle_outlined,
+                              size: 14,
+                              color:
+                                  Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    FeedbackLine(correct: _lastAnswer),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}

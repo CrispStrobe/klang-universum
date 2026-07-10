@@ -51,6 +51,13 @@ class AudioService {
           (freqs: [midiToFrequency(midi)], ms: ms),
       ]));
 
+  /// Sequential chords (e.g. a cadence), [ms] each.
+  Future<void> playChordSequence(List<List<int>> chords, {int ms = 900}) =>
+      _play(renderWav([
+        for (final midis in chords)
+          (freqs: midis.map(midiToFrequency).toList(), ms: ms),
+      ]));
+
   // Retro feedback SFX, rendered once and cached.
   static Uint8List? _correctWav;
   static Uint8List? _wrongWav;

@@ -283,6 +283,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get gameScaleBuilder => 'Scale Builder';
+
+  @override
+  String get gameScaleBuilderSubtitle => 'Build the scale step by step';
+
+  @override
+  String scaleBuilderPrompt(String name) {
+    return 'Build the $name major scale — tap the next note!';
+  }
+
+  @override
+  String get gameCadenceWorkshop => 'Cadence Workshop';
+
+  @override
+  String get gameCadenceWorkshopSubtitle => 'Build T–S–D–T cadences';
+
+  @override
+  String cadencePrompt(String function, String key) {
+    return 'Tap the $function in $key!';
+  }
+
+  @override
   String get gameRhythmTap => 'Rhythm Echo';
 
   @override

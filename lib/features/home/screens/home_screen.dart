@@ -5,11 +5,13 @@
 // (features/games, not yet implemented — shows a "coming soon" snackbar).
 
 import 'package:flutter/material.dart';
+import 'package:partitura/partitura.dart' show Clef;
 import 'package:provider/provider.dart';
 
 import '../../../core/models/learning_module.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../games/note_reading/note_reading_quiz_screen.dart';
 import '../../games/note_values/note_value_quiz_screen.dart';
 import '../../games/screens/module_screen.dart';
 import '../../progress/screens/progress_screen.dart';
@@ -18,11 +20,16 @@ import '../../settings/screens/settings_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  /// Starts a review session over due items. Currently only the note_values
-  /// symbol items have a runner; other modules join as their games land.
+  /// Starts a review session over due items. Runners exist for the
+  /// note_values symbol items and the note_reading items (per clef);
+  /// per session, the biggest due bucket wins. Other skills join as
+  /// their review runners land.
   void _startReview(BuildContext context) {
     final sri = context.read<SriService>();
-    final ids = sri
+
+    // Collect due items of the reviewable modules (one fetch per module;
+    // resetSessionFirst so the buckets are complete).
+    final symbolIds = sri
         .getItemsForReview(
           limit: 10,
           moduleId: 'note_values',
@@ -30,8 +37,34 @@ class HomeScreen extends StatelessWidget {
         )
         .where((id) => id.startsWith('note_values.symbol.'))
         .toList();
+    final readingIds = sri.getItemsForReview(
+      limit: 20,
+      moduleId: 'note_reading',
+      resetSessionFirst: true,
+    );
+    final treble = readingIds
+        .where((id) => id.startsWith('note_reading.treble.'))
+        .toList();
+    final bass = readingIds
+        .where((id) => id.startsWith('note_reading.bass.'))
+        .toList();
 
-    if (ids.isEmpty) {
+    final Widget? runner;
+    if (symbolIds.length >= treble.length &&
+        symbolIds.length >= bass.length &&
+        symbolIds.isNotEmpty) {
+      runner = NoteValueQuizScreen(reviewItemIds: symbolIds);
+    } else if (treble.length >= bass.length && treble.isNotEmpty) {
+      runner = NoteReadingQuizScreen(
+          clef: Clef.treble, reviewItemIds: treble.take(10).toList());
+    } else if (bass.isNotEmpty) {
+      runner = NoteReadingQuizScreen(
+          clef: Clef.bass, reviewItemIds: bass.take(10).toList());
+    } else {
+      runner = null;
+    }
+
+    if (runner == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.comingSoon),
@@ -41,11 +74,8 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => NoteValueQuizScreen(reviewItemIds: ids),
-      ),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => runner!));
   }
 
   @override
