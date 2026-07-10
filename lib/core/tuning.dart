@@ -9,6 +9,11 @@
 /// player advances to the next one.
 const int kWinsRequiredForLevelUp = 3;
 
+/// A locked module unlocks once the previous module (registry order) has
+/// at least this many SRI-tracked items — i.e. the child has genuinely
+/// played there. Soft engagement gate, not a mastery gate (docs/PLAN.md).
+const int kModuleUnlockTracked = 6;
+
 /// Default pass threshold (0.0 to 1.0) for ratio-based outcomes.
 const double kDefaultPassThreshold = 0.7;
 

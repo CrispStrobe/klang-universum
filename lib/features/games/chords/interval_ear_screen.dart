@@ -46,6 +46,9 @@ class _IntervalEarScreenState extends State<IntervalEarScreen>
   int get totalRounds => 10;
 
   @override
+  String get gameType => 'interval_ear';
+
+  @override
   void initState() {
     super.initState();
     prepareRound();

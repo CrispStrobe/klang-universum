@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Locked'**
   String get locked;
 
+  /// No description provided for @unlockHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Play {module} first to unlock this!'**
+  String unlockHint(String module);
+
   /// No description provided for @reviewTitle.
   ///
   /// In en, this message translates to:

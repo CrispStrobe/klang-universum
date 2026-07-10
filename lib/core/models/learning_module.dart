@@ -55,7 +55,6 @@ final List<LearningModule> kLearningModules = [
   ),
   LearningModule(
     id: 'measures',
-    initiallyUnlocked: true,
     icon: Icons.straighten,
     color: const Color(0xFFFF6D00),
     title: (l) => l.moduleMeasures,
@@ -63,7 +62,6 @@ final List<LearningModule> kLearningModules = [
   ),
   LearningModule(
     id: 'scales',
-    initiallyUnlocked: true,
     icon: Icons.stairs,
     color: const Color(0xFF00C853),
     title: (l) => l.moduleScales,
@@ -71,7 +69,6 @@ final List<LearningModule> kLearningModules = [
   ),
   LearningModule(
     id: 'chords',
-    initiallyUnlocked: true,
     icon: Icons.library_music,
     color: const Color(0xFFD500F9),
     title: (l) => l.moduleChords,
@@ -79,7 +76,6 @@ final List<LearningModule> kLearningModules = [
   ),
   LearningModule(
     id: 'harmony',
-    initiallyUnlocked: true,
     icon: Icons.auto_awesome,
     color: const Color(0xFFFFAB00),
     title: (l) => l.moduleHarmony,

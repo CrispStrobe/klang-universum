@@ -40,6 +40,9 @@ class _MajorMinorEarScreenState extends State<MajorMinorEarScreen>
   int get totalRounds => 10;
 
   @override
+  String get gameType => 'major_minor_ear';
+
+  @override
   void initState() {
     super.initState();
     prepareRound();

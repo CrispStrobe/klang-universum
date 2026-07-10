@@ -59,6 +59,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get locked => 'Gesperrt';
 
   @override
+  String unlockHint(String module) {
+    return 'Spiele zuerst $module, um das freizuschalten!';
+  }
+
+  @override
   String get reviewTitle => 'Wiederholen';
 
   @override

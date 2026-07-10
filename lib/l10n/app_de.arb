@@ -16,6 +16,7 @@
   "moduleHarmonySubtitle": "Tonika, Subdominante, Dominante",
   "comingSoon": "Kommt bald!",
   "locked": "Gesperrt",
+  "unlockHint": "Spiele zuerst {module}, um das freizuschalten!",
   "reviewTitle": "Wiederholen",
   "dueForReview": "{count, plural, =0{Nichts zu wiederholen} =1{1 Aufgabe zum Wiederholen} other{{count} Aufgaben zum Wiederholen}}",
   "settingsTitle": "Einstellungen",

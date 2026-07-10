@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/audio_service.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -135,6 +136,14 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
   int get totalRounds;
   int get pointsPerRound => 100;
 
+  /// Key into [kStarThresholds] for the star rating.
+  String get gameType;
+
+  /// ID the result is recorded under in [ProgressService]; defaults to
+  /// [gameType]. Override where one screen serves several registry entries
+  /// (e.g. place-the-note per clef).
+  String get progressId => gameType;
+
   /// Retro correct/wrong blips on every answer. Games that play their own
   /// pitch/chord feedback (place-the-note, chord quiz) override to false.
   bool get playFeedbackSounds => true;
@@ -149,6 +158,12 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
     final audio = context.read<AudioService>();
     if (correct && round + 1 >= totalRounds) {
       audio.playFanfare();
+      final finalScore = score + (answeredWrong ? 0 : pointsPerRound);
+      context.read<ProgressService>().recordResult(
+            progressId,
+            score: finalScore,
+            stars: scoreToStars(gameType, finalScore, true),
+          );
     } else if (playFeedbackSounds) {
       correct ? audio.playCorrect() : audio.playWrong();
     }

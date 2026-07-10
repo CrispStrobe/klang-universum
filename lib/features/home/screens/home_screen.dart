@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/models/learning_module.dart';
 import '../../../core/services/sri_service.dart';
+import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../games/note_reading/note_reading_quiz_screen.dart';
 import '../../games/note_values/note_value_quiz_screen.dart';
@@ -84,6 +85,21 @@ class HomeScreen extends StatelessWidget {
     final sri = context.watch<SriService>();
     final dueCount = sri.getAvailableReviewCount();
 
+    // Soft engagement gate: a module unlocks once the previous one has
+    // kModuleUnlockTracked SRI items (docs/PLAN.md).
+    final breakdown = sri.getDetailedBreakdown();
+    int trackedIn(String moduleId) => (breakdown[moduleId] ?? const {})
+        .values
+        .fold(0, (sum, s) => sum + s.tracked);
+    final unlockedById = <String, bool>{};
+    for (var i = 0; i < kLearningModules.length; i++) {
+      final module = kLearningModules[i];
+      unlockedById[module.id] = module.initiallyUnlocked ||
+          (i > 0 &&
+              trackedIn(kLearningModules[i - 1].id) >=
+                  kModuleUnlockTracked);
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.appTitle),
@@ -145,7 +161,13 @@ class HomeScreen extends StatelessWidget {
                 itemCount: kLearningModules.length,
                 itemBuilder: (context, index) {
                   final module = kLearningModules[index];
-                  return _ModuleCard(module: module, l10n: l10n);
+                  return _ModuleCard(
+                    module: module,
+                    l10n: l10n,
+                    unlocked: unlockedById[module.id] ?? true,
+                    previousModule:
+                        index > 0 ? kLearningModules[index - 1] : null,
+                  );
                 },
               ),
             ),
@@ -159,16 +181,18 @@ class HomeScreen extends StatelessWidget {
 class _ModuleCard extends StatelessWidget {
   final LearningModule module;
   final AppLocalizations l10n;
+  final bool unlocked;
+  final LearningModule? previousModule;
 
-  const _ModuleCard({required this.module, required this.l10n});
+  const _ModuleCard({
+    required this.module,
+    required this.l10n,
+    required this.unlocked,
+    required this.previousModule,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // TODO: unlock progression — later modules open once earlier ones reach
-    // mastery (SriService.getDetailedBreakdown). For now only the initial
-    // modules are active.
-    final unlocked = module.initiallyUnlocked;
-
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -182,8 +206,10 @@ class _ModuleCard extends StatelessWidget {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(l10n.locked),
-                duration: const Duration(seconds: 1),
+                content: Text(previousModule != null
+                    ? l10n.unlockHint(previousModule!.title(l10n))
+                    : l10n.locked),
+                duration: const Duration(seconds: 2),
               ),
             );
           }

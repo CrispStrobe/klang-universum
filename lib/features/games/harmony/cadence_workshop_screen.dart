@@ -50,6 +50,9 @@ class _CadenceWorkshopScreenState extends State<CadenceWorkshopScreen>
   @override
   int get totalRounds => 4;
 
+  @override
+  String get gameType => 'cadence_workshop';
+
   // The chords themselves are the audio feedback.
   @override
   bool get playFeedbackSounds => false;

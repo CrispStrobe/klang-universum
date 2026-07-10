@@ -67,6 +67,9 @@ class _RhythmTapScreenState extends State<RhythmTapScreen>
   @override
   int get totalRounds => 8;
 
+  @override
+  String get gameType => 'rhythm_tap';
+
   // Taps click on their own; blips would muddle the rhythm.
   @override
   bool get playFeedbackSounds => false;

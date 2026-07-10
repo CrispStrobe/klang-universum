@@ -40,6 +40,9 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
   @override
   int get totalRounds => 10;
 
+  @override
+  String get gameType => 'chord_quiz';
+
   // The chord itself plays on a correct answer.
   @override
   bool get playFeedbackSounds => false;

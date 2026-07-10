@@ -14,6 +14,7 @@ import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/audio_service.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
@@ -75,9 +76,16 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
   void _prepareRound() {
     // Naturals on the staff (bottom line..top line), no ledger lines yet —
     // the right starting range for beginners in both clefs.
+    // Star-driven difficulty: 2+ stars widen the range to the ledger
+    // neighborhood (middle C below the treble staff, high A above).
+    final stars = context
+        .read<ProgressService>()
+        .starsFor('note_reading_${widget.clef.name}');
     _target = _reviewSequence != null
         ? _reviewSequence![_round]
-        : widget.clef.pitchAt(_random.nextInt(9)); // staff positions 0..8
+        : stars >= 2
+            ? widget.clef.pitchAt(-2 + _random.nextInt(13)) // -2..10
+            : widget.clef.pitchAt(_random.nextInt(9)); // 0..8
 
     final distractors = [...Step.values]
       ..remove(_target.step)
@@ -111,6 +119,13 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
         }
         if (_round + 1 >= _totalRounds) {
           _finished = true;
+          if (!_isReview) {
+            context.read<ProgressService>().recordResult(
+                  'note_reading_${widget.clef.name}',
+                  score: _score,
+                  stars: scoreToStars('note_reading_quiz', _score, true),
+                );
+          }
         }
       } else {
         _answeredWrong = true;

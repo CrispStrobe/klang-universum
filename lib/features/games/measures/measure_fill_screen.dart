@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/progress_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/music_glyph.dart';
@@ -55,6 +56,9 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
   int get totalRounds => 10;
 
   @override
+  String get gameType => 'measure_fill';
+
+  @override
   void initState() {
     super.initState();
     prepareRound();
@@ -72,9 +76,13 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
         _timeSignatures[_random.nextInt(_timeSignatures.length)];
     final capacity = _timeSignature.beats * (16 ~/ _timeSignature.beatUnit);
 
-    // The missing piece: a half, quarter or eighth that fits with room for
-    // at least one prefix note.
-    final candidates = [8, 4, 2].where((d) => d < capacity).toList();
+    // The missing piece: h/q/e — sixteenths join at 2+ stars — with room
+    // for at least one prefix note.
+    final pool =
+        context.read<ProgressService>().starsFor('measure_fill') >= 2
+            ? [8, 4, 2, 1]
+            : [8, 4, 2];
+    final candidates = pool.where((d) => d < capacity).toList();
     _remainder16 = candidates[_random.nextInt(candidates.length)];
 
     // Fill the rest of the measure with random h/q/e notes.

@@ -45,6 +45,9 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
   @override
   int get totalRounds => 6;
 
+  @override
+  String get gameType => 'scale_builder';
+
   // Placed pitches and the finished scale are the audio feedback.
   @override
   bool get playFeedbackSounds => false;

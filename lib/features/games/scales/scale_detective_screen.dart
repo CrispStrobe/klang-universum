@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' hide Step, Key;
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/progress_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../note_reading/note_names.dart';
@@ -29,8 +30,9 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
     with QuizRoundMixin {
   final _random = Random();
 
-  // Beginner keys; more via difficulty progression (see docs/PLAN.md).
-  static const _tonics = [Step.c, Step.f, Step.g];
+  // Beginner keys; D and A majors join at 2+ stars (docs/PLAN.md).
+  static const _baseTonics = [Step.c, Step.f, Step.g];
+  static const _advancedTonics = [Step.c, Step.f, Step.g, Step.d, Step.a];
 
   late Step _tonic;
   late Key _key;
@@ -43,6 +45,9 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
   int get totalRounds => 8;
 
   @override
+  String get gameType => 'scale_detective';
+
+  @override
   void initState() {
     super.initState();
     prepareRound();
@@ -50,7 +55,11 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
 
   @override
   void prepareRound() {
-    _tonic = _tonics[_random.nextInt(_tonics.length)];
+    final tonics =
+        context.read<ProgressService>().starsFor('scale_detective') >= 2
+            ? _advancedTonics
+            : _baseTonics;
+    _tonic = tonics[_random.nextInt(tonics.length)];
     _key = Key.major(Pitch(_tonic));
     final scale = Scale(Pitch(_tonic), ScaleType.major).pitches;
 

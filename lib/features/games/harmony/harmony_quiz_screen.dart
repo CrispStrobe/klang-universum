@@ -42,6 +42,9 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
   int get totalRounds => 10;
 
   @override
+  String get gameType => 'harmony_quiz';
+
+  @override
   void initState() {
     super.initState();
     prepareRound();

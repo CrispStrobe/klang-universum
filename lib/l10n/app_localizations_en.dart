@@ -59,6 +59,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locked => 'Locked';
 
   @override
+  String unlockHint(String module) {
+    return 'Play $module first to unlock this!';
+  }
+
+  @override
   String get reviewTitle => 'Review';
 
   @override

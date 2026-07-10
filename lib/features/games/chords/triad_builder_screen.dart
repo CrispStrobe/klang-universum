@@ -40,6 +40,9 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
   @override
   int get totalRounds => 8;
 
+  @override
+  String get gameType => 'triad_builder';
+
   // Placed pitches and the completed chord are the audio feedback.
   @override
   bool get playFeedbackSounds => false;

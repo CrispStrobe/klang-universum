@@ -4,6 +4,7 @@ import 'package:partitura/partitura.dart' show Bravura;
 import 'package:provider/provider.dart';
 
 import 'core/services/audio_service.dart';
+import 'core/services/progress_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/services/sri_service.dart';
 import 'features/games/game_registry.dart';
@@ -35,6 +36,9 @@ class KlangUniversumApp extends StatelessWidget {
         Provider<AudioService>(
           create: (_) => AudioService(),
           dispose: (_, service) => service.dispose(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ProgressService()..load(),
         ),
       ],
       child: Consumer<SettingsService>(

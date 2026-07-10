@@ -47,12 +47,19 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 - Function Quiz: C/F/G major → all keys → minor keys (with harmonic-minor
   dominant) → hear the function (audio).
 
-## Module unlocking
+## Progression (shipped)
 
-For now all modules with games are unlocked (testing phase). Planned gating
-(see `learning_module.dart` TODO): a module unlocks when the previous one
-reaches ≥50% mastery in the SRI breakdown — visible on the Progress screen,
-so the child always knows why something is locked and what to practice.
+- **Stars persist** (`ProgressService`): best stars/score and play count per
+  game, shown on every game tile.
+- **Star-driven difficulty**: 2+ stars widen a game's material (reading
+  games gain the ledger range incl. middle C; Scale Detective gains D and A
+  major; Measure Filler gains sixteenths). More expansions per game over
+  time — SM-2 mastery stays the long-term signal, stars the session signal.
+- **Soft unlock gating**: a module unlocks once the *previous* one has
+  ≥ `kModuleUnlockTracked` SRI-tracked items (the child genuinely played
+  there). Engagement gate, not a mastery gate — mastery gating proved too
+  slow for a 6-year-old's first week. Locked cards explain what to play
+  first.
 
 ## Audio (v1 shipped)
 

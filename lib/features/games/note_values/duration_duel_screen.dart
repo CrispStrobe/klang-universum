@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/audio_service.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
@@ -70,6 +71,13 @@ class _DurationDuelScreenState extends State<DurationDuelScreen> {
     final audio = context.read<AudioService>();
     if (correct && _round + 1 >= DurationDuelScreen.totalRounds) {
       audio.playFanfare();
+      final finalScore =
+          _score + (_answeredWrong ? 0 : DurationDuelScreen.pointsPerRound);
+      context.read<ProgressService>().recordResult(
+            'duration_duel',
+            score: finalScore,
+            stars: scoreToStars('duration_duel', finalScore, true),
+          );
     } else {
       correct ? audio.playCorrect() : audio.playWrong();
     }

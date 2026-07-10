@@ -40,6 +40,12 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
   @override
   int get totalRounds => 10;
 
+  @override
+  String get gameType => 'place_note';
+
+  @override
+  String get progressId => 'place_note_${widget.clef.name}';
+
   // The tapped pitch itself is the audio feedback here.
   @override
   bool get playFeedbackSounds => false;

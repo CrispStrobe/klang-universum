@@ -16,6 +16,14 @@
   "moduleHarmonySubtitle": "Tonic, subdominant, dominant",
   "comingSoon": "Coming soon!",
   "locked": "Locked",
+  "unlockHint": "Play {module} first to unlock this!",
+  "@unlockHint": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
   "reviewTitle": "Review",
   "dueForReview": "{count, plural, =0{Nothing to review} =1{1 item to review} other{{count} items to review}}",
   "@dueForReview": {

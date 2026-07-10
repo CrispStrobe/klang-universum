@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/scales/major_minor_ear_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -22,6 +23,7 @@ void main() {
         providers: [
           ChangeNotifierProvider<SriService>.value(value: sri),
           Provider<AudioService>(create: (_) => AudioService()),
+      ChangeNotifierProvider(create: (_) => ProgressService()),
         ],
         child: const MaterialApp(
           localizationsDelegates: [

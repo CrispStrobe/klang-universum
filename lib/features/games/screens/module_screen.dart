@@ -3,8 +3,10 @@
 // Lists the minigames of one learning module (from the game registry).
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/models/learning_module.dart';
+import '../../../core/services/progress_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../game_registry.dart';
 
@@ -16,6 +18,7 @@ class ModuleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final progress = context.watch<ProgressService>();
     final games = kGamesByModule[module.id] ?? const [];
 
     return Scaffold(
@@ -37,7 +40,21 @@ class ModuleScreen extends StatelessWidget {
                     ),
                     title: Text(game.title(l10n)),
                     subtitle: Text(game.subtitle(l10n)),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < 3; i++)
+                          Icon(
+                            i < progress.starsFor(game.id)
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 18,
+                            color: Colors.amber,
+                          ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: game.builder),
                     ),
