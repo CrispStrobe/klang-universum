@@ -1,6 +1,6 @@
 {
-    "name": "klang_universum",
-    "short_name": "klang_universum",
+    "name": "KlangUniversum",
+    "short_name": "KlangUniversum",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
