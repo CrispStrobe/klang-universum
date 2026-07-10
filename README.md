@@ -12,16 +12,19 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games |
+| id | Topic | Games (15) |
 |---|---|---|
-| `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel |
-| `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 • Place the Note ×2 (SRI review runners) |
+| `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo |
+| `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 • Place the Note ×2 |
 | `measures` | Takte & Taktarten | Measure Filler |
-| `scales` | Tonleitern, Dur/Moll | Scale Detective |
-| `chords` | Akkorde & Intervalle | Chord Quiz |
-| `harmony` | Harmonik (T/S/D) | Function Quiz |
+| `scales` | Tonleitern, Dur/Moll | Scale Detective • Dur oder Moll? (ear) • Scale Builder |
+| `chords` | Akkorde & Intervalle | Chord Quiz • Triad Builder • Interval Detective (ear) |
+| `harmony` | Harmonik (T/S/D) | Function Quiz • Cadence Workshop |
 
-Later: audio/ear training, Kadenzen, Kompositionstechnik (see plan).
+SRI review runners: note-value symbols + note reading (per clef); the home
+review button routes to the biggest due bucket. Audio is synthesized in
+pure Dart (no assets). Web deep links: `?game=<id>`.
+Later: more ear training, unlock gating, Kompositionstechnik (see plan).
 Live web build: https://mus-theta.vercel.app
 
 ## Architecture notes
