@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:partitura/partitura.dart' show Bravura;
 import 'package:provider/provider.dart';
 
 import 'core/services/audio_service.dart';
@@ -10,8 +11,11 @@ import 'features/home/screens/home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'shared/theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Per the partitura contract (CONTRACT.md §6): await the SMuFL metadata
+  // up front so the first StaffView frame is never empty.
+  await Bravura.load();
   runApp(const KlangUniversumApp());
 }
 
