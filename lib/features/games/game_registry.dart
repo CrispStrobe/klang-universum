@@ -9,12 +9,15 @@ import 'package:partitura/partitura.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'chords/chord_quiz_screen.dart';
+import 'chords/interval_ear_screen.dart';
+import 'chords/triad_builder_screen.dart';
 import 'harmony/harmony_quiz_screen.dart';
 import 'measures/measure_fill_screen.dart';
 import 'note_reading/note_reading_quiz_screen.dart';
 import 'note_reading/place_note_screen.dart';
 import 'note_values/duration_duel_screen.dart';
 import 'note_values/note_value_quiz_screen.dart';
+import 'note_values/rhythm_tap_screen.dart';
 import 'scales/major_minor_ear_screen.dart';
 import 'scales/scale_detective_screen.dart';
 
@@ -50,6 +53,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDurationDuel,
       subtitle: (l) => l.gameDurationDuelSubtitle,
       builder: (_) => const DurationDuelScreen(),
+    ),
+    GameInfo(
+      id: 'rhythm_tap',
+      icon: Icons.touch_app,
+      title: (l) => l.gameRhythmTap,
+      subtitle: (l) => l.gameRhythmTapSubtitle,
+      builder: (_) => const RhythmTapScreen(),
     ),
   ],
   'note_reading': [
@@ -114,6 +124,20 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameChordQuiz,
       subtitle: (l) => l.gameChordQuizSubtitle,
       builder: (_) => const ChordQuizScreen(),
+    ),
+    GameInfo(
+      id: 'triad_builder',
+      icon: Icons.construction,
+      title: (l) => l.gameTriadBuilder,
+      subtitle: (l) => l.gameTriadBuilderSubtitle,
+      builder: (_) => const TriadBuilderScreen(),
+    ),
+    GameInfo(
+      id: 'interval_ear',
+      icon: Icons.hearing,
+      title: (l) => l.gameIntervalEar,
+      subtitle: (l) => l.gameIntervalEarSubtitle,
+      builder: (_) => const IntervalEarScreen(),
     ),
   ],
   'harmony': [

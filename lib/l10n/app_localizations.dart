@@ -536,6 +536,90 @@ abstract class AppLocalizations {
   /// **'Minor'**
   String get minorLabel;
 
+  /// No description provided for @gameIntervalEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval Detective'**
+  String get gameIntervalEar;
+
+  /// No description provided for @gameIntervalEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How far apart are two notes?'**
+  String get gameIntervalEarSubtitle;
+
+  /// No description provided for @listenIntervalPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen! What interval is this?'**
+  String get listenIntervalPrompt;
+
+  /// No description provided for @intervalSecond.
+  ///
+  /// In en, this message translates to:
+  /// **'Second'**
+  String get intervalSecond;
+
+  /// No description provided for @intervalThird.
+  ///
+  /// In en, this message translates to:
+  /// **'Third'**
+  String get intervalThird;
+
+  /// No description provided for @intervalFifth.
+  ///
+  /// In en, this message translates to:
+  /// **'Fifth'**
+  String get intervalFifth;
+
+  /// No description provided for @intervalOctave.
+  ///
+  /// In en, this message translates to:
+  /// **'Octave'**
+  String get intervalOctave;
+
+  /// No description provided for @gameTriadBuilder.
+  ///
+  /// In en, this message translates to:
+  /// **'Triad Builder'**
+  String get gameTriadBuilder;
+
+  /// No description provided for @gameTriadBuilderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stack the chord on the staff'**
+  String get gameTriadBuilderSubtitle;
+
+  /// No description provided for @triadBuilderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Build the {name} major triad!'**
+  String triadBuilderPrompt(String name);
+
+  /// No description provided for @gameRhythmTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Rhythm Echo'**
+  String get gameRhythmTap;
+
+  /// No description provided for @gameRhythmTapSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen and tap it back'**
+  String get gameRhythmTapSubtitle;
+
+  /// No description provided for @rhythmTapPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen, then tap the rhythm!'**
+  String get rhythmTapPrompt;
+
+  /// No description provided for @tapHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here!'**
+  String get tapHere;
+
   /// No description provided for @whatIsThisSymbol.
   ///
   /// In en, this message translates to:

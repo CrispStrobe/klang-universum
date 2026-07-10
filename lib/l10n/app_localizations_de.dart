@@ -253,6 +253,51 @@ class AppLocalizationsDe extends AppLocalizations {
   String get minorLabel => 'Moll';
 
   @override
+  String get gameIntervalEar => 'Intervall-Detektiv';
+
+  @override
+  String get gameIntervalEarSubtitle =>
+      'Wie weit liegen zwei Töne auseinander?';
+
+  @override
+  String get listenIntervalPrompt => 'Hör zu! Welches Intervall ist das?';
+
+  @override
+  String get intervalSecond => 'Sekunde';
+
+  @override
+  String get intervalThird => 'Terz';
+
+  @override
+  String get intervalFifth => 'Quinte';
+
+  @override
+  String get intervalOctave => 'Oktave';
+
+  @override
+  String get gameTriadBuilder => 'Dreiklang-Baumeister';
+
+  @override
+  String get gameTriadBuilderSubtitle => 'Baue den Akkord auf den Linien';
+
+  @override
+  String triadBuilderPrompt(String name) {
+    return 'Baue den $name-Dur-Dreiklang!';
+  }
+
+  @override
+  String get gameRhythmTap => 'Rhythmus-Echo';
+
+  @override
+  String get gameRhythmTapSubtitle => 'Hör zu und klopfe nach';
+
+  @override
+  String get rhythmTapPrompt => 'Hör zu und klopfe den Rhythmus nach!';
+
+  @override
+  String get tapHere => 'Klopf hier!';
+
+  @override
   String get whatIsThisSymbol => 'Wie heißt dieses Zeichen?';
 
   @override

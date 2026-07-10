@@ -251,6 +251,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minorLabel => 'Minor';
 
   @override
+  String get gameIntervalEar => 'Interval Detective';
+
+  @override
+  String get gameIntervalEarSubtitle => 'How far apart are two notes?';
+
+  @override
+  String get listenIntervalPrompt => 'Listen! What interval is this?';
+
+  @override
+  String get intervalSecond => 'Second';
+
+  @override
+  String get intervalThird => 'Third';
+
+  @override
+  String get intervalFifth => 'Fifth';
+
+  @override
+  String get intervalOctave => 'Octave';
+
+  @override
+  String get gameTriadBuilder => 'Triad Builder';
+
+  @override
+  String get gameTriadBuilderSubtitle => 'Stack the chord on the staff';
+
+  @override
+  String triadBuilderPrompt(String name) {
+    return 'Build the $name major triad!';
+  }
+
+  @override
+  String get gameRhythmTap => 'Rhythm Echo';
+
+  @override
+  String get gameRhythmTapSubtitle => 'Listen and tap it back';
+
+  @override
+  String get rhythmTapPrompt => 'Listen, then tap the rhythm!';
+
+  @override
+  String get tapHere => 'Tap here!';
+
+  @override
   String get whatIsThisSymbol => 'What is this symbol called?';
 
   @override

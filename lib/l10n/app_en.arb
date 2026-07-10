@@ -125,6 +125,27 @@
   "listenAgain": "Hear it again",
   "majorLabel": "Major",
   "minorLabel": "Minor",
+  "gameIntervalEar": "Interval Detective",
+  "gameIntervalEarSubtitle": "How far apart are two notes?",
+  "listenIntervalPrompt": "Listen! What interval is this?",
+  "intervalSecond": "Second",
+  "intervalThird": "Third",
+  "intervalFifth": "Fifth",
+  "intervalOctave": "Octave",
+  "gameTriadBuilder": "Triad Builder",
+  "gameTriadBuilderSubtitle": "Stack the chord on the staff",
+  "triadBuilderPrompt": "Build the {name} major triad!",
+  "@triadBuilderPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameRhythmTap": "Rhythm Echo",
+  "gameRhythmTapSubtitle": "Listen and tap it back",
+  "rhythmTapPrompt": "Listen, then tap the rhythm!",
+  "tapHere": "Tap here!",
   "whatIsThisSymbol": "What is this symbol called?",
   "roundOf": "Round {current} of {total}",
   "@roundOf": {

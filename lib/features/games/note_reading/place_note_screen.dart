@@ -57,10 +57,16 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
     _lastAnswer = null;
   }
 
+  // Whole rests keep the measures at normal width (empty measures collapse),
+  // so the tappable staff stays wide — and it's correct notation anyway.
+  static const _wholeRest = RestElement(NoteDuration(DurationBase.whole));
+
   Score get _score => Score(
         clef: widget.clef,
         measures: [
-          Measure([if (_placed != null) _placed!]),
+          Measure([_placed ?? _wholeRest]),
+          Measure(const [_wholeRest]),
+          Measure(const [_wholeRest]),
         ],
       );
 
@@ -140,6 +146,9 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
                             child: InteractiveStaff(
                               score: _score,
                               theme: theme,
+                              // Fixed scale: fit-to-width explodes on a
+                              // near-empty score (clef + one note).
+                              staffSpace: 16,
                               ghostDuration:
                                   const NoteDuration(DurationBase.whole),
                               onStaffTap: _onStaffTap,

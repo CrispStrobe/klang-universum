@@ -1,0 +1,196 @@
+// lib/features/games/chords/triad_builder_screen.dart
+//
+// "Dreiklang-Baumeister" — the root is given on the staff; the child taps
+// the two missing notes of the root-position triad (third and fifth: the
+// next two lines-or-spaces up). Every placed note sounds; the finished
+// triad is played as a chord. The first constructive/building game.
+//
+// SRI: 'chords.build.<root>_major' (correct = built without a wrong tap).
+
+import 'dart:math';
+
+// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:flutter/material.dart' hide Step;
+import 'package:partitura/partitura.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/services/audio_service.dart';
+import '../../../core/services/sri_service.dart';
+import '../../../l10n/app_localizations.dart';
+import '../note_reading/note_names.dart';
+import '../widgets/game_widgets.dart';
+
+class TriadBuilderScreen extends StatefulWidget {
+  const TriadBuilderScreen({super.key});
+
+  @override
+  State<TriadBuilderScreen> createState() => _TriadBuilderScreenState();
+}
+
+class _TriadBuilderScreenState extends State<TriadBuilderScreen>
+    with QuizRoundMixin {
+  final _random = Random();
+
+  late Pitch _root;
+  late int _rootPosition;
+  final Set<int> _placedPositions = {}; // relative: 2 and 4 above the root
+  int? _wrongPosition; // flashes red briefly
+  bool _sriRecorded = false;
+
+  @override
+  int get totalRounds => 8;
+
+  // Placed pitches and the completed chord are the audio feedback.
+  @override
+  bool get playFeedbackSounds => false;
+
+  @override
+  void initState() {
+    super.initState();
+    prepareRound();
+  }
+
+  @override
+  void prepareRound() {
+    _rootPosition = _random.nextInt(5); // triad top stays on the staff
+    _root = Clef.treble.pitchAt(_rootPosition);
+    _placedPositions.clear();
+    _wrongPosition = null;
+    _sriRecorded = false;
+  }
+
+  bool get _complete => _placedPositions.length == 2;
+
+  Score get _score {
+    final pitches = [
+      _root,
+      for (final offset in _placedPositions)
+        Clef.treble.pitchAt(_rootPosition + offset),
+      if (_wrongPosition != null) Clef.treble.pitchAt(_wrongPosition!),
+    ]..sort((a, b) => a.diatonicIndex.compareTo(b.diatonicIndex));
+
+    return Score(
+      clef: Clef.treble,
+      measures: [
+        Measure([
+          NoteElement(
+            pitches: pitches,
+            duration: const NoteDuration(DurationBase.whole),
+            id: 'triad',
+          ),
+        ]),
+        // A whole-rest measure widens the tappable staff (empty measures
+        // collapse to minimal width).
+        Measure(const [RestElement(NoteDuration(DurationBase.whole))]),
+      ],
+    );
+  }
+
+  void _record(bool correct) {
+    if (_sriRecorded) return;
+    _sriRecorded = true;
+    context
+        .read<SriService>()
+        .recordResponse('chords.build.${_root.step.name}_major', correct);
+  }
+
+  void _onStaffTap(StaffTarget target) {
+    if (_complete) return; // round already resolved
+    final offset = target.staffPosition - _rootPosition;
+    final audio = context.read<AudioService>();
+
+    if ((offset == 2 || offset == 4) && !_placedPositions.contains(offset)) {
+      audio.playMidiNote(
+          Clef.treble.pitchAt(target.staffPosition).midiNumber,
+          ms: 500);
+      setState(() {
+        _placedPositions.add(offset);
+        _wrongPosition = null;
+      });
+      if (_complete) {
+        _record(!answeredWrong);
+        audio.playMidiChord([
+          _root.midiNumber,
+          Clef.treble.pitchAt(_rootPosition + 2).midiNumber,
+          Clef.treble.pitchAt(_rootPosition + 4).midiNumber,
+        ]);
+        resolveAnswer(correct: true);
+      }
+    } else {
+      _record(false);
+      audio.playWrong();
+      setState(() => _wrongPosition = target.staffPosition);
+      resolveAnswer(correct: false);
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        setState(() => _wrongPosition = null);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    // The whole chord element flashes red on a wrong tap, green when done.
+    final theme = PartituraTheme.kids.copyWith(
+      elementColors: {
+        if (_wrongPosition != null) 'triad': Colors.redAccent,
+        if (_complete) 'triad': Colors.green,
+      },
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.gameTriadBuilder)),
+      body: SafeArea(
+        child: finished
+            ? GameResultView(
+                gameType: 'triad_builder',
+                score: score,
+                onRestart: restartGame,
+              )
+            : Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    RoundHeader(
+                      round: round + 1,
+                      totalRounds: totalRounds,
+                      prompt: l10n.triadBuilderPrompt(
+                          noteName(l10n, _root.step)),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: Card(
+                        child: Center(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 24),
+                            child: InteractiveStaff(
+                              score: _score,
+                              theme: theme,
+                              // Fixed scale: fit-to-width explodes on a
+                              // near-empty score (clef + one chord).
+                              staffSpace: 16,
+                              ghostDuration:
+                                  const NoteDuration(DurationBase.whole),
+                              onStaffTap: _onStaffTap,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FeedbackLine(
+                      correct: _wrongPosition != null
+                          ? false
+                          : _complete
+                              ? true
+                              : null,
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}
