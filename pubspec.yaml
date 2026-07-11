@@ -51,6 +51,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.1
+  # Test-only: fake the file picker to drive the import file-pick paths.
+  file_selector_platform_interface: ^2.7.0
+  plugin_platform_interface: ^2.1.8
 
 flutter_launcher_icons:
   android: true

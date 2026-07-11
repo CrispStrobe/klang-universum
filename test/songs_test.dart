@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,8 +17,96 @@ import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show MultiSystemView;
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Returns a fixed file (or null) from the picker so the import file-pick
+/// paths can be driven without a real dialog.
+class _FakeFileSelector extends FileSelectorPlatform
+    with MockPlatformInterfaceMixin {
+  _FakeFileSelector(this._file);
+  final XFile? _file;
+
+  @override
+  Future<XFile?> openFile({
+    List<XTypeGroup>? acceptedTypeGroups,
+    String? initialDirectory,
+    String? confirmButtonText,
+  }) async =>
+      _file;
+}
+
+/// Home screen with a button that pushes [screen], so a screen that pops
+/// itself on success has a route to return to.
+Widget _launcher(Widget screen) => Builder(
+      builder: (context) => Scaffold(
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => screen),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+
+/// A minimal valid single-track SMF: C4, D4, E4 quarters.
+Uint8List _buildMidi() {
+  final track = <int>[
+    0x00,
+    0x90,
+    60,
+    100,
+    0x83,
+    0x60,
+    0x80,
+    60,
+    0,
+    0x00,
+    0x90,
+    62,
+    100,
+    0x83,
+    0x60,
+    0x80,
+    62,
+    0,
+    0x00,
+    0x90,
+    64,
+    100,
+    0x87,
+    0x40,
+    0x80,
+    64,
+    0,
+    0x00,
+    0xff,
+    0x2f,
+    0x00,
+  ];
+  return Uint8List.fromList([
+    ...'MThd'.codeUnits,
+    0,
+    0,
+    0,
+    6,
+    0,
+    0,
+    0,
+    1,
+    0x01,
+    0xe0,
+    ...'MTrk'.codeUnits,
+    (track.length >> 24) & 0xff,
+    (track.length >> 16) & 0xff,
+    (track.length >> 8) & 0xff,
+    track.length & 0xff,
+    ...track,
+  ]);
+}
 
 const _xml = '''
 <score-partwise version="4.0"><part-list><score-part id="P1">
@@ -161,5 +253,47 @@ void main() {
 
     expect(songs.songs, hasLength(1));
     expect(find.text('open'), findsOneWidget); // popped back
+  });
+
+  testWidgets('import screen: picking a MusicXML file adds a song',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final songs = UserSongsService();
+    FileSelectorPlatform.instance = _FakeFileSelector(
+      XFile.fromData(
+        Uint8List.fromList(utf8.encode(_xml)),
+        path: 'my_tune.musicxml',
+      ),
+    );
+
+    await tester
+        .pumpWidget(_wrap(_launcher(const ImportScreen()), sri, songs: songs));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pick a MusicXML file…'));
+    await tester.pumpAndSettle();
+
+    expect(songs.songs, hasLength(1));
+    // No title typed and no work-title in the XML -> filename is the fallback.
+    expect(songs.songs.single.title, 'my_tune');
+  });
+
+  testWidgets('import screen: picking a MIDI file adds a song', (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final songs = UserSongsService();
+    FileSelectorPlatform.instance = _FakeFileSelector(
+      XFile.fromData(_buildMidi(), path: 'ditty.mid'),
+    );
+
+    await tester
+        .pumpWidget(_wrap(_launcher(const ImportScreen()), sri, songs: songs));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pick a MIDI file…'));
+    await tester.pumpAndSettle();
+
+    // Parsed + quantized + persisted as MusicXML under the filename.
+    expect(songs.songs, hasLength(1));
+    expect(songs.songs.single.title, 'ditty');
   });
 }
