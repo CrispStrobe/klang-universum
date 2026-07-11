@@ -1,5 +1,6 @@
-// Follow the Conductor — the reaction/gesture toy. Verifies that performing the
-// called gesture scores, and that letting the countdown bar empty costs a life.
+// Follow the Conductor — conducting patterns. The Ticker is the master clock
+// (driven by pump): tapping the lit direction zone on the beat scores; letting
+// a beat pass untapped does not.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -34,61 +35,38 @@ CommandCallerTester _game(WidgetTester tester) =>
     tester.state<State<CommandCallerScreen>>(find.byType(CommandCallerScreen))
         as CommandCallerTester;
 
-/// Perform the gesture that satisfies command [key] on the pad.
-Future<void> _do(WidgetTester tester, String key) async {
-  final pad = find.byKey(CommandCallerScreen.padKey);
-  switch (key) {
-    case 'tap':
-      await tester.tap(pad);
-    case 'hold':
-      await tester.longPress(pad);
-    case 'swipeLeft':
-      await tester.drag(pad, const Offset(-140, 0));
-    case 'swipeRight':
-      await tester.drag(pad, const Offset(140, 0));
-    case 'swipeUp':
-      await tester.drag(pad, const Offset(0, -140));
-    case 'swipeDown':
-      await tester.drag(pad, const Offset(0, 140));
-  }
-  await tester.pump();
-}
-
-/// Let the run play out (doing nothing → timeouts → game over) so no round
-/// timer is left pending at teardown.
-Future<void> _drain(WidgetTester tester, CommandCallerTester game) async {
-  for (var i = 0; i < 80 && !game.finished; i++) {
-    await tester.pump(const Duration(milliseconds: 700));
-  }
-}
-
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('performing the called gesture scores a point', (tester) async {
+  testWidgets('conducting the beat on the downbeat scores a hit',
+      (tester) async {
     await tester.pumpWidget(_app());
     final game = _game(tester);
 
-    final key = game.currentCommandKey;
-    expect(key, isNotNull);
+    // Advance to the first beat (the count-in lead is 1400ms).
+    await tester.pump(const Duration(milliseconds: 1400));
+    final dir = game.expectedNow;
+    expect(dir, isNotNull, reason: 'a beat should be active');
 
-    await _do(tester, key!);
+    await tester.tap(find.byKey(CommandCallerScreen.zoneKey(dir!)));
+    await tester.pump();
+
+    expect(game.hits, 1);
     expect(game.score, greaterThan(0));
-    expect(game.lives, CommandCallerScreen.maxLives);
-
-    await _drain(tester, game);
   });
 
-  testWidgets('letting the bar empty costs a life', (tester) async {
+  testWidgets('a wrong direction does not score', (tester) async {
     await tester.pumpWidget(_app());
     final game = _game(tester);
-    expect(game.currentCommandKey, isNotNull);
 
-    // Do nothing until past the (max) countdown window.
-    await tester.pump(const Duration(milliseconds: 2700));
-    expect(game.lives, lessThan(CommandCallerScreen.maxLives));
+    await tester.pump(const Duration(milliseconds: 1400));
+    final dir = game.expectedNow!;
+    // Tap a different zone than the one expected.
+    final wrong = Beat.values.firstWhere((b) => b != dir);
+    await tester.tap(find.byKey(CommandCallerScreen.zoneKey(wrong)));
+    await tester.pump();
+
+    expect(game.hits, 0);
     expect(game.score, 0);
-
-    await _drain(tester, game);
   });
 }

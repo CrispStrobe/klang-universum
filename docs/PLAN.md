@@ -280,13 +280,13 @@ training. *(Generic names only — no product names in code or docs.)*
   module. *(Extends to swipe-direction pads and a rhythm-timed variant.)*
 - [x] **Command caller** — rapid voice/text commands ("tap!", "hold!", "swipe
   up!", "clap the beat!"); do the matching gesture before the timer. Reaction +
-  gesture vocabulary. *M.* **Shipped**: **Follow the Conductor** (scales) — the
-  conductor calls a gesture (tap / hold / swipe in four directions); perform it
-  before the countdown bar empties. Each correct cue sounds the next note of a
-  rising pentatonic melody (so a good run plays a tune); a wrong move or a
-  timeout costs one of three hearts. Combo multiplier + level-based shrinking
-  window. A pure reaction toy — no SRI, scored like Sound Echo. *(Extends to a
-  "clap the beat" tempo mode.)*
+  gesture vocabulary. *M.* **Shipped** as **Follow the Conductor** (scales),
+  reworked from a bare reaction toy into a **metre lesson**: the baton traces the
+  real conducting figure for the current time signature (2/4 down·up, 3/4
+  down·right·up, 4/4 down·left·right·up); the target zone lights on each beat
+  (a tick, accented on the downbeat) and the child follows it — taps or arrow
+  keys. A no-fail run through 2/4, 3/4 and 4/4, scored by timing accuracy. The
+  learning is kinaesthetic: you feel the downbeat and internalise each metre.
 - [ ] **Strum toy** — swipe/strum across the screen to sound a chord or arpeggio;
   a free "air-instrument" jam built on the existing fretboard/keyboard widgets. *S–M.*
 - [ ] **Loop mixer** — tap/place cards that each trigger a synced musical loop

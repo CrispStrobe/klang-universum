@@ -816,6 +816,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippen, halten oder wischen — bevor der Balken leer ist!';
 
   @override
+  String get conductorPrompt => 'Folge dem Takt des Dirigenten!';
+
+  @override
   String get commandTap => 'Tippen!';
 
   @override

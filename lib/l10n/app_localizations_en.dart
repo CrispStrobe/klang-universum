@@ -810,6 +810,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap, hold, or swipe — before the bar runs out!';
 
   @override
+  String get conductorPrompt => 'Follow the conductor\'s beat!';
+
+  @override
   String get commandTap => 'Tap!';
 
   @override

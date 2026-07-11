@@ -1,16 +1,21 @@
 // lib/features/games/scales/command_caller_screen.dart
 //
-// "Der Dirigent" / "Follow the Conductor" — the command-caller toy mechanic
-// (docs/PLAN.md toy-inspired list) given a musical frame: the conductor calls a
-// gesture (tap, hold, or a swipe), and the child must perform it before the
-// countdown bar empties. Each correct cue sounds the next note of a rising
-// pentatonic melody, so a good run plays a little tune; misses cost a heart.
-// Reaction + gesture vocabulary, with a musical payoff. A pure toy — no SRI,
-// scored like Sound Echo.
-
-import 'dart:math';
+// "Der Dirigent" / "Follow the Conductor" — conduct the beat pattern. Instead
+// of a meaningless tap/hold/swipe reaction, this now teaches METER: the baton
+// traces the real conducting pattern for the current time signature, and the
+// child follows it beat by beat. Beat 1 is always DOWN (the downbeat you feel);
+// the rest trace the standard 2/4, 3/4 and 4/4 figures.
+//
+//   2/4: down · up            3/4: down · right · up
+//   4/4: down · left · right · up
+//
+// The target zone lights up on each beat (a tick, accented on the downbeat) and
+// the child taps it — or uses the arrow keys. A no-fail toy scored by accuracy,
+// like Sound Echo; the learning is kinaesthetic (you feel the metre).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
@@ -19,207 +24,236 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:provider/provider.dart';
 
-/// A conductor cue. [key] is stable (used by tests + as a switch tag).
-enum Command {
-  tap('tap', Icons.touch_app),
-  hold('hold', Icons.back_hand),
-  swipeLeft('swipeLeft', Icons.west),
-  swipeRight('swipeRight', Icons.east),
-  swipeUp('swipeUp', Icons.north),
-  swipeDown('swipeDown', Icons.south);
+/// A conducting direction (a zone in the diamond).
+enum Beat { up, down, left, right }
 
-  const Command(this.key, this.icon);
-
-  final String key;
-  final IconData icon;
+/// A metre and its conducting figure.
+class _Meter {
+  const _Meter(this.signature, this.pattern);
+  final String signature; // e.g. "4/4"
+  final List<Beat> pattern;
 }
 
 class CommandCallerScreen extends StatefulWidget {
   const CommandCallerScreen({super.key});
 
-  /// Cues per run — the round budget behind the star rating.
-  static const _kTotalRounds = 15;
-  static const _kMaxLives = 3;
+  static const _meters = [
+    _Meter('4/4', [Beat.down, Beat.left, Beat.right, Beat.up]),
+    _Meter('3/4', [Beat.down, Beat.right, Beat.up]),
+    _Meter('2/4', [Beat.down, Beat.up]),
+  ];
+
+  /// The run: two measures of each metre, twice through.
+  static const _plan = [0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2];
+
+  static const _beatMs = 850; // gentle ~70 BPM
+  static const _leadMs = 1400; // a one-beat count-in before beat 0
+  static const _hitWindowMs = 300;
+  static const _perfectMs = 130;
 
   @visibleForTesting
-  static const maxLives = _kMaxLives;
-
-  /// Key on the gesture pad, so tests can drive it.
-  @visibleForTesting
-  static const padKey = ValueKey('conductor_pad');
-
-  // Rising C-major pentatonic — every correct cue plays the next note.
-  static const _melody = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81];
+  static Key zoneKey(Beat b) => ValueKey('conduct_${b.name}');
 
   @override
   State<CommandCallerScreen> createState() => _CommandCallerScreenState();
 }
 
-/// Typed window into the game for widget tests (the state class is private).
+/// One scheduled beat in the run.
+class _ScheduledBeat {
+  _ScheduledBeat(this.target, this.timeMs, this.downbeat, this.signature);
+  final Beat target;
+  final int timeMs;
+  final bool downbeat;
+  final String signature;
+  bool resolved = false;
+}
+
+/// Typed window into the game for widget tests.
 @visibleForTesting
 abstract interface class CommandCallerTester {
   int get score;
-  int get lives;
+  int get hits;
   bool get finished;
 
-  /// Stable key of the cue currently called, or null between/after rounds.
-  String? get currentCommandKey;
+  /// The direction expected around now, or null between beats.
+  Beat? get expectedNow;
 }
+
+enum _Judge { perfect, good, miss }
 
 class _CommandCallerScreenState extends State<CommandCallerScreen>
     with SingleTickerProviderStateMixin
     implements CommandCallerTester {
-  final _random = Random();
+  late final Ticker _ticker = createTicker(_onTick);
+  final ValueNotifier<int> _now = ValueNotifier<int>(0);
 
-  // The countdown bar doubles as the round timer: when it completes, the cue
-  // timed out. One source of truth for both the visual and the deadline.
-  late final AnimationController _clock = AnimationController(vsync: this)
-    ..addStatusListener((s) {
-      if (s == AnimationStatus.completed) _resolve(null);
-    });
+  late final List<_ScheduledBeat> _beats = _buildSchedule();
 
-  Command? _target;
-  int _round = 0;
   int _score = 0;
-  int _combo = 0;
-  int _lives = CommandCallerScreen._kMaxLives;
-  int _correct = 0;
+  int _hits = 0;
+  int _lastTickPlayed = -1;
   bool _finished = false;
-  bool _answered = false; // guard: one resolution per round
-  bool? _lastOk;
+
+  _Judge? _lastJudge;
+  Beat? _lastJudgeDir;
+  int _judgeUntil = 0;
   NoteMascotMood _mascot = NoteMascotMood.idle;
 
-  Offset _dragStart = Offset.zero;
-
-  int get _level => 1 + _correct ~/ 4;
-  int get _multiplier => (1 + _combo ~/ 3).clamp(1, 5);
-  int get _windowMs => (2600 - 300 * (_level - 1)).clamp(1200, 2600);
+  static List<_ScheduledBeat> _buildSchedule() {
+    final beats = <_ScheduledBeat>[];
+    var t = CommandCallerScreen._leadMs;
+    for (final meterIndex in CommandCallerScreen._plan) {
+      final meter = CommandCallerScreen._meters[meterIndex];
+      for (var b = 0; b < meter.pattern.length; b++) {
+        beats.add(
+          _ScheduledBeat(meter.pattern[b], t, b == 0, meter.signature),
+        );
+        t += CommandCallerScreen._beatMs;
+      }
+    }
+    return beats;
+  }
 
   @override
   int get score => _score;
   @override
-  int get lives => _lives;
+  int get hits => _hits;
   @override
   bool get finished => _finished;
-  @override
-  String? get currentCommandKey => _answered ? null : _target?.key;
 
-  // Level 1 keeps to tap/hold/left/right; up & down join at level 2.
-  List<Command> get _pool => _level >= 2
-      ? Command.values
-      : const [
-          Command.tap,
-          Command.hold,
-          Command.swipeLeft,
-          Command.swipeRight,
-        ];
+  @override
+  Beat? get expectedNow {
+    final b = _nearestOpenBeat(_now.value);
+    return b?.target;
+  }
 
   @override
   void initState() {
     super.initState();
-    _nextRound();
+    _ticker.start();
   }
 
   @override
   void dispose() {
-    _clock.dispose();
+    _ticker.dispose();
+    _now.dispose();
     super.dispose();
   }
 
-  void _nextRound() {
-    // Callers rebuild (initState builds next; the advance path setStates
-    // `_round`), so plain assignment is enough — and safe to call from
-    // initState.
-    final pool = _pool;
-    _target = pool[_random.nextInt(pool.length)];
-    _answered = false;
-    _lastOk = null;
-    _mascot = NoteMascotMood.idle;
-    context.read<AudioService>().playMidiNote(72, ms: 90); // a short call cue
-    _clock
-      ..duration = Duration(milliseconds: _windowMs)
-      ..forward(from: 0);
+  _ScheduledBeat? _nearestOpenBeat(int now) {
+    _ScheduledBeat? best;
+    var bestDelta = CommandCallerScreen._hitWindowMs + 1;
+    for (final b in _beats) {
+      if (b.resolved) continue;
+      final d = (now - b.timeMs).abs();
+      if (d < bestDelta) {
+        bestDelta = d;
+        best = b;
+      }
+    }
+    return best;
   }
 
-  void _perform(Command gesture) {
-    if (_finished || _answered || _target == null) return;
-    _resolve(gesture);
-  }
+  void _onTick(Duration elapsed) {
+    if (_finished) return;
+    final now = elapsed.inMilliseconds;
 
-  void _resolve(Command? gesture) {
-    if (_answered || _finished) return;
-    _answered = true;
-    _clock.stop();
-    final ok = gesture == _target;
-    final audio = context.read<AudioService>();
-
-    if (ok) {
-      _correct++;
-      _combo++;
-      _score += 10 * _multiplier;
-      audio.playMidiNote(
-        CommandCallerScreen
-            ._melody[(_correct - 1) % CommandCallerScreen._melody.length],
-        ms: 320,
-      );
-    } else {
-      _lives--;
-      _combo = 0;
-      audio.playWrong();
+    // Tick on each beat, accented on the downbeat, as the baton lands.
+    while (_lastTickPlayed + 1 < _beats.length &&
+        now >= _beats[_lastTickPlayed + 1].timeMs) {
+      _lastTickPlayed++;
+      final b = _beats[_lastTickPlayed];
+      context.read<AudioService>().playMidiNote(b.downbeat ? 76 : 69, ms: 120);
     }
 
-    setState(() {
-      _lastOk = ok;
-      _mascot = ok ? NoteMascotMood.happy : NoteMascotMood.oops;
-    });
-
-    final done = _lives <= 0 || _round + 1 >= CommandCallerScreen._kTotalRounds;
-    Future.delayed(const Duration(milliseconds: 650), () {
-      if (!mounted) return;
-      if (done) {
-        _finish();
-      } else {
-        setState(() => _round++);
-        _nextRound();
+    // A beat whose window closed unhit is a miss.
+    var missed = false;
+    for (final b in _beats) {
+      if (!b.resolved && now > b.timeMs + CommandCallerScreen._hitWindowMs) {
+        b.resolved = true;
+        _lastJudge = _Judge.miss;
+        _judgeUntil = now + 300;
+        _mascot = NoteMascotMood.oops;
+        missed = true;
       }
-    });
+    }
+
+    _now.value = now;
+    if (missed) setState(() {});
+
+    if (now > _beats.last.timeMs + CommandCallerScreen._hitWindowMs + 400) {
+      _finish();
+    }
+  }
+
+  void _onBeat(Beat dir) {
+    if (_finished) return;
+    final now = _now.value;
+    final beat = _nearestOpenBeat(now);
+    if (beat == null) return;
+
+    if (beat.target != dir) {
+      // Wrong direction — breaks the combo but costs nothing (no-fail).
+      _lastJudge = _Judge.miss;
+      _lastJudgeDir = dir;
+      _judgeUntil = now + 300;
+      setState(() => _mascot = NoteMascotMood.oops);
+      context.read<AudioService>().playWrong();
+      return;
+    }
+
+    beat.resolved = true;
+    _hits++;
+    final delta = (now - beat.timeMs).abs();
+    final perfect = delta <= CommandCallerScreen._perfectMs;
+    _score += perfect ? 20 : 10;
+    _lastJudge = perfect ? _Judge.perfect : _Judge.good;
+    _lastJudgeDir = dir;
+    _judgeUntil = now + 300;
+    context.read<AudioService>().playMidiNote(beat.downbeat ? 84 : 79, ms: 160);
+    setState(() => _mascot = NoteMascotMood.happy);
   }
 
   void _finish() {
-    _clock.stop();
+    _finished = true;
+    _ticker.stop();
     context.read<AudioService>().playFanfare();
     context.read<ProgressService>().recordResult(
           'command_caller',
           score: _score,
           stars: scoreToStars('command_caller', _score, true),
         );
-    setState(() => _finished = true);
+    setState(() {});
   }
 
   void _restart() {
-    setState(() {
-      _round = 0;
-      _score = 0;
-      _combo = 0;
-      _lives = CommandCallerScreen._kMaxLives;
-      _correct = 0;
-      _finished = false;
-    });
-    _nextRound();
+    _ticker.stop();
+    for (final b in _beats) {
+      b.resolved = false;
+    }
+    _score = 0;
+    _hits = 0;
+    _lastTickPlayed = -1;
+    _lastJudge = null;
+    _finished = false;
+    _mascot = NoteMascotMood.idle;
+    _now.value = 0;
+    setState(() {});
+    _ticker.start();
   }
 
-  // --- Gesture reading -------------------------------------------------------
-
-  void _onPanEnd(DragEndDetails d, Offset end) {
-    final delta = end - _dragStart;
-    if (delta.distance < 30) return; // too small to be a swipe
-    final Command dir;
-    if (delta.dx.abs() > delta.dy.abs()) {
-      dir = delta.dx < 0 ? Command.swipeLeft : Command.swipeRight;
-    } else {
-      dir = delta.dy < 0 ? Command.swipeUp : Command.swipeDown;
-    }
-    _perform(dir);
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final dir = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowUp => Beat.up,
+      LogicalKeyboardKey.arrowDown => Beat.down,
+      LogicalKeyboardKey.arrowLeft => Beat.left,
+      LogicalKeyboardKey.arrowRight => Beat.right,
+      _ => null,
+    };
+    if (dir == null) return KeyEventResult.ignored;
+    _onBeat(dir);
+    return KeyEventResult.handled;
   }
 
   @override
@@ -235,191 +269,188 @@ class _CommandCallerScreenState extends State<CommandCallerScreen>
                 score: _score,
                 onRestart: _restart,
               )
-            : Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _Hud(
-                      round: _round + 1,
-                      totalRounds: CommandCallerScreen._kTotalRounds,
-                      score: _score,
-                      multiplier: _multiplier,
-                      lives: _lives,
-                      maxLives: CommandCallerScreen._kMaxLives,
-                      mascot: _mascot,
-                    ),
-                    const SizedBox(height: 8),
-                    // The shrinking countdown bar.
-                    AnimatedBuilder(
-                      animation: _clock,
-                      builder: (context, _) => ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: 1 - _clock.value,
-                          minHeight: 8,
+            : Focus(
+                autofocus: true,
+                onKeyEvent: _onKey,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          NoteMascot(mood: _mascot, size: 30),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.star, color: Colors.amber, size: 22),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$_score',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const Spacer(),
+                          Text(
+                            l10n.conductorPrompt,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: _now,
+                          builder: (context, now, _) {
+                            final active = _nearestOpenBeat(now);
+                            // Light the target only around its beat time.
+                            final lit = (active != null &&
+                                    now >= active.timeMs - 260 &&
+                                    now <=
+                                        active.timeMs +
+                                            CommandCallerScreen._hitWindowMs)
+                                ? active.target
+                                : null;
+                            final judgeDir =
+                                now < _judgeUntil ? _lastJudgeDir : null;
+                            return _ConductorPad(
+                              lit: lit,
+                              signature:
+                                  active?.signature ?? _beats.first.signature,
+                              onBeat: _onBeat,
+                              judge: now < _judgeUntil ? _lastJudge : null,
+                              judgeDir: judgeDir,
+                            );
+                          },
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: GestureDetector(
-                        key: CommandCallerScreen.padKey,
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _perform(Command.tap),
-                        onLongPress: () => _perform(Command.hold),
-                        onPanStart: (d) => _dragStart = d.localPosition,
-                        onPanEnd: (d) => _onPanEnd(d, d.localPosition),
-                        child: _CommandPad(
-                          command: _target,
-                          lastOk: _lastOk,
-                          label: _target == null
-                              ? ''
-                              : _commandLabel(l10n, _target!),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.commandCallerHint,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
       ),
     );
   }
-
-  String _commandLabel(AppLocalizations l10n, Command c) => switch (c) {
-        Command.tap => l10n.commandTap,
-        Command.hold => l10n.commandHold,
-        Command.swipeLeft => l10n.commandSwipeLeft,
-        Command.swipeRight => l10n.commandSwipeRight,
-        Command.swipeUp => l10n.commandSwipeUp,
-        Command.swipeDown => l10n.commandSwipeDown,
-      };
 }
 
-class _CommandPad extends StatelessWidget {
-  const _CommandPad({
-    required this.command,
-    required this.lastOk,
-    required this.label,
+class _ConductorPad extends StatelessWidget {
+  const _ConductorPad({
+    required this.lit,
+    required this.signature,
+    required this.onBeat,
+    required this.judge,
+    required this.judgeDir,
   });
 
-  final Command? command;
-  final bool? lastOk;
-  final String label;
+  final Beat? lit;
+  final String signature;
+  final ValueChanged<Beat> onBeat;
+  final _Judge? judge;
+  final Beat? judgeDir;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bg = lastOk == null
-        ? scheme.primaryContainer
-        : lastOk!
-            ? Colors.green.shade100
-            : Colors.red.shade100;
-    final fg = lastOk == null
-        ? scheme.onPrimaryContainer
-        : lastOk!
-            ? Colors.green.shade800
-            : Colors.red.shade800;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+        final zone = (w < h ? w : h) * 0.30;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        Widget place(Beat b, Alignment a) => Align(
+              alignment: a,
+              child: _Zone(
+                key: CommandCallerScreen.zoneKey(b),
+                dir: b,
+                size: zone,
+                lit: lit == b,
+                judge: judgeDir == b ? judge : null,
+                onTap: () => onBeat(b),
+              ),
+            );
+
+        return Stack(
           children: [
-            Icon(command?.icon ?? Icons.music_note, size: 96, color: fg),
-            const SizedBox(height: 16),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .displaySmall
-                  ?.copyWith(color: fg, fontWeight: FontWeight.bold),
+            place(Beat.up, Alignment.topCenter),
+            place(Beat.down, Alignment.bottomCenter),
+            place(Beat.left, Alignment.centerLeft),
+            place(Beat.right, Alignment.centerRight),
+            // Centre: the current time signature.
+            Center(
+              child: Container(
+                width: zone,
+                height: zone,
+                alignment: Alignment.center,
+                child: Text(
+                  signature,
+                  style: Theme.of(context)
+                      .textTheme
+                      .displaySmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-class _Hud extends StatelessWidget {
-  const _Hud({
-    required this.round,
-    required this.totalRounds,
-    required this.score,
-    required this.multiplier,
-    required this.lives,
-    required this.maxLives,
-    required this.mascot,
+class _Zone extends StatelessWidget {
+  const _Zone({
+    super.key,
+    required this.dir,
+    required this.size,
+    required this.lit,
+    required this.judge,
+    required this.onTap,
   });
 
-  final int round;
-  final int totalRounds;
-  final int score;
-  final int multiplier;
-  final int lives;
-  final int maxLives;
-  final NoteMascotMood mascot;
+  final Beat dir;
+  final double size;
+  final bool lit;
+  final _Judge? judge;
+  final VoidCallback onTap;
+
+  static const _icons = {
+    Beat.up: Icons.north,
+    Beat.down: Icons.south,
+    Beat.left: Icons.west,
+    Beat.right: Icons.east,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
+    final bg = judge == _Judge.perfect || judge == _Judge.good
+        ? Colors.green.shade300
+        : judge == _Judge.miss
+            ? Colors.red.shade200
+            : lit
+                ? scheme.primary
+                : scheme.surfaceContainerHighest;
+    final fg = lit ? scheme.onPrimary : scheme.onSurfaceVariant;
 
-    return Row(
-      children: [
-        NoteMascot(mood: mascot, size: 30),
-        const SizedBox(width: 8),
-        const Icon(Icons.star, color: Colors.amber, size: 22),
-        const SizedBox(width: 4),
-        Text(
-          '$score',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const Spacer(),
-        Text(
-          l10n.roundOf(round, totalRounds),
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
-        const Spacer(),
-        if (multiplier > 1) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              l10n.fallingMultiplier(multiplier),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
+    return GestureDetector(
+      onTapDown: (_) => onTap(),
+      child: AnimatedScale(
+        scale: lit ? 1.12 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: bg,
+            shape: BoxShape.circle,
+            boxShadow:
+                lit ? [BoxShadow(color: scheme.primary, blurRadius: 22)] : null,
           ),
-          const SizedBox(width: 8),
-        ],
-        for (var i = 0; i < maxLives; i++)
-          Icon(
-            i < lives ? Icons.favorite : Icons.favorite_border,
-            color: i < lives ? Colors.redAccent : scheme.outlineVariant,
-            size: 22,
+          child: Icon(
+            _icons[dir],
+            size: size * 0.5,
+            color: fg,
           ),
-      ],
+        ),
+      ),
     );
   }
 }

@@ -1532,6 +1532,12 @@ abstract class AppLocalizations {
   /// **'Tap, hold, or swipe — before the bar runs out!'**
   String get commandCallerHint;
 
+  /// No description provided for @conductorPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the conductor\'s beat!'**
+  String get conductorPrompt;
+
   /// No description provided for @commandTap.
   ///
   /// In en, this message translates to:
