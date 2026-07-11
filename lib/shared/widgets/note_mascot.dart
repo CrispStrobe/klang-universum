@@ -115,12 +115,12 @@ class _NotePainter extends CustomPainter {
       ..restore();
 
     // Face, drawn upright on the notehead.
-    final eyeY = head.dy - h * 0.03;
+    final eyeY = head.dy - h * 0.04;
     final eyeR = w * 0.055;
-    c.drawCircle(Offset(head.dx - w * 0.15, eyeY), eyeR, face);
-    c.drawCircle(Offset(head.dx + w * 0.05, eyeY), eyeR, face);
+    c.drawCircle(Offset(head.dx - w * 0.12, eyeY), eyeR, face);
+    c.drawCircle(Offset(head.dx + w * 0.08, eyeY), eyeR, face);
 
-    final mouth = Offset(head.dx - w * 0.05, head.dy + h * 0.05);
+    final mouth = Offset(head.dx - w * 0.02, head.dy + h * 0.045);
     switch (mood) {
       case NoteMascotMood.happy:
         c.drawArc(
