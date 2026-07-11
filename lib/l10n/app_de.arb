@@ -184,6 +184,16 @@
   "feedbackCorrect": "Richtig!",
   "feedbackTryAgain": "Ups — versuch es nochmal!",
   "resultScore": "Punkte: {score}",
+  "resultTime": "Deine Zeit: {time}",
+  "@resultTime": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "resultBest": "Bestzeit: {time}",
+  "@resultBest": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "resultNewBest": "Neue Bestzeit! 🎉",
+  "showTimerLabel": "Zeit anzeigen",
   "playAgain": "Nochmal spielen",
   "backButton": "Zurück",
   "wholeNote": "Ganze Note",

@@ -77,6 +77,9 @@ void main() {
 
   testWidgets('settings screen: language options + stats, switch to German',
       (tester) async {
+    // Tall surface so the whole settings ListView builds (stats near bottom).
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     PackageInfo.setMockInitialValues(
       appName: 'KlangUniversum',
       packageName: 'de.example.klang',

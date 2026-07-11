@@ -144,7 +144,10 @@ the app category the idea comes from. Tick as shipped.
 - [x] Reacting mascot — a pure-Dart quarter-note character in the shared
   feedback line: hops + grins on correct, damped wobble + "oops" mouth on wrong;
   reduced-motion aware. *(note-eating mascot games.) M · ♪♪.* **Shipped.**
-- [ ] Hideable timer + beat-your-time replay — voluntary reps feed SM-2. *(flashcard reading apps.) S · ♪♪.*
+- [x] Opt-in timer + beat-your-time — off by default; when on, the result
+  screen shows your completion time + personal best + "new best!" (no live
+  clock, to keep the no-pressure default). *(flashcard reading apps.) S · ♪♪.*
+  **Shipped.**
 - [ ] Foreground the bilingual EN/DE pedagogy (positioning, not translated
   strings). *(white space — nobody owns it.) S · ♪♪♪.*
 

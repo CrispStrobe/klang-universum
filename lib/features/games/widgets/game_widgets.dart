@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
@@ -102,6 +103,12 @@ class GameResultView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final stars = scoreToStars(gameType, starScore ?? score, true);
+    // Time is shown only in normal games (onRestart != null, so not a review)
+    // and only when the learner opted in.
+    final progress = context.watch<ProgressService>();
+    final showTime = onRestart != null &&
+        context.watch<SettingsService>().showTimer &&
+        progress.lastElapsedMs > 0;
 
     return Center(
       child: Column(
@@ -123,6 +130,33 @@ class GameResultView extends StatelessWidget {
             l10n.resultScore(score),
             style: Theme.of(context).textTheme.headlineSmall,
           ),
+          if (showTime) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.timer_outlined, size: 20),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.resultTime(_formatTime(progress.lastElapsedMs)),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            Text(
+              progress.lastWasBest
+                  ? l10n.resultNewBest
+                  : l10n.resultBest(_formatTime(progress.lastBestMs)),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: progress.lastWasBest
+                        ? Colors.amber.shade700
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: progress.lastWasBest
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+            ),
+          ],
           const SizedBox(height: 24),
           if (onRestart != null)
             FilledButton.icon(
@@ -172,18 +206,24 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
   /// advance; also on restart.
   void prepareRound();
 
+  /// Times the whole session (first answer → finish), for the personal best.
+  final Stopwatch _timer = Stopwatch();
+
   /// Handle a resolved answer. Returns true if the round advances.
   /// Call from the tap handler AFTER recording SRI.
   bool resolveAnswer({required bool correct}) {
+    _timer.start(); // no-op once already running
     final audio = context.read<AudioService>();
     if (correct && round + 1 >= totalRounds) {
       audio.playFanfare();
+      _timer.stop();
       if (!isReviewSession) {
         final finalScore = score + (answeredWrong ? 0 : pointsPerRound);
         context.read<ProgressService>().recordResult(
               progressId,
               score: finalScore,
               stars: scoreToStars(gameType, finalScore, true),
+              elapsedMs: _timer.elapsedMilliseconds,
             );
       }
     } else if (playFeedbackSounds) {
@@ -212,6 +252,9 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
   }
 
   void restartGame() {
+    _timer
+      ..stop()
+      ..reset();
     setState(() {
       round = 0;
       score = 0;
@@ -220,4 +263,10 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
       prepareRound();
     });
   }
+}
+
+/// Milliseconds as `m:ss`.
+String _formatTime(int ms) {
+  final total = (ms / 1000).round();
+  return '${total ~/ 60}:${(total % 60).toString().padLeft(2, '0')}';
 }

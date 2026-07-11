@@ -615,6 +615,22 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String resultTime(String time) {
+    return 'Deine Zeit: $time';
+  }
+
+  @override
+  String resultBest(String time) {
+    return 'Bestzeit: $time';
+  }
+
+  @override
+  String get resultNewBest => 'Neue Bestzeit! 🎉';
+
+  @override
+  String get showTimerLabel => 'Zeit anzeigen';
+
+  @override
   String get playAgain => 'Nochmal spielen';
 
   @override

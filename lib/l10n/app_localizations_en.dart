@@ -608,6 +608,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String resultTime(String time) {
+    return 'Your time: $time';
+  }
+
+  @override
+  String resultBest(String time) {
+    return 'Best: $time';
+  }
+
+  @override
+  String get resultNewBest => 'New best time! 🎉';
+
+  @override
+  String get showTimerLabel => 'Show your time';
+
+  @override
   String get playAgain => 'Play again';
 
   @override

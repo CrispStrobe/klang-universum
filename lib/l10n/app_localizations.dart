@@ -1184,6 +1184,30 @@ abstract class AppLocalizations {
   /// **'Score: {score}'**
   String resultScore(int score);
 
+  /// No description provided for @resultTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Your time: {time}'**
+  String resultTime(String time);
+
+  /// No description provided for @resultBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {time}'**
+  String resultBest(String time);
+
+  /// No description provided for @resultNewBest.
+  ///
+  /// In en, this message translates to:
+  /// **'New best time! 🎉'**
+  String get resultNewBest;
+
+  /// No description provided for @showTimerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your time'**
+  String get showTimerLabel;
+
   /// No description provided for @playAgain.
   ///
   /// In en, this message translates to:

@@ -10,9 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsService with ChangeNotifier {
   static const _localeKey = 'app_locale';
   static const _noteNamingKey = 'note_naming';
+  static const _showTimerKey = 'show_timer';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
+  bool _showTimer = false;
 
   /// Forced app locale; null follows the system locale.
   Locale? get locale => _locale;
@@ -20,12 +22,17 @@ class SettingsService with ChangeNotifier {
   /// How note letters are spelled (auto follows the app language).
   NoteNaming get noteNaming => _noteNaming;
 
+  /// Whether games show your completion time and personal best (off = no
+  /// timing shown at all, keeping the no-time-pressure default).
+  bool get showTimer => _showTimer;
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString(_localeKey);
     _locale = (code == null || code.isEmpty) ? null : Locale(code);
     final naming = prefs.getString(_noteNamingKey);
     _noteNaming = NoteNaming.values.asNameMap()[naming] ?? NoteNaming.auto;
+    _showTimer = prefs.getBool(_showTimerKey) ?? false;
     notifyListeners();
   }
 
@@ -41,5 +48,12 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_noteNamingKey, naming.name);
+  }
+
+  Future<void> setShowTimer(bool value) async {
+    _showTimer = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_showTimerKey, value);
   }
 }

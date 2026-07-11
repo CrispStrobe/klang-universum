@@ -305,6 +305,16 @@
       }
     }
   },
+  "resultTime": "Your time: {time}",
+  "@resultTime": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "resultBest": "Best: {time}",
+  "@resultBest": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "resultNewBest": "New best time! 🎉",
+  "showTimerLabel": "Show your time",
   "playAgain": "Play again",
   "backButton": "Back",
   "wholeNote": "Whole note",

@@ -13,20 +13,27 @@ class GameProgress {
   final int bestStars; // 0..3
   final int bestScore;
   final int plays;
+  final int bestTimeMs; // fastest completion, 0 = never timed
 
   const GameProgress({
     this.bestStars = 0,
     this.bestScore = 0,
     this.plays = 0,
+    this.bestTimeMs = 0,
   });
 
-  Map<String, dynamic> toJson() =>
-      {'stars': bestStars, 'score': bestScore, 'plays': plays};
+  Map<String, dynamic> toJson() => {
+        'stars': bestStars,
+        'score': bestScore,
+        'plays': plays,
+        'time': bestTimeMs,
+      };
 
   factory GameProgress.fromJson(Map<String, dynamic> json) => GameProgress(
         bestStars: (json['stars'] as int?) ?? 0,
         bestScore: (json['score'] as int?) ?? 0,
         plays: (json['plays'] as int?) ?? 0,
+        bestTimeMs: (json['time'] as int?) ?? 0,
       );
 }
 
@@ -43,6 +50,20 @@ class ProgressService with ChangeNotifier {
 
   /// Days on which at least one game was finished, as `YYYY-MM-DD` keys.
   Set<String> _practiceDays = {};
+
+  // The most recently recorded timed run, for the result screen.
+  int _lastElapsedMs = 0;
+  int _lastBestMs = 0;
+  bool _lastWasBest = false;
+
+  /// This run's completion time in ms (0 if the last game wasn't timed).
+  int get lastElapsedMs => _lastElapsedMs;
+
+  /// Best time for the game just finished, in ms.
+  int get lastBestMs => _lastBestMs;
+
+  /// Whether the run just finished set a new personal best.
+  bool get lastWasBest => _lastWasBest;
 
   Future<void> load() async {
     try {
@@ -84,15 +105,30 @@ class ProgressService with ChangeNotifier {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
-  /// Records a finished game; keeps the best stars/score, counts plays, and
-  /// marks today as a practice day (feeds the streak).
-  void recordResult(String gameId, {required int score, required int stars}) {
+  /// Records a finished game; keeps the best stars/score, counts plays, tracks
+  /// the fastest completion (when [elapsedMs] is given), and marks today as a
+  /// practice day (feeds the streak).
+  void recordResult(
+    String gameId, {
+    required int score,
+    required int stars,
+    int? elapsedMs,
+  }) {
     final old = _byGame[gameId] ?? const GameProgress();
+    final timed = elapsedMs != null && elapsedMs > 0;
+    final isBest = timed && (old.bestTimeMs == 0 || elapsedMs < old.bestTimeMs);
+    final newBest = isBest ? elapsedMs : old.bestTimeMs;
     _byGame[gameId] = GameProgress(
       bestStars: stars > old.bestStars ? stars : old.bestStars,
       bestScore: score > old.bestScore ? score : old.bestScore,
       plays: old.plays + 1,
+      bestTimeMs: newBest,
     );
+    if (timed) {
+      _lastElapsedMs = elapsedMs;
+      _lastBestMs = newBest;
+      _lastWasBest = isBest;
+    }
     _practiceDays.add(_dayKey(_now()));
     notifyListeners();
     _save();

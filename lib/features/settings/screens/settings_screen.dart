@@ -85,6 +85,14 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          Card(
+            child: SwitchListTile(
+              title: Text(l10n.showTimerLabel),
+              value: settings.showTimer,
+              onChanged: settings.setShowTimer,
+            ),
+          ),
+          const SizedBox(height: 20),
           Text(
             l10n.statsTitle,
             style: Theme.of(context).textTheme.titleMedium,
