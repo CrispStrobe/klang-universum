@@ -186,6 +186,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameNoteReadingSubtitle => 'Wie heißt die Note auf den Linien?';
 
   @override
+  String get moduleGuitar => 'Gitarren-Ecke';
+
+  @override
+  String get moduleGuitarSubtitle => 'Tabulatur lesen und die Saiten lernen';
+
+  @override
+  String get gameGuitarStringQuiz => 'Leere Saiten';
+
+  @override
+  String get gameGuitarStringQuizSubtitle =>
+      'Benenne die leere Saite (E A D G H E)';
+
+  @override
+  String get guitarStringPrompt => 'Welche Note ist diese leere Saite?';
+
+  @override
+  String get gameGuitarTabRead => 'Tabulatur lesen';
+
+  @override
+  String get gameGuitarTabReadSubtitle => 'Welche Note spielt dieser Bund?';
+
+  @override
+  String get guitarTabReadPrompt => 'Welche Note ist das?';
+
+  @override
   String get moduleCello => 'Cello-Ecke';
 
   @override

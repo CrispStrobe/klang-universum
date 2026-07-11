@@ -398,6 +398,54 @@ abstract class AppLocalizations {
   /// **'Name the note on the staff'**
   String get gameNoteReadingSubtitle;
 
+  /// No description provided for @moduleGuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar Corner'**
+  String get moduleGuitar;
+
+  /// No description provided for @moduleGuitarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read tab and learn the strings'**
+  String get moduleGuitarSubtitle;
+
+  /// No description provided for @gameGuitarStringQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Strings'**
+  String get gameGuitarStringQuiz;
+
+  /// No description provided for @gameGuitarStringQuizSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the open string (E A D G B E)'**
+  String get gameGuitarStringQuizSubtitle;
+
+  /// No description provided for @guitarStringPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which note is this open string?'**
+  String get guitarStringPrompt;
+
+  /// No description provided for @gameGuitarTabRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the Tab'**
+  String get gameGuitarTabRead;
+
+  /// No description provided for @gameGuitarTabReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What note does this fret play?'**
+  String get gameGuitarTabReadSubtitle;
+
+  /// No description provided for @guitarTabReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which note is this?'**
+  String get guitarTabReadPrompt;
+
   /// No description provided for @moduleCello.
   ///
   /// In en, this message translates to:

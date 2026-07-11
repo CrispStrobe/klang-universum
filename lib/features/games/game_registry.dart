@@ -13,6 +13,8 @@ import 'package:klang_universum/features/games/chords/triad_builder_screen.dart'
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
+import 'package:klang_universum/features/games/guitar/guitar_string_quiz_screen.dart';
+import 'package:klang_universum/features/games/guitar/guitar_tab_read_screen.dart';
 import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:klang_universum/features/games/harmony/function_ear_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
@@ -260,6 +262,22 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteReadingTenor,
       subtitle: (l) => l.gameNoteReadingSubtitle,
       builder: (_) => const NoteReadingQuizScreen(clef: Clef.tenor),
+    ),
+  ],
+  'guitar': [
+    GameInfo(
+      id: 'guitar_string_quiz',
+      icon: Icons.music_note,
+      title: (l) => l.gameGuitarStringQuiz,
+      subtitle: (l) => l.gameGuitarStringQuizSubtitle,
+      builder: (_) => const GuitarStringQuizScreen(),
+    ),
+    GameInfo(
+      id: 'guitar_tab_read',
+      icon: Icons.grid_on,
+      title: (l) => l.gameGuitarTabRead,
+      subtitle: (l) => l.gameGuitarTabReadSubtitle,
+      builder: (_) => const GuitarTabReadScreen(),
     ),
   ],
   'songs': [

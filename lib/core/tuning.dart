@@ -75,6 +75,8 @@ const Map<String, List<int>> kStarThresholds = {
   'melody_dictation': [100, 500, 750],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
+  'guitar_string_quiz': [100, 600, 900],
+  'guitar_tab_read': [100, 600, 900],
   'key_find': [100, 600, 900],
   'key_name': [100, 600, 900],
   // 8 rounds: max 800.

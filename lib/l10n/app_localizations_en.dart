@@ -185,6 +185,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameNoteReadingSubtitle => 'Name the note on the staff';
 
   @override
+  String get moduleGuitar => 'Guitar Corner';
+
+  @override
+  String get moduleGuitarSubtitle => 'Read tab and learn the strings';
+
+  @override
+  String get gameGuitarStringQuiz => 'Open Strings';
+
+  @override
+  String get gameGuitarStringQuizSubtitle =>
+      'Name the open string (E A D G B E)';
+
+  @override
+  String get guitarStringPrompt => 'Which note is this open string?';
+
+  @override
+  String get gameGuitarTabRead => 'Read the Tab';
+
+  @override
+  String get gameGuitarTabReadSubtitle => 'What note does this fret play?';
+
+  @override
+  String get guitarTabReadPrompt => 'Which note is this?';
+
+  @override
   String get moduleCello => 'Cello Corner';
 
   @override

@@ -98,6 +98,16 @@ final List<LearningModule> kLearningModules = [
     title: (l) => l.moduleCello,
     subtitle: (l) => l.moduleCelloSubtitle,
   ),
+  // Guitar corner — a second instrument corner (tablature), unlocked from the
+  // start like the cello corner (special interest beats curriculum order).
+  LearningModule(
+    id: 'guitar',
+    icon: Icons.music_note,
+    color: const Color(0xFF6D4C41),
+    initiallyUnlocked: true,
+    title: (l) => l.moduleGuitar,
+    subtitle: (l) => l.moduleGuitarSubtitle,
+  ),
   LearningModule(
     id: 'songs',
     icon: Icons.library_music,
