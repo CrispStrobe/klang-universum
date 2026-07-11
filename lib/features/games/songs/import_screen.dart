@@ -45,23 +45,58 @@ class _ImportScreenState extends State<ImportScreen> {
     Navigator.of(context).pop();
   }
 
+  /// Title priority: the title field, else the score's embedded work title,
+  /// else [fallback].
+  String _musicXmlTitle(String xml, {required String fallback}) {
+    final typed = _title.text.trim();
+    if (typed.isNotEmpty) return typed;
+    final embedded = RegExp(r'<(?:work-title|movement-title)>([^<]+)<')
+        .firstMatch(xml)
+        ?.group(1)
+        ?.trim();
+    return (embedded != null && embedded.isNotEmpty) ? embedded : fallback;
+  }
+
   void _importMusicXml() {
     try {
       final xml = _text.text.trim();
       scoreFromMusicXml(xml); // validate before storing
-      final title = _title.text.trim().isNotEmpty
-          ? _title.text.trim()
-          : RegExp(r'<(?:work-title|movement-title)>([^<]+)<')
-                  .firstMatch(xml)
-                  ?.group(1)
-                  ?.trim() ??
-              'MusicXML';
       context.read<UserSongsService>().addSong(
-            ImportedSong(id: _newId(), title: title, musicXml: xml),
+            ImportedSong(
+              id: _newId(),
+              title: _musicXmlTitle(xml, fallback: 'MusicXML'),
+              musicXml: xml,
+            ),
           );
       _done();
     } catch (e) {
       _fail(e);
+    }
+  }
+
+  Future<void> _importMusicXmlFile() async {
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'MusicXML', extensions: ['musicxml', 'xml']),
+        ],
+      );
+      if (file == null || !mounted) return;
+      final xml = await file.readAsString();
+      if (!mounted) return;
+      scoreFromMusicXml(xml); // validate before storing
+      final base = file.name
+          .replaceAll(RegExp(r'\.(musicxml|xml)$', caseSensitive: false), '');
+      context.read<UserSongsService>().addSong(
+            ImportedSong(
+              id: _newId(),
+              title: _musicXmlTitle(xml, fallback: base),
+              musicXml: xml,
+            ),
+          );
+      _done();
+    } catch (e) {
+      if (mounted) _fail(e);
     }
   }
 
@@ -165,6 +200,11 @@ class _ImportScreenState extends State<ImportScreen> {
                     onPressed: _importChordPro,
                     icon: const Icon(Icons.tag),
                     label: Text(l10n.importAsChordPro),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _importMusicXmlFile,
+                    icon: const Icon(Icons.file_open),
+                    label: Text(l10n.importMusicXmlFile),
                   ),
                   OutlinedButton.icon(
                     onPressed: _importMidi,

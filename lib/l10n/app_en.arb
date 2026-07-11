@@ -104,6 +104,7 @@
   "importAsMusicXml": "Import as MusicXML",
   "importAsChordPro": "Import as ChordPro",
   "importMidiFile": "Pick a MIDI file…",
+  "importMusicXmlFile": "Pick a MusicXML file…",
   "importDone": "Imported!",
   "importFailed": "Import failed: {error}",
   "@importFailed": {

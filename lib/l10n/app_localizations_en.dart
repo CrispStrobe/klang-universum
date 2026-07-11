@@ -270,6 +270,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importMidiFile => 'Pick a MIDI file…';
 
   @override
+  String get importMusicXmlFile => 'Pick a MusicXML file…';
+
+  @override
   String get importDone => 'Imported!';
 
   @override

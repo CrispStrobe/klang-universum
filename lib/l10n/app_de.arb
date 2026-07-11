@@ -80,6 +80,7 @@
   "importAsMusicXml": "Als MusicXML importieren",
   "importAsChordPro": "Als ChordPro importieren",
   "importMidiFile": "MIDI-Datei wählen…",
+  "importMusicXmlFile": "MusicXML-Datei wählen…",
   "importDone": "Importiert!",
   "importFailed": "Import fehlgeschlagen: {error}",
   "importedSongs": "Meine importierten Lieder",

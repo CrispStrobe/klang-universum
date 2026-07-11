@@ -578,6 +578,12 @@ abstract class AppLocalizations {
   /// **'Pick a MIDI file…'**
   String get importMidiFile;
 
+  /// No description provided for @importMusicXmlFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a MusicXML file…'**
+  String get importMusicXmlFile;
+
   /// No description provided for @importDone.
   ///
   /// In en, this message translates to:
