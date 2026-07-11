@@ -834,6 +834,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get commandSwipeDown => 'Nach unten wischen!';
 
   @override
+  String get gameKeySignature => 'Tonart-Detektiv';
+
+  @override
+  String get gameKeySignatureSubtitle => 'Lies die Vorzeichen — welche Tonart?';
+
+  @override
+  String get keySignaturePrompt => 'Welche Dur-Tonart ist das?';
+
+  @override
+  String keyMajorLabel(String name) {
+    return '$name-Dur';
+  }
+
+  @override
   String get gameBeatRunner => 'Im Takt';
 
   @override

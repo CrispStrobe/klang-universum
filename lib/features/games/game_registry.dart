@@ -44,6 +44,7 @@ import 'package:klang_universum/features/games/note_values/note_value_quiz_scree
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
 import 'package:klang_universum/features/games/scales/command_caller_screen.dart';
 import 'package:klang_universum/features/games/scales/echo_sequence_screen.dart';
+import 'package:klang_universum/features/games/scales/key_signature_screen.dart';
 import 'package:klang_universum/features/games/scales/major_minor_ear_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_builder_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
@@ -258,6 +259,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCommandCaller,
       subtitle: (l) => l.gameCommandCallerSubtitle,
       builder: (_) => const CommandCallerScreen(),
+    ),
+    GameInfo(
+      id: 'key_sig',
+      icon: Icons.vpn_key,
+      title: (l) => l.gameKeySignature,
+      subtitle: (l) => l.gameKeySignatureSubtitle,
+      builder: (_) => const KeySignatureScreen(),
     ),
   ],
   'chords': [

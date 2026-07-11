@@ -312,9 +312,14 @@ the curriculum doesn't yet drill. Ordered by value ÷ effort; effort S/M/L, fit 
   stars adds bass, above, and 3 lines. A correct count plays the pitch. SRI
   `note_reading.ledger.<clef>.<below|above><n>`. *(Extends to naming the ledger
   note as a second step.)*
-- [ ] **Key Signature Detective** — how many sharps/flats, and which key? Read a key
+- [x] **Key Signature Detective** — how many sharps/flats, and which key? Read a key
   signature and name it, with a fading circle-of-fifths hint. New skill
-  `key_sig.read` — nothing covers signatures yet. *S · ♪♪♪.*
+  `key_sig.read` — nothing covers signatures yet. *S · ♪♪♪.* **Shipped** as **Key
+  Detective** (scales): partitura renders the signature (`KeySignature(fifths)`);
+  name the major key. Scoped to natural-letter tonics (C G D A E B F) so buttons
+  never need an accidental and German B = H is handled by the naming toggle.
+  Star-gated (C/F/G/D → +A/E/B); a correct answer plays the tonic triad. SRI
+  `key_sig.<tonic>`.
 - [ ] **Note Whack** — whack-a-mole: noteheads pop up around the staff, a target
   name is called, tap the matching one before it ducks. Reading under gentle
   reaction pressure; reuses the reading pools. SRI `note_reading.*`. *S–M · ♪♪♪.*

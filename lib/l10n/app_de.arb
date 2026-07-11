@@ -251,6 +251,15 @@
   "commandSwipeRight": "Nach rechts wischen!",
   "commandSwipeUp": "Nach oben wischen!",
   "commandSwipeDown": "Nach unten wischen!",
+  "gameKeySignature": "Tonart-Detektiv",
+  "gameKeySignatureSubtitle": "Lies die Vorzeichen — welche Tonart?",
+  "keySignaturePrompt": "Welche Dur-Tonart ist das?",
+  "keyMajorLabel": "{name}-Dur",
+  "@keyMajorLabel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "gameBeatRunner": "Im Takt",
   "gameBeatRunnerSubtitle": "Tippe im Takt, wenn die Schläge die Linie erreichen!",
   "beatRunnerHint": "Tippe auf den Schlag!",

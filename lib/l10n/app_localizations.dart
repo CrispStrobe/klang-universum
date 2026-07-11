@@ -1568,6 +1568,30 @@ abstract class AppLocalizations {
   /// **'Swipe down!'**
   String get commandSwipeDown;
 
+  /// No description provided for @gameKeySignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Detective'**
+  String get gameKeySignature;
+
+  /// No description provided for @gameKeySignatureSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the sharps or flats — name the key'**
+  String get gameKeySignatureSubtitle;
+
+  /// No description provided for @keySignaturePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which major key is this?'**
+  String get keySignaturePrompt;
+
+  /// No description provided for @keyMajorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} major'**
+  String keyMajorLabel(String name);
+
   /// No description provided for @gameBeatRunner.
   ///
   /// In en, this message translates to:

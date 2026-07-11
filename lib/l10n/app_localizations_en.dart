@@ -828,6 +828,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commandSwipeDown => 'Swipe down!';
 
   @override
+  String get gameKeySignature => 'Key Detective';
+
+  @override
+  String get gameKeySignatureSubtitle =>
+      'Read the sharps or flats — name the key';
+
+  @override
+  String get keySignaturePrompt => 'Which major key is this?';
+
+  @override
+  String keyMajorLabel(String name) {
+    return '$name major';
+  }
+
+  @override
   String get gameBeatRunner => 'Beat Runner';
 
   @override

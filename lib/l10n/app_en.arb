@@ -404,6 +404,15 @@
   "commandSwipeRight": "Swipe right!",
   "commandSwipeUp": "Swipe up!",
   "commandSwipeDown": "Swipe down!",
+  "gameKeySignature": "Key Detective",
+  "gameKeySignatureSubtitle": "Read the sharps or flats — name the key",
+  "keySignaturePrompt": "Which major key is this?",
+  "keyMajorLabel": "{name} major",
+  "@keyMajorLabel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "gameBeatRunner": "Beat Runner",
   "gameBeatRunnerSubtitle": "Tap in time as the beats reach the line!",
   "beatRunnerHint": "Tap on the beat!",
