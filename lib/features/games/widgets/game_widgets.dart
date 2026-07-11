@@ -8,6 +8,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:provider/provider.dart';
 
 class RoundHeader extends StatelessWidget {
@@ -51,18 +52,28 @@ class FeedbackLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final mood = correct == null
+        ? NoteMascotMood.idle
+        : correct!
+            ? NoteMascotMood.happy
+            : NoteMascotMood.oops;
     return SizedBox(
-      height: 28,
-      child: Text(
-        correct == null
-            ? ''
-            : correct!
-                ? l10n.feedbackCorrect
-                : l10n.feedbackTryAgain,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: (correct ?? false) ? Colors.green : Colors.redAccent,
-              fontWeight: FontWeight.bold,
+      height: 44,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          NoteMascot(mood: mood, size: 30),
+          if (correct != null) ...[
+            const SizedBox(width: 10),
+            Text(
+              correct! ? l10n.feedbackCorrect : l10n.feedbackTryAgain,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: correct! ? Colors.green : Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
+          ],
+        ],
       ),
     );
   }

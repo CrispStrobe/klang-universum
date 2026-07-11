@@ -141,8 +141,9 @@ the app category the idea comes from. Tick as shipped.
   slow readers. *(interactive sheet-music apps.) S · ♪♪♪.* **Already the design**
   (`QuizRoundMixin` retries until correct, no timers/lives anywhere); now
   guarded by a contract test.
-- [ ] Reacting mascot — eats correct notes, comically reacts on wrong (our
-  biggest kid-engagement gap). *(note-eating mascot games.) M · ♪♪.*
+- [x] Reacting mascot — a pure-Dart quarter-note character in the shared
+  feedback line: hops + grins on correct, damped wobble + "oops" mouth on wrong;
+  reduced-motion aware. *(note-eating mascot games.) M · ♪♪.* **Shipped.**
 - [ ] Hideable timer + beat-your-time replay — voluntary reps feed SM-2. *(flashcard reading apps.) S · ♪♪.*
 - [ ] Foreground the bilingual EN/DE pedagogy (positioning, not translated
   strings). *(white space — nobody owns it.) S · ♪♪♪.*
