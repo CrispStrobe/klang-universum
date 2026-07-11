@@ -248,6 +248,12 @@
   "commandSwipeRight": "Nach rechts wischen!",
   "commandSwipeUp": "Nach oben wischen!",
   "commandSwipeDown": "Nach unten wischen!",
+  "gameBeatRunner": "Im Takt",
+  "gameBeatRunnerSubtitle": "Tippe im Takt, wenn die Schläge die Linie erreichen!",
+  "beatRunnerHint": "Tippe auf den Schlag!",
+  "beatPerfect": "Perfekt!",
+  "beatGood": "Gut!",
+  "beatMiss": "Daneben",
   "fallingSpeedUp": "Schneller!",
   "fallingMultiplier": "×{mult}",
   "@fallingMultiplier": {

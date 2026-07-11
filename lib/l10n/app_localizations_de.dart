@@ -824,6 +824,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get commandSwipeDown => 'Nach unten wischen!';
 
   @override
+  String get gameBeatRunner => 'Im Takt';
+
+  @override
+  String get gameBeatRunnerSubtitle =>
+      'Tippe im Takt, wenn die Schläge die Linie erreichen!';
+
+  @override
+  String get beatRunnerHint => 'Tippe auf den Schlag!';
+
+  @override
+  String get beatPerfect => 'Perfekt!';
+
+  @override
+  String get beatGood => 'Gut!';
+
+  @override
+  String get beatMiss => 'Daneben';
+
+  @override
   String get fallingSpeedUp => 'Schneller!';
 
   @override

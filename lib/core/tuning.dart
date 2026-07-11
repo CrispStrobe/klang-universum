@@ -89,6 +89,8 @@ const Map<String, List<int>> kStarThresholds = {
   'echo_sequence': [100, 400, 700],
   // Follow the Conductor: 15 cues, points = 10 × combo multiplier (1..5).
   'command_caller': [50, 250, 400],
+  // Beat Runner: 16 beats, Perfect 20 / Good 10 × combo multiplier (1..4).
+  'beat_runner': [120, 320, 520],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
   'guitar_string_quiz': [100, 600, 900],

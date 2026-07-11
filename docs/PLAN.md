@@ -27,7 +27,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 |---|--------|------------------------|-------|--------|
 | 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) • Sort the Beats (drag into buckets) • Connect the Symbols (drag glyph↔name) | 6 built |
 | 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) • Falling Notes (arcade: name before it lands) • Connect the Notes (drag note↔name) | 11 built |
-| 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
+| 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) • Beat Runner (tap-along rhythm lane) | 3 built |
 | 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) • Follow the Conductor (reaction toy) | 5 built |
 | 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
 | 6 | **Harmonik** (T/S/D) | `harmony.function`, `.cadence`, `.hear` | Function Quiz • Cadence Workshop (build T–S–D–T) • Hear the Function (I–IV–V–I context, name the target by ear) | 3 built |
@@ -189,7 +189,14 @@ the app category the idea comes from. Tick as shipped.
   the Note, with a colour legend in Settings. Composes with the existing
   note-naming toggle for the solfège layer. *(Number + Curwen hand-sign layers
   remain as future extensions of the same scaffold.)*
-- [ ] Play-in-time-to-music lane (tap-along rhythm / falling-note). *(tap-along rhythm games.) M · ♪♪.*
+- [x] Play-in-time-to-music lane (tap-along rhythm / falling-note). *(tap-along rhythm games.) M · ♪♪.*
+  **Shipped**: **Beat Runner** (Takte) — markers fall and cross a glowing
+  hit-line exactly on each beat of a steady bass groove; tap in time. The
+  game's own Ticker is the master clock, so groove/markers/tap-timing never
+  drift apart (no audio-latency sync problem). Taps score Perfect/Good by
+  accuracy, with a rising-pentatonic sparkle on a hit; a no-fail toy (every run
+  finishes), scored like Sound Echo. *(Extends to tempo ramps and off-beat
+  syncopation patterns.)*
 - [ ] Parent view + multi-child profiles. *(kids' practice apps.) M · ♪♪.*
 
 **German-market moat — the thin-market opening**

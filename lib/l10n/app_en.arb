@@ -401,6 +401,12 @@
   "commandSwipeRight": "Swipe right!",
   "commandSwipeUp": "Swipe up!",
   "commandSwipeDown": "Swipe down!",
+  "gameBeatRunner": "Beat Runner",
+  "gameBeatRunnerSubtitle": "Tap in time as the beats reach the line!",
+  "beatRunnerHint": "Tap on the beat!",
+  "beatPerfect": "Perfect!",
+  "beatGood": "Good!",
+  "beatMiss": "Miss",
   "fallingSpeedUp": "Speed up!",
   "fallingMultiplier": "×{mult}",
   "@fallingMultiplier": {

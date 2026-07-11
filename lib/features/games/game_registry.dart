@@ -24,6 +24,7 @@ import 'package:klang_universum/features/games/keyboard/key_ear_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_find_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_melody_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
+import 'package:klang_universum/features/games/measures/beat_runner_screen.dart';
 import 'package:klang_universum/features/games/measures/measure_fill_screen.dart';
 import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
 import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
@@ -205,6 +206,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMeterDetective,
       subtitle: (l) => l.gameMeterDetectiveSubtitle,
       builder: (_) => const MeterDetectiveScreen(),
+    ),
+    GameInfo(
+      id: 'beat_runner',
+      icon: Icons.sports_esports,
+      title: (l) => l.gameBeatRunner,
+      subtitle: (l) => l.gameBeatRunnerSubtitle,
+      builder: (_) => const BeatRunnerScreen(),
     ),
   ],
   'scales': [

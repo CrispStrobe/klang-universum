@@ -1550,6 +1550,42 @@ abstract class AppLocalizations {
   /// **'Swipe down!'**
   String get commandSwipeDown;
 
+  /// No description provided for @gameBeatRunner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beat Runner'**
+  String get gameBeatRunner;
+
+  /// No description provided for @gameBeatRunnerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap in time as the beats reach the line!'**
+  String get gameBeatRunnerSubtitle;
+
+  /// No description provided for @beatRunnerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap on the beat!'**
+  String get beatRunnerHint;
+
+  /// No description provided for @beatPerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect!'**
+  String get beatPerfect;
+
+  /// No description provided for @beatGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good!'**
+  String get beatGood;
+
+  /// No description provided for @beatMiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Miss'**
+  String get beatMiss;
+
   /// No description provided for @fallingSpeedUp.
   ///
   /// In en, this message translates to:

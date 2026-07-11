@@ -818,6 +818,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commandSwipeDown => 'Swipe down!';
 
   @override
+  String get gameBeatRunner => 'Beat Runner';
+
+  @override
+  String get gameBeatRunnerSubtitle =>
+      'Tap in time as the beats reach the line!';
+
+  @override
+  String get beatRunnerHint => 'Tap on the beat!';
+
+  @override
+  String get beatPerfect => 'Perfect!';
+
+  @override
+  String get beatGood => 'Good!';
+
+  @override
+  String get beatMiss => 'Miss';
+
+  @override
   String get fallingSpeedUp => 'Speed up!';
 
   @override
