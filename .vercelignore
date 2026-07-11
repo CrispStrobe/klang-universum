@@ -1,0 +1,6 @@
+# Keep debug symbolication maps out of the deploy. Flutter's web build emits
+# ~8 MB of *.symbols files (CanvasKit/skwasm stack-trace maps); the runtime
+# never fetches them, so they only bloat the upload. Everything users actually
+# download (main.dart.js, the selected canvaskit.wasm, tree-shaken fonts) is
+# served brotli-compressed by Vercel and stays.
+*.symbols
