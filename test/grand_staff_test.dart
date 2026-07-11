@@ -16,7 +16,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('grand staff reading offers four notes and records under '
+  testWidgets(
+      'grand staff reading offers four notes and records under '
       'keyboard.grand', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
 
