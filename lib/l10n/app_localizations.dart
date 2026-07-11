@@ -1436,6 +1436,30 @@ abstract class AppLocalizations {
   /// **'Swipe: is the note on a line or in a space?'**
   String get gameLineSpaceSubtitle;
 
+  /// No description provided for @gameFallingNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Falling Notes'**
+  String get gameFallingNotes;
+
+  /// No description provided for @gameFallingNotesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the notes before they land!'**
+  String get gameFallingNotesSubtitle;
+
+  /// No description provided for @fallingSpeedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed up!'**
+  String get fallingSpeedUp;
+
+  /// No description provided for @fallingMultiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'×{mult}'**
+  String fallingMultiplier(int mult);
+
   /// No description provided for @lineSpacePrompt.
   ///
   /// In en, this message translates to:

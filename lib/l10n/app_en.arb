@@ -382,6 +382,15 @@
   "gameNoteOrderSubtitle": "Tap the notes from lowest to highest",
   "gameLineSpace": "Line or Space?",
   "gameLineSpaceSubtitle": "Swipe: is the note on a line or in a space?",
+  "gameFallingNotes": "Falling Notes",
+  "gameFallingNotesSubtitle": "Name the notes before they land!",
+  "fallingSpeedUp": "Speed up!",
+  "fallingMultiplier": "×{mult}",
+  "@fallingMultiplier": {
+    "placeholders": {
+      "mult": { "type": "int" }
+    }
+  },
   "lineSpacePrompt": "Swipe ← Line   or   Space →",
   "lineLabel": "Line",
   "spaceLabel": "Space",

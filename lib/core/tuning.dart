@@ -78,6 +78,9 @@ const Map<String, List<int>> kStarThresholds = {
   'note_memory': [100, 450, 560],
   'note_order': [100, 600, 900],
   'line_space': [100, 600, 900],
+  // Falling Notes: 15 notes, points = 10 x combo multiplier (1..5). A flawless
+  // combo run tops out near 450; 3 stars rewards a near-perfect streak.
+  'falling_notes': [50, 250, 400],
   // Echo Sequence: score = 100 × longest sequence echoed.
   'echo_sequence': [100, 400, 700],
   'cello_string_quiz': [100, 600, 900],

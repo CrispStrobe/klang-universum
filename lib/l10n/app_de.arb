@@ -229,6 +229,15 @@
   "gameNoteOrderSubtitle": "Tippe die Noten von tief nach hoch",
   "gameLineSpace": "Linie oder Zwischenraum?",
   "gameLineSpaceSubtitle": "Wische: Linie oder Zwischenraum?",
+  "gameFallingNotes": "Notenregen",
+  "gameFallingNotesSubtitle": "Benenne die Noten, bevor sie landen!",
+  "fallingSpeedUp": "Schneller!",
+  "fallingMultiplier": "×{mult}",
+  "@fallingMultiplier": {
+    "placeholders": {
+      "mult": { "type": "int" }
+    }
+  },
   "lineSpacePrompt": "Wische ← Linie   oder   Zwischenraum →",
   "lineLabel": "Linie",
   "spaceLabel": "Zwischenr.",

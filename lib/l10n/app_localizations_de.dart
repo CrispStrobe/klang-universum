@@ -762,6 +762,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameLineSpaceSubtitle => 'Wische: Linie oder Zwischenraum?';
 
   @override
+  String get gameFallingNotes => 'Notenregen';
+
+  @override
+  String get gameFallingNotesSubtitle => 'Benenne die Noten, bevor sie landen!';
+
+  @override
+  String get fallingSpeedUp => 'Schneller!';
+
+  @override
+  String fallingMultiplier(int mult) {
+    return '×$mult';
+  }
+
+  @override
   String get lineSpacePrompt => 'Wische ← Linie   oder   Zwischenraum →';
 
   @override

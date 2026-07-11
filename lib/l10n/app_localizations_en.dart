@@ -757,6 +757,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Swipe: is the note on a line or in a space?';
 
   @override
+  String get gameFallingNotes => 'Falling Notes';
+
+  @override
+  String get gameFallingNotesSubtitle => 'Name the notes before they land!';
+
+  @override
+  String get fallingSpeedUp => 'Speed up!';
+
+  @override
+  String fallingMultiplier(int mult) {
+    return '×$mult';
+  }
+
+  @override
   String get lineSpacePrompt => 'Swipe ← Line   or   Space →';
 
   @override
