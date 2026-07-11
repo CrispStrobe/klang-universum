@@ -88,10 +88,13 @@ Interval Detective, Meter Detective; option to graduate to `flutter_soloud`
 
 - GitHub: `CrispStrobe/klang-universum` (app), `CrispStrobe/partitura` (lib).
 - **CI** (`.github/workflows/ci.yml`): every push/PR runs format + analyze +
-  test and uploads coverage. It checks out `partitura` as a sibling so the
-  `../partitura` path dependency resolves on the runner. Analyzer is strict
-  (`strict-casts`/`strict-raw-types`); the `build` symlink is untracked (it
-  points at a dev-only SSD path and would dangle on CI).
+  test and uploads coverage (~85% of `lib/`). It checks out `partitura` as a
+  sibling so the `../partitura` path dependency resolves on the runner.
+  Analyzer is strict (`strict-casts`/`strict-raw-types`); the `build` symlink
+  is untracked (it points at a dev-only SSD path and would dangle on CI).
 - Web: Vercel (`mus` project), prebuilt `build/web`, same pattern as voc.
+  A root `.vercelignore` drops the Flutter build's `*.symbols` debug maps
+  (~8 MB, never fetched at runtime) from the upload; the served bundle is
+  brotli (main.dart.js ~924 KB, canvaskit.wasm ~2.85 MB, fonts tree-shaken).
 - pub.dev publication of partitura: deliberately **not yet** (maintainer
   decision); everything is consumed via path/git.

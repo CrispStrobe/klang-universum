@@ -57,3 +57,5 @@ flutter run -d chrome    # or macos, etc.
 CI (`.github/workflows/ci.yml`) runs format + analyze + test on every push and
 PR, checking out the sibling `partitura` repo alongside so the path dependency
 resolves. The `build/` symlink (a dev-only SSD path) is intentionally untracked.
+The test suite (85 tests) covers ~85% of `lib/`, including the services, the
+import round-trips, and a render smoke test per game screen.
