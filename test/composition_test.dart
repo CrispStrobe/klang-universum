@@ -82,7 +82,7 @@ void main() {
     await tester.pumpWidget(_wrap(const MyMelodyScreen(), sri));
     await tester.pump();
 
-    expect(find.textContaining('write your melody'), findsOneWidget);
+    expect(find.textContaining('Write your melody'), findsOneWidget);
     expect(find.byType(InteractiveStaff), findsOneWidget);
 
     // Play/Undo/Clear disabled while empty.

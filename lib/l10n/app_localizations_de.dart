@@ -273,7 +273,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get myMelodyPrompt =>
-      'Tippe auf die Linien und schreibe deine Melodie!';
+      'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
+
+  @override
+  String get inputStaff => 'Noten';
+
+  @override
+  String get inputPiano => 'Klavier';
+
+  @override
+  String get inputGuitar => 'Gitarre';
+
+  @override
+  String get inputCello => 'Cello';
 
   @override
   String get myMelodyFull => 'Deine Melodie ist voll — spiel sie ab!';

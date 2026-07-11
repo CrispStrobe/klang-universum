@@ -563,8 +563,32 @@ abstract class AppLocalizations {
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Tap the staff to write your melody!'**
+  /// **'Write your melody — tap the staff or an instrument!'**
   String get myMelodyPrompt;
+
+  /// No description provided for @inputStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff'**
+  String get inputStaff;
+
+  /// No description provided for @inputPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano'**
+  String get inputPiano;
+
+  /// No description provided for @inputGuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar'**
+  String get inputGuitar;
+
+  /// No description provided for @inputCello.
+  ///
+  /// In en, this message translates to:
+  /// **'Cello'**
+  String get inputCello;
 
   /// No description provided for @myMelodyFull.
   ///

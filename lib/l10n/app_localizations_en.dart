@@ -271,7 +271,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameMyMelodySubtitle => 'Compose and play your own tune';
 
   @override
-  String get myMelodyPrompt => 'Tap the staff to write your melody!';
+  String get myMelodyPrompt =>
+      'Write your melody — tap the staff or an instrument!';
+
+  @override
+  String get inputStaff => 'Staff';
+
+  @override
+  String get inputPiano => 'Piano';
+
+  @override
+  String get inputGuitar => 'Guitar';
+
+  @override
+  String get inputCello => 'Cello';
 
   @override
   String get myMelodyFull => 'Your melody is full — play it!';

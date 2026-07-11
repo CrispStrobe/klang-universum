@@ -11,6 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:klang_universum/shared/widgets/cello_fingerboard.dart';
+import 'package:klang_universum/shared/widgets/guitar_fretboard.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart'
     show
         Clef,
@@ -20,11 +24,16 @@ import 'package:partitura/partitura.dart'
         NoteDuration,
         NoteElement,
         PartituraTheme,
+        Pitch,
         RestElement,
         Score,
         StaffTarget,
+        StaffView,
         scoreToMusicXml;
 import 'package:provider/provider.dart';
+
+/// How the child enters notes into the sandbox.
+enum NoteInput { staff, piano, guitar, cello }
 
 class MyMelodyScreen extends StatefulWidget {
   const MyMelodyScreen({super.key});
@@ -38,6 +47,7 @@ class MyMelodyScreen extends StatefulWidget {
 class _MyMelodyScreenState extends State<MyMelodyScreen> {
   final List<NoteElement> _notes = [];
   var _nextId = 0;
+  NoteInput _input = NoteInput.staff;
 
   Score get _score => Score(
         clef: Clef.treble,
@@ -49,9 +59,13 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
         ],
       );
 
-  void _onStaffTap(StaffTarget target) {
+  void _onStaffTap(StaffTarget target) =>
+      _addPitch(target.pitchFor(Clef.treble));
+
+  void _addMidi(int midi) => _addPitch(pitchFromMidi(midi));
+
+  void _addPitch(Pitch pitch) {
     if (_notes.length >= MyMelodyScreen.maxNotes) return;
-    final pitch = target.pitchFor(Clef.treble);
     context.read<AudioService>().playMidiNote(pitch.midiNumber, ms: 400);
     setState(() {
       _notes.add(
@@ -141,24 +155,64 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Expanded(
                 child: Card(
                   child: Center(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: InteractiveStaff(
-                        score: _score,
-                        theme: PartituraTheme.kids,
-                        staffSpace: 14,
-                        onStaffTap: _onStaffTap,
-                      ),
+                      // Staff mode: tap the staff directly. Instrument modes:
+                      // the staff just shows what's been written so far.
+                      child: _input == NoteInput.staff
+                          ? InteractiveStaff(
+                              score: _score,
+                              theme: PartituraTheme.kids,
+                              staffSpace: 14,
+                              onStaffTap: _onStaffTap,
+                            )
+                          : StaffView(
+                              score: _score,
+                              theme: PartituraTheme.kids,
+                              staffSpace: 14,
+                            ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              SegmentedButton<NoteInput>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: NoteInput.staff,
+                    icon: const Icon(Icons.music_note),
+                    label: Text(l10n.inputStaff),
+                  ),
+                  ButtonSegment(
+                    value: NoteInput.piano,
+                    icon: const Icon(Icons.piano),
+                    label: Text(l10n.inputPiano),
+                  ),
+                  ButtonSegment(
+                    value: NoteInput.guitar,
+                    icon: const Icon(Icons.music_note),
+                    label: Text(l10n.inputGuitar),
+                  ),
+                  ButtonSegment(
+                    value: NoteInput.cello,
+                    icon: const Icon(Icons.audiotrack),
+                    label: Text(l10n.inputCello),
+                  ),
+                ],
+                selected: {_input},
+                onSelectionChanged: (s) => setState(() => _input = s.first),
+              ),
+              if (_input != NoteInput.staff) ...[
+                const SizedBox(height: 8),
+                _InstrumentInput(input: _input, onNote: full ? null : _addMidi),
+              ],
+              const SizedBox(height: 12),
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 12,
@@ -194,5 +248,34 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
         ),
       ),
     );
+  }
+}
+
+/// The chosen instrument input surface (piano / guitar / cello).
+class _InstrumentInput extends StatelessWidget {
+  final NoteInput input;
+  final void Function(int midi)? onNote;
+
+  const _InstrumentInput({required this.input, required this.onNote});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (input) {
+      case NoteInput.staff:
+        return const SizedBox.shrink();
+      case NoteInput.piano:
+        return SizedBox(
+          height: 120,
+          child: PianoKeyboard(
+            whiteKeyCount: 8,
+            showLabels: true,
+            onKeyTap: onNote,
+          ),
+        );
+      case NoteInput.guitar:
+        return GuitarFretboard(onTap: onNote);
+      case NoteInput.cello:
+        return CelloFingerboard(onTap: onNote);
+    }
   }
 }
