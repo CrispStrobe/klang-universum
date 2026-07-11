@@ -7,17 +7,27 @@
 
 import 'package:flutter/material.dart';
 import 'package:partitura/partitura.dart'
-    show MultiSystemView, NoteElement, PartituraTheme;
+    show MultiSystemView, NoteElement, PartituraTheme, Score;
 import 'package:provider/provider.dart';
 
 import '../../../core/services/audio_service.dart';
 import '../../../l10n/app_localizations.dart';
+import 'chord_sheet_screen.dart';
+import 'import/chordpro.dart';
+import 'import_screen.dart';
 import 'song_book.dart';
+import 'user_songs_service.dart';
 
 class SongScreen extends StatefulWidget {
-  final Song song;
+  final String title;
+  final Score score;
 
-  const SongScreen({super.key, required this.song});
+  SongScreen({super.key, required Song song})
+      : title = song.title,
+        score = song.score;
+
+  const SongScreen.fromScore(
+      {super.key, required this.title, required this.score});
 
   @override
   State<SongScreen> createState() => _SongScreenState();
@@ -28,8 +38,11 @@ class _SongScreenState extends State<SongScreen> {
   bool _playing = false;
   int _playToken = 0; // invalidates a running play loop
 
+  late final List<(String, int, int)> _playback =
+      playbackOf(widget.score);
+
   late final Map<String, int> _midiById = {
-    for (final measure in widget.song.score.measures)
+    for (final measure in widget.score.measures)
       for (final element in measure.elements)
         if (element is NoteElement && element.id != null)
           element.id!: element.pitches.first.midiNumber,
@@ -42,10 +55,10 @@ class _SongScreenState extends State<SongScreen> {
 
     // One synthesized render of the whole melody...
     audio.playSequence([
-      for (final (_, midi, ms) in widget.song.playback) (midi, ms),
+      for (final (_, midi, ms) in _playback) (midi, ms),
     ]);
     // ...while the cursor walks the notation in the same rhythm.
-    for (final (id, _, ms) in widget.song.playback) {
+    for (final (id, _, ms) in _playback) {
       if (!mounted || token != _playToken) return;
       setState(() => _highlightedId = id);
       await Future.delayed(Duration(milliseconds: ms));
@@ -77,7 +90,7 @@ class _SongScreenState extends State<SongScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.song.title)),
+      appBar: AppBar(title: Text(widget.title)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -88,7 +101,7 @@ class _SongScreenState extends State<SongScreen> {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: MultiSystemView(
-                      score: widget.song.score,
+                      score: widget.score,
                       staffSpace: 11,
                       theme: PartituraTheme.kids,
                       highlightedIds: {
@@ -127,9 +140,21 @@ class SongListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final userSongs = context.watch<UserSongsService>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameSongBook)),
+      appBar: AppBar(
+        title: Text(l10n.gameSongBook),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: l10n.importTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ImportScreen()),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -147,6 +172,64 @@ class SongListScreen extends StatelessWidget {
                 ),
               ),
             ),
+          if (userSongs.songs.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
+              child: Text(l10n.importedSongs,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            for (final song in userSongs.songs)
+              Card(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 8),
+                  leading:
+                      const CircleAvatar(child: Icon(Icons.file_download)),
+                  title: Text(song.title),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () =>
+                        context.read<UserSongsService>().removeSong(song.id),
+                  ),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SongScreen.fromScore(
+                          title: song.title, score: song.score),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+          if (userSongs.sheets.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
+              child: Text(l10n.chordSheets,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            for (final sheet in userSongs.sheets)
+              Card(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 8),
+                  leading: const CircleAvatar(child: Icon(Icons.tag)),
+                  title: Text(sheet.title),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => context
+                        .read<UserSongsService>()
+                        .removeSheet(sheet.id),
+                  ),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChordSheetScreen(
+                        title: sheet.title,
+                        sheet: parseChordPro(sheet.source),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );

@@ -25,6 +25,9 @@ dependencies:
   # Audio
   audioplayers: ^6.1.0
 
+  # Files (import of MIDI etc.)
+  file_selector: ^1.0.3
+
   # Utils
   intl: any
   equatable: ^2.0.5

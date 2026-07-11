@@ -15,6 +15,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/main.dart';
 import 'package:partitura/partitura.dart' show Bravura, SmuflMetadata;
@@ -107,6 +108,7 @@ void main() {
               ChangeNotifierProvider<SriService>.value(value: sri),
               Provider<AudioService>(create: (_) => AudioService()),
               ChangeNotifierProvider(create: (_) => ProgressService()),
+              ChangeNotifierProvider(create: (_) => UserSongsService()),
             ],
             child: MaterialApp(
               localizationsDelegates: const [

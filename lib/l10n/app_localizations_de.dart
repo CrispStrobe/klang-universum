@@ -240,6 +240,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get songStop => 'Stopp';
 
   @override
+  String get importTitle => 'Lieder importieren';
+
+  @override
+  String get importTitleField => 'Titel (optional)';
+
+  @override
+  String get importHint =>
+      'Füge hier MusicXML (aus MuseScore & Co.) oder ChordPro (Text mit [C]-Akkorden) ein — oder wähle unten eine einfache MIDI-Datei.';
+
+  @override
+  String get importAsMusicXml => 'Als MusicXML importieren';
+
+  @override
+  String get importAsChordPro => 'Als ChordPro importieren';
+
+  @override
+  String get importMidiFile => 'MIDI-Datei wählen…';
+
+  @override
+  String get importDone => 'Importiert!';
+
+  @override
+  String importFailed(String error) {
+    return 'Import fehlgeschlagen: $error';
+  }
+
+  @override
+  String get importedSongs => 'Meine importierten Lieder';
+
+  @override
+  String get chordSheets => 'Akkord-Blätter';
+
+  @override
   String get gameTuneQuiz => 'Lieder-Quiz';
 
   @override

@@ -7,6 +7,7 @@ import 'core/services/audio_service.dart';
 import 'core/services/progress_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/services/sri_service.dart';
+import 'features/games/songs/user_songs_service.dart';
 import 'features/games/game_registry.dart';
 import 'features/home/screens/home_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -39,6 +40,9 @@ class KlangUniversumApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ProgressService()..load(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserSongsService()..load(),
         ),
       ],
       child: Consumer<SettingsService>(

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
 import 'package:klang_universum/features/games/songs/song_screen.dart';
 import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
@@ -18,6 +19,7 @@ Widget _wrap(Widget child, SriService sri) {
       ChangeNotifierProvider<SriService>.value(value: sri),
       Provider<AudioService>(create: (_) => AudioService()),
       ChangeNotifierProvider(create: (_) => ProgressService()),
+      ChangeNotifierProvider(create: (_) => UserSongsService()),
     ],
     child: MaterialApp(
       localizationsDelegates: const [

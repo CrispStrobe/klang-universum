@@ -8,6 +8,22 @@
 import 'package:partitura/partitura.dart'
     show NoteElement, Score, TimeSignature;
 
+/// Playable sequence for any single-voice [score]:
+/// (elementId, midi, milliseconds) in reading order.
+List<(String, int, int)> playbackOf(Score score, {int quarterMs = 500}) {
+  final result = <(String, int, int)>[];
+  for (final measure in score.measures) {
+    for (final element in measure.elements) {
+      if (element is NoteElement && element.id != null) {
+        final (num, den) = element.duration.fraction;
+        final ms = (4 * quarterMs * num / den).round();
+        result.add((element.id!, element.pitches.first.midiNumber, ms));
+      }
+    }
+  }
+  return result;
+}
+
 class Song {
   final String id;
   final String title;
@@ -34,19 +50,8 @@ class Song {
       );
 
   /// Playable sequence: (elementId, midi, milliseconds) in reading order.
-  List<(String, int, int)> get playback {
-    final result = <(String, int, int)>[];
-    for (final measure in score.measures) {
-      for (final element in measure.elements) {
-        if (element is NoteElement && element.id != null) {
-          final (num, den) = element.duration.fraction;
-          final ms = (4 * quarterMs * num / den).round();
-          result.add((element.id!, element.pitches.first.midiNumber, ms));
-        }
-      }
-    }
-    return result;
-  }
+  List<(String, int, int)> get playback =>
+      playbackOf(score, quarterMs: quarterMs);
 }
 
 const kSongs = <Song>[

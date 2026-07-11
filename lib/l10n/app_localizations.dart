@@ -518,6 +518,66 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get songStop;
 
+  /// No description provided for @importTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import songs'**
+  String get importTitle;
+
+  /// No description provided for @importTitleField.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
+  String get importTitleField;
+
+  /// No description provided for @importHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste MusicXML (from MuseScore & co.) or ChordPro (lyrics with [C] chords) here — or pick a simple MIDI file below.'**
+  String get importHint;
+
+  /// No description provided for @importAsMusicXml.
+  ///
+  /// In en, this message translates to:
+  /// **'Import as MusicXML'**
+  String get importAsMusicXml;
+
+  /// No description provided for @importAsChordPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Import as ChordPro'**
+  String get importAsChordPro;
+
+  /// No description provided for @importMidiFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a MIDI file…'**
+  String get importMidiFile;
+
+  /// No description provided for @importDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported!'**
+  String get importDone;
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String importFailed(String error);
+
+  /// No description provided for @importedSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'My imported songs'**
+  String get importedSongs;
+
+  /// No description provided for @chordSheets.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord sheets'**
+  String get chordSheets;
+
   /// No description provided for @gameTuneQuiz.
   ///
   /// In en, this message translates to:

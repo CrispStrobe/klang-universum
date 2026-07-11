@@ -158,8 +158,11 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
     final title = _isReview
         ? l10n.reviewTitle
         : switch (widget.clef) {
-            Clef.treble => l10n.gameNoteReadingTreble,
-            Clef.bass => l10n.gameNoteReadingBass,
+            Clef.treble ||
+            Clef.treble8va ||
+            Clef.treble8vb =>
+              l10n.gameNoteReadingTreble,
+            Clef.bass || Clef.bass8vb => l10n.gameNoteReadingBass,
             Clef.tenor => l10n.gameNoteReadingTenor,
             Clef.alto => l10n.gameNoteReadingAlto,
           };
@@ -192,8 +195,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: StaffView(
                               score: Score.simple(
                                 clef: widget.clef,
