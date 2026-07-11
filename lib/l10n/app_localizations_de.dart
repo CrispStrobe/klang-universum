@@ -713,6 +713,36 @@ class AppLocalizationsDe extends AppLocalizations {
   String get whatIsThisSymbol => 'Wie heißt dieses Zeichen?';
 
   @override
+  String get hearLength => 'Länge anhören';
+
+  @override
+  String get halfBeat => '½ Schlag';
+
+  @override
+  String get quarterBeat => '¼ Schlag';
+
+  @override
+  String beatsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Schläge',
+      one: '1 Schlag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String symbolLength(String name, String length) {
+    return '$name dauert $length';
+  }
+
+  @override
+  String symbolLengthRest(String name, String length) {
+    return '$name: $length Pause';
+  }
+
+  @override
   String roundOf(int current, int total) {
     return 'Runde $current von $total';
   }

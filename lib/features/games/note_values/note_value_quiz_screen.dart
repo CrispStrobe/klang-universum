@@ -10,6 +10,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -81,6 +82,24 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
     _tapped = null;
   }
 
+  bool get _targetIsRest => _target.id.endsWith('_rest');
+
+  /// The symbol's length in 4/4 beats (whole = 4, quarter = 1, eighth = ½).
+  double get _targetBeats => _target.beats * 4;
+
+  String _lengthLabel(AppLocalizations l10n) {
+    final beats = _targetBeats;
+    if (beats == 0.5) return l10n.halfBeat;
+    if (beats == 0.25) return l10n.quarterBeat;
+    return l10n.beatsCount(beats.toInt());
+  }
+
+  void _playLength() {
+    context
+        .read<AudioService>()
+        .playNoteLength(_targetBeats, isRest: _targetIsRest);
+  }
+
   void _onAnswer(NoteSymbol choice) {
     if (_tapped == _target) return; // round already resolved
     final correct = choice == _target;
@@ -92,6 +111,9 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
 
     setState(() => _tapped = choice);
     resolveAnswer(correct: correct);
+    // On a miss the round stays put — explain the length (text + audio) so the
+    // child learns what they got wrong before trying again.
+    if (!correct) _playLength();
   }
 
   @override
@@ -131,6 +153,22 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
                     FeedbackLine(
                       correct: _tapped == null ? null : _tapped == _target,
                     ),
+                    if (_tapped != null && _tapped != _target) ...[
+                      const SizedBox(height: 8),
+                      _LengthExplanation(
+                        text: _targetIsRest
+                            ? l10n.symbolLengthRest(
+                                _target.label(l10n),
+                                _lengthLabel(l10n),
+                              )
+                            : l10n.symbolLength(
+                                _target.label(l10n),
+                                _lengthLabel(l10n),
+                              ),
+                        onHear: _playLength,
+                        hearLabel: l10n.hearLength,
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     GridView.count(
                       crossAxisCount: 2,
@@ -164,5 +202,52 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
     if (option == _target && _tapped == _target) return Colors.green;
     if (option == _tapped && option != _target) return Colors.redAccent;
     return null;
+  }
+}
+
+/// A little "how long is this?" card: the length in beats plus a button to
+/// hear it, shown after a wrong answer in the Symbol Quiz.
+class _LengthExplanation extends StatelessWidget {
+  final String text;
+  final String hearLabel;
+  final VoidCallback onHear;
+
+  const _LengthExplanation({
+    required this.text,
+    required this.hearLabel,
+    required this.onHear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          TextButton.icon(
+            onPressed: onHear,
+            icon: const Icon(Icons.volume_up, size: 18),
+            label: Text(hearLabel),
+          ),
+        ],
+      ),
+    );
   }
 }

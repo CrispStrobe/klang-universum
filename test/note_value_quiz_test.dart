@@ -61,6 +61,28 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('a wrong answer shows the note-length explanation',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 10));
+    await tester.pumpWidget(_wrap(const NoteValueQuizScreen(), sri));
+    await tester.pumpAndSettle();
+
+    // Tap options until a wrong one lands (keeps the round put).
+    var sawWrong = false;
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(find.byType(FilledButton).at(i));
+      await tester.pump();
+      if (find.text('Oops — try again!').evaluate().isNotEmpty) {
+        sawWrong = true;
+        break;
+      }
+      await tester.pumpAndSettle(); // correct -> advanced; try the next round
+    }
+
+    expect(sawWrong, isTrue);
+    expect(find.text('Hear the length'), findsOneWidget);
+  });
+
   testWidgets('answering correctly advances to the next round', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 10));
 

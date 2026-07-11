@@ -1340,6 +1340,42 @@ abstract class AppLocalizations {
   /// **'What is this symbol called?'**
   String get whatIsThisSymbol;
 
+  /// No description provided for @hearLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear the length'**
+  String get hearLength;
+
+  /// No description provided for @halfBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'½ beat'**
+  String get halfBeat;
+
+  /// No description provided for @quarterBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'¼ beat'**
+  String get quarterBeat;
+
+  /// No description provided for @beatsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 beat} other{{count} beats}}'**
+  String beatsCount(int count);
+
+  /// No description provided for @symbolLength.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} lasts {length}'**
+  String symbolLength(String name, String length);
+
+  /// No description provided for @symbolLengthRest.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: {length} of silence'**
+  String symbolLengthRest(String name, String length);
+
   /// No description provided for @roundOf.
   ///
   /// In en, this message translates to:

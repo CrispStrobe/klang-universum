@@ -361,6 +361,29 @@
   "melodyDictationPrompt": "The first note is given — add the ones you hear",
   "dictationUndo": "Undo",
   "whatIsThisSymbol": "What is this symbol called?",
+  "hearLength": "Hear the length",
+  "halfBeat": "½ beat",
+  "quarterBeat": "¼ beat",
+  "beatsCount": "{count, plural, =1{1 beat} other{{count} beats}}",
+  "@beatsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "symbolLength": "{name} lasts {length}",
+  "@symbolLength": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "length": { "type": "String" }
+    }
+  },
+  "symbolLengthRest": "{name}: {length} of silence",
+  "@symbolLengthRest": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "length": { "type": "String" }
+    }
+  },
   "roundOf": "Round {current} of {total}",
   "@roundOf": {
     "placeholders": {

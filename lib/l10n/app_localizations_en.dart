@@ -705,6 +705,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIsThisSymbol => 'What is this symbol called?';
 
   @override
+  String get hearLength => 'Hear the length';
+
+  @override
+  String get halfBeat => '½ beat';
+
+  @override
+  String get quarterBeat => '¼ beat';
+
+  @override
+  String beatsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count beats',
+      one: '1 beat',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String symbolLength(String name, String length) {
+    return '$name lasts $length';
+  }
+
+  @override
+  String symbolLengthRest(String name, String length) {
+    return '$name: $length of silence';
+  }
+
+  @override
   String roundOf(int current, int total) {
     return 'Round $current of $total';
   }

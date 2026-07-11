@@ -88,6 +88,28 @@ class AudioService {
         ]),
       );
 
+  /// Demonstrates a note/rest length: a note sustains a tone for [beats] beats;
+  /// a rest frames [beats] beats of silence between two soft ticks. Used by the
+  /// Symbol Quiz to make "how long is this?" audible.
+  Future<void> playNoteLength(double beats, {required bool isRest}) {
+    const beatMs = 480;
+    final ms = (beats * beatMs).round().clamp(120, 4000);
+    if (isRest) {
+      return _play(
+        renderWav([
+          (freqs: [midiToFrequency(84)], ms: 80),
+          (freqs: const <double>[], ms: ms),
+          (freqs: [midiToFrequency(84)], ms: 80),
+        ]),
+      );
+    }
+    return _play(
+      renderWav([
+        (freqs: [midiToFrequency(69)], ms: ms),
+      ]),
+    );
+  }
+
   // Retro feedback SFX, rendered once and cached.
   static Uint8List? _correctWav;
   static Uint8List? _wrongWav;
