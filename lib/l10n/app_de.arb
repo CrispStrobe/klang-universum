@@ -33,6 +33,10 @@
   "noteNamingGerman": "Deutsch (C D E F G A H)",
   "noteNamingEnglish": "Englisch (C D E F G A B)",
   "noteNamingSolfege": "Solfège (Do Re Mi Fa Sol La Si)",
+  "streakDays": "{count, plural, =1{1 Tag in Folge} other{{count} Tage in Folge}}",
+  "@streakDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "statsTitle": "Lernstatistik",
   "statsTracked": "Erfasste Aufgaben",
   "statsLearning": "Noch am Lernen",

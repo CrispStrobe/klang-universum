@@ -135,7 +135,8 @@ the app category the idea comes from. Tick as shipped.
 **Quick wins — low effort, ship first**
 - [x] Note-naming toggle: German H/B, English, solfège — one setting, every
   drill. *(web theory trainers.) S · ♪♪♪.* Reinforces EN/DE. **Shipped.**
-- [ ] Daily streak + practice calendar. *(habit-loop learning apps.) S · ♪♪.* Retention loop.
+- [x] Daily streak + practice calendar (flame + count + 7-day dots on home;
+  finishing a game marks the day). *(habit-loop learning apps.) S · ♪♪.* **Shipped.**
 - [ ] "Wait mode" pacing — advance only on the correct answer, no timed fail for
   slow readers. *(interactive sheet-music apps.) S · ♪♪♪.*
 - [ ] Reacting mascot — eats correct notes, comically reacts on wrong (our

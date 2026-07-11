@@ -57,6 +57,10 @@
   "noteNamingGerman": "German (C D E F G A H)",
   "noteNamingEnglish": "English (C D E F G A B)",
   "noteNamingSolfege": "Solfège (Do Re Mi Fa Sol La Si)",
+  "streakDays": "{count, plural, =1{1-day streak} other{{count}-day streak}}",
+  "@streakDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "statsTitle": "Learning statistics",
   "statsTracked": "Tracked items",
   "statsLearning": "Still learning",

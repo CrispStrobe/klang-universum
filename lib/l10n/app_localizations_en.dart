@@ -123,6 +123,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteNamingSolfege => 'Solfège (Do Re Mi Fa Sol La Si)';
 
   @override
+  String streakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count-day streak',
+      one: '1-day streak',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get statsTitle => 'Learning statistics';
 
   @override

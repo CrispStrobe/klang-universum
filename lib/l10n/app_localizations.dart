@@ -296,6 +296,12 @@ abstract class AppLocalizations {
   /// **'Solfège (Do Re Mi Fa Sol La Si)'**
   String get noteNamingSolfege;
 
+  /// No description provided for @streakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1-day streak} other{{count}-day streak}}'**
+  String streakDays(int count);
+
   /// No description provided for @statsTitle.
   ///
   /// In en, this message translates to:

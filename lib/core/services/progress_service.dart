@@ -31,9 +31,18 @@ class GameProgress {
 }
 
 class ProgressService with ChangeNotifier {
+  ProgressService({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
   static const _storageKey = 'game_progress';
+  static const _daysKey = 'practice_days';
+
+  /// Clock, injectable for tests.
+  final DateTime Function() _now;
 
   Map<String, GameProgress> _byGame = {};
+
+  /// Days on which at least one game was finished, as `YYYY-MM-DD` keys.
+  Set<String> _practiceDays = {};
 
   Future<void> load() async {
     try {
@@ -48,9 +57,12 @@ class ProgressService with ChangeNotifier {
           ),
         );
       }
+      final days = prefs.getStringList(_daysKey);
+      if (days != null) _practiceDays = days.toSet();
     } catch (e) {
       if (kDebugMode) debugPrint('[PROGRESS] load failed: $e');
       _byGame = {};
+      _practiceDays = {};
     }
     notifyListeners();
   }
@@ -62,12 +74,18 @@ class ProgressService with ChangeNotifier {
         _storageKey,
         json.encode(_byGame.map((key, v) => MapEntry(key, v.toJson()))),
       );
+      await prefs.setStringList(_daysKey, _practiceDays.toList());
     } catch (e) {
       if (kDebugMode) debugPrint('[PROGRESS] save failed: $e');
     }
   }
 
-  /// Records a finished game; keeps the best stars/score, counts plays.
+  static String _dayKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+
+  /// Records a finished game; keeps the best stars/score, counts plays, and
+  /// marks today as a practice day (feeds the streak).
   void recordResult(String gameId, {required int score, required int stars}) {
     final old = _byGame[gameId] ?? const GameProgress();
     _byGame[gameId] = GameProgress(
@@ -75,8 +93,28 @@ class ProgressService with ChangeNotifier {
       bestScore: score > old.bestScore ? score : old.bestScore,
       plays: old.plays + 1,
     );
+    _practiceDays.add(_dayKey(_now()));
     notifyListeners();
     _save();
+  }
+
+  /// Whether a game was finished on [day].
+  bool practicedOn(DateTime day) => _practiceDays.contains(_dayKey(day));
+
+  /// Date-only "today" per the injected clock (used for streak + calendar).
+  DateTime get today => DateTime(_now().year, _now().month, _now().day);
+
+  /// Consecutive practice days ending today (or yesterday, so the streak
+  /// doesn't read as broken before today's first session).
+  int get currentStreak {
+    var day =
+        practicedOn(today) ? today : today.subtract(const Duration(days: 1));
+    var streak = 0;
+    while (practicedOn(day)) {
+      streak++;
+      day = day.subtract(const Duration(days: 1));
+    }
+    return streak;
   }
 
   GameProgress progressFor(String gameId) =>

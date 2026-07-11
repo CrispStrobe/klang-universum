@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/models/learning_module.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
@@ -114,6 +115,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final sri = context.watch<SriService>();
+    final progress = context.watch<ProgressService>();
     final dueCount = sri.getAvailableReviewCount();
 
     // Soft engagement gate: a module unlocks once the previous one has
@@ -163,6 +165,8 @@ class HomeScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
+            if (progress.currentStreak > 0)
+              _StreakBar(progress: progress, l10n: l10n),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: dueCount > 0
@@ -203,6 +207,65 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StreakBar extends StatelessWidget {
+  final ProgressService progress;
+  final AppLocalizations l10n;
+
+  const _StreakBar({required this.progress, required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    final today = progress.today;
+    final days = [
+      for (var i = 6; i >= 0; i--) today.subtract(Duration(days: i)),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.local_fire_department,
+                color: Colors.deepOrange,
+                size: 20,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l10n.streakDays(progress.currentStreak),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (final d in days)
+                Container(
+                  width: 12,
+                  height: 12,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: progress.practicedOn(d)
+                        ? Colors.deepOrange
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

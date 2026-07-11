@@ -11,13 +11,15 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _wrap(Widget child, SriService sri) {
+Widget _wrap(Widget child, SriService sri, {ProgressService? progress}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => SettingsService()),
       ChangeNotifierProvider<SriService>.value(value: sri),
       Provider<AudioService>(create: (_) => AudioService()),
-      ChangeNotifierProvider(create: (_) => ProgressService()),
+      ChangeNotifierProvider<ProgressService>.value(
+        value: progress ?? ProgressService(),
+      ),
     ],
     child: MaterialApp(
       localizationsDelegates: const [
@@ -43,9 +45,23 @@ void main() {
     expect(find.byIcon(Icons.settings), findsOneWidget);
     expect(find.byIcon(Icons.bar_chart), findsOneWidget);
     expect(find.byType(Card), findsWidgets); // module cards
-    // Nothing tracked yet -> no review button, just the plain due line.
+    // Nothing tracked yet -> no review button, no streak bar.
     expect(find.byIcon(Icons.replay), findsNothing);
+    expect(find.byIcon(Icons.local_fire_department), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('home shows the practice-streak bar once a game is finished',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final progress = ProgressService(now: () => DateTime(2026, 7, 11))
+      ..recordResult('note_value_quiz', score: 300, stars: 3);
+
+    await tester.pumpWidget(_wrap(const HomeScreen(), sri, progress: progress));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.local_fire_department), findsOneWidget);
+    expect(find.text('1-day streak'), findsOneWidget);
   });
 
   testWidgets('home review button launches the biggest due bucket',
