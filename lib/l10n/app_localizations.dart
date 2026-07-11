@@ -386,6 +386,72 @@ abstract class AppLocalizations {
   /// **'First position: which finger?'**
   String get gameCelloFingerQuizSubtitle;
 
+  /// No description provided for @moduleKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano Corner'**
+  String get moduleKeyboard;
+
+  /// No description provided for @moduleKeyboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find your way around the piano keys'**
+  String get moduleKeyboardSubtitle;
+
+  /// No description provided for @gameKeyFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the Key'**
+  String get gameKeyFind;
+
+  /// No description provided for @gameKeyFindSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'From the staff note to the piano key'**
+  String get gameKeyFindSubtitle;
+
+  /// No description provided for @keyFindPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the key for this note!'**
+  String get keyFindPrompt;
+
+  /// No description provided for @gameKeyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Quiz'**
+  String get gameKeyName;
+
+  /// No description provided for @gameKeyNameSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which key is marked?'**
+  String get gameKeyNameSubtitle;
+
+  /// No description provided for @keyNamePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the marked key called?'**
+  String get keyNamePrompt;
+
+  /// No description provided for @gameKeyEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Echo Keys'**
+  String get gameKeyEar;
+
+  /// No description provided for @gameKeyEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play back what you hear'**
+  String get gameKeyEarSubtitle;
+
+  /// No description provided for @keyEarPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'First you hear C, then the mystery note — tap it!'**
+  String get keyEarPrompt;
+
   /// No description provided for @celloFingerPrompt.
   ///
   /// In en, this message translates to:

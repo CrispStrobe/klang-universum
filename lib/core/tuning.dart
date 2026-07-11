@@ -73,6 +73,10 @@ const Map<String, List<int>> kStarThresholds = {
   'melody_echo': [100, 500, 750],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
+  'key_find': [100, 600, 900],
+  'key_name': [100, 600, 900],
+  // 8 rounds: max 800.
+  'key_ear': [100, 500, 750],
 };
 
 /// Convert a raw game score to 1-3 stars. Returns 0 if the game was lost.

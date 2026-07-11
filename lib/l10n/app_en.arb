@@ -72,6 +72,17 @@
   "celloStringPrompt": "Which string plays this note?",
   "gameCelloFingerQuiz": "Finger Quiz",
   "gameCelloFingerQuizSubtitle": "First position: which finger?",
+  "moduleKeyboard": "Piano Corner",
+  "moduleKeyboardSubtitle": "Find your way around the piano keys",
+  "gameKeyFind": "Find the Key",
+  "gameKeyFindSubtitle": "From the staff note to the piano key",
+  "keyFindPrompt": "Tap the key for this note!",
+  "gameKeyName": "Key Quiz",
+  "gameKeyNameSubtitle": "Which key is marked?",
+  "keyNamePrompt": "What is the marked key called?",
+  "gameKeyEar": "Echo Keys",
+  "gameKeyEarSubtitle": "Play back what you hear",
+  "keyEarPrompt": "First you hear C, then the mystery note — tap it!",
   "celloFingerPrompt": "Which finger plays it on the {string} string?",
   "@celloFingerPrompt": {
     "placeholders": {

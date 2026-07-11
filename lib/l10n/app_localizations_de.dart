@@ -170,6 +170,41 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameCelloFingerQuizSubtitle => 'Erste Lage: welcher Finger?';
 
   @override
+  String get moduleKeyboard => 'Tasten-Ecke';
+
+  @override
+  String get moduleKeyboardSubtitle =>
+      'Finde dich auf den Klaviertasten zurecht';
+
+  @override
+  String get gameKeyFind => 'Taste finden';
+
+  @override
+  String get gameKeyFindSubtitle => 'Von der Note zur Taste';
+
+  @override
+  String get keyFindPrompt => 'Tippe auf die Taste für diese Note!';
+
+  @override
+  String get gameKeyName => 'Tasten-Quiz';
+
+  @override
+  String get gameKeyNameSubtitle => 'Welche Taste ist markiert?';
+
+  @override
+  String get keyNamePrompt => 'Wie heißt die markierte Taste?';
+
+  @override
+  String get gameKeyEar => 'Echo-Tasten';
+
+  @override
+  String get gameKeyEarSubtitle => 'Spiel nach, was du hörst';
+
+  @override
+  String get keyEarPrompt =>
+      'Zuerst hörst du C, dann den Rätselton — tippe ihn!';
+
+  @override
   String celloFingerPrompt(String string) {
     return 'Welcher Finger spielt sie auf der $string-Saite?';
   }

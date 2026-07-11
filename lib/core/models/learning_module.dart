@@ -91,4 +91,12 @@ final List<LearningModule> kLearningModules = [
     title: (l) => l.moduleCello,
     subtitle: (l) => l.moduleCelloSubtitle,
   ),
+  LearningModule(
+    id: 'keyboard',
+    icon: Icons.piano,
+    color: const Color(0xFF26A69A),
+    initiallyUnlocked: true,
+    title: (l) => l.moduleKeyboard,
+    subtitle: (l) => l.moduleKeyboardSubtitle,
+  ),
 ];

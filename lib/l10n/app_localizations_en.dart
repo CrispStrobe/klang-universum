@@ -169,6 +169,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameCelloFingerQuizSubtitle => 'First position: which finger?';
 
   @override
+  String get moduleKeyboard => 'Piano Corner';
+
+  @override
+  String get moduleKeyboardSubtitle => 'Find your way around the piano keys';
+
+  @override
+  String get gameKeyFind => 'Find the Key';
+
+  @override
+  String get gameKeyFindSubtitle => 'From the staff note to the piano key';
+
+  @override
+  String get keyFindPrompt => 'Tap the key for this note!';
+
+  @override
+  String get gameKeyName => 'Key Quiz';
+
+  @override
+  String get gameKeyNameSubtitle => 'Which key is marked?';
+
+  @override
+  String get keyNamePrompt => 'What is the marked key called?';
+
+  @override
+  String get gameKeyEar => 'Echo Keys';
+
+  @override
+  String get gameKeyEarSubtitle => 'Play back what you hear';
+
+  @override
+  String get keyEarPrompt =>
+      'First you hear C, then the mystery note — tap it!';
+
+  @override
   String celloFingerPrompt(String string) {
     return 'Which finger plays it on the $string string?';
   }
