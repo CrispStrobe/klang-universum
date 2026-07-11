@@ -1,6 +1,6 @@
 {
   "framework": null,
   "buildCommand": "",
-  "outputDirectory": "build/web",
+  "outputDirectory": "deploy_web",
   "ignoreCommand": "exit 0"
 }

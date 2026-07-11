@@ -44,3 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .vercel
+
+# Vercel staging copy (build/web lives on the SSD via symlink)
+/deploy_web/
