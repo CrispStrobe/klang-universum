@@ -4,8 +4,11 @@
 // Tapping an unlocked module will navigate to its game selection screen
 // (features/games, not yet implemented — shows a "coming soon" snackbar).
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/models/learning_module.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
@@ -122,10 +125,11 @@ class HomeScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final sri = context.watch<SriService>();
     final progress = context.watch<ProgressService>();
+    final debugUnlockAll = context.watch<DebugService>().unlockAll;
     final dueCount = sri.getAvailableReviewCount();
 
     // Soft engagement gate: a module unlocks once the previous one has
-    // kModuleUnlockTracked SRI items (docs/PLAN.md).
+    // kModuleUnlockTracked SRI items (docs/PLAN.md). Debug mode opens all.
     final breakdown = sri.getDetailedBreakdown();
     int trackedIn(String moduleId) => (breakdown[moduleId] ?? const {})
         .values
@@ -133,14 +137,15 @@ class HomeScreen extends StatelessWidget {
     final unlockedById = <String, bool>{};
     for (var i = 0; i < kLearningModules.length; i++) {
       final module = kLearningModules[i];
-      unlockedById[module.id] = module.initiallyUnlocked ||
+      unlockedById[module.id] = debugUnlockAll ||
+          module.initiallyUnlocked ||
           (i > 0 &&
               trackedIn(kLearningModules[i - 1].id) >= kModuleUnlockTracked);
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        title: const _DebugTapTitle(),
         centerTitle: true,
         actions: [
           IconButton(
@@ -214,6 +219,53 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The app-bar title. Seven taps within a couple of seconds turn on debug
+/// mode (all modules unlocked) — matching the sibling apps.
+class _DebugTapTitle extends StatefulWidget {
+  const _DebugTapTitle();
+
+  @override
+  State<_DebugTapTitle> createState() => _DebugTapTitleState();
+}
+
+class _DebugTapTitleState extends State<_DebugTapTitle> {
+  int _taps = 0;
+  Timer? _resetTimer;
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onTap() {
+    final debug = context.read<DebugService>();
+    if (debug.unlockAll) return; // already on
+    _resetTimer?.cancel();
+    _taps++;
+    if (_taps >= 7) {
+      _taps = 0;
+      debug.setUnlockAll(true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.debugModeEnabled),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      _resetTimer = Timer(const Duration(seconds: 2), () => _taps = 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _onTap,
+      child: Text(AppLocalizations.of(context)!.appTitle),
     );
   }
 }

@@ -393,6 +393,8 @@
   "showTimerLabel": "Show your time",
   "colorScaffoldLabel": "Colour helper for beginners",
   "colorScaffoldSubtitle": "Tint notes by their letter — turn it off once the staff is familiar",
+  "debugModeEnabled": "All games unlocked!",
+  "debugUnlockLabel": "Unlock all games (debug)",
   "playAgain": "Play again",
   "backButton": "Back",
   "wholeNote": "Whole note",

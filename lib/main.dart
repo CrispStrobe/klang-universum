@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
@@ -42,6 +43,9 @@ class KlangUniversumApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => UserSongsService()..load(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DebugService()..load(),
         ),
       ],
       child: Consumer<SettingsService>(

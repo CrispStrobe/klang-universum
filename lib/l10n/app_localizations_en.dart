@@ -740,6 +740,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tint notes by their letter — turn it off once the staff is familiar';
 
   @override
+  String get debugModeEnabled => 'All games unlocked!';
+
+  @override
+  String get debugUnlockLabel => 'Unlock all games (debug)';
+
+  @override
   String get playAgain => 'Play again';
 
   @override

@@ -1394,6 +1394,18 @@ abstract class AppLocalizations {
   /// **'Tint notes by their letter — turn it off once the staff is familiar'**
   String get colorScaffoldSubtitle;
 
+  /// No description provided for @debugModeEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'All games unlocked!'**
+  String get debugModeEnabled;
+
+  /// No description provided for @debugUnlockLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock all games (debug)'**
+  String get debugUnlockLabel;
+
   /// No description provided for @playAgain.
   ///
   /// In en, this message translates to:

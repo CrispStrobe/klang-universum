@@ -749,6 +749,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Noten nach ihrem Buchstaben einfärben — später einfach ausschalten';
 
   @override
+  String get debugModeEnabled => 'Alle Spiele freigeschaltet!';
+
+  @override
+  String get debugUnlockLabel => 'Alle Spiele freischalten (Debug)';
+
+  @override
   String get playAgain => 'Nochmal spielen';
 
   @override

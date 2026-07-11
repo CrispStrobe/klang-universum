@@ -228,6 +228,8 @@
   "showTimerLabel": "Zeit anzeigen",
   "colorScaffoldLabel": "Farbhilfe für Anfänger",
   "colorScaffoldSubtitle": "Noten nach ihrem Buchstaben einfärben — später einfach ausschalten",
+  "debugModeEnabled": "Alle Spiele freigeschaltet!",
+  "debugUnlockLabel": "Alle Spiele freischalten (Debug)",
   "playAgain": "Nochmal spielen",
   "backButton": "Zurück",
   "wholeNote": "Ganze Note",

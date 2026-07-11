@@ -5,6 +5,7 @@
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/note_naming.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
@@ -136,6 +137,17 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (context.watch<DebugService>().unlockAll) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.lock_open),
+                title: Text(l10n.debugUnlockLabel),
+                value: true,
+                onChanged: (v) => context.read<DebugService>().setUnlockAll(v),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Text(
             l10n.statsTitle,

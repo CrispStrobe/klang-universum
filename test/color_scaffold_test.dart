@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
@@ -58,6 +59,7 @@ void main() {
           ChangeNotifierProvider<SriService>.value(
             value: SriService(getNow: () => DateTime(2026, 7, 11)),
           ),
+          ChangeNotifierProvider(create: (_) => DebugService()),
         ],
         child: const MaterialApp(
           localizationsDelegates: [

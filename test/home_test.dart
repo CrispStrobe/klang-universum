@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
@@ -20,6 +21,7 @@ Widget _wrap(Widget child, SriService sri, {ProgressService? progress}) {
       ChangeNotifierProvider<ProgressService>.value(
         value: progress ?? ProgressService(),
       ),
+      ChangeNotifierProvider(create: (_) => DebugService()),
     ],
     child: MaterialApp(
       localizationsDelegates: const [
@@ -49,6 +51,42 @@ void main() {
     expect(find.byIcon(Icons.replay), findsNothing);
     expect(find.byIcon(Icons.local_fire_department), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('seven taps on the title unlock all games (debug)',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final debug = DebugService();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => SettingsService()),
+          ChangeNotifierProvider<SriService>.value(value: sri),
+          Provider<AudioService>(create: (_) => AudioService()),
+          ChangeNotifierProvider(create: (_) => ProgressService()),
+          ChangeNotifierProvider<DebugService>.value(value: debug),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [Locale('en'), Locale('de')],
+          home: HomeScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(debug.unlockAll, isFalse);
+    for (var i = 0; i < 7; i++) {
+      await tester.tap(find.text('KlangUniversum'));
+      await tester.pump();
+    }
+    expect(debug.unlockAll, isTrue);
+    expect(find.text('All games unlocked!'), findsOneWidget);
   });
 
   testWidgets('home shows the practice-streak bar once a game is finished',

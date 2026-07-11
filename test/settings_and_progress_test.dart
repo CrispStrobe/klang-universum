@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/note_naming.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/progress/screens/progress_screen.dart';
@@ -97,6 +98,7 @@ void main() {
         providers: [
           ChangeNotifierProvider<SettingsService>.value(value: settings),
           ChangeNotifierProvider<SriService>.value(value: sri),
+          ChangeNotifierProvider(create: (_) => DebugService()),
         ],
         child: const MaterialApp(
           localizationsDelegates: [
