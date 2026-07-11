@@ -33,7 +33,8 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | 6 | **Harmonik** (T/S/D) | `harmony.function`, `.cadence` | Function Quiz • Cadence Workshop (build T–S–D–T) | 2 built |
 | 7 | **Cello-Ecke** (instrument corner) | `cello.string`, `cello.finger`, `note_reading.tenor` | Which String? (bass-clef note → C/G/D/A) • Finger Quiz (first position, 0–4) • Tenor Clef reading • *later: shifting/positions, string+finger combined ("play this note"), open-string ear tuning* | 3 built |
 | 8 | **Tasten-Ecke** (piano corner) | `keyboard.find`, `.name`, `.ear`, `.melody`, `.chord` | Find the Key (staff→key, labels fade at 2★, black keys at 3★) • Key Quiz (key→name) • Echo Keys (ear→key, C anchor) • Play the Melody (sight-playing) • Chord Grip | 5 built |
-| 9 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
+| 9 | **Liederbuch** (real songs) | `songs.tune` | Song Book — public-domain children's songs as real notation with lyrics (partitura v0.4 MultiSystemView + lyrics), synth playback with a karaoke cursor, tap any note to hear it • Name That Tune (ear) • *later: more songs, sing-along recording?* | 2 built |
+| 10 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
 
 **Instrument corners** are the modular-extension pattern proven by the
 cello module: a data table (string/finger map), instrument-specific games

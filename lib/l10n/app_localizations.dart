@@ -488,6 +488,54 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get myMelodyClear;
 
+  /// No description provided for @moduleSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Song Book'**
+  String get moduleSongs;
+
+  /// No description provided for @moduleSongsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Real songs — read, listen, sing along'**
+  String get moduleSongsSubtitle;
+
+  /// No description provided for @gameSongBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Song Book'**
+  String get gameSongBook;
+
+  /// No description provided for @gameSongBookSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full songs with lyrics and a play-along cursor'**
+  String get gameSongBookSubtitle;
+
+  /// No description provided for @songStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get songStop;
+
+  /// No description provided for @gameTuneQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Name That Tune'**
+  String get gameTuneQuiz;
+
+  /// No description provided for @gameTuneQuizSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize the song from its opening'**
+  String get gameTuneQuizSubtitle;
+
+  /// No description provided for @tuneQuizPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen! Which song starts like this?'**
+  String get tuneQuizPrompt;
+
   /// No description provided for @moduleKeyboard.
   ///
   /// In en, this message translates to:

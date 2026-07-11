@@ -99,6 +99,14 @@ final List<LearningModule> kLearningModules = [
     subtitle: (l) => l.moduleCelloSubtitle,
   ),
   LearningModule(
+    id: 'songs',
+    icon: Icons.library_music,
+    color: const Color(0xFFEC407A),
+    initiallyUnlocked: true,
+    title: (l) => l.moduleSongs,
+    subtitle: (l) => l.moduleSongsSubtitle,
+  ),
+  LearningModule(
     id: 'keyboard',
     icon: Icons.piano,
     color: const Color(0xFF26A69A),

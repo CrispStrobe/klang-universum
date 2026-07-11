@@ -12,7 +12,7 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games (29) |
+| id | Topic | Games (31) + Song Book |
 |---|---|---|
 | `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) |
 | `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 • Place the Note ×2 • Melody Echo (ear↔staff) |
@@ -22,6 +22,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 | `harmony` | Harmonik (T/S/D) | Function Quiz • Cadence Workshop |
 | `composition` | Komponieren (Kompositionstechnik) | Ending Detective (closure) • Question & Answer (phrases) • My Melody (free composing sandbox) |
 | `cello` | Cello-Ecke (instrument corner) | Which String? • Finger Quiz (1st position) • Tenor Clef reading |
+| `songs` | Liederbuch (real songs) | Song Book (play-along cursor + lyrics) • Name That Tune (ear) |
 | `keyboard` | Tasten-Ecke (piano corner) | Find the Key (staff→key) • Key Quiz (key→name) • Echo Keys (ear→key) • Play the Melody (sight-playing) • Chord Grip |
 
 SRI review runners: note-value symbols + note reading (per clef); the home

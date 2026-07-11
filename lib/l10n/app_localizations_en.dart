@@ -223,6 +223,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myMelodyClear => 'Clear';
 
   @override
+  String get moduleSongs => 'Song Book';
+
+  @override
+  String get moduleSongsSubtitle => 'Real songs — read, listen, sing along';
+
+  @override
+  String get gameSongBook => 'Song Book';
+
+  @override
+  String get gameSongBookSubtitle =>
+      'Full songs with lyrics and a play-along cursor';
+
+  @override
+  String get songStop => 'Stop';
+
+  @override
+  String get gameTuneQuiz => 'Name That Tune';
+
+  @override
+  String get gameTuneQuizSubtitle => 'Recognize the song from its opening';
+
+  @override
+  String get tuneQuizPrompt => 'Listen! Which song starts like this?';
+
+  @override
   String get moduleKeyboard => 'Piano Corner';
 
   @override

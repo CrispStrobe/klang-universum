@@ -225,6 +225,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get myMelodyClear => 'Löschen';
 
   @override
+  String get moduleSongs => 'Liederbuch';
+
+  @override
+  String get moduleSongsSubtitle => 'Echte Lieder — lesen, hören, mitsingen';
+
+  @override
+  String get gameSongBook => 'Liederbuch';
+
+  @override
+  String get gameSongBookSubtitle => 'Ganze Lieder mit Text und Mitlese-Cursor';
+
+  @override
+  String get songStop => 'Stopp';
+
+  @override
+  String get gameTuneQuiz => 'Lieder-Quiz';
+
+  @override
+  String get gameTuneQuizSubtitle => 'Erkenne das Lied am Anfang';
+
+  @override
+  String get tuneQuizPrompt => 'Hör zu! Welches Lied fängt so an?';
+
+  @override
   String get moduleKeyboard => 'Tasten-Ecke';
 
   @override

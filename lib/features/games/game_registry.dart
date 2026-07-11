@@ -33,6 +33,8 @@ import 'note_values/note_value_quiz_screen.dart';
 import 'note_values/rhythm_tap_screen.dart';
 import 'harmony/cadence_workshop_screen.dart';
 import 'scales/major_minor_ear_screen.dart';
+import 'songs/song_screen.dart';
+import 'songs/tune_quiz_screen.dart';
 import 'scales/scale_builder_screen.dart';
 import 'scales/scale_detective_screen.dart';
 
@@ -243,6 +245,22 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteReadingTenor,
       subtitle: (l) => l.gameNoteReadingSubtitle,
       builder: (_) => const NoteReadingQuizScreen(clef: Clef.tenor),
+    ),
+  ],
+  'songs': [
+    GameInfo(
+      id: 'song_book',
+      icon: Icons.menu_book,
+      title: (l) => l.gameSongBook,
+      subtitle: (l) => l.gameSongBookSubtitle,
+      builder: (_) => const SongListScreen(),
+    ),
+    GameInfo(
+      id: 'tune_quiz',
+      icon: Icons.hearing,
+      title: (l) => l.gameTuneQuiz,
+      subtitle: (l) => l.gameTuneQuizSubtitle,
+      builder: (_) => const TuneQuizScreen(),
     ),
   ],
   'keyboard': [

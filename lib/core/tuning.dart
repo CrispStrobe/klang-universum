@@ -81,6 +81,7 @@ const Map<String, List<int>> kStarThresholds = {
   // 6 rounds: max 600.
   'key_melody': [100, 400, 550],
   'ending_detective': [100, 600, 900],
+  'tune_quiz': [100, 500, 750],
   // 8 rounds: max 800.
   'question_answer': [100, 500, 750],
 };
