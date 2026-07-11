@@ -381,6 +381,8 @@
   },
   "resultNewBest": "New best time! 🎉",
   "showTimerLabel": "Show your time",
+  "colorScaffoldLabel": "Colour helper for beginners",
+  "colorScaffoldSubtitle": "Tint notes by their letter — turn it off once the staff is familiar",
   "playAgain": "Play again",
   "backButton": "Back",
   "wholeNote": "Whole note",

@@ -12,7 +12,9 @@ import 'dart:math';
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/note_reading/reading_hint.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -143,9 +145,17 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
     return true;
   }
 
+  static const _wholeNote = NoteDuration(DurationBase.whole);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScaffold = context.watch<SettingsService>().colorScaffold;
+    final staffTheme = colorScaffold
+        ? PartituraTheme.kids.copyWith(
+            elementColors: {'target': pitchClassColor(_target.step)},
+          )
+        : PartituraTheme.kids;
     final title = _isReview
         ? l10n.reviewTitle
         : switch (widget.clef) {
@@ -184,13 +194,20 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: StaffView(
-                              score: Score.simple(
+                              score: Score(
                                 clef: widget.clef,
-                                notes:
-                                    '${_target.step.name}${_target.octave}:w',
+                                measures: [
+                                  Measure([
+                                    NoteElement.note(
+                                      _target,
+                                      _wholeNote,
+                                      id: 'target',
+                                    ),
+                                  ]),
+                                ],
                               ),
                               staffSpace: 14,
-                              theme: PartituraTheme.kids,
+                              theme: staffTheme,
                             ),
                           ),
                         ),
@@ -217,7 +234,8 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                         for (final option in _options)
                           FilledButton(
                             style: FilledButton.styleFrom(
-                              backgroundColor: _buttonColor(option),
+                              backgroundColor:
+                                  _buttonColor(option, colorScaffold),
                               textStyle: Theme.of(context)
                                   .textTheme
                                   .titleLarge
@@ -235,8 +253,14 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
     );
   }
 
-  Color? _buttonColor(Step option) {
-    if (_tapped == null) return null;
+  Color? _buttonColor(Step option, bool colorScaffold) {
+    if (_tapped == null) {
+      // Before answering, tint each choice with its pitch-class colour so a
+      // pre-reader can match the coloured notehead to the coloured button.
+      return colorScaffold
+          ? pitchClassColor(option).withValues(alpha: 0.30)
+          : null;
+    }
     if (option == _target.step && _tapped == _target.step) {
       return Colors.green;
     }

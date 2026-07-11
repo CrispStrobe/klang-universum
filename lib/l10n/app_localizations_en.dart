@@ -702,6 +702,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showTimerLabel => 'Show your time';
 
   @override
+  String get colorScaffoldLabel => 'Colour helper for beginners';
+
+  @override
+  String get colorScaffoldSubtitle =>
+      'Tint notes by their letter — turn it off once the staff is familiar';
+
+  @override
   String get playAgain => 'Play again';
 
   @override

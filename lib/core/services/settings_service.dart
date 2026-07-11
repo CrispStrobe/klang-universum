@@ -11,10 +11,12 @@ class SettingsService with ChangeNotifier {
   static const _localeKey = 'app_locale';
   static const _noteNamingKey = 'note_naming';
   static const _showTimerKey = 'show_timer';
+  static const _colorScaffoldKey = 'color_scaffold';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
   bool _showTimer = false;
+  bool _colorScaffold = false;
 
   /// Forced app locale; null follows the system locale.
   Locale? get locale => _locale;
@@ -26,6 +28,12 @@ class SettingsService with ChangeNotifier {
   /// timing shown at all, keeping the no-time-pressure default).
   bool get showTimer => _showTimer;
 
+  /// Pre-reader colour scaffold: when on, noteheads and answer choices in the
+  /// reading games are tinted by pitch class (a Boomwhacker-style aid).
+  /// Off by default and parent-removable — it "peels away" as the child learns
+  /// the staff.
+  bool get colorScaffold => _colorScaffold;
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString(_localeKey);
@@ -33,6 +41,7 @@ class SettingsService with ChangeNotifier {
     final naming = prefs.getString(_noteNamingKey);
     _noteNaming = NoteNaming.values.asNameMap()[naming] ?? NoteNaming.auto;
     _showTimer = prefs.getBool(_showTimerKey) ?? false;
+    _colorScaffold = prefs.getBool(_colorScaffoldKey) ?? false;
     notifyListeners();
   }
 
@@ -55,5 +64,12 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_showTimerKey, value);
+  }
+
+  Future<void> setColorScaffold(bool value) async {
+    _colorScaffold = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_colorScaffoldKey, value);
   }
 }

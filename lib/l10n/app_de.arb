@@ -216,6 +216,8 @@
   },
   "resultNewBest": "Neue Bestzeit! 🎉",
   "showTimerLabel": "Zeit anzeigen",
+  "colorScaffoldLabel": "Farbhilfe für Anfänger",
+  "colorScaffoldSubtitle": "Noten nach ihrem Buchstaben einfärben — später einfach ausschalten",
   "playAgain": "Nochmal spielen",
   "backButton": "Zurück",
   "wholeNote": "Ganze Note",

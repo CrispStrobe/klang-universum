@@ -1322,6 +1322,18 @@ abstract class AppLocalizations {
   /// **'Show your time'**
   String get showTimerLabel;
 
+  /// No description provided for @colorScaffoldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour helper for beginners'**
+  String get colorScaffoldLabel;
+
+  /// No description provided for @colorScaffoldSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tint notes by their letter — turn it off once the staff is familiar'**
+  String get colorScaffoldSubtitle;
+
   /// No description provided for @playAgain.
   ///
   /// In en, this message translates to:

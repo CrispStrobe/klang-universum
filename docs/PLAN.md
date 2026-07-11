@@ -177,8 +177,14 @@ the app category the idea comes from. Tick as shipped.
   undo, and a note-for-note check; SRI `note_reading.dictation.len3`. The
   production sibling of the multiple-choice Melody Echo. (Rhythm dictation is
   already served by Rhythm Echo's hear-then-tap-back loop.)
-- [ ] Removable color scaffold for pre-readers (color + solfège + number +
+- [x] Removable color scaffold for pre-readers (color + solfège + number +
   hand-sign, peeled away as they learn the staff). *(color-coded early-years methods.) M · ♪♪.*
+  **Shipped**: a Settings toggle "Colour helper for beginners" (off by default,
+  parent-removable) tints noteheads and answer choices by pitch class
+  (Boomwhacker-style, shared `note_colors.dart`) in the Reading Quiz and Place
+  the Note, with a colour legend in Settings. Composes with the existing
+  note-naming toggle for the solfège layer. *(Number + Curwen hand-sign layers
+  remain as future extensions of the same scaffold.)*
 - [ ] Play-in-time-to-music lane (tap-along rhythm / falling-note). *(tap-along rhythm games.) M · ♪♪.*
 - [ ] Parent view + multi-child profiles. *(kids' practice apps.) M · ♪♪.*
 

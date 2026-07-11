@@ -2,12 +2,16 @@
 //
 // Language override (system/EN/DE) and a compact SRI statistics summary.
 
-import 'package:flutter/material.dart';
+// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/note_naming.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_colors.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -90,6 +94,46 @@ class SettingsScreen extends StatelessWidget {
               title: Text(l10n.showTimerLabel),
               value: settings.showTimer,
               onChanged: settings.setShowTimer,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: Text(l10n.colorScaffoldLabel),
+                  subtitle: Text(l10n.colorScaffoldSubtitle),
+                  value: settings.colorScaffold,
+                  onChanged: settings.setColorScaffold,
+                ),
+                if (settings.colorScaffold)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        for (final step in Step.values)
+                          Column(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: pitchClassColor(step),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                noteNameFor(context, step),
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 20),

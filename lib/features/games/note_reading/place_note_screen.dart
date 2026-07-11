@@ -12,7 +12,9 @@ import 'dart:math';
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -110,6 +112,7 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScaffold = context.watch<SettingsService>().colorScaffold;
     final theme = PartituraTheme.kids.copyWith(
       elementColors: {
         if (_lastAnswer != null)
@@ -142,6 +145,13 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
                       prompt: l10n
                           .placeNotePrompt(noteNameFor(context, _targetStep)),
                     ),
+                    if (colorScaffold) ...[
+                      const SizedBox(height: 8),
+                      _TargetColorSwatch(
+                        color: pitchClassColor(_targetStep),
+                        label: noteNameFor(context, _targetStep),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
@@ -168,6 +178,36 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
                 ),
               ),
       ),
+    );
+  }
+}
+
+/// A colour chip for the pre-reader scaffold: the target letter and its colour.
+class _TargetColorSwatch extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _TargetColorSwatch({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+      ],
     );
   }
 }

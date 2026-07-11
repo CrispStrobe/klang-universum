@@ -711,6 +711,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get showTimerLabel => 'Zeit anzeigen';
 
   @override
+  String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
+
+  @override
+  String get colorScaffoldSubtitle =>
+      'Noten nach ihrem Buchstaben einfärben — später einfach ausschalten';
+
+  @override
   String get playAgain => 'Nochmal spielen';
 
   @override
