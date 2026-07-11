@@ -12,7 +12,7 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games (26) |
+| id | Topic | Games (29) |
 |---|---|---|
 | `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) |
 | `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 • Place the Note ×2 • Melody Echo (ear↔staff) |
@@ -20,6 +20,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 | `scales` | Tonleitern, Dur/Moll | Scale Detective • Dur oder Moll? (ear) • Scale Builder |
 | `chords` | Akkorde & Intervalle | Chord Quiz • Triad Builder • Interval Detective (ear) |
 | `harmony` | Harmonik (T/S/D) | Function Quiz • Cadence Workshop |
+| `composition` | Komponieren (Kompositionstechnik) | Ending Detective (closure) • Question & Answer (phrases) • My Melody (free composing sandbox) |
 | `cello` | Cello-Ecke (instrument corner) | Which String? • Finger Quiz (1st position) • Tenor Clef reading |
 | `keyboard` | Tasten-Ecke (piano corner) | Find the Key (staff→key) • Key Quiz (key→name) • Echo Keys (ear→key) • Play the Melody (sight-playing) • Chord Grip |
 

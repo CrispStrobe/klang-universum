@@ -169,6 +169,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameCelloFingerQuizSubtitle => 'First position: which finger?';
 
   @override
+  String get moduleComposition => 'Composing';
+
+  @override
+  String get moduleCompositionSubtitle =>
+      'Endings, phrases — and your own melodies';
+
+  @override
+  String get gameEndingDetective => 'Ending Detective';
+
+  @override
+  String get gameEndingDetectiveSubtitle => 'Does the melody sound finished?';
+
+  @override
+  String get endingDetectivePrompt =>
+      'Listen! Does this melody sound finished?';
+
+  @override
+  String get soundsFinished => 'Finished!';
+
+  @override
+  String get soundsOpen => 'Not yet...';
+
+  @override
+  String get gameQuestionAnswer => 'Question & Answer';
+
+  @override
+  String get gameQuestionAnswerSubtitle => 'Find the answer phrase that fits';
+
+  @override
+  String get questionAnswerPrompt =>
+      'The melody asks a question — which answer finishes it?';
+
+  @override
+  String get gameMyMelody => 'My Melody';
+
+  @override
+  String get gameMyMelodySubtitle => 'Compose and play your own tune';
+
+  @override
+  String get myMelodyPrompt => 'Tap the staff to write your melody!';
+
+  @override
+  String get myMelodyFull => 'Your melody is full — play it!';
+
+  @override
+  String get myMelodyPlay => 'Play';
+
+  @override
+  String get myMelodyUndo => 'Undo';
+
+  @override
+  String get myMelodyClear => 'Clear';
+
+  @override
   String get moduleKeyboard => 'Piano Corner';
 
   @override

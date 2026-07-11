@@ -170,6 +170,61 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameCelloFingerQuizSubtitle => 'Erste Lage: welcher Finger?';
 
   @override
+  String get moduleComposition => 'Komponieren';
+
+  @override
+  String get moduleCompositionSubtitle =>
+      'Schlüsse, Phrasen — und eigene Melodien';
+
+  @override
+  String get gameEndingDetective => 'Schluss-Detektiv';
+
+  @override
+  String get gameEndingDetectiveSubtitle => 'Klingt die Melodie fertig?';
+
+  @override
+  String get endingDetectivePrompt => 'Hör zu! Klingt diese Melodie fertig?';
+
+  @override
+  String get soundsFinished => 'Fertig!';
+
+  @override
+  String get soundsOpen => 'Noch nicht...';
+
+  @override
+  String get gameQuestionAnswer => 'Frage & Antwort';
+
+  @override
+  String get gameQuestionAnswerSubtitle => 'Finde die passende Antwort-Phrase';
+
+  @override
+  String get questionAnswerPrompt =>
+      'Die Melodie stellt eine Frage — welche Antwort macht sie fertig?';
+
+  @override
+  String get gameMyMelody => 'Meine Melodie';
+
+  @override
+  String get gameMyMelodySubtitle =>
+      'Komponiere und spiele deine eigene Melodie';
+
+  @override
+  String get myMelodyPrompt =>
+      'Tippe auf die Linien und schreibe deine Melodie!';
+
+  @override
+  String get myMelodyFull => 'Deine Melodie ist voll — spiel sie ab!';
+
+  @override
+  String get myMelodyPlay => 'Abspielen';
+
+  @override
+  String get myMelodyUndo => 'Rückgängig';
+
+  @override
+  String get myMelodyClear => 'Löschen';
+
+  @override
   String get moduleKeyboard => 'Tasten-Ecke';
 
   @override

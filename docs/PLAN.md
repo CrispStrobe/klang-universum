@@ -32,7 +32,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | 5 | **Akkorde & Intervalle** | `chords.triad`, later `chords.quality`, `chords.interval` | **Chord Quiz** (name a rendered triad) • *Triad Builder (drag, next phase)* • *Interval ear training (audio, later)* | 1 this phase |
 | 6 | **Harmonik** (T/S/D) | `harmony.function`, later `harmony.cadence` | **Function Quiz** (a triad in a labeled key — Tonika, Subdominante or Dominante?) • *Cadence Builder (order T–S–D–T, next phase)* | 1 this phase |
 | 7 | **Cello-Ecke** (instrument corner) | `cello.string`, `cello.finger`, `note_reading.tenor` | Which String? (bass-clef note → C/G/D/A) • Finger Quiz (first position, 0–4) • Tenor Clef reading • *later: shifting/positions, string+finger combined ("play this note"), open-string ear tuning* | 3 built |
-| 8 | *Komposition (later)* | `composition.*` | Melody completion (finish the phrase), question–answer phrases, cadence-based accompaniment | design only |
+| 8 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
 
 **Instrument corners** are the modular-extension pattern proven by the
 cello module: a data table (string/finger map), instrument-specific games

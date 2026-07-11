@@ -11,6 +11,9 @@ import '../../l10n/app_localizations.dart';
 import 'cello/cello_finger_quiz_screen.dart';
 import 'cello/cello_string_quiz_screen.dart';
 import 'chords/chord_quiz_screen.dart';
+import 'composition/ending_detective_screen.dart';
+import 'composition/my_melody_screen.dart';
+import 'composition/question_answer_screen.dart';
 import 'chords/interval_ear_screen.dart';
 import 'chords/triad_builder_screen.dart';
 import 'harmony/harmony_quiz_screen.dart';
@@ -194,6 +197,29 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCadenceWorkshop,
       subtitle: (l) => l.gameCadenceWorkshopSubtitle,
       builder: (_) => const CadenceWorkshopScreen(),
+    ),
+  ],
+  'composition': [
+    GameInfo(
+      id: 'ending_detective',
+      icon: Icons.hearing,
+      title: (l) => l.gameEndingDetective,
+      subtitle: (l) => l.gameEndingDetectiveSubtitle,
+      builder: (_) => const EndingDetectiveScreen(),
+    ),
+    GameInfo(
+      id: 'question_answer',
+      icon: Icons.question_answer,
+      title: (l) => l.gameQuestionAnswer,
+      subtitle: (l) => l.gameQuestionAnswerSubtitle,
+      builder: (_) => const QuestionAnswerScreen(),
+    ),
+    GameInfo(
+      id: 'my_melody',
+      icon: Icons.edit_note,
+      title: (l) => l.gameMyMelody,
+      subtitle: (l) => l.gameMyMelodySubtitle,
+      builder: (_) => const MyMelodyScreen(),
     ),
   ],
   'cello': [

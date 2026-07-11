@@ -386,6 +386,108 @@ abstract class AppLocalizations {
   /// **'First position: which finger?'**
   String get gameCelloFingerQuizSubtitle;
 
+  /// No description provided for @moduleComposition.
+  ///
+  /// In en, this message translates to:
+  /// **'Composing'**
+  String get moduleComposition;
+
+  /// No description provided for @moduleCompositionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Endings, phrases — and your own melodies'**
+  String get moduleCompositionSubtitle;
+
+  /// No description provided for @gameEndingDetective.
+  ///
+  /// In en, this message translates to:
+  /// **'Ending Detective'**
+  String get gameEndingDetective;
+
+  /// No description provided for @gameEndingDetectiveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Does the melody sound finished?'**
+  String get gameEndingDetectiveSubtitle;
+
+  /// No description provided for @endingDetectivePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen! Does this melody sound finished?'**
+  String get endingDetectivePrompt;
+
+  /// No description provided for @soundsFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished!'**
+  String get soundsFinished;
+
+  /// No description provided for @soundsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet...'**
+  String get soundsOpen;
+
+  /// No description provided for @gameQuestionAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Question & Answer'**
+  String get gameQuestionAnswer;
+
+  /// No description provided for @gameQuestionAnswerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the answer phrase that fits'**
+  String get gameQuestionAnswerSubtitle;
+
+  /// No description provided for @questionAnswerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'The melody asks a question — which answer finishes it?'**
+  String get questionAnswerPrompt;
+
+  /// No description provided for @gameMyMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'My Melody'**
+  String get gameMyMelody;
+
+  /// No description provided for @gameMyMelodySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compose and play your own tune'**
+  String get gameMyMelodySubtitle;
+
+  /// No description provided for @myMelodyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the staff to write your melody!'**
+  String get myMelodyPrompt;
+
+  /// No description provided for @myMelodyFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Your melody is full — play it!'**
+  String get myMelodyFull;
+
+  /// No description provided for @myMelodyPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get myMelodyPlay;
+
+  /// No description provided for @myMelodyUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get myMelodyUndo;
+
+  /// No description provided for @myMelodyClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get myMelodyClear;
+
   /// No description provided for @moduleKeyboard.
   ///
   /// In en, this message translates to:
