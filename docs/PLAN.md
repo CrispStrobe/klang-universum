@@ -296,3 +296,40 @@ training. *(Generic names only — no product names in code or docs.)*
   sequence/beat to keep going at once (piano-hands coordination). *M–L, advanced.*
 - [ ] **Move-to-the-beat caller** — a move/gesture is called on each beat; perform
   it in time (rhythm + reaction). *M.*
+
+### New minigame concepts (original — not from the surveys)
+
+Fresh ideas that fit the machinery we already have (partitura notation, pure-Dart
+audio, the SM-2 engine, the falling/connect/reaction engines) and target skills
+the curriculum doesn't yet drill. Ordered by value ÷ effort; effort S/M/L, fit ♪–♪♪♪.
+
+- [ ] **Ledger Leap** — the ledger-line drill kids trip on: a note sits above/below
+  the staff; tap how many ledger lines (or its letter). Isolates the middle-C /
+  high-A neighbourhood that reading games only brush. SRI `note_reading.*`. *S · ♪♪♪.*
+- [ ] **Key Signature Detective** — how many sharps/flats, and which key? Read a key
+  signature and name it, with a fading circle-of-fifths hint. New skill
+  `key_sig.read` — nothing covers signatures yet. *S · ♪♪♪.*
+- [ ] **Note Whack** — whack-a-mole: noteheads pop up around the staff, a target
+  name is called, tap the matching one before it ducks. Reading under gentle
+  reaction pressure; reuses the reading pools. SRI `note_reading.*`. *S–M · ♪♪♪.*
+- [ ] **Odd One Out** — three notes/chords (heard or shown); one is different (out of
+  key, wrong quality, higher). Tap it. A discrimination drill that plugs into every
+  module (reading, chords, scales). *S · ♪♪.*
+- [ ] **Interval Ladder** — climb a ladder: from the current note, pick the note a
+  called interval above/below (on the staff or by ear). Interval *construction*, not
+  just recognition. SRI `chords.interval.build`. *S–M · ♪♪.*
+- [ ] **Staff Runner** — endless generative sight-reading at kid scale: the staff
+  scrolls and each note must be named/played as it hits the read-line; speeds up,
+  ends after a few misses. A stepping-stone to the "generative sight-reading" big
+  swing. SRI `note_reading.*`. *M · ♪♪♪.*
+- [ ] **Chord Grip Hero** — Falling Keys for chords: a chord shape falls onto the
+  piano; press all its keys together before it lands. Extends the falling engine to
+  `keyboard.chord`. *M · ♪♪.*
+- [ ] **Dynamics & Tempo Charades** — hear a phrase, pick its marking: loud/soft
+  (p–f) or fast/slow (Adagio–Presto). Introduces expressive vocabulary the app
+  doesn't touch. SRI `expression.hear`. *S · ♪♪.*
+- [ ] **Note Snake** — a snake on a staff grid eats the note matching a called
+  letter; a wrong note ends the run. Reading + a classic arcade loop. *M · ♪♪.*
+- [ ] **Recital Mode** — a progression meta, not a new mechanic: string 3–5 *due*
+  minigames into a themed "recital" with one combined score and a curtain-call star
+  tally. Wraps the SM-2 review in a set-piece that boosts retention. *M · ♪♪♪.*
