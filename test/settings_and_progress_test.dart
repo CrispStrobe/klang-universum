@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/note_naming.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/progress/screens/progress_screen.dart';
@@ -30,6 +31,18 @@ void main() {
     final again = SettingsService();
     await again.load();
     expect(again.locale, isNull);
+  });
+
+  test('SettingsService persists the note-naming convention', () async {
+    final settings = SettingsService();
+    await settings.load();
+    expect(settings.noteNaming, NoteNaming.auto); // default
+
+    await settings.setNoteNaming(NoteNaming.solfege);
+
+    final reloaded = SettingsService();
+    await reloaded.load();
+    expect(reloaded.noteNaming, NoteNaming.solfege);
   });
 
   testWidgets('progress screen shows boxes and module mastery', (tester) async {

@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 Widget _wrap(Widget child, SriService sri) {
   return MultiProvider(
     providers: [
+      ChangeNotifierProvider(create: (_) => SettingsService()),
       ChangeNotifierProvider<SriService>.value(value: sri),
       Provider<AudioService>(create: (_) => AudioService()),
       ChangeNotifierProvider(create: (_) => ProgressService()),

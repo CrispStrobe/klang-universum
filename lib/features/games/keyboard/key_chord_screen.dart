@@ -153,7 +153,7 @@ class _KeyChordScreenState extends State<KeyChordScreen> with QuizRoundMixin {
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.keyChordPrompt(noteName(l10n, _root)),
+                      prompt: l10n.keyChordPrompt(noteNameFor(context, _root)),
                     ),
                     const SizedBox(height: 12),
                     Expanded(

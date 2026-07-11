@@ -139,7 +139,8 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.placeNotePrompt(noteName(l10n, _targetStep)),
+                      prompt: l10n
+                          .placeNotePrompt(noteNameFor(context, _targetStep)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(

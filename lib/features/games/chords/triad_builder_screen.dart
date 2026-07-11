@@ -159,7 +159,7 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.triadBuilderPrompt(
-                        noteName(l10n, _root.step),
+                        noteNameFor(context, _root.step),
                       ),
                     ),
                     const SizedBox(height: 16),

@@ -7,7 +7,6 @@
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
-import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show Step;
 
 class PianoKeyboard extends StatelessWidget {
@@ -53,8 +52,6 @@ class PianoKeyboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final keyWidth = constraints.maxWidth / whiteKeyCount;
@@ -83,7 +80,7 @@ class PianoKeyboard extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: showLabels
                             ? Text(
-                                noteName(l10n, _whiteSteps[i % 7]),
+                                noteNameFor(context, _whiteSteps[i % 7]),
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium

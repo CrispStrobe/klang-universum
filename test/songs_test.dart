@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/songs/chord_sheet_screen.dart';
 import 'package:klang_universum/features/games/songs/import/chordpro.dart';
@@ -120,6 +121,7 @@ const _xml = '''
 Widget _wrap(Widget child, SriService sri, {UserSongsService? songs}) {
   return MultiProvider(
     providers: [
+      ChangeNotifierProvider(create: (_) => SettingsService()),
       ChangeNotifierProvider<SriService>.value(value: sri),
       Provider<AudioService>(create: (_) => AudioService()),
       ChangeNotifierProvider(create: (_) => ProgressService()),

@@ -3,6 +3,7 @@
 // Language override (system/EN/DE) and a compact SRI statistics summary.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/note_naming.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -46,6 +47,38 @@ class SettingsScreen extends StatelessWidget {
                   const RadioListTile<String>(
                     title: Text('Deutsch'),
                     value: 'de',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            l10n.noteNamingLabel,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Card(
+            child: RadioGroup<NoteNaming>(
+              groupValue: settings.noteNaming,
+              onChanged: (naming) =>
+                  settings.setNoteNaming(naming ?? NoteNaming.auto),
+              child: Column(
+                children: [
+                  RadioListTile<NoteNaming>(
+                    title: Text(l10n.noteNamingAuto),
+                    value: NoteNaming.auto,
+                  ),
+                  RadioListTile<NoteNaming>(
+                    title: Text(l10n.noteNamingGerman),
+                    value: NoteNaming.germanH,
+                  ),
+                  RadioListTile<NoteNaming>(
+                    title: Text(l10n.noteNamingEnglish),
+                    value: NoteNaming.english,
+                  ),
+                  RadioListTile<NoteNaming>(
+                    title: Text(l10n.noteNamingSolfege),
+                    value: NoteNaming.solfege,
                   ),
                 ],
               ),

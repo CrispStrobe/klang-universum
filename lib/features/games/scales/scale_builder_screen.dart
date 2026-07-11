@@ -148,7 +148,8 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.scaleBuilderPrompt(noteName(l10n, _tonic)),
+                      prompt:
+                          l10n.scaleBuilderPrompt(noteNameFor(context, _tonic)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(

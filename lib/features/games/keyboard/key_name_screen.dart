@@ -147,7 +147,7 @@ class _KeyNameScreenState extends State<KeyNameScreen> with QuizRoundMixin {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             onPressed: () => _onAnswer(option),
-                            child: Text(noteName(l10n, option)),
+                            child: Text(noteNameFor(context, option)),
                           ),
                       ],
                     ),

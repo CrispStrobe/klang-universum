@@ -266,6 +266,36 @@ abstract class AppLocalizations {
   /// **'System default'**
   String get systemDefault;
 
+  /// No description provided for @noteNamingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note names'**
+  String get noteNamingLabel;
+
+  /// No description provided for @noteNamingAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow language'**
+  String get noteNamingAuto;
+
+  /// No description provided for @noteNamingGerman.
+  ///
+  /// In en, this message translates to:
+  /// **'German (C D E F G A H)'**
+  String get noteNamingGerman;
+
+  /// No description provided for @noteNamingEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English (C D E F G A B)'**
+  String get noteNamingEnglish;
+
+  /// No description provided for @noteNamingSolfege.
+  ///
+  /// In en, this message translates to:
+  /// **'Solfège (Do Re Mi Fa Sol La Si)'**
+  String get noteNamingSolfege;
+
   /// No description provided for @statsTitle.
   ///
   /// In en, this message translates to:

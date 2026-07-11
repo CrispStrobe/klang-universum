@@ -180,7 +180,7 @@ class _CadenceWorkshopScreenState extends State<CadenceWorkshopScreen>
                                 l10n,
                                 _sequence[_stepIndex],
                               ),
-                              l10n.keyMajorName(noteName(l10n, _tonic)),
+                              l10n.keyMajorName(noteNameFor(context, _tonic)),
                             ),
                     ),
                     const SizedBox(height: 12),

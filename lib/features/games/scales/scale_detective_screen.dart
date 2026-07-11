@@ -166,7 +166,8 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.scaleDetectivePrompt(noteName(l10n, _tonic)),
+                      prompt: l10n
+                          .scaleDetectivePrompt(noteNameFor(context, _tonic)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(

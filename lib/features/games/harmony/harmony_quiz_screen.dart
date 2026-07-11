@@ -147,7 +147,7 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.harmonyPrompt(
-                        l10n.keyMajorName(noteName(l10n, _tonic)),
+                        l10n.keyMajorName(noteNameFor(context, _tonic)),
                       ),
                     ),
                     const SizedBox(height: 16),

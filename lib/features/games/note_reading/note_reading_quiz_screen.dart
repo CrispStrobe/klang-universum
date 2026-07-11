@@ -206,7 +206,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             onPressed: () => _onAnswer(option),
-                            child: Text(noteName(l10n, option)),
+                            child: Text(noteNameFor(context, option)),
                           ),
                       ],
                     ),

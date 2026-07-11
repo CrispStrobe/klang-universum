@@ -108,6 +108,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemDefault => 'System default';
 
   @override
+  String get noteNamingLabel => 'Note names';
+
+  @override
+  String get noteNamingAuto => 'Follow language';
+
+  @override
+  String get noteNamingGerman => 'German (C D E F G A H)';
+
+  @override
+  String get noteNamingEnglish => 'English (C D E F G A B)';
+
+  @override
+  String get noteNamingSolfege => 'Solfège (Do Re Mi Fa Sol La Si)';
+
+  @override
   String get statsTitle => 'Learning statistics';
 
   @override

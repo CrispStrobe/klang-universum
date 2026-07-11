@@ -108,6 +108,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get systemDefault => 'Systemstandard';
 
   @override
+  String get noteNamingLabel => 'Notennamen';
+
+  @override
+  String get noteNamingAuto => 'Der Sprache folgen';
+
+  @override
+  String get noteNamingGerman => 'Deutsch (C D E F G A H)';
+
+  @override
+  String get noteNamingEnglish => 'Englisch (C D E F G A B)';
+
+  @override
+  String get noteNamingSolfege => 'Solfège (Do Re Mi Fa Sol La Si)';
+
+  @override
   String get statsTitle => 'Lernstatistik';
 
   @override

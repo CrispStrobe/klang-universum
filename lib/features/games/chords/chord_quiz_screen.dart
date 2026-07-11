@@ -186,7 +186,7 @@ class _ChordQuizScreenState extends State<ChordQuizScreen> with QuizRoundMixin {
                             ),
                             onPressed: () => _onAnswer(option),
                             child: Text(
-                              l10n.majorChordName(noteName(l10n, option)),
+                              l10n.majorChordName(noteNameFor(context, option)),
                             ),
                           ),
                       ],
