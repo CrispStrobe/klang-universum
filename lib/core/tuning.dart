@@ -93,8 +93,8 @@ const Map<String, List<int>> kStarThresholds = {
   'echo_sequence': [100, 400, 700],
   // Follow the Conductor (conducting patterns): 26 beats, Perfect 20 / Good 10.
   'command_caller': [120, 300, 460],
-  // Beat Runner: 16 beats, Perfect 20 / Good 10 × combo multiplier (1..4).
-  'beat_runner': [120, 320, 520],
+  // Beat Runner (rhythm patterns): ~14-22 notes, Perfect 20 / Good 10.
+  'beat_runner': [100, 240, 400],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
   'guitar_string_quiz': [100, 600, 900],

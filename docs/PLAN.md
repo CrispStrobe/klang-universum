@@ -190,13 +190,14 @@ the app category the idea comes from. Tick as shipped.
   note-naming toggle for the solfège layer. *(Number + Curwen hand-sign layers
   remain as future extensions of the same scaffold.)*
 - [x] Play-in-time-to-music lane (tap-along rhythm / falling-note). *(tap-along rhythm games.) M · ♪♪.*
-  **Shipped**: **Beat Runner** (Takte) — markers fall and cross a glowing
-  hit-line exactly on each beat of a steady bass groove; tap in time. The
-  game's own Ticker is the master clock, so groove/markers/tap-timing never
-  drift apart (no audio-latency sync problem). Taps score Perfect/Good by
-  accuracy, with a rising-pentatonic sparkle on a hit; a no-fail toy (every run
-  finishes), scored like Sound Echo. *(Extends to tempo ramps and off-beat
-  syncopation patterns.)*
+  **Shipped**: **Beat Runner** (Takte) — a rhythm-reading lane. Note-value
+  markers (whole/half/quarter/eighth) fall spaced by their REAL durations — a
+  half note takes twice as long to arrive as a quarter — and the child taps each
+  as it crosses the hit-line, over a steady click (accented on the downbeat). So
+  a good run means the child has read and performed a real rhythm, not just
+  tapped a pulse. Ticker master clock (no drift), space bar/tap, Perfect/Good by
+  accuracy; a no-fail toy. *(Reworked from the original flat-metronome version,
+  which taught nothing. Extends to tempo ramps and syncopation.)*
 - [ ] Parent view + multi-child profiles. *(kids' practice apps.) M · ♪♪.*
 
 **German-market moat — the thin-market opening**

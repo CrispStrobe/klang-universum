@@ -1,56 +1,84 @@
 // lib/features/games/measures/beat_runner_screen.dart
 //
-// "Im Takt" / "Beat Runner" — the tap-along rhythm lane (docs/PLAN.md
-// opportunity backlog: "play-in-time-to-music lane"). Markers fall down a lane
-// and cross a glowing hit-line exactly on each beat; the child taps in time.
-// The game's own Ticker is the master clock, so the groove (a bass note per
-// beat), the falling markers, and the tap timing all reference one clock — no
-// audio-latency drift. Taps score Perfect / Good by accuracy; a no-fail toy
-// (every run finishes), scored like Sound Echo.
+// "Im Takt" / "Beat Runner" — read and play a rhythm in time. Reworked from a
+// flat metronome (tapping a steady pulse taught nothing) into a rhythm-reading
+// lane: note-value markers fall spaced by their REAL durations — a half note
+// takes twice as long to arrive as a quarter, an eighth half as long — and the
+// child taps each as it crosses the hit-line, over a steady click. So a good
+// run means the child has read and performed the rhythm.
+//
+// The game's own Ticker is the master clock, so the click, the falling markers
+// and the tap timing all reference one clock — no audio-latency drift. Taps
+// score Perfect/Good by accuracy; a no-fail toy scored like Sound Echo.
+
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:provider/provider.dart';
 
 class BeatRunnerScreen extends StatefulWidget {
   const BeatRunnerScreen({super.key});
 
-  static const _kBeats = 16;
-  static const _kBeatMs = 650; // ~92 BPM
-  static const _kTravelMs = 1300; // a marker is airborne for two beats
-  static const _kLeadMs = _kTravelMs + 700; // time of beat 0
-  static const _kHitWindowMs = 180; // a tap this close counts
-  static const _kPerfectMs = 75; // …this close is Perfect
+  static const _beatMs = 700; // ~86 BPM
+  static const _travelMs = 1400; // a marker is airborne for two beats
+  static const _leadMs = _travelMs + 500;
+  static const _hitWindowMs = 200;
+  static const _perfectMs = 90;
 
-  /// A steady two-bar bass groove (C–G–F–G), one note per beat.
-  static const _kBass = [48, 48, 55, 55, 53, 53, 55, 55];
+  // One-measure 4/4 rhythm patterns (durations in beats; each sums to 4).
+  static const _patterns = <List<double>>[
+    [1, 1, 1, 1],
+    [2, 1, 1],
+    [1, 1, 2],
+    [2, 2],
+    [1, 0.5, 0.5, 1, 1],
+    [0.5, 0.5, 1, 1, 1],
+    [1, 1, 0.5, 0.5, 1],
+  ];
 
-  /// Bright notes played on a good hit — a rising pentatonic sparkle.
-  static const _kSparkle = [72, 74, 76, 79, 81, 84];
+  static const _measures = 4;
+
+  static String _glyphFor(double beats) {
+    if (beats >= 4) return Smufl.wholeNote;
+    if (beats >= 2) return Smufl.halfNote;
+    if (beats >= 1) return Smufl.quarterNote;
+    return Smufl.eighthNote;
+  }
 
   @visibleForTesting
   static const padKey = ValueKey('beat_pad');
-
-  /// Ticker time (ms) at which beat [k] lands on the hit-line.
-  static int beatTimeMs(int k) => _kLeadMs + k * _kBeatMs;
 
   @override
   State<BeatRunnerScreen> createState() => _BeatRunnerScreenState();
 }
 
-/// Typed window into the game for widget tests (the state class is private).
+/// A note in the falling rhythm.
+class _RhythmNote {
+  _RhythmNote(this.timeMs, this.glyph, this.column);
+  final int timeMs; // when it lands on the hit-line
+  final String glyph;
+  final int column; // gentle horizontal offset so equal onsets don't overlap
+  bool resolved = false;
+}
+
 @visibleForTesting
 abstract interface class BeatRunnerTester {
   int get score;
   int get hits;
+  int get noteCount;
   bool get finished;
-  int get nowMs;
+
+  /// Landing time (ms) of note [i] — lets tests tap it on the beat.
+  int noteTimeMs(int i);
 }
 
 enum _Judgement { perfect, good, miss }
@@ -58,30 +86,53 @@ enum _Judgement { perfect, good, miss }
 class _BeatRunnerScreenState extends State<BeatRunnerScreen>
     with SingleTickerProviderStateMixin
     implements BeatRunnerTester {
+  final _random = Random();
   late final Ticker _ticker = createTicker(_onTick);
   final ValueNotifier<int> _now = ValueNotifier<int>(0);
 
-  final List<bool> _resolved =
-      List<bool>.filled(BeatRunnerScreen._kBeats, false);
+  late final List<_RhythmNote> _notes = _buildRhythm();
+  late final int _totalBeats;
 
   int _score = 0;
   int _hits = 0;
-  int _combo = 0;
-  int _lastBeatPlayed = -1;
+  int _lastBeatClicked = -1;
   bool _finished = false;
 
   _Judgement? _lastJudgement;
   int _judgementUntil = 0;
   NoteMascotMood _mascot = NoteMascotMood.idle;
 
+  List<_RhythmNote> _buildRhythm() {
+    final notes = <_RhythmNote>[];
+    var beatCursor = 0.0;
+    var col = 0;
+    for (var m = 0; m < BeatRunnerScreen._measures; m++) {
+      final pattern = BeatRunnerScreen
+          ._patterns[_random.nextInt(BeatRunnerScreen._patterns.length)];
+      for (final beats in pattern) {
+        final timeMs = BeatRunnerScreen._leadMs +
+            (beatCursor * BeatRunnerScreen._beatMs).round();
+        notes.add(
+          _RhythmNote(timeMs, BeatRunnerScreen._glyphFor(beats), col % 3),
+        );
+        col++;
+        beatCursor += beats;
+      }
+    }
+    _totalBeats = beatCursor.round();
+    return notes;
+  }
+
   @override
   int get score => _score;
   @override
   int get hits => _hits;
   @override
+  int get noteCount => _notes.length;
+  @override
   bool get finished => _finished;
   @override
-  int get nowMs => _now.value;
+  int noteTimeMs(int i) => _notes[i].timeMs;
 
   @override
   void initState() {
@@ -96,35 +147,28 @@ class _BeatRunnerScreenState extends State<BeatRunnerScreen>
     super.dispose();
   }
 
-  double _progress(int k, int now) {
-    final land = BeatRunnerScreen.beatTimeMs(k);
-    return (now - (land - BeatRunnerScreen._kTravelMs)) /
-        BeatRunnerScreen._kTravelMs;
-  }
+  double _progress(_RhythmNote n, int now) =>
+      (now - (n.timeMs - BeatRunnerScreen._travelMs)) /
+      BeatRunnerScreen._travelMs;
 
   void _onTick(Duration elapsed) {
     if (_finished) return;
     final now = elapsed.inMilliseconds;
 
-    // Play the groove: one bass note as each beat lands.
-    while (_lastBeatPlayed + 1 < BeatRunnerScreen._kBeats &&
-        now >= BeatRunnerScreen.beatTimeMs(_lastBeatPlayed + 1)) {
-      _lastBeatPlayed++;
-      context.read<AudioService>().playMidiNote(
-            BeatRunnerScreen
-                ._kBass[_lastBeatPlayed % BeatRunnerScreen._kBass.length],
-            ms: 240,
-          );
+    // A steady click on every beat, accented on the bar's downbeat.
+    while (_lastBeatClicked + 1 < _totalBeats &&
+        now >=
+            BeatRunnerScreen._leadMs +
+                (_lastBeatClicked + 1) * BeatRunnerScreen._beatMs) {
+      _lastBeatClicked++;
+      final down = _lastBeatClicked % 4 == 0;
+      context.read<AudioService>().playMidiNote(down ? 84 : 72, ms: 90);
     }
 
-    // Retire beats whose window has closed uncaught → a miss.
     var missed = false;
-    for (var k = 0; k < BeatRunnerScreen._kBeats; k++) {
-      if (!_resolved[k] &&
-          now >
-              BeatRunnerScreen.beatTimeMs(k) + BeatRunnerScreen._kHitWindowMs) {
-        _resolved[k] = true;
-        _combo = 0;
+    for (final n in _notes) {
+      if (!n.resolved && now > n.timeMs + BeatRunnerScreen._hitWindowMs) {
+        n.resolved = true;
         _lastJudgement = _Judgement.miss;
         _judgementUntil = now + 350;
         _mascot = NoteMascotMood.oops;
@@ -135,46 +179,37 @@ class _BeatRunnerScreenState extends State<BeatRunnerScreen>
     _now.value = now;
     if (missed) setState(() {});
 
-    if (now >
-        BeatRunnerScreen.beatTimeMs(BeatRunnerScreen._kBeats - 1) +
-            BeatRunnerScreen._kHitWindowMs +
-            400) {
+    if (now > _notes.last.timeMs + BeatRunnerScreen._hitWindowMs + 500) {
       _finish();
     }
   }
-
-  int get _multiplier => (1 + _combo ~/ 4).clamp(1, 4);
 
   void _onTap() {
     if (_finished) return;
     final now = _now.value;
 
-    // Nearest unresolved beat within the hit window.
     var best = -1;
-    var bestDelta = BeatRunnerScreen._kHitWindowMs + 1;
-    for (var k = 0; k < BeatRunnerScreen._kBeats; k++) {
-      if (_resolved[k]) continue;
-      final d = (now - BeatRunnerScreen.beatTimeMs(k)).abs();
+    var bestDelta = BeatRunnerScreen._hitWindowMs + 1;
+    for (var i = 0; i < _notes.length; i++) {
+      if (_notes[i].resolved) continue;
+      final d = (now - _notes[i].timeMs).abs();
       if (d < bestDelta) {
         bestDelta = d;
-        best = k;
+        best = i;
       }
     }
-    if (best < 0) return; // off-beat tap — no marker to catch, no penalty
+    if (best < 0) return;
 
-    _resolved[best] = true;
+    _notes[best].resolved = true;
     _hits++;
-    _combo++;
-    final perfect = bestDelta <= BeatRunnerScreen._kPerfectMs;
-    _score += (perfect ? 20 : 10) * _multiplier;
+    final perfect = bestDelta <= BeatRunnerScreen._perfectMs;
+    _score += perfect ? 20 : 10;
     _lastJudgement = perfect ? _Judgement.perfect : _Judgement.good;
     _judgementUntil = now + 350;
     _mascot = NoteMascotMood.happy;
-    context.read<AudioService>().playMidiNote(
-          BeatRunnerScreen
-              ._kSparkle[(_hits - 1) % BeatRunnerScreen._kSparkle.length],
-          ms: 260,
-        );
+    context
+        .read<AudioService>()
+        .playMidiNote(67, ms: 150); // a wood-block-ish hit
     setState(() {});
   }
 
@@ -192,13 +227,12 @@ class _BeatRunnerScreenState extends State<BeatRunnerScreen>
 
   void _restart() {
     _ticker.stop();
-    for (var k = 0; k < _resolved.length; k++) {
-      _resolved[k] = false;
+    for (final n in _notes) {
+      n.resolved = false;
     }
     _score = 0;
     _hits = 0;
-    _combo = 0;
-    _lastBeatPlayed = -1;
+    _lastBeatClicked = -1;
     _lastJudgement = null;
     _finished = false;
     _mascot = NoteMascotMood.idle;
@@ -207,9 +241,20 @@ class _BeatRunnerScreenState extends State<BeatRunnerScreen>
     _ticker.start();
   }
 
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.space ||
+        event.logicalKey == LogicalKeyboardKey.enter) {
+      _onTap();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.gameBeatRunner)),
@@ -220,150 +265,171 @@ class _BeatRunnerScreenState extends State<BeatRunnerScreen>
                 score: _score,
                 onRestart: _restart,
               )
-            : Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-                    child: Row(
-                      children: [
-                        NoteMascot(mood: _mascot, size: 30),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.star, color: Colors.amber, size: 22),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$_score',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const Spacer(),
-                        Text(
-                          l10n.beatRunnerHint,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: GestureDetector(
-                      key: BeatRunnerScreen.padKey,
-                      behavior: HitTestBehavior.opaque,
-                      onTapDown: (_) => _onTap(),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) =>
-                            ValueListenableBuilder<int>(
-                          valueListenable: _now,
-                          builder: (context, now, _) => CustomPaint(
-                            size: constraints.biggest,
-                            painter: _BeatPainter(
-                              now: now,
-                              progress: _progress,
-                              resolved: _resolved,
-                              beats: BeatRunnerScreen._kBeats,
-                              judgement:
-                                  now < _judgementUntil ? _lastJudgement : null,
-                              scheme: Theme.of(context).colorScheme,
-                              perfectLabel: l10n.beatPerfect,
-                              goodLabel: l10n.beatGood,
-                              missLabel: l10n.beatMiss,
-                            ),
+            : Focus(
+                autofocus: true,
+                onKeyEvent: _onKey,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                      child: Row(
+                        children: [
+                          NoteMascot(mood: _mascot, size: 30),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.star, color: Colors.amber, size: 22),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$_score',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
+                          const Spacer(),
+                          Text(
+                            l10n.beatRunnerHint,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        key: BeatRunnerScreen.padKey,
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: (_) => _onTap(),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final size = constraints.biggest;
+                            final hitY = size.height * 0.82;
+                            return ValueListenableBuilder<int>(
+                              valueListenable: _now,
+                              builder: (context, now, _) {
+                                return Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    // The hit-line.
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      top: hitY,
+                                      child: Container(
+                                        height: 3,
+                                        color: scheme.primary,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      left: size.width / 2 - 30,
+                                      top: hitY - 30,
+                                      child: _TargetRing(color: scheme.primary),
+                                    ),
+                                    for (final n in _notes)
+                                      if (_visible(n, now))
+                                        _fallingMarker(
+                                          n,
+                                          size,
+                                          hitY,
+                                          now,
+                                          scheme,
+                                        ),
+                                    if (now < _judgementUntil &&
+                                        _lastJudgement != null)
+                                      Positioned(
+                                        left: 0,
+                                        right: 0,
+                                        top: hitY - 92,
+                                        child: _JudgementText(
+                                          judgement: _lastJudgement!,
+                                          l10n: l10n,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+      ),
+    );
+  }
+
+  bool _visible(_RhythmNote n, int now) {
+    final p = _progress(n, now);
+    if (p < 0 || p > 1.3) return false;
+    if (n.resolved && p > 1.0) return false;
+    return true;
+  }
+
+  Widget _fallingMarker(
+    _RhythmNote n,
+    Size size,
+    double hitY,
+    int now,
+    ColorScheme scheme,
+  ) {
+    final p = _progress(n, now);
+    const markerSize = 56.0;
+    final cx = size.width / 2 + (n.column - 1) * 4.0;
+    final y = p * hitY;
+    return Positioned(
+      left: cx - markerSize / 2,
+      top: y - markerSize / 2,
+      width: markerSize,
+      height: markerSize,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: n.resolved ? Colors.green.shade200 : scheme.tertiaryContainer,
+          shape: BoxShape.circle,
+          border: Border.all(color: scheme.tertiary, width: 2),
+        ),
+        child: Center(
+          child:
+              MusicGlyph(n.glyph, size: 30, color: scheme.onTertiaryContainer),
+        ),
       ),
     );
   }
 }
 
-class _BeatPainter extends CustomPainter {
-  _BeatPainter({
-    required this.now,
-    required this.progress,
-    required this.resolved,
-    required this.beats,
-    required this.judgement,
-    required this.scheme,
-    required this.perfectLabel,
-    required this.goodLabel,
-    required this.missLabel,
-  });
-
-  final int now;
-  final double Function(int, int) progress;
-  final List<bool> resolved;
-  final int beats;
-  final _Judgement? judgement;
-  final ColorScheme scheme;
-  final String perfectLabel;
-  final String goodLabel;
-  final String missLabel;
-
+class _TargetRing extends StatelessWidget {
+  const _TargetRing({required this.color});
+  final Color color;
   @override
-  void paint(Canvas canvas, Size size) {
-    final hitY = size.height * 0.82;
-    final cx = size.width / 2;
-
-    // The hit-line + a target ring.
-    canvas.drawLine(
-      Offset(0, hitY),
-      Offset(size.width, hitY),
-      Paint()
-        ..color = scheme.primary
-        ..strokeWidth = 3,
-    );
-    canvas.drawCircle(
-      Offset(cx, hitY),
-      30,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..color = scheme.primary.withValues(alpha: 0.6),
-    );
-
-    // Falling markers.
-    for (var k = 0; k < beats; k++) {
-      final p = progress(k, now);
-      if (p < 0 || p > 1.25) continue;
-      // Caught/missed markers stop drawing once past the line.
-      if (resolved[k] && p > 1.0) continue;
-      final y = p * hitY;
-      final caughtGlow = resolved[k];
-      canvas.drawCircle(
-        Offset(cx, y),
-        caughtGlow ? 26 : 20,
-        Paint()
-          ..color = (caughtGlow ? Colors.green : scheme.tertiary)
-              .withValues(alpha: caughtGlow ? 0.4 : 1.0),
-      );
-    }
-
-    // Judgement text.
-    if (judgement != null) {
-      final (text, color) = switch (judgement!) {
-        _Judgement.perfect => (perfectLabel, Colors.amber),
-        _Judgement.good => (goodLabel, Colors.lightGreen),
-        _Judgement.miss => (missLabel, Colors.redAccent),
-      };
-      final tp = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(
-            color: color,
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-          ),
+  Widget build(BuildContext context) => Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: color.withValues(alpha: 0.6), width: 3),
         ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(cx - tp.width / 2, hitY - 90));
-    }
-  }
+      );
+}
 
+class _JudgementText extends StatelessWidget {
+  const _JudgementText({required this.judgement, required this.l10n});
+  final _Judgement judgement;
+  final AppLocalizations l10n;
   @override
-  bool shouldRepaint(covariant _BeatPainter old) => true;
+  Widget build(BuildContext context) {
+    final (text, color) = switch (judgement) {
+      _Judgement.perfect => (l10n.beatPerfect, Colors.amber),
+      _Judgement.good => (l10n.beatGood, Colors.lightGreen),
+      _Judgement.miss => (l10n.beatMiss, Colors.redAccent),
+    };
+    return Center(
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 30,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 }

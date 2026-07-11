@@ -1,6 +1,5 @@
-// Beat Runner — the tap-along rhythm lane. The game's Ticker is the master
-// clock, driven by tester.pump(): tapping when a beat reaches the line scores,
-// and letting a beat pass untapped does not.
+// Beat Runner — read & play a rhythm. The Ticker is the master clock (driven by
+// pump): tapping as a note lands scores; letting a note pass untapped does not.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -38,12 +37,12 @@ BeatRunnerTester _game(WidgetTester tester) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('tapping as the beat lands scores a hit', (tester) async {
+  testWidgets('tapping as the first note lands scores a hit', (tester) async {
     await tester.pumpWidget(_app());
     final game = _game(tester);
+    expect(game.noteCount, greaterThan(0));
 
-    // Advance the master clock to the moment beat 0 crosses the line.
-    await tester.pump(Duration(milliseconds: BeatRunnerScreen.beatTimeMs(0)));
+    await tester.pump(Duration(milliseconds: game.noteTimeMs(0)));
     await tester.tap(find.byKey(BeatRunnerScreen.padKey));
     await tester.pump();
 
@@ -51,14 +50,11 @@ void main() {
     expect(game.score, greaterThan(0));
   });
 
-  testWidgets('letting a beat pass untapped is not a hit', (tester) async {
+  testWidgets('letting a note pass untapped is not a hit', (tester) async {
     await tester.pumpWidget(_app());
     final game = _game(tester);
 
-    // Past beat 0's window with no tap.
-    await tester.pump(
-      Duration(milliseconds: BeatRunnerScreen.beatTimeMs(0) + 260),
-    );
+    await tester.pump(Duration(milliseconds: game.noteTimeMs(0) + 300));
     expect(game.hits, 0);
     expect(game.score, 0);
   });
