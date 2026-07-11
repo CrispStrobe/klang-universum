@@ -33,8 +33,8 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | 6 | **Harmonik** (T/S/D) | `harmony.function`, `.cadence` | Function Quiz • Cadence Workshop (build T–S–D–T) | 2 built |
 | 7 | **Cello-Ecke** (instrument corner) | `cello.string`, `cello.finger`, `note_reading.tenor` | Which String? (bass-clef note → C/G/D/A) • Finger Quiz (first position, 0–4) • Tenor Clef reading • *later: shifting/positions, string+finger combined ("play this note"), open-string ear tuning* | 3 built |
 | 8 | **Tasten-Ecke** (piano corner) | `keyboard.find`, `.name`, `.ear`, `.melody`, `.chord` | Find the Key (staff→key, labels fade at 2★, black keys at 3★) • Key Quiz (key→name) • Echo Keys (ear→key, C anchor) • Play the Melody (sight-playing) • Chord Grip | 5 built |
-| 9 | **Liederbuch** (real songs) | `songs.tune` | Song Book — public-domain children's songs as real notation with lyrics (partitura v0.4 MultiSystemView + lyrics), synth playback with a karaoke cursor, tap any note to hear it • Name That Tune (ear) • **Import**: MusicXML (paste, via partitura v0.5), ChordPro chord sheets (own parser; tappable chord chips play triads), simple monophonic MIDI (own SMF parser + sixteenth quantization; persisted as MusicXML) • *out of scope: polyphonic MIDI (transcription problem), guitar tablature (excluded from the notation library)* | 2 built + import |
-| 10 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
+| 9 | **Liederbuch** (real songs) | `songs.tune` | Song Book — public-domain children's songs (5: Alle meine Entchen, Hänschen klein, Twinkle, Mary Had a Little Lamb, Old MacDonald) as real notation with lyrics (partitura v0.4 MultiSystemView + lyrics), synth playback with a karaoke cursor, tap any note to hear it • Name That Tune (ear) • **Import**: MusicXML (paste **or file pick**, via partitura v0.5), ChordPro chord sheets (own parser; tappable chord chips play triads), simple monophonic MIDI (own SMF parser + sixteenth quantization; persisted as MusicXML) • *out of scope: polyphonic MIDI (transcription problem), guitar tablature (excluded from the notation library)* | 2 built + import |
+| 10 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring; **saves to the Song Book as MusicXML** via partitura's writer — opens in MuseScore & co.) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
 
 **Instrument corners** are the modular-extension pattern proven by the
 cello module: a data table (string/finger map), instrument-specific games
@@ -87,6 +87,11 @@ Interval Detective, Meter Detective; option to graduate to `flutter_soloud`
 ## Delivery
 
 - GitHub: `CrispStrobe/klang-universum` (app), `CrispStrobe/partitura` (lib).
+- **CI** (`.github/workflows/ci.yml`): every push/PR runs format + analyze +
+  test and uploads coverage. It checks out `partitura` as a sibling so the
+  `../partitura` path dependency resolves on the runner. Analyzer is strict
+  (`strict-casts`/`strict-raw-types`); the `build` symlink is untracked (it
+  points at a dev-only SSD path and would dangle on CI).
 - Web: Vercel (`mus` project), prebuilt `build/web`, same pattern as voc.
 - pub.dev publication of partitura: deliberately **not yet** (maintainer
   decision); everything is consumed via path/git.

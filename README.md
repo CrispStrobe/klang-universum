@@ -22,7 +22,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 | `harmony` | Harmonik (T/S/D) | Function Quiz • Cadence Workshop |
 | `composition` | Komponieren (Kompositionstechnik) | Ending Detective (closure) • Question & Answer (phrases) • My Melody (free composing sandbox, saves to the Song Book as MusicXML) |
 | `cello` | Cello-Ecke (instrument corner) | Which String? • Finger Quiz (1st position) • Tenor Clef reading |
-| `songs` | Liederbuch (real songs) | Song Book (play-along cursor + lyrics) • Name That Tune (ear) • **Import**: MusicXML, ChordPro chord sheets (playable chips), simple monophonic MIDI |
+| `songs` | Liederbuch (real songs) | Song Book (5 songs, play-along cursor + lyrics) • Name That Tune (ear) • **Import**: MusicXML (paste or file), ChordPro chord sheets (playable chips), simple monophonic MIDI |
 | `keyboard` | Tasten-Ecke (piano corner) | Find the Key (staff→key) • Key Quiz (key→name) • Echo Keys (ear→key) • Play the Melody (sight-playing) • Chord Grip |
 
 SRI review runners: note-value symbols + note reading (per clef); the home
@@ -49,6 +49,11 @@ Live web build: https://mus-theta.vercel.app
 
 ```
 flutter pub get
-flutter test
-flutter run -d chrome   # or macos, etc.
+flutter analyze          # strict: strict-casts / strict-raw-types
+flutter test             # add --coverage for lcov.info
+flutter run -d chrome    # or macos, etc.
 ```
+
+CI (`.github/workflows/ci.yml`) runs format + analyze + test on every push and
+PR, checking out the sibling `partitura` repo alongside so the path dependency
+resolves. The `build/` symlink (a dev-only SSD path) is intentionally untracked.
