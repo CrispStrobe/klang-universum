@@ -25,14 +25,15 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 
 | # | Module | Skills (SRI namespace) | Games | Status |
 |---|--------|------------------------|-------|--------|
-| 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `note_values.duration` | Symbol Quiz (name the glyph) • Duration Duel (which lasts longer) • *Rhythm Tap-Back (audio, later)* | 2 built |
-| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_treble`, `.place_bass` | Reading Quiz per clef (name the staff note) • **Place the Note** per clef (inverse: tap the staff) | 2 built, 2 this phase |
-| 3 | **Takte** (measures & meter) | `measures.fill` | **Measure Filler** (complete the measure so durations sum to the time signature) • *Meter Detective (hear the beat, audio, later)* | 1 this phase |
-| 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, later `scales.build`, `scales.hear` | **Scale Detective** (tap the wrong note in a rendered scale) • *Scale Builder (drag notes to build one, next phase)* • *Major-or-minor by ear (audio, later)* | 1 this phase |
-| 5 | **Akkorde & Intervalle** | `chords.triad`, later `chords.quality`, `chords.interval` | **Chord Quiz** (name a rendered triad) • *Triad Builder (drag, next phase)* • *Interval ear training (audio, later)* | 1 this phase |
-| 6 | **Harmonik** (T/S/D) | `harmony.function`, later `harmony.cadence` | **Function Quiz** (a triad in a labeled key — Tonika, Subdominante or Dominante?) • *Cadence Builder (order T–S–D–T, next phase)* | 1 this phase |
+| 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) | 4 built |
+| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody` | Reading Quiz ×2 • Place the Note ×2 • Melody Echo (ear↔staff) | 5 built |
+| 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
+| 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) | 3 built |
+| 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
+| 6 | **Harmonik** (T/S/D) | `harmony.function`, `.cadence` | Function Quiz • Cadence Workshop (build T–S–D–T) | 2 built |
 | 7 | **Cello-Ecke** (instrument corner) | `cello.string`, `cello.finger`, `note_reading.tenor` | Which String? (bass-clef note → C/G/D/A) • Finger Quiz (first position, 0–4) • Tenor Clef reading • *later: shifting/positions, string+finger combined ("play this note"), open-string ear tuning* | 3 built |
-| 8 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
+| 8 | **Tasten-Ecke** (piano corner) | `keyboard.find`, `.name`, `.ear`, `.melody`, `.chord` | Find the Key (staff→key, labels fade at 2★, black keys at 3★) • Key Quiz (key→name) • Echo Keys (ear→key, C anchor) • Play the Melody (sight-playing) • Chord Grip | 5 built |
+| 9 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
 
 **Instrument corners** are the modular-extension pattern proven by the
 cello module: a data table (string/finger map), instrument-specific games
