@@ -83,6 +83,19 @@
   "gameKeyEar": "Echo Keys",
   "gameKeyEarSubtitle": "Play back what you hear",
   "keyEarPrompt": "First you hear C, then the mystery note — tap it!",
+  "gameKeyMelody": "Play the Melody",
+  "gameKeyMelodySubtitle": "Read the staff, play the keys",
+  "keyMelodyPrompt": "Play these notes in order!",
+  "gameKeyChord": "Chord Grip",
+  "gameKeyChordSubtitle": "Grab all three chord notes",
+  "keyChordPrompt": "Play the {name} major chord — tap all three keys!",
+  "@keyChordPrompt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "celloFingerPrompt": "Which finger plays it on the {string} string?",
   "@celloFingerPrompt": {
     "placeholders": {

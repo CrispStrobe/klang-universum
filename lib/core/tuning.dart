@@ -77,6 +77,9 @@ const Map<String, List<int>> kStarThresholds = {
   'key_name': [100, 600, 900],
   // 8 rounds: max 800.
   'key_ear': [100, 500, 750],
+  'key_chord': [100, 500, 750],
+  // 6 rounds: max 600.
+  'key_melody': [100, 400, 550],
 };
 
 /// Convert a raw game score to 1-3 stars. Returns 0 if the game was lost.

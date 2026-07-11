@@ -205,6 +205,26 @@ class AppLocalizationsDe extends AppLocalizations {
       'Zuerst hörst du C, dann den Rätselton — tippe ihn!';
 
   @override
+  String get gameKeyMelody => 'Melodie spielen';
+
+  @override
+  String get gameKeyMelodySubtitle => 'Lies die Noten, spiel die Tasten';
+
+  @override
+  String get keyMelodyPrompt => 'Spiele diese Noten der Reihe nach!';
+
+  @override
+  String get gameKeyChord => 'Akkord-Griff';
+
+  @override
+  String get gameKeyChordSubtitle => 'Greife alle drei Töne des Akkords';
+
+  @override
+  String keyChordPrompt(String name) {
+    return 'Spiele den $name-Dur-Akkord — tippe alle drei Tasten!';
+  }
+
+  @override
   String celloFingerPrompt(String string) {
     return 'Welcher Finger spielt sie auf der $string-Saite?';
   }

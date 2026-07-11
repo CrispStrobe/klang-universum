@@ -50,12 +50,31 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
     prepareRound();
   }
 
+  // Black-key targets, unlocked at 3 stars (all within C4..G5).
+  static const _alteredTargets = [
+    Pitch(Step.f, alter: 1), // F#4
+    Pitch(Step.g, alter: 1), // G#4
+    Pitch(Step.b, alter: -1), // Bb4
+    Pitch(Step.c, alter: 1, octave: 5), // C#5
+    Pitch(Step.e, alter: -1, octave: 5), // Eb5
+  ];
+
   @override
   void prepareRound() {
     // Staff naturals E4..F5 (positions 0..8) — all inside the C4..G5 keys.
-    _target = Clef.treble.pitchAt(_random.nextInt(9));
+    // At 3 stars, every third round targets a black key (accidental!).
+    final stars = context.read<ProgressService>().starsFor('key_find');
+    _target = (stars >= 3 && _random.nextInt(3) == 0)
+        ? _alteredTargets[_random.nextInt(_alteredTargets.length)]
+        : Clef.treble.pitchAt(_random.nextInt(9));
     _tappedMidi = null;
     _lastAnswer = null;
+  }
+
+  String get _targetToken {
+    final accidental =
+        switch (_target.alter) { 1 => '#', -1 => 'b', _ => '' };
+    return '${_target.step.name}$accidental${_target.octave}';
   }
 
   void _onKeyTap(int midi) {
@@ -64,10 +83,10 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
     context.read<AudioService>().playMidiNote(midi, ms: 550);
 
     if (_tappedMidi == null || !answeredWrong) {
-      context.read<SriService>().recordResponse(
-            'keyboard.find.${_target.step.name}${_target.octave}',
-            correct,
-          );
+      // Token includes the accidental, so F#4 is a distinct item from F4.
+      context
+          .read<SriService>()
+          .recordResponse('keyboard.find.$_targetToken', correct);
     }
 
     setState(() {
@@ -117,10 +136,7 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 32),
                             child: StaffView(
-                              score: Score.simple(
-                                notes:
-                                    '${_target.step.name}${_target.octave}:w',
-                              ),
+                              score: Score.simple(notes: '$_targetToken:w'),
                               staffSpace: 12,
                               theme: PartituraTheme.kids,
                             ),

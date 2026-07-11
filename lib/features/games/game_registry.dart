@@ -14,8 +14,10 @@ import 'chords/chord_quiz_screen.dart';
 import 'chords/interval_ear_screen.dart';
 import 'chords/triad_builder_screen.dart';
 import 'harmony/harmony_quiz_screen.dart';
+import 'keyboard/key_chord_screen.dart';
 import 'keyboard/key_ear_screen.dart';
 import 'keyboard/key_find_screen.dart';
+import 'keyboard/key_melody_screen.dart';
 import 'keyboard/key_name_screen.dart';
 import 'measures/measure_fill_screen.dart';
 import 'measures/meter_detective_screen.dart';
@@ -238,6 +240,20 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameKeyEar,
       subtitle: (l) => l.gameKeyEarSubtitle,
       builder: (_) => const KeyEarScreen(),
+    ),
+    GameInfo(
+      id: 'key_melody',
+      icon: Icons.queue_music,
+      title: (l) => l.gameKeyMelody,
+      subtitle: (l) => l.gameKeyMelodySubtitle,
+      builder: (_) => const KeyMelodyScreen(),
+    ),
+    GameInfo(
+      id: 'key_chord',
+      icon: Icons.back_hand,
+      title: (l) => l.gameKeyChord,
+      subtitle: (l) => l.gameKeyChordSubtitle,
+      builder: (_) => const KeyChordScreen(),
     ),
   ],
 };

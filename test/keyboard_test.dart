@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/keyboard/key_chord_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_ear_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_find_screen.dart';
+import 'package:klang_universum/features/games/keyboard/key_melody_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
@@ -105,6 +107,44 @@ void main() {
     await tester.pump();
     expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['ear']);
     await tester.pump(const Duration(milliseconds: 700));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('play-the-melody shows staff + labeled keys and records',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const KeyMelodyScreen(), sri));
+    await tester.pump();
+
+    expect(find.text('Play these notes in order!'), findsOneWidget);
+    expect(find.byType(StaffView), findsOneWidget);
+    expect(find.byType(PianoKeyboard), findsOneWidget);
+
+    final keyboardBox = tester.getRect(find.byType(PianoKeyboard));
+    await tester
+        .tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
+    await tester.pump();
+    expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['melody']);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('chord grip asks for a triad and records on key taps',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const KeyChordScreen(), sri));
+    await tester.pump();
+
+    expect(find.textContaining('major chord'), findsOneWidget);
+    expect(find.byType(PianoKeyboard), findsOneWidget);
+
+    // Tap the top-left corner of the keyboard: that's a black key (C#4),
+    // never part of the C/F/G base triads — records a wrong answer.
+    final keyboardBox = tester.getRect(find.byType(PianoKeyboard));
+    await tester.tapAt(Offset(
+        keyboardBox.left + keyboardBox.width / 12 * 0.9,
+        keyboardBox.top + 10));
+    await tester.pump();
+    expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['chord']);
+    await tester.pump(const Duration(milliseconds: 600));
     await tester.pumpAndSettle();
   });
 }

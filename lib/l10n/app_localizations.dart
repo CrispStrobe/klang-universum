@@ -452,6 +452,42 @@ abstract class AppLocalizations {
   /// **'First you hear C, then the mystery note — tap it!'**
   String get keyEarPrompt;
 
+  /// No description provided for @gameKeyMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the Melody'**
+  String get gameKeyMelody;
+
+  /// No description provided for @gameKeyMelodySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the staff, play the keys'**
+  String get gameKeyMelodySubtitle;
+
+  /// No description provided for @keyMelodyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Play these notes in order!'**
+  String get keyMelodyPrompt;
+
+  /// No description provided for @gameKeyChord.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord Grip'**
+  String get gameKeyChord;
+
+  /// No description provided for @gameKeyChordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grab all three chord notes'**
+  String get gameKeyChordSubtitle;
+
+  /// No description provided for @keyChordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the {name} major chord — tap all three keys!'**
+  String keyChordPrompt(String name);
+
   /// No description provided for @celloFingerPrompt.
   ///
   /// In en, this message translates to:

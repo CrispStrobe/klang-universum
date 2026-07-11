@@ -203,6 +203,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'First you hear C, then the mystery note — tap it!';
 
   @override
+  String get gameKeyMelody => 'Play the Melody';
+
+  @override
+  String get gameKeyMelodySubtitle => 'Read the staff, play the keys';
+
+  @override
+  String get keyMelodyPrompt => 'Play these notes in order!';
+
+  @override
+  String get gameKeyChord => 'Chord Grip';
+
+  @override
+  String get gameKeyChordSubtitle => 'Grab all three chord notes';
+
+  @override
+  String keyChordPrompt(String name) {
+    return 'Play the $name major chord — tap all three keys!';
+  }
+
+  @override
   String celloFingerPrompt(String string) {
     return 'Which finger plays it on the $string string?';
   }
