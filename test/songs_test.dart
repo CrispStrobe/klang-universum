@@ -4,6 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/songs/chord_sheet_screen.dart';
+import 'package:klang_universum/features/games/songs/import/chordpro.dart';
+import 'package:klang_universum/features/games/songs/import_screen.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
 import 'package:klang_universum/features/games/songs/song_screen.dart';
 import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
@@ -13,13 +16,24 @@ import 'package:partitura/partitura.dart' show MultiSystemView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _wrap(Widget child, SriService sri) {
+const _xml = '''
+<score-partwise version="4.0"><part-list><score-part id="P1">
+<part-name>M</part-name></score-part></part-list><part id="P1"><measure number="1">
+<attributes><divisions>1</divisions><key><fifths>0</fifths></key>
+<time><beats>4</beats><beat-type>4</beat-type></time>
+<clef><sign>G</sign><line>2</line></clef></attributes>
+<note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration>
+<type>whole</type></note></measure></part></score-partwise>''';
+
+Widget _wrap(Widget child, SriService sri, {UserSongsService? songs}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<SriService>.value(value: sri),
       Provider<AudioService>(create: (_) => AudioService()),
       ChangeNotifierProvider(create: (_) => ProgressService()),
-      ChangeNotifierProvider(create: (_) => UserSongsService()),
+      ChangeNotifierProvider<UserSongsService>.value(
+        value: songs ?? UserSongsService(),
+      ),
     ],
     child: MaterialApp(
       localizationsDelegates: const [
@@ -92,5 +106,60 @@ void main() {
     await tester.pump();
     expect(sri.getDetailedBreakdown()['songs']!.keys, ['tune']);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('chord sheet screen renders the chord row and lyrics',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final sheet = parseChordPro('{title: Test}\n[C]Twin- kle [G]twin- kle');
+    await tester.pumpWidget(
+      _wrap(ChordSheetScreen(title: 'Test', sheet: sheet), sri),
+    );
+    await tester.pump();
+
+    expect(find.widgetWithText(AppBar, 'Test'), findsOneWidget);
+    expect(find.byType(ActionChip), findsWidgets); // the strum row
+    expect(find.text('C'), findsWidgets);
+    expect(find.textContaining('Twin'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('import screen: pasted MusicXML lands in the Song Book',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final songs = UserSongsService();
+    await tester.pumpWidget(
+      _wrap(
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ImportScreen()),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+        sri,
+        songs: songs,
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // All four import affordances are present.
+    expect(find.text('Import as MusicXML'), findsOneWidget);
+    expect(find.text('Pick a MusicXML file…'), findsOneWidget);
+    expect(find.text('Pick a MIDI file…'), findsOneWidget);
+
+    // Paste valid MusicXML and import it.
+    await tester.enterText(find.byType(TextField).last, _xml);
+    await tester.tap(find.text('Import as MusicXML'));
+    await tester.pumpAndSettle();
+
+    expect(songs.songs, hasLength(1));
+    expect(find.text('open'), findsOneWidget); // popped back
   });
 }
