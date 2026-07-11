@@ -22,6 +22,12 @@
   "settingsTitle": "Einstellungen",
   "progressTitle": "Fortschritt",
   "karteikastenTitle": "Karteikasten",
+  "trickyNotesTitle": "Deine kniffligen Stellen",
+  "trickyNotesHint": "Was du am häufigsten verpasst — die Wiederholung übt das zuerst.",
+  "trickyMissed": "{count}× verpasst",
+  "@trickyMissed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "moduleProgressTitle": "Module",
   "boxNew": "Neu",
   "boxMastered": "Gemeistert",

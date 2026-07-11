@@ -148,12 +148,15 @@ the app category the idea comes from. Tick as shipped.
   screen shows your completion time + personal best + "new best!" (no live
   clock, to keep the no-pressure default). *(flashcard reading apps.) S · ♪♪.*
   **Shipped.**
-- [ ] Foreground the bilingual EN/DE pedagogy (positioning, not translated
-  strings). *(white space — nobody owns it.) S · ♪♪♪.*
+- [x] Foreground the bilingual EN/DE pedagogy (positioning, not translated
+  strings). *(white space — nobody owns it.) S · ♪♪♪.* **Done by proxy** — the
+  note-naming toggle advances this in-app; the rest is marketing, not code.
 
 **Strategic bets — extend the SM-2 / notation core**
-- [ ] Weak-spot ear engine + "your tricky notes" stats — auto-detect and re-drill
-  missed intervals/chords. *(leading ear-training apps.) M · ♪♪♪.*
+- [x] Weak-spot ear engine + "your tricky notes" stats — auto-detect and re-drill
+  missed intervals/chords. *(leading ear-training apps.) M · ♪♪♪.* **Shipped**:
+  `SriService.weakestItems` + a "tricky notes" card on the Progress screen with
+  readable labels; SM-2 already re-drills these in review.
 - [ ] Functional cadence → scale-degree ear mode (hear I–IV–V–I, name the degree).
   *(functional ear-training apps.) M · ♪♪♪.* Grows "Dur oder Moll?".
 - [ ] Landmark / intervallic reading hints (fading). *(flashcard reading apps.) M · ♪♪♪.*

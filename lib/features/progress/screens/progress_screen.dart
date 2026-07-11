@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/models/learning_module.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/progress/sri_item_label.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -18,6 +19,7 @@ class ProgressScreen extends StatelessWidget {
     final sri = context.watch<SriService>();
     final boxCounts = sri.getBoxCounts();
     final breakdown = sri.getDetailedBreakdown();
+    final tricky = sri.weakestItems();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.progressTitle)),
@@ -50,6 +52,38 @@ class ProgressScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (tricky.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              l10n.trickyNotesTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.trickyNotesHint,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Column(
+                children: [
+                  for (final item in tricky)
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(
+                        Icons.priority_high,
+                        color: Colors.redAccent,
+                      ),
+                      title: Text(describeSriItem(l10n, item.itemId)),
+                      trailing: Text(
+                        l10n.trickyMissed(item.failureCount),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Text(
             l10n.moduleProgressTitle,

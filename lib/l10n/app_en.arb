@@ -36,6 +36,12 @@
   "settingsTitle": "Settings",
   "progressTitle": "Progress",
   "karteikastenTitle": "Flashcard boxes",
+  "trickyNotesTitle": "Your tricky notes",
+  "trickyNotesHint": "The things you miss most — review will practise these first.",
+  "trickyMissed": "missed {count}×",
+  "@trickyMissed": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "moduleProgressTitle": "Modules",
   "boxNew": "New",
   "boxMastered": "Mastered",

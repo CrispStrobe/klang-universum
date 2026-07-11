@@ -230,6 +230,24 @@ abstract class AppLocalizations {
   /// **'Flashcard boxes'**
   String get karteikastenTitle;
 
+  /// No description provided for @trickyNotesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your tricky notes'**
+  String get trickyNotesTitle;
+
+  /// No description provided for @trickyNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The things you miss most — review will practise these first.'**
+  String get trickyNotesHint;
+
+  /// No description provided for @trickyMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'missed {count}×'**
+  String trickyMissed(int count);
+
   /// No description provided for @moduleProgressTitle.
   ///
   /// In en, this message translates to:

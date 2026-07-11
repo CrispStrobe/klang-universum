@@ -88,6 +88,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get karteikastenTitle => 'Karteikasten';
 
   @override
+  String get trickyNotesTitle => 'Deine kniffligen Stellen';
+
+  @override
+  String get trickyNotesHint =>
+      'Was du am häufigsten verpasst — die Wiederholung übt das zuerst.';
+
+  @override
+  String trickyMissed(int count) {
+    return '$count× verpasst';
+  }
+
+  @override
   String get moduleProgressTitle => 'Module';
 
   @override

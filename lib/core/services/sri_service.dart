@@ -307,6 +307,21 @@ class SriService with ChangeNotifier {
     return items.take(limit).toList();
   }
 
+  /// The learner's "tricky notes": items they have actually missed and not yet
+  /// mastered, hardest first (most misses, then lowest easiness). SM-2 already
+  /// re-drills these in review; this surfaces them so the child sees them.
+  List<SriItemData> weakestItems({int limit = 5}) {
+    final struggled = _sriDatabase.values
+        .where((d) => d.failureCount > 0 && !isItemMastered(d.itemId))
+        .toList()
+      ..sort((a, b) {
+        final byFails = b.failureCount.compareTo(a.failureCount);
+        if (byFails != 0) return byFails;
+        return a.easinessFactor.compareTo(b.easinessFactor);
+      });
+    return struggled.take(limit).toList();
+  }
+
   // ============== Karteikasten (Leitner-style) projection ==============
   //
   // Maps the SM-2 state onto 5 boxes for a flashcard-box UI, identical to
