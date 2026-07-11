@@ -12,7 +12,10 @@ import '../../../core/models/learning_module.dart';
 import '../../../core/services/sri_service.dart';
 import '../../../core/tuning.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../games/chords/chord_quiz_screen.dart';
+import '../../games/harmony/harmony_quiz_screen.dart';
 import '../../games/note_reading/note_reading_quiz_screen.dart';
+import '../../games/scales/scale_detective_screen.dart';
 import '../../games/note_values/note_value_quiz_screen.dart';
 import '../../games/screens/module_screen.dart';
 import '../../progress/screens/progress_screen.dart';
@@ -52,6 +55,14 @@ class HomeScreen extends StatelessWidget {
     final tenor = readingIds
         .where((id) => id.startsWith('note_reading.tenor.'))
         .toList();
+    List<String> dueOf(String moduleId, String prefix) => sri
+        .getItemsForReview(
+            limit: 10, moduleId: moduleId, resetSessionFirst: true)
+        .where((id) => id.startsWith(prefix))
+        .toList();
+    final scaleSpots = dueOf('scales', 'scales.spot.');
+    final triads = dueOf('chords', 'chords.triad.');
+    final functions = dueOf('harmony', 'harmony.function.');
 
     // Pick the biggest due bucket.
     final buckets = <(int, Widget Function())>[
@@ -71,6 +82,11 @@ class HomeScreen extends StatelessWidget {
         () => NoteReadingQuizScreen(
             clef: Clef.tenor, reviewItemIds: tenor.take(10).toList())
       ),
+      (scaleSpots.length,
+          () => ScaleDetectiveScreen(reviewItemIds: scaleSpots)),
+      (triads.length, () => ChordQuizScreen(reviewItemIds: triads)),
+      (functions.length,
+          () => HarmonyQuizScreen(reviewItemIds: functions)),
     ]..sort((a, b) => b.$1.compareTo(a.$1));
     final runner = buckets.first.$1 > 0 ? buckets.first.$2() : null;
 

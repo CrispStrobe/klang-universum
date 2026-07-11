@@ -44,6 +44,7 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
     TimeSignature.threeFour,
     TimeSignature.fourFour,
   ];
+  static const _sixEight = TimeSignature(6, 8);
 
   late TimeSignature _timeSignature;
   late List<String> _prefixTokens; // rendered, incomplete measure
@@ -72,8 +73,13 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
 
   @override
   void prepareRound() {
-    _timeSignature =
-        _timeSignatures[_random.nextInt(_timeSignatures.length)];
+    // 6/8 joins the rotation at 3 stars.
+    final signatures = [
+      ..._timeSignatures,
+      if (context.read<ProgressService>().starsFor('measure_fill') >= 3)
+        _sixEight,
+    ];
+    _timeSignature = signatures[_random.nextInt(signatures.length)];
     final capacity = _timeSignature.beats * (16 ~/ _timeSignature.beatUnit);
 
     // The missing piece: h/q/e — sixteenths join at 2+ stars — with room

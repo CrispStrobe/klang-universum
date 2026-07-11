@@ -19,7 +19,10 @@ import '../note_reading/note_names.dart';
 import '../widgets/game_widgets.dart';
 
 class ChordQuizScreen extends StatefulWidget {
-  const ChordQuizScreen({super.key});
+  /// Review mode: full SRI item IDs (`chords.triad.<root>_major`) to drill.
+  final List<String>? reviewItemIds;
+
+  const ChordQuizScreen({super.key, this.reviewItemIds});
 
   @override
   State<ChordQuizScreen> createState() => _ChordQuizScreenState();
@@ -32,13 +35,19 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
   // Roots whose major triads sit comfortably on the treble staff.
   static const _roots = [Step.c, Step.d, Step.e, Step.f, Step.g, Step.a];
 
+  List<Step>? _reviewRoots;
+  bool get _isReview => _reviewRoots != null;
+
   late Step _root;
   late List<Step> _options;
   Step? _tapped;
   bool? _lastAnswer;
 
   @override
-  int get totalRounds => 10;
+  int get totalRounds => _reviewRoots?.length ?? 10;
+
+  @override
+  bool get isReviewSession => _isReview;
 
   @override
   String get gameType => 'chord_quiz';
@@ -50,12 +59,22 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
   @override
   void initState() {
     super.initState();
+    final parsed = widget.reviewItemIds
+        ?.map((id) {
+          final root = id.split('.').last.split('_').first;
+          return Step.values.asNameMap()[root];
+        })
+        .whereType<Step>()
+        .toList();
+    _reviewRoots = (parsed == null || parsed.isEmpty) ? null : parsed;
     prepareRound();
   }
 
   @override
   void prepareRound() {
-    _root = _roots[_random.nextInt(_roots.length)];
+    _root = _isReview
+        ? _reviewRoots![round]
+        : _roots[_random.nextInt(_roots.length)];
     final distractors = [..._roots]
       ..remove(_root)
       ..shuffle(_random);
@@ -106,7 +125,7 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.gameChordQuiz),
+        title: Text(_isReview ? l10n.reviewTitle : l10n.gameChordQuiz),
         actions: [
           IconButton(
             icon: const Icon(Icons.volume_up),
@@ -120,7 +139,7 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
             ? GameResultView(
                 gameType: 'chord_quiz',
                 score: score,
-                onRestart: restartGame,
+                onRestart: _isReview ? null : restartGame,
               )
             : Padding(
                 padding: const EdgeInsets.all(20),

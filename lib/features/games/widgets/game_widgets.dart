@@ -148,6 +148,10 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
   /// pitch/chord feedback (place-the-note, chord quiz) override to false.
   bool get playFeedbackSounds => true;
 
+  /// Review sessions don't count toward stars; screens with a review mode
+  /// override this accordingly.
+  bool get isReviewSession => false;
+
   /// Set up the next round's data. Called once initially and after each
   /// advance; also on restart.
   void prepareRound();
@@ -158,12 +162,14 @@ mixin QuizRoundMixin<T extends StatefulWidget> on State<T> {
     final audio = context.read<AudioService>();
     if (correct && round + 1 >= totalRounds) {
       audio.playFanfare();
-      final finalScore = score + (answeredWrong ? 0 : pointsPerRound);
-      context.read<ProgressService>().recordResult(
-            progressId,
-            score: finalScore,
-            stars: scoreToStars(gameType, finalScore, true),
-          );
+      if (!isReviewSession) {
+        final finalScore = score + (answeredWrong ? 0 : pointsPerRound);
+        context.read<ProgressService>().recordResult(
+              progressId,
+              score: finalScore,
+              stars: scoreToStars(gameType, finalScore, true),
+            );
+      }
     } else if (playFeedbackSounds) {
       correct ? audio.playCorrect() : audio.playWrong();
     }

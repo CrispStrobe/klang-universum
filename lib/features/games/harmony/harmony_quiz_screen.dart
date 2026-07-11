@@ -19,7 +19,10 @@ import '../note_reading/note_names.dart';
 import '../widgets/game_widgets.dart';
 
 class HarmonyQuizScreen extends StatefulWidget {
-  const HarmonyQuizScreen({super.key});
+  /// Review mode: full SRI item IDs (`harmony.function.<tonic>_<function>`).
+  final List<String>? reviewItemIds;
+
+  const HarmonyQuizScreen({super.key, this.reviewItemIds});
 
   @override
   State<HarmonyQuizScreen> createState() => _HarmonyQuizScreenState();
@@ -32,6 +35,9 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
   // Beginner keys; more via difficulty progression (see docs/PLAN.md).
   static const _tonics = [Step.c, Step.g, Step.f];
 
+  List<(Step, HarmonicFunction)>? _reviewItems;
+  bool get _isReview => _reviewItems != null;
+
   late Step _tonic;
   late Key _key;
   late HarmonicFunction _function;
@@ -39,7 +45,10 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
   bool? _lastAnswer;
 
   @override
-  int get totalRounds => 10;
+  int get totalRounds => _reviewItems?.length ?? 10;
+
+  @override
+  bool get isReviewSession => _isReview;
 
   @override
   String get gameType => 'harmony_quiz';
@@ -47,15 +56,34 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
   @override
   void initState() {
     super.initState();
+    final parsed = widget.reviewItemIds
+        ?.map((id) {
+          final parts = id.split('.').last.split('_');
+          if (parts.length != 2) return null;
+          final tonic = Step.values.asNameMap()[parts[0]];
+          final function = HarmonicFunction.values.asNameMap()[parts[1]];
+          return (tonic == null || function == null)
+              ? null
+              : (tonic, function);
+        })
+        .whereType<(Step, HarmonicFunction)>()
+        .toList();
+    _reviewItems = (parsed == null || parsed.isEmpty) ? null : parsed;
     prepareRound();
   }
 
   @override
   void prepareRound() {
-    _tonic = _tonics[_random.nextInt(_tonics.length)];
+    if (_isReview) {
+      final (tonic, function) = _reviewItems![round];
+      _tonic = tonic;
+      _function = function;
+    } else {
+      _tonic = _tonics[_random.nextInt(_tonics.length)];
+      _function = HarmonicFunction
+          .values[_random.nextInt(HarmonicFunction.values.length)];
+    }
     _key = Key.major(Pitch(_tonic));
-    _function = HarmonicFunction
-        .values[_random.nextInt(HarmonicFunction.values.length)];
     _tapped = null;
     _lastAnswer = null;
   }
@@ -104,13 +132,15 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameHarmonyQuiz)),
+      appBar: AppBar(
+          title:
+              Text(_isReview ? l10n.reviewTitle : l10n.gameHarmonyQuiz)),
       body: SafeArea(
         child: finished
             ? GameResultView(
                 gameType: 'harmony_quiz',
                 score: score,
-                onRestart: restartGame,
+                onRestart: _isReview ? null : restartGame,
               )
             : Padding(
                 padding: const EdgeInsets.all(20),

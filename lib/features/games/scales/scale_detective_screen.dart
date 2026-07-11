@@ -20,7 +20,10 @@ import '../note_reading/note_names.dart';
 import '../widgets/game_widgets.dart';
 
 class ScaleDetectiveScreen extends StatefulWidget {
-  const ScaleDetectiveScreen({super.key});
+  /// Review mode: full SRI item IDs (`scales.spot.<tonic>_major`).
+  final List<String>? reviewItemIds;
+
+  const ScaleDetectiveScreen({super.key, this.reviewItemIds});
 
   @override
   State<ScaleDetectiveScreen> createState() => _ScaleDetectiveScreenState();
@@ -34,6 +37,9 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
   static const _baseTonics = [Step.c, Step.f, Step.g];
   static const _advancedTonics = [Step.c, Step.f, Step.g, Step.d, Step.a];
 
+  List<Step>? _reviewTonics;
+  bool get _isReview => _reviewTonics != null;
+
   late Step _tonic;
   late Key _key;
   late List<Pitch> _pitches; // with the wrong one substituted
@@ -42,7 +48,10 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
   bool? _lastAnswer;
 
   @override
-  int get totalRounds => 8;
+  int get totalRounds => _reviewTonics?.length ?? 8;
+
+  @override
+  bool get isReviewSession => _isReview;
 
   @override
   String get gameType => 'scale_detective';
@@ -50,16 +59,28 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
   @override
   void initState() {
     super.initState();
+    final parsed = widget.reviewItemIds
+        ?.map((id) {
+          final tonic = id.split('.').last.split('_').first;
+          return Step.values.asNameMap()[tonic];
+        })
+        .whereType<Step>()
+        .toList();
+    _reviewTonics = (parsed == null || parsed.isEmpty) ? null : parsed;
     prepareRound();
   }
 
   @override
   void prepareRound() {
-    final tonics =
-        context.read<ProgressService>().starsFor('scale_detective') >= 2
-            ? _advancedTonics
-            : _baseTonics;
-    _tonic = tonics[_random.nextInt(tonics.length)];
+    if (_isReview) {
+      _tonic = _reviewTonics![round];
+    } else {
+      final tonics =
+          context.read<ProgressService>().starsFor('scale_detective') >= 2
+              ? _advancedTonics
+              : _baseTonics;
+      _tonic = tonics[_random.nextInt(tonics.length)];
+    }
     _key = Key.major(Pitch(_tonic));
     final scale = Scale(Pitch(_tonic), ScaleType.major).pitches;
 
@@ -125,13 +146,15 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameScaleDetective)),
+      appBar: AppBar(
+          title: Text(
+              _isReview ? l10n.reviewTitle : l10n.gameScaleDetective)),
       body: SafeArea(
         child: finished
             ? GameResultView(
                 gameType: 'scale_detective',
                 score: score,
-                onRestart: restartGame,
+                onRestart: _isReview ? null : restartGame,
               )
             : Padding(
                 padding: const EdgeInsets.all(20),
