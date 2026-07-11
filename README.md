@@ -12,7 +12,7 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games (35) + Song Book |
+| id | Topic | Games (36) + Song Book |
 |---|---|---|
 | `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) |
 | `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 (fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write) |
@@ -24,7 +24,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 | `cello` | Cello-Ecke (instrument corner) | Which String? • Finger Quiz (1st position) • Tenor Clef reading |
 | `guitar` | Gitarren-Ecke (tablature corner) | Open Strings (name the open string) • Read the Tab (fretted note → name) |
 | `songs` | Liederbuch (real songs) | Song Book (5 songs, play-along cursor + lyrics) • Name That Tune (ear) • **Import**: MusicXML (paste or file), ChordPro chord sheets (playable chips), simple monophonic MIDI |
-| `keyboard` | Tasten-Ecke (piano corner) | Find the Key (staff→key) • Key Quiz (key→name) • Echo Keys (ear→key) • Play the Melody (sight-playing) • Chord Grip |
+| `keyboard` | Tasten-Ecke (piano corner) | Find the Key (staff→key) • Key Quiz (key→name) • Echo Keys (ear→key) • Play the Melody (sight-playing) • Chord Grip • Grand Staff (read both clefs) |
 
 SRI review runners: note-value symbols + note reading (per clef); the home
 review button routes to the biggest due bucket. Audio is synthesized in
@@ -58,5 +58,5 @@ flutter run -d chrome    # or macos, etc.
 CI (`.github/workflows/ci.yml`) runs format + analyze + test on every push and
 PR, checking out the sibling `partitura` repo alongside so the path dependency
 resolves. The `build/` symlink (a dev-only SSD path) is intentionally untracked.
-The test suite (127 tests) covers ~85% of `lib/`, including the services, the
+The test suite (128 tests) covers ~85% of `lib/`, including the services, the
 import round-trips, and a render smoke test per game screen.

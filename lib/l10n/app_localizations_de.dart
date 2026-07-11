@@ -410,6 +410,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameKeyChordSubtitle => 'Greife alle drei Töne des Akkords';
 
   @override
+  String get gameGrandStaffRead => 'Klaviersystem';
+
+  @override
+  String get gameGrandStaffReadSubtitle => 'Noten in beiden Schlüsseln lesen';
+
+  @override
   String keyChordPrompt(String name) {
     return 'Spiele den $name-Dur-Akkord — tippe alle drei Tasten!';
   }

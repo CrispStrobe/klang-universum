@@ -408,6 +408,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameKeyChordSubtitle => 'Grab all three chord notes';
 
   @override
+  String get gameGrandStaffRead => 'Grand Staff';
+
+  @override
+  String get gameGrandStaffReadSubtitle => 'Read notes on both clefs at once';
+
+  @override
   String keyChordPrompt(String name) {
     return 'Play the $name major chord — tap all three keys!';
   }

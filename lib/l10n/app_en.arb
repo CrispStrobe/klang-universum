@@ -158,6 +158,8 @@
   "keyMelodyPrompt": "Play these notes in order!",
   "gameKeyChord": "Chord Grip",
   "gameKeyChordSubtitle": "Grab all three chord notes",
+  "gameGrandStaffRead": "Grand Staff",
+  "gameGrandStaffReadSubtitle": "Read notes on both clefs at once",
   "keyChordPrompt": "Play the {name} major chord — tap all three keys!",
   "@keyChordPrompt": {
     "placeholders": {

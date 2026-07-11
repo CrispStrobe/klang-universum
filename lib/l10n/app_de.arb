@@ -127,6 +127,8 @@
   "keyMelodyPrompt": "Spiele diese Noten der Reihe nach!",
   "gameKeyChord": "Akkord-Griff",
   "gameKeyChordSubtitle": "Greife alle drei Töne des Akkords",
+  "gameGrandStaffRead": "Klaviersystem",
+  "gameGrandStaffReadSubtitle": "Noten in beiden Schlüsseln lesen",
   "keyChordPrompt": "Spiele den {name}-Dur-Akkord — tippe alle drei Tasten!",
   "celloFingerPrompt": "Welcher Finger spielt sie auf der {string}-Saite?",
   "whatIsThisNote": "Wie heißt diese Note?",

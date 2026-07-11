@@ -79,6 +79,7 @@ const Map<String, List<int>> kStarThresholds = {
   'guitar_tab_read': [100, 600, 900],
   'key_find': [100, 600, 900],
   'key_name': [100, 600, 900],
+  'grand_staff_read': [100, 600, 900],
   // 8 rounds: max 800.
   'key_ear': [100, 500, 750],
   'key_chord': [100, 500, 750],

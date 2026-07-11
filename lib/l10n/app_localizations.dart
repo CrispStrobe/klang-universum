@@ -824,6 +824,18 @@ abstract class AppLocalizations {
   /// **'Grab all three chord notes'**
   String get gameKeyChordSubtitle;
 
+  /// No description provided for @gameGrandStaffRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Grand Staff'**
+  String get gameGrandStaffRead;
+
+  /// No description provided for @gameGrandStaffReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read notes on both clefs at once'**
+  String get gameGrandStaffReadSubtitle;
+
   /// No description provided for @keyChordPrompt.
   ///
   /// In en, this message translates to:

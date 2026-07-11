@@ -18,6 +18,7 @@ import 'package:klang_universum/features/games/guitar/guitar_tab_read_screen.dar
 import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:klang_universum/features/games/harmony/function_ear_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
+import 'package:klang_universum/features/games/keyboard/grand_staff_read_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_chord_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_ear_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_find_screen.dart';
@@ -331,6 +332,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameKeyChord,
       subtitle: (l) => l.gameKeyChordSubtitle,
       builder: (_) => const KeyChordScreen(),
+    ),
+    GameInfo(
+      id: 'grand_staff_read',
+      icon: Icons.menu_book,
+      title: (l) => l.gameGrandStaffRead,
+      subtitle: (l) => l.gameGrandStaffReadSubtitle,
+      builder: (_) => const GrandStaffReadScreen(),
     ),
   ],
 };
