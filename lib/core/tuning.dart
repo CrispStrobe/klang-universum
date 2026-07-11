@@ -73,6 +73,8 @@ const Map<String, List<int>> kStarThresholds = {
   'meter_detective': [100, 500, 750],
   'melody_echo': [100, 500, 750],
   'melody_dictation': [100, 500, 750],
+  // Note Match (6 pairs): 600 flawless; fewer moves = more stars.
+  'note_memory': [100, 450, 560],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
   'guitar_string_quiz': [100, 600, 900],

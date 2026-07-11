@@ -711,6 +711,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hear it, then write it on the staff';
 
   @override
+  String get gameNoteMemory => 'Note Match';
+
+  @override
+  String get gameNoteMemorySubtitle =>
+      'Memory game: match notes to their names';
+
+  @override
+  String get noteMemoryPrompt => 'Find the pairs: a note and its name!';
+
+  @override
+  String noteMemoryMoves(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count moves',
+      one: '1 move',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get melodyDictationPrompt =>
       'The first note is given — add the ones you hear';
 

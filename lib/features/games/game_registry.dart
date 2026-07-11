@@ -28,6 +28,7 @@ import 'package:klang_universum/features/games/measures/measure_fill_screen.dart
 import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
 import 'package:klang_universum/features/games/note_reading/melody_dictation_screen.dart';
 import 'package:klang_universum/features/games/note_reading/melody_echo_screen.dart';
+import 'package:klang_universum/features/games/note_reading/note_memory_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
@@ -132,6 +133,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMelodyDictation,
       subtitle: (l) => l.gameMelodyDictationSubtitle,
       builder: (_) => const MelodyDictationScreen(),
+    ),
+    GameInfo(
+      id: 'note_memory',
+      icon: Icons.grid_view,
+      title: (l) => l.gameNoteMemory,
+      subtitle: (l) => l.gameNoteMemorySubtitle,
+      builder: (_) => const NoteMemoryScreen(),
     ),
   ],
   'measures': [

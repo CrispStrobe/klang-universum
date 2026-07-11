@@ -718,6 +718,26 @@ class AppLocalizationsDe extends AppLocalizations {
       'Hören, dann ins Notensystem schreiben';
 
   @override
+  String get gameNoteMemory => 'Noten-Memory';
+
+  @override
+  String get gameNoteMemorySubtitle => 'Memory: Noten und ihre Namen zuordnen';
+
+  @override
+  String get noteMemoryPrompt => 'Finde die Paare: eine Note und ihr Name!';
+
+  @override
+  String noteMemoryMoves(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Züge',
+      one: '1 Zug',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get melodyDictationPrompt =>
       'Die erste Note ist da — ergänze die, die du hörst';
 

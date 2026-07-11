@@ -363,6 +363,15 @@
   "melodyEchoPrompt": "Listen! Which melody did you hear?",
   "gameMelodyDictation": "Melody Dictation",
   "gameMelodyDictationSubtitle": "Hear it, then write it on the staff",
+  "gameNoteMemory": "Note Match",
+  "gameNoteMemorySubtitle": "Memory game: match notes to their names",
+  "noteMemoryPrompt": "Find the pairs: a note and its name!",
+  "noteMemoryMoves": "{count, plural, =1{1 move} other{{count} moves}}",
+  "@noteMemoryMoves": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "melodyDictationPrompt": "The first note is given — add the ones you hear",
   "dictationUndo": "Undo",
   "whatIsThisSymbol": "What is this symbol called?",

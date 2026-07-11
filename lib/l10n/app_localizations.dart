@@ -1352,6 +1352,30 @@ abstract class AppLocalizations {
   /// **'Hear it, then write it on the staff'**
   String get gameMelodyDictationSubtitle;
 
+  /// No description provided for @gameNoteMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Note Match'**
+  String get gameNoteMemory;
+
+  /// No description provided for @gameNoteMemorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory game: match notes to their names'**
+  String get gameNoteMemorySubtitle;
+
+  /// No description provided for @noteMemoryPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the pairs: a note and its name!'**
+  String get noteMemoryPrompt;
+
+  /// No description provided for @noteMemoryMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 move} other{{count} moves}}'**
+  String noteMemoryMoves(int count);
+
   /// No description provided for @melodyDictationPrompt.
   ///
   /// In en, this message translates to:
