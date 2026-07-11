@@ -12,11 +12,12 @@ import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _app() => MultiProvider(
+Widget _app({FallingMode mode = FallingMode.name}) => MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(
@@ -25,15 +26,15 @@ Widget _app() => MultiProvider(
         Provider<AudioService>(create: (_) => AudioService()),
         ChangeNotifierProvider(create: (_) => ProgressService()),
       ],
-      child: const MaterialApp(
-        localizationsDelegates: [
+      child: MaterialApp(
+        localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [Locale('en'), Locale('de')],
-        home: FallingNotesScreen(),
+        supportedLocales: const [Locale('en'), Locale('de')],
+        home: FallingNotesScreen(mode: mode),
       ),
     );
 
@@ -99,5 +100,33 @@ void main() {
     expect(game.finished, isTrue);
     // The result screen shows the star row (three star icons).
     expect(find.byIcon(Icons.star).evaluate().length, greaterThanOrEqualTo(1));
+  });
+
+  testWidgets('play mode: pressing the matching piano key catches the note',
+      (tester) async {
+    await tester.pumpWidget(_app(mode: FallingMode.play));
+    final game = _game(tester);
+    expect(find.byType(PianoKeyboard), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    final active = game.activeTargetPitch();
+    expect(active, isNotNull);
+
+    // Tap the white key whose MIDI matches the falling note.
+    const kb = PianoKeyboard();
+    var idx = 0;
+    for (var i = 0; i < 12; i++) {
+      if (kb.whiteMidi(i) == active!.midiNumber) {
+        idx = i;
+        break;
+      }
+    }
+    final box = tester.getRect(find.byType(PianoKeyboard));
+    final keyW = box.width / 12;
+    await tester.tapAt(Offset(box.left + (idx + 0.5) * keyW, box.bottom - 8));
+    await tester.pump();
+
+    expect(game.caughtCount, 1);
+    expect(game.score, greaterThan(0));
   });
 }

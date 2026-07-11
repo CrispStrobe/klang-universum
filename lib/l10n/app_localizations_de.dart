@@ -778,6 +778,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectLinePrompt => 'Verbinde jede Note mit ihrem Namen!';
 
   @override
+  String get gameFallingKeys => 'Fallende Tasten';
+
+  @override
+  String get gameFallingKeysSubtitle =>
+      'Spiele jede fallende Note auf dem Klavier, bevor sie landet!';
+
+  @override
+  String get gameConnectSymbols => 'Symbole verbinden';
+
+  @override
+  String get gameConnectSymbolsSubtitle =>
+      'Ziehe eine Linie von jedem Notenwert zu seinem Namen';
+
+  @override
+  String get connectSymbolsPrompt => 'Verbinde jedes Symbol mit seinem Namen!';
+
+  @override
   String get fallingSpeedUp => 'Schneller!';
 
   @override

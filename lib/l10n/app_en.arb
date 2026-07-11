@@ -387,6 +387,11 @@
   "gameConnectLine": "Connect the Notes",
   "gameConnectLineSubtitle": "Draw a line from each note to its name",
   "connectLinePrompt": "Connect each note to its name!",
+  "gameFallingKeys": "Falling Keys",
+  "gameFallingKeysSubtitle": "Play each falling note on the piano before it lands!",
+  "gameConnectSymbols": "Connect the Symbols",
+  "gameConnectSymbolsSubtitle": "Draw a line from each note value to its name",
+  "connectSymbolsPrompt": "Connect each symbol to its name!",
   "fallingSpeedUp": "Speed up!",
   "fallingMultiplier": "×{mult}",
   "@fallingMultiplier": {

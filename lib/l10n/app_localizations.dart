@@ -1466,6 +1466,36 @@ abstract class AppLocalizations {
   /// **'Connect each note to its name!'**
   String get connectLinePrompt;
 
+  /// No description provided for @gameFallingKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Falling Keys'**
+  String get gameFallingKeys;
+
+  /// No description provided for @gameFallingKeysSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play each falling note on the piano before it lands!'**
+  String get gameFallingKeysSubtitle;
+
+  /// No description provided for @gameConnectSymbols.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Symbols'**
+  String get gameConnectSymbols;
+
+  /// No description provided for @gameConnectSymbolsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw a line from each note value to its name'**
+  String get gameConnectSymbolsSubtitle;
+
+  /// No description provided for @connectSymbolsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect each symbol to its name!'**
+  String get connectSymbolsPrompt;
+
   /// No description provided for @fallingSpeedUp.
   ///
   /// In en, this message translates to:

@@ -25,14 +25,14 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 
 | # | Module | Skills (SRI namespace) | Games | Status |
 |---|--------|------------------------|-------|--------|
-| 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) • Sort the Beats (drag into buckets) | 5 built |
+| 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) • Sort the Beats (drag into buckets) • Connect the Symbols (drag glyph↔name) | 6 built |
 | 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) • Falling Notes (arcade: name before it lands) • Connect the Notes (drag note↔name) | 11 built |
 | 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
 | 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) | 4 built |
 | 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
 | 6 | **Harmonik** (T/S/D) | `harmony.function`, `.cadence`, `.hear` | Function Quiz • Cadence Workshop (build T–S–D–T) • Hear the Function (I–IV–V–I context, name the target by ear) | 3 built |
 | 7 | **Cello-Ecke** (instrument corner) | `cello.string`, `cello.finger`, `note_reading.tenor` | Which String? (bass-clef note → C/G/D/A) • Finger Quiz (first position, 0–4) • Tenor Clef reading • *later: shifting/positions, string+finger combined ("play this note"), open-string ear tuning* | 3 built |
-| 8 | **Tasten-Ecke** (piano corner) | `keyboard.find`, `.name`, `.ear`, `.melody`, `.chord`, `.grand` | Find the Key (staff→key, labels fade at 2★, black keys at 3★) • Key Quiz (key→name) • Echo Keys (ear→key, C anchor) • Play the Melody (sight-playing) • Chord Grip • Grand Staff (read both clefs at once, 2★ widens into the middle-C ledger region — partitura `GrandStaffView`) | 6 built |
+| 8 | **Tasten-Ecke** (piano corner) | `keyboard.find`, `.name`, `.ear`, `.melody`, `.chord`, `.grand` | Find the Key (staff→key, labels fade at 2★, black keys at 3★) • Key Quiz (key→name) • Echo Keys (ear→key, C anchor) • Play the Melody (sight-playing) • Chord Grip • Grand Staff (read both clefs at once, 2★ widens into the middle-C ledger region — partitura `GrandStaffView`) • Falling Keys (arcade: play it before it lands) | 7 built |
 | 8b | **Gitarren-Ecke** (guitar corner) | `guitar.string`, `guitar.fret` | Open Strings (read an open string on tab → name it, E A D G B E) • Read the Tab (fretted first-position note → name it) • *later: bass tuning, fretboard-tap "find the fret", techniques (bends/slides/HO-PO), chord-grip diagrams* | 2 built |
 | 9 | **Liederbuch** (real songs) | `songs.tune` | Song Book — public-domain children's songs (5: Alle meine Entchen, Hänschen klein, Twinkle, Mary Had a Little Lamb, Old MacDonald) as real notation with lyrics (partitura v0.4 MultiSystemView + lyrics), synth playback with a karaoke cursor, tap any note to hear it • Name That Tune (ear) • **Import**: MusicXML (paste **or file pick**, via partitura v0.5), ChordPro chord sheets (own parser; tappable chord chips play triads), simple monophonic MIDI (own SMF parser + sixteenth quantization; persisted as MusicXML) • *out of scope: polyphonic MIDI (transcription problem)* | 2 built + import |
 | 10 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring; enter notes by tapping the **staff, a piano, a guitar fretboard, or a cello fingerboard**; **saves to the Song Book as MusicXML** via partitura's writer — opens in MuseScore & co.) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
@@ -245,8 +245,11 @@ of them. Ordered by value ÷ effort.
   ramps every four catches ("Speed up!"). Three hearts, a fixed 15-note run so
   it keeps the rounds/score/1–3★ loop, star-driven range (naturals → middle-C
   ledger at 2★+), colour-scaffold pad, reduced-motion aware. Feeds the shared
-  `note_reading.treble.*` SM-2 engine on every catch/miss. *(Extends to a
-  play-on-the-keyboard variant and a note-values "catch the longest" mode.)*
+  `note_reading.treble.*` SM-2 engine on every catch/miss. The **"play it"
+  variant** ships too: **Falling Keys** (keyboard corner) drops the same notes
+  onto a **piano keyboard** — tap the matching key before it lands (SRI
+  `keyboard.find.*`), one engine, two input modes. *(Still open: a note-values
+  "catch the longest" mode.)*
 - [x] **Connect-a-line matching** (two columns + CustomPaint): note↔name,
   symbol↔meaning, interval↔number. *M — needs a line-drawing overlay.*
   **Shipped**: **Connect the Notes** — notes on staves down the left, their
@@ -254,8 +257,10 @@ of them. Ordered by value ÷ effort.
   correct link locks in colour and plays the pitch, a wrong drop buzzes and
   snaps back; clear all four to advance. A `CustomPaint` draws the wires +
   ports; distinct step letters keep every name unambiguous. Star-driven range,
-  colour-scaffold aware, SRI `note_reading.treble.*`. *(Extends to
-  symbol↔meaning and interval↔number columns.)*
+  colour-scaffold aware, SRI `note_reading.treble.*`. The **symbol↔meaning**
+  column ships too: **Connect the Symbols** (Notenwerte) matches note-value
+  glyphs to their names (SRI `note_values.symbol.*`) — same engine, a `mode`
+  flag. *(Still open: an interval↔number column.)*
 
 ### Toy-inspired mechanics (electronic-toy lineage)
 

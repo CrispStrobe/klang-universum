@@ -2,14 +2,15 @@
 //
 // "Verbinde die Noten" / "Connect the Notes" — a connect-a-line matching drill
 // (docs/PLAN.md gamified backlog, the last of the surveyed interaction
-// mechanics). Two columns: notes on real partitura staves on the left, their
-// letter names (shuffled) on the right. The child drags a line from a note to
-// its name; a correct link locks in colour and plays the pitch, a wrong drop
-// buzzes and snaps back (the app's no-fail loop). Match all four to clear the
-// round.
+// mechanics). Two columns: a symbol on the left (a note on a real partitura
+// staff, or a note-value glyph), its names shuffled down the right. The child
+// drags a line from each symbol to its name; a correct link locks in colour
+// (and plays the pitch, when there is one), a wrong drop buzzes and snaps back
+// (the app's no-fail loop). Match all four to clear the round.
 //
-// SRI: 'note_reading.treble.<step><octave>' — the shared reading namespace, so
-// each first-try link feeds the SM-2 engine.
+// One screen, two modes (like the reading quiz serves several clefs):
+//   • notes   — pitch ↔ letter name        → SRI 'note_reading.treble.*'
+//   • symbols — note-value glyph ↔ its name → SRI 'note_values.symbol.*'
 
 import 'dart:math';
 
@@ -21,13 +22,41 @@ import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
+/// What the two columns hold.
+enum ConnectMode { notes, symbols }
+
+/// One matchable item: a left visual, a (unique) right name, a match key, the
+/// colour of its wire, the pitch to sound on a correct link (if any), and the
+/// SM-2 id it scores into. Names/colours that need context are resolved lazily.
+class _ConnectItem {
+  _ConnectItem({
+    required this.card,
+    required this.matchKey,
+    required this.sriId,
+    required this.playMidi,
+    required this.label,
+    required this.color,
+  });
+
+  final Widget card;
+  final String matchKey; // unique within a round
+  final String sriId;
+  final int? playMidi;
+  final String Function(BuildContext) label;
+  final Color Function(ColorScheme, bool colorScaffold) color;
+}
+
 class ConnectLineScreen extends StatefulWidget {
-  const ConnectLineScreen({super.key});
+  const ConnectLineScreen({super.key, this.mode = ConnectMode.notes});
+
+  final ConnectMode mode;
 
   /// Pairs to connect per round.
   static const pairs = 4;
@@ -52,7 +81,7 @@ abstract interface class ConnectLineTester {
   int get round;
   int get matchedCount;
 
-  /// The right-column index whose name matches left note [leftIndex].
+  /// The right-column index whose name matches left item [leftIndex].
   int matchingRight(int leftIndex);
 }
 
@@ -61,15 +90,8 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     implements ConnectLineTester {
   final _random = Random();
 
-  @override
-  int get matchedCount => _matched.length;
-
-  @override
-  int matchingRight(int leftIndex) =>
-      _rights.indexWhere((p) => p.step == _lefts[leftIndex].step);
-
-  late List<Pitch> _lefts; // notes, top → bottom
-  late List<Pitch> _rights; // the same notes, shuffled, shown as names
+  late List<_ConnectItem> _lefts; // symbols, top → bottom
+  late List<_ConnectItem> _rights; // the same items, shuffled, shown as names
   final Map<int, int> _matched = {}; // left index → right index (locked)
   final Set<int> _recorded = {}; // left indices already scored into SRI
 
@@ -77,10 +99,22 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
   Offset? _dragPos; // current finger position (local)
 
   @override
-  int get totalRounds => 6;
+  int get matchedCount => _matched.length;
 
   @override
+  int matchingRight(int leftIndex) =>
+      _rights.indexWhere((r) => r.matchKey == _lefts[leftIndex].matchKey);
+
+  @override
+  int get totalRounds => 6;
+
+  // Both modes share the star bracket; progress is tracked per mode.
+  @override
   String get gameType => 'connect_line';
+
+  @override
+  String get progressId =>
+      widget.mode == ConnectMode.symbols ? 'connect_symbols' : 'connect_line';
 
   // We play each linked note's own pitch (and a buzz on a miss).
   @override
@@ -94,10 +128,23 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
 
   @override
   void prepareRound() {
+    final items =
+        widget.mode == ConnectMode.symbols ? _symbolItems() : _noteItems();
+    _lefts = items;
+    _rights = [...items]..shuffle(_random);
+    _matched.clear();
+    _recorded.clear();
+    _dragFrom = null;
+    _dragPos = null;
+  }
+
+  // --- Content ---------------------------------------------------------------
+
+  List<_ConnectItem> _noteItems() {
     // Four notes with *distinct* step letters, so every name on the right is
-    // unique and a link is unambiguous. Star-driven width, like the reading
-    // quizzes: naturals on the staff → the middle-C ledger neighbourhood.
-    final wide = context.read<ProgressService>().starsFor('connect_line') >= 2;
+    // unique. Star-driven width like the reading quizzes: naturals on the
+    // staff → the middle-C ledger neighbourhood.
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
     final pool = [for (var p = wide ? -3 : 0; p <= (wide ? 10 : 8); p++) p]
       ..shuffle(_random);
 
@@ -111,31 +158,70 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       }
     }
 
-    _lefts = picked;
-    _rights = [...picked]..shuffle(_random);
-    _matched.clear();
-    _recorded.clear();
-    _dragFrom = null;
-    _dragPos = null;
+    return [
+      for (final pitch in picked)
+        _ConnectItem(
+          card: StaffView(
+            score: Score.simple(notes: '${pitch.step.name}${pitch.octave}:w'),
+            staffSpace: 7,
+            theme: PartituraTheme.kids,
+          ),
+          matchKey: pitch.step.name,
+          sriId: 'note_reading.treble.${pitch.step.name}${pitch.octave}',
+          playMidi: pitch.midiNumber,
+          label: (ctx) => noteNameFor(ctx, pitch.step),
+          color: (scheme, colorScaffold) =>
+              colorScaffold ? pitchClassColor(pitch.step) : scheme.secondary,
+        ),
+    ];
   }
 
-  String _sriId(Pitch p) => 'note_reading.treble.${p.step.name}${p.octave}';
+  List<_ConnectItem> _symbolItems() {
+    // Whole/half/quarter/eighth notes for beginners; rests + sixteenths join at
+    // two stars. Distinct symbols → distinct names.
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final pool = [...(wide ? kNoteSymbols : kNoteSymbols.take(4))]
+      ..shuffle(_random);
+    final picked = pool.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: MusicGlyph(picked[i].glyph, size: 46),
+          matchKey: picked[i].id,
+          sriId: picked[i].sriId,
+          playMidi: null,
+          label: (ctx) => picked[i].label(AppLocalizations.of(ctx)!),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static const _symbolPalette = [
+    Color(0xFF3949AB), // indigo
+    Color(0xFF00897B), // teal
+    Color(0xFFF9A825), // amber
+    Color(0xFFD81B60), // pink
+  ];
+
+  // --- Linking ---------------------------------------------------------------
 
   void _tryConnect(int leftIndex, int rightIndex) {
-    final correct = _lefts[leftIndex].step == _rights[rightIndex].step;
+    final left = _lefts[leftIndex];
+    final correct = left.matchKey == _rights[rightIndex].matchKey;
 
-    // Score the read into SM-2 on the first attempt for this note.
+    // Score the read into SM-2 on the first attempt for this item.
     if (_recorded.add(leftIndex)) {
-      context.read<SriService>().recordResponse(
-            _sriId(_lefts[leftIndex]),
-            correct,
-          );
+      context.read<SriService>().recordResponse(left.sriId, correct);
     }
 
     if (correct) {
-      context
-          .read<AudioService>()
-          .playMidiNote(_lefts[leftIndex].midiNumber, ms: 450);
+      final midi = left.playMidi;
+      if (midi != null) {
+        context.read<AudioService>().playMidiNote(midi, ms: 450);
+      } else {
+        context.read<AudioService>().playCorrect();
+      }
       setState(() => _matched[leftIndex] = rightIndex);
       if (_matched.length == ConnectLineScreen.pairs) {
         resolveAnswer(correct: true); // round cleared
@@ -180,13 +266,18 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     });
   }
 
+  // --- UI --------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScaffold = context.watch<SettingsService>().colorScaffold;
+    final isSymbols = widget.mode == ConnectMode.symbols;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameConnectLine)),
+      appBar: AppBar(
+        title: Text(isSymbols ? l10n.gameConnectSymbols : l10n.gameConnectLine),
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(
@@ -201,7 +292,9 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.connectLinePrompt,
+                      prompt: isSymbols
+                          ? l10n.connectSymbolsPrompt
+                          : l10n.connectLinePrompt,
                     ),
                     const SizedBox(height: 12),
                     Expanded(
@@ -226,10 +319,14 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
   }
 
   Widget _buildBoard(BuildContext context, Size size, bool colorScaffold) {
+    final scheme = Theme.of(context).colorScheme;
     final rowH = size.height / ConnectLineScreen.pairs;
     const leftPortX = ConnectLineScreen._pad + ConnectLineScreen._cardW;
     final rightPortX =
         size.width - ConnectLineScreen._pad - ConnectLineScreen._chipW;
+    final lineColors = [
+      for (final it in _lefts) it.color(scheme, colorScaffold),
+    ];
 
     return GestureDetector(
       key: ConnectLineScreen.boardKey,
@@ -239,17 +336,17 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       onPanEnd: (_) => _onPanEnd(size),
       child: Stack(
         children: [
-          // Left column: notes on staves.
+          // Left column: the symbols.
           for (var i = 0; i < _lefts.length; i++)
             Positioned(
               left: ConnectLineScreen._pad,
               top: i * rowH,
               width: ConnectLineScreen._cardW,
               height: rowH,
-              child: _NoteCard(
-                pitch: _lefts[i],
+              child: _ItemCard(
                 connected: _matched.containsKey(i),
                 active: _dragFrom == i,
+                child: _lefts[i].card,
               ),
             ),
           // Right column: the names.
@@ -260,10 +357,8 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
               width: ConnectLineScreen._chipW,
               height: rowH,
               child: _NameChip(
-                label: noteNameFor(context, _rights[j].step),
-                color: colorScaffold
-                    ? pitchClassColor(_rights[j].step)
-                    : Theme.of(context).colorScheme.secondary,
+                label: _rights[j].label(context),
+                color: _rights[j].color(scheme, colorScaffold),
                 connected: _matched.values.contains(j),
               ),
             ),
@@ -276,12 +371,11 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
                 leftPortX: leftPortX,
                 rightPortX: rightPortX,
                 matched: Map.of(_matched),
-                leftSteps: [for (final p in _lefts) p.step],
+                lineColors: lineColors,
                 dragFrom: _dragFrom,
                 dragPos: _dragPos,
-                colorScaffold: colorScaffold,
-                lineColor: Theme.of(context).colorScheme.primary,
-                portColor: Theme.of(context).colorScheme.outline,
+                dragColor: scheme.primary,
+                portColor: scheme.outline,
               ),
             ),
           ),
@@ -291,16 +385,16 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
   }
 }
 
-class _NoteCard extends StatelessWidget {
-  const _NoteCard({
-    required this.pitch,
+class _ItemCard extends StatelessWidget {
+  const _ItemCard({
     required this.connected,
     required this.active,
+    required this.child,
   });
 
-  final Pitch pitch;
   final bool connected;
   final bool active;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -319,13 +413,7 @@ class _NoteCard extends StatelessWidget {
         border:
             Border.all(color: border, width: connected || active ? 2.5 : 1.5),
       ),
-      child: Center(
-        child: StaffView(
-          score: Score.simple(notes: '${pitch.step.name}${pitch.octave}:w'),
-          staffSpace: 7,
-          theme: PartituraTheme.kids,
-        ),
-      ),
+      child: Center(child: child),
     );
   }
 }
@@ -345,6 +433,7 @@ class _NameChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: connected ? 0.85 : 0.22),
         borderRadius: BorderRadius.circular(12),
@@ -356,7 +445,8 @@ class _NameChip extends StatelessWidget {
       child: Center(
         child: Text(
           label,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: connected
                     ? Colors.white
@@ -376,11 +466,10 @@ class _WirePainter extends CustomPainter {
     required this.leftPortX,
     required this.rightPortX,
     required this.matched,
-    required this.leftSteps,
+    required this.lineColors,
     required this.dragFrom,
     required this.dragPos,
-    required this.colorScaffold,
-    required this.lineColor,
+    required this.dragColor,
     required this.portColor,
   });
 
@@ -389,11 +478,10 @@ class _WirePainter extends CustomPainter {
   final double leftPortX;
   final double rightPortX;
   final Map<int, int> matched;
-  final List<Step> leftSteps;
+  final List<Color> lineColors;
   final int? dragFrom;
   final Offset? dragPos;
-  final bool colorScaffold;
-  final Color lineColor;
+  final Color dragColor;
   final Color portColor;
 
   double _rowCenter(int index) => index * rowH + rowH / 2;
@@ -416,7 +504,7 @@ class _WirePainter extends CustomPainter {
 
     // Locked links.
     matched.forEach((i, j) {
-      final c = colorScaffold ? pitchClassColor(leftSteps[i]) : Colors.green;
+      final c = lineColors[i];
       final paint = Paint()
         ..color = c
         ..strokeWidth = 4
@@ -431,7 +519,7 @@ class _WirePainter extends CustomPainter {
     // The line being dragged.
     if (dragFrom != null && dragPos != null) {
       final paint = Paint()
-        ..color = lineColor
+        ..color = dragColor
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(

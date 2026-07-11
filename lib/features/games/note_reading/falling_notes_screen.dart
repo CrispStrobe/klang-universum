@@ -30,6 +30,7 @@ import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -83,8 +84,20 @@ class _Spark {
   static const lifeMs = 620;
 }
 
+/// How the child answers a falling note.
+enum FallingMode {
+  /// Tap the letter name on a 7-button pad (drills reading → `note_reading`).
+  name,
+
+  /// Tap the matching key on a piano (drills staff → key → `keyboard.find`).
+  play,
+}
+
 class FallingNotesScreen extends StatefulWidget {
-  const FallingNotesScreen({super.key});
+  const FallingNotesScreen({super.key, this.mode = FallingMode.name});
+
+  /// Whether the note is answered by naming it or by playing it on the piano.
+  final FallingMode mode;
 
   /// Notes per run — the round budget behind the star rating.
   static const _kTotalNotes = 15;
@@ -167,6 +180,10 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
   /// Score multiplier grows every 3 consecutive catches, capped at ×5.
   int get _multiplier => (1 + _combo ~/ 3).clamp(1, 5);
 
+  /// Star-thresholds / progress key: distinct per mode.
+  String get _gameId =>
+      widget.mode == FallingMode.play ? 'falling_keys' : 'falling_notes';
+
   @override
   int get score => _score;
   @override
@@ -197,7 +214,10 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
   @override
   void initState() {
     super.initState();
-    _wideRange = context.read<ProgressService>().starsFor('falling_notes') >= 2;
+    // Play mode keeps notes to white keys inside the piano's range, so no
+    // ledger widening there.
+    _wideRange = widget.mode == FallingMode.name &&
+        context.read<ProgressService>().starsFor(_gameId) >= 2;
     _ticker.start();
   }
 
@@ -297,6 +317,18 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
     }
   }
 
+  void _onKey(int midi) {
+    if (_finished) return;
+    final target = activeNote();
+    if (target == null) return;
+
+    if (midi == target.pitch.midiNumber) {
+      _onCatch(target);
+    } else {
+      _onWrongTap();
+    }
+  }
+
   void _onCatch(_FallingNote note) {
     _notes.remove(note);
     context.read<AudioService>().playMidiNote(note.pitch.midiNumber, ms: 420);
@@ -364,9 +396,9 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
     _finished = true;
     _ticker.stop();
     final won = _lives > 0;
-    final stars = scoreToStars('falling_notes', _score, true);
+    final stars = scoreToStars(_gameId, _score, true);
     context.read<ProgressService>().recordResult(
-          'falling_notes',
+          _gameId,
           score: _score,
           stars: stars,
           elapsedMs: _now.value,
@@ -402,7 +434,11 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
     _ticker.start();
   }
 
-  String _sriId(Pitch p) => 'note_reading.treble.${p.step.name}${p.octave}';
+  // Reading the note feeds the shared reading namespace; playing it feeds the
+  // staff→key namespace (both natural-only here, so no accidental token).
+  String _sriId(Pitch p) => widget.mode == FallingMode.play
+      ? 'keyboard.find.${p.step.name}${p.octave}'
+      : 'note_reading.treble.${p.step.name}${p.octave}';
 
   Widget _buildCard(Pitch pitch) => StaffView(
         score: Score.simple(notes: '${pitch.step.name}${pitch.octave}:w'),
@@ -436,13 +472,16 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isPlay = widget.mode == FallingMode.play;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameFallingNotes)),
+      appBar: AppBar(
+        title: Text(isPlay ? l10n.gameFallingKeys : l10n.gameFallingNotes),
+      ),
       body: SafeArea(
         child: _finished
             ? GameResultView(
-                gameType: 'falling_notes',
+                gameType: _gameId,
                 score: _score,
                 onRestart: _restart,
               )
@@ -464,10 +503,23 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
                       },
                     ),
                   ),
-                  _LetterPad(
-                    steps: FallingNotesScreen._kSteps,
-                    onTap: _onLetter,
-                  ),
+                  if (isPlay)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 12),
+                      child: SizedBox(
+                        height: 150,
+                        // C4..G5 covers the natural falling notes (E4..F5).
+                        child: PianoKeyboard(
+                          showLabels: true,
+                          onKeyTap: _onKey,
+                        ),
+                      ),
+                    )
+                  else
+                    _LetterPad(
+                      steps: FallingNotesScreen._kSteps,
+                      onTap: _onLetter,
+                    ),
                 ],
               ),
       ),

@@ -773,6 +773,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectLinePrompt => 'Connect each note to its name!';
 
   @override
+  String get gameFallingKeys => 'Falling Keys';
+
+  @override
+  String get gameFallingKeysSubtitle =>
+      'Play each falling note on the piano before it lands!';
+
+  @override
+  String get gameConnectSymbols => 'Connect the Symbols';
+
+  @override
+  String get gameConnectSymbolsSubtitle =>
+      'Draw a line from each note value to its name';
+
+  @override
+  String get connectSymbolsPrompt => 'Connect each symbol to its name!';
+
+  @override
   String get fallingSpeedUp => 'Speed up!';
 
   @override

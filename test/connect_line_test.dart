@@ -14,7 +14,7 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _app() => MultiProvider(
+Widget _app({ConnectMode mode = ConnectMode.notes}) => MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(
@@ -23,15 +23,15 @@ Widget _app() => MultiProvider(
         Provider<AudioService>(create: (_) => AudioService()),
         ChangeNotifierProvider(create: (_) => ProgressService()),
       ],
-      child: const MaterialApp(
-        localizationsDelegates: [
+      child: MaterialApp(
+        localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [Locale('en'), Locale('de')],
-        home: ConnectLineScreen(),
+        supportedLocales: const [Locale('en'), Locale('de')],
+        home: ConnectLineScreen(mode: mode),
       ),
     );
 
@@ -78,6 +78,21 @@ void main() {
     expect(game.matchedCount, ConnectLineScreen.pairs);
 
     // Clearing the board auto-advances (700ms in QuizRoundMixin).
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(game.round, 1);
+    expect(game.score, greaterThan(0));
+  });
+
+  testWidgets('symbols mode: matching each glyph to its name clears the round',
+      (tester) async {
+    await tester.pumpWidget(_app(mode: ConnectMode.symbols));
+    final game = _game(tester);
+
+    for (var i = 0; i < ConnectLineScreen.pairs; i++) {
+      await _drag(tester, i, game.matchingRight(i));
+    }
+    expect(game.matchedCount, ConnectLineScreen.pairs);
+
     await tester.pump(const Duration(milliseconds: 800));
     expect(game.round, 1);
     expect(game.score, greaterThan(0));

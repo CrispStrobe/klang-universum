@@ -234,6 +234,11 @@
   "gameConnectLine": "Noten verbinden",
   "gameConnectLineSubtitle": "Ziehe eine Linie von jeder Note zu ihrem Namen",
   "connectLinePrompt": "Verbinde jede Note mit ihrem Namen!",
+  "gameFallingKeys": "Fallende Tasten",
+  "gameFallingKeysSubtitle": "Spiele jede fallende Note auf dem Klavier, bevor sie landet!",
+  "gameConnectSymbols": "Symbole verbinden",
+  "gameConnectSymbolsSubtitle": "Ziehe eine Linie von jedem Notenwert zu seinem Namen",
+  "connectSymbolsPrompt": "Verbinde jedes Symbol mit seinem Namen!",
   "fallingSpeedUp": "Schneller!",
   "fallingMultiplier": "×{mult}",
   "@fallingMultiplier": {

@@ -103,6 +103,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameBeatSortSubtitle,
       builder: (_) => const BeatSortScreen(),
     ),
+    GameInfo(
+      id: 'connect_symbols',
+      icon: Icons.polyline,
+      title: (l) => l.gameConnectSymbols,
+      subtitle: (l) => l.gameConnectSymbolsSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.symbols),
+    ),
   ],
   'note_reading': [
     GameInfo(
@@ -395,6 +402,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameGrandStaffRead,
       subtitle: (l) => l.gameGrandStaffReadSubtitle,
       builder: (_) => const GrandStaffReadScreen(),
+    ),
+    GameInfo(
+      id: 'falling_keys',
+      icon: Icons.bolt,
+      title: (l) => l.gameFallingKeys,
+      subtitle: (l) => l.gameFallingKeysSubtitle,
+      builder: (_) => const FallingNotesScreen(mode: FallingMode.play),
     ),
   ],
 };
