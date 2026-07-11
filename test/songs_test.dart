@@ -200,6 +200,87 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('song screen: Play walks the cursor and finishes on its own',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    // A tiny two-note song keeps the fake-clock walk short.
+    const song =
+        Song(id: 't', title: 'Test', dsl: 'c4:q d4:q', lyrics: 'la la');
+    await tester.pumpWidget(_wrap(SongScreen(song: song), sri));
+    await tester.pump();
+
+    expect(find.text('Play'), findsOneWidget);
+    await tester.tap(find.text('Play'));
+    await tester.pump();
+    expect(find.text('Stop'), findsOneWidget); // now playing
+
+    // Walk both quarter notes (500 ms each) to completion.
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Play'), findsOneWidget); // finished, reset to Play
+  });
+
+  testWidgets('song screen: Stop halts playback', (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    const song =
+        Song(id: 't', title: 'Test', dsl: 'c4:q d4:q', lyrics: 'la la');
+    await tester.pumpWidget(_wrap(SongScreen(song: song), sri));
+    await tester.pump();
+
+    await tester.tap(find.text('Play'));
+    await tester.pump();
+    expect(find.text('Stop'), findsOneWidget);
+
+    await tester.tap(find.text('Stop'));
+    await tester.pump();
+    expect(find.text('Play'), findsOneWidget);
+
+    // Flush the pending cursor delay so no timer outlives the test.
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets(
+      'song book lists imported songs + sheets, and delete removes them',
+      (tester) async {
+    // Tall surface so the lazy ListView builds the whole list.
+    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final songs = UserSongsService()
+      ..addSong(
+        const ImportedSong(id: 's1', title: 'Imported One', musicXml: _xml),
+      )
+      ..addSheet(
+        const ImportedChordSheet(
+          id: 'sh1',
+          title: 'Sheet One',
+          source: '{title: x}\n[C]la',
+        ),
+      );
+
+    await tester.pumpWidget(_wrap(const SongListScreen(), sri, songs: songs));
+    await tester.pump();
+
+    expect(find.text('My imported songs'), findsOneWidget);
+    expect(find.text('Imported One'), findsOneWidget);
+    expect(find.text('Chord sheets'), findsOneWidget);
+    expect(find.text('Sheet One'), findsOneWidget);
+
+    // Delete the imported song via its trailing button.
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(Card, 'Imported One'),
+        matching: find.byIcon(Icons.delete_outline),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Imported One'), findsNothing);
+    expect(find.text('Sheet One'), findsOneWidget); // sheet untouched
+  });
+
   testWidgets('chord sheet screen renders the chord row and lyrics',
       (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
