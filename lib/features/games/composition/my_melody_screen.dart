@@ -49,8 +49,15 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
   var _nextId = 0;
   NoteInput _input = NoteInput.staff;
 
+  /// Show low material (e.g. a cello's C2) in the bass clef instead of a tower
+  /// of ledger lines under a treble staff.
+  Clef get _clef =>
+      _notes.any((n) => n.pitches.first.midiNumber < 55) // below G3
+          ? Clef.bass
+          : Clef.treble;
+
   Score get _score => Score(
-        clef: Clef.treble,
+        clef: _clef,
         measures: [
           Measure(List.of(_notes)),
           // Whole-rest measure keeps the tappable staff wide.
@@ -59,8 +66,7 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
         ],
       );
 
-  void _onStaffTap(StaffTarget target) =>
-      _addPitch(target.pitchFor(Clef.treble));
+  void _onStaffTap(StaffTarget target) => _addPitch(target.pitchFor(_clef));
 
   void _addMidi(int midi) => _addPitch(pitchFromMidi(midi));
 
@@ -93,7 +99,7 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
       for (var i = 0; i < _notes.length; i += perMeasure)
         Measure(_notes.sublist(i, min(i + perMeasure, _notes.length))),
     ];
-    return Score(clef: Clef.treble, measures: measures);
+    return Score(clef: _clef, measures: measures);
   }
 
   Future<void> _saveToSongBook() async {

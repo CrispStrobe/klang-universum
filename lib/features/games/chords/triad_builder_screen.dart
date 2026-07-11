@@ -71,6 +71,9 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
       if (_wrongPosition != null) Clef.treble.pitchAt(_wrongPosition!),
     ]..sort((a, b) => a.diatonicIndex.compareTo(b.diatonicIndex));
 
+    // A single measure: only the note's *height* (pitch) matters, and a second
+    // measure just made taps land far from where the note appears. A larger
+    // staff space keeps the target comfortable.
     return Score(
       clef: Clef.treble,
       measures: [
@@ -81,9 +84,6 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
             id: 'triad',
           ),
         ]),
-        // A whole-rest measure widens the tappable staff (empty measures
-        // collapse to minimal width).
-        const Measure([RestElement(NoteDuration(DurationBase.whole))]),
       ],
     );
   }
@@ -173,7 +173,7 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
                               theme: theme,
                               // Fixed scale: fit-to-width explodes on a
                               // near-empty score (clef + one chord).
-                              staffSpace: 16,
+                              staffSpace: 22,
                               ghostDuration:
                                   const NoteDuration(DurationBase.whole),
                               onStaffTap: _onStaffTap,

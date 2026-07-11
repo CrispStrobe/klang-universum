@@ -62,12 +62,21 @@ class _SongScreenState extends State<SongScreen> {
         for (final (_, midi, ms) in _playback) (midi, ms),
       ]),
     );
-    // ...while the cursor walks the notation in the same rhythm.
+    // ...while the cursor walks the notation in the same rhythm. Scheduled
+    // against an absolute clock, not a cumulative Future.delayed: the per-note
+    // rebuild overhead was making the highlight drift behind the audio.
+    final clock = Stopwatch()..start();
+    var startMs = 0;
     for (final (id, _, ms) in _playback) {
+      final wait = startMs - clock.elapsedMilliseconds;
+      if (wait > 0) await Future.delayed(Duration(milliseconds: wait));
       if (!mounted || token != _playToken) return;
       setState(() => _highlightedId = id);
-      await Future.delayed(Duration(milliseconds: ms));
+      startMs += ms;
     }
+    // Hold the last note for its full duration before clearing.
+    final tail = startMs - clock.elapsedMilliseconds;
+    if (tail > 0) await Future.delayed(Duration(milliseconds: tail));
     if (!mounted || token != _playToken) return;
     setState(() {
       _highlightedId = null;
