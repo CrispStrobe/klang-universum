@@ -231,6 +231,9 @@
   "gameLineSpaceSubtitle": "Wische: Linie oder Zwischenraum?",
   "gameFallingNotes": "Notenregen",
   "gameFallingNotesSubtitle": "Benenne die Noten, bevor sie landen!",
+  "gameConnectLine": "Noten verbinden",
+  "gameConnectLineSubtitle": "Ziehe eine Linie von jeder Note zu ihrem Namen",
+  "connectLinePrompt": "Verbinde jede Note mit ihrem Namen!",
   "fallingSpeedUp": "Schneller!",
   "fallingMultiplier": "×{mult}",
   "@fallingMultiplier": {

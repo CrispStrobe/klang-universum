@@ -768,6 +768,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameFallingNotesSubtitle => 'Benenne die Noten, bevor sie landen!';
 
   @override
+  String get gameConnectLine => 'Noten verbinden';
+
+  @override
+  String get gameConnectLineSubtitle =>
+      'Ziehe eine Linie von jeder Note zu ihrem Namen';
+
+  @override
+  String get connectLinePrompt => 'Verbinde jede Note mit ihrem Namen!';
+
+  @override
   String get fallingSpeedUp => 'Schneller!';
 
   @override

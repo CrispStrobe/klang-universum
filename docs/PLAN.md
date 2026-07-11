@@ -26,7 +26,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | # | Module | Skills (SRI namespace) | Games | Status |
 |---|--------|------------------------|-------|--------|
 | 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) • Sort the Beats (drag into buckets) | 5 built |
-| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) • Falling Notes (arcade: name before it lands) | 10 built |
+| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) • Falling Notes (arcade: name before it lands) • Connect the Notes (drag note↔name) | 11 built |
 | 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
 | 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) | 4 built |
 | 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
@@ -247,8 +247,15 @@ of them. Ordered by value ÷ effort.
   ledger at 2★+), colour-scaffold pad, reduced-motion aware. Feeds the shared
   `note_reading.treble.*` SM-2 engine on every catch/miss. *(Extends to a
   play-on-the-keyboard variant and a note-values "catch the longest" mode.)*
-- [ ] **Connect-a-line matching** (two columns + CustomPaint): note↔name,
+- [x] **Connect-a-line matching** (two columns + CustomPaint): note↔name,
   symbol↔meaning, interval↔number. *M — needs a line-drawing overlay.*
+  **Shipped**: **Connect the Notes** — notes on staves down the left, their
+  names (shuffled) down the right; drag a line from each note to its name. A
+  correct link locks in colour and plays the pitch, a wrong drop buzzes and
+  snaps back; clear all four to advance. A `CustomPaint` draws the wires +
+  ports; distinct step letters keep every name unambiguous. Star-driven range,
+  colour-scaffold aware, SRI `note_reading.treble.*`. *(Extends to
+  symbol↔meaning and interval↔number columns.)*
 
 ### Toy-inspired mechanics (electronic-toy lineage)
 

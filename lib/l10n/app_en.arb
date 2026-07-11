@@ -384,6 +384,9 @@
   "gameLineSpaceSubtitle": "Swipe: is the note on a line or in a space?",
   "gameFallingNotes": "Falling Notes",
   "gameFallingNotesSubtitle": "Name the notes before they land!",
+  "gameConnectLine": "Connect the Notes",
+  "gameConnectLineSubtitle": "Draw a line from each note to its name",
+  "connectLinePrompt": "Connect each note to its name!",
   "fallingSpeedUp": "Speed up!",
   "fallingMultiplier": "×{mult}",
   "@fallingMultiplier": {

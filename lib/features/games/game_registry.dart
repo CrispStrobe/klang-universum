@@ -26,6 +26,7 @@ import 'package:klang_universum/features/games/keyboard/key_melody_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
 import 'package:klang_universum/features/games/measures/measure_fill_screen.dart';
 import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
+import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
 import 'package:klang_universum/features/games/note_reading/line_space_screen.dart';
 import 'package:klang_universum/features/games/note_reading/melody_dictation_screen.dart';
@@ -173,6 +174,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameFallingNotes,
       subtitle: (l) => l.gameFallingNotesSubtitle,
       builder: (_) => const FallingNotesScreen(),
+    ),
+    GameInfo(
+      id: 'connect_line',
+      icon: Icons.polyline,
+      title: (l) => l.gameConnectLine,
+      subtitle: (l) => l.gameConnectLineSubtitle,
+      builder: (_) => const ConnectLineScreen(),
     ),
   ],
   'measures': [

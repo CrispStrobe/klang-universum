@@ -1448,6 +1448,24 @@ abstract class AppLocalizations {
   /// **'Name the notes before they land!'**
   String get gameFallingNotesSubtitle;
 
+  /// No description provided for @gameConnectLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Notes'**
+  String get gameConnectLine;
+
+  /// No description provided for @gameConnectLineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw a line from each note to its name'**
+  String get gameConnectLineSubtitle;
+
+  /// No description provided for @connectLinePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect each note to its name!'**
+  String get connectLinePrompt;
+
   /// No description provided for @fallingSpeedUp.
   ///
   /// In en, this message translates to:
