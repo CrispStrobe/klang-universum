@@ -741,6 +741,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tap the notes from lowest to highest';
 
   @override
+  String get gameLineSpace => 'Line or Space?';
+
+  @override
+  String get gameLineSpaceSubtitle =>
+      'Swipe: is the note on a line or in a space?';
+
+  @override
+  String get lineSpacePrompt => 'Swipe ← Line   or   Space →';
+
+  @override
+  String get lineLabel => 'Line';
+
+  @override
+  String get spaceLabel => 'Space';
+
+  @override
   String get noteOrderPrompt => 'Tap the notes from lowest to highest!';
 
   @override

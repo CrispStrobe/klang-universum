@@ -1406,6 +1406,36 @@ abstract class AppLocalizations {
   /// **'Tap the notes from lowest to highest'**
   String get gameNoteOrderSubtitle;
 
+  /// No description provided for @gameLineSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Line or Space?'**
+  String get gameLineSpace;
+
+  /// No description provided for @gameLineSpaceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe: is the note on a line or in a space?'**
+  String get gameLineSpaceSubtitle;
+
+  /// No description provided for @lineSpacePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe ← Line   or   Space →'**
+  String get lineSpacePrompt;
+
+  /// No description provided for @lineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Line'**
+  String get lineLabel;
+
+  /// No description provided for @spaceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Space'**
+  String get spaceLabel;
+
   /// No description provided for @noteOrderPrompt.
   ///
   /// In en, this message translates to:

@@ -26,7 +26,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | # | Module | Skills (SRI namespace) | Games | Status |
 |---|--------|------------------------|-------|--------|
 | 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) | 4 built |
-| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) | 8 built |
+| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) | 9 built |
 | 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
 | 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) | 4 built |
 | 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
@@ -230,8 +230,10 @@ of them. Ordered by value ÷ effort.
   a melody-recall ear variant.)*
 - [ ] **Sort into buckets** (Draggable→DragTarget): major/minor, high/low,
   long/short, sharp/natural/flat; play each card on drag. *S–M.*
-- [ ] **Swipe left/right** (binary drill): line-or-space, in-the-scale?, major or
-  minor by ear. Fast combo/streak loop. *S — cheapest new format.*
+- [x] **Swipe left/right** (binary drill). **Shipped**: **Line or Space?** — a
+  note on a swipe card; swipe left = line, right = space; a wrong swipe bounces
+  back to retry. SRI `note_reading.line_space.*`. *(Extends to in-the-scale? and
+  major-or-minor-by-ear swipes.)*
 - [ ] **Falling notes** (arcade): notes fall to a staff/keyboard, name or play
   them before they land; combo + speed-up. Highest kid-appeal. *M–L.*
 - [ ] **Connect-a-line matching** (two columns + CustomPaint): note↔name,

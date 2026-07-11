@@ -76,6 +76,7 @@ const Map<String, List<int>> kStarThresholds = {
   // Note Match (6 pairs): 600 flawless; fewer moves = more stars.
   'note_memory': [100, 450, 560],
   'note_order': [100, 600, 900],
+  'line_space': [100, 600, 900],
   // Echo Sequence: score = 100 × longest sequence echoed.
   'echo_sequence': [100, 400, 700],
   'cello_string_quiz': [100, 600, 900],

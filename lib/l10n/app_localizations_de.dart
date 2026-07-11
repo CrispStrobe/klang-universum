@@ -747,6 +747,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tippe die Noten von tief nach hoch';
 
   @override
+  String get gameLineSpace => 'Linie oder Zwischenraum?';
+
+  @override
+  String get gameLineSpaceSubtitle => 'Wische: Linie oder Zwischenraum?';
+
+  @override
+  String get lineSpacePrompt => 'Wische ← Linie   oder   Zwischenraum →';
+
+  @override
+  String get lineLabel => 'Linie';
+
+  @override
+  String get spaceLabel => 'Zwischenr.';
+
+  @override
   String get noteOrderPrompt => 'Tippe die Noten von tief nach hoch!';
 
   @override
