@@ -30,7 +30,9 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+# `build` is a symlink to an external SSD on the dev machine (disk-volume
+# policy); a plain `/build/` only matches a real dir, so match the symlink too.
+/build
 /coverage/
 
 # Symbolication related
