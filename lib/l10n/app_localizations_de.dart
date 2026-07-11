@@ -661,10 +661,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameRhythmTapSubtitle => 'Hör zu und klopfe nach';
 
   @override
-  String get rhythmTapPrompt => 'Hör zu und klopfe den Rhythmus nach!';
+  String get rhythmTapPrompt => 'Klopfe den Rhythmus — halte die langen Noten!';
 
   @override
   String get tapHere => 'Klopf hier!';
+
+  @override
+  String get rhythmTapHold => 'Halten…';
 
   @override
   String get gameBeatCount => 'Schläge zählen';
@@ -714,6 +717,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get hearLength => 'Länge anhören';
+
+  @override
+  String get countAlong => 'Mitzählen';
 
   @override
   String get halfBeat => '½ Schlag';

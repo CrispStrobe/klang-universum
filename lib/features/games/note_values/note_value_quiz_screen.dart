@@ -170,25 +170,30 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
                       ),
                     ],
                     const SizedBox(height: 16),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 3.2,
-                      children: [
-                        for (final option in _options)
-                          FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: _buttonColor(option),
-                            ),
-                            onPressed: () => _onAnswer(option),
-                            child: Text(
-                              option.label(l10n),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                      ],
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 3.2,
+                          children: [
+                            for (final option in _options)
+                              FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: _buttonColor(option),
+                                ),
+                                onPressed: () => _onAnswer(option),
+                                child: Text(
+                                  option.label(l10n),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

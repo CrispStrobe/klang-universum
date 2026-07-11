@@ -88,6 +88,22 @@ class AudioService {
         ]),
       );
 
+  /// Plays a note of [beats] quarter-beats with an audible pulse on each beat —
+  /// a tick blended with the tone, re-articulated every beat, so the child can
+  /// count "1–2–3" along with the sounding note.
+  Future<void> playCountedNote(int beats, {int beatMs = 550}) {
+    final note = midiToFrequency(67);
+    final tick = midiToFrequency(84);
+    return _play(
+      renderWav([
+        for (var b = 0; b < beats; b++) ...[
+          (freqs: [note, tick], ms: 70),
+          (freqs: [note], ms: beatMs - 70),
+        ],
+      ]),
+    );
+  }
+
   /// Demonstrates a note/rest length: a note sustains a tone for [beats] beats;
   /// a rest frames [beats] beats of silence between two soft ticks. Used by the
   /// Symbol Quiz to make "how long is this?" audible.

@@ -275,27 +275,32 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                       showMascot: false,
                     ),
                     const SizedBox(height: 16),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 3.2,
-                      children: [
-                        for (final option in _options)
-                          FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  _buttonColor(option, colorScaffold),
-                              textStyle: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () => _onAnswer(option),
-                            child: Text(noteNameFor(context, option)),
-                          ),
-                      ],
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 3.2,
+                          children: [
+                            for (final option in _options)
+                              FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor:
+                                      _buttonColor(option, colorScaffold),
+                                  textStyle: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () => _onAnswer(option),
+                                child: Text(noteNameFor(context, option)),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -76,6 +76,11 @@ class _BeatCountScreenState extends State<BeatCountScreen> with QuizRoundMixin {
     context.read<AudioService>().playMidiNote(67, ms: _expr.beats * 550);
   }
 
+  void _playCounted() {
+    // The same note with an audible beat, so the child can count along.
+    context.read<AudioService>().playCountedNote(_expr.beats);
+  }
+
   void _onAnswer(int beats) {
     if (_lastAnswer == true) return; // round already resolved
     final correct = beats == _expr.beats;
@@ -105,6 +110,11 @@ class _BeatCountScreenState extends State<BeatCountScreen> with QuizRoundMixin {
             icon: const Icon(Icons.volume_up),
             tooltip: l10n.listenAgain,
             onPressed: _playExpr,
+          ),
+          IconButton(
+            icon: const Icon(Icons.timer),
+            tooltip: l10n.countAlong,
+            onPressed: _playCounted,
           ),
         ],
       ),

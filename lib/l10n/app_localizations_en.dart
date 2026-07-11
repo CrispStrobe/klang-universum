@@ -655,10 +655,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameRhythmTapSubtitle => 'Listen and tap it back';
 
   @override
-  String get rhythmTapPrompt => 'Listen, then tap the rhythm!';
+  String get rhythmTapPrompt => 'Tap the rhythm — hold the long notes!';
 
   @override
   String get tapHere => 'Tap here!';
+
+  @override
+  String get rhythmTapHold => 'Holding…';
 
   @override
   String get gameBeatCount => 'Count the Beats';
@@ -706,6 +709,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hearLength => 'Hear the length';
+
+  @override
+  String get countAlong => 'Count along';
 
   @override
   String get halfBeat => '½ beat';

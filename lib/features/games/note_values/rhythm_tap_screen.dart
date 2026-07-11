@@ -6,6 +6,7 @@
 //
 // SRI: 'note_values.rhythm.p<index>'.
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -58,9 +59,16 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
 
   late int _patternIndex;
   _Pattern get _pattern => _patterns[_patternIndex];
-  final List<int> _tapTimesMs = [];
+  // Each press captures both its onset and how long the pad was held, so long
+  // notes must actually be held down (not just tapped).
+  final List<({int onset, int duration})> _presses = [];
   final Stopwatch _stopwatch = Stopwatch();
+  int? _pressStart;
+  bool _holding = false;
   bool? _lastAnswer;
+
+  /// A long note (half or longer) must be held roughly this long to count.
+  static const _longHoldMs = 780;
 
   @override
   int get totalRounds => 8;
@@ -82,7 +90,9 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
   @override
   void prepareRound() {
     _patternIndex = _random.nextInt(_patterns.length);
-    _tapTimesMs.clear();
+    _presses.clear();
+    _pressStart = null;
+    _holding = false;
     _stopwatch
       ..stop()
       ..reset();
@@ -97,27 +107,43 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
     ]);
   }
 
-  void _onTap() {
+  void _onPressDown() {
     if (_lastAnswer != null) return; // evaluating/resolved
-    context.read<AudioService>().playMidiNote(79, ms: 150);
+    if (_presses.length >= _pattern.beats.length) return;
+    if (!_stopwatch.isRunning) _stopwatch.start();
+    setState(() {
+      _holding = true;
+      _pressStart = _stopwatch.elapsedMilliseconds;
+    });
+  }
 
-    if (_tapTimesMs.isEmpty) _stopwatch.start();
-    setState(() => _tapTimesMs.add(_stopwatch.elapsedMilliseconds));
-
-    if (_tapTimesMs.length == _pattern.beats.length) {
-      _evaluate();
-    }
+  void _onPressUp() {
+    if (_lastAnswer != null || _pressStart == null) return;
+    final duration = _stopwatch.elapsedMilliseconds - _pressStart!;
+    // Play the note for as long as it was held — the child hears the length.
+    context.read<AudioService>().playMidiNote(79, ms: duration.clamp(80, 2000));
+    setState(() {
+      _presses.add((onset: _pressStart!, duration: duration));
+      _pressStart = null;
+      _holding = false;
+    });
+    if (_presses.length == _pattern.beats.length) _evaluate();
   }
 
   void _evaluate() {
     final expected = _pattern.onsets
         .map((b) => (b * RhythmTapScreen.beatMs).round())
         .toList();
-    final t0 = _tapTimesMs.first;
+    final t0 = _presses.first.onset;
     var correct = true;
     for (var i = 0; i < expected.length; i++) {
-      final relative = _tapTimesMs[i] - t0;
+      final relative = _presses[i].onset - t0;
       if ((relative - expected[i]).abs() > RhythmTapScreen.toleranceMs) {
+        correct = false;
+        break;
+      }
+      // Long notes (half or more) must actually be held, not just tapped.
+      if (_pattern.beats[i] >= 2 && _presses[i].duration < _longHoldMs) {
         correct = false;
         break;
       }
@@ -133,12 +159,14 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
     if (correct) {
       resolveAnswer(correct: true);
     } else {
-      // Full retry: wrong rhythm resets the taps after a beat.
+      // Full retry: wrong rhythm resets the presses after a beat.
       resolveAnswer(correct: false);
       Future.delayed(const Duration(milliseconds: 900), () {
         if (!mounted) return;
         setState(() {
-          _tapTimesMs.clear();
+          _presses.clear();
+          _pressStart = null;
+          _holding = false;
           _stopwatch
             ..stop()
             ..reset();
@@ -200,7 +228,7 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Icon(
-                              i < _tapTimesMs.length
+                              i < _presses.length
                                   ? Icons.circle
                                   : Icons.circle_outlined,
                               size: 16,
@@ -215,20 +243,33 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 8),
-                        child: Material(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(32),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(32),
-                            onTap: _onTap,
+                        child: Listener(
+                          onPointerDown: (_) => _onPressDown(),
+                          onPointerUp: (_) => _onPressUp(),
+                          onPointerCancel: (_) => _onPressUp(),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 80),
+                            decoration: BoxDecoration(
+                              color: _holding
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer,
+                              borderRadius: BorderRadius.circular(32),
+                            ),
                             child: Center(
                               child: Text(
-                                l10n.tapHere,
+                                _holding ? l10n.rhythmTapHold : l10n.tapHere,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineSmall
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
+                                      color: _holding
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary
+                                          : null,
                                     ),
                               ),
                             ),

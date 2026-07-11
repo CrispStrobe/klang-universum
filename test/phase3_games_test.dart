@@ -73,13 +73,13 @@ void main() {
     await tester.pumpWidget(_wrap(const RhythmTapScreen(), sri));
     await tester.pump();
 
-    expect(find.text('Listen, then tap the rhythm!'), findsOneWidget);
+    expect(find.text('Tap the rhythm — hold the long notes!'), findsOneWidget);
     expect(find.byType(StaffView), findsOneWidget);
     expect(find.text('Tap here!'), findsOneWidget);
 
-    // Tap the pad as many times as the pattern has notes (dots count
-    // matches the pattern length). All taps land instantly, so the round
-    // evaluates as wrong — but it must record exactly one SRI response.
+    // Press the pad once per pattern note (a tap = a zero-length press, so any
+    // long note fails the hold check). The round evaluates as wrong but must
+    // record exactly one SRI response.
     final dots = find.byIcon(Icons.circle_outlined).evaluate().length;
     for (var i = 0; i < dots; i++) {
       await tester.tap(find.text('Tap here!'));

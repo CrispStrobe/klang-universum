@@ -1247,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @rhythmTapPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Listen, then tap the rhythm!'**
+  /// **'Tap the rhythm — hold the long notes!'**
   String get rhythmTapPrompt;
 
   /// No description provided for @tapHere.
@@ -1255,6 +1255,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap here!'**
   String get tapHere;
+
+  /// No description provided for @rhythmTapHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Holding…'**
+  String get rhythmTapHold;
 
   /// No description provided for @gameBeatCount.
   ///
@@ -1345,6 +1351,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hear the length'**
   String get hearLength;
+
+  /// No description provided for @countAlong.
+  ///
+  /// In en, this message translates to:
+  /// **'Count along'**
+  String get countAlong;
 
   /// No description provided for @halfBeat.
   ///
