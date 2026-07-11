@@ -10,168 +10,86 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/progress_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../core/tuning.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/music_glyph.dart';
-import 'symbol_catalog.dart';
 
 class DurationDuelScreen extends StatefulWidget {
   const DurationDuelScreen({super.key});
-
-  static const totalRounds = 10;
-  static const pointsPerRound = 100;
 
   @override
   State<DurationDuelScreen> createState() => _DurationDuelScreenState();
 }
 
-class _DurationDuelScreenState extends State<DurationDuelScreen> {
+class _DurationDuelScreenState extends State<DurationDuelScreen>
+    with QuizRoundMixin<DurationDuelScreen> {
   final _random = Random();
 
-  int _round = 0;
-  int _score = 0;
   late NoteSymbol _left;
   late NoteSymbol _right;
   NoteSymbol? _tapped;
-  bool _answeredWrong = false;
-  bool _finished = false;
 
   NoteSymbol get _longer => _left.beats >= _right.beats ? _left : _right;
 
   @override
+  int get totalRounds => 10;
+
+  @override
+  String get gameType => 'duration_duel';
+
+  @override
   void initState() {
     super.initState();
-    _prepareRound();
+    prepareRound();
   }
 
-  void _prepareRound() {
+  @override
+  void prepareRound() {
     // Draw two symbols with different durations.
     final pool = [...kNoteSymbols]..shuffle(_random);
     _left = pool.first;
     _right = pool.firstWhere((s) => s.beats != _left.beats);
     _tapped = null;
-    _answeredWrong = false;
   }
 
   void _onTap(NoteSymbol choice) {
     if (_tapped == _longer) return; // round already resolved
     final correct = choice == _longer;
 
-    if (_tapped == null || !_answeredWrong) {
+    if (_tapped == null || !answeredWrong) {
       final sri = context.read<SriService>();
       sri.recordResponse(_left.sriId, correct);
       sri.recordResponse(_right.sriId, correct);
     }
 
-    final audio = context.read<AudioService>();
-    if (correct && _round + 1 >= DurationDuelScreen.totalRounds) {
-      audio.playFanfare();
-      final finalScore =
-          _score + (_answeredWrong ? 0 : DurationDuelScreen.pointsPerRound);
-      context.read<ProgressService>().recordResult(
-            'duration_duel',
-            score: finalScore,
-            stars: scoreToStars('duration_duel', finalScore, true),
-          );
-    } else {
-      correct ? audio.playCorrect() : audio.playWrong();
-    }
-
-    setState(() {
-      _tapped = choice;
-      if (correct) {
-        if (!_answeredWrong) {
-          _score += DurationDuelScreen.pointsPerRound;
-        }
-        if (_round + 1 >= DurationDuelScreen.totalRounds) {
-          _finished = true;
-        }
-      } else {
-        _answeredWrong = true;
-      }
-    });
-
-    if (correct && !_finished) {
-      Future.delayed(const Duration(milliseconds: 700), () {
-        if (!mounted) return;
-        setState(() {
-          _round++;
-          _prepareRound();
-        });
-      });
-    }
-  }
-
-  void _restart() {
-    setState(() {
-      _round = 0;
-      _score = 0;
-      _finished = false;
-      _prepareRound();
-    });
+    setState(() => _tapped = choice);
+    resolveAnswer(correct: correct);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final stars = scoreToStars('duration_duel', _score, true);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.gameDurationDuel)),
       body: SafeArea(
-        child: _finished
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (var i = 0; i < 3; i++)
-                          Icon(
-                            i < stars ? Icons.star : Icons.star_border,
-                            size: 56,
-                            color: Colors.amber,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.resultScore(_score),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _restart,
-                      icon: const Icon(Icons.replay),
-                      label: Text(l10n.playAgain),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(l10n.backButton),
-                    ),
-                  ],
-                ),
+        child: finished
+            ? GameResultView(
+                gameType: gameType,
+                score: score,
+                onRestart: restartGame,
               )
             : Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    Text(
-                      l10n.roundOf(_round + 1, DurationDuelScreen.totalRounds),
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.whichLastsLonger,
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center,
+                    RoundHeader(
+                      round: round + 1,
+                      totalRounds: totalRounds,
+                      prompt: l10n.whichLastsLonger,
                     ),
                     const SizedBox(height: 16),
                     Expanded(
@@ -184,22 +102,8 @@ class _DurationDuelScreenState extends State<DurationDuelScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 28,
-                      child: Text(
-                        _tapped == null
-                            ? ''
-                            : _tapped == _longer
-                                ? l10n.feedbackCorrect
-                                : l10n.feedbackTryAgain,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: _tapped == _longer
-                                      ? Colors.green
-                                      : Colors.redAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
+                    FeedbackLine(
+                      correct: _tapped == null ? null : _tapped == _longer,
                     ),
                   ],
                 ),

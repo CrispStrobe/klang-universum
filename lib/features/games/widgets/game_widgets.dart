@@ -4,12 +4,11 @@
 // prompt) and the end-of-game result view (stars, score, replay).
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/progress_service.dart';
-import '../../../core/tuning.dart';
-import '../../../l10n/app_localizations.dart';
 
 class RoundHeader extends StatelessWidget {
   final int round; // 1-based
@@ -73,19 +72,25 @@ class GameResultView extends StatelessWidget {
   /// Game type key into [kStarThresholds].
   final String gameType;
   final int score;
+
+  /// Score used for the star rating, when it differs from the displayed
+  /// [score]. Lets variable-length review sessions normalize to the same star
+  /// brackets as a full game. Defaults to [score].
+  final int? starScore;
   final VoidCallback? onRestart;
 
   const GameResultView({
     super.key,
     required this.gameType,
     required this.score,
+    this.starScore,
     this.onRestart,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final stars = scoreToStars(gameType, score, true);
+    final stars = scoreToStars(gameType, starScore ?? score, true);
 
     return Center(
       child: Column(

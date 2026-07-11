@@ -10,15 +10,14 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/progress_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../core/tuning.dart';
-import '../../../l10n/app_localizations.dart';
-import 'note_names.dart';
 
 class NoteReadingQuizScreen extends StatefulWidget {
   final Clef clef;
@@ -34,27 +33,44 @@ class NoteReadingQuizScreen extends StatefulWidget {
   });
 
   static const totalRounds = 10;
-  static const pointsPerRound = 100;
 
   @override
   State<NoteReadingQuizScreen> createState() => _NoteReadingQuizScreenState();
 }
 
-class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
+class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
+    with QuizRoundMixin<NoteReadingQuizScreen> {
   final _random = Random();
 
   List<Pitch>? _reviewSequence; // null = random rounds
-  int _round = 0;
-  int _score = 0;
   late Pitch _target;
   late List<Step> _options;
-  bool _answeredWrong = false;
   Step? _tapped;
-  bool _finished = false;
 
   bool get _isReview => _reviewSequence != null;
-  int get _totalRounds =>
+
+  @override
+  int get totalRounds =>
       _reviewSequence?.length ?? NoteReadingQuizScreen.totalRounds;
+
+  @override
+  String get gameType => 'note_reading_quiz';
+
+  @override
+  String get progressId => 'note_reading_${widget.clef.name}';
+
+  @override
+  bool get isReviewSession => _isReview;
+
+  // This game plays the actual sounding pitch as feedback, not a generic blip.
+  @override
+  bool get playFeedbackSounds => false;
+
+  /// Normalize review sessions to a full-length-equivalent score so any length
+  /// lands in the same star brackets.
+  int get _starScore => totalRounds > 0
+      ? (score * NoteReadingQuizScreen.totalRounds / totalRounds).round()
+      : 0;
 
   @override
   void initState() {
@@ -70,10 +86,11 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
         .whereType<Pitch>()
         .toList();
     _reviewSequence = (parsed == null || parsed.isEmpty) ? null : parsed;
-    _prepareRound();
+    prepareRound();
   }
 
-  void _prepareRound() {
+  @override
+  void prepareRound() {
     // Naturals on the staff (bottom line..top line), no ledger lines yet —
     // the right starting range for beginners in both clefs.
     // Star-driven difficulty: 2+ stars widen the range to the ledger
@@ -82,7 +99,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
         .read<ProgressService>()
         .starsFor('note_reading_${widget.clef.name}');
     _target = _reviewSequence != null
-        ? _reviewSequence![_round]
+        ? _reviewSequence![round]
         : stars >= 2
             ? widget.clef.pitchAt(-2 + _random.nextInt(13)) // -2..10
             : widget.clef.pitchAt(_random.nextInt(9)); // 0..8
@@ -90,8 +107,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
     final distractors = [...Step.values]
       ..remove(_target.step)
       ..shuffle(_random);
-    _options = ([_target.step, ...distractors.take(3)]..shuffle(_random));
-    _answeredWrong = false;
+    _options = [_target.step, ...distractors.take(3)]..shuffle(_random);
     _tapped = null;
   }
 
@@ -107,49 +123,12 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
       context.read<AudioService>().playWrong();
     }
 
-    if (_tapped == null || !_answeredWrong) {
+    if (_tapped == null || !answeredWrong) {
       context.read<SriService>().recordResponse(_sriId, correct);
     }
 
-    setState(() {
-      _tapped = choice;
-      if (correct) {
-        if (!_answeredWrong) {
-          _score += NoteReadingQuizScreen.pointsPerRound;
-        }
-        if (_round + 1 >= _totalRounds) {
-          _finished = true;
-          if (!_isReview) {
-            context.read<ProgressService>().recordResult(
-                  'note_reading_${widget.clef.name}',
-                  score: _score,
-                  stars: scoreToStars('note_reading_quiz', _score, true),
-                );
-          }
-        }
-      } else {
-        _answeredWrong = true;
-      }
-    });
-
-    if (correct && !_finished) {
-      Future.delayed(const Duration(milliseconds: 700), () {
-        if (!mounted) return;
-        setState(() {
-          _round++;
-          _prepareRound();
-        });
-      });
-    }
-  }
-
-  void _restart() {
-    setState(() {
-      _round = 0;
-      _score = 0;
-      _finished = false;
-      _prepareRound();
-    });
+    setState(() => _tapped = choice);
+    resolveAnswer(correct: correct);
   }
 
   @override
@@ -170,25 +149,21 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: SafeArea(
-        child: _finished
-            ? _ResultView(
-                score: _score,
-                rounds: _totalRounds,
-                onRestart: _isReview ? null : _restart,
+        child: finished
+            ? GameResultView(
+                gameType: gameType,
+                score: score,
+                starScore: _starScore,
+                onRestart: _isReview ? null : restartGame,
               )
             : Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    Text(
-                      l10n.roundOf(_round + 1, _totalRounds),
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.whatIsThisNote,
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center,
+                    RoundHeader(
+                      round: round + 1,
+                      totalRounds: totalRounds,
+                      prompt: l10n.whatIsThisNote,
                     ),
                     const SizedBox(height: 16),
                     Expanded(
@@ -210,22 +185,8 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 28,
-                      child: Text(
-                        _tapped == null
-                            ? ''
-                            : _tapped == _target.step
-                                ? l10n.feedbackCorrect
-                                : l10n.feedbackTryAgain,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: _tapped == _target.step
-                                      ? Colors.green
-                                      : Colors.redAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
+                    FeedbackLine(
+                      correct: _tapped == null ? null : _tapped == _target.step,
                     ),
                     const SizedBox(height: 16),
                     GridView.count(
@@ -263,64 +224,5 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen> {
     }
     if (option == _tapped && option != _target.step) return Colors.redAccent;
     return null;
-  }
-}
-
-class _ResultView extends StatelessWidget {
-  final int score;
-  final int rounds;
-  final VoidCallback? onRestart;
-
-  const _ResultView({
-    required this.score,
-    required this.rounds,
-    required this.onRestart,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    // Normalize to a 10-round-equivalent score so the same star bracket
-    // works for review sessions of any length.
-    final normalized = rounds > 0
-        ? (score * NoteReadingQuizScreen.totalRounds / rounds).round()
-        : 0;
-    final stars = scoreToStars('note_reading_quiz', normalized, true);
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 0; i < 3; i++)
-                Icon(
-                  i < stars ? Icons.star : Icons.star_border,
-                  size: 56,
-                  color: Colors.amber,
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.resultScore(score),
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 24),
-          if (onRestart != null)
-            FilledButton.icon(
-              onPressed: onRestart,
-              icon: const Icon(Icons.replay),
-              label: Text(l10n.playAgain),
-            ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.backButton),
-          ),
-        ],
-      ),
-    );
   }
 }
