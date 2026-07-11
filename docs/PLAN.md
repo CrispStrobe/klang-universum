@@ -137,8 +137,10 @@ the app category the idea comes from. Tick as shipped.
   drill. *(web theory trainers.) S · ♪♪♪.* Reinforces EN/DE. **Shipped.**
 - [x] Daily streak + practice calendar (flame + count + 7-day dots on home;
   finishing a game marks the day). *(habit-loop learning apps.) S · ♪♪.* **Shipped.**
-- [ ] "Wait mode" pacing — advance only on the correct answer, no timed fail for
-  slow readers. *(interactive sheet-music apps.) S · ♪♪♪.*
+- [x] "Wait mode" pacing — advance only on the correct answer, no timed fail for
+  slow readers. *(interactive sheet-music apps.) S · ♪♪♪.* **Already the design**
+  (`QuizRoundMixin` retries until correct, no timers/lives anywhere); now
+  guarded by a contract test.
 - [ ] Reacting mascot — eats correct notes, comically reacts on wrong (our
   biggest kid-engagement gap). *(note-eating mascot games.) M · ♪♪.*
 - [ ] Hideable timer + beat-your-time replay — voluntary reps feed SM-2. *(flashcard reading apps.) S · ♪♪.*
