@@ -345,6 +345,10 @@
   "gameMelodyEcho": "Melody Echo",
   "gameMelodyEchoSubtitle": "Find the melody you heard",
   "melodyEchoPrompt": "Listen! Which melody did you hear?",
+  "gameMelodyDictation": "Melody Dictation",
+  "gameMelodyDictationSubtitle": "Hear it, then write it on the staff",
+  "melodyDictationPrompt": "Listen, then tap the notes you heard",
+  "dictationUndo": "Undo",
   "whatIsThisSymbol": "What is this symbol called?",
   "roundOf": "Round {current} of {total}",
   "@roundOf": {

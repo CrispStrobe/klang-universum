@@ -26,7 +26,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | # | Module | Skills (SRI namespace) | Games | Status |
 |---|--------|------------------------|-------|--------|
 | 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) | 4 built |
-| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody` | Reading Quiz ×2 • Place the Note ×2 • Melody Echo (ear↔staff) | 5 built |
+| 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) | 6 built |
 | 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
 | 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) | 3 built |
 | 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
@@ -169,8 +169,14 @@ the app category the idea comes from. Tick as shipped.
   C via diatonic arithmetic. It **fades with mastery**: always for beginners,
   only after a wrong attempt at 2★, gone at 3★ and in review tests. Pure hint
   engine in `reading_hint.dart`, unit-tested across clefs.
-- [ ] Written rhythm & melodic dictation — tap the rhythm / place noteheads,
-  reusing the MusicXML sandbox. *(theory/ear-training apps.) M · ♪♪.*
+- [x] Written rhythm & melodic dictation — tap the rhythm / place noteheads,
+  reusing the MusicXML sandbox. *(theory/ear-training apps.) M · ♪♪.* **Shipped**:
+  **Melody Dictation** (note_reading) — a melody plays (audio only, nothing
+  shown) and the child *writes* it by tapping noteheads onto partitura's
+  InteractiveStaff (the composing-sandbox input), with per-note pitch feedback,
+  undo, and a note-for-note check; SRI `note_reading.dictation.len3`. The
+  production sibling of the multiple-choice Melody Echo. (Rhythm dictation is
+  already served by Rhythm Echo's hear-then-tap-back loop.)
 - [ ] Removable color scaffold for pre-readers (color + solfège + number +
   hand-sign, peeled away as they learn the staff). *(color-coded early-years methods.) M · ♪♪.*
 - [ ] Play-in-time-to-music lane (tap-along rhythm / falling-note). *(tap-along rhythm games.) M · ♪♪.*

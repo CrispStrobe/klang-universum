@@ -263,8 +263,11 @@ class _ReadingHintChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.lightbulb_outline,
-              size: 18, color: scheme.onSecondaryContainer),
+          Icon(
+            Icons.lightbulb_outline,
+            size: 18,
+            color: scheme.onSecondaryContainer,
+          ),
           const SizedBox(width: 8),
           Flexible(
             child: Text(

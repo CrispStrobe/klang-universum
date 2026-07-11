@@ -1244,6 +1244,30 @@ abstract class AppLocalizations {
   /// **'Listen! Which melody did you hear?'**
   String get melodyEchoPrompt;
 
+  /// No description provided for @gameMelodyDictation.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody Dictation'**
+  String get gameMelodyDictation;
+
+  /// No description provided for @gameMelodyDictationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear it, then write it on the staff'**
+  String get gameMelodyDictationSubtitle;
+
+  /// No description provided for @melodyDictationPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen, then tap the notes you heard'**
+  String get melodyDictationPrompt;
+
+  /// No description provided for @dictationUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get dictationUndo;
+
   /// No description provided for @whatIsThisSymbol.
   ///
   /// In en, this message translates to:

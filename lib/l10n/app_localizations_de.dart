@@ -662,6 +662,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get melodyEchoPrompt => 'Hör zu! Welche Melodie war das?';
 
   @override
+  String get gameMelodyDictation => 'Melodie-Diktat';
+
+  @override
+  String get gameMelodyDictationSubtitle =>
+      'Hören, dann ins Notensystem schreiben';
+
+  @override
+  String get melodyDictationPrompt =>
+      'Hör zu und tippe die Noten, die du gehört hast';
+
+  @override
+  String get dictationUndo => 'Zurück';
+
+  @override
   String get whatIsThisSymbol => 'Wie heißt dieses Zeichen?';
 
   @override

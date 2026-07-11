@@ -23,6 +23,7 @@ import 'package:klang_universum/features/games/keyboard/key_melody_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
 import 'package:klang_universum/features/games/measures/measure_fill_screen.dart';
 import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
+import 'package:klang_universum/features/games/note_reading/melody_dictation_screen.dart';
 import 'package:klang_universum/features/games/note_reading/melody_echo_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
@@ -121,6 +122,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMelodyEcho,
       subtitle: (l) => l.gameMelodyEchoSubtitle,
       builder: (_) => const MelodyEchoScreen(),
+    ),
+    GameInfo(
+      id: 'melody_dictation',
+      icon: Icons.edit_note,
+      title: (l) => l.gameMelodyDictation,
+      subtitle: (l) => l.gameMelodyDictationSubtitle,
+      builder: (_) => const MelodyDictationScreen(),
     ),
   ],
   'measures': [
