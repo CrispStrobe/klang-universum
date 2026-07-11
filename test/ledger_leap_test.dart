@@ -2,6 +2,7 @@
 // scores; a wrong count does not (the app's no-fail loop).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
@@ -49,6 +50,23 @@ void main() {
     expect(game.round, 0);
 
     await tester.tap(find.widgetWithText(FilledButton, '${game.correctLines}'));
+    await tester.pump(const Duration(milliseconds: 800));
+
+    expect(game.round, 1);
+    expect(game.score, greaterThan(0));
+  });
+
+  testWidgets('number keys select the answer (keyboard control)',
+      (tester) async {
+    await tester.pumpWidget(_app());
+    final game = _game(tester);
+    const keys = {
+      1: LogicalKeyboardKey.digit1,
+      2: LogicalKeyboardKey.digit2,
+      3: LogicalKeyboardKey.digit3,
+    };
+
+    await tester.sendKeyEvent(keys[game.correctLines]!);
     await tester.pump(const Duration(milliseconds: 800));
 
     expect(game.round, 1);

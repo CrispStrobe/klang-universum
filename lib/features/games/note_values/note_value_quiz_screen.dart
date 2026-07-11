@@ -15,7 +15,7 @@ import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:klang_universum/shared/widgets/music_glyph.dart';
+import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class NoteValueQuizScreen extends StatefulWidget {
@@ -84,6 +84,21 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
 
   bool get _targetIsRest => _target.id.endsWith('_rest');
 
+  static String _durationToken(double beats) {
+    if (beats >= 1.0) return 'w';
+    if (beats >= 0.5) return 'h';
+    if (beats >= 0.25) return 'q';
+    if (beats >= 0.125) return 'e';
+    return 's';
+  }
+
+  /// The symbol on a real staff so rests (whole vs half hang from different
+  /// lines) are actually identifiable — a bare glyph is ambiguous.
+  Score get _symbolScore {
+    final token = _durationToken(_target.beats);
+    return Score.simple(notes: _targetIsRest ? 'r:$token' : 'b4:$token');
+  }
+
   /// The symbol's length in 4/4 beats (whole = 4, quarter = 1, eighth = ½).
   double get _targetBeats => _target.beats * 4;
 
@@ -145,7 +160,14 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
                     Expanded(
                       child: Card(
                         child: Center(
-                          child: MusicGlyph(_target.glyph, size: 96),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: StaffView(
+                              score: _symbolScore,
+                              staffSpace: 18,
+                              theme: PartituraTheme.kids,
+                            ),
+                          ),
                         ),
                       ),
                     ),

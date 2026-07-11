@@ -73,8 +73,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
     expect(game.activeTargetPitch(), isNotNull);
 
-    // Do nothing until well past the fall time: the note drops uncaught.
-    await tester.pump(const Duration(milliseconds: 5200));
+    // Do nothing until well past the (level-1) fall time: the note drops
+    // uncaught. Level 1 fall is ~9s, so pump comfortably past it.
+    await tester.pump(const Duration(milliseconds: 10000));
     expect(game.lives, lessThan(FallingNotesScreen.maxLives));
     expect(game.caughtCount, 0);
   });

@@ -230,11 +230,12 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
 
   // --- Speed / difficulty tuning ---------------------------------------------
 
+  // Level 1 starts gentle (~half the old speed); it ramps as catches climb.
   int _fallMsForLevel(int level) =>
-      (4600 - 520 * (level - 1)).clamp(2200, 4600);
+      (9000 - 900 * (level - 1)).clamp(3600, 9000);
 
   int _spawnGapForLevel(int level) =>
-      (1700 - 170 * (level - 1)).clamp(950, 1700);
+      (2600 - 220 * (level - 1)).clamp(1400, 2600);
 
   // --- Game loop -------------------------------------------------------------
 

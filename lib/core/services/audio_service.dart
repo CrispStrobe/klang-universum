@@ -137,6 +137,16 @@ class AudioService {
 
   Future<void> playFanfare() => _play(_fanfareWav ??= renderSfxFanfare());
 
+  /// Stops whatever is currently sounding. Used by hold-to-play games so a note
+  /// rings only while the pad is held.
+  Future<void> stop() async {
+    try {
+      await _player?.stop();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AUDIO] stop unavailable: $e');
+    }
+  }
+
   void dispose() {
     _player?.dispose();
     _player = null;

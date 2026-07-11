@@ -298,11 +298,18 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
                     ),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final size = constraints.biggest;
-                          return _buildBoard(context, size, colorScaffold);
-                        },
+                      // Keep the two columns close together, not pinned to the
+                      // screen edges on wide/web layouts.
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final size = constraints.biggest;
+                              return _buildBoard(context, size, colorScaffold);
+                            },
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),

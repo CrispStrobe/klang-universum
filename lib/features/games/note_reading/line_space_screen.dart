@@ -11,6 +11,7 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:flutter/services.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -87,6 +88,19 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
     resolveAnswer(correct: correct);
   }
 
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      _commit(true); // line
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      _commit(false); // space
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -102,57 +116,62 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
                 score: score,
                 onRestart: restartGame,
               )
-            : Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    RoundHeader(
-                      round: round + 1,
-                      totalRounds: totalRounds,
-                      prompt: l10n.lineSpacePrompt,
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          _SwipeLabel(
-                            text: l10n.lineLabel,
-                            icon: Icons.remove,
-                            active: progress < -0.3,
-                          ),
-                          Expanded(
-                            child: GestureDetector(
-                              onHorizontalDragUpdate: (d) =>
-                                  setState(() => _dragX += d.delta.dx),
-                              onHorizontalDragEnd: (_) {
-                                if (_dragX <=
-                                    -LineSpaceScreen._swipeThreshold) {
-                                  _commit(true);
-                                } else if (_dragX >=
-                                    LineSpaceScreen._swipeThreshold) {
-                                  _commit(false);
-                                } else {
-                                  setState(() => _dragX = 0);
-                                }
-                              },
-                              child: Transform.translate(
-                                offset: Offset(_dragX, 0),
-                                child: Transform.rotate(
-                                  angle: progress * 0.12,
-                                  child: Card(
-                                    elevation: 4,
-                                    child: Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        child: StaffView(
-                                          score: Score.simple(
-                                            notes:
-                                                '${_pitch.step.name}${_pitch.octave}:w',
+            : Focus(
+                autofocus: true,
+                onKeyEvent: _onKey,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      RoundHeader(
+                        round: round + 1,
+                        totalRounds: totalRounds,
+                        prompt: l10n.lineSpacePrompt,
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            _SwipeLabel(
+                              text: l10n.lineLabel,
+                              icon: Icons.remove,
+                              active: progress < -0.3,
+                              onTap: () => _commit(true),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onHorizontalDragUpdate: (d) =>
+                                    setState(() => _dragX += d.delta.dx),
+                                onHorizontalDragEnd: (_) {
+                                  if (_dragX <=
+                                      -LineSpaceScreen._swipeThreshold) {
+                                    _commit(true);
+                                  } else if (_dragX >=
+                                      LineSpaceScreen._swipeThreshold) {
+                                    _commit(false);
+                                  } else {
+                                    setState(() => _dragX = 0);
+                                  }
+                                },
+                                child: Transform.translate(
+                                  offset: Offset(_dragX, 0),
+                                  child: Transform.rotate(
+                                    angle: progress * 0.12,
+                                    child: Card(
+                                      elevation: 4,
+                                      child: Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
                                           ),
-                                          staffSpace: 14,
-                                          theme: PartituraTheme.kids,
+                                          child: StaffView(
+                                            score: Score.simple(
+                                              notes:
+                                                  '${_pitch.step.name}${_pitch.octave}:w',
+                                            ),
+                                            staffSpace: 14,
+                                            theme: PartituraTheme.kids,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -160,18 +179,19 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
                                 ),
                               ),
                             ),
-                          ),
-                          _SwipeLabel(
-                            text: l10n.spaceLabel,
-                            icon: Icons.crop_square,
-                            active: progress > 0.3,
-                          ),
-                        ],
+                            _SwipeLabel(
+                              text: l10n.spaceLabel,
+                              icon: Icons.crop_square,
+                              active: progress > 0.3,
+                              onTap: () => _commit(false),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    FeedbackLine(correct: _lastAnswer),
-                  ],
+                      const SizedBox(height: 16),
+                      FeedbackLine(correct: _lastAnswer),
+                    ],
+                  ),
                 ),
               ),
       ),
@@ -179,37 +199,56 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
   }
 }
 
+/// A tappable Line/Space target. You can swipe the card toward it or just tap
+/// it (or use the arrow keys) — the swipe alone was too obscure.
 class _SwipeLabel extends StatelessWidget {
   final String text;
   final IconData icon;
   final bool active;
+  final VoidCallback onTap;
 
   const _SwipeLabel({
     required this.text,
     required this.icon,
     required this.active,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final color = active ? scheme.primary : scheme.onSurfaceVariant;
-    return SizedBox(
-      width: 64,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: active ? 34 : 26),
-          const SizedBox(height: 6),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: color,
-                  fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 72,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+        decoration: BoxDecoration(
+          color:
+              active ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: active ? scheme.primary : scheme.outlineVariant,
+            width: active ? 2.5 : 1.5,
           ),
-        ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: active ? 34 : 28),
+            const SizedBox(height: 6),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: color,
+                    fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }

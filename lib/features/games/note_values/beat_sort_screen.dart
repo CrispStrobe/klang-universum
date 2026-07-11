@@ -41,6 +41,7 @@ class _BeatSortScreenState extends State<BeatSortScreen> with QuizRoundMixin {
   late List<bool> _placed;
   final Map<int, List<NoteSymbol>> _binned = {};
   final Set<int> _recorded = {};
+  bool? _lastDropOk; // drives the reacting mascot
 
   @override
   int get totalRounds => 6;
@@ -71,6 +72,7 @@ class _BeatSortScreenState extends State<BeatSortScreen> with QuizRoundMixin {
       ..clear()
       ..addEntries(BeatSortScreen._buckets.map((b) => MapEntry(b, [])));
     _recorded.clear();
+    _lastDropOk = null;
   }
 
   void _onAccept(int cardIndex, int bucket) {
@@ -81,6 +83,7 @@ class _BeatSortScreenState extends State<BeatSortScreen> with QuizRoundMixin {
     setState(() {
       _placed[cardIndex] = true;
       _binned[bucket]!.add(_cards[cardIndex]);
+      _lastDropOk = true;
     });
     if (_placed.every((p) => p)) resolveAnswer(correct: true);
   }
@@ -90,7 +93,10 @@ class _BeatSortScreenState extends State<BeatSortScreen> with QuizRoundMixin {
     if (_recorded.add(cardIndex)) {
       context.read<SriService>().recordResponse(_cards[cardIndex].sriId, false);
     }
-    setState(() => answeredWrong = true);
+    setState(() {
+      answeredWrong = true;
+      _lastDropOk = false;
+    });
   }
 
   @override
@@ -169,7 +175,7 @@ class _BeatSortScreenState extends State<BeatSortScreen> with QuizRoundMixin {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    FeedbackLine(correct: finished ? true : null),
+                    FeedbackLine(correct: finished ? true : _lastDropOk),
                   ],
                 ),
               ),
@@ -225,7 +231,7 @@ class _Bucket extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      height: 140,
+      height: 168,
       decoration: BoxDecoration(
         color:
             hovering ? scheme.primaryContainer : scheme.surfaceContainerHighest,
@@ -252,7 +258,7 @@ class _Bucket extends StatelessWidget {
               spacing: 4,
               runSpacing: 4,
               children: [
-                for (final s in contents) MusicGlyph(s.glyph, size: 26),
+                for (final s in contents) MusicGlyph(s.glyph, size: 44),
               ],
             ),
           ),

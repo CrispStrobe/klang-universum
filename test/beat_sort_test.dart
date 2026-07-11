@@ -57,7 +57,10 @@ void main() {
       await gesture.moveTo(end);
       await tester.pump();
       await gesture.up();
-      await tester.pumpAndSettle();
+      // Fixed pump (not pumpAndSettle): the reacting mascot animates for
+      // ~550ms after each drop, which pumpAndSettle interleaves badly with the
+      // next drag.
+      await tester.pump(const Duration(milliseconds: 650));
       return cards().evaluate().length < before;
     }
 

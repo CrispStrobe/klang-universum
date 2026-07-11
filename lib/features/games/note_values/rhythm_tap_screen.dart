@@ -111,6 +111,9 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
     if (_lastAnswer != null) return; // evaluating/resolved
     if (_presses.length >= _pattern.beats.length) return;
     if (!_stopwatch.isRunning) _stopwatch.start();
+    // Sound the note from the first tap, and keep it ringing while held — the
+    // note is cut on release, so the child hears exactly how long they held.
+    context.read<AudioService>().playMidiNote(79, ms: 2500);
     setState(() {
       _holding = true;
       _pressStart = _stopwatch.elapsedMilliseconds;
@@ -120,8 +123,7 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
   void _onPressUp() {
     if (_lastAnswer != null || _pressStart == null) return;
     final duration = _stopwatch.elapsedMilliseconds - _pressStart!;
-    // Play the note for as long as it was held — the child hears the length.
-    context.read<AudioService>().playMidiNote(79, ms: duration.clamp(80, 2000));
+    context.read<AudioService>().stop(); // end the held note now
     setState(() {
       _presses.add((onset: _pressStart!, duration: duration));
       _pressStart = null;

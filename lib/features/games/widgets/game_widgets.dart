@@ -4,6 +4,7 @@
 // prompt) and the end-of-game result view (stars, score, replay).
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
@@ -91,23 +92,64 @@ class FeedbackLine extends StatelessWidget {
 /// A capped two-column grid of answer buttons: centered and no wider than
 /// 480 px, with flat (aspect 3.2) cells — so the choices stay compact and never
 /// take up more than the lower part of the screen, even on wide/web layouts.
+///
+/// Keyboard-steerable: number keys 1..N activate the matching option (the
+/// child must be a [ButtonStyleButton]), so every quiz built on this grid is
+/// playable without a mouse. This is why the grid is a `Focus` that grabs
+/// focus on build.
 class AnswerGrid extends StatelessWidget {
   final List<Widget> children;
 
   const AnswerGrid({super.key, required this.children});
 
+  static int? _digit(LogicalKeyboardKey key) {
+    final digits = <LogicalKeyboardKey, int>{
+      LogicalKeyboardKey.digit1: 1,
+      LogicalKeyboardKey.digit2: 2,
+      LogicalKeyboardKey.digit3: 3,
+      LogicalKeyboardKey.digit4: 4,
+      LogicalKeyboardKey.digit5: 5,
+      LogicalKeyboardKey.digit6: 6,
+      LogicalKeyboardKey.digit7: 7,
+      LogicalKeyboardKey.numpad1: 1,
+      LogicalKeyboardKey.numpad2: 2,
+      LogicalKeyboardKey.numpad3: 3,
+      LogicalKeyboardKey.numpad4: 4,
+      LogicalKeyboardKey.numpad5: 5,
+      LogicalKeyboardKey.numpad6: 6,
+      LogicalKeyboardKey.numpad7: 7,
+    };
+    return digits[key];
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final n = _digit(event.logicalKey);
+    if (n == null || n > children.length) return KeyEventResult.ignored;
+    final child = children[n - 1];
+    if (child is ButtonStyleButton && child.onPressed != null) {
+      child.onPressed!();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 3.2,
-          children: children,
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _onKey,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 3.2,
+            children: children,
+          ),
         ),
       ),
     );
