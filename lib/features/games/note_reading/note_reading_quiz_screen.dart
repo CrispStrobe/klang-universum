@@ -6,6 +6,7 @@
 //
 // SRI: 'note_reading.<clef>.<step><octave>', e.g. 'note_reading.treble.g4'.
 
+import 'dart:async';
 import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
@@ -19,6 +20,7 @@ import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/note_reading/reading_hint.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -49,6 +51,12 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
   late Pitch _target;
   late List<Step> _options;
   Step? _tapped;
+
+  // The landmark hint is opt-in: it appears when the child asks for it, or
+  // after a few seconds of hesitation — never instantly over the note.
+  bool _hintShown = false;
+  Timer? _hintTimer;
+  static const _hintDelay = Duration(seconds: 6);
 
   bool get _isReview => _reviewSequence != null;
 
@@ -112,6 +120,21 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
       ..shuffle(_random);
     _options = [_target.step, ...distractors.take(3)]..shuffle(_random);
     _tapped = null;
+
+    // Reset the hint for the new note; auto-reveal only after a pause.
+    _hintShown = false;
+    _hintTimer?.cancel();
+    if (_hintAvailable) {
+      _hintTimer = Timer(_hintDelay, () {
+        if (mounted && _tapped == null) setState(() => _hintShown = true);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _hintTimer?.cancel();
+    super.dispose();
   }
 
   String get _sriId =>
@@ -134,16 +157,19 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
     resolveAnswer(correct: correct);
   }
 
-  /// Landmark reading hint, faded by mastery: shown always for beginners
-  /// (< 2 stars), only after a wrong attempt at 2 stars (a nudge when stuck),
-  /// and never at 3 stars or in a review test.
-  bool get _showHint {
+  /// Whether the landmark hint may be offered at all — faded by mastery: not in
+  /// a review test, and gone once the child earns 3 stars. Whether it is
+  /// actually *shown* is opt-in (a tap or a pause), never instant.
+  bool get _hintAvailable {
     if (_isReview) return false;
-    final stars = context.read<ProgressService>().starsFor(progressId);
-    if (stars >= 3) return false;
-    if (stars >= 2) return answeredWrong;
-    return true;
+    return context.read<ProgressService>().starsFor(progressId) < 3;
   }
+
+  NoteMascotMood get _mascotMood => _tapped == null
+      ? NoteMascotMood.idle
+      : _tapped == _target.step
+          ? NoteMascotMood.happy
+          : NoteMascotMood.oops;
 
   static const _wholeNote = NoteDuration(DurationBase.whole);
 
@@ -190,38 +216,63 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: StaffView(
-                              score: Score(
-                                clef: widget.clef,
-                                measures: [
-                                  Measure([
-                                    NoteElement.note(
-                                      _target,
-                                      _wholeNote,
-                                      id: 'target',
-                                    ),
-                                  ]),
-                                ],
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 24),
+                                child: StaffView(
+                                  score: Score(
+                                    clef: widget.clef,
+                                    measures: [
+                                      Measure([
+                                        NoteElement.note(
+                                          _target,
+                                          _wholeNote,
+                                          id: 'target',
+                                        ),
+                                      ]),
+                                    ],
+                                  ),
+                                  staffSpace: 14,
+                                  theme: staffTheme,
+                                ),
                               ),
-                              staffSpace: 14,
-                              theme: staffTheme,
                             ),
-                          ),
+                            // Reacting mascot in the top-left corner, by the clef.
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: NoteMascot(mood: _mascotMood, size: 30),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    if (_showHint) ...[
-                      const SizedBox(height: 12),
-                      _ReadingHintChip(
-                        text: readingHintText(context, widget.clef, _target),
-                      ),
+                    if (_hintAvailable) ...[
+                      const SizedBox(height: 8),
+                      _hintShown
+                          ? _ReadingHintChip(
+                              text: readingHintText(
+                                context,
+                                widget.clef,
+                                _target,
+                              ),
+                            )
+                          : TextButton.icon(
+                              onPressed: () {
+                                _hintTimer?.cancel();
+                                setState(() => _hintShown = true);
+                              },
+                              icon: const Icon(Icons.lightbulb_outline),
+                              label: Text(l10n.hintButton),
+                            ),
                     ],
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     FeedbackLine(
                       correct: _tapped == null ? null : _tapped == _target.step,
+                      showMascot: false,
                     ),
                     const SizedBox(height: 16),
                     GridView.count(

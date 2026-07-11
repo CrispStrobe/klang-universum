@@ -137,13 +137,17 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
-          if (context.watch<DebugService>().unlockAll) ...[
-            const SizedBox(height: 12),
+          if (context.watch<DebugService>().menuEnabled) ...[
+            const SizedBox(height: 20),
+            Text(
+              l10n.debugSectionTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             Card(
               child: SwitchListTile(
                 secondary: const Icon(Icons.lock_open),
                 title: Text(l10n.debugUnlockLabel),
-                value: true,
+                value: context.watch<DebugService>().unlockAll,
                 onChanged: (v) => context.read<DebugService>().setUnlockAll(v),
               ),
             ),

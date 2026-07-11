@@ -53,7 +53,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('seven taps on the title unlock all games (debug)',
+  testWidgets('seven taps on the title reveal the debug settings',
       (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
     final debug = DebugService();
@@ -80,13 +80,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(debug.unlockAll, isFalse);
+    expect(debug.menuEnabled, isFalse);
     for (var i = 0; i < 7; i++) {
       await tester.tap(find.text('KlangUniversum'));
       await tester.pump();
     }
-    expect(debug.unlockAll, isTrue);
-    expect(find.text('All games unlocked!'), findsOneWidget);
+    // The menu is revealed, but games stay locked until toggled in Settings.
+    expect(debug.menuEnabled, isTrue);
+    expect(debug.unlockAll, isFalse);
+    expect(find.text('Debug settings unlocked!'), findsOneWidget);
   });
 
   testWidgets('home shows the practice-streak bar once a game is finished',

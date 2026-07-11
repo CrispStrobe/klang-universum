@@ -244,12 +244,12 @@ class _DebugTapTitleState extends State<_DebugTapTitle> {
 
   void _onTap() {
     final debug = context.read<DebugService>();
-    if (debug.unlockAll) return; // already on
+    if (debug.menuEnabled) return; // already revealed
     _resetTimer?.cancel();
     _taps++;
     if (_taps >= 7) {
       _taps = 0;
-      debug.setUnlockAll(true);
+      debug.enableMenu();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.debugModeEnabled),

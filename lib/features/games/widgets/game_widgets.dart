@@ -48,7 +48,15 @@ class FeedbackLine extends StatelessWidget {
   /// null = not answered yet, true/false = last answer correct/wrong.
   final bool? correct;
 
-  const FeedbackLine({super.key, required this.correct});
+  /// Whether to show the reacting mascot. Screens that place their own mascot
+  /// (e.g. by the staff) set this false to avoid a duplicate.
+  final bool showMascot;
+
+  const FeedbackLine({
+    super.key,
+    required this.correct,
+    this.showMascot = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +71,9 @@ class FeedbackLine extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          NoteMascot(mood: mood, size: 30),
+          if (showMascot) NoteMascot(mood: mood, size: 30),
           if (correct != null) ...[
-            const SizedBox(width: 10),
+            if (showMascot) const SizedBox(width: 10),
             Text(
               correct! ? l10n.feedbackCorrect : l10n.feedbackTryAgain,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(

@@ -427,6 +427,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatIsThisNote => 'What is this note called?';
 
   @override
+  String get hintButton => 'Need a hint?';
+
+  @override
   String readingHintSame(String name) {
     return 'It\'s $name — a landmark note!';
   }
@@ -740,10 +743,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tint notes by their letter — turn it off once the staff is familiar';
 
   @override
-  String get debugModeEnabled => 'All games unlocked!';
+  String get debugModeEnabled => 'Debug settings unlocked!';
 
   @override
-  String get debugUnlockLabel => 'Unlock all games (debug)';
+  String get debugSectionTitle => 'Debug';
+
+  @override
+  String get debugUnlockLabel => 'Unlock all games';
 
   @override
   String get playAgain => 'Play again';

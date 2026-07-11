@@ -854,6 +854,12 @@ abstract class AppLocalizations {
   /// **'What is this note called?'**
   String get whatIsThisNote;
 
+  /// No description provided for @hintButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Need a hint?'**
+  String get hintButton;
+
   /// No description provided for @readingHintSame.
   ///
   /// In en, this message translates to:
@@ -1397,13 +1403,19 @@ abstract class AppLocalizations {
   /// No description provided for @debugModeEnabled.
   ///
   /// In en, this message translates to:
-  /// **'All games unlocked!'**
+  /// **'Debug settings unlocked!'**
   String get debugModeEnabled;
+
+  /// No description provided for @debugSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Debug'**
+  String get debugSectionTitle;
 
   /// No description provided for @debugUnlockLabel.
   ///
   /// In en, this message translates to:
-  /// **'Unlock all games (debug)'**
+  /// **'Unlock all games'**
   String get debugUnlockLabel;
 
   /// No description provided for @playAgain.

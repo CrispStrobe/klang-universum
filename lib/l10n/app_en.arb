@@ -177,6 +177,7 @@
     }
   },
   "whatIsThisNote": "What is this note called?",
+  "hintButton": "Need a hint?",
   "readingHintSame": "It's {name} — a landmark note!",
   "@readingHintSame": {
     "placeholders": {
@@ -393,8 +394,9 @@
   "showTimerLabel": "Show your time",
   "colorScaffoldLabel": "Colour helper for beginners",
   "colorScaffoldSubtitle": "Tint notes by their letter — turn it off once the staff is familiar",
-  "debugModeEnabled": "All games unlocked!",
-  "debugUnlockLabel": "Unlock all games (debug)",
+  "debugModeEnabled": "Debug settings unlocked!",
+  "debugSectionTitle": "Debug",
+  "debugUnlockLabel": "Unlock all games",
   "playAgain": "Play again",
   "backButton": "Back",
   "wholeNote": "Whole note",
