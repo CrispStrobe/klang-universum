@@ -78,4 +78,18 @@ const kSongs = <Song>[
     lyrics: 'Twin- kle, twin- kle, lit- tle star, '
         'how I won- der what you are.',
   ),
+  Song(
+    id: 'mary_lamb',
+    title: 'Mary Had a Little Lamb',
+    dsl: 'e4:q d4 c4 d4 | e4 e4 e4:h | d4:q d4 d4:h | e4:q g4 g4:h | '
+        'e4:q d4 c4 d4 | e4 e4 e4 e4 | d4:q d4 e4 d4 | c4:w',
+    lyrics: 'Ma- ry had a lit- tle lamb, lit- tle lamb, lit- tle lamb, '
+        'Ma- ry had a lit- tle lamb whose fleece was white as snow.',
+  ),
+  Song(
+    id: 'old_macdonald',
+    title: 'Old MacDonald Had a Farm',
+    dsl: 'g4:q g4 g4 d4 | e4 e4 d4:h | b4:q b4 a4 a4 | g4:w',
+    lyrics: 'Old Mac- Don- ald had a farm, E- I- E- I- O.',
+  ),
 ];
