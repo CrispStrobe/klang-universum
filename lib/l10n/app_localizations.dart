@@ -1124,6 +1124,36 @@ abstract class AppLocalizations {
   /// **'Just the chord'**
   String get functionEarTargetAgain;
 
+  /// No description provided for @gameEchoSequence.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound Echo'**
+  String get gameEchoSequence;
+
+  /// No description provided for @gameEchoSequenceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch, listen, then repeat the tune'**
+  String get gameEchoSequenceSubtitle;
+
+  /// No description provided for @echoWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch and listen…'**
+  String get echoWatch;
+
+  /// No description provided for @echoRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn — repeat it!'**
+  String get echoRepeat;
+
+  /// No description provided for @echoLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: {count}'**
+  String echoLength(int count);
+
   /// No description provided for @gameMajorMinorEar.
   ///
   /// In en, this message translates to:

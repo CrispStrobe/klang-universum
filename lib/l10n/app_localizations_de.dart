@@ -593,6 +593,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get functionEarTargetAgain => 'Nur der Akkord';
 
   @override
+  String get gameEchoSequence => 'Ton-Echo';
+
+  @override
+  String get gameEchoSequenceSubtitle => 'Zusehen, zuhören, dann nachspielen';
+
+  @override
+  String get echoWatch => 'Schau und hör zu…';
+
+  @override
+  String get echoRepeat => 'Du bist dran — spiel es nach!';
+
+  @override
+  String echoLength(int count) {
+    return 'Länge: $count';
+  }
+
+  @override
   String get gameMajorMinorEar => 'Dur oder Moll?';
 
   @override

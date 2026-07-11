@@ -12,12 +12,12 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games (38) + Song Book |
+| id | Topic | Games (39) + Song Book |
 |---|---|---|
 | `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) |
 | `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 (fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write) • Note Match (memory pairs) • Note Order (low→high) |
 | `measures` | Takte & Taktarten | Measure Filler • Meter Detective (ear) |
-| `scales` | Tonleitern, Dur/Moll | Scale Detective • Dur oder Moll? (ear) • Scale Builder |
+| `scales` | Tonleitern, Dur/Moll | Scale Detective • Dur oder Moll? (ear) • Scale Builder • Sound Echo (memory sequence) |
 | `chords` | Akkorde & Intervalle | Chord Quiz • Triad Builder • Interval Detective (ear) |
 | `harmony` | Harmonik (T/S/D) | Function Quiz • Cadence Workshop • Hear the Function (ear) |
 | `composition` | Komponieren (Kompositionstechnik) | Ending Detective (closure) • Question & Answer (phrases) • My Melody (free composing sandbox, saves to the Song Book as MusicXML) |
@@ -58,5 +58,5 @@ flutter run -d chrome    # or macos, etc.
 CI (`.github/workflows/ci.yml`) runs format + analyze + test on every push and
 PR, checking out the sibling `partitura` repo alongside so the path dependency
 resolves. The `build/` symlink (a dev-only SSD path) is intentionally untracked.
-The test suite (137 tests) covers ~85% of `lib/`, including the services, the
+The test suite (138 tests) covers ~85% of `lib/`, including the services, the
 import round-trips, and a render smoke test per game screen.

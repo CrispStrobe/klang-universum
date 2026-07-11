@@ -590,6 +590,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get functionEarTargetAgain => 'Just the chord';
 
   @override
+  String get gameEchoSequence => 'Sound Echo';
+
+  @override
+  String get gameEchoSequenceSubtitle => 'Watch, listen, then repeat the tune';
+
+  @override
+  String get echoWatch => 'Watch and listen…';
+
+  @override
+  String get echoRepeat => 'Your turn — repeat it!';
+
+  @override
+  String echoLength(int count) {
+    return 'Length: $count';
+  }
+
+  @override
   String get gameMajorMinorEar => 'Major or Minor?';
 
   @override

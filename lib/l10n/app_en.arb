@@ -301,6 +301,16 @@
   },
   "functionEarReplayHint": "Hear the key, then the chord again",
   "functionEarTargetAgain": "Just the chord",
+  "gameEchoSequence": "Sound Echo",
+  "gameEchoSequenceSubtitle": "Watch, listen, then repeat the tune",
+  "echoWatch": "Watch and listen…",
+  "echoRepeat": "Your turn — repeat it!",
+  "echoLength": "Length: {count}",
+  "@echoLength": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "gameMajorMinorEar": "Major or Minor?",
   "gameMajorMinorEarSubtitle": "Listen closely and decide",
   "listenMajorMinorPrompt": "Listen! Does it sound major or minor?",
