@@ -44,7 +44,7 @@ void main() {
   });
 
   test('keyboard maps white keys and black-key gaps correctly', () {
-    const keyboard = PianoKeyboard(startMidi: 60, whiteKeyCount: 12);
+    const keyboard = PianoKeyboard();
     // C4 D4 E4 F4 G4 A4 B4 C5 D5 E5 F5 G5
     expect(keyboard.whiteMidi(0), 60);
     expect(keyboard.whiteMidi(2), 64); // E4
@@ -69,8 +69,7 @@ void main() {
 
     // Tap the leftmost white key (C4) — records either way.
     final keyboardBox = tester.getRect(find.byType(PianoKeyboard));
-    await tester
-        .tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
+    await tester.tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
     await tester.pump();
     expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['find']);
     await tester.pump(const Duration(milliseconds: 700));
@@ -92,18 +91,18 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('echo keys plays an anchor and accepts key taps',
-      (tester) async {
+  testWidgets('echo keys plays an anchor and accepts key taps', (tester) async {
     await tester.pumpWidget(_wrap(const KeyEarScreen(), sri));
     await tester.pump();
 
     expect(
-        find.textContaining('mystery note'), findsOneWidget);
+      find.textContaining('mystery note'),
+      findsOneWidget,
+    );
     expect(find.byType(PianoKeyboard), findsOneWidget);
 
     final keyboardBox = tester.getRect(find.byType(PianoKeyboard));
-    await tester
-        .tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
+    await tester.tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
     await tester.pump();
     expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['ear']);
     await tester.pump(const Duration(milliseconds: 700));
@@ -120,8 +119,7 @@ void main() {
     expect(find.byType(PianoKeyboard), findsOneWidget);
 
     final keyboardBox = tester.getRect(find.byType(PianoKeyboard));
-    await tester
-        .tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
+    await tester.tapAt(Offset(keyboardBox.left + 10, keyboardBox.bottom - 10));
     await tester.pump();
     expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['melody']);
     await tester.pump(const Duration(milliseconds: 600));
@@ -139,9 +137,12 @@ void main() {
     // Tap the top-left corner of the keyboard: that's a black key (C#4),
     // never part of the C/F/G base triads — records a wrong answer.
     final keyboardBox = tester.getRect(find.byType(PianoKeyboard));
-    await tester.tapAt(Offset(
+    await tester.tapAt(
+      Offset(
         keyboardBox.left + keyboardBox.width / 12 * 0.9,
-        keyboardBox.top + 10));
+        keyboardBox.top + 10,
+      ),
+    );
     await tester.pump();
     expect(sri.getDetailedBreakdown()['keyboard']!.keys, ['chord']);
     await tester.pump(const Duration(milliseconds: 600));

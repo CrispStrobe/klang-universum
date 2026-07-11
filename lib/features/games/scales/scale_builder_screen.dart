@@ -11,14 +11,13 @@ import 'dart:math';
 
 // Material also exports `Step` (Stepper) and `Key`; partitura's win here.
 import 'package:flutter/material.dart' hide Step, Key;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class ScaleBuilderScreen extends StatefulWidget {
   const ScaleBuilderScreen({super.key});
@@ -86,7 +85,7 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
           // Whole-rest measure keeps the tappable staff wide while the
           // scale is still short.
           if (_placedCount < 5)
-            Measure(const [RestElement(NoteDuration(DurationBase.whole))]),
+            const Measure([RestElement(NoteDuration(DurationBase.whole))]),
         ],
       );
 
@@ -149,22 +148,18 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n
-                          .scaleBuilderPrompt(noteName(l10n, _tonic)),
+                      prompt: l10n.scaleBuilderPrompt(noteName(l10n, _tonic)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: InteractiveStaff(
                               score: _score,
                               theme: PartituraTheme.kids,
                               staffSpace: 13,
-                              ghostDuration:
-                                  const NoteDuration(DurationBase.quarter),
                               onStaffTap: _onStaffTap,
                             ),
                           ),
@@ -177,15 +172,13 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
                       children: [
                         for (var i = 0; i < _scale.length; i++)
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
                             child: Icon(
                               i < _placedCount
                                   ? Icons.circle
                                   : Icons.circle_outlined,
                               size: 14,
-                              color:
-                                  Theme.of(context).colorScheme.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                       ],

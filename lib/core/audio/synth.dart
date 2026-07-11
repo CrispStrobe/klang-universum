@@ -20,10 +20,14 @@ double midiToFrequency(int midi) => 440.0 * pow(2.0, (midi - 69) / 12.0);
 const _harmonics = [1.0, 0.45, 0.22, 0.1, 0.05];
 
 /// Renders [segments] back-to-back into normalized PCM16 samples.
-Int16List renderSegments(List<Segment> segments,
-    {int sampleRate = kSampleRate}) {
+Int16List renderSegments(
+  List<Segment> segments, {
+  int sampleRate = kSampleRate,
+}) {
   final totalSamples = segments.fold<int>(
-      0, (sum, s) => sum + (s.ms * sampleRate) ~/ 1000);
+    0,
+    (sum, s) => sum + (s.ms * sampleRate) ~/ 1000,
+  );
   final buffer = Float64List(totalSamples);
 
   var offset = 0;
@@ -99,8 +103,12 @@ Uint8List renderWav(List<Segment> segments) =>
 // (sfxr-like 8-bit synthesizer): no assets, instantly recognizable.
 
 /// A square-wave segment sweeping from [startFreq] to [endFreq].
-Float64List _squareSweep(double startFreq, double endFreq, int ms,
-    {int sampleRate = kSampleRate}) {
+Float64List _squareSweep(
+  double startFreq,
+  double endFreq,
+  int ms, {
+  int sampleRate = kSampleRate,
+}) {
   final n = (ms * sampleRate) ~/ 1000;
   final out = Float64List(n);
   final seconds = ms / 1000;

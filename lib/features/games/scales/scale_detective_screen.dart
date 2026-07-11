@@ -10,14 +10,13 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step, Key;
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/progress_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class ScaleDetectiveScreen extends StatefulWidget {
   /// Review mode: full SRI item IDs (`scales.spot.<tonic>_major`).
@@ -88,11 +87,13 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
     final original = _pitchesOf(scale)[_wrongIndex];
     // Shift by a semitone, away from any existing alteration so we stay
     // within a single sharp/flat (B♭ in F major becomes B natural).
-    final shift = original.alter == 0
-        ? (_random.nextBool() ? 1 : -1)
-        : -original.alter;
-    final wrong = Pitch(original.step,
-        alter: original.alter + shift, octave: original.octave);
+    final shift =
+        original.alter == 0 ? (_random.nextBool() ? 1 : -1) : -original.alter;
+    final wrong = Pitch(
+      original.step,
+      alter: original.alter + shift,
+      octave: original.octave,
+    );
 
     _pitches = [..._pitchesOf(scale)];
     _pitches[_wrongIndex] = wrong;
@@ -147,8 +148,10 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(
-              _isReview ? l10n.reviewTitle : l10n.gameScaleDetective)),
+        title: Text(
+          _isReview ? l10n.reviewTitle : l10n.gameScaleDetective,
+        ),
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(
@@ -163,16 +166,14 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n
-                          .scaleDetectivePrompt(noteName(l10n, _tonic)),
+                      prompt: l10n.scaleDetectivePrompt(noteName(l10n, _tonic)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: StaffView(
                               score: _score,
                               theme: theme,

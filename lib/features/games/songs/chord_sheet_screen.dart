@@ -5,17 +5,19 @@
 // for the notation-shy.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/features/games/songs/import/chordpro.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import 'import/chordpro.dart';
 
 class ChordSheetScreen extends StatelessWidget {
   final String title;
   final ChordSheet sheet;
 
-  const ChordSheetScreen(
-      {super.key, required this.title, required this.sheet});
+  const ChordSheetScreen({
+    super.key,
+    required this.title,
+    required this.sheet,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +37,10 @@ class ChordSheetScreen extends StatelessWidget {
               children: [
                 for (final chord in sheet.chords)
                   ActionChip(
-                    label: Text(chord,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold)),
+                    label: Text(
+                      chord,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     backgroundColor: scheme.primaryContainer,
                     onPressed: () {
                       final midis = chordMidis(chord);
@@ -58,8 +61,7 @@ class ChordSheetScreen extends StatelessWidget {
                           for (final segment in line)
                             Column(
                               mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SizedBox(
                                   height: 26,
@@ -68,7 +70,8 @@ class ChordSheetScreen extends StatelessWidget {
                                       : GestureDetector(
                                           onTap: () {
                                             final midis = chordMidis(
-                                                segment.chord!);
+                                              segment.chord!,
+                                            );
                                             if (midis != null) {
                                               audio.playMidiChord(midis);
                                             }
@@ -84,9 +87,8 @@ class ChordSheetScreen extends StatelessWidget {
                                 ),
                                 Text(
                                   segment.text,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                 ),
                               ],
                             ),

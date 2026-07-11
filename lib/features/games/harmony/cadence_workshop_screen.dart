@@ -11,21 +11,19 @@ import 'dart:math';
 
 // Material also exports `Step` (Stepper) and `Key`; partitura's win here.
 import 'package:flutter/material.dart' hide Step, Key;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class CadenceWorkshopScreen extends StatefulWidget {
   const CadenceWorkshopScreen({super.key});
 
   @override
-  State<CadenceWorkshopScreen> createState() =>
-      _CadenceWorkshopScreenState();
+  State<CadenceWorkshopScreen> createState() => _CadenceWorkshopScreenState();
 }
 
 class _CadenceWorkshopScreenState extends State<CadenceWorkshopScreen>
@@ -132,7 +130,8 @@ class _CadenceWorkshopScreenState extends State<CadenceWorkshopScreen>
       if (_complete) {
         _record(!answeredWrong);
         audio.playChordSequence(
-            [for (final f in _sequence) _midis(f)]);
+          [for (final f in _sequence) _midis(f)],
+        );
         resolveAnswer(correct: true);
       }
     } else {
@@ -178,7 +177,9 @@ class _CadenceWorkshopScreenState extends State<CadenceWorkshopScreen>
                           ? l10n.feedbackCorrect
                           : l10n.cadencePrompt(
                               _functionLabel(
-                                  l10n, _sequence[_stepIndex]),
+                                l10n,
+                                _sequence[_stepIndex],
+                              ),
                               l10n.keyMajorName(noteName(l10n, _tonic)),
                             ),
                     ),
@@ -205,7 +206,8 @@ class _CadenceWorkshopScreenState extends State<CadenceWorkshopScreen>
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 4),
+                                  horizontal: 4,
+                                ),
                                 child: Card(
                                   clipBehavior: Clip.antiAlias,
                                   child: InkWell(

@@ -59,8 +59,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('answering correctly advances to the next round',
-      (tester) async {
+  testWidgets('answering correctly advances to the next round', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 10));
 
     await tester.pumpWidget(_wrap(const NoteValueQuizScreen(), sri));

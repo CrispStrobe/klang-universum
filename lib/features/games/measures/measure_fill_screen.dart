@@ -10,14 +10,13 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/progress_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/music_glyph.dart';
-import '../widgets/game_widgets.dart';
 
 /// Note durations in sixteenths, with their DSL letters and display glyphs.
 const _durations = <int, (String, String)>{
@@ -84,10 +83,9 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
 
     // The missing piece: h/q/e — sixteenths join at 2+ stars — with room
     // for at least one prefix note.
-    final pool =
-        context.read<ProgressService>().starsFor('measure_fill') >= 2
-            ? [8, 4, 2, 1]
-            : [8, 4, 2];
+    final pool = context.read<ProgressService>().starsFor('measure_fill') >= 2
+        ? [8, 4, 2, 1]
+        : [8, 4, 2];
     final candidates = pool.where((d) => d < capacity).toList();
     _remainder16 = candidates[_random.nextInt(candidates.length)];
 
@@ -162,8 +160,7 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: StaffView(
                               score: _renderedScore,
                               staffSpace: 12,

@@ -11,14 +11,13 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class TriadBuilderScreen extends StatefulWidget {
   const TriadBuilderScreen({super.key});
@@ -84,7 +83,7 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
         ]),
         // A whole-rest measure widens the tappable staff (empty measures
         // collapse to minimal width).
-        Measure(const [RestElement(NoteDuration(DurationBase.whole))]),
+        const Measure([RestElement(NoteDuration(DurationBase.whole))]),
       ],
     );
   }
@@ -104,8 +103,9 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
 
     if ((offset == 2 || offset == 4) && !_placedPositions.contains(offset)) {
       audio.playMidiNote(
-          Clef.treble.pitchAt(target.staffPosition).midiNumber,
-          ms: 500);
+        Clef.treble.pitchAt(target.staffPosition).midiNumber,
+        ms: 500,
+      );
       setState(() {
         _placedPositions.add(offset);
         _wrongPosition = null;
@@ -159,15 +159,15 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.triadBuilderPrompt(
-                          noteName(l10n, _root.step)),
+                        noteName(l10n, _root.step),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: InteractiveStaff(
                               score: _score,
                               theme: theme,

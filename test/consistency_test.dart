@@ -11,21 +11,33 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 void main() {
   test('module ids are unique and every game module exists', () {
     final moduleIds = kLearningModules.map((m) => m.id).toList();
-    expect(moduleIds.toSet().length, moduleIds.length,
-        reason: 'duplicate module id');
+    expect(
+      moduleIds.toSet().length,
+      moduleIds.length,
+      reason: 'duplicate module id',
+    );
 
     for (final key in kGamesByModule.keys) {
-      expect(moduleIds, contains(key),
-          reason: 'games registered for unknown module "$key"');
+      expect(
+        moduleIds,
+        contains(key),
+        reason: 'games registered for unknown module "$key"',
+      );
     }
   });
 
   test('every module has at least one game', () {
     for (final module in kLearningModules) {
-      expect(kGamesByModule[module.id], isNotNull,
-          reason: 'module "${module.id}" has no games');
-      expect(kGamesByModule[module.id], isNotEmpty,
-          reason: 'module "${module.id}" has an empty game list');
+      expect(
+        kGamesByModule[module.id],
+        isNotNull,
+        reason: 'module "${module.id}" has no games',
+      );
+      expect(
+        kGamesByModule[module.id],
+        isNotEmpty,
+        reason: 'module "${module.id}" has an empty game list',
+      );
     }
   });
 
@@ -55,10 +67,16 @@ void main() {
       }
       for (final games in kGamesByModule.values) {
         for (final game in games) {
-          expect(game.title(l10n), isNotEmpty,
-              reason: '${game.id} title (${locale.languageCode})');
-          expect(game.subtitle(l10n), isNotEmpty,
-              reason: '${game.id} subtitle (${locale.languageCode})');
+          expect(
+            game.title(l10n),
+            isNotEmpty,
+            reason: '${game.id} title (${locale.languageCode})',
+          );
+          expect(
+            game.subtitle(l10n),
+            isNotEmpty,
+            reason: '${game.id} subtitle (${locale.languageCode})',
+          );
         }
       }
     }

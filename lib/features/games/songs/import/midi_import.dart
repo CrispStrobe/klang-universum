@@ -34,7 +34,8 @@ class _MidiNote {
 /// Throws [FormatException] on unusable input.
 Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
   final data = ByteData.sublistView(bytes);
-  if (bytes.length < 14 || String.fromCharCodes(bytes.sublist(0, 4)) != 'MThd') {
+  if (bytes.length < 14 ||
+      String.fromCharCodes(bytes.sublist(0, 4)) != 'MThd') {
     throw const FormatException('Not a MIDI file (missing MThd)');
   }
   final division = data.getUint16(12);
@@ -50,7 +51,8 @@ Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
     final chunkLength = data.getUint32(offset + 4);
     if (chunkType == 'MTrk') {
       final track = _readTrack(
-          bytes.sublist(offset + 8, offset + 8 + chunkLength));
+        bytes.sublist(offset + 8, offset + 8 + chunkLength),
+      );
       if (track.isNotEmpty) notes = track;
     }
     offset += 8 + chunkLength;
@@ -94,17 +96,18 @@ Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
   var id = 0;
   for (final note in line.take(maxNotes)) {
     final start16 = (note.startTicks / ticksPer16th).round();
-    final dur16 =
-        (note.durationTicks / ticksPer16th).round().clamp(1, 16);
+    final dur16 = (note.durationTicks / ticksPer16th).round().clamp(1, 16);
     if (cursor16 >= 0 && start16 > cursor16) {
       final gap = (start16 - cursor16).clamp(1, 16);
       elements.add(RestElement(snap(gap)));
     }
-    elements.add(NoteElement.note(
-      _pitchFromMidi(note.midi),
-      snap(dur16),
-      id: 'e${id++}',
-    ));
+    elements.add(
+      NoteElement.note(
+        _pitchFromMidi(note.midi),
+        snap(dur16),
+        id: 'e${id++}',
+      ),
+    );
     cursor16 = start16 + dur16;
   }
   if (elements.whereType<NoteElement>().isEmpty) {
@@ -114,8 +117,14 @@ Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
   // Chunk into measures for line breaking (unmetered: sums unchecked).
   final measures = <Measure>[];
   for (var i = 0; i < elements.length; i += 8) {
-    measures.add(Measure(elements.sublist(
-        i, i + 8 > elements.length ? elements.length : i + 8)));
+    measures.add(
+      Measure(
+        elements.sublist(
+          i,
+          i + 8 > elements.length ? elements.length : i + 8,
+        ),
+      ),
+    );
   }
   return Score(clef: Clef.treble, measures: measures);
 }
@@ -123,9 +132,18 @@ Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
 /// Sharp-preferring spelling for a MIDI number.
 Pitch _pitchFromMidi(int midi) {
   const steps = [
-    (Step.c, 0), (Step.c, 1), (Step.d, 0), (Step.d, 1), (Step.e, 0),
-    (Step.f, 0), (Step.f, 1), (Step.g, 0), (Step.g, 1), (Step.a, 0),
-    (Step.a, 1), (Step.b, 0),
+    (Step.c, 0),
+    (Step.c, 1),
+    (Step.d, 0),
+    (Step.d, 1),
+    (Step.e, 0),
+    (Step.f, 0),
+    (Step.f, 1),
+    (Step.g, 0),
+    (Step.g, 1),
+    (Step.a, 0),
+    (Step.a, 1),
+    (Step.b, 0),
   ];
   final (step, alter) = steps[midi % 12];
   return Pitch(step, alter: alter, octave: midi ~/ 12 - 1);

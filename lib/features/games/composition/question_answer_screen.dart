@@ -10,13 +10,12 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class QuestionAnswerScreen extends StatefulWidget {
   const QuestionAnswerScreen({super.key});
@@ -57,8 +56,7 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
     final phrase = <Pitch>[];
     for (var i = 0; i < 3; i++) {
       phrase.add(Clef.treble.pitchAt(position));
-      position =
-          (position + [-1, 1, 1, 2][_random.nextInt(4)]).clamp(1, 8);
+      position = (position + [-1, 1, 1, 2][_random.nextInt(4)]).clamp(1, 8);
     }
     phrase.add(Clef.treble.pitchAt(endPosition));
     return phrase;
@@ -95,8 +93,10 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
         notes: phrase
             .asMap()
             .entries
-            .map((e) =>
-                '${e.value.step.name}${e.value.octave}${e.key == phrase.length - 1 ? ':h' : e.key == 0 ? ':q' : ''}')
+            .map(
+              (e) =>
+                  '${e.value.step.name}${e.value.octave}${e.key == phrase.length - 1 ? ':h' : e.key == 0 ? ':q' : ''}',
+            )
             .join(' '),
       );
 
@@ -156,10 +156,10 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
                         padding: const EdgeInsets.all(10),
                         child: Row(
                           children: [
-                            Icon(Icons.help_outline,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary),
+                            Icon(
+                              Icons.help_outline,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: StaffView(
@@ -181,24 +181,25 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 4),
+                                  vertical: 4,
+                                ),
                                 child: Card(
                                   clipBehavior: Clip.antiAlias,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16),
                                     side: _tapped == null
                                         ? BorderSide.none
                                         : i == _correctCard &&
                                                 _tapped == _correctCard
                                             ? const BorderSide(
                                                 color: Colors.green,
-                                                width: 3)
+                                                width: 3,
+                                              )
                                             : i == _tapped
                                                 ? const BorderSide(
-                                                    color:
-                                                        Colors.redAccent,
-                                                    width: 3)
+                                                    color: Colors.redAccent,
+                                                    width: 3,
+                                                  )
                                                 : BorderSide.none,
                                   ),
                                   child: InkWell(
@@ -212,7 +213,8 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
                                           child: Center(
                                             child: StaffView(
                                               score: _phraseScore(
-                                                  _answers[i]),
+                                                _answers[i],
+                                              ),
                                               staffSpace: 8,
                                             ),
                                           ),

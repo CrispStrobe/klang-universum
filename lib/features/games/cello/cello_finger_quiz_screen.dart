@@ -11,21 +11,19 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/cello/cello_first_position.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
-import 'cello_first_position.dart';
 
 class CelloFingerQuizScreen extends StatefulWidget {
   const CelloFingerQuizScreen({super.key});
 
   @override
-  State<CelloFingerQuizScreen> createState() =>
-      _CelloFingerQuizScreenState();
+  State<CelloFingerQuizScreen> createState() => _CelloFingerQuizScreenState();
 }
 
 class _CelloFingerQuizScreenState extends State<CelloFingerQuizScreen>
@@ -54,8 +52,7 @@ class _CelloFingerQuizScreenState extends State<CelloFingerQuizScreen>
 
   @override
   void prepareRound() {
-    _target =
-        kCelloFirstPosition[_random.nextInt(kCelloFirstPosition.length)];
+    _target = kCelloFirstPosition[_random.nextInt(kCelloFirstPosition.length)];
     _tapped = null;
     _lastAnswer = null;
   }
@@ -106,15 +103,15 @@ class _CelloFingerQuizScreenState extends State<CelloFingerQuizScreen>
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.celloFingerPrompt(
-                          _target.string.label(l10n)),
+                        _target.string.label(l10n),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
                             child: StaffView(
                               score: Score.simple(
                                 clef: Clef.bass,
@@ -137,11 +134,13 @@ class _CelloFingerQuizScreenState extends State<CelloFingerQuizScreen>
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4),
+                                horizontal: 4,
+                              ),
                               child: FilledButton(
                                 style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 20),
+                                    vertical: 20,
+                                  ),
                                   backgroundColor: _tapped == null
                                       ? null
                                       : finger == _target.finger &&
@@ -154,7 +153,8 @@ class _CelloFingerQuizScreenState extends State<CelloFingerQuizScreen>
                                       .textTheme
                                       .headlineSmall
                                       ?.copyWith(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                                 onPressed: () => _onAnswer(finger),
                                 child: Text('$finger'),

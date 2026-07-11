@@ -13,9 +13,8 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:klang_universum/core/tuning.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../tuning.dart';
 
 /// SM-2 state for one tracked learning item.
 class SriItemData {
@@ -52,12 +51,13 @@ class SriItemData {
       };
 
   factory SriItemData.fromJson(Map<String, dynamic> json) => SriItemData(
-        itemId: json['id'],
-        successCount: json['s'] ?? 0,
-        failureCount: json['f'] ?? 0,
-        easinessFactor: (json['ef'] ?? kSm2InitialEasiness).toDouble(),
-        repetitions: json['r'] ?? 0,
-        nextReviewDate: DateTime.parse(json['next']),
+        itemId: json['id'] as String,
+        successCount: (json['s'] as int?) ?? 0,
+        failureCount: (json['f'] as int?) ?? 0,
+        easinessFactor:
+            ((json['ef'] as num?) ?? kSm2InitialEasiness).toDouble(),
+        repetitions: (json['r'] as int?) ?? 0,
+        nextReviewDate: DateTime.parse(json['next'] as String),
       );
 }
 
@@ -119,9 +119,12 @@ class SriService with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_sriStorageKey);
       if (jsonString != null) {
-        final Map<String, dynamic> jsonMap = json.decode(jsonString);
+        final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
         _sriDatabase = jsonMap.map(
-          (key, value) => MapEntry(key, SriItemData.fromJson(value)),
+          (key, value) => MapEntry(
+            key,
+            SriItemData.fromJson(value as Map<String, dynamic>),
+          ),
         );
         _log('✅ Loaded ${_sriDatabase.length} SRI records.');
       } else {
@@ -216,11 +219,13 @@ class SriService with ChangeNotifier {
     };
 
     final reviewable = _sriDatabase.values
-        .where((data) =>
-            data.nextReviewDate.isBefore(now) &&
-            !allExcluded.contains(data.itemId) &&
-            !isItemMastered(data.itemId) &&
-            (moduleId == null || data.moduleId == moduleId))
+        .where(
+          (data) =>
+              data.nextReviewDate.isBefore(now) &&
+              !allExcluded.contains(data.itemId) &&
+              !isItemMastered(data.itemId) &&
+              (moduleId == null || data.moduleId == moduleId),
+        )
         .toList();
 
     reviewable.sort((a, b) {
@@ -246,11 +251,13 @@ class SriService with ChangeNotifier {
     };
 
     return _sriDatabase.values
-        .where((data) =>
-            data.nextReviewDate.isBefore(now) &&
-            !allExcluded.contains(data.itemId) &&
-            !isItemMastered(data.itemId) &&
-            (moduleId == null || data.moduleId == moduleId))
+        .where(
+          (data) =>
+              data.nextReviewDate.isBefore(now) &&
+              !allExcluded.contains(data.itemId) &&
+              !isItemMastered(data.itemId) &&
+              (moduleId == null || data.moduleId == moduleId),
+        )
         .length;
   }
 
@@ -273,21 +280,24 @@ class SriService with ChangeNotifier {
     }
 
     return buckets.map((moduleId, skills) {
-      return MapEntry(moduleId, skills.map((skillId, items) {
-        final mastered =
-            items.where((d) => isItemMastered(d.itemId)).length;
-        final totalEf =
-            items.fold<double>(0, (sum, d) => sum + d.easinessFactor);
-        return MapEntry(
-          skillId,
-          SkillStat(
-            tracked: items.length,
-            mastered: mastered,
-            averageEasiness:
-                items.isNotEmpty ? totalEf / items.length : kSm2InitialEasiness,
-          ),
-        );
-      }));
+      return MapEntry(
+        moduleId,
+        skills.map((skillId, items) {
+          final mastered = items.where((d) => isItemMastered(d.itemId)).length;
+          final totalEf =
+              items.fold<double>(0, (sum, d) => sum + d.easinessFactor);
+          return MapEntry(
+            skillId,
+            SkillStat(
+              tracked: items.length,
+              mastered: mastered,
+              averageEasiness: items.isNotEmpty
+                  ? totalEf / items.length
+                  : kSm2InitialEasiness,
+            ),
+          );
+        }),
+      );
     });
   }
 

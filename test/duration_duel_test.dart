@@ -57,15 +57,17 @@ void main() {
   testWidgets('review mode drills exactly the given items', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 10));
 
-    await tester.pumpWidget(_wrap(
-      const NoteValueQuizScreen(
-        reviewItemIds: [
-          'note_values.symbol.quarter_note',
-          'note_values.symbol.half_rest',
-        ],
+    await tester.pumpWidget(
+      _wrap(
+        const NoteValueQuizScreen(
+          reviewItemIds: [
+            'note_values.symbol.quarter_note',
+            'note_values.symbol.half_rest',
+          ],
+        ),
+        sri,
       ),
-      sri,
-    ));
+    );
     await tester.pumpAndSettle();
 
     // Review title instead of the game title, and only 2 rounds.

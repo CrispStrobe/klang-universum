@@ -1,0 +1,62 @@
+name: CI
+
+# Analyze + test on every push to main and every PR. The app has a path
+# dependency on the sibling `partitura` library (../partitura), so we lay the
+# two repos out as siblings in the workspace and run from within this one.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout klang-universum
+        uses: actions/checkout@v4
+        with:
+          path: klang-universum
+
+      # partitura + partitura_core are resolved via ../partitura/... path deps.
+      - name: Checkout partitura (sibling path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/partitura
+          ref: main
+          path: partitura
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.4
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: klang-universum
+        run: flutter pub get
+
+      - name: Verify formatting
+        working-directory: klang-universum
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        working-directory: klang-universum
+        run: flutter analyze
+
+      - name: Test
+        working-directory: klang-universum
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lcov
+          path: klang-universum/coverage/lcov.info
+          if-no-files-found: warn

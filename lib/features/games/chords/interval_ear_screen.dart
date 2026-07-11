@@ -9,13 +9,12 @@ import 'dart:math';
 // Material also exports `Step` (Stepper) and `Interval` (animation curves);
 // partitura's win here.
 import 'package:flutter/material.dart' hide Step, Interval;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class IntervalEarScreen extends StatefulWidget {
   const IntervalEarScreen({super.key});
@@ -156,8 +155,7 @@ class _IntervalEarScreenState extends State<IntervalEarScreen>
                             style: FilledButton.styleFrom(
                               backgroundColor: _tapped == null
                                   ? null
-                                  : option == _interval &&
-                                          _tapped == _interval
+                                  : option == _interval && _tapped == _interval
                                       ? Colors.green
                                       : option == _tapped
                                           ? Colors.redAccent

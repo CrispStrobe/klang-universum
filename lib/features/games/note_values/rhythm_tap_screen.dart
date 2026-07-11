@@ -9,13 +9,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show Score, StaffView, TimeSignature;
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class _Pattern {
   /// Note durations in beats (4/4, sums to 4).
@@ -54,8 +53,7 @@ class RhythmTapScreen extends StatefulWidget {
   State<RhythmTapScreen> createState() => _RhythmTapScreenState();
 }
 
-class _RhythmTapScreenState extends State<RhythmTapScreen>
-    with QuizRoundMixin {
+class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
   final _random = Random();
 
   late int _patternIndex;
@@ -200,15 +198,13 @@ class _RhythmTapScreenState extends State<RhythmTapScreen>
                       children: [
                         for (var i = 0; i < _pattern.beats.length; i++)
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Icon(
                               i < _tapTimesMs.length
                                   ? Icons.circle
                                   : Icons.circle_outlined,
                               size: 16,
-                              color:
-                                  Theme.of(context).colorScheme.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                       ],
@@ -220,9 +216,7 @@ class _RhythmTapScreenState extends State<RhythmTapScreen>
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Material(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer,
+                          color: Theme.of(context).colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(32),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(32),
@@ -234,7 +228,8 @@ class _RhythmTapScreenState extends State<RhythmTapScreen>
                                     .textTheme
                                     .headlineSmall
                                     ?.copyWith(
-                                        fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                             ),
                           ),

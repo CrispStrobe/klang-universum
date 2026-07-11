@@ -5,21 +5,20 @@
 // (features/games, not yet implemented — shows a "coming soon" snackbar).
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/models/learning_module.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
+import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
+import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
+import 'package:klang_universum/features/games/screens/module_screen.dart';
+import 'package:klang_universum/features/progress/screens/progress_screen.dart';
+import 'package:klang_universum/features/settings/screens/settings_screen.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show Clef;
 import 'package:provider/provider.dart';
-
-import '../../../core/models/learning_module.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../core/tuning.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../games/chords/chord_quiz_screen.dart';
-import '../../games/harmony/harmony_quiz_screen.dart';
-import '../../games/note_reading/note_reading_quiz_screen.dart';
-import '../../games/scales/scale_detective_screen.dart';
-import '../../games/note_values/note_value_quiz_screen.dart';
-import '../../games/screens/module_screen.dart';
-import '../../progress/screens/progress_screen.dart';
-import '../../settings/screens/settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -49,15 +48,16 @@ class HomeScreen extends StatelessWidget {
     final treble = readingIds
         .where((id) => id.startsWith('note_reading.treble.'))
         .toList();
-    final bass = readingIds
-        .where((id) => id.startsWith('note_reading.bass.'))
-        .toList();
-    final tenor = readingIds
-        .where((id) => id.startsWith('note_reading.tenor.'))
-        .toList();
+    final bass =
+        readingIds.where((id) => id.startsWith('note_reading.bass.')).toList();
+    final tenor =
+        readingIds.where((id) => id.startsWith('note_reading.tenor.')).toList();
     List<String> dueOf(String moduleId, String prefix) => sri
         .getItemsForReview(
-            limit: 10, moduleId: moduleId, resetSessionFirst: true)
+          limit: 10,
+          moduleId: moduleId,
+          resetSessionFirst: true,
+        )
         .where((id) => id.startsWith(prefix))
         .toList();
     final scaleSpots = dueOf('scales', 'scales.spot.');
@@ -70,23 +70,30 @@ class HomeScreen extends StatelessWidget {
       (
         treble.length,
         () => NoteReadingQuizScreen(
-            clef: Clef.treble, reviewItemIds: treble.take(10).toList())
+              clef: Clef.treble,
+              reviewItemIds: treble.take(10).toList(),
+            )
       ),
       (
         bass.length,
         () => NoteReadingQuizScreen(
-            clef: Clef.bass, reviewItemIds: bass.take(10).toList())
+              clef: Clef.bass,
+              reviewItemIds: bass.take(10).toList(),
+            )
       ),
       (
         tenor.length,
         () => NoteReadingQuizScreen(
-            clef: Clef.tenor, reviewItemIds: tenor.take(10).toList())
+              clef: Clef.tenor,
+              reviewItemIds: tenor.take(10).toList(),
+            )
       ),
-      (scaleSpots.length,
-          () => ScaleDetectiveScreen(reviewItemIds: scaleSpots)),
+      (
+        scaleSpots.length,
+        () => ScaleDetectiveScreen(reviewItemIds: scaleSpots)
+      ),
       (triads.length, () => ChordQuizScreen(reviewItemIds: triads)),
-      (functions.length,
-          () => HarmonyQuizScreen(reviewItemIds: functions)),
+      (functions.length, () => HarmonyQuizScreen(reviewItemIds: functions)),
     ]..sort((a, b) => b.$1.compareTo(a.$1));
     final runner = buckets.first.$1 > 0 ? buckets.first.$2() : null;
 
@@ -100,8 +107,7 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => runner));
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => runner));
   }
 
   @override
@@ -121,8 +127,7 @@ class HomeScreen extends StatelessWidget {
       final module = kLearningModules[i];
       unlockedById[module.id] = module.initiallyUnlocked ||
           (i > 0 &&
-              trackedIn(kLearningModules[i - 1].id) >=
-                  kModuleUnlockTracked);
+              trackedIn(kLearningModules[i - 1].id) >= kModuleUnlockTracked);
     }
 
     return Scaffold(
@@ -231,9 +236,11 @@ class _ModuleCard extends StatelessWidget {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(previousModule != null
-                    ? l10n.unlockHint(previousModule!.title(l10n))
-                    : l10n.locked),
+                content: Text(
+                  previousModule != null
+                      ? l10n.unlockHint(previousModule!.title(l10n))
+                      : l10n.locked,
+                ),
                 duration: const Duration(seconds: 2),
               ),
             );

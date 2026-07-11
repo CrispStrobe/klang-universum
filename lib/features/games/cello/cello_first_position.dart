@@ -5,9 +5,8 @@
 // position: finger 1 a whole step above open, fingers 2/3 a half step
 // apart, finger 4 a fourth above open.
 
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
-
-import '../../../l10n/app_localizations.dart';
 
 /// The four cello strings, low to high.
 enum CelloString {
@@ -58,6 +57,6 @@ const kCelloFirstPosition = <CelloNote>[
   // A string: A(0) B(1) C(2) D(4)
   CelloNote(Pitch(Step.a, octave: 3), CelloString.a, 0),
   CelloNote(Pitch(Step.b, octave: 3), CelloString.a, 1),
-  CelloNote(Pitch(Step.c, octave: 4), CelloString.a, 2),
-  CelloNote(Pitch(Step.d, octave: 4), CelloString.a, 4),
+  CelloNote(Pitch(Step.c), CelloString.a, 2),
+  CelloNote(Pitch(Step.d), CelloString.a, 4),
 ];

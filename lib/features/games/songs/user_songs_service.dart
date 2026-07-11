@@ -15,16 +15,21 @@ class ImportedSong {
   final String title;
   final String musicXml;
 
-  const ImportedSong(
-      {required this.id, required this.title, required this.musicXml});
+  const ImportedSong({
+    required this.id,
+    required this.title,
+    required this.musicXml,
+  });
 
   Score get score => scoreFromMusicXml(musicXml);
 
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'title': title, 'xml': musicXml};
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'xml': musicXml};
 
   factory ImportedSong.fromJson(Map<String, dynamic> json) => ImportedSong(
-      id: json['id'], title: json['title'], musicXml: json['xml']);
+        id: json['id'] as String,
+        title: json['title'] as String,
+        musicXml: json['xml'] as String,
+      );
 }
 
 class ImportedChordSheet {
@@ -32,15 +37,20 @@ class ImportedChordSheet {
   final String title;
   final String source;
 
-  const ImportedChordSheet(
-      {required this.id, required this.title, required this.source});
+  const ImportedChordSheet({
+    required this.id,
+    required this.title,
+    required this.source,
+  });
 
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'title': title, 'source': source};
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'source': source};
 
   factory ImportedChordSheet.fromJson(Map<String, dynamic> json) =>
       ImportedChordSheet(
-          id: json['id'], title: json['title'], source: json['source']);
+        id: json['id'] as String,
+        title: json['title'] as String,
+        source: json['source'] as String,
+      );
 }
 
 class UserSongsService with ChangeNotifier {
@@ -60,11 +70,11 @@ class UserSongsService with ChangeNotifier {
         final map = json.decode(jsonString) as Map<String, dynamic>;
         _songs = [
           for (final s in (map['songs'] as List? ?? []))
-            ImportedSong.fromJson(s)
+            ImportedSong.fromJson(s as Map<String, dynamic>),
         ];
         _sheets = [
           for (final s in (map['sheets'] as List? ?? []))
-            ImportedChordSheet.fromJson(s)
+            ImportedChordSheet.fromJson(s as Map<String, dynamic>),
         ];
       }
     } catch (e) {

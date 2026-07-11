@@ -10,13 +10,12 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step, Key;
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class HarmonyQuizScreen extends StatefulWidget {
   /// Review mode: full SRI item IDs (`harmony.function.<tonic>_<function>`).
@@ -62,9 +61,7 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
           if (parts.length != 2) return null;
           final tonic = Step.values.asNameMap()[parts[0]];
           final function = HarmonicFunction.values.asNameMap()[parts[1]];
-          return (tonic == null || function == null)
-              ? null
-              : (tonic, function);
+          return (tonic == null || function == null) ? null : (tonic, function);
         })
         .whereType<(Step, HarmonicFunction)>()
         .toList();
@@ -133,8 +130,8 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
 
     return Scaffold(
       appBar: AppBar(
-          title:
-              Text(_isReview ? l10n.reviewTitle : l10n.gameHarmonyQuiz)),
+        title: Text(_isReview ? l10n.reviewTitle : l10n.gameHarmonyQuiz),
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(
@@ -150,15 +147,15 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.harmonyPrompt(
-                          l10n.keyMajorName(noteName(l10n, _tonic))),
+                        l10n.keyMajorName(noteName(l10n, _tonic)),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 48),
+                            padding: const EdgeInsets.symmetric(horizontal: 48),
                             child: StaffView(
                               score: _score,
                               staffSpace: 14,
@@ -175,8 +172,7 @@ class _HarmonyQuizScreenState extends State<HarmonyQuizScreen>
                       children: [
                         for (final option in HarmonicFunction.values)
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             child: SizedBox(
                               width: double.infinity,
                               child: FilledButton(

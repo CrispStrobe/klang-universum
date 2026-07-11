@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
-import '../audio/synth.dart';
+import 'package:klang_universum/core/audio/synth.dart';
 
 class AudioService {
   AudioPlayer? _player;
@@ -21,7 +21,8 @@ class AudioService {
       if (kIsWeb) {
         // BytesSource is not supported by the web implementation; a data
         // URI plays fine in the browser's audio element.
-        await player.play(UrlSource('data:audio/wav;base64,${base64Encode(wav)}'));
+        await player
+            .play(UrlSource('data:audio/wav;base64,${base64Encode(wav)}'));
       } else {
         await player.play(BytesSource(wav, mimeType: 'audio/wav'));
       }
@@ -30,33 +31,43 @@ class AudioService {
     }
   }
 
-  Future<void> playMidiNote(int midi, {int ms = 700}) =>
-      _play(renderWav([(freqs: [midiToFrequency(midi)], ms: ms)]));
+  Future<void> playMidiNote(int midi, {int ms = 700}) => _play(
+        renderWav([
+          (freqs: [midiToFrequency(midi)], ms: ms),
+        ]),
+      );
 
   Future<void> playMidiChord(List<int> midis, {int ms = 1200}) => _play(
-      renderWav([(freqs: midis.map(midiToFrequency).toList(), ms: ms)]));
+        renderWav([(freqs: midis.map(midiToFrequency).toList(), ms: ms)]),
+      );
 
   /// Arpeggio (bottom-up), then the block chord.
   Future<void> playArpeggioThenChord(List<int> midis) {
     final freqs = midis.map(midiToFrequency).toList();
-    return _play(renderWav([
-      for (final f in freqs) (freqs: [f], ms: 400),
-      (freqs: freqs, ms: 1200),
-    ]));
+    return _play(
+      renderWav([
+        for (final f in freqs) (freqs: [f], ms: 400),
+        (freqs: freqs, ms: 1200),
+      ]),
+    );
   }
 
   /// Sequential melody of (midi, ms) notes.
-  Future<void> playSequence(List<(int, int)> notes) => _play(renderWav([
-        for (final (midi, ms) in notes)
-          (freqs: [midiToFrequency(midi)], ms: ms),
-      ]));
+  Future<void> playSequence(List<(int, int)> notes) => _play(
+        renderWav([
+          for (final (midi, ms) in notes)
+            (freqs: [midiToFrequency(midi)], ms: ms),
+        ]),
+      );
 
   /// Sequential chords (e.g. a cadence), [ms] each.
   Future<void> playChordSequence(List<List<int>> chords, {int ms = 900}) =>
-      _play(renderWav([
-        for (final midis in chords)
-          (freqs: midis.map(midiToFrequency).toList(), ms: ms),
-      ]));
+      _play(
+        renderWav([
+          for (final midis in chords)
+            (freqs: midis.map(midiToFrequency).toList(), ms: ms),
+        ]),
+      );
 
   // Retro feedback SFX, rendered once and cached.
   static Uint8List? _correctWav;

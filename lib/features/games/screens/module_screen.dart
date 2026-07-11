@@ -3,12 +3,11 @@
 // Lists the minigames of one learning module (from the game registry).
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/models/learning_module.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/features/games/game_registry.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/models/learning_module.dart';
-import '../../../core/services/progress_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../game_registry.dart';
 
 class ModuleScreen extends StatelessWidget {
   final LearningModule module;
@@ -33,7 +32,9 @@ class ModuleScreen extends StatelessWidget {
                 return Card(
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 8),
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     leading: CircleAvatar(
                       backgroundColor: module.color,
                       child: Icon(game.icon, color: Colors.white),

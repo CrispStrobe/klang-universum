@@ -9,14 +9,13 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class ChordQuizScreen extends StatefulWidget {
   /// Review mode: full SRI item IDs (`chords.triad.<root>_major`) to drill.
@@ -28,8 +27,7 @@ class ChordQuizScreen extends StatefulWidget {
   State<ChordQuizScreen> createState() => _ChordQuizScreenState();
 }
 
-class _ChordQuizScreenState extends State<ChordQuizScreen>
-    with QuizRoundMixin {
+class _ChordQuizScreenState extends State<ChordQuizScreen> with QuizRoundMixin {
   final _random = Random();
 
   // Roots whose major triads sit comfortably on the treble staff.
@@ -155,8 +153,7 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 48),
+                            padding: const EdgeInsets.symmetric(horizontal: 48),
                             child: StaffView(
                               score: _score,
                               staffSpace: 14,
@@ -189,7 +186,8 @@ class _ChordQuizScreenState extends State<ChordQuizScreen>
                             ),
                             onPressed: () => _onAnswer(option),
                             child: Text(
-                                l10n.majorChordName(noteName(l10n, option))),
+                              l10n.majorChordName(noteName(l10n, option)),
+                            ),
                           ),
                       ],
                     ),

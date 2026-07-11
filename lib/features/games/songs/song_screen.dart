@@ -5,18 +5,19 @@
 // the sounding note highlights in sync (repaint-only per the partitura
 // contract). Tapping any note plays it.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/features/games/songs/chord_sheet_screen.dart';
+import 'package:klang_universum/features/games/songs/import/chordpro.dart';
+import 'package:klang_universum/features/games/songs/import_screen.dart';
+import 'package:klang_universum/features/games/songs/song_book.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart'
     show MultiSystemView, NoteElement, PartituraTheme, Score;
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../l10n/app_localizations.dart';
-import 'chord_sheet_screen.dart';
-import 'import/chordpro.dart';
-import 'import_screen.dart';
-import 'song_book.dart';
-import 'user_songs_service.dart';
 
 class SongScreen extends StatefulWidget {
   final String title;
@@ -26,8 +27,11 @@ class SongScreen extends StatefulWidget {
       : title = song.title,
         score = song.score;
 
-  const SongScreen.fromScore(
-      {super.key, required this.title, required this.score});
+  const SongScreen.fromScore({
+    super.key,
+    required this.title,
+    required this.score,
+  });
 
   @override
   State<SongScreen> createState() => _SongScreenState();
@@ -38,8 +42,7 @@ class _SongScreenState extends State<SongScreen> {
   bool _playing = false;
   int _playToken = 0; // invalidates a running play loop
 
-  late final List<(String, int, int)> _playback =
-      playbackOf(widget.score);
+  late final List<(String, int, int)> _playback = playbackOf(widget.score);
 
   late final Map<String, int> _midiById = {
     for (final measure in widget.score.measures)
@@ -53,10 +56,12 @@ class _SongScreenState extends State<SongScreen> {
     final audio = context.read<AudioService>();
     setState(() => _playing = true);
 
-    // One synthesized render of the whole melody...
-    audio.playSequence([
-      for (final (_, midi, ms) in _playback) (midi, ms),
-    ]);
+    // One synthesized render of the whole melody, deliberately not awaited...
+    unawaited(
+      audio.playSequence([
+        for (final (_, midi, ms) in _playback) (midi, ms),
+      ]),
+    );
     // ...while the cursor walks the notation in the same rhythm.
     for (final (id, _, ms) in _playback) {
       if (!mounted || token != _playToken) return;
@@ -124,7 +129,8 @@ class _SongScreenState extends State<SongScreen> {
                 onPressed: _playing ? _stop : _play,
                 icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
                 label: Text(
-                    _playing ? l10n.songStop : l10n.myMelodyPlay),
+                  _playing ? l10n.songStop : l10n.myMelodyPlay,
+                ),
               ),
             ],
           ),
@@ -168,23 +174,27 @@ class SongListScreen extends StatelessWidget {
                 trailing: const Icon(Icons.play_circle_outline),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                      builder: (_) => SongScreen(song: song)),
+                    builder: (_) => SongScreen(song: song),
+                  ),
                 ),
               ),
             ),
           if (userSongs.songs.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
-              child: Text(l10n.importedSongs,
-                  style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                l10n.importedSongs,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             for (final song in userSongs.songs)
               Card(
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 8),
-                  leading:
-                      const CircleAvatar(child: Icon(Icons.file_download)),
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  leading: const CircleAvatar(child: Icon(Icons.file_download)),
                   title: Text(song.title),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
@@ -194,7 +204,9 @@ class SongListScreen extends StatelessWidget {
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => SongScreen.fromScore(
-                          title: song.title, score: song.score),
+                        title: song.title,
+                        score: song.score,
+                      ),
                     ),
                   ),
                 ),
@@ -203,21 +215,24 @@ class SongListScreen extends StatelessWidget {
           if (userSongs.sheets.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
-              child: Text(l10n.chordSheets,
-                  style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                l10n.chordSheets,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             for (final sheet in userSongs.sheets)
               Card(
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 8),
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   leading: const CircleAvatar(child: Icon(Icons.tag)),
                   title: Text(sheet.title),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    onPressed: () => context
-                        .read<UserSongsService>()
-                        .removeSheet(sheet.id),
+                    onPressed: () =>
+                        context.read<UserSongsService>().removeSheet(sheet.id),
                   ),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(

@@ -3,12 +3,11 @@
 // Language override (system/EN/DE) and a compact SRI statistics summary.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/settings_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

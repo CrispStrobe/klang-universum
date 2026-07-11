@@ -50,10 +50,22 @@ schwimmen auf dem [C]See
         0x00, 0xff, 0x2f, 0x00, // end of track
       ];
       final header = [
-        ...'MThd'.codeUnits, 0, 0, 0, 6, 0, 0, 0, 1, 0x01, 0xe0,
+        ...'MThd'.codeUnits,
+        0,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        1,
+        0x01,
+        0xe0,
         ...'MTrk'.codeUnits,
-        (track.length >> 24) & 0xff, (track.length >> 16) & 0xff,
-        (track.length >> 8) & 0xff, track.length & 0xff,
+        (track.length >> 24) & 0xff,
+        (track.length >> 16) & 0xff,
+        (track.length >> 8) & 0xff,
+        track.length & 0xff,
         ...track,
       ];
       return Uint8List.fromList(header);
@@ -64,7 +76,7 @@ schwimmen auf dem [C]See
       final notes = [
         for (final m in score.measures)
           for (final e in m.elements)
-            if (e is NoteElement) e
+            if (e is NoteElement) e,
       ];
       expect(notes.length, 3);
       expect(notes[0].pitches.first.midiNumber, 60);
@@ -76,8 +88,10 @@ schwimmen auf dem [C]See
     });
 
     test('rejects junk', () {
-      expect(() => scoreFromMidi(Uint8List.fromList([1, 2, 3])),
-          throwsFormatException);
+      expect(
+        () => scoreFromMidi(Uint8List.fromList([1, 2, 3])),
+        throwsFormatException,
+      );
     });
   });
 

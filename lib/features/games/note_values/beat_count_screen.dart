@@ -10,13 +10,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show Score, StaffView;
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class _BeatExpr {
   final String id; // SRI detail
@@ -44,8 +43,7 @@ class BeatCountScreen extends StatefulWidget {
   State<BeatCountScreen> createState() => _BeatCountScreenState();
 }
 
-class _BeatCountScreenState extends State<BeatCountScreen>
-    with QuizRoundMixin {
+class _BeatCountScreenState extends State<BeatCountScreen> with QuizRoundMixin {
   final _random = Random();
 
   late _BeatExpr _expr;
@@ -131,8 +129,7 @@ class _BeatCountScreenState extends State<BeatCountScreen>
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
                             child: StaffView(
                               score: Score.simple(notes: _expr.dsl),
                               staffSpace: 14,
@@ -150,11 +147,13 @@ class _BeatCountScreenState extends State<BeatCountScreen>
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6),
+                                horizontal: 6,
+                              ),
                               child: FilledButton(
                                 style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 20),
+                                    vertical: 20,
+                                  ),
                                   backgroundColor: _tapped == null
                                       ? null
                                       : beats == _expr.beats &&
@@ -167,7 +166,8 @@ class _BeatCountScreenState extends State<BeatCountScreen>
                                       .textTheme
                                       .headlineSmall
                                       ?.copyWith(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                                 onPressed: () => _onAnswer(beats),
                                 child: Text('$beats'),

@@ -24,9 +24,9 @@ class GameProgress {
       {'stars': bestStars, 'score': bestScore, 'plays': plays};
 
   factory GameProgress.fromJson(Map<String, dynamic> json) => GameProgress(
-        bestStars: json['stars'] ?? 0,
-        bestScore: json['score'] ?? 0,
-        plays: json['plays'] ?? 0,
+        bestStars: (json['stars'] as int?) ?? 0,
+        bestScore: (json['score'] as int?) ?? 0,
+        plays: (json['plays'] as int?) ?? 0,
       );
 }
 
@@ -40,9 +40,12 @@ class ProgressService with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
       if (jsonString != null) {
-        final Map<String, dynamic> jsonMap = json.decode(jsonString);
+        final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
         _byGame = jsonMap.map(
-          (key, value) => MapEntry(key, GameProgress.fromJson(value)),
+          (key, value) => MapEntry(
+            key,
+            GameProgress.fromJson(value as Map<String, dynamic>),
+          ),
         );
       }
     } catch (e) {
@@ -82,6 +85,5 @@ class ProgressService with ChangeNotifier {
   /// Best stars for [gameId] (0 if never finished).
   int starsFor(String gameId) => progressFor(gameId).bestStars;
 
-  int get totalStars =>
-      _byGame.values.fold(0, (sum, p) => sum + p.bestStars);
+  int get totalStars => _byGame.values.fold(0, (sum, p) => sum + p.bestStars);
 }

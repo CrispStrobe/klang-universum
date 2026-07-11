@@ -11,20 +11,18 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class EndingDetectiveScreen extends StatefulWidget {
   const EndingDetectiveScreen({super.key});
 
   @override
-  State<EndingDetectiveScreen> createState() =>
-      _EndingDetectiveScreenState();
+  State<EndingDetectiveScreen> createState() => _EndingDetectiveScreenState();
 }
 
 class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
@@ -57,12 +55,10 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
     final melody = <Pitch>[];
     for (var i = 0; i < 5; i++) {
       melody.add(Clef.treble.pitchAt(position));
-      position =
-          (position + [-1, 1, 1, 2][_random.nextInt(4)]).clamp(0, 8);
+      position = (position + [-1, 1, 1, 2][_random.nextInt(4)]).clamp(0, 8);
     }
     _finishedEnding = _random.nextBool();
-    final endPosition =
-        _finishedEnding ? 5 : [6, 4, 2][_random.nextInt(3)];
+    final endPosition = _finishedEnding ? 5 : [6, 4, 2][_random.nextInt(3)];
     melody.add(Clef.treble.pitchAt(endPosition)); // C5 or D5/B4/G4
     _melody = melody;
     _tapped = null;
@@ -81,8 +77,10 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
         notes: _melody
             .asMap()
             .entries
-            .map((e) =>
-                '${e.value.step.name}${e.value.octave}${e.key == _melody.length - 1 ? ':h' : e.key == 0 ? ':q' : ''}')
+            .map(
+              (e) =>
+                  '${e.value.step.name}${e.value.octave}${e.key == _melody.length - 1 ? ':h' : e.key == 0 ? ':q' : ''}',
+            )
             .join(' '),
       );
 
@@ -140,8 +138,7 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: StaffView(
                               score: _score,
                               staffSpace: 10,
@@ -159,7 +156,8 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8),
+                              horizontal: 8,
+                            ),
                             child: FilledButton.icon(
                               style: _buttonStyle(context, true),
                               icon: const Icon(Icons.check_circle),
@@ -171,7 +169,8 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8),
+                              horizontal: 8,
+                            ),
                             child: FilledButton.icon(
                               style: _buttonStyle(context, false),
                               icon: const Icon(Icons.more_horiz),

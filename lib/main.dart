@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/game_registry.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
+import 'package:klang_universum/features/home/screens/home_screen.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/theme.dart';
 import 'package:partitura/partitura.dart' show Bravura;
 import 'package:provider/provider.dart';
-
-import 'core/services/audio_service.dart';
-import 'core/services/progress_service.dart';
-import 'core/services/settings_service.dart';
-import 'core/services/sri_service.dart';
-import 'features/games/songs/user_songs_service.dart';
-import 'features/games/game_registry.dart';
-import 'features/home/screens/home_screen.dart';
-import 'l10n/app_localizations.dart';
-import 'shared/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

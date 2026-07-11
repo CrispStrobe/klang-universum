@@ -5,38 +5,37 @@
 // scores, a bracket in core/tuning.dart's kStarThresholds.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
+import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
+import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
+import 'package:klang_universum/features/games/chords/interval_ear_screen.dart';
+import 'package:klang_universum/features/games/chords/triad_builder_screen.dart';
+import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
+import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
+import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
+import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.dart';
+import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
+import 'package:klang_universum/features/games/keyboard/key_chord_screen.dart';
+import 'package:klang_universum/features/games/keyboard/key_ear_screen.dart';
+import 'package:klang_universum/features/games/keyboard/key_find_screen.dart';
+import 'package:klang_universum/features/games/keyboard/key_melody_screen.dart';
+import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
+import 'package:klang_universum/features/games/measures/measure_fill_screen.dart';
+import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
+import 'package:klang_universum/features/games/note_reading/melody_echo_screen.dart';
+import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
+import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
+import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
+import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
+import 'package:klang_universum/features/games/scales/major_minor_ear_screen.dart';
+import 'package:klang_universum/features/games/scales/scale_builder_screen.dart';
+import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
+import 'package:klang_universum/features/games/songs/song_screen.dart';
+import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
-
-import '../../l10n/app_localizations.dart';
-import 'cello/cello_finger_quiz_screen.dart';
-import 'cello/cello_string_quiz_screen.dart';
-import 'chords/chord_quiz_screen.dart';
-import 'composition/ending_detective_screen.dart';
-import 'composition/my_melody_screen.dart';
-import 'composition/question_answer_screen.dart';
-import 'chords/interval_ear_screen.dart';
-import 'chords/triad_builder_screen.dart';
-import 'harmony/harmony_quiz_screen.dart';
-import 'keyboard/key_chord_screen.dart';
-import 'keyboard/key_ear_screen.dart';
-import 'keyboard/key_find_screen.dart';
-import 'keyboard/key_melody_screen.dart';
-import 'keyboard/key_name_screen.dart';
-import 'measures/measure_fill_screen.dart';
-import 'measures/meter_detective_screen.dart';
-import 'note_reading/melody_echo_screen.dart';
-import 'note_reading/note_reading_quiz_screen.dart';
-import 'note_reading/place_note_screen.dart';
-import 'note_values/beat_count_screen.dart';
-import 'note_values/duration_duel_screen.dart';
-import 'note_values/note_value_quiz_screen.dart';
-import 'note_values/rhythm_tap_screen.dart';
-import 'harmony/cadence_workshop_screen.dart';
-import 'scales/major_minor_ear_screen.dart';
-import 'songs/song_screen.dart';
-import 'songs/tune_quiz_screen.dart';
-import 'scales/scale_builder_screen.dart';
-import 'scales/scale_detective_screen.dart';
 
 class GameInfo {
   /// Stable ID, used for star thresholds and analytics.

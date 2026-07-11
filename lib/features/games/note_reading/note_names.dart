@@ -3,9 +3,8 @@
 // Localized note letter names. German uses H for the natural B — that's why
 // these go through the ARB files instead of Step.name.toUpperCase().
 
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
-
-import '../../../l10n/app_localizations.dart';
 
 String noteName(AppLocalizations l10n, Step step) => switch (step) {
       Step.c => l10n.noteNameC,

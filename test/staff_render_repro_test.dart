@@ -12,27 +12,26 @@ import 'package:partitura/partitura.dart';
 void main() {
   setUpAll(() {
     final metadata = File(
-            '../partitura/packages/partitura/assets/smufl/bravura_metadata.json')
-        .readAsStringSync();
+      '../partitura/packages/partitura/assets/smufl/bravura_metadata.json',
+    ).readAsStringSync();
     Bravura.debugOverrideMetadata(
       SmuflMetadata.fromJson(jsonDecode(metadata) as Map<String, Object?>),
     );
   });
 
-  testWidgets('whole-rest measures render without exceptions',
-      (tester) async {
+  testWidgets('whole-rest measures render without exceptions', (tester) async {
     const wholeRest = RestElement(NoteDuration(DurationBase.whole));
-    final score = Score(
+    const score = Score(
       clef: Clef.treble,
       measures: [
-        Measure(const [wholeRest]),
-        Measure(const [wholeRest]),
-        Measure(const [wholeRest]),
+        Measure([wholeRest]),
+        Measure([wholeRest]),
+        Measure([wholeRest]),
       ],
     );
 
     await tester.pumpWidget(
-      Directionality(
+      const Directionality(
         textDirection: TextDirection.ltr,
         child: Center(child: StaffView(score: score, staffSpace: 16)),
       ),

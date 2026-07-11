@@ -10,14 +10,13 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/piano_keyboard.dart';
-import '../widgets/game_widgets.dart';
 
 class KeyMelodyScreen extends StatefulWidget {
   const KeyMelodyScreen({super.key});
@@ -28,8 +27,7 @@ class KeyMelodyScreen extends StatefulWidget {
   State<KeyMelodyScreen> createState() => _KeyMelodyScreenState();
 }
 
-class _KeyMelodyScreenState extends State<KeyMelodyScreen>
-    with QuizRoundMixin {
+class _KeyMelodyScreenState extends State<KeyMelodyScreen> with QuizRoundMixin {
   final _random = Random();
 
   late List<Pitch> _melody;
@@ -72,17 +70,13 @@ class _KeyMelodyScreenState extends State<KeyMelodyScreen>
   bool get _complete => _playedCount >= _melody.length;
 
   Score get _score => Score.simple(
-        notes: _melody
-            .map((p) => '${p.step.name}${p.octave}')
-            .join(' '),
+        notes: _melody.map((p) => '${p.step.name}${p.octave}').join(' '),
       );
 
   void _record(bool correct) {
     if (_sriRecorded) return;
     _sriRecorded = true;
-    context
-        .read<SriService>()
-        .recordResponse('keyboard.melody.len4', correct);
+    context.read<SriService>().recordResponse('keyboard.melody.len4', correct);
   }
 
   void _onKeyTap(int midi) {
@@ -144,8 +138,7 @@ class _KeyMelodyScreenState extends State<KeyMelodyScreen>
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: StaffView(
                               score: _score,
                               staffSpace: 11,
@@ -167,13 +160,10 @@ class _KeyMelodyScreenState extends State<KeyMelodyScreen>
                     SizedBox(
                       height: 170,
                       child: PianoKeyboard(
-                        startMidi: 60, // C4..G5
-                        whiteKeyCount: 12,
                         showLabels: true,
                         onKeyTap: _onKeyTap,
                         keyColors: {
-                          if (_wrongMidi != null)
-                            _wrongMidi!: Colors.redAccent,
+                          if (_wrongMidi != null) _wrongMidi!: Colors.redAccent,
                         },
                       ),
                     ),

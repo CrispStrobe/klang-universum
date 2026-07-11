@@ -10,7 +10,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../l10n/app_localizations.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 
 class LearningModule {
   /// Stable ID, also the first segment of this module's SRI item IDs.

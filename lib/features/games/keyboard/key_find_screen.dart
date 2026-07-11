@@ -10,15 +10,14 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/progress_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/piano_keyboard.dart';
-import '../widgets/game_widgets.dart';
 
 class KeyFindScreen extends StatefulWidget {
   const KeyFindScreen({super.key});
@@ -72,8 +71,7 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
   }
 
   String get _targetToken {
-    final accidental =
-        switch (_target.alter) { 1 => '#', -1 => 'b', _ => '' };
+    final accidental = switch (_target.alter) { 1 => '#', -1 => 'b', _ => '' };
     return '${_target.step.name}$accidental${_target.octave}';
   }
 
@@ -107,8 +105,7 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     // Beginners (0-1 stars) get letter labels on the keys.
-    final showLabels =
-        context.read<ProgressService>().starsFor('key_find') < 2;
+    final showLabels = context.read<ProgressService>().starsFor('key_find') < 2;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.gameKeyFind)),
@@ -133,8 +130,7 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
                             child: StaffView(
                               score: Score.simple(notes: '$_targetToken:w'),
                               staffSpace: 12,
@@ -150,15 +146,12 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
                     SizedBox(
                       height: 170,
                       child: PianoKeyboard(
-                        startMidi: 60, // C4..G5
-                        whiteKeyCount: 12,
                         showLabels: showLabels,
                         onKeyTap: _onKeyTap,
                         keyColors: {
                           if (_tappedMidi != null)
-                            _tappedMidi!: _lastAnswer!
-                                ? Colors.green
-                                : Colors.redAccent,
+                            _tappedMidi!:
+                                _lastAnswer! ? Colors.green : Colors.redAccent,
                         },
                       ),
                     ),

@@ -8,13 +8,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/songs/song_book.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
-import 'song_book.dart';
 
 class TuneQuizScreen extends StatefulWidget {
   const TuneQuizScreen({super.key});
@@ -25,8 +24,7 @@ class TuneQuizScreen extends StatefulWidget {
   State<TuneQuizScreen> createState() => _TuneQuizScreenState();
 }
 
-class _TuneQuizScreenState extends State<TuneQuizScreen>
-    with QuizRoundMixin {
+class _TuneQuizScreenState extends State<TuneQuizScreen> with QuizRoundMixin {
   final _random = Random();
 
   late Song _target;
@@ -124,8 +122,7 @@ class _TuneQuizScreenState extends State<TuneQuizScreen>
                       children: [
                         for (final song in kSongs)
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
                             child: SizedBox(
                               width: double.infinity,
                               child: FilledButton(

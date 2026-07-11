@@ -11,17 +11,15 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
-import 'package:partitura/partitura.dart'
-    show ChordQuality, Pitch, Step, Triad;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
+import 'package:partitura/partitura.dart' show ChordQuality, Pitch, Step, Triad;
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/progress_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/piano_keyboard.dart';
-import '../note_reading/note_names.dart';
-import '../widgets/game_widgets.dart';
 
 class KeyChordScreen extends StatefulWidget {
   const KeyChordScreen({super.key});
@@ -30,8 +28,7 @@ class KeyChordScreen extends StatefulWidget {
   State<KeyChordScreen> createState() => _KeyChordScreenState();
 }
 
-class _KeyChordScreenState extends State<KeyChordScreen>
-    with QuizRoundMixin {
+class _KeyChordScreenState extends State<KeyChordScreen> with QuizRoundMixin {
   final _random = Random();
 
   static const _baseRoots = [Step.c, Step.f, Step.g]; // all-white triads
@@ -69,10 +66,9 @@ class _KeyChordScreenState extends State<KeyChordScreen>
 
   @override
   void prepareRound() {
-    final roots =
-        context.read<ProgressService>().starsFor('key_chord') >= 2
-            ? _advancedRoots
-            : _baseRoots;
+    final roots = context.read<ProgressService>().starsFor('key_chord') >= 2
+        ? _advancedRoots
+        : _baseRoots;
     _root = roots[_random.nextInt(roots.length)];
     _targetMidis = Triad(Pitch(_root), ChordQuality.major)
         .pitches
@@ -157,8 +153,7 @@ class _KeyChordScreenState extends State<KeyChordScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n
-                          .keyChordPrompt(noteName(l10n, _root)),
+                      prompt: l10n.keyChordPrompt(noteName(l10n, _root)),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
@@ -169,7 +164,8 @@ class _KeyChordScreenState extends State<KeyChordScreen>
                             for (var i = 0; i < 3; i++)
                               Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6),
+                                  horizontal: 6,
+                                ),
                                 child: Icon(
                                   i < _foundMidis.length
                                       ? Icons.music_note
@@ -177,9 +173,7 @@ class _KeyChordScreenState extends State<KeyChordScreen>
                                   size: 40,
                                   color: i < _foundMidis.length
                                       ? Colors.green
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .outline,
+                                      : Theme.of(context).colorScheme.outline,
                                 ),
                               ),
                           ],
@@ -198,15 +192,11 @@ class _KeyChordScreenState extends State<KeyChordScreen>
                     SizedBox(
                       height: 170,
                       child: PianoKeyboard(
-                        startMidi: 60, // C4..G5
-                        whiteKeyCount: 12,
                         showLabels: true,
                         onKeyTap: _onKeyTap,
                         keyColors: {
-                          for (final midi in _foundMidis)
-                            midi: Colors.green,
-                          if (_wrongMidi != null)
-                            _wrongMidi!: Colors.redAccent,
+                          for (final midi in _foundMidis) midi: Colors.green,
+                          if (_wrongMidi != null) _wrongMidi!: Colors.redAccent,
                         },
                       ),
                     ),

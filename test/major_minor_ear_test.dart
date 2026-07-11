@@ -23,7 +23,7 @@ void main() {
         providers: [
           ChangeNotifierProvider<SriService>.value(value: sri),
           Provider<AudioService>(create: (_) => AudioService()),
-      ChangeNotifierProvider(create: (_) => ProgressService()),
+          ChangeNotifierProvider(create: (_) => ProgressService()),
         ],
         child: const MaterialApp(
           localizationsDelegates: [

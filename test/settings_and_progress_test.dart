@@ -30,8 +30,7 @@ void main() {
     expect(again.locale, isNull);
   });
 
-  testWidgets('progress screen shows boxes and module mastery',
-      (tester) async {
+  testWidgets('progress screen shows boxes and module mastery', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 10));
     // Two tracked items: one brand-new failure (box 1), one in progress.
     sri.recordResponse('note_values.symbol.whole_note', false);

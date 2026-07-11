@@ -9,12 +9,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class MeterDetectiveScreen extends StatefulWidget {
   const MeterDetectiveScreen({super.key});
@@ -130,15 +129,16 @@ class _MeterDetectiveScreenState extends State<MeterDetectiveScreen>
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6),
+                                horizontal: 6,
+                              ),
                               child: FilledButton(
                                 style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 20),
+                                    vertical: 20,
+                                  ),
                                   backgroundColor: _tapped == null
                                       ? null
-                                      : beats == _beats &&
-                                              _tapped == _beats
+                                      : beats == _beats && _tapped == _beats
                                           ? Colors.green
                                           : beats == _tapped
                                               ? Colors.redAccent
@@ -147,7 +147,8 @@ class _MeterDetectiveScreenState extends State<MeterDetectiveScreen>
                                       .textTheme
                                       .titleLarge
                                       ?.copyWith(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                                 onPressed: () => _onAnswer(beats),
                                 child: Text('$beats/4'),

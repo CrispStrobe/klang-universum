@@ -6,14 +6,13 @@
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:klang_universum/features/games/songs/import/chordpro.dart';
+import 'package:klang_universum/features/games/songs/import/midi_import.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart'
     show scoreFromMusicXml, scoreToMusicXml;
 import 'package:provider/provider.dart';
-
-import '../../../l10n/app_localizations.dart';
-import 'import/chordpro.dart';
-import 'import/midi_import.dart';
-import 'user_songs_service.dart';
 
 class ImportScreen extends StatefulWidget {
   const ImportScreen({super.key});
@@ -29,11 +28,14 @@ class _ImportScreenState extends State<ImportScreen> {
   String _newId() => DateTime.now().millisecondsSinceEpoch.toString();
 
   void _fail(Object error) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          AppLocalizations.of(context)!.importFailed(error.toString())),
-      backgroundColor: Colors.redAccent,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.importFailed(error.toString()),
+        ),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
   }
 
   void _done() {
@@ -55,7 +57,8 @@ class _ImportScreenState extends State<ImportScreen> {
                   ?.trim() ??
               'MusicXML';
       context.read<UserSongsService>().addSong(
-          ImportedSong(id: _newId(), title: title, musicXml: xml));
+            ImportedSong(id: _newId(), title: title, musicXml: xml),
+          );
       _done();
     } catch (e) {
       _fail(e);
@@ -66,11 +69,11 @@ class _ImportScreenState extends State<ImportScreen> {
     try {
       final source = _text.text;
       final sheet = parseChordPro(source); // validates
-      final title = _title.text.trim().isNotEmpty
-          ? _title.text.trim()
-          : sheet.title;
+      final title =
+          _title.text.trim().isNotEmpty ? _title.text.trim() : sheet.title;
       context.read<UserSongsService>().addSheet(
-          ImportedChordSheet(id: _newId(), title: title, source: source));
+            ImportedChordSheet(id: _newId(), title: title, source: source),
+          );
       _done();
     } catch (e) {
       _fail(e);
@@ -79,9 +82,11 @@ class _ImportScreenState extends State<ImportScreen> {
 
   Future<void> _importMidi() async {
     try {
-      final file = await openFile(acceptedTypeGroups: [
-        const XTypeGroup(label: 'MIDI', extensions: ['mid', 'midi']),
-      ]);
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'MIDI', extensions: ['mid', 'midi']),
+        ],
+      );
       if (file == null || !mounted) return;
       final bytes = await file.readAsBytes();
       if (!mounted) return;
@@ -90,11 +95,13 @@ class _ImportScreenState extends State<ImportScreen> {
           ? _title.text.trim()
           : file.name.replaceAll(RegExp(r'\.(mid|midi)$'), '');
       // Persist as MusicXML so it reloads without re-parsing MIDI.
-      context.read<UserSongsService>().addSong(ImportedSong(
-            id: _newId(),
-            title: title,
-            musicXml: scoreToMusicXml(score, partName: title),
-          ));
+      context.read<UserSongsService>().addSong(
+            ImportedSong(
+              id: _newId(),
+              title: title,
+              musicXml: scoreToMusicXml(score, partName: title),
+            ),
+          );
       _done();
     } catch (e) {
       if (mounted) _fail(e);
@@ -133,7 +140,9 @@ class _ImportScreenState extends State<ImportScreen> {
                   maxLines: null,
                   expands: true,
                   style: const TextStyle(
-                      fontFamily: 'monospace', fontSize: 12),
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
                   decoration: InputDecoration(
                     hintText: l10n.importHint,
                     border: const OutlineInputBorder(),

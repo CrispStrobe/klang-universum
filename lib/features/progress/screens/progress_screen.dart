@@ -4,11 +4,10 @@
 // SM-2 state, as in space_math_academy) and per-module mastery bars.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/models/learning_module.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/models/learning_module.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
 
 class ProgressScreen extends StatelessWidget {
   const ProgressScreen({super.key});

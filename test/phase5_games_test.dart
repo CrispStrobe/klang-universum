@@ -70,8 +70,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('melody echo shows three distinct melody cards',
-      (tester) async {
+  testWidgets('melody echo shows three distinct melody cards', (tester) async {
     await tester.pumpWidget(_wrap(const MelodyEchoScreen(), sri));
     await tester.pump();
 

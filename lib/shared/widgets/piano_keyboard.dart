@@ -6,10 +6,9 @@
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show Step;
-
-import '../../features/games/note_reading/note_names.dart';
-import '../../l10n/app_localizations.dart';
 
 class PianoKeyboard extends StatelessWidget {
   /// MIDI number of the leftmost key; must be a C (e.g. 60 = C4).
@@ -89,8 +88,9 @@ class PianoKeyboard extends StatelessWidget {
                                     .textTheme
                                     .titleMedium
                                     ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black54),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
                               )
                             : null,
                       ),
@@ -111,8 +111,7 @@ class PianoKeyboard extends StatelessWidget {
                         : () => onKeyTap!(whiteMidi(i) + 1),
                     child: Container(
                       decoration: BoxDecoration(
-                        color:
-                            keyColors[whiteMidi(i) + 1] ?? Colors.black87,
+                        color: keyColors[whiteMidi(i) + 1] ?? Colors.black87,
                         borderRadius: const BorderRadius.vertical(
                           bottom: Radius.circular(4),
                         ),

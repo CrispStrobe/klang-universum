@@ -10,21 +10,19 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/cello/cello_first_position.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
-import 'cello_first_position.dart';
 
 class CelloStringQuizScreen extends StatefulWidget {
   const CelloStringQuizScreen({super.key});
 
   @override
-  State<CelloStringQuizScreen> createState() =>
-      _CelloStringQuizScreenState();
+  State<CelloStringQuizScreen> createState() => _CelloStringQuizScreenState();
 }
 
 class _CelloStringQuizScreenState extends State<CelloStringQuizScreen>
@@ -53,8 +51,7 @@ class _CelloStringQuizScreenState extends State<CelloStringQuizScreen>
 
   @override
   void prepareRound() {
-    _target =
-        kCelloFirstPosition[_random.nextInt(kCelloFirstPosition.length)];
+    _target = kCelloFirstPosition[_random.nextInt(kCelloFirstPosition.length)];
     _tapped = null;
     _lastAnswer = null;
   }
@@ -111,8 +108,7 @@ class _CelloStringQuizScreenState extends State<CelloStringQuizScreen>
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
                             child: StaffView(
                               score: Score.simple(
                                 clef: Clef.bass,
@@ -136,11 +132,11 @@ class _CelloStringQuizScreenState extends State<CelloStringQuizScreen>
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6),
+                                horizontal: 6,
+                              ),
                               child: _StringButton(
                                 label: string.label(l10n),
-                                thickness:
-                                    6.0 - string.index * 1.2,
+                                thickness: 6.0 - string.index * 1.2,
                                 color: _tapped == null
                                     ? null
                                     : string == _target.string &&

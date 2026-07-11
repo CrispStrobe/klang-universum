@@ -40,7 +40,8 @@ void main() {
     final sri = SriService(getNow: () => DateTime(2026, 7, 10));
 
     await tester.pumpWidget(
-        _wrap(const NoteReadingQuizScreen(clef: Clef.treble), sri));
+      _wrap(const NoteReadingQuizScreen(clef: Clef.treble), sri),
+    );
     await tester.pump();
 
     expect(find.text('What is this note called?'), findsOneWidget);
@@ -62,7 +63,8 @@ void main() {
     final sri = SriService(getNow: () => DateTime(2026, 7, 10));
 
     await tester.pumpWidget(
-        _wrap(const NoteReadingQuizScreen(clef: Clef.bass), sri));
+      _wrap(const NoteReadingQuizScreen(clef: Clef.bass), sri),
+    );
     await tester.pump();
 
     await tester.tap(find.byType(FilledButton).first);

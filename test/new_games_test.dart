@@ -59,7 +59,9 @@ void main() {
     await tester.pump();
 
     expect(
-        find.text('Which note completes the measure?'), findsOneWidget);
+      find.text('Which note completes the measure?'),
+      findsOneWidget,
+    );
     expect(find.byType(StaffView), findsOneWidget);
     // 4 glyph option cards + the staff card.
     expect(find.byType(InkWell), findsNWidgets(4));
@@ -71,8 +73,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('scale detective renders 8 tappable scale notes',
-      (tester) async {
+  testWidgets('scale detective renders 8 tappable scale notes', (tester) async {
     await tester.pumpWidget(_wrap(const ScaleDetectiveScreen(), sri));
     await tester.pump();
 

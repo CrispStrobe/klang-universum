@@ -5,8 +5,7 @@
 // every chord chip in the sheet can sound.
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
-import 'package:partitura/partitura.dart'
-    show ChordQuality, Pitch, Step, Triad;
+import 'package:partitura/partitura.dart' show ChordQuality, Pitch, Step, Triad;
 
 /// One lyric fragment with an optional chord starting on it.
 class ChordSegment {

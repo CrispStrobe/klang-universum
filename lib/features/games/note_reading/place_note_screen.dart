@@ -11,14 +11,13 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
-import 'note_names.dart';
 
 class PlaceNoteScreen extends StatefulWidget {
   final Clef clef;
@@ -29,8 +28,7 @@ class PlaceNoteScreen extends StatefulWidget {
   State<PlaceNoteScreen> createState() => _PlaceNoteScreenState();
 }
 
-class _PlaceNoteScreenState extends State<PlaceNoteScreen>
-    with QuizRoundMixin {
+class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
   final _random = Random();
 
   late Step _targetStep;
@@ -71,8 +69,8 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
         clef: widget.clef,
         measures: [
           Measure([_placed ?? _wholeRest]),
-          Measure(const [_wholeRest]),
-          Measure(const [_wholeRest]),
+          const Measure([_wholeRest]),
+          const Measure([_wholeRest]),
         ],
       );
 
@@ -121,9 +119,11 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.clef == Clef.treble
-            ? l10n.gamePlaceNoteTreble
-            : l10n.gamePlaceNoteBass),
+        title: Text(
+          widget.clef == Clef.treble
+              ? l10n.gamePlaceNoteTreble
+              : l10n.gamePlaceNoteBass,
+        ),
       ),
       body: SafeArea(
         child: finished
@@ -139,16 +139,14 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n
-                          .placeNotePrompt(noteName(l10n, _targetStep)),
+                      prompt: l10n.placeNotePrompt(noteName(l10n, _targetStep)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: Card(
                         child: Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: InteractiveStaff(
                               score: _score,
                               theme: theme,

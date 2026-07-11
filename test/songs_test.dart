@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
-import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
 import 'package:klang_universum/features/games/songs/song_screen.dart';
 import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show MultiSystemView;
 import 'package:provider/provider.dart';
@@ -44,8 +44,11 @@ void main() {
       // Building the score throws if lyric tokens do not match the notes.
       final score = song.score;
       expect(score.lyrics, isNotEmpty, reason: song.id);
-      expect(score.lyrics.length, song.playback.length,
-          reason: '${song.id}: one syllable per note in these songs');
+      expect(
+        score.lyrics.length,
+        song.playback.length,
+        reason: '${song.id}: one syllable per note in these songs',
+      );
 
       final playback = song.playback;
       expect(playback.length, greaterThan(10 - 1), reason: song.id);
@@ -75,8 +78,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('tune quiz offers all song titles and records',
-      (tester) async {
+  testWidgets('tune quiz offers all song titles and records', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
     await tester.pumpWidget(_wrap(const TuneQuizScreen(), sri));
     await tester.pump();

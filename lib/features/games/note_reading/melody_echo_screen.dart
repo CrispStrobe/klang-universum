@@ -11,13 +11,12 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class MelodyEchoScreen extends StatefulWidget {
   const MelodyEchoScreen({super.key});
@@ -73,8 +72,7 @@ class _MelodyEchoScreenState extends State<MelodyEchoScreen>
     final changes = 1 + _random.nextInt(2);
     for (var c = 0; c < changes; c++) {
       final i = 1 + _random.nextInt(variant.length - 1); // keep the start
-      variant[i] =
-          (variant[i] + (_random.nextBool() ? 2 : -2)).clamp(0, 8);
+      variant[i] = (variant[i] + (_random.nextBool() ? 2 : -2)).clamp(0, 8);
     }
     return variant;
   }
@@ -114,12 +112,10 @@ class _MelodyEchoScreenState extends State<MelodyEchoScreen>
   }
 
   Score _cardScore(List<int> positions) => Score.simple(
-        notes: positions
-            .map((p) {
-              final pitch = Clef.treble.pitchAt(p);
-              return '${pitch.step.name}${pitch.octave}';
-            })
-            .join(' '),
+        notes: positions.map((p) {
+          final pitch = Clef.treble.pitchAt(p);
+          return '${pitch.step.name}${pitch.octave}';
+        }).join(' '),
       );
 
   void _onCardTap(int index) {
@@ -191,24 +187,25 @@ class _MelodyEchoScreenState extends State<MelodyEchoScreen>
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 4),
+                                  vertical: 4,
+                                ),
                                 child: Card(
                                   clipBehavior: Clip.antiAlias,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(16),
                                     side: _tapped == null
                                         ? BorderSide.none
                                         : i == _correctCard &&
                                                 _tapped == _correctCard
                                             ? const BorderSide(
                                                 color: Colors.green,
-                                                width: 3)
+                                                width: 3,
+                                              )
                                             : i == _tapped
                                                 ? const BorderSide(
-                                                    color:
-                                                        Colors.redAccent,
-                                                    width: 3)
+                                                    color: Colors.redAccent,
+                                                    width: 3,
+                                                  )
                                                 : BorderSide.none,
                                   ),
                                   child: InkWell(

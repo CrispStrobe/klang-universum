@@ -46,8 +46,11 @@ void main() {
       // Every note lies on or above its open string, within a fourth.
       final semitonesAboveOpen =
           note.pitch.midiNumber - note.string.openPitch.midiNumber;
-      expect(semitonesAboveOpen, inInclusiveRange(0, 5),
-          reason: '${note.pitch} on ${note.string}');
+      expect(
+        semitonesAboveOpen,
+        inInclusiveRange(0, 5),
+        reason: '${note.pitch} on ${note.string}',
+      );
       // Open string <=> finger 0.
       expect(note.finger == 0, semitonesAboveOpen == 0);
       expect(note.finger, inInclusiveRange(0, 4));

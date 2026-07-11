@@ -10,13 +10,12 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../widgets/game_widgets.dart';
 
 class MajorMinorEarScreen extends StatefulWidget {
   const MajorMinorEarScreen({super.key});
@@ -53,18 +52,15 @@ class _MajorMinorEarScreenState extends State<MajorMinorEarScreen>
   @override
   void prepareRound() {
     _root = _roots[_random.nextInt(_roots.length)];
-    _quality =
-        _random.nextBool() ? ChordQuality.major : ChordQuality.minor;
+    _quality = _random.nextBool() ? ChordQuality.major : ChordQuality.minor;
     _tapped = null;
     _lastAnswer = null;
     if (round > 0) _playChord();
   }
 
   void _playChord() {
-    final midis = Triad(Pitch(_root), _quality)
-        .pitches
-        .map((p) => p.midiNumber)
-        .toList();
+    final midis =
+        Triad(Pitch(_root), _quality).pitches.map((p) => p.midiNumber).toList();
     context.read<AudioService>().playArpeggioThenChord(midis);
   }
 
@@ -136,11 +132,13 @@ class _MajorMinorEarScreenState extends State<MajorMinorEarScreen>
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8),
+                                horizontal: 8,
+                              ),
                               child: FilledButton(
                                 style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 20),
+                                    vertical: 20,
+                                  ),
                                   backgroundColor: _tapped == null
                                       ? null
                                       : option == _quality &&
@@ -153,12 +151,15 @@ class _MajorMinorEarScreenState extends State<MajorMinorEarScreen>
                                       .textTheme
                                       .titleLarge
                                       ?.copyWith(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                 ),
                                 onPressed: () => _onAnswer(option),
-                                child: Text(option == ChordQuality.major
-                                    ? l10n.majorLabel
-                                    : l10n.minorLabel),
+                                child: Text(
+                                  option == ChordQuality.major
+                                      ? l10n.majorLabel
+                                      : l10n.minorLabel,
+                                ),
                               ),
                             ),
                           ),

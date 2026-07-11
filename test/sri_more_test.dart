@@ -44,8 +44,10 @@ void main() {
 
     final difficult = sri.getMostDifficultItems(limit: 2);
     expect(difficult.first.itemId, 'scales.spot.c_major');
-    expect(difficult.first.easinessFactor,
-        lessThan(difficult.last.easinessFactor));
+    expect(
+      difficult.first.easinessFactor,
+      lessThan(difficult.last.easinessFactor),
+    );
   });
 
   test('breakdown averages easiness within a skill bucket', () {

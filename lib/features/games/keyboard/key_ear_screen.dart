@@ -10,14 +10,13 @@ import 'dart:math';
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart' show Clef, Pitch;
 import 'package:provider/provider.dart';
-
-import '../../../core/services/audio_service.dart';
-import '../../../core/services/sri_service.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/piano_keyboard.dart';
-import '../widgets/game_widgets.dart';
 
 class KeyEarScreen extends StatefulWidget {
   const KeyEarScreen({super.key});
@@ -144,16 +143,13 @@ class _KeyEarScreenState extends State<KeyEarScreen> with QuizRoundMixin {
                     SizedBox(
                       height: 170,
                       child: PianoKeyboard(
-                        startMidi: 60, // C4..G5
-                        whiteKeyCount: 12,
                         onKeyTap: _onKeyTap,
                         keyColors: {
                           // The anchor C is always marked.
                           KeyEarScreen.anchorMidi: scheme.primaryContainer,
                           if (_tappedMidi != null)
-                            _tappedMidi!: _lastAnswer!
-                                ? Colors.green
-                                : Colors.redAccent,
+                            _tappedMidi!:
+                                _lastAnswer! ? Colors.green : Colors.redAccent,
                         },
                       ),
                     ),

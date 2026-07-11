@@ -69,16 +69,18 @@ void main() {
 
   testWidgets('note reading review mode drills the given items',
       (tester) async {
-    await tester.pumpWidget(_wrap(
-      const NoteReadingQuizScreen(
-        clef: Clef.treble,
-        reviewItemIds: [
-          'note_reading.treble.g4',
-          'note_reading.treble.b4',
-        ],
+    await tester.pumpWidget(
+      _wrap(
+        const NoteReadingQuizScreen(
+          clef: Clef.treble,
+          reviewItemIds: [
+            'note_reading.treble.g4',
+            'note_reading.treble.b4',
+          ],
+        ),
+        sri,
       ),
-      sri,
-    ));
+    );
     await tester.pump();
 
     expect(find.text('Review'), findsOneWidget);
