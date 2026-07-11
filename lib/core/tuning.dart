@@ -69,6 +69,7 @@ const Map<String, List<int>> kStarThresholds = {
   // 4 rounds: max 400.
   'cadence_workshop': [100, 300, 400],
   'beat_count': [100, 600, 900],
+  'beat_sort': [100, 400, 550],
   // 8 rounds: max 800.
   'meter_detective': [100, 500, 750],
   'melody_echo': [100, 500, 750],

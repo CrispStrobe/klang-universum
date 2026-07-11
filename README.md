@@ -12,9 +12,9 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games (40) + Song Book |
+| id | Topic | Games (41) + Song Book |
 |---|---|---|
-| `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) |
+| `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) • Sort the Beats (drag) |
 | `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 (fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write) • Note Match (memory pairs) • Note Order (low→high) • Line or Space? (swipe) |
 | `measures` | Takte & Taktarten | Measure Filler • Meter Detective (ear) |
 | `scales` | Tonleitern, Dur/Moll | Scale Detective • Dur oder Moll? (ear) • Scale Builder • Sound Echo (memory sequence) |
@@ -58,5 +58,5 @@ flutter run -d chrome    # or macos, etc.
 CI (`.github/workflows/ci.yml`) runs format + analyze + test on every push and
 PR, checking out the sibling `partitura` repo alongside so the path dependency
 resolves. The `build/` symlink (a dev-only SSD path) is intentionally untracked.
-The test suite (139 tests) covers ~85% of `lib/`, including the services, the
+The test suite (140 tests) covers ~85% of `lib/`, including the services, the
 import round-trips, and a render smoke test per game screen.

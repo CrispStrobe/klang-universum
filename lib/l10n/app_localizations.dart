@@ -1328,6 +1328,24 @@ abstract class AppLocalizations {
   /// **'Dots and ties add up — how long is it?'**
   String get gameBeatCountSubtitle;
 
+  /// No description provided for @gameBeatSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort the Beats'**
+  String get gameBeatSort;
+
+  /// No description provided for @gameBeatSortSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag each note to its beat bucket'**
+  String get gameBeatSortSubtitle;
+
+  /// No description provided for @beatSortPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag each note into the right bucket!'**
+  String get beatSortPrompt;
+
   /// No description provided for @beatCountPrompt.
   ///
   /// In en, this message translates to:

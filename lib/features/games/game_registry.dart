@@ -34,6 +34,7 @@ import 'package:klang_universum/features/games/note_reading/note_order_screen.da
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
+import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
@@ -92,6 +93,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameBeatCount,
       subtitle: (l) => l.gameBeatCountSubtitle,
       builder: (_) => const BeatCountScreen(),
+    ),
+    GameInfo(
+      id: 'beat_sort',
+      icon: Icons.drag_indicator,
+      title: (l) => l.gameBeatSort,
+      subtitle: (l) => l.gameBeatSortSubtitle,
+      builder: (_) => const BeatSortScreen(),
     ),
   ],
   'note_reading': [

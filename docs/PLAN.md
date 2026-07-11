@@ -25,7 +25,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 
 | # | Module | Skills (SRI namespace) | Games | Status |
 |---|--------|------------------------|-------|--------|
-| 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) | 4 built |
+| 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) • Sort the Beats (drag into buckets) | 5 built |
 | 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) | 9 built |
 | 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
 | 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) | 4 built |
@@ -228,8 +228,10 @@ of them. Ordered by value ÷ effort.
   correct tap plays the note and locks with a number badge, a wrong tap buzzes.
   SRI `note_reading.order.len4`. *(Still open: note-values longest→shortest, and
   a melody-recall ear variant.)*
-- [ ] **Sort into buckets** (Draggable→DragTarget): major/minor, high/low,
-  long/short, sharp/natural/flat; play each card on drag. *S–M.*
+- [x] **Sort into buckets** (Draggable→DragTarget). **Shipped**: **Sort the
+  Beats** — drag note-value symbols into their 1 / 2 / 4-beat bucket; a card
+  only drops into the right one, a wrong drop bounces back and buzzes. SRI
+  `note_values.symbol.*`. *(Extends to major/minor, high/low, sharp/flat sorts.)*
 - [x] **Swipe left/right** (binary drill). **Shipped**: **Line or Space?** — a
   note on a swipe card; swipe left = line, right = space; a wrong swipe bounces
   back to retry. SRI `note_reading.line_space.*`. *(Extends to in-the-scale? and

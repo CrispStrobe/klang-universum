@@ -706,6 +706,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Punkte und Bögen zählen mit — wie lang ist das?';
 
   @override
+  String get gameBeatSort => 'Schläge sortieren';
+
+  @override
+  String get gameBeatSortSubtitle => 'Ziehe jede Note in ihren Schläge-Korb';
+
+  @override
+  String get beatSortPrompt => 'Ziehe jede Note in den richtigen Korb!';
+
+  @override
   String get beatCountPrompt => 'Wie viele Schläge dauert das? (♩ = 1)';
 
   @override

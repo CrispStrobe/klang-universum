@@ -700,6 +700,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameBeatCountSubtitle => 'Dots and ties add up — how long is it?';
 
   @override
+  String get gameBeatSort => 'Sort the Beats';
+
+  @override
+  String get gameBeatSortSubtitle => 'Drag each note to its beat bucket';
+
+  @override
+  String get beatSortPrompt => 'Drag each note into the right bucket!';
+
+  @override
   String get beatCountPrompt => 'How many beats does this last? (♩ = 1)';
 
   @override
