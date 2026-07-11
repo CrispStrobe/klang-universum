@@ -28,7 +28,7 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | 1 | **Notenwerte** (note values & lengths) | `note_values.symbol`, `.rhythm`, `.beats` | Symbol Quiz • Duration Duel • Rhythm Echo (tap-back) • Count the Beats (dots + ties) • Sort the Beats (drag into buckets) • Connect the Symbols (drag glyph↔name) | 6 built |
 | 2 | **Noten lesen** (treble & bass clef) | `note_reading.treble`, `.bass`, `.place_*`, `.melody`, `.dictation` | Reading Quiz ×2 (with fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write on staff) • Note Match (memory pairs: note ↔ name) • Note Order (tap low→high) • Line or Space? (swipe) • Falling Notes (arcade: name before it lands) • Connect the Notes (drag note↔name) | 11 built |
 | 3 | **Takte** (measures & meter) | `measures.fill`, `.meter` | Measure Filler • Meter Detective (accented downbeats by ear) | 2 built |
-| 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) | 4 built |
+| 4 | **Tonleitern** (scales, Dur/Moll) | `scales.spot`, `.build`, `.hear` | Scale Detective • Scale Builder • Dur oder Moll? (ear) • Sound Echo (memory-sequence toy) • Follow the Conductor (reaction toy) | 5 built |
 | 5 | **Akkorde & Intervalle** | `chords.triad`, `.build`, `.interval` | Chord Quiz • Triad Builder • Interval Detective (ear) | 3 built |
 | 6 | **Harmonik** (T/S/D) | `harmony.function`, `.cadence`, `.hear` | Function Quiz • Cadence Workshop (build T–S–D–T) • Hear the Function (I–IV–V–I context, name the target by ear) | 3 built |
 | 7 | **Cello-Ecke** (instrument corner) | `cello.string`, `cello.finger`, `note_reading.tenor` | Which String? (bass-clef note → C/G/D/A) • Finger Quiz (first position, 0–4) • Tenor Clef reading • *later: shifting/positions, string+finger combined ("play this note"), open-string ear tuning* | 3 built |
@@ -271,9 +271,15 @@ training. *(Generic names only — no product names in code or docs.)*
   pentatonic pitch; the app lights & plays a growing sequence, the child echoes
   it; one miss ends the run, score = longest sequence. **Shipped** in the scales
   module. *(Extends to swipe-direction pads and a rhythm-timed variant.)*
-- [ ] **Command caller** — rapid voice/text commands ("tap!", "hold!", "swipe
+- [x] **Command caller** — rapid voice/text commands ("tap!", "hold!", "swipe
   up!", "clap the beat!"); do the matching gesture before the timer. Reaction +
-  gesture vocabulary. *M.*
+  gesture vocabulary. *M.* **Shipped**: **Follow the Conductor** (scales) — the
+  conductor calls a gesture (tap / hold / swipe in four directions); perform it
+  before the countdown bar empties. Each correct cue sounds the next note of a
+  rising pentatonic melody (so a good run plays a tune); a wrong move or a
+  timeout costs one of three hearts. Combo multiplier + level-based shrinking
+  window. A pure reaction toy — no SRI, scored like Sound Echo. *(Extends to a
+  "clap the beat" tempo mode.)*
 - [ ] **Strum toy** — swipe/strum across the screen to sound a chord or arpeggio;
   a free "air-instrument" jam built on the existing fretboard/keyboard widgets. *S–M.*
 - [ ] **Loop mixer** — tap/place cards that each trigger a synced musical loop

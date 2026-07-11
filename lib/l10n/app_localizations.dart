@@ -1496,6 +1496,60 @@ abstract class AppLocalizations {
   /// **'Connect each symbol to its name!'**
   String get connectSymbolsPrompt;
 
+  /// No description provided for @gameCommandCaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the Conductor'**
+  String get gameCommandCaller;
+
+  /// No description provided for @gameCommandCallerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Do the move the conductor calls!'**
+  String get gameCommandCallerSubtitle;
+
+  /// No description provided for @commandCallerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap, hold, or swipe — before the bar runs out!'**
+  String get commandCallerHint;
+
+  /// No description provided for @commandTap.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap!'**
+  String get commandTap;
+
+  /// No description provided for @commandHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold!'**
+  String get commandHold;
+
+  /// No description provided for @commandSwipeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe left!'**
+  String get commandSwipeLeft;
+
+  /// No description provided for @commandSwipeRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe right!'**
+  String get commandSwipeRight;
+
+  /// No description provided for @commandSwipeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe up!'**
+  String get commandSwipeUp;
+
+  /// No description provided for @commandSwipeDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe down!'**
+  String get commandSwipeDown;
+
   /// No description provided for @fallingSpeedUp.
   ///
   /// In en, this message translates to:

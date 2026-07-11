@@ -40,6 +40,7 @@ import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
+import 'package:klang_universum/features/games/scales/command_caller_screen.dart';
 import 'package:klang_universum/features/games/scales/echo_sequence_screen.dart';
 import 'package:klang_universum/features/games/scales/major_minor_ear_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_builder_screen.dart';
@@ -234,6 +235,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameEchoSequence,
       subtitle: (l) => l.gameEchoSequenceSubtitle,
       builder: (_) => const EchoSequenceScreen(),
+    ),
+    GameInfo(
+      id: 'command_caller',
+      icon: Icons.gesture,
+      title: (l) => l.gameCommandCaller,
+      subtitle: (l) => l.gameCommandCallerSubtitle,
+      builder: (_) => const CommandCallerScreen(),
     ),
   ],
   'chords': [

@@ -795,6 +795,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectSymbolsPrompt => 'Verbinde jedes Symbol mit seinem Namen!';
 
   @override
+  String get gameCommandCaller => 'Der Dirigent';
+
+  @override
+  String get gameCommandCallerSubtitle =>
+      'Mach die Bewegung, die der Dirigent ansagt!';
+
+  @override
+  String get commandCallerHint =>
+      'Tippen, halten oder wischen — bevor der Balken leer ist!';
+
+  @override
+  String get commandTap => 'Tippen!';
+
+  @override
+  String get commandHold => 'Halten!';
+
+  @override
+  String get commandSwipeLeft => 'Nach links wischen!';
+
+  @override
+  String get commandSwipeRight => 'Nach rechts wischen!';
+
+  @override
+  String get commandSwipeUp => 'Nach oben wischen!';
+
+  @override
+  String get commandSwipeDown => 'Nach unten wischen!';
+
+  @override
   String get fallingSpeedUp => 'Schneller!';
 
   @override

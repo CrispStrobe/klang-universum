@@ -790,6 +790,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectSymbolsPrompt => 'Connect each symbol to its name!';
 
   @override
+  String get gameCommandCaller => 'Follow the Conductor';
+
+  @override
+  String get gameCommandCallerSubtitle => 'Do the move the conductor calls!';
+
+  @override
+  String get commandCallerHint =>
+      'Tap, hold, or swipe — before the bar runs out!';
+
+  @override
+  String get commandTap => 'Tap!';
+
+  @override
+  String get commandHold => 'Hold!';
+
+  @override
+  String get commandSwipeLeft => 'Swipe left!';
+
+  @override
+  String get commandSwipeRight => 'Swipe right!';
+
+  @override
+  String get commandSwipeUp => 'Swipe up!';
+
+  @override
+  String get commandSwipeDown => 'Swipe down!';
+
+  @override
   String get fallingSpeedUp => 'Speed up!';
 
   @override

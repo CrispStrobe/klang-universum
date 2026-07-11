@@ -87,6 +87,8 @@ const Map<String, List<int>> kStarThresholds = {
   'connect_line': [100, 400, 550],
   // Echo Sequence: score = 100 × longest sequence echoed.
   'echo_sequence': [100, 400, 700],
+  // Follow the Conductor: 15 cues, points = 10 × combo multiplier (1..5).
+  'command_caller': [50, 250, 400],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
   'guitar_string_quiz': [100, 600, 900],
