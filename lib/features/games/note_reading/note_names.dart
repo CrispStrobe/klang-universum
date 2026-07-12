@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:klang_universum/core/note_naming.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -67,4 +68,35 @@ String noteNameFor(BuildContext context, Step step) => noteName(
       AppLocalizations.of(context)!,
       step,
       naming: context.watch<SettingsService>().noteNaming,
+    );
+
+/// A full MIDI note spelled in [naming], e.g. "A3", "F♯4", or "H4" in German.
+/// Accidentals are shown as ♯/♭ appended to the localized letter (the app
+/// spells black keys as sharps). Pure — testable without a widget tree.
+String spelledMidiNameWith(
+  AppLocalizations l10n,
+  NoteNaming naming,
+  int midi, {
+  bool withOctave = true,
+}) {
+  final p = pitchFromMidi(midi);
+  final letter = noteName(l10n, p.step, naming: naming);
+  final acc =
+      p.alter > 0 ? '♯' * p.alter : (p.alter < 0 ? '♭' * (-p.alter) : '');
+  return withOctave ? '$letter$acc${p.octave}' : '$letter$acc';
+}
+
+/// [spelledMidiNameWith] resolved from the current [SettingsService]/locale.
+/// Call from a widget build. Pass [withOctave] = false for a pitch-class name
+/// (chord roots).
+String spelledMidiName(
+  BuildContext context,
+  int midi, {
+  bool withOctave = true,
+}) =>
+    spelledMidiNameWith(
+      AppLocalizations.of(context)!,
+      context.watch<SettingsService>().noteNaming,
+      midi,
+      withOctave: withOctave,
     );

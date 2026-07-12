@@ -10,22 +10,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/chroma_analysis.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 
-const _pcNames = <String>[
-  'C',
-  'C#',
-  'D',
-  'D#',
-  'E',
-  'F',
-  'F#',
-  'G',
-  'G#',
-  'A',
-  'A#',
-  'B',
-];
+/// A chord candidate named in the learner's convention, e.g. "Am", "G7", or
+/// "Hm" in German — the root spelled via the note-naming setting, suffix as-is.
+String _candidateName(BuildContext context, ChordCandidate c) =>
+    '${spelledMidiName(context, 60 + c.rootPc, withOctave: false)}${c.suffix}';
 
 class ChordListenSpikeScreen extends StatefulWidget {
   const ChordListenSpikeScreen({super.key});
@@ -114,7 +105,7 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
             children: [
               const SizedBox(height: 8),
               Text(
-                best?.name ?? '—',
+                best == null ? '—' : _candidateName(context, best),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -139,7 +130,8 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
                   for (final c in r.candidates.skip(1))
                     Chip(
                       label: Text(
-                        '${c.name}  ${(c.score * 100).toStringAsFixed(0)}%',
+                        '${_candidateName(context, c)}  '
+                        '${(c.score * 100).toStringAsFixed(0)}%',
                       ),
                     ),
                 ],
@@ -224,7 +216,7 @@ class _ChromaBars extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _pcNames[pc],
+                  spelledMidiName(context, 60 + pc, withOctave: false),
                   style: TextStyle(fontSize: 10, color: labelColor),
                 ),
               ],

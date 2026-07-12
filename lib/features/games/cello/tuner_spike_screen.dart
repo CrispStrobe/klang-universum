@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 
 /// The cello's four open strings, low → high, as intonation reference chips.
@@ -121,7 +122,7 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
             children: [
               const SizedBox(height: 8),
               Text(
-                r.hasPitch ? r.noteName : '—',
+                r.hasPitch ? spelledMidiName(context, r.nearestMidi) : '—',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -170,7 +171,7 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
                 children: [
                   for (final s in _celloStrings)
                     Chip(
-                      label: Text(s.name),
+                      label: Text(spelledMidiName(context, s.midi)),
                       backgroundColor: r.nearestMidi == s.midi
                           ? scheme.primaryContainer
                           : null,

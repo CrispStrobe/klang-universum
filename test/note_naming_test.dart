@@ -33,6 +33,24 @@ void main() {
     );
   });
 
+  test('spelledMidiName: octave, sharps, and German H', () {
+    // English: A3, C#4, B4.
+    expect(spelledMidiNameWith(en, NoteNaming.auto, 57), 'A3');
+    expect(spelledMidiNameWith(en, NoteNaming.auto, 61), 'C♯4');
+    expect(spelledMidiNameWith(en, NoteNaming.auto, 71), 'B4');
+    // German auto: the natural B becomes H.
+    expect(spelledMidiNameWith(de, NoteNaming.auto, 71), 'H4');
+    // Pitch-class form (chord roots): no octave.
+    expect(
+      spelledMidiNameWith(en, NoteNaming.auto, 60 + 9, withOctave: false),
+      'A',
+    );
+    expect(
+      spelledMidiNameWith(de, NoteNaming.auto, 60 + 11, withOctave: false),
+      'H',
+    );
+  });
+
   test('the non-B letters are identical across letter conventions', () {
     for (final step in [Step.c, Step.d, Step.e, Step.f, Step.g, Step.a]) {
       final letter = noteName(en, step, naming: NoteNaming.english);

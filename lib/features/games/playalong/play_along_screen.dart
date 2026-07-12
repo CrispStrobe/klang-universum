@@ -21,25 +21,10 @@ import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
-const _noteNames = <String>[
-  'C',
-  'C#',
-  'D',
-  'D#',
-  'E',
-  'F',
-  'F#',
-  'G',
-  'G#',
-  'A',
-  'A#',
-  'B',
-];
-String _midiName(int m) => '${_noteNames[m % 12]}${(m ~/ 12) - 1}';
 
 class PlayAlongScreen extends StatefulWidget {
   const PlayAlongScreen({
@@ -200,14 +185,19 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                               ? (_engine.inCountIn
                                   ? l.playAlongCountIn
                                   : (active != null
-                                      ? _midiName(active.note.midi)
+                                      ? spelledMidiName(
+                                          context,
+                                          active.note.midi,
+                                        )
                                       : '—'))
                               : '—',
                         ),
                         _stat(
                           context,
                           l.playAlongYou,
-                          _latest.hasPitch ? _latest.noteName : '—',
+                          _latest.hasPitch
+                              ? spelledMidiName(context, _latest.nearestMidi)
+                              : '—',
                         ),
                       ],
                     ),
