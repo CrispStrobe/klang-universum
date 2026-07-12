@@ -210,3 +210,15 @@ Uint8List renderSfxFanfare() => _sfxWav([
       _squareSweep(784, 784, 110), // G5
       _squareSweep(1047, 1319, 450), // C6 sweeping up
     ]);
+
+/// A short metronome tick — a brief high blip, [accent]ed (higher) on the
+/// downbeat. Kept high and short to be unobtrusive; it does not need to be
+/// mic-safe by itself because the play-along only clicks during the (unscored)
+/// count-in (see metronome.dart's CountInClicker).
+Uint8List renderSfxTick({bool accent = false}) => _sfxWav([
+      _squareSweep(
+        accent ? 1760 : 1320,
+        accent ? 1760 : 1320,
+        accent ? 45 : 32,
+      ),
+    ]);

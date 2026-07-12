@@ -44,6 +44,11 @@ class AudioService {
         ]),
       );
 
+  /// A metronome tick ([accent]ed on the downbeat). Used by the play-along
+  /// count-in.
+  Future<void> playTick({bool accent = false}) =>
+      _play(renderSfxTick(accent: accent));
+
   Future<void> playMidiChord(List<int> midis, {int ms = 1200}) => _play(
         _wav([(freqs: midis.map(midiToFrequency).toList(), ms: ms)]),
       );

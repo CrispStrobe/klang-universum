@@ -15,6 +15,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:klang_universum/core/audio/metronome.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
@@ -52,6 +53,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   late PlayAlongEngine _engine = PlayAlongEngine(widget.chart);
 
   PitchReading _latest = PitchReading.silent();
+  final CountInClicker _clicker = CountInClicker();
   bool _running = false;
   bool _finished = false;
   ({PitchCaptureError reason, String? detail})? _error;
@@ -77,6 +79,8 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       elapsedMs: elapsed.inMicroseconds / 1000.0,
       reading: _latest,
     );
+    final c = _clicker.update(_engine.currentBeat);
+    if (c.click) context.read<AudioService>().playTick(accent: c.accent);
     if (_engine.finished) {
       _finish();
     } else {
@@ -96,6 +100,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   }
 
   Future<void> _start() async {
+    _clicker.reset();
     setState(() {
       _error = null;
       _finished = false;
