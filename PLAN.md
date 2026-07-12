@@ -53,9 +53,11 @@ the BlackHole loop — all four roots detected on real captured audio (the
 ## Known constraints / follow-ups (not yet done)
 - **Backing audio vs. mic:** playing the melody through speakers while the mic
   listens causes the mic to detect the *speaker* (we deliberately disable echo
-  cancellation for pitch accuracy). v1 play/sing-along therefore scrolls the
-  score without audible backing, with a "preview" listen before you start; real
-  backing needs headphones or an AEC path. Documented, not solved.
+  cancellation for pitch accuracy). Play/sing-along scrolls the score without
+  audible backing, with a "preview" listen before you start. Partly addressed:
+  an audible **count-in metronome** (metronome.dart) sets the tempo — it only
+  clicks during the unscored count-in, so it needs no AEC. Full backing *during*
+  play still needs headphones or an AEC path. Not solved.
 - **Localization:** DONE — the four modes have de/en `AppLocalizations` keys,
   and the tuner/chord/play-along note readouts respect the note-naming setting
   (German H, solfège) via `spelledMidiName`. Chart names + the Hz/clarity
