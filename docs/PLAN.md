@@ -145,9 +145,10 @@ this repo; the notes below describe capability *categories*, not products.
   bilingual).
 - **Where we already lead** (rare among kids' apps): SM-2 spaced repetition,
   real four-clef notation, theory/harmony depth (T/S/D, cadences), a composition
-  sandbox with MusicXML export, and bilingual EN/DE.
-- **The one structural gap every strong rival has and we don't:** live
-  real-instrument input (mic pitch-detection / MIDI).
+  sandbox with MusicXML export, bilingual EN/DE — and now **live mic input**.
+- **The structural gap that used to set the strong rivals apart — live
+  real-instrument input — is now closed on the mic side** (play-along/sing-along,
+  tuner, chord listener; see HISTORY). MIDI input remains open.
 
 ### Opportunity backlog (implement top-to-bottom)
 
@@ -175,11 +176,14 @@ the app category the idea comes from. Shipped items live in
   Classroom). *(classroom notation/DAW platforms.) L · ♪♪.* Schools buy per-seat.
 
 **Big swings — category table-stakes, heavy lift**
-- [ ] Real-instrument input (mic / MIDI) — grade what the child actually plays;
-  scope as opt-in cello & piano corners. *(instrument-tutor + flashcard apps.) L · ♪♪.*
+- [x] Real-instrument input — **mic side shipped**: live pitch/chroma detection
+  powers **Play-along / Sing-along** (moving-score grading), a **Tuner**, and a
+  **Chord Listener** ([HISTORY.md](HISTORY.md#live-microphone--pitch-detection)).
+  *Open: MIDI input; wiring mic grading into more of the corners.*
 - [ ] Generative sight-reading + performance grading — endless non-repeating
   exercises scored for pitch & rhythm. *(generative sight-reading services.) L · ♪♪♪.*
-  Answers the teacher-reported material shortage directly.
+  Answers the teacher-reported material shortage directly. *(Staff Runner is the
+  kid-scale stepping stone; mic grading now exists to score the performance.)*
 
 Caveats: competitor prices/age-ratings drift; some DACH adoption/award figures
 are self-reported — verify before external citation.
