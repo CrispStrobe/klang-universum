@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/curriculum/curriculum.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
 import 'package:klang_universum/features/recital/recital_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -37,11 +38,13 @@ class CurriculumLevelScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final progress = context.watch<ProgressService>();
+    final sri = context.watch<SriService>();
     int stars(String id) => progress.starsFor(id);
+    double? mastery(String prefix) => sri.masteryUnder(prefix);
     final program = _program();
 
     // The lowest-readiness topic — the best thing to drill next.
-    final weakest = weakestTopic(level, stars);
+    final weakest = weakestTopic(level, stars, mastery);
     final weakestGames = weakest == null
         ? <GameInfo>[]
         : [
@@ -86,7 +89,7 @@ class CurriculumLevelScreen extends StatelessWidget {
             for (final topic in level.topics)
               _TopicTile(
                 topic: topic,
-                readiness: topicReadiness(topic, stars),
+                readiness: topicReadiness(topic, stars, mastery),
               ),
           ],
         ),

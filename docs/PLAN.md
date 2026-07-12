@@ -162,9 +162,11 @@ the app category the idea comes from. Shipped items live in
   generic progress levels tied to **school years** (Klasse 1–2 … 9–10), each
   topic mapped to the games that drill it, with a *readiness* meter from the
   child's stars, a "continue here" marker on the recommended level, and
-  per-level / weakest-topic practice runs. The engine (`Curriculum → Level →
-  Topic → gameIds`) keeps per-region variants as drop-in data. *Open: SM-2-based
-  readiness; optional per-Bundesland variants (rough matching is fine).*
+  per-level / weakest-topic practice runs. Readiness blends **star coverage ×
+  SM-2 retention** (`SriService.masteryUnder(namespace)`), so it reflects both
+  breadth and whether skills actually stuck. The engine (`Curriculum → Level →
+  Topic → gameIds`) keeps per-region variants as drop-in data. *Open: optional
+  per-Bundesland variants (rough matching is fine).*
 - [ ] Sound-toy creative modes that feed notation (grid composer + geometric
   rhythm toy for pre-readers). *(browser music sound-toys.) M · ♪♪.*
 - [ ] Color-coded kids' notation editor with MusicXML/MIDI export. *(kids'

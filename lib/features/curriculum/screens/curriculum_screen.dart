@@ -1,12 +1,14 @@
 // lib/features/curriculum/screens/curriculum_screen.dart
 //
 // Lists the curriculum's levels (generic progress levels tied to school years).
-// Each shows a readiness bar derived from the child's stars in the mapped games;
-// the recommended level is marked, and tapping one opens its topic breakdown.
+// Each shows a readiness bar (star coverage × SM-2 retention in the mapped
+// games/skills); the recommended level is marked, and tapping one opens its
+// topic breakdown.
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/curriculum/curriculum.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/curriculum/screens/curriculum_level_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +20,9 @@ class CurriculumScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final progress = context.watch<ProgressService>();
+    final sri = context.watch<SriService>();
     int stars(String id) => progress.starsFor(id);
+    double? mastery(String prefix) => sri.masteryUnder(prefix);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.curriculumTitle)),
@@ -37,8 +41,9 @@ class CurriculumScreen extends StatelessWidget {
               for (final level in curriculum.levels)
                 _LevelCard(
                   level: level,
-                  readiness: levelReadiness(level, stars),
-                  recommended: level == recommendedLevel(curriculum, stars),
+                  readiness: levelReadiness(level, stars, mastery),
+                  recommended:
+                      level == recommendedLevel(curriculum, stars, mastery),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => CurriculumLevelScreen(level: level),

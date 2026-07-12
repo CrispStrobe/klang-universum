@@ -33,14 +33,32 @@ void main() {
     }
   });
 
-  test('readiness is 0 with no stars and 1 when everything is mastered', () {
+  test('readiness blends star coverage with SM-2 retention', () {
     final level = kCurricula.first.levels.firstWhere((l) => l.id == 'g56');
-    expect(levelReadiness(level, (_) => 0), 0);
-    expect(levelReadiness(level, (_) => 3), 1.0);
-    // Partial mastery lands strictly between.
-    final mid = levelReadiness(level, (_) => 2);
+    // No stars → 0 regardless of retention.
+    expect(levelReadiness(level, (_) => 0, (_) => null), 0);
+    // Full stars, no SM-2 signal yet (null = neutral) → full coverage.
+    expect(levelReadiness(level, (_) => 3, (_) => null), 1.0);
+    // Full stars but nothing retained → SM-2 pulls readiness to 0.
+    expect(levelReadiness(level, (_) => 3, (_) => 0.0), 0);
+    // Full stars, half-retained → about half.
+    expect(levelReadiness(level, (_) => 3, (_) => 0.5), closeTo(0.5, 1e-9));
+    // Partial stars, neutral retention → strictly between.
+    final mid = levelReadiness(level, (_) => 2, (_) => null);
     expect(mid, greaterThan(0));
     expect(mid, lessThan(1));
+  });
+
+  test('SriService.masteryUnder aggregates by namespace', () {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    expect(sri.masteryUnder('note_reading'), isNull); // nothing practised
+    sri.recordResponse('note_reading.treble.c4', true);
+    final m = sri.masteryUnder('note_reading');
+    expect(m, isNotNull);
+    expect(m, greaterThanOrEqualTo(0));
+    expect(m, lessThanOrEqualTo(1));
+    // A different namespace is still untouched.
+    expect(sri.masteryUnder('chords'), isNull);
   });
 
   testWidgets('the curriculum screen lists levels with readiness',
