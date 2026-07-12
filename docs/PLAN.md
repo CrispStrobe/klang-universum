@@ -171,25 +171,10 @@ training. Shipped: Sound Echo, Follow the Conductor
 
 Fresh ideas that fit the machinery we already have (partitura notation, pure-Dart
 audio, the SM-2 engine, the falling/connect/reaction engines) and target skills
-the curriculum doesn't yet drill. Ordered by value ÷ effort; effort S/M/L, fit ♪–♪♪♪.
-Shipped: Ledger Leap, Key Detective
-([HISTORY.md](HISTORY.md#original-concepts--shipped)).
+the curriculum doesn't yet drill.
 
-- [ ] **Interval Ladder** — climb a ladder: from the current note, pick the note a
-  called interval above/below (on the staff or by ear). Interval *construction*, not
-  just recognition. SRI `chords.interval.build`. *S–M · ♪♪.*
-- [ ] **Staff Runner** — endless generative sight-reading at kid scale: the staff
-  scrolls and each note must be named/played as it hits the read-line; speeds up,
-  ends after a few misses. A stepping-stone to the "generative sight-reading" big
-  swing. SRI `note_reading.*`. *M · ♪♪♪.*
-- [ ] **Chord Grip Hero** — Falling Keys for chords: a chord shape falls onto the
-  piano; press all its keys together before it lands. Extends the falling engine to
-  `keyboard.chord`. *M · ♪♪.*
-- [ ] **Dynamics & Tempo Charades** — hear a phrase, pick its marking: loud/soft
-  (p–f) or fast/slow (Adagio–Presto). Introduces expressive vocabulary the app
-  doesn't touch. SRI `expression.hear`. *S · ♪♪.*
-- [ ] **Note Snake** — a snake on a staff grid eats the note matching a called
-  letter; a wrong note ends the run. Reading + a classic arcade loop. *M · ♪♪.*
-- [ ] **Recital Mode** — a progression meta, not a new mechanic: string 3–5 *due*
-  minigames into a themed "recital" with one combined score and a curtain-call star
-  tally. Wraps the SM-2 review in a set-piece that boosts retention. *M · ♪♪♪.*
+**All shipped** — Ledger Leap, Key Detective, Odd One Out, Note Whack, Interval
+Ladder, Staff Runner, Chord Grip Hero, Dynamics & Tempo Charades, Note Snake, and
+Recital Mode all live now
+([HISTORY.md](HISTORY.md#original-concepts--shipped)). New original ideas get
+added here as they come up.

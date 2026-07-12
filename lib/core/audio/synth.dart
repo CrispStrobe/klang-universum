@@ -64,10 +64,14 @@ const _timbres = <Instrument, Timbre>{
 Timbre timbreFor(Instrument instrument) => _timbres[instrument]!;
 
 /// Renders [segments] back-to-back into normalized PCM16 samples.
+///
+/// [gain] (0..1) scales the final level below the normalized peak — used to
+/// voice dynamics (pp..ff) since the output is otherwise peak-normalized.
 Int16List renderSegments(
   List<Segment> segments, {
   int sampleRate = kSampleRate,
   Timbre? timbre,
+  double gain = 1.0,
 }) {
   final voice = timbre ?? _timbres[Instrument.piano]!;
   final harmonics = voice.harmonics;
@@ -104,7 +108,7 @@ Int16List renderSegments(
   for (final v in buffer) {
     if (v.abs() > peak) peak = v.abs();
   }
-  final scale = peak > 0 ? 0.8 * 32767 / peak : 0.0;
+  final scale = (peak > 0 ? 0.8 * 32767 / peak : 0.0) * gain.clamp(0.0, 1.0);
   final samples = Int16List(totalSamples);
   for (var i = 0; i < totalSamples; i++) {
     samples[i] = (buffer[i] * scale).round();
@@ -143,8 +147,12 @@ Uint8List wavBytes(Int16List samples, {int sampleRate = kSampleRate}) {
 }
 
 /// Convenience: render [segments] straight to WAV bytes.
-Uint8List renderWav(List<Segment> segments, {Timbre? timbre}) =>
-    wavBytes(renderSegments(segments, timbre: timbre));
+Uint8List renderWav(
+  List<Segment> segments, {
+  Timbre? timbre,
+  double gain = 1.0,
+}) =>
+    wavBytes(renderSegments(segments, timbre: timbre, gain: gain));
 
 // --- Retro game SFX (CrispFXR-style: square waves, pitch sweeps) ---
 //

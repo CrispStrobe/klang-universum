@@ -151,7 +151,39 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 ## Original concepts — shipped
 
-- **Note Whack** (note reading) — whack-a-mole under gentle reaction pressure:
+- **Recital Mode** (progression meta) — a home-bar "recital" strings a 3–5 piece
+  programme (favouring games the child has already practised) into one set; play
+  each in turn and the run ends on a **curtain call** that tallies the stars
+  earned across the whole programme. Wraps the review loop in a set-piece.
+- **Note Snake** (note reading) — reading meets the classic arcade snake: a
+  target note shows on the staff, letters sit on a grid, and you steer the snake
+  (arrow keys or an on-screen pad) to eat the letter that names it. Eating the
+  wrong letter — or biting your tail — ends the run; it wraps at the edges and
+  speeds up as you grow. Star-gated range, colour-scaffold, treble + bass. Feeds
+  `note_reading.<clef>.*`.
+- **Chord Grip Hero** (keyboard) — Falling Keys for chords: a triad falls on the
+  staff and its keys glow on the piano; press all of them before it lands. Full
+  grips speed up the next; three ungripped landings end the run. White-key
+  diatonic triads of C major (playable without black keys); C/F/G major for
+  beginners, the Dm/Em/Am minors at 2★. Feeds `keyboard.chord.*`.
+- **Staff Runner** (note reading) — an endless sight-reading sprint: one note at
+  the read-line with a depleting timer bar; name it before the bar empties.
+  Every correct read shortens the next timer (the "speed up"); three misses
+  (wrong name or timeout) end the run, score = notes read. Star-gated range,
+  colour-scaffold, letter-key control, treble + bass. A stepping-stone to the
+  generative-sight-reading big swing. Feeds `note_reading.<clef>.*`.
+- **Interval Ladder** (chords & intervals) — interval *construction*: a base
+  note is shown with a chip saying how far and which way to climb (▲3 = a third
+  up); tap the candidate note at that interval (a correct pick plays base→target
+  melodically). Thirds/fifths up for beginners, all sizes and both directions at
+  2★. SRI `chords.interval.build.<n><up|down>`.
+- **Dynamics & Tempo Charades** (expression) — expressive vocabulary the app
+  didn't touch: a phrase plays at one of four tempi (Adagio→Presto) or four
+  dynamic levels (pp→ff); name what you heard. The two clear extremes for
+  beginners, all four terms at 2★. Needed a `gain` on the synth so dynamics are
+  actually softer/louder (the output is otherwise peak-normalized). SRI
+  `expression.hear.<tempo|dynamics>.<term>`.
+- **Odd One Out** (note reading) — whack-a-mole under gentle reaction pressure:
   noteheads pop up in a 3×2 grid of holes, a target letter is called ("Whack:
   A") and the child taps the matching notes before they duck. Correct whacks
   grow a ×1–×5 combo; a wrong whack costs a heart (3 lives); a fixed 12-whack

@@ -195,7 +195,11 @@ class _ModuleProgressCard extends StatelessWidget {
 /// corner. Null when nothing matches.
 LearningModule? _moduleForSriId(String id) {
   final seg = id.split('.').first;
-  final mapped = seg == 'key_sig' ? 'scales' : seg;
+  final mapped = switch (seg) {
+    'key_sig' => 'scales',
+    'expression' => 'measures',
+    _ => seg,
+  };
   for (final module in kLearningModules) {
     if (module.id == mapped) return module;
   }

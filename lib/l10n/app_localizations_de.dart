@@ -833,6 +833,74 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe jede passende Note — ein falscher Schlag kostet ein Herz!';
 
   @override
+  String get gameCharades => 'Schnell oder laut?';
+
+  @override
+  String get gameCharadesSubtitle => 'Benenne Tempo oder Dynamik, die du hörst';
+
+  @override
+  String get charadesTempoPrompt => 'Wie schnell ist es?';
+
+  @override
+  String get charadesDynamicsPrompt => 'Wie laut ist es?';
+
+  @override
+  String get gameIntervalLadder => 'Intervall-Leiter';
+
+  @override
+  String get gameIntervalLadderSubtitle =>
+      'Steige das Intervall von der Basisnote';
+
+  @override
+  String get intervalLadderPrompt => 'Tippe die Note, auf die der Pfeil zeigt!';
+
+  @override
+  String get intervalLadderHint =>
+      '▲ hoch, ▼ runter. Die Zahl ist das Intervall (3 = Terz).';
+
+  @override
+  String get gameStaffRunner => 'Noten-Sprint';
+
+  @override
+  String get gameStaffRunnerSubtitle => 'Benenne Noten, bevor die Zeit abläuft';
+
+  @override
+  String get gameChordGripHero => 'Akkord-Griff-Held';
+
+  @override
+  String get gameChordGripHeroSubtitle =>
+      'Drücke alle Akkordtasten, bevor er landet';
+
+  @override
+  String get chordGripHint => 'Drücke jede leuchtende Taste!';
+
+  @override
+  String get gameNoteSnake => 'Noten-Schlange';
+
+  @override
+  String get gameNoteSnakeSubtitle => 'Lenke die Schlange zur passenden Note';
+
+  @override
+  String get noteSnakePrompt => 'Friss diese Note:';
+
+  @override
+  String get recitalTitle => 'Vorspiel';
+
+  @override
+  String get recitalTooltip => 'Ein Vorspiel spielen';
+
+  @override
+  String recitalProgress(int done, int total) {
+    return '$done von $total Stücken gespielt';
+  }
+
+  @override
+  String get recitalCurtainCall => 'Bravo!';
+
+  @override
+  String get recitalDone => 'Verbeugen';
+
+  @override
   String get clefBass => 'Bassschlüssel';
 
   @override

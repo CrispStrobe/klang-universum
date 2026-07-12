@@ -72,6 +72,8 @@ String describeSriItem(AppLocalizations l10n, String id) {
         _ => _prettify(fn),
       };
       return '$root · $fnLabel'.trim();
+    case 'expression':
+      return l10n.gameCharades;
     default:
       return _prettify(detail.isEmpty ? skill : detail);
   }

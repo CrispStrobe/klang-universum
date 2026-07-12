@@ -826,6 +826,75 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap every note that matches — a wrong whack costs a heart!';
 
   @override
+  String get gameCharades => 'Fast or Loud?';
+
+  @override
+  String get gameCharadesSubtitle => 'Name the tempo or the dynamics you hear';
+
+  @override
+  String get charadesTempoPrompt => 'How fast is it?';
+
+  @override
+  String get charadesDynamicsPrompt => 'How loud is it?';
+
+  @override
+  String get gameIntervalLadder => 'Interval Ladder';
+
+  @override
+  String get gameIntervalLadderSubtitle =>
+      'Climb the interval from the base note';
+
+  @override
+  String get intervalLadderPrompt => 'Tap the note the arrow points to!';
+
+  @override
+  String get intervalLadderHint =>
+      '▲ up, ▼ down. The number is the interval (3 = a third).';
+
+  @override
+  String get gameStaffRunner => 'Staff Runner';
+
+  @override
+  String get gameStaffRunnerSubtitle => 'Name notes before the timer runs out';
+
+  @override
+  String get gameChordGripHero => 'Chord Grip Hero';
+
+  @override
+  String get gameChordGripHeroSubtitle =>
+      'Press all the chord keys before it lands';
+
+  @override
+  String get chordGripHint => 'Press every glowing key!';
+
+  @override
+  String get gameNoteSnake => 'Note Snake';
+
+  @override
+  String get gameNoteSnakeSubtitle =>
+      'Steer the snake to eat the matching note';
+
+  @override
+  String get noteSnakePrompt => 'Eat this note:';
+
+  @override
+  String get recitalTitle => 'Recital';
+
+  @override
+  String get recitalTooltip => 'Play a recital';
+
+  @override
+  String recitalProgress(int done, int total) {
+    return '$done of $total pieces performed';
+  }
+
+  @override
+  String get recitalCurtainCall => 'Bravo!';
+
+  @override
+  String get recitalDone => 'Take a bow';
+
+  @override
   String get clefBass => 'Bass clef';
 
   @override

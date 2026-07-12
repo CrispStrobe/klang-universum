@@ -59,6 +59,23 @@ class AudioService {
     );
   }
 
+  /// A short melodic phrase at a given tempo ([noteMs] per note) and dynamic
+  /// level ([gain], 0..1) — the audio behind Dynamics & Tempo Charades.
+  Future<void> playPhrase(
+    List<int> midis, {
+    int noteMs = 400,
+    double gain = 1.0,
+  }) =>
+      _play(
+        renderWav(
+          [
+            for (final m in midis) (freqs: [midiToFrequency(m)], ms: noteMs),
+          ],
+          timbre: timbreFor(instrument),
+          gain: gain,
+        ),
+      );
+
   /// Sequential melody of (midi, ms) notes.
   Future<void> playSequence(List<(int, int)> notes) => _play(
         _wav([

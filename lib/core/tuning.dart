@@ -82,6 +82,16 @@ const Map<String, List<int>> kStarThresholds = {
   // Note Whack: 12 whacks x 10 x combo multiplier (1..5); a flawless combo run
   // tops out near 300. 3 stars rewards clean, wrong-free whacking.
   'note_whack': [80, 200, 300],
+  // Dynamics & Tempo Charades: 10 rounds x 100.
+  'charades': [100, 600, 900],
+  // Interval Ladder: 8 rounds x 100, max 800.
+  'interval_ladder': [100, 500, 800],
+  // Staff Runner: endless; score = notes read before three misses.
+  'staff_runner': [6, 15, 25],
+  // Chord Grip Hero: 10 chords; score = chords fully gripped.
+  'chord_grip_hero': [3, 7, 10],
+  // Note Snake: endless; score = notes eaten before a wrong bite.
+  'note_snake': [3, 8, 15],
   'line_space': [100, 600, 900],
   // Falling Notes: 15 notes, points = 10 x combo multiplier (1..5). A flawless
   // combo run tops out near 450; 3 stars rewards a near-perfect streak.

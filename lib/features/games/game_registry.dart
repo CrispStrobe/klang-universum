@@ -10,15 +10,18 @@ import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.da
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ear_screen.dart';
+import 'package:klang_universum/features/games/chords/interval_ladder_screen.dart';
 import 'package:klang_universum/features/games/chords/triad_builder_screen.dart';
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
+import 'package:klang_universum/features/games/expression/charades_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_tab_read_screen.dart';
 import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:klang_universum/features/games/harmony/function_ear_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
+import 'package:klang_universum/features/games/keyboard/chord_grip_hero_screen.dart';
 import 'package:klang_universum/features/games/keyboard/grand_staff_read_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_chord_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_ear_screen.dart';
@@ -37,9 +40,11 @@ import 'package:klang_universum/features/games/note_reading/melody_echo_screen.d
 import 'package:klang_universum/features/games/note_reading/note_memory_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_order_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_reading/note_snake_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_whack_screen.dart';
 import 'package:klang_universum/features/games/note_reading/odd_one_out_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
+import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
@@ -227,6 +232,20 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameNoteWhackSubtitle,
       builder: (_) => const NoteWhackScreen(),
     ),
+    GameInfo(
+      id: 'staff_runner',
+      icon: Icons.directions_run,
+      title: (l) => l.gameStaffRunner,
+      subtitle: (l) => l.gameStaffRunnerSubtitle,
+      builder: (_) => const StaffRunnerScreen(),
+    ),
+    GameInfo(
+      id: 'note_snake',
+      icon: Icons.gesture,
+      title: (l) => l.gameNoteSnake,
+      subtitle: (l) => l.gameNoteSnakeSubtitle,
+      builder: (_) => const NoteSnakeScreen(),
+    ),
     // Bass-clef variants of the reading games (violin/treble + bass).
     GameInfo(
       id: 'line_space_bass',
@@ -270,6 +289,20 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameNoteWhackSubtitle,
       builder: (_) => const NoteWhackScreen(clef: Clef.bass),
     ),
+    GameInfo(
+      id: 'staff_runner_bass',
+      icon: Icons.directions_run,
+      title: (l) => '${l.gameStaffRunner} — ${l.clefBass}',
+      subtitle: (l) => l.gameStaffRunnerSubtitle,
+      builder: (_) => const StaffRunnerScreen(clef: Clef.bass),
+    ),
+    GameInfo(
+      id: 'note_snake_bass',
+      icon: Icons.gesture,
+      title: (l) => '${l.gameNoteSnake} — ${l.clefBass}',
+      subtitle: (l) => l.gameNoteSnakeSubtitle,
+      builder: (_) => const NoteSnakeScreen(clef: Clef.bass),
+    ),
   ],
   'measures': [
     GameInfo(
@@ -292,6 +325,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameBeatRunner,
       subtitle: (l) => l.gameBeatRunnerSubtitle,
       builder: (_) => const BeatRunnerScreen(),
+    ),
+    GameInfo(
+      id: 'charades',
+      icon: Icons.speed,
+      title: (l) => l.gameCharades,
+      subtitle: (l) => l.gameCharadesSubtitle,
+      builder: (_) => const CharadesScreen(),
     ),
   ],
   'scales': [
@@ -359,6 +399,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameIntervalEar,
       subtitle: (l) => l.gameIntervalEarSubtitle,
       builder: (_) => const IntervalEarScreen(),
+    ),
+    GameInfo(
+      id: 'interval_ladder',
+      icon: Icons.stairs,
+      title: (l) => l.gameIntervalLadder,
+      subtitle: (l) => l.gameIntervalLadderSubtitle,
+      builder: (_) => const IntervalLadderScreen(),
     ),
   ],
   'harmony': [
@@ -517,6 +564,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameFallingKeys,
       subtitle: (l) => l.gameFallingKeysSubtitle,
       builder: (_) => const FallingNotesScreen(mode: FallingMode.play),
+    ),
+    GameInfo(
+      id: 'chord_grip_hero',
+      icon: Icons.piano,
+      title: (l) => l.gameChordGripHero,
+      subtitle: (l) => l.gameChordGripHeroSubtitle,
+      builder: (_) => const ChordGripHeroScreen(),
     ),
   ],
 };

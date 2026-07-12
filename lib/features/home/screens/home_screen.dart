@@ -20,6 +20,7 @@ import 'package:klang_universum/features/games/note_values/note_value_quiz_scree
 import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
 import 'package:klang_universum/features/games/screens/module_screen.dart';
 import 'package:klang_universum/features/progress/screens/progress_screen.dart';
+import 'package:klang_universum/features/recital/recital_screen.dart';
 import 'package:klang_universum/features/settings/screens/settings_screen.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -149,6 +150,16 @@ class HomeScreen extends StatelessWidget {
         title: const _DebugTapTitle(),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.theater_comedy),
+            tooltip: l10n.recitalTooltip,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    RecitalScreen(program: buildRecitalProgram(context)),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.piano),
             tooltip: l10n.workshopTitle,

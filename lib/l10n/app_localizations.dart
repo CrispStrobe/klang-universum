@@ -1556,6 +1556,132 @@ abstract class AppLocalizations {
   /// **'Tap every note that matches — a wrong whack costs a heart!'**
   String get noteWhackHint;
 
+  /// No description provided for @gameCharades.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast or Loud?'**
+  String get gameCharades;
+
+  /// No description provided for @gameCharadesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the tempo or the dynamics you hear'**
+  String get gameCharadesSubtitle;
+
+  /// No description provided for @charadesTempoPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How fast is it?'**
+  String get charadesTempoPrompt;
+
+  /// No description provided for @charadesDynamicsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How loud is it?'**
+  String get charadesDynamicsPrompt;
+
+  /// No description provided for @gameIntervalLadder.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval Ladder'**
+  String get gameIntervalLadder;
+
+  /// No description provided for @gameIntervalLadderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Climb the interval from the base note'**
+  String get gameIntervalLadderSubtitle;
+
+  /// No description provided for @intervalLadderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the note the arrow points to!'**
+  String get intervalLadderPrompt;
+
+  /// No description provided for @intervalLadderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'▲ up, ▼ down. The number is the interval (3 = a third).'**
+  String get intervalLadderHint;
+
+  /// No description provided for @gameStaffRunner.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff Runner'**
+  String get gameStaffRunner;
+
+  /// No description provided for @gameStaffRunnerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name notes before the timer runs out'**
+  String get gameStaffRunnerSubtitle;
+
+  /// No description provided for @gameChordGripHero.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord Grip Hero'**
+  String get gameChordGripHero;
+
+  /// No description provided for @gameChordGripHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Press all the chord keys before it lands'**
+  String get gameChordGripHeroSubtitle;
+
+  /// No description provided for @chordGripHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press every glowing key!'**
+  String get chordGripHint;
+
+  /// No description provided for @gameNoteSnake.
+  ///
+  /// In en, this message translates to:
+  /// **'Note Snake'**
+  String get gameNoteSnake;
+
+  /// No description provided for @gameNoteSnakeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Steer the snake to eat the matching note'**
+  String get gameNoteSnakeSubtitle;
+
+  /// No description provided for @noteSnakePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat this note:'**
+  String get noteSnakePrompt;
+
+  /// No description provided for @recitalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recital'**
+  String get recitalTitle;
+
+  /// No description provided for @recitalTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a recital'**
+  String get recitalTooltip;
+
+  /// No description provided for @recitalProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} pieces performed'**
+  String recitalProgress(int done, int total);
+
+  /// No description provided for @recitalCurtainCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Bravo!'**
+  String get recitalCurtainCall;
+
+  /// No description provided for @recitalDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a bow'**
+  String get recitalDone;
+
   /// No description provided for @clefBass.
   ///
   /// In en, this message translates to:
