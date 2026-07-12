@@ -134,4 +134,13 @@ final List<LearningModule> kLearningModules = [
     title: (l) => l.moduleTranspose,
     subtitle: (l) => l.moduleTransposeSubtitle,
   ),
+  // Drum/percussion corner — read rhythms on the neutral percussion staff.
+  LearningModule(
+    id: 'drums',
+    icon: Icons.album,
+    color: const Color(0xFF455A64),
+    initiallyUnlocked: true,
+    title: (l) => l.moduleDrums,
+    subtitle: (l) => l.moduleDrumsSubtitle,
+  ),
 ];

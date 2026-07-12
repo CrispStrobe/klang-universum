@@ -1002,6 +1002,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duetPrompt => 'Name the highlighted note';
 
   @override
+  String get moduleDrums => 'Drums';
+
+  @override
+  String get moduleDrumsSubtitle => 'Read and play rhythms';
+
+  @override
+  String get gameDrumRead => 'Drum Read';
+
+  @override
+  String get gameDrumReadSubtitle => 'Read the rhythm and tap it on the drum';
+
+  @override
+  String get drumReadHint =>
+      'Tap the drum on each note, in time with the click.';
+
+  @override
+  String get drumReadGo => 'Play!';
+
+  @override
   String beatsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

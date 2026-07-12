@@ -314,6 +314,12 @@
   "gameDuet": "Duett",
   "gameDuetSubtitle": "Lies die markierte Stimme im Zweiersystem",
   "duetPrompt": "Benenne die markierte Note",
+  "moduleDrums": "Schlagzeug",
+  "moduleDrumsSubtitle": "Rhythmen lesen und spielen",
+  "gameDrumRead": "Trommeln lesen",
+  "gameDrumReadSubtitle": "Lies den Rhythmus und tippe ihn auf der Trommel",
+  "drumReadHint": "Tippe die Trommel bei jeder Note, im Takt des Klicks.",
+  "drumReadGo": "Los!",
   "beatsCount": "{count, plural, =1{1 Zählzeit} other{{count} Zählzeiten}}",
   "@beatsCount": {
     "placeholders": {

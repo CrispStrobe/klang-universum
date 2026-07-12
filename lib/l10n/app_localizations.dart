@@ -1880,6 +1880,42 @@ abstract class AppLocalizations {
   /// **'Name the highlighted note'**
   String get duetPrompt;
 
+  /// No description provided for @moduleDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums'**
+  String get moduleDrums;
+
+  /// No description provided for @moduleDrumsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read and play rhythms'**
+  String get moduleDrumsSubtitle;
+
+  /// No description provided for @gameDrumRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Drum Read'**
+  String get gameDrumRead;
+
+  /// No description provided for @gameDrumReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the rhythm and tap it on the drum'**
+  String get gameDrumReadSubtitle;
+
+  /// No description provided for @drumReadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the drum on each note, in time with the click.'**
+  String get drumReadHint;
+
+  /// No description provided for @drumReadGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Play!'**
+  String get drumReadGo;
+
   /// No description provided for @beatsCount.
   ///
   /// In en, this message translates to:

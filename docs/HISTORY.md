@@ -174,6 +174,11 @@ Games built on partitura capabilities the app didn't use before.
   name it, tracking the right line. Both treble for beginners; the lower part
   becomes bass clef at 2★, like a grand-staff duet. SRI
   `note_reading.<clef>.*`.
+- **Drum Read** (new **Drums** corner) — read a two-bar rhythm on the neutral
+  **percussion clef** and tap it back on the drum pad. After a one-bar count-in
+  the notation goes live; each tap is judged Perfect/Good/Miss against the
+  notated onsets over a steady click (one Ticker master clock, no drift). A
+  no-fail performance toy.
 
 ## Toy-inspired mechanics — shipped
 

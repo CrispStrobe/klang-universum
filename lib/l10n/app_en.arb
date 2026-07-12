@@ -481,6 +481,12 @@
   "gameDuet": "Duet",
   "gameDuetSubtitle": "Read the highlighted part in a two-staff score",
   "duetPrompt": "Name the highlighted note",
+  "moduleDrums": "Drums",
+  "moduleDrumsSubtitle": "Read and play rhythms",
+  "gameDrumRead": "Drum Read",
+  "gameDrumReadSubtitle": "Read the rhythm and tap it on the drum",
+  "drumReadHint": "Tap the drum on each note, in time with the click.",
+  "drumReadGo": "Play!",
   "beatsCount": "{count, plural, =1{1 beat} other{{count} beats}}",
   "@beatsCount": {
     "placeholders": {

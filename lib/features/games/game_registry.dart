@@ -17,6 +17,7 @@ import 'package:klang_universum/features/games/chords/triad_builder_screen.dart'
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
+import 'package:klang_universum/features/games/drums/drum_read_screen.dart';
 import 'package:klang_universum/features/games/expression/charades_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_tab_read_screen.dart';
@@ -629,6 +630,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConcertPitch,
       subtitle: (l) => l.gameConcertPitchSubtitle,
       builder: (_) => const ConcertPitchScreen(),
+    ),
+  ],
+  'drums': [
+    GameInfo(
+      id: 'drum_read',
+      icon: Icons.album,
+      title: (l) => l.gameDrumRead,
+      subtitle: (l) => l.gameDrumReadSubtitle,
+      builder: (_) => const DrumReadScreen(),
     ),
   ],
 };

@@ -87,8 +87,9 @@ capabilities and what they unlock:
 - **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** **Time
   Signatures** is shipped — read the signature (incl. C and ¢) for the beats per
   bar. Still open: spot the **upbeat (Auftakt)** with anacrusis measures.
-- **Percussion clef** → a **drum/rhythm corner** on the neutral staff. *(Open —
-  a larger new build.)*
+- **Percussion clef** → **shipped**: a **Drums** corner with **Drum Read** — read
+  a rhythm on the neutral percussion staff and tap it back on the drum pad in
+  time (count-in, then Perfect/Good/Miss vs the notated onsets).
 - **Figured bass** (SMuFL figbass) → Baroque continuo reading — advanced, later.
 
 ## Difficulty progression (within each game)
