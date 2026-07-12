@@ -9,6 +9,7 @@ import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/tuner_spike_screen.dart';
+import 'package:klang_universum/features/games/chords/chord_listen_spike_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ear_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ladder_screen.dart';
@@ -383,6 +384,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
     ),
   ],
   'chords': [
+    // SPIKE (temporary, not localized): phase-2 fuzzy chord recognition from
+    // the live mic. Remove once a real chord-listening game replaces it.
+    GameInfo(
+      id: 'chord_listen_spike',
+      icon: Icons.hearing,
+      title: (_) => 'Chord listener (spike)',
+      subtitle: (_) => 'Name the chord you strum or play',
+      builder: (_) => const ChordListenSpikeScreen(),
+    ),
     GameInfo(
       id: 'chord_quiz',
       icon: Icons.library_music,

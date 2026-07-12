@@ -12,8 +12,10 @@
 // and a user gesture before the mic will open.
 
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:klang_universum/core/audio/chroma_analysis.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:record/record.dart';
 
@@ -38,22 +40,33 @@ class PitchCaptureException implements Exception {
 class MicrophonePitchService {
   MicrophonePitchService({
     PitchDetector? detector,
+    this.chordDetector,
     this.sampleRate = 44100,
     double a4 = kDefaultA4,
   }) : detector = detector ?? PitchDetector(sampleRate: sampleRate, a4: a4);
 
   final PitchDetector detector;
+
+  /// Optional phase-2 chord recognizer. When set, each analysed window is also
+  /// matched for chords and emitted on [chords]; when null there is no extra
+  /// cost and the mono [readings] path is unchanged.
+  final ChordDetector? chordDetector;
+
   final int sampleRate;
 
   final AudioRecorder _recorder = AudioRecorder();
   final StreamController<PitchReading> _readings =
       StreamController<PitchReading>.broadcast();
+  final StreamController<ChordReading> _chords =
+      StreamController<ChordReading>.broadcast();
   StreamSubscription<Uint8List>? _chunkSub;
 
-  /// Rolling analysis buffer (mono floats). We run the detector on a sliding
-  /// window and advance by [_hop] each time, so the meter updates several
-  /// times per window rather than once.
-  late final int _windowSize = detector.windowSize;
+  /// Rolling analysis buffer (mono floats). We run the detector(s) on a sliding
+  /// window and advance by [_hop] each time, so the meter updates several times
+  /// per window rather than once. The window fits whichever detector needs the
+  /// most samples (chord matching wants a larger FFT window than pitch).
+  late final int _windowSize =
+      max(detector.windowSize, chordDetector?.windowSize ?? 0);
   late final int _hop = _windowSize ~/ 2;
   final List<double> _buffer = <double>[];
 
@@ -62,6 +75,11 @@ class MicrophonePitchService {
   /// Live stream of readings. Silent frames arrive as [PitchReading.silent] so
   /// the UI can dim/park the needle rather than freezing on the last note.
   Stream<PitchReading> get readings => _readings.stream;
+
+  /// Live stream of fuzzy chord guesses — empty unless a [chordDetector] was
+  /// supplied.
+  Stream<ChordReading> get chords => _chords.stream;
+
   bool get isRunning => _running;
 
   /// Does the app have (or can it obtain) mic permission?
@@ -118,6 +136,10 @@ class MicrophonePitchService {
         window[i] = _buffer[i];
       }
       if (!_readings.isClosed) _readings.add(detector.analyze(window));
+      final chord = chordDetector;
+      if (chord != null && !_chords.isClosed) {
+        _chords.add(chord.analyze(window));
+      }
       _buffer.removeRange(0, _hop);
     }
   }
@@ -138,5 +160,6 @@ class MicrophonePitchService {
     await stop();
     await _recorder.dispose();
     await _readings.close();
+    await _chords.close();
   }
 }
