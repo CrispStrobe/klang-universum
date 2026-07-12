@@ -1862,6 +1862,24 @@ abstract class AppLocalizations {
   /// **'How many beats are in one bar?'**
   String get timeSignaturePrompt;
 
+  /// No description provided for @gameDuet.
+  ///
+  /// In en, this message translates to:
+  /// **'Duet'**
+  String get gameDuet;
+
+  /// No description provided for @gameDuetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the highlighted part in a two-staff score'**
+  String get gameDuetSubtitle;
+
+  /// No description provided for @duetPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the highlighted note'**
+  String get duetPrompt;
+
   /// No description provided for @beatsCount.
   ///
   /// In en, this message translates to:

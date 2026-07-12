@@ -102,6 +102,8 @@ const Map<String, List<int>> kStarThresholds = {
   'which_beat': [100, 600, 900],
   // Time Signatures (read C/cut/numeric): 10 rounds x 100.
   'time_signature': [100, 600, 900],
+  // Duet (read the highlighted part of a two-staff system): 10 rounds x 100.
+  'duet': [100, 600, 900],
   'line_space': [100, 600, 900],
   // Falling Notes: 15 notes, points = 10 x combo multiplier (1..5). A flawless
   // combo run tops out near 450; 3 stars rewards a near-perfect streak.

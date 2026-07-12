@@ -73,8 +73,9 @@ capabilities and what they unlock:
   slash-chord inversions at 2★. Still open: auto-grade any built chord in Triad
   Builder / Chord Grip Hero (not just root position), and chord symbols over the
   Song Book.
-- **`StaffSystemView`** (N-staff systems). Duet/ensemble reading, a richer Grand
-  Staff, SATB chorale reading.
+- **`StaffSystemView`** (N-staff systems). **Duet** is shipped — read the
+  highlighted part of a two-staff system (lower staff switches to bass clef at
+  2★). Still open: SATB chorale reading, a richer Grand Staff.
 - **Transposing instruments + concert-pitch toggle.** **Shipped** — a new
   **Transposing corner** with **Concert Pitch**
   ([HISTORY.md](HISTORY.md#partitura-powered--shipped)): read a written note for

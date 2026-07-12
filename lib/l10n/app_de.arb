@@ -311,6 +311,9 @@
   "gameTimeSignature": "Taktarten",
   "gameTimeSignatureSubtitle": "Lies die Taktart (auch C und Alla breve)",
   "timeSignaturePrompt": "Wie viele Zählzeiten hat ein Takt?",
+  "gameDuet": "Duett",
+  "gameDuetSubtitle": "Lies die markierte Stimme im Zweiersystem",
+  "duetPrompt": "Benenne die markierte Note",
   "beatsCount": "{count, plural, =1{1 Zählzeit} other{{count} Zählzeiten}}",
   "@beatsCount": {
     "placeholders": {

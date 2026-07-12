@@ -478,6 +478,9 @@
   "gameTimeSignature": "Time Signatures",
   "gameTimeSignatureSubtitle": "Read the signature (incl. C and cut time)",
   "timeSignaturePrompt": "How many beats are in one bar?",
+  "gameDuet": "Duet",
+  "gameDuetSubtitle": "Read the highlighted part in a two-staff score",
+  "duetPrompt": "Name the highlighted note",
   "beatsCount": "{count, plural, =1{1 beat} other{{count} beats}}",
   "@beatsCount": {
     "placeholders": {

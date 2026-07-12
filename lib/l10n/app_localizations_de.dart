@@ -998,6 +998,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get timeSignaturePrompt => 'Wie viele Zählzeiten hat ein Takt?';
 
   @override
+  String get gameDuet => 'Duett';
+
+  @override
+  String get gameDuetSubtitle => 'Lies die markierte Stimme im Zweiersystem';
+
+  @override
+  String get duetPrompt => 'Benenne die markierte Note';
+
+  @override
   String beatsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

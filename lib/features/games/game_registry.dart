@@ -37,6 +37,7 @@ import 'package:klang_universum/features/games/measures/meter_detective_screen.d
 import 'package:klang_universum/features/games/measures/time_signature_screen.dart';
 import 'package:klang_universum/features/games/measures/which_beat_screen.dart';
 import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
+import 'package:klang_universum/features/games/note_reading/duet_screen.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
 import 'package:klang_universum/features/games/note_reading/ledger_leap_screen.dart';
 import 'package:klang_universum/features/games/note_reading/line_space_screen.dart';
@@ -251,6 +252,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteSnake,
       subtitle: (l) => l.gameNoteSnakeSubtitle,
       builder: (_) => const NoteSnakeScreen(),
+    ),
+    GameInfo(
+      id: 'duet',
+      icon: Icons.splitscreen,
+      title: (l) => l.gameDuet,
+      subtitle: (l) => l.gameDuetSubtitle,
+      builder: (_) => const DuetScreen(),
     ),
     // Bass-clef variants of the reading games (violin/treble + bass).
     GameInfo(

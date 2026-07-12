@@ -169,6 +169,11 @@ Games built on partitura capabilities the app didn't use before.
 - **ABC export** (Composition Workshop) — an AppBar action renders the current
   score to **ABC** (`scoreToAbc`) in a dialog and copies it to the clipboard;
   round-trips with the Song Book's ABC import.
+- **Duet** (note reading) — read the **highlighted part of a two-staff system**
+  (partitura's `StaffSystemView`): two parts are shown, one note highlighted;
+  name it, tracking the right line. Both treble for beginners; the lower part
+  becomes bass clef at 2★, like a grand-staff duet. SRI
+  `note_reading.<clef>.*`.
 
 ## Toy-inspired mechanics — shipped
 

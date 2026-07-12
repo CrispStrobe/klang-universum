@@ -992,6 +992,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timeSignaturePrompt => 'How many beats are in one bar?';
 
   @override
+  String get gameDuet => 'Duet';
+
+  @override
+  String get gameDuetSubtitle =>
+      'Read the highlighted part in a two-staff score';
+
+  @override
+  String get duetPrompt => 'Name the highlighted note';
+
+  @override
   String beatsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
