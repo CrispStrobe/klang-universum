@@ -895,6 +895,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recitalDone => 'Take a bow';
 
   @override
+  String get gameStrumToy => 'Strum Toy';
+
+  @override
+  String get gameStrumToySubtitle => 'Pick a chord and strum a free jam';
+
+  @override
+  String get strumToyHint =>
+      'Swipe across the strings to strum, or tap one to pluck.';
+
+  @override
   String get clefBass => 'Bass clef';
 
   @override

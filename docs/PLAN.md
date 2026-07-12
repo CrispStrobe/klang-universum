@@ -51,6 +51,39 @@ shared machinery, and the right clefs (the library supports all four). The
 strings, treble clef; viola: alto clef); a bass corner reuses the guitar recipe
 with `Tuning.standardBass`.
 
+## Partitura capabilities → new ideas
+
+The partitura library has grown well past what the app currently uses (local
+`main` is ~63 commits ahead of the ref CI builds against). **These ideas are
+gated on those commits landing on the partitura ref CI checks out** — until then
+building on the new APIs would compile locally but fail CI. Verified new
+capabilities and what they unlock:
+
+- **Teaching overlays on `StaffView`** (`showNoteNames`, `showBeatNumbers`,
+  `showMeasureNumbers`). Replace our external note-name/colour scaffold with a
+  *native fading scaffold* (names on the staff at level 1, gone by 3★), and a
+  **rhythm-counting game** that shows "1 & 2 &" under the notes.
+- **ABC notation import/export** (`scoreToAbc`, ABC reader). **Import the huge
+  public-domain ABC folk-tune libraries into the Song Book** (massive content
+  win), add an **ABC export** in the Workshop/My Melody, and a tiny "type-a-tune"
+  advanced mode.
+- **Chord identification** (`identifyChord`, `chordSymbolFor`). A **"Name that
+  Chord"** game auto-graded for root/quality/**inversion & 7ths**; **auto-grade
+  any built chord** in Triad Builder / Chord Grip Hero (not just root position);
+  show chord symbols over the Song Book.
+- **`StaffSystemView`** (N-staff systems). Duet/ensemble reading, a richer Grand
+  Staff, SATB chorale reading.
+- **Transposing instruments + concert-pitch toggle.** A **transposing-instrument
+  corner** (Bb trumpet/clarinet, Eb alto sax): read the written note, name the
+  concert pitch — a skill nothing else covers.
+- **Up-bow / down-bow articulations.** A **cello/violin bowing game**: read and
+  perform the bowing (⊓ down-bow, ∨ up-bow) — deepens the string corners.
+- **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** Meter games
+  that name C/¢ and spot the **upbeat (Auftakt)**.
+- **Percussion clef** (in progress upstream) → a **drum/rhythm corner** on a
+  neutral staff once it lands.
+- **Figured bass** (SMuFL figbass) → Baroque continuo reading — advanced, later.
+
 ## Difficulty progression (within each game)
 
 Games start at the easiest concrete slice and widen per level (driven by
@@ -157,8 +190,9 @@ Classic hand-held electronic music/reaction toys, reimagined for notation & ear
 training. Shipped: Sound Echo, Follow the Conductor
 ([HISTORY.md](HISTORY.md#toy-inspired-mechanics--shipped)).
 
-- [ ] **Strum toy** — swipe/strum across the screen to sound a chord or arpeggio;
+- [x] **Strum toy** — swipe/strum across the screen to sound a chord or arpeggio;
   a free "air-instrument" jam built on the existing fretboard/keyboard widgets. *S–M.*
+  **Shipped** ([HISTORY.md](HISTORY.md#toy-inspired-mechanics--shipped)).
 - [ ] **Loop mixer** — tap/place cards that each trigger a synced musical loop
   (bass / chords / melody / drums), layering a mix in time. Creative sound-toy.
   *L — needs multi-track synced loop playback.*

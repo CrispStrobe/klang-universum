@@ -18,6 +18,7 @@ import 'package:klang_universum/features/games/composition/question_answer_scree
 import 'package:klang_universum/features/games/expression/charades_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_tab_read_screen.dart';
+import 'package:klang_universum/features/games/guitar/strum_toy_screen.dart';
 import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:klang_universum/features/games/harmony/function_ear_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
@@ -497,6 +498,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameGuitarTabRead,
       subtitle: (l) => l.gameGuitarTabReadSubtitle,
       builder: (_) => const GuitarTabReadScreen(),
+    ),
+    GameInfo(
+      id: 'strum_toy',
+      icon: Icons.music_note,
+      title: (l) => l.gameStrumToy,
+      subtitle: (l) => l.gameStrumToySubtitle,
+      builder: (_) => const StrumToyScreen(),
     ),
   ],
   'songs': [

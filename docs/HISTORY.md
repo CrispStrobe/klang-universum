@@ -139,6 +139,10 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 ## Toy-inspired mechanics — shipped
 
+- **Strum Toy** (guitar corner) — a free, no-scoring jam: pick an open chord
+  (C/G/D/Em/Am) and swipe across the strings to strum (down = low→high, up =
+  high→low) or tap one to pluck. Voiced as an arpeggio-into-block-chord (the
+  synth is monophonic), colour-coded strings, keyboard 1–5 + space/arrows.
 - **Sound Echo** (memory-sequence toy) — four pentatonic pads; the app lights +
   plays a growing sequence, the child echoes it; one miss ends the run. Made
   educative: noteheads on a mini-staff (C-major pentatonic) and **cues fade as

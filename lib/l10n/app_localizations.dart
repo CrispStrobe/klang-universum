@@ -1682,6 +1682,24 @@ abstract class AppLocalizations {
   /// **'Take a bow'**
   String get recitalDone;
 
+  /// No description provided for @gameStrumToy.
+  ///
+  /// In en, this message translates to:
+  /// **'Strum Toy'**
+  String get gameStrumToy;
+
+  /// No description provided for @gameStrumToySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a chord and strum a free jam'**
+  String get gameStrumToySubtitle;
+
+  /// No description provided for @strumToyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe across the strings to strum, or tap one to pluck.'**
+  String get strumToyHint;
+
   /// No description provided for @clefBass.
   ///
   /// In en, this message translates to:

@@ -901,6 +901,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recitalDone => 'Verbeugen';
 
   @override
+  String get gameStrumToy => 'Zupf-Spaß';
+
+  @override
+  String get gameStrumToySubtitle => 'Wähle einen Akkord und jamme frei';
+
+  @override
+  String get strumToyHint =>
+      'Wische über die Saiten zum Schrammeln oder tippe eine zum Zupfen.';
+
+  @override
   String get clefBass => 'Bassschlüssel';
 
   @override
