@@ -64,7 +64,7 @@ void main() {
     await tester.pumpWidget(_wrap(const CelloStringQuizScreen(), sri));
     await tester.pump();
 
-    expect(find.text('Which string plays this note?'), findsOneWidget);
+    expect(find.text('Which open string is this?'), findsOneWidget);
     expect(find.byType(StaffView), findsOneWidget);
     for (final label in ['C', 'G', 'D', 'A']) {
       expect(find.text(label), findsOneWidget);

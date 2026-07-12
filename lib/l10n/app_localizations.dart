@@ -473,7 +473,7 @@ abstract class AppLocalizations {
   /// No description provided for @celloStringPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Which string plays this note?'**
+  /// **'Which open string is this?'**
   String get celloStringPrompt;
 
   /// No description provided for @gameCelloFingerQuiz.

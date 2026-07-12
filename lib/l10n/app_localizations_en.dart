@@ -223,7 +223,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameCelloStringQuizSubtitle => 'Find the right cello string';
 
   @override
-  String get celloStringPrompt => 'Which string plays this note?';
+  String get celloStringPrompt => 'Which open string is this?';
 
   @override
   String get gameCelloFingerQuiz => 'Finger Quiz';

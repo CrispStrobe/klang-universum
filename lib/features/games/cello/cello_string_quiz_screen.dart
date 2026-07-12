@@ -51,7 +51,12 @@ class _CelloStringQuizScreenState extends State<CelloStringQuizScreen>
 
   @override
   void prepareRound() {
-    _target = kCelloFirstPosition[_random.nextInt(kCelloFirstPosition.length)];
+    // Only the OPEN strings: each open-string pitch belongs to exactly one
+    // string, so "which string?" has one unambiguous answer. (Stopped notes
+    // can be played on several strings — that made the old quiz confusing.)
+    final string =
+        CelloString.values[_random.nextInt(CelloString.values.length)];
+    _target = CelloNote(string.openPitch, string, 0);
     _tapped = null;
     _lastAnswer = null;
   }

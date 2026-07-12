@@ -92,7 +92,7 @@
   "moduleCelloSubtitle": "Strings, fingers and clefs for young cellists",
   "gameCelloStringQuiz": "Which String?",
   "gameCelloStringQuizSubtitle": "Find the right cello string",
-  "celloStringPrompt": "Which string plays this note?",
+  "celloStringPrompt": "Which open string is this?",
   "gameCelloFingerQuiz": "Finger Quiz",
   "gameCelloFingerQuizSubtitle": "First position: which finger?",
   "moduleComposition": "Composing",

@@ -224,7 +224,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameCelloStringQuizSubtitle => 'Finde die richtige Cello-Saite';
 
   @override
-  String get celloStringPrompt => 'Auf welcher Saite spielst du diese Note?';
+  String get celloStringPrompt => 'Welche leere Saite ist das?';
 
   @override
   String get gameCelloFingerQuiz => 'Finger-Quiz';

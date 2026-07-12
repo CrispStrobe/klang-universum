@@ -68,7 +68,7 @@
   "moduleCelloSubtitle": "Saiten, Finger und Schlüssel für junge Cellisten",
   "gameCelloStringQuiz": "Welche Saite?",
   "gameCelloStringQuizSubtitle": "Finde die richtige Cello-Saite",
-  "celloStringPrompt": "Auf welcher Saite spielst du diese Note?",
+  "celloStringPrompt": "Welche leere Saite ist das?",
   "gameCelloFingerQuiz": "Finger-Quiz",
   "gameCelloFingerQuizSubtitle": "Erste Lage: welcher Finger?",
   "moduleComposition": "Komponieren",
