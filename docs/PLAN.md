@@ -278,7 +278,12 @@ training. *(Generic names only — no product names in code or docs.)*
 - [x] **Sound Echo** — memory-sequence toy: four coloured pads each play a
   pentatonic pitch; the app lights & plays a growing sequence, the child echoes
   it; one miss ends the run, score = longest sequence. **Shipped** in the scales
-  module. *(Extends to swipe-direction pads and a rhythm-timed variant.)*
+  module, then made educative: the four pads carry **noteheads on a mini-staff**
+  (C-major pentatonic), and the **cues fade as the sequence grows** — colour +
+  sound + notation at first, then the colour drops, then the sound, until the
+  longest runs are read from the noteheads alone (a cue bar shows what's active).
+  So it trains ear↔staff, not just colour memory. *(Extends to a rhythm-timed
+  variant.)*
 - [x] **Command caller** — rapid voice/text commands ("tap!", "hold!", "swipe
   up!", "clap the beat!"); do the matching gesture before the timer. Reaction +
   gesture vocabulary. *M.* **Shipped** as **Follow the Conductor** (scales),

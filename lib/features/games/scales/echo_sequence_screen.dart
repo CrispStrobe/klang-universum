@@ -1,37 +1,55 @@
 // lib/features/games/scales/echo_sequence_screen.dart
 //
-// "Ton-Echo" — a melodic-memory game: four coloured pads each sound a pitch
-// (a pentatonic set, so any sequence stays consonant). The app lights and
-// plays a sequence that grows by one each round; the child echoes it back.
-// One wrong pad ends the run; the score is the longest sequence reached.
-// A memory-sequence toy mechanic reimagined for the ear.
+// "Ton-Echo" / "Sound Echo" — a melodic-memory game turned into a reading toy.
+// Four pentatonic pads each carry a pitch AND its notehead on a mini-staff. The
+// app lights and plays a growing sequence; the child echoes it back. What makes
+// it educative is that the *cues fade as the sequence grows*: it starts with
+// colour + sound + notation, then drops the colour, then the sound — until at
+// the longest runs the child is reading the noteheads alone. One wrong pad ends
+// the run; the score is the longest sequence reached.
 //
-// No SRI — this is pure short-term melodic memory, not a drilled fact.
+// No SRI — short-term memory, not a drilled fact — but now it trains ear↔staff.
 
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 enum _Phase { watching, repeating, over }
 
+/// A perceptual channel a step can be shown through.
+enum Cue { colour, sound, note }
+
 class EchoSequenceScreen extends StatefulWidget {
   const EchoSequenceScreen({super.key});
 
-  // Pentatonic pads (C D E G), so every sequence sounds musical.
-  static const _midis = [60, 62, 64, 67];
-  static const _colors = [
-    Color(0xFFE53935), // red
-    Color(0xFFFDD835), // yellow
-    Color(0xFF43A047), // green
-    Color(0xFF1E88E5), // blue
+  // A C-major pentatonic (C D E G) in octave 5 — clean on the treble staff and
+  // consonant in any order.
+  static const _pitches = [
+    Pitch(Step.c, octave: 5),
+    Pitch(Step.d, octave: 5),
+    Pitch(Step.e, octave: 5),
+    Pitch(Step.g, octave: 5),
   ];
+
+  /// Which cues are active for a sequence of the given length — they thin out
+  /// as it grows, so notation carries more and more of the load. Notation is
+  /// always on (the pads stay readable and tappable).
+  static Set<Cue> cuesFor(int length) {
+    if (length < 4) return {Cue.colour, Cue.sound, Cue.note};
+    if (length < 6) return {Cue.sound, Cue.note};
+    if (length < 8) return {Cue.colour, Cue.note};
+    return {Cue.note};
+  }
 
   @override
   State<EchoSequenceScreen> createState() => _EchoSequenceScreenState();
@@ -50,6 +68,10 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
   Timer? _flashTimer;
   Timer? _startTimer;
 
+  Set<Cue> get _cues => EchoSequenceScreen.cuesFor(_sequence.length);
+
+  int _midi(int pad) => EchoSequenceScreen._pitches[pad].midiNumber;
+
   @override
   void initState() {
     super.initState();
@@ -66,7 +88,7 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
 
   void _addAndWatch() {
     if (!mounted) return;
-    _sequence.add(_random.nextInt(EchoSequenceScreen._midis.length));
+    _sequence.add(_random.nextInt(EchoSequenceScreen._pitches.length));
     _startWatch();
   }
 
@@ -88,11 +110,13 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
     }
     final pad = _sequence[_watchPos];
     setState(() => _lit = pad);
-    context.read<AudioService>().playMidiNote(EchoSequenceScreen._midis[pad]);
-    _watchTimer = Timer(const Duration(milliseconds: 500), () {
+    if (_cues.contains(Cue.sound)) {
+      context.read<AudioService>().playMidiNote(_midi(pad));
+    }
+    _watchTimer = Timer(const Duration(milliseconds: 550), () {
       if (!mounted) return;
       setState(() => _lit = null);
-      _watchTimer = Timer(const Duration(milliseconds: 220), () {
+      _watchTimer = Timer(const Duration(milliseconds: 240), () {
         if (!mounted) return;
         _watchPos++;
         _watchStep();
@@ -102,10 +126,11 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
 
   void _flash(int pad) {
     setState(() => _lit = pad);
-    context.read<AudioService>().playMidiNote(
-          EchoSequenceScreen._midis[pad],
-          ms: 350,
-        );
+    // A tap sounds only when the sound cue is on, so the silent (reading) levels
+    // stay honest.
+    if (_cues.contains(Cue.sound)) {
+      context.read<AudioService>().playMidiNote(_midi(pad), ms: 350);
+    }
     _flashTimer?.cancel();
     _flashTimer = Timer(const Duration(milliseconds: 200), () {
       if (mounted) setState(() => _lit = null);
@@ -119,7 +144,6 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
     if (pad == _sequence[_inputIndex]) {
       _inputIndex++;
       if (_inputIndex == _sequence.length) {
-        // Whole sequence echoed — grow it.
         _best = _sequence.length;
         setState(() => _phase = _Phase.watching);
         _startTimer = Timer(const Duration(milliseconds: 700), _addAndWatch);
@@ -153,6 +177,7 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final cues = _cues;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.gameEchoSequence)),
@@ -179,11 +204,13 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
                       l10n.echoLength(_sequence.length),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    _CueBar(cues: cues),
+                    const SizedBox(height: 12),
                     Expanded(
                       child: Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 360),
+                          constraints: const BoxConstraints(maxWidth: 380),
                           child: GridView.count(
                             crossAxisCount: 2,
                             shrinkWrap: true,
@@ -191,10 +218,12 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
                             crossAxisSpacing: 16,
                             children: [
                               for (var i = 0;
-                                  i < EchoSequenceScreen._midis.length;
+                                  i < EchoSequenceScreen._pitches.length;
                                   i++)
                                 _Pad(
-                                  color: EchoSequenceScreen._colors[i],
+                                  pitch: EchoSequenceScreen._pitches[i],
+                                  showColour: cues.contains(Cue.colour),
+                                  showNote: cues.contains(Cue.note),
                                   lit: _lit == i,
                                   onTap: _phase == _Phase.repeating
                                       ? () => _onPad(i)
@@ -213,30 +242,88 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
   }
 }
 
-class _Pad extends StatelessWidget {
-  final Color color;
-  final bool lit;
-  final VoidCallback? onTap;
-
-  const _Pad({required this.color, required this.lit, this.onTap});
+/// Shows which cues are active this level (colour / sound / notation).
+class _CueBar extends StatelessWidget {
+  const _CueBar({required this.cues});
+  final Set<Cue> cues;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget chip(IconData icon, bool on) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: Icon(
+            icon,
+            size: 22,
+            color: on ? scheme.primary : scheme.outlineVariant,
+          ),
+        );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        chip(Icons.palette, cues.contains(Cue.colour)),
+        chip(Icons.volume_up, cues.contains(Cue.sound)),
+        chip(Icons.music_note, cues.contains(Cue.note)),
+      ],
+    );
+  }
+}
+
+class _Pad extends StatelessWidget {
+  const _Pad({
+    required this.pitch,
+    required this.showColour,
+    required this.showNote,
+    required this.lit,
+    required this.onTap,
+  });
+
+  final Pitch pitch;
+  final bool showColour;
+  final bool showNote;
+  final bool lit;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colour = pitchClassColor(pitch.step);
+    final base = showColour ? colour : scheme.surfaceContainerHighest;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
-          color: lit ? color : color.withValues(alpha: 0.45),
+          color: lit
+              ? (showColour ? colour : scheme.primaryContainer)
+              : base.withValues(alpha: showColour ? 0.55 : 1.0),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: lit ? Colors.white : Colors.black26,
+            color: lit ? scheme.primary : scheme.outlineVariant,
             width: lit ? 4 : 2,
           ),
           boxShadow: lit
-              ? [BoxShadow(color: color, blurRadius: 24, spreadRadius: 2)]
+              ? [
+                  BoxShadow(
+                    color: scheme.primary,
+                    blurRadius: 22,
+                    spreadRadius: 1,
+                  ),
+                ]
               : null,
         ),
+        child: showNote
+            ? Center(
+                child: StaffView(
+                  score: Score.simple(
+                    notes: '${pitch.step.name}${pitch.octave}:w',
+                  ),
+                  staffSpace: 9,
+                  theme: PartituraTheme.kids,
+                ),
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
