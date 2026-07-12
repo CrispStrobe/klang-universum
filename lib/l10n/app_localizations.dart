@@ -284,6 +284,36 @@ abstract class AppLocalizations {
   /// **'System default'**
   String get systemDefault;
 
+  /// No description provided for @instrumentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument sound'**
+  String get instrumentLabel;
+
+  /// No description provided for @instrumentPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano'**
+  String get instrumentPiano;
+
+  /// No description provided for @instrumentCello.
+  ///
+  /// In en, this message translates to:
+  /// **'Cello'**
+  String get instrumentCello;
+
+  /// No description provided for @instrumentFlute.
+  ///
+  /// In en, this message translates to:
+  /// **'Flute'**
+  String get instrumentFlute;
+
+  /// No description provided for @instrumentMusicBox.
+  ///
+  /// In en, this message translates to:
+  /// **'Music box'**
+  String get instrumentMusicBox;
+
   /// No description provided for @noteNamingLabel.
   ///
   /// In en, this message translates to:

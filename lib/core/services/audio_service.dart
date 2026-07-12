@@ -14,6 +14,13 @@ import 'package:klang_universum/core/audio/synth.dart';
 class AudioService {
   AudioPlayer? _player;
 
+  /// The voice used for pitched notes/chords/sequences (not the retro SFX).
+  /// Wired from the instrument setting in main.dart.
+  Instrument instrument = Instrument.piano;
+
+  Uint8List _wav(List<Segment> segments) =>
+      renderWav(segments, timbre: timbreFor(instrument));
+
   Future<void> _play(Uint8List wav) async {
     try {
       final player = _player ??= AudioPlayer();
@@ -32,20 +39,20 @@ class AudioService {
   }
 
   Future<void> playMidiNote(int midi, {int ms = 700}) => _play(
-        renderWav([
+        _wav([
           (freqs: [midiToFrequency(midi)], ms: ms),
         ]),
       );
 
   Future<void> playMidiChord(List<int> midis, {int ms = 1200}) => _play(
-        renderWav([(freqs: midis.map(midiToFrequency).toList(), ms: ms)]),
+        _wav([(freqs: midis.map(midiToFrequency).toList(), ms: ms)]),
       );
 
   /// Arpeggio (bottom-up), then the block chord.
   Future<void> playArpeggioThenChord(List<int> midis) {
     final freqs = midis.map(midiToFrequency).toList();
     return _play(
-      renderWav([
+      _wav([
         for (final f in freqs) (freqs: [f], ms: 400),
         (freqs: freqs, ms: 1200),
       ]),
@@ -54,7 +61,7 @@ class AudioService {
 
   /// Sequential melody of (midi, ms) notes.
   Future<void> playSequence(List<(int, int)> notes) => _play(
-        renderWav([
+        _wav([
           for (final (midi, ms) in notes)
             (freqs: [midiToFrequency(midi)], ms: ms),
         ]),
@@ -63,7 +70,7 @@ class AudioService {
   /// Sequential chords (e.g. a cadence), [ms] each.
   Future<void> playChordSequence(List<List<int>> chords, {int ms = 900}) =>
       _play(
-        renderWav([
+        _wav([
           for (final midis in chords)
             (freqs: midis.map(midiToFrequency).toList(), ms: ms),
         ]),
@@ -80,7 +87,7 @@ class AudioService {
     int targetMs = 1300,
   }) =>
       _play(
-        renderWav([
+        _wav([
           for (final midis in cadence)
             (freqs: midis.map(midiToFrequency).toList(), ms: cadenceMs),
           (freqs: const <double>[], ms: gapMs),
@@ -95,7 +102,7 @@ class AudioService {
     final note = midiToFrequency(67);
     final tick = midiToFrequency(84);
     return _play(
-      renderWav([
+      _wav([
         for (var b = 0; b < beats; b++) ...[
           (freqs: [note, tick], ms: 70),
           (freqs: [note], ms: beatMs - 70),
@@ -112,7 +119,7 @@ class AudioService {
     final ms = (beats * beatMs).round().clamp(120, 4000);
     if (isRest) {
       return _play(
-        renderWav([
+        _wav([
           (freqs: [midiToFrequency(84)], ms: 80),
           (freqs: const <double>[], ms: ms),
           (freqs: [midiToFrequency(84)], ms: 80),
@@ -120,7 +127,7 @@ class AudioService {
       );
     }
     return _play(
-      renderWav([
+      _wav([
         (freqs: [midiToFrequency(69)], ms: ms),
       ]),
     );

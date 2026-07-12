@@ -49,21 +49,25 @@ class KlangUniversumApp extends StatelessWidget {
         ),
       ],
       child: Consumer<SettingsService>(
-        builder: (context, settings, _) => MaterialApp(
-          onGenerateTitle: (context) =>
-              AppLocalizations.of(context)?.appTitle ?? 'KlangUniversum',
-          debugShowCheckedModeBanner: false,
-          theme: buildAppTheme(),
-          locale: settings.locale,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('en'), Locale('de')],
-          home: const _StartupRouter(),
-        ),
+        builder: (context, settings, _) {
+          // Keep the audio voice in sync with the chosen instrument.
+          context.read<AudioService>().instrument = settings.instrument;
+          return MaterialApp(
+            onGenerateTitle: (context) =>
+                AppLocalizations.of(context)?.appTitle ?? 'KlangUniversum',
+            debugShowCheckedModeBanner: false,
+            theme: buildAppTheme(),
+            locale: settings.locale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('de')],
+            home: const _StartupRouter(),
+          );
+        },
       ),
     );
   }

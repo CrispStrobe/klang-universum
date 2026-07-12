@@ -120,6 +120,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemDefault => 'System default';
 
   @override
+  String get instrumentLabel => 'Instrument sound';
+
+  @override
+  String get instrumentPiano => 'Piano';
+
+  @override
+  String get instrumentCello => 'Cello';
+
+  @override
+  String get instrumentFlute => 'Flute';
+
+  @override
+  String get instrumentMusicBox => 'Music box';
+
+  @override
   String get noteNamingLabel => 'Note names';
 
   @override

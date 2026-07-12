@@ -4,7 +4,9 @@
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:klang_universum/core/audio/synth.dart' show Instrument;
 import 'package:klang_universum/core/note_naming.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
@@ -53,6 +55,35 @@ class SettingsScreen extends StatelessWidget {
                     title: Text('Deutsch'),
                     value: 'de',
                   ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            l10n.instrumentLabel,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final instrument in Instrument.values)
+                    ChoiceChip(
+                      avatar: Icon(_instrumentIcon(instrument)),
+                      label: Text(_instrumentName(l10n, instrument)),
+                      selected: settings.instrument == instrument,
+                      onSelected: (_) {
+                        settings.setInstrument(instrument);
+                        // Preview the voice right away.
+                        context.read<AudioService>()
+                          ..instrument = instrument
+                          ..playMidiNote(67);
+                      },
+                    ),
                 ],
               ),
             ),
@@ -197,3 +228,18 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+
+IconData _instrumentIcon(Instrument instrument) => switch (instrument) {
+      Instrument.piano => Icons.piano,
+      Instrument.cello => Icons.music_note,
+      Instrument.flute => Icons.air,
+      Instrument.musicBox => Icons.toys,
+    };
+
+String _instrumentName(AppLocalizations l10n, Instrument instrument) =>
+    switch (instrument) {
+      Instrument.piano => l10n.instrumentPiano,
+      Instrument.cello => l10n.instrumentCello,
+      Instrument.flute => l10n.instrumentFlute,
+      Instrument.musicBox => l10n.instrumentMusicBox,
+    };

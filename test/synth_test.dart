@@ -25,6 +25,21 @@ void main() {
     expect(peak, lessThanOrEqualTo((0.8 * 32767).ceil())); // no clipping
   });
 
+  test('each instrument timbre renders a distinct waveform', () {
+    const seg = [
+      (freqs: [440.0], ms: 200),
+    ];
+    final piano = renderSegments(seg, timbre: timbreFor(Instrument.piano));
+    final cello = renderSegments(seg, timbre: timbreFor(Instrument.cello));
+    expect(piano.length, cello.length);
+    // Different harmonics/decay → the samples must actually differ.
+    var differences = 0;
+    for (var i = 0; i < piano.length; i++) {
+      if (piano[i] != cello[i]) differences++;
+    }
+    expect(differences, greaterThan(piano.length ~/ 2));
+  });
+
   test('wavBytes writes a valid RIFF/WAVE header', () {
     final samples = Int16List.fromList(List.filled(1000, 1234));
     final wav = wavBytes(samples);

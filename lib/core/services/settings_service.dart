@@ -4,6 +4,7 @@
 // the system, the default) and the note-naming convention.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/audio/synth.dart' show Instrument;
 import 'package:klang_universum/core/note_naming.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,11 +13,16 @@ class SettingsService with ChangeNotifier {
   static const _noteNamingKey = 'note_naming';
   static const _showTimerKey = 'show_timer';
   static const _colorScaffoldKey = 'color_scaffold';
+  static const _instrumentKey = 'instrument';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
   bool _showTimer = false;
   bool _colorScaffold = false;
+  Instrument _instrument = Instrument.piano;
+
+  /// The voice used for pitched playback across the app.
+  Instrument get instrument => _instrument;
 
   /// Forced app locale; null follows the system locale.
   Locale? get locale => _locale;
@@ -42,6 +48,9 @@ class SettingsService with ChangeNotifier {
     _noteNaming = NoteNaming.values.asNameMap()[naming] ?? NoteNaming.auto;
     _showTimer = prefs.getBool(_showTimerKey) ?? false;
     _colorScaffold = prefs.getBool(_colorScaffoldKey) ?? false;
+    _instrument =
+        Instrument.values.asNameMap()[prefs.getString(_instrumentKey)] ??
+            Instrument.piano;
     notifyListeners();
   }
 
@@ -71,5 +80,12 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_colorScaffoldKey, value);
+  }
+
+  Future<void> setInstrument(Instrument instrument) async {
+    _instrument = instrument;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_instrumentKey, instrument.name);
   }
 }

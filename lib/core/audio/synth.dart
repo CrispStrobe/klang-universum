@@ -16,14 +16,63 @@ typedef Segment = ({List<double> freqs, int ms});
 
 double midiToFrequency(int midi) => 440.0 * pow(2.0, (midi - 69) / 12.0);
 
-/// Relative amplitudes of the harmonics (fundamental first).
-const _harmonics = [1.0, 0.45, 0.22, 0.1, 0.05];
+/// A selectable instrument voice.
+enum Instrument { piano, cello, flute, musicBox }
+
+/// A timbre: the relative amplitudes of the harmonics, the attack time, and how
+/// fast the note decays over its segment (small = sustained, large = plucked).
+class Timbre {
+  const Timbre({
+    required this.harmonics,
+    required this.attackMs,
+    required this.decay,
+  });
+
+  final List<double> harmonics;
+  final double attackMs;
+  final double decay;
+}
+
+const _timbres = <Instrument, Timbre>{
+  // Piano-ish: the original bright, decaying voice.
+  Instrument.piano: Timbre(
+    harmonics: [1.0, 0.45, 0.22, 0.1, 0.05],
+    attackMs: 8,
+    decay: 3.0,
+  ),
+  // Cello: reedy upper harmonics, a slower bow attack, and a sustained tone.
+  Instrument.cello: Timbre(
+    harmonics: [1.0, 0.6, 0.45, 0.32, 0.22, 0.16, 0.1],
+    attackMs: 45,
+    decay: 0.9,
+  ),
+  // Flute: almost pure, soft, sustained.
+  Instrument.flute: Timbre(
+    harmonics: [1.0, 0.18, 0.06, 0.02],
+    attackMs: 35,
+    decay: 1.1,
+  ),
+  // Music box: bright and bell-like, fast decay.
+  Instrument.musicBox: Timbre(
+    harmonics: [1.0, 0.3, 0.55, 0.2, 0.35, 0.12],
+    attackMs: 2,
+    decay: 6.0,
+  ),
+};
+
+/// The timbre for [instrument].
+Timbre timbreFor(Instrument instrument) => _timbres[instrument]!;
 
 /// Renders [segments] back-to-back into normalized PCM16 samples.
 Int16List renderSegments(
   List<Segment> segments, {
   int sampleRate = kSampleRate,
+  Timbre? timbre,
 }) {
+  final voice = timbre ?? _timbres[Instrument.piano]!;
+  final harmonics = voice.harmonics;
+  final attackSec = voice.attackMs / 1000;
+  final decay = voice.decay;
   final totalSamples = segments.fold<int>(
     0,
     (sum, s) => sum + (s.ms * sampleRate) ~/ 1000,
@@ -36,13 +85,13 @@ Int16List renderSegments(
     final seconds = segment.ms / 1000;
     for (var i = 0; i < n; i++) {
       final t = i / sampleRate;
-      // Fast attack (8 ms), exponential decay over the segment.
-      final attack = t < 0.008 ? t / 0.008 : 1.0;
-      final envelope = attack * exp(-3.0 * t / seconds);
+      // Instrument-specific attack, exponential decay over the segment.
+      final attack = t < attackSec ? t / attackSec : 1.0;
+      final envelope = attack * exp(-decay * t / seconds);
       var sample = 0.0;
       for (final freq in segment.freqs) {
-        for (var h = 0; h < _harmonics.length; h++) {
-          sample += _harmonics[h] * sin(2 * pi * freq * (h + 1) * t);
+        for (var h = 0; h < harmonics.length; h++) {
+          sample += harmonics[h] * sin(2 * pi * freq * (h + 1) * t);
         }
       }
       buffer[offset + i] = sample * envelope;
@@ -94,8 +143,8 @@ Uint8List wavBytes(Int16List samples, {int sampleRate = kSampleRate}) {
 }
 
 /// Convenience: render [segments] straight to WAV bytes.
-Uint8List renderWav(List<Segment> segments) =>
-    wavBytes(renderSegments(segments));
+Uint8List renderWav(List<Segment> segments, {Timbre? timbre}) =>
+    wavBytes(renderSegments(segments, timbre: timbre));
 
 // --- Retro game SFX (CrispFXR-style: square waves, pitch sweeps) ---
 //

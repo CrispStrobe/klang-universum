@@ -120,6 +120,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get systemDefault => 'Systemstandard';
 
   @override
+  String get instrumentLabel => 'Instrumentenklang';
+
+  @override
+  String get instrumentPiano => 'Klavier';
+
+  @override
+  String get instrumentCello => 'Cello';
+
+  @override
+  String get instrumentFlute => 'Flöte';
+
+  @override
+  String get instrumentMusicBox => 'Spieluhr';
+
+  @override
   String get noteNamingLabel => 'Notennamen';
 
   @override
