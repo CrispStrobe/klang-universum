@@ -7,6 +7,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
+import 'package:klang_universum/core/tuning.dart';
 
 /// A reading exactly on [midi], [cents] off.
 PitchReading _reading(int midi, {double cents = 0}) {
@@ -105,6 +106,21 @@ void main() {
           : _reading(active.note.midi - 12),
     );
     expect(engine.hits, 0);
+  });
+
+  test('a perfect run earns 3 stars, a total miss earns 0', () {
+    final perfect = _run(
+      PlayAlongCharts.celloFirstPosition,
+      (active) =>
+          active == null ? PitchReading.silent() : _reading(active.note.midi),
+    );
+    expect(scoreToStars('cello_play_along', perfect.hits, perfect.hits > 0), 3);
+
+    final silent = _run(
+      PlayAlongCharts.celloFirstPosition,
+      (_) => PitchReading.silent(),
+    );
+    expect(scoreToStars('cello_play_along', silent.hits, silent.hits > 0), 0);
   });
 
   test('counts in before the first note', () {

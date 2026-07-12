@@ -537,6 +537,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (ctx) => PlayAlongScreen(
         chart: PlayAlongCharts.celloFirstPosition,
         title: AppLocalizations.of(ctx)!.gamePlayAlong,
+        gameId: 'cello_play_along',
       ),
     ),
     GameInfo(
@@ -614,6 +615,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (ctx) => PlayAlongScreen(
         chart: PlayAlongCharts.twinkleSing,
         title: AppLocalizations.of(ctx)!.gameSingAlong,
+        gameId: 'sing_along',
       ),
     ),
     GameInfo(

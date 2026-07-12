@@ -19,6 +19,9 @@ import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -43,10 +46,14 @@ class PlayAlongScreen extends StatefulWidget {
     super.key,
     required this.chart,
     required this.title,
+    required this.gameId,
   });
 
   final PlayAlongChart chart;
   final String title;
+
+  /// Key into [kStarThresholds] and [ProgressService] (e.g. 'cello_play_along').
+  final String gameId;
 
   @override
   State<PlayAlongScreen> createState() => _PlayAlongScreenState();
@@ -61,6 +68,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
 
   PitchReading _latest = PitchReading.silent();
   bool _running = false;
+  bool _finished = false;
   ({PitchCaptureError reason, String? detail})? _error;
 
   @override
@@ -85,15 +93,27 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       reading: _latest,
     );
     if (_engine.finished) {
-      _stop();
+      _finish();
     } else {
       setState(() {});
     }
   }
 
+  void _finish() {
+    // Record the run so play/sing-along count toward stars like other games.
+    context.read<ProgressService>().recordResult(
+          widget.gameId,
+          score: _engine.hits,
+          stars: scoreToStars(widget.gameId, _engine.hits, _engine.hits > 0),
+        );
+    _stop();
+    if (mounted) setState(() => _finished = true);
+  }
+
   Future<void> _start() async {
     setState(() {
       _error = null;
+      _finished = false;
       _engine = PlayAlongEngine(widget.chart);
     });
     try {
@@ -155,83 +175,92 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: _finished
+            ? GameResultView(
+                gameType: widget.gameId,
+                score: _engine.hits,
+                onRestart: _start,
+              )
+            : Column(
                 children: [
-                  _stat(
-                    context,
-                    l.playAlongScore,
-                    '${_engine.hits}/${_engine.notes.length}',
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _stat(
+                          context,
+                          l.playAlongScore,
+                          '${_engine.hits}/${_engine.notes.length}',
+                        ),
+                        _stat(
+                          context,
+                          l.playAlongNow,
+                          _running
+                              ? (_engine.inCountIn
+                                  ? l.playAlongCountIn
+                                  : (active != null
+                                      ? _midiName(active.note.midi)
+                                      : '—'))
+                              : '—',
+                        ),
+                        _stat(
+                          context,
+                          l.playAlongYou,
+                          _latest.hasPitch ? _latest.noteName : '—',
+                        ),
+                      ],
+                    ),
                   ),
-                  _stat(
-                    context,
-                    l.playAlongNow,
-                    _running
-                        ? (_engine.inCountIn
-                            ? l.playAlongCountIn
-                            : (active != null
-                                ? _midiName(active.note.midi)
-                                : '—'))
-                        : '—',
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: CustomPaint(
+                        painter: _HighwayPainter(
+                          engine: _engine,
+                          liveMidi: liveMidi,
+                          onPitch: active != null &&
+                              _latest.hasPitch &&
+                              _latest.cents.abs() <= _engine.centsTolerance &&
+                              (widget.chart.octaveAgnostic
+                                  ? _latest.nearestMidi % 12 ==
+                                      active.note.midi % 12
+                                  : _latest.nearestMidi == active.note.midi),
+                          scheme: scheme,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
                   ),
-                  _stat(
-                    context,
-                    l.playAlongYou,
-                    _latest.hasPitch ? _latest.noteName : '—',
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(
+                        _errorText(l),
+                        style: TextStyle(color: scheme.error),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _running ? null : _preview,
+                          icon: const Icon(Icons.volume_up),
+                          label: Text(l.playAlongPreview),
+                        ),
+                        const SizedBox(width: 12),
+                        FilledButton.icon(
+                          onPressed: _running ? _stop : _start,
+                          icon: Icon(_running ? Icons.stop : Icons.play_arrow),
+                          label: Text(_running ? l.micStop : widget.title),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: CustomPaint(
-                  painter: _HighwayPainter(
-                    engine: _engine,
-                    liveMidi: liveMidi,
-                    onPitch: active != null &&
-                        _latest.hasPitch &&
-                        _latest.cents.abs() <= _engine.centsTolerance &&
-                        (widget.chart.octaveAgnostic
-                            ? _latest.nearestMidi % 12 == active.note.midi % 12
-                            : _latest.nearestMidi == active.note.midi),
-                    scheme: scheme,
-                  ),
-                  child: const SizedBox.expand(),
-                ),
-              ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child:
-                    Text(_errorText(l), style: TextStyle(color: scheme.error)),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _running ? null : _preview,
-                    icon: const Icon(Icons.volume_up),
-                    label: Text(l.playAlongPreview),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    onPressed: _running ? _stop : _start,
-                    icon: Icon(_running ? Icons.stop : Icons.play_arrow),
-                    label: Text(_running ? l.micStop : widget.title),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

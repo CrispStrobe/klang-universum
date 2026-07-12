@@ -128,6 +128,9 @@ const Map<String, List<int>> kStarThresholds = {
   'beat_runner': [100, 240, 400],
   'cello_string_quiz': [100, 600, 900],
   'cello_finger_quiz': [100, 600, 900],
+  // Play/sing-along: score = notes hit. Cello walk has 9 notes, Twinkle 14.
+  'cello_play_along': [1, 6, 9],
+  'sing_along': [1, 9, 13],
   'guitar_string_quiz': [100, 600, 900],
   'guitar_tab_read': [100, 600, 900],
   'key_find': [100, 600, 900],
