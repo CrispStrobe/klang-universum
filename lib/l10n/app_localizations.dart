@@ -764,6 +764,12 @@ abstract class AppLocalizations {
   /// **'Import as MusicXML'**
   String get importAsMusicXml;
 
+  /// No description provided for @importAsAbc.
+  ///
+  /// In en, this message translates to:
+  /// **'Import as ABC'**
+  String get importAsAbc;
+
   /// No description provided for @importAsChordPro.
   ///
   /// In en, this message translates to:
@@ -1699,6 +1705,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Swipe across the strings to strum, or tap one to pluck.'**
   String get strumToyHint;
+
+  /// No description provided for @gameNameThatChord.
+  ///
+  /// In en, this message translates to:
+  /// **'Name That Chord'**
+  String get gameNameThatChord;
+
+  /// No description provided for @gameNameThatChordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read or hear a chord, pick its symbol'**
+  String get gameNameThatChordSubtitle;
+
+  /// No description provided for @nameThatChordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which chord is this?'**
+  String get nameThatChordPrompt;
 
   /// No description provided for @clefBass.
   ///

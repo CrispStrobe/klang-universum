@@ -379,6 +379,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get importAsMusicXml => 'Als MusicXML importieren';
 
   @override
+  String get importAsAbc => 'Als ABC importieren';
+
+  @override
   String get importAsChordPro => 'Als ChordPro importieren';
 
   @override
@@ -909,6 +912,16 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get strumToyHint =>
       'Wische über die Saiten zum Schrammeln oder tippe eine zum Zupfen.';
+
+  @override
+  String get gameNameThatChord => 'Akkord benennen';
+
+  @override
+  String get gameNameThatChordSubtitle =>
+      'Lies oder höre einen Akkord, wähle sein Symbol';
+
+  @override
+  String get nameThatChordPrompt => 'Welcher Akkord ist das?';
 
   @override
   String get clefBass => 'Bassschlüssel';

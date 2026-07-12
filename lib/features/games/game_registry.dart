@@ -11,6 +11,7 @@ import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.da
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ear_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ladder_screen.dart';
+import 'package:klang_universum/features/games/chords/name_that_chord_screen.dart';
 import 'package:klang_universum/features/games/chords/triad_builder_screen.dart';
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
@@ -407,6 +408,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameIntervalLadder,
       subtitle: (l) => l.gameIntervalLadderSubtitle,
       builder: (_) => const IntervalLadderScreen(),
+    ),
+    GameInfo(
+      id: 'name_that_chord',
+      icon: Icons.abc,
+      title: (l) => l.gameNameThatChord,
+      subtitle: (l) => l.gameNameThatChordSubtitle,
+      builder: (_) => const NameThatChordScreen(),
     ),
   ],
   'harmony': [

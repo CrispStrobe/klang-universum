@@ -137,6 +137,21 @@ per-game `unlockedWhen` gate on `GameInfo`).
   The **symbol↔meaning** column ships as **Connect the Symbols** (Notenwerte,
   `note_values.symbol.*`) — same engine, a `mode` flag.
 
+## Partitura-powered — shipped
+
+Games built on partitura capabilities the app didn't use before.
+
+- **Name That Chord** (chords) — read or hear a chord and pick its symbol; the
+  answer is graded by partitura's `identifyChord`, so it names quality **and**
+  inversion. Roots C–A (no accidental in the symbol); major/minor root position
+  for beginners, diminished/augmented and slash-chord inversions (C/E) at 2★.
+  Renders the chord as a block on the staff, replay button, keyboard 1–4. SRI
+  `chords.name.<root>_<type>`.
+- **ABC import** (Song Book) — the importer takes pasted **ABC notation**
+  (`scoreFromAbc`) alongside MusicXML / ChordPro / MIDI, stored as MusicXML like
+  the rest. Opens the large public-domain ABC folk-tune libraries; the tune's
+  `T:` line seeds the title.
+
 ## Toy-inspired mechanics — shipped
 
 - **Strum Toy** (guitar corner) — a free, no-scoring jam: pick an open chord

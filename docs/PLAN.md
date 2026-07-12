@@ -63,14 +63,17 @@ capabilities and what they unlock:
   `showMeasureNumbers`). Replace our external note-name/colour scaffold with a
   *native fading scaffold* (names on the staff at level 1, gone by 3★), and a
   **rhythm-counting game** that shows "1 & 2 &" under the notes.
-- **ABC notation import/export** (`scoreToAbc`, ABC reader). **Import the huge
-  public-domain ABC folk-tune libraries into the Song Book** (massive content
-  win), add an **ABC export** in the Workshop/My Melody, and a tiny "type-a-tune"
-  advanced mode.
-- **Chord identification** (`identifyChord`, `chordSymbolFor`). A **"Name that
-  Chord"** game auto-graded for root/quality/**inversion & 7ths**; **auto-grade
-  any built chord** in Triad Builder / Chord Grip Hero (not just root position);
-  show chord symbols over the Song Book.
+- **ABC notation import/export** (`scoreToAbc`, ABC reader). **ABC import is
+  shipped** — paste an ABC tune in the Song Book importer and it parses via
+  `scoreFromAbc`, stored as MusicXML like everything else, opening the huge
+  public-domain ABC folk-tune libraries. Still open: **ABC export** in the
+  Workshop/My Melody, and a "type-a-tune" mode.
+- **Chord identification** (`identifyChord`, `chordSymbolFor`). **Name That
+  Chord** is shipped ([HISTORY.md](HISTORY.md#partitura-powered--shipped)) —
+  auto-graded via `identifyChord`, root position for beginners and dim/aug +
+  slash-chord inversions at 2★. Still open: auto-grade any built chord in Triad
+  Builder / Chord Grip Hero (not just root position), and chord symbols over the
+  Song Book.
 - **`StaffSystemView`** (N-staff systems). Duet/ensemble reading, a richer Grand
   Staff, SATB chorale reading.
 - **Transposing instruments + concert-pitch toggle.** A **transposing-instrument

@@ -5,7 +5,7 @@ import 'package:klang_universum/features/games/songs/import/chordpro.dart';
 import 'package:klang_universum/features/games/songs/import/midi_import.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
 import 'package:partitura/partitura.dart'
-    show NoteElement, scoreFromMusicXml, scoreToMusicXml;
+    show NoteElement, scoreFromAbc, scoreFromMusicXml, scoreToMusicXml;
 
 void main() {
   group('ChordPro', () {
@@ -35,6 +35,26 @@ schwimmen auf dem [C]See
       expect(chordMidis('F7'), [65, 69, 72]); // reduced to the F triad
       expect(chordMidis('Bb'), [70, 74, 77]);
       expect(chordMidis('??'), isNull);
+    });
+  });
+
+  group('ABC import', () {
+    test('parses a simple tune and round-trips through the stored MusicXML',
+        () {
+      const abc = '''
+X:1
+T:Test Tune
+M:4/4
+L:1/4
+K:C
+C D E F | G A B c |
+''';
+      final score = scoreFromAbc(abc);
+      expect(score.measures.length, greaterThanOrEqualTo(2));
+
+      // The Song Book stores imports as MusicXML; re-parsing must still work.
+      final xml = scoreToMusicXml(score, partName: 'Test Tune');
+      expect(scoreFromMusicXml(xml).measures, isNotEmpty);
     });
   });
 

@@ -11,7 +11,7 @@ import 'package:klang_universum/features/games/songs/import/midi_import.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart'
-    show scoreFromMusicXml, scoreToMusicXml;
+    show scoreFromAbc, scoreFromMusicXml, scoreToMusicXml;
 import 'package:provider/provider.dart';
 
 class ImportScreen extends StatefulWidget {
@@ -97,6 +97,36 @@ class _ImportScreenState extends State<ImportScreen> {
       _done();
     } catch (e) {
       if (mounted) _fail(e);
+    }
+  }
+
+  String _abcTitle(String abc) {
+    final typed = _title.text.trim();
+    if (typed.isNotEmpty) return typed;
+    final t = RegExp(r'^T:\s*(.+)$', multiLine: true)
+        .firstMatch(abc)
+        ?.group(1)
+        ?.trim();
+    return (t != null && t.isNotEmpty) ? t : 'ABC';
+  }
+
+  // ABC is a compact text notation used by huge public-domain tune libraries.
+  // Parse it to a Score (partitura), then store it as MusicXML like the rest.
+  void _importAbc() {
+    try {
+      final abc = _text.text.trim();
+      final score = scoreFromAbc(abc); // parse + validate
+      final title = _abcTitle(abc);
+      context.read<UserSongsService>().addSong(
+            ImportedSong(
+              id: _newId(),
+              title: title,
+              musicXml: scoreToMusicXml(score, partName: title),
+            ),
+          );
+      _done();
+    } catch (e) {
+      _fail(e);
     }
   }
 
@@ -195,6 +225,11 @@ class _ImportScreenState extends State<ImportScreen> {
                     onPressed: _importMusicXml,
                     icon: const Icon(Icons.library_music),
                     label: Text(l10n.importAsMusicXml),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: _importAbc,
+                    icon: const Icon(Icons.abc),
+                    label: Text(l10n.importAsAbc),
                   ),
                   FilledButton.tonalIcon(
                     onPressed: _importChordPro,
