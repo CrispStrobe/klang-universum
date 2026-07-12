@@ -799,6 +799,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tap the notes from lowest to highest';
 
   @override
+  String get gameOddOneOut => 'Odd One Out';
+
+  @override
+  String get gameOddOneOutSubtitle =>
+      'Two notes share a name — tap the odd one';
+
+  @override
+  String get oddOneOutPrompt => 'Which note is the odd one out?';
+
+  @override
+  String get oddOneOutHint =>
+      'Two notes have the same letter name. Tap the different one!';
+
+  @override
   String get clefBass => 'Bass clef';
 
   @override

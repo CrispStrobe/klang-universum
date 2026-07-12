@@ -178,9 +178,6 @@ Shipped: Ledger Leap, Key Detective
 - [ ] **Note Whack** — whack-a-mole: noteheads pop up around the staff, a target
   name is called, tap the matching one before it ducks. Reading under gentle
   reaction pressure; reuses the reading pools. SRI `note_reading.*`. *S–M · ♪♪♪.*
-- [ ] **Odd One Out** — three notes/chords (heard or shown); one is different (out of
-  key, wrong quality, higher). Tap it. A discrimination drill that plugs into every
-  module (reading, chords, scales). *S · ♪♪.*
 - [ ] **Interval Ladder** — climb a ladder: from the current note, pick the note a
   called interval above/below (on the staff or by ear). Interval *construction*, not
   just recognition. SRI `chords.interval.build`. *S–M · ♪♪.*

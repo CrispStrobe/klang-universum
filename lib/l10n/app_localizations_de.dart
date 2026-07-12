@@ -805,6 +805,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tippe die Noten von tief nach hoch';
 
   @override
+  String get gameOddOneOut => 'Wer passt nicht?';
+
+  @override
+  String get gameOddOneOutSubtitle =>
+      'Zwei Noten heißen gleich — tippe die andere';
+
+  @override
+  String get oddOneOutPrompt => 'Welche Note passt nicht dazu?';
+
+  @override
+  String get oddOneOutHint =>
+      'Zwei Noten haben denselben Notennamen. Tippe die andere!';
+
+  @override
   String get clefBass => 'Bassschlüssel';
 
   @override

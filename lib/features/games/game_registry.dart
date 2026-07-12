@@ -37,6 +37,7 @@ import 'package:klang_universum/features/games/note_reading/melody_echo_screen.d
 import 'package:klang_universum/features/games/note_reading/note_memory_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_order_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_reading/odd_one_out_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
@@ -211,6 +212,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameLedgerLeapSubtitle,
       builder: (_) => const LedgerLeapScreen(),
     ),
+    GameInfo(
+      id: 'odd_one_out',
+      icon: Icons.filter_2,
+      title: (l) => l.gameOddOneOut,
+      subtitle: (l) => l.gameOddOneOutSubtitle,
+      builder: (_) => const OddOneOutScreen(),
+    ),
     // Bass-clef variants of the reading games (violin/treble + bass).
     GameInfo(
       id: 'line_space_bass',
@@ -239,6 +247,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameConnectLine} — ${l.clefBass}',
       subtitle: (l) => l.gameConnectLineSubtitle,
       builder: (_) => const ConnectLineScreen(clef: Clef.bass),
+    ),
+    GameInfo(
+      id: 'odd_one_out_bass',
+      icon: Icons.filter_2,
+      title: (l) => '${l.gameOddOneOut} — ${l.clefBass}',
+      subtitle: (l) => l.gameOddOneOutSubtitle,
+      builder: (_) => const OddOneOutScreen(clef: Clef.bass),
     ),
   ],
   'measures': [

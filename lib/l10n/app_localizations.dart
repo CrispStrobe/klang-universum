@@ -1508,6 +1508,30 @@ abstract class AppLocalizations {
   /// **'Tap the notes from lowest to highest'**
   String get gameNoteOrderSubtitle;
 
+  /// No description provided for @gameOddOneOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Odd One Out'**
+  String get gameOddOneOut;
+
+  /// No description provided for @gameOddOneOutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two notes share a name — tap the odd one'**
+  String get gameOddOneOutSubtitle;
+
+  /// No description provided for @oddOneOutPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which note is the odd one out?'**
+  String get oddOneOutPrompt;
+
+  /// No description provided for @oddOneOutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Two notes have the same letter name. Tap the different one!'**
+  String get oddOneOutHint;
+
   /// No description provided for @clefBass.
   ///
   /// In en, this message translates to:

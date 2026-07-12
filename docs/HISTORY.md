@@ -151,6 +151,13 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 ## Original concepts — shipped
 
+- **Odd One Out** (note reading) — three note cards; two share the same letter
+  name at different octaves, one is a different letter. Tap the odd one out — a
+  discrimination drill that trains rapid name-reading, not just notehead
+  matching. Star-gated octave range (staff → ledger), colour-scaffold aware,
+  number-key control, reacting mascot; treble + bass variants. Feeds the shared
+  `note_reading.<clef>.*` pool on the odd note. *(Extends to chord-quality and
+  scale-degree "odd one out" by ear.)*
 - **Ledger Leap** (note reading) — a note sits exactly on the Nth ledger line
   (never a space, so the count is unambiguous); tap 1 / 2 / 3. Star-gated
   (treble/middle-C region first; +bass, above, 3 lines at 2★). A correct count
