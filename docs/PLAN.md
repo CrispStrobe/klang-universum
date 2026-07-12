@@ -37,6 +37,13 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 | 9 | **Liederbuch** (real songs) | `songs.tune` | Song Book — public-domain children's songs (5: Alle meine Entchen, Hänschen klein, Twinkle, Mary Had a Little Lamb, Old MacDonald) as real notation with lyrics (partitura v0.4 MultiSystemView + lyrics), synth playback with a karaoke cursor, tap any note to hear it • Name That Tune (ear) • **Import**: MusicXML (paste **or file pick**, via partitura v0.5), ChordPro chord sheets (own parser; tappable chord chips play triads), simple monophonic MIDI (own SMF parser + sixteenth quantization; persisted as MusicXML) • *out of scope: polyphonic MIDI (transcription problem)* | 2 built + import |
 | 10 | **Komponieren** | `composition.closure`, `composition.answer` | Ending Detective (does it sound finished?) • Question & Answer (antecedent/consequent) • My Melody (free-composition sandbox, no scoring; enter notes by tapping the **staff, a piano, a guitar fretboard, or a cello fingerboard**; **saves to the Song Book as MusicXML** via partitura's writer — opens in MuseScore & co.) • *later: melody completion with choices, cadence-based accompaniment* | 3 built |
 
+**Workshop** (a section *outside* the minigames, reached from the home bar): the
+**Composition Workshop** — a small real score editor. Pick a time signature
+(2/4 · 3/4 · 4/4, bar-lines drawn automatically), pick a note value
+(whole/half/quarter/eighth), tap the staff to write, tap a note to select it and
+re-pitch or delete it, hear it back with real durations, and save to the Song
+Book as MusicXML. The Capella-like grown-up sibling of the My Melody sandbox.
+
 **Instrument corners** are the modular-extension pattern proven by the
 cello module: a data table (string/finger map), instrument-specific games
 reusing the shared machinery, and the right clefs (tenor for cello — the

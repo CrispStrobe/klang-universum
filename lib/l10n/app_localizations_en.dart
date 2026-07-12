@@ -120,6 +120,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get systemDefault => 'System default';
 
   @override
+  String get workshopTitle => 'Workshop';
+
+  @override
+  String get workshopComposeTitle => 'Composition Workshop';
+
+  @override
+  String get workshopTimeSignature => 'Time';
+
+  @override
+  String get workshopHint =>
+      'Pick a note value, then tap the staff to write your tune.';
+
+  @override
+  String get workshopEditHint =>
+      'Tap the staff to move this note, or Delete it.';
+
+  @override
+  String get workshopDelete => 'Delete';
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override

@@ -21,6 +21,7 @@ import 'package:klang_universum/features/games/scales/scale_detective_screen.dar
 import 'package:klang_universum/features/games/screens/module_screen.dart';
 import 'package:klang_universum/features/progress/screens/progress_screen.dart';
 import 'package:klang_universum/features/settings/screens/settings_screen.dart';
+import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' show Clef;
 import 'package:provider/provider.dart';
@@ -148,6 +149,15 @@ class HomeScreen extends StatelessWidget {
         title: const _DebugTapTitle(),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.piano),
+            tooltip: l10n.workshopTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const CompositionWorkshopScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: l10n.progressTitle,

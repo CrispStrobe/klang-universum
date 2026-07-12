@@ -284,6 +284,42 @@ abstract class AppLocalizations {
   /// **'System default'**
   String get systemDefault;
 
+  /// No description provided for @workshopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workshop'**
+  String get workshopTitle;
+
+  /// No description provided for @workshopComposeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Composition Workshop'**
+  String get workshopComposeTitle;
+
+  /// No description provided for @workshopTimeSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get workshopTimeSignature;
+
+  /// No description provided for @workshopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a note value, then tap the staff to write your tune.'**
+  String get workshopHint;
+
+  /// No description provided for @workshopEditHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the staff to move this note, or Delete it.'**
+  String get workshopEditHint;
+
+  /// No description provided for @workshopDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get workshopDelete;
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:

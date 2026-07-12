@@ -120,6 +120,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get systemDefault => 'Systemstandard';
 
   @override
+  String get workshopTitle => 'Werkstatt';
+
+  @override
+  String get workshopComposeTitle => 'Kompositions-Werkstatt';
+
+  @override
+  String get workshopTimeSignature => 'Takt';
+
+  @override
+  String get workshopHint =>
+      'Wähle einen Notenwert und tippe ins System, um deine Melodie zu schreiben.';
+
+  @override
+  String get workshopEditHint =>
+      'Tippe ins System, um die Note zu verschieben, oder lösche sie.';
+
+  @override
+  String get workshopDelete => 'Löschen';
+
+  @override
   String get instrumentLabel => 'Instrumentenklang';
 
   @override
