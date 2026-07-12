@@ -508,5 +508,8 @@
       }
     }
   },
-  "chordListenerHeard": "Gehörte Tonklassen"
+  "chordListenerHeard": "Gehörte Tonklassen",
+  "aboutTitle": "Über",
+  "aboutSubtitle": "Version, Lizenzen und Danksagungen",
+  "appLegalese": "© 2026 Christian Ströbele"
 }

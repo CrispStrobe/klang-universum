@@ -714,5 +714,8 @@
       }
     }
   },
-  "chordListenerHeard": "Heard pitch classes"
+  "chordListenerHeard": "Heard pitch classes",
+  "aboutTitle": "About",
+  "aboutSubtitle": "Version, licenses and credits",
+  "appLegalese": "© 2026 Christian Ströbele"
 }

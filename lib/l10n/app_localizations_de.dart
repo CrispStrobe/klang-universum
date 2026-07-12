@@ -1491,4 +1491,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get chordListenerHeard => 'Gehörte Tonklassen';
+
+  @override
+  String get aboutTitle => 'Über';
+
+  @override
+  String get aboutSubtitle => 'Version, Lizenzen und Danksagungen';
+
+  @override
+  String get appLegalese => '© 2026 Christian Ströbele';
 }

@@ -1484,4 +1484,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chordListenerHeard => 'Heard pitch classes';
+
+  @override
+  String get aboutTitle => 'About';
+
+  @override
+  String get aboutSubtitle => 'Version, licenses and credits';
+
+  @override
+  String get appLegalese => '© 2026 Christian Ströbele';
 }

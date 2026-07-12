@@ -2731,6 +2731,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Heard pitch classes'**
   String get chordListenerHeard;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get aboutTitle;
+
+  /// No description provided for @aboutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Version, licenses and credits'**
+  String get aboutSubtitle;
+
+  /// No description provided for @appLegalese.
+  ///
+  /// In en, this message translates to:
+  /// **'© 2026 Christian Ströbele'**
+  String get appLegalese;
 }
 
 class _AppLocalizationsDelegate
