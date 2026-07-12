@@ -12,11 +12,11 @@
 // and a user gesture before the mic will open.
 
 import 'dart:async';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:klang_universum/core/audio/chroma_analysis.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
+import 'package:klang_universum/core/audio/streaming_analyzer.dart';
 import 'package:record/record.dart';
 
 /// Why a capture session failed to start — surfaced to the UI so it can show
@@ -61,14 +61,12 @@ class MicrophonePitchService {
       StreamController<ChordReading>.broadcast();
   StreamSubscription<Uint8List>? _chunkSub;
 
-  /// Rolling analysis buffer (mono floats). We run the detector(s) on a sliding
-  /// window and advance by [_hop] each time, so the meter updates several times
-  /// per window rather than once. The window fits whichever detector needs the
-  /// most samples (chord matching wants a larger FFT window than pitch).
-  late final int _windowSize =
-      max(detector.windowSize, chordDetector?.windowSize ?? 0);
-  late final int _hop = _windowSize ~/ 2;
-  final List<double> _buffer = <double>[];
+  /// The pure-Dart windowing/analysis core, shared with the CLI. It slides the
+  /// analysis window across the PCM stream and yields a frame per window.
+  late final StreamingAudioAnalyzer _analyzer = StreamingAudioAnalyzer(
+    detector: detector,
+    chordDetector: chordDetector,
+  );
 
   bool _running = false;
 
@@ -117,7 +115,7 @@ class MicrophonePitchService {
       throw PitchCaptureException(PitchCaptureError.unknown, '$e');
     }
 
-    _buffer.clear();
+    _analyzer.reset();
     _running = true;
     _chunkSub = pcm.listen(
       _onChunk,
@@ -127,20 +125,10 @@ class MicrophonePitchService {
   }
 
   void _onChunk(Uint8List bytes) {
-    final floats = pcm16ToFloat(bytes);
-    _buffer.addAll(floats);
-
-    while (_buffer.length >= _windowSize) {
-      final window = Float64List(_windowSize);
-      for (var i = 0; i < _windowSize; i++) {
-        window[i] = _buffer[i];
-      }
-      if (!_readings.isClosed) _readings.add(detector.analyze(window));
-      final chord = chordDetector;
-      if (chord != null && !_chords.isClosed) {
-        _chords.add(chord.analyze(window));
-      }
-      _buffer.removeRange(0, _hop);
+    for (final frame in _analyzer.addPcm16(bytes)) {
+      if (!_readings.isClosed) _readings.add(frame.pitch);
+      final chord = frame.chord;
+      if (chord != null && !_chords.isClosed) _chords.add(chord);
     }
   }
 
@@ -149,7 +137,7 @@ class MicrophonePitchService {
     _running = false;
     await _chunkSub?.cancel();
     _chunkSub = null;
-    _buffer.clear();
+    _analyzer.clearBuffer();
     if (await _recorder.isRecording()) {
       await _recorder.stop();
     }
