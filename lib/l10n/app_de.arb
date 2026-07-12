@@ -16,6 +16,7 @@
   "moduleHarmonySubtitle": "Tonika, Subdominante, Dominante",
   "comingSoon": "Kommt bald!",
   "locked": "Gesperrt",
+  "advancedGameHint": "Für Fortgeschrittene! Hol dir zuerst 2 Sterne in den anderen Cello-Ecke-Spielen.",
   "unlockHint": "Spiele zuerst {module}, um das freizuschalten!",
   "reviewTitle": "Wiederholen",
   "dueForReview": "{count, plural, =0{Nichts zu wiederholen} =1{1 Aufgabe zum Wiederholen} other{{count} Aufgaben zum Wiederholen}}",

@@ -194,6 +194,12 @@ abstract class AppLocalizations {
   /// **'Locked'**
   String get locked;
 
+  /// No description provided for @advancedGameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced! Earn 2 stars in the other Cello Corner games first.'**
+  String get advancedGameHint;
+
   /// No description provided for @unlockHint.
   ///
   /// In en, this message translates to:

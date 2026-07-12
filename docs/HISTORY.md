@@ -74,7 +74,9 @@ bass, own SRI + stars) · **keyboard control** app-wide (number keys select any
 answer grid; arrow keys drive Line or Space & the Conductor; space/enter the
 rhythm lane; C–B letter keys catch Falling Notes) · **Progress "tricky spots"**
 now shows every skill (coloured module icons, skill-typed labels), not just
-notes.
+notes · **Tenor Clef reading** is gated as an advanced unlock — the tile shows
+locked until the child has 2★ in both other Cello-Corner games (a general
+per-game `unlockedWhen` gate on `GameInfo`).
 
 ## Opportunity backlog — shipped
 

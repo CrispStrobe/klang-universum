@@ -5,6 +5,7 @@
 // scores, a bracket in core/tuning.dart's kStarThresholds.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
@@ -61,12 +62,22 @@ class GameInfo {
   final String Function(AppLocalizations) subtitle;
   final WidgetBuilder builder;
 
+  /// Optional advanced gate. When set and it returns `false`, the tile is
+  /// locked (dimmed, with a lock icon) until the child has progressed enough
+  /// in the prerequisite games. Null means always available.
+  final bool Function(ProgressService)? unlockedWhen;
+
+  /// Hint shown when [unlockedWhen] keeps the tile locked.
+  final String Function(AppLocalizations)? lockedHint;
+
   const GameInfo({
     required this.id,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.builder,
+    this.unlockedWhen,
+    this.lockedHint,
   });
 }
 
@@ -387,6 +398,12 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteReadingTenor,
       subtitle: (l) => l.gameNoteReadingSubtitle,
       builder: (_) => const NoteReadingQuizScreen(clef: Clef.tenor),
+      // Tenor clef is advanced for a young cellist — open it only once the
+      // string and finger basics are solid (upper levels only).
+      unlockedWhen: (p) =>
+          p.starsFor('cello_string_quiz') >= 2 &&
+          p.starsFor('cello_finger_quiz') >= 2,
+      lockedHint: (l) => l.advancedGameHint,
     ),
   ],
   'guitar': [

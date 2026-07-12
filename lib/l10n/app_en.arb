@@ -16,6 +16,7 @@
   "moduleHarmonySubtitle": "Tonic, subdominant, dominant",
   "comingSoon": "Coming soon!",
   "locked": "Locked",
+  "advancedGameHint": "Advanced! Earn 2 stars in the other Cello Corner games first.",
   "unlockHint": "Play {module} first to unlock this!",
   "@unlockHint": {
     "placeholders": {

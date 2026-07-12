@@ -65,12 +65,6 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 - Function Quiz: C/F/G major → all keys → minor keys (with harmonic-minor
   dominant) → hear the function (audio).
 
-## Open decisions
-
-- **Cello tenor-clef game** — tenor clef is unusual for a young cellist; decide
-  whether to keep the Tenor Clef reading game, remove it, or gate it as an
-  advanced (3★) unlock. Awaiting a call.
-
 ## Delivery
 
 - GitHub: `CrispStrobe/klang-universum` (app), `CrispStrobe/partitura` (lib).

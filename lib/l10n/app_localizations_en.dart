@@ -59,6 +59,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locked => 'Locked';
 
   @override
+  String get advancedGameHint =>
+      'Advanced! Earn 2 stars in the other Cello Corner games first.';
+
+  @override
   String unlockHint(String module) {
     return 'Play $module first to unlock this!';
   }

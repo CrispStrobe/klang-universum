@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/models/learning_module.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_first_position.dart';
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
+import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
+import 'package:klang_universum/features/games/screens/module_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart' hide Step;
 import 'package:provider/provider.dart';
@@ -88,5 +92,56 @@ void main() {
     await tester.pump();
     expect(sri.getDetailedBreakdown()['cello']!.keys, ['finger']);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('tenor clef stays locked until the cello basics are starred',
+      (tester) async {
+    final progress = ProgressService();
+    final cello = kLearningModules.firstWhere((m) => m.id == 'cello');
+
+    Widget wrap() => MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => SettingsService()),
+            ChangeNotifierProvider<SriService>.value(value: sri),
+            ChangeNotifierProvider(create: (_) => DebugService()),
+            Provider<AudioService>(create: (_) => AudioService()),
+            ChangeNotifierProvider<ProgressService>.value(value: progress),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('de')],
+            home: ModuleScreen(module: cello),
+          ),
+        );
+
+    await tester.pumpWidget(wrap());
+    await tester.pump();
+
+    // Locked: the advanced hint shows and a lock icon is on the tile.
+    expect(find.textContaining('Advanced'), findsOneWidget);
+    expect(find.byIcon(Icons.lock), findsWidgets);
+
+    // Tapping the locked tile only flashes the hint, never navigates.
+    await tester.tap(find.text('Tenor Clef'));
+    await tester.pump();
+    expect(find.byType(NoteReadingQuizScreen), findsNothing);
+
+    // Two stars in each basic cello game clears the gate.
+    progress.recordResult('cello_string_quiz', score: 100, stars: 2);
+    progress.recordResult('cello_finger_quiz', score: 100, stars: 2);
+    // Settle first so the earlier hint SnackBar has auto-dismissed.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.lock), findsNothing);
+
+    // Now the tile opens the tenor-clef reading game.
+    await tester.tap(find.text('Tenor Clef'));
+    await tester.pumpAndSettle();
+    expect(find.byType(NoteReadingQuizScreen), findsOneWidget);
   });
 }
