@@ -54,6 +54,7 @@ import 'package:klang_universum/features/games/note_reading/note_reading_quiz_sc
 import 'package:klang_universum/features/games/note_reading/note_snake_screen.dart';
 import 'package:klang_universum/features/games/note_reading/note_whack_screen.dart';
 import 'package:klang_universum/features/games/note_reading/odd_one_out_screen.dart';
+import 'package:klang_universum/features/games/note_reading/perform_it_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
@@ -260,6 +261,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameStaffRunner,
       subtitle: (l) => l.gameStaffRunnerSubtitle,
       builder: (_) => const StaffRunnerScreen(),
+    ),
+    GameInfo(
+      id: 'perform_read',
+      icon: Icons.mic,
+      title: (l) => l.gamePerformIt,
+      subtitle: (l) => l.gamePerformItSubtitle,
+      builder: (_) => const PerformItScreen(),
     ),
     GameInfo(
       id: 'note_snake',

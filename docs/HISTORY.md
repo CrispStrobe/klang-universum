@@ -65,6 +65,12 @@ plugins beyond capture.
   chord and it names the closest match with runner-up guesses and the 12-bin
   pitch-class profile it heard (chroma analysis — "name the chord" beats
   "transcribe every note").
+- **Perform It** (note reading) — mic-graded *reading*: a note is shown and the
+  child **plays or sings it** — the pitch detector verifies it (octave-agnostic,
+  held briefly to avoid false hits) instead of a letter tap. Live detected-note
+  readout, star-gated range, skip button, mic-permission handling; feeds the
+  shared `note_reading.<clef>.*` SM-2 pool. The kid-scale core of performance-
+  graded sight-reading.
 
 ## Curriculum (Lehrplan alignment)
 
