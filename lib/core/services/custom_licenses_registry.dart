@@ -1,49 +1,18 @@
 // lib/core/services/custom_licenses_registry.dart
 //
-// Idempotent registration of custom LicenseEntry items for bundled fonts that
-// Flutter's showLicensePage() would otherwise miss. The license page auto-
-// discovers the LICENSE file of each *pub package*, but a font shipped as an
-// *asset* (here: Bravura, bundled by the partitura package) is invisible to it
-// unless we register the license text ourselves via LicenseRegistry.addLicense.
+// Ensures asset-bundled font licenses appear on showLicensePage(). Flutter's
+// license page auto-discovers each *pub package*'s LICENSE file but not fonts
+// shipped as assets, so those must be registered via LicenseRegistry.addLicense.
 //
-// Call ensureCustomLicensesRegistered() before opening the About / license
-// page (see settings_screen.dart). Mirrors the pattern used in the sibling
-// apps (voc's custom_licenses_registry, CrisperWeaver's native_licenses).
+// The notation font (Bravura, OFL) is bundled by the partitura package, which
+// now owns its registration (partitura's MusicFonts.load calls it automatically
+// on first render). We call it here too so the license page is complete even if
+// opened from Settings before any notation has been rendered. Add any
+// app-specific bundled-font licenses here if this app ever bundles its own.
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:partitura/partitura.dart' show registerBundledFontLicenses;
 
-bool _registered = false;
-
-/// Register the SIL OFL for the fonts this app bundles. Safe to call repeatedly.
+/// Register the licenses for fonts this app (transitively) bundles. Idempotent.
 Future<void> ensureCustomLicensesRegistered() async {
-  if (_registered) return;
-  _registered = true;
-
-  try {
-    // OFL.txt ships inside the partitura package next to Bravura.otf and is
-    // declared as a loadable asset there, so we can read it by package path.
-    final ofl =
-        await rootBundle.loadString('packages/partitura/assets/fonts/OFL.txt');
-
-    LicenseRegistry.addLicense(
-      () => Stream<LicenseEntry>.fromIterable([
-        LicenseEntryWithLineBreaks(
-          const ['Bravura (SMuFL music font)'],
-          'Bravura — SMuFL-compliant music notation font\n'
-          'Copyright © Steinberg Media Technologies GmbH '
-          '(designed by Daniel Spreadbury)\n'
-          'Bundled via the partitura package.\n'
-          'License: SIL Open Font License, Version 1.1\n\n'
-          '------------------------------------------------------------\n\n'
-          '$ofl',
-        ),
-      ]),
-    );
-  } catch (e) {
-    // Don't let a missing/unreadable license file break the license page; the
-    // pub-package licenses still show.
-    _registered = false; // allow a retry on the next open
-    if (kDebugMode) debugPrint('Custom license registration failed: $e');
-  }
+  registerBundledFontLicenses(); // Bravura (SIL OFL 1.1), owned by partitura.
 }
