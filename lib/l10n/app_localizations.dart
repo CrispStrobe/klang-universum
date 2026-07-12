@@ -2072,6 +2072,36 @@ abstract class AppLocalizations {
   /// **'Name the highlighted note'**
   String get duetPrompt;
 
+  /// No description provided for @gamePerformIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Perform It'**
+  String get gamePerformIt;
+
+  /// No description provided for @gamePerformItSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play or sing the note you see'**
+  String get gamePerformItSubtitle;
+
+  /// No description provided for @performItPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Play or sing this note!'**
+  String get performItPrompt;
+
+  /// No description provided for @performItOnTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it!'**
+  String get performItOnTarget;
+
+  /// No description provided for @performItSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get performItSkip;
+
   /// No description provided for @moduleDrums.
   ///
   /// In en, this message translates to:

@@ -145,9 +145,10 @@ this repo; the notes below describe capability *categories*, not products.
   bilingual).
 - **Where we already lead** (rare among kids' apps): SM-2 spaced repetition,
   real four-clef notation, theory/harmony depth (T/S/D, cadences), a composition
-  sandbox with MusicXML export, and bilingual EN/DE.
-- **The one structural gap every strong rival has and we don't:** live
-  real-instrument input (mic pitch-detection / MIDI).
+  sandbox with MusicXML export, bilingual EN/DE — and now **live mic input**.
+- **The structural gap that used to set the strong rivals apart — live
+  real-instrument input — is now closed on the mic side** (play-along/sing-along,
+  tuner, chord listener; see HISTORY). MIDI input remains open.
 
 ### Opportunity backlog (implement top-to-bottom)
 
@@ -175,11 +176,35 @@ the app category the idea comes from. Shipped items live in
   Classroom). *(classroom notation/DAW platforms.) L · ♪♪.* Schools buy per-seat.
 
 **Big swings — category table-stakes, heavy lift**
-- [ ] Real-instrument input (mic / MIDI) — grade what the child actually plays;
-  scope as opt-in cello & piano corners. *(instrument-tutor + flashcard apps.) L · ♪♪.*
+- [x] Real-instrument input — **mic side shipped**: live pitch/chroma detection
+  powers **Play-along / Sing-along** (moving-score grading), a **Tuner**, and a
+  **Chord Listener** ([HISTORY.md](HISTORY.md#live-microphone--pitch-detection)).
+  *Open: MIDI input; wiring mic grading into more of the corners.*
 - [ ] Generative sight-reading + performance grading — endless non-repeating
   exercises scored for pitch & rhythm. *(generative sight-reading services.) L · ♪♪♪.*
-  Answers the teacher-reported material shortage directly.
+  Answers the teacher-reported material shortage directly. *(Staff Runner is the
+  kid-scale stepping stone; mic grading now exists to score the performance.)*
+
+### Live-mic follow-ups (the mic pipeline is shipped — exploit it)
+
+Now that live pitch/chroma detection, the `PlayAlongEngine`, and the moving-score
+UI exist, these are high value ÷ effort because the hard infra is done:
+
+- [x] **"Perform It" — mic-graded reading.** **Shipped**
+  ([HISTORY.md](HISTORY.md#live-microphone--pitch-detection)): a note is shown;
+  the child **plays or sings it** and the pitch detector verifies it
+  (octave-agnostic, sustained-match), instead of tapping a letter. Feeds the
+  shared `note_reading.<clef>.*` SM-2 pool. The kid-scale core of the
+  generative-sight-reading big swing.
+- [ ] **Sing-back ear training.** Hear a note/interval, sing it back, graded live
+  (octave-agnostic). Deepens ear training for kids without an instrument. *S–M · ♪♪♪.*
+- [ ] **Play-along for the Song Book.** Extend play/sing-along to the real
+  public-domain songs — play or sing Twinkle & co. against the moving score. *M · ♪♪.*
+- [ ] **Mic grading in the instrument corners.** "Play this note/string/finger"
+  verified by the mic across the cello / guitar / piano corners. *M · ♪♪.*
+- [ ] **Parent view + multi-child profiles.** *(kids' practice apps. M · ♪♪.)* A
+  parent dashboard over the curriculum **readiness** — each child's school-year
+  progress at a glance; per-child profiles. (Also listed under Strategic bets.)
 
 Caveats: competitor prices/age-ratings drift; some DACH adoption/award figures
 are self-reported — verify before external citation.

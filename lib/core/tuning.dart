@@ -106,6 +106,8 @@ const Map<String, List<int>> kStarThresholds = {
   'time_signature': [100, 600, 900],
   // Duet (read the highlighted part of a two-staff system): 10 rounds x 100.
   'duet': [100, 600, 900],
+  // Perform It (mic-graded reading): 8 notes x 10 performed; skips score 0.
+  'perform_read': [30, 60, 80],
   // Drum Read: ~12 notes x 10-20 (Perfect/Good); a clean run tops out near 200.
   'drum_read': [60, 140, 200],
   'line_space': [100, 600, 900],

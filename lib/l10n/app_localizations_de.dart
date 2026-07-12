@@ -1109,6 +1109,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get duetPrompt => 'Benenne die markierte Note';
 
   @override
+  String get gamePerformIt => 'Spiel es!';
+
+  @override
+  String get gamePerformItSubtitle =>
+      'Spiele oder singe die Note, die du siehst';
+
+  @override
+  String get performItPrompt => 'Spiele oder singe diese Note!';
+
+  @override
+  String get performItOnTarget => 'Getroffen!';
+
+  @override
+  String get performItSkip => 'Überspringen';
+
+  @override
   String get moduleDrums => 'Schlagzeug';
 
   @override

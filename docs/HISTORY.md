@@ -46,6 +46,51 @@ note to select it and re-pitch or delete it, hear it back with real durations,
 and save to the Song Book as MusicXML. The Capella-like grown-up sibling of the
 My Melody sandbox.
 
+## Live microphone & pitch detection
+
+The app's first **real-instrument input** (the structural gap every strong rival
+had and we didn't). Pure-Dart chain: mic → PCM → pitch/chroma analysis, no
+plugins beyond capture.
+
+- **Play-along / Sing-along** — a **moving score**: target notes scroll
+  right-to-left past a fixed "now" line while your live pitch is drawn as a dot,
+  so you see yourself land on (or drift from) each note. Scoring is a pure
+  `PlayAlongEngine` (right pitch — optionally octave-agnostic for voices —
+  within a cents window for enough of the note); the screen just drives the
+  Ticker clock, feeds it mic readings, and paints. No audible backing on purpose
+  (the mic would hear the speaker; a Preview button plays it first).
+- **Tuner** (cello corner) — open the mic, detect the note, show cents sharp/
+  flat on an intonation meter. The whole chain mic → PCM → detector → meter.
+- **Chord Listener** — fuzzy chord recognition from the live mic: strum/play a
+  chord and it names the closest match with runner-up guesses and the 12-bin
+  pitch-class profile it heard (chroma analysis — "name the chord" beats
+  "transcribe every note").
+- **Perform It** (note reading) — mic-graded *reading*: a note is shown and the
+  child **plays or sings it** — the pitch detector verifies it (octave-agnostic,
+  held briefly to avoid false hits) instead of a letter tap. Live detected-note
+  readout, star-gated range, skip button, mic-permission handling; feeds the
+  shared `note_reading.<clef>.*` SM-2 pool. The kid-scale core of performance-
+  graded sight-reading.
+
+## Curriculum (Lehrplan alignment)
+
+A **Curriculum** screen (home-bar 🏫) that maps the games onto a syllabus.
+Deliberately **un-branded, generic progress levels tied to school years**
+(Klasse 1–2 … 9–10) — the topic scope distilled in our own words from public
+school curricula, no badge/association branding. A small data engine
+(`Curriculum → Level → Topic → gameIds`) with topic labels reused across levels;
+per-region variants are drop-in data (`region` field).
+
+- **Readiness** per level/topic = **star coverage × SM-2 retention**: breadth
+  (played + performed the games) modulated by whether skills actually stuck
+  (`SriService.masteryUnder(namespace)` — mean per-item mastery, neutral until a
+  namespace is practised so there's no discouraging cold start).
+- Study guidance: a **"continue here"** marker on the recommended level, and
+  **"practise your weakest topic"** — both running curated recitals of the
+  relevant games. A test guards every mapped game ID against the registry.
+- Internal licensing rationale (why no D-branding) lives in the gitignored
+  `CLAUDE.md`, not here.
+
 ## Playtest cycle — polish, reworks & tools
 
 A full parent/child playtest pass. Grouped by kind.
