@@ -918,6 +918,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameThatChordPrompt => 'Which chord is this?';
 
   @override
+  String get moduleTranspose => 'Transposing';
+
+  @override
+  String get moduleTransposeSubtitle => 'Written vs concert pitch';
+
+  @override
+  String get gameConcertPitch => 'Concert Pitch';
+
+  @override
+  String get gameConcertPitchSubtitle => 'Name the note that really sounds';
+
+  @override
+  String concertPitchPrompt(String instrument) {
+    return 'A $instrument reads this note. What sounds?';
+  }
+
+  @override
+  String get concertPitchHint =>
+      'A transposing instrument sounds a different note than written.';
+
+  @override
+  String get concertInstrumentBb => 'B♭ Trumpet';
+
+  @override
+  String get concertInstrumentEb => 'E♭ Alto Sax';
+
+  @override
+  String get concertInstrumentF => 'F Horn';
+
+  @override
   String get clefBass => 'Bass clef';
 
   @override

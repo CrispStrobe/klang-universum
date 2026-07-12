@@ -151,6 +151,11 @@ Games built on partitura capabilities the app didn't use before.
   (`scoreFromAbc`) alongside MusicXML / ChordPro / MIDI, stored as MusicXML like
   the rest. Opens the large public-domain ABC folk-tune libraries; the tune's
   `T:` line seeds the title.
+- **Concert Pitch** (new **Transposing** module/corner) — read a written note
+  for a **B♭ trumpet / E♭ alto sax / F horn** and name the concert pitch that
+  actually sounds; partitura's `transposeBy` computes the exact letter. The B♭
+  instruments alone for beginners, E♭ and F added at 2★. A skill nothing else in
+  the app covers. SRI `transpose.<instrument>.<written-step>`.
 
 ## Toy-inspired mechanics — shipped
 

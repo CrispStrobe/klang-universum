@@ -76,9 +76,12 @@ capabilities and what they unlock:
   Song Book.
 - **`StaffSystemView`** (N-staff systems). Duet/ensemble reading, a richer Grand
   Staff, SATB chorale reading.
-- **Transposing instruments + concert-pitch toggle.** A **transposing-instrument
-  corner** (Bb trumpet/clarinet, Eb alto sax): read the written note, name the
-  concert pitch — a skill nothing else covers.
+- **Transposing instruments + concert-pitch toggle.** **Shipped** — a new
+  **Transposing corner** with **Concert Pitch**
+  ([HISTORY.md](HISTORY.md#partitura-powered--shipped)): read a written note for
+  a B♭/E♭/F instrument, name the concert pitch that sounds (partitura's
+  `transposeBy` does the maths). Still open: a written↔concert *toggle* on
+  rendered scores.
 - **Up-bow / down-bow articulations.** A **cello/violin bowing game**: read and
   perform the bowing (⊓ down-bow, ∨ up-bow) — deepens the string corners.
 - **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** Meter games

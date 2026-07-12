@@ -60,6 +60,7 @@ import 'package:klang_universum/features/games/scales/scale_builder_screen.dart'
 import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
 import 'package:klang_universum/features/games/songs/song_screen.dart';
 import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
+import 'package:klang_universum/features/games/transpose/concert_pitch_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 
@@ -587,6 +588,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameChordGripHero,
       subtitle: (l) => l.gameChordGripHeroSubtitle,
       builder: (_) => const ChordGripHeroScreen(),
+    ),
+  ],
+  'transpose': [
+    GameInfo(
+      id: 'concert_pitch',
+      icon: Icons.swap_vert,
+      title: (l) => l.gameConcertPitch,
+      subtitle: (l) => l.gameConcertPitchSubtitle,
+      builder: (_) => const ConcertPitchScreen(),
     ),
   ],
 };

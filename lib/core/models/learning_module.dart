@@ -124,4 +124,14 @@ final List<LearningModule> kLearningModules = [
     title: (l) => l.moduleKeyboard,
     subtitle: (l) => l.moduleKeyboardSubtitle,
   ),
+  // Transposing-instrument corner — advanced, unlocked from the start like the
+  // other instrument corners (special interest beats curriculum order).
+  LearningModule(
+    id: 'transpose',
+    icon: Icons.swap_vert,
+    color: const Color(0xFF00897B),
+    initiallyUnlocked: true,
+    title: (l) => l.moduleTranspose,
+    subtitle: (l) => l.moduleTransposeSubtitle,
+  ),
 ];

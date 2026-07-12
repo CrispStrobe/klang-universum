@@ -1724,6 +1724,60 @@ abstract class AppLocalizations {
   /// **'Which chord is this?'**
   String get nameThatChordPrompt;
 
+  /// No description provided for @moduleTranspose.
+  ///
+  /// In en, this message translates to:
+  /// **'Transposing'**
+  String get moduleTranspose;
+
+  /// No description provided for @moduleTransposeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Written vs concert pitch'**
+  String get moduleTransposeSubtitle;
+
+  /// No description provided for @gameConcertPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Concert Pitch'**
+  String get gameConcertPitch;
+
+  /// No description provided for @gameConcertPitchSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the note that really sounds'**
+  String get gameConcertPitchSubtitle;
+
+  /// No description provided for @concertPitchPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'A {instrument} reads this note. What sounds?'**
+  String concertPitchPrompt(String instrument);
+
+  /// No description provided for @concertPitchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A transposing instrument sounds a different note than written.'**
+  String get concertPitchHint;
+
+  /// No description provided for @concertInstrumentBb.
+  ///
+  /// In en, this message translates to:
+  /// **'B♭ Trumpet'**
+  String get concertInstrumentBb;
+
+  /// No description provided for @concertInstrumentEb.
+  ///
+  /// In en, this message translates to:
+  /// **'E♭ Alto Sax'**
+  String get concertInstrumentEb;
+
+  /// No description provided for @concertInstrumentF.
+  ///
+  /// In en, this message translates to:
+  /// **'F Horn'**
+  String get concertInstrumentF;
+
   /// No description provided for @clefBass.
   ///
   /// In en, this message translates to:

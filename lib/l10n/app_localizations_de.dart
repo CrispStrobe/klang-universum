@@ -924,6 +924,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nameThatChordPrompt => 'Welcher Akkord ist das?';
 
   @override
+  String get moduleTranspose => 'Transponieren';
+
+  @override
+  String get moduleTransposeSubtitle => 'Notiert vs. klingend';
+
+  @override
+  String get gameConcertPitch => 'Klingende Note';
+
+  @override
+  String get gameConcertPitchSubtitle =>
+      'Benenne die Note, die wirklich klingt';
+
+  @override
+  String concertPitchPrompt(String instrument) {
+    return 'Eine $instrument liest diese Note. Was klingt?';
+  }
+
+  @override
+  String get concertPitchHint =>
+      'Ein transponierendes Instrument klingt anders als notiert.';
+
+  @override
+  String get concertInstrumentBb => 'B-Trompete';
+
+  @override
+  String get concertInstrumentEb => 'Es-Altsax';
+
+  @override
+  String get concertInstrumentF => 'F-Horn';
+
+  @override
   String get clefBass => 'Bassschlüssel';
 
   @override

@@ -450,6 +450,20 @@
   "gameNameThatChord": "Name That Chord",
   "gameNameThatChordSubtitle": "Read or hear a chord, pick its symbol",
   "nameThatChordPrompt": "Which chord is this?",
+  "moduleTranspose": "Transposing",
+  "moduleTransposeSubtitle": "Written vs concert pitch",
+  "gameConcertPitch": "Concert Pitch",
+  "gameConcertPitchSubtitle": "Name the note that really sounds",
+  "concertPitchPrompt": "A {instrument} reads this note. What sounds?",
+  "@concertPitchPrompt": {
+    "placeholders": {
+      "instrument": { "type": "String" }
+    }
+  },
+  "concertPitchHint": "A transposing instrument sounds a different note than written.",
+  "concertInstrumentBb": "B♭ Trumpet",
+  "concertInstrumentEb": "E♭ Alto Sax",
+  "concertInstrumentF": "F Horn",
   "clefBass": "Bass clef",
   "gameLineSpace": "Line or Space?",
   "gameLineSpaceSubtitle": "Swipe: is the note on a line or in a space?",
