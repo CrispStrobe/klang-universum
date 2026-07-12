@@ -88,11 +88,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get karteikastenTitle => 'Flashcard boxes';
 
   @override
-  String get trickyNotesTitle => 'Your tricky notes';
+  String get trickyNotesTitle => 'Your tricky spots';
 
   @override
   String get trickyNotesHint =>
-      'The things you miss most — review will practise these first.';
+      'The skills you miss most — reading, rhythm, chords and more. Review practises these first.';
 
   @override
   String trickyMissed(int count) {

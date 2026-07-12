@@ -233,13 +233,13 @@ abstract class AppLocalizations {
   /// No description provided for @trickyNotesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your tricky notes'**
+  /// **'Your tricky spots'**
   String get trickyNotesTitle;
 
   /// No description provided for @trickyNotesHint.
   ///
   /// In en, this message translates to:
-  /// **'The things you miss most — review will practise these first.'**
+  /// **'The skills you miss most — reading, rhythm, chords and more. Review practises these first.'**
   String get trickyNotesHint;
 
   /// No description provided for @trickyMissed.

@@ -36,6 +36,13 @@ void main() {
     expect(describeSriItem(en, 'note_reading.treble.g4'), 'G4 · Treble');
     expect(describeSriItem(en, 'chords.triad.a_major'), 'A major');
     expect(describeSriItem(en, 'note_values.symbol.half_rest'), isNotEmpty);
+    // Non-note skills read as skills, not bare pitches.
+    expect(describeSriItem(en, 'note_values.rhythm.p2'), 'Rhythm Echo');
+    expect(describeSriItem(en, 'key_sig.g'), 'G major');
+    expect(
+      describeSriItem(en, 'note_reading.ledger.treble.below2'),
+      'Ledger Leap',
+    );
   });
 
   testWidgets('progress screen surfaces the tricky-notes card', (tester) async {
@@ -59,7 +66,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Your tricky notes'), findsOneWidget);
+    expect(find.text('Your tricky spots'), findsOneWidget);
     expect(find.text('G4 · Treble'), findsOneWidget);
     expect(find.text('missed 1×'), findsOneWidget);
   });

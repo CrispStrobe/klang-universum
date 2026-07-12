@@ -92,7 +92,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get trickyNotesHint =>
-      'Was du am häufigsten verpasst — die Wiederholung übt das zuerst.';
+      'Was du am häufigsten verpasst — Lesen, Rhythmus, Akkorde und mehr. Die Wiederholung übt das zuerst.';
 
   @override
   String trickyMissed(int count) {

@@ -23,7 +23,7 @@
   "progressTitle": "Fortschritt",
   "karteikastenTitle": "Karteikasten",
   "trickyNotesTitle": "Deine kniffligen Stellen",
-  "trickyNotesHint": "Was du am häufigsten verpasst — die Wiederholung übt das zuerst.",
+  "trickyNotesHint": "Was du am häufigsten verpasst — Lesen, Rhythmus, Akkorde und mehr. Die Wiederholung übt das zuerst.",
   "trickyMissed": "{count}× verpasst",
   "@trickyMissed": {
     "placeholders": { "count": { "type": "int" } }

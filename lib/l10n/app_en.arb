@@ -36,8 +36,8 @@
   "settingsTitle": "Settings",
   "progressTitle": "Progress",
   "karteikastenTitle": "Flashcard boxes",
-  "trickyNotesTitle": "Your tricky notes",
-  "trickyNotesHint": "The things you miss most — review will practise these first.",
+  "trickyNotesTitle": "Your tricky spots",
+  "trickyNotesHint": "The skills you miss most — reading, rhythm, chords and more. Review practises these first.",
   "trickyMissed": "missed {count}×",
   "@trickyMissed": {
     "placeholders": { "count": { "type": "int" } }

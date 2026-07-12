@@ -68,17 +68,10 @@ class ProgressScreen extends StatelessWidget {
               child: Column(
                 children: [
                   for (final item in tricky)
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(
-                        Icons.priority_high,
-                        color: Colors.redAccent,
-                      ),
-                      title: Text(describeSriItem(l10n, item.itemId)),
-                      trailing: Text(
-                        l10n.trickyMissed(item.failureCount),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                    _TrickyTile(
+                      module: _moduleForSriId(item.itemId),
+                      label: describeSriItem(l10n, item.itemId),
+                      missed: l10n.trickyMissed(item.failureCount),
                     ),
                 ],
               ),
@@ -193,6 +186,51 @@ class _ModuleProgressCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The learning module an SRI item belongs to (its first segment), for the
+/// coloured icon in the tricky-spots list. Key signatures live in the scales
+/// corner. Null when nothing matches.
+LearningModule? _moduleForSriId(String id) {
+  final seg = id.split('.').first;
+  final mapped = seg == 'key_sig' ? 'scales' : seg;
+  for (final module in kLearningModules) {
+    if (module.id == mapped) return module;
+  }
+  return null;
+}
+
+/// One weak SRI item: a coloured module icon (so the list obviously spans
+/// reading, rhythm, chords, harmony, keyboard, …), a readable label, and how
+/// many times it was missed.
+class _TrickyTile extends StatelessWidget {
+  const _TrickyTile({
+    required this.module,
+    required this.label,
+    required this.missed,
+  });
+
+  final LearningModule? module;
+  final String label;
+  final String missed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      leading: CircleAvatar(
+        radius: 15,
+        backgroundColor: module?.color ?? Colors.redAccent,
+        child: Icon(
+          module?.icon ?? Icons.priority_high,
+          size: 17,
+          color: Colors.white,
+        ),
+      ),
+      title: Text(label),
+      trailing: Text(missed, style: Theme.of(context).textTheme.bodySmall),
     );
   }
 }

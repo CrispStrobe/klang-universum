@@ -20,15 +20,38 @@ String describeSriItem(AppLocalizations l10n, String id) {
   final skill = parts.length > 1 ? parts[1] : '';
   final detail = parts.length > 2 ? parts.sublist(2).join('.') : '';
 
+  // Reading and playing sub-skills read as the skill, not a bare pitch, so the
+  // "tricky spots" list obviously spans more than notes.
+  const clefs = {'treble', 'bass', 'tenor', 'alto'};
+
   switch (module) {
     case 'note_values':
       if (skill == 'symbol') {
         return symbolById(detail)?.label(l10n) ?? _prettify(detail);
       }
+      if (skill == 'rhythm') return l10n.gameRhythmTap;
       return _prettify(detail.isEmpty ? skill : detail);
     case 'note_reading':
-      // skill = clef, detail = pitch like "g4".
-      return '${detail.toUpperCase()} · ${_prettify(skill)}';
+      if (clefs.contains(skill)) {
+        // skill = clef, detail = pitch like "g4".
+        return '${detail.toUpperCase()} · ${_prettify(skill)}';
+      }
+      return switch (skill) {
+        'line_space' => l10n.gameLineSpace,
+        'order' => l10n.gameNoteOrder,
+        'ledger' => l10n.gameLedgerLeap,
+        'melody' => l10n.gameMelodyEcho,
+        'dictation' => l10n.gameMelodyDictation,
+        _ => _prettify(detail.isEmpty ? skill : detail),
+      };
+    case 'keyboard':
+      if (skill == 'find') {
+        return '${detail.toUpperCase()} · ${l10n.gameKeyFind}';
+      }
+      return _prettify(detail.isEmpty ? skill : detail);
+    case 'key_sig':
+      // "key_sig.<tonic>" — skill is the tonic.
+      return l10n.keyMajorLabel(skill.toUpperCase());
     case 'chords':
       if (skill == 'triad') {
         final seg = detail.split('_');
