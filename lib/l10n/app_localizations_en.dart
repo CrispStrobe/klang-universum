@@ -918,6 +918,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameThatChordPrompt => 'Which chord is this?';
 
   @override
+  String get curriculumTitle => 'Badges & Curriculum';
+
+  @override
+  String get curriculumTooltip => 'Badges & curriculum';
+
+  @override
+  String get curLeistungsabzeichen => 'Music Badges (D0–D3)';
+
+  @override
+  String get curSchoolGeneral => 'School Music (general)';
+
+  @override
+  String get curLevelD0 => 'D0 · Junior';
+
+  @override
+  String get curLevelD1 => 'D1 · Bronze';
+
+  @override
+  String get curLevelD2 => 'D2 · Silver';
+
+  @override
+  String get curLevelD3 => 'D3 · Gold';
+
+  @override
+  String get curLevelPrimary => 'Primary school';
+
+  @override
+  String get curLevelLowerSecondary => 'Lower secondary';
+
+  @override
+  String get curLevelUpperSecondary => 'Upper secondary';
+
+  @override
+  String get curTopicNoteReading => 'Note reading';
+
+  @override
+  String get curTopicNoteValues => 'Note values & rhythm';
+
+  @override
+  String get curTopicMeter => 'Time & metre';
+
+  @override
+  String get curTopicDynamics => 'Dynamics & tempo';
+
+  @override
+  String get curTopicScales => 'Scales & keys';
+
+  @override
+  String get curTopicIntervals => 'Intervals';
+
+  @override
+  String get curTopicChords => 'Chords';
+
+  @override
+  String get curTopicHarmony => 'Harmony & cadences';
+
+  @override
+  String get curTopicTransposition => 'Transposition';
+
+  @override
+  String get curTopicEar => 'Ear training';
+
+  @override
+  String get curTopicSightReading => 'Sight-reading';
+
+  @override
+  String curReadiness(int pct) {
+    return '$pct% ready';
+  }
+
+  @override
+  String get curPracticeLevel => 'Practise this level';
+
+  @override
+  String get curTopicsHeader => 'Topics';
+
+  @override
+  String get curGuideNote =>
+      'A practice guide, not an official alignment — verify against your association\'s catalogue.';
+
+  @override
+  String get curNoGames => 'No games for this topic yet';
+
+  @override
   String get gameChordBuilder => 'Chord Builder';
 
   @override

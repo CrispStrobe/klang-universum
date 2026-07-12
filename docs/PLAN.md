@@ -159,8 +159,15 @@ the app category the idea comes from. Shipped items live in
 - [ ] Parent view + multi-child profiles. *(kids' practice apps.) M · ♪♪.*
 
 **German-market moat — the thin-market opening**
-- [ ] Lehrplan alignment + German framing (map minigames to Bundesland curricula;
-  German terminology). *(the curriculum-aligned incumbent.) M · ♪♪♪.* Strongest available moat.
+- [x] Lehrplan alignment + German framing. **First cut shipped**: a
+  curriculum-mapping engine (`Curriculum → Level → Topic → gameIds`) with a
+  **Badges & Curriculum** screen. Seeded with the **Leistungsabzeichen D0–D3**
+  (topics → the games that drill them, with a *readiness* meter from the child's
+  stars) and a general **school-music** guide; both frameworks share the model,
+  so per-**Bundesland** Lehrpläne are drop-in data. Labelled in-app as a practice
+  guide, not an official alignment. *Still open: authoritative per-Verband D1–D3
+  catalogues and real per-state Lehrplan data (need sourcing/expert review), and
+  SM-2-based (not just star-based) readiness.*
 - [ ] Sound-toy creative modes that feed notation (grid composer + geometric
   rhythm toy for pre-readers). *(browser music sound-toys.) M · ♪♪.*
 - [ ] Color-coded kids' notation editor with MusicXML/MIDI export. *(kids'

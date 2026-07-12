@@ -70,6 +70,15 @@ import 'package:klang_universum/features/games/transpose/concert_pitch_screen.da
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart';
 
+/// Every game by ID, across all modules — for curriculum/recital lookups.
+final Map<String, GameInfo> kGamesById = {
+  for (final games in kGamesByModule.values)
+    for (final game in games) game.id: game,
+};
+
+/// The [GameInfo] for [id], or null if no such game is registered.
+GameInfo? gameInfoById(String id) => kGamesById[id];
+
 class GameInfo {
   /// Stable ID, used for star thresholds and analytics.
   final String id;

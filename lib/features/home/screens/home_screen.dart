@@ -12,6 +12,7 @@ import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/features/curriculum/screens/curriculum_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/harmony/function_ear_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
@@ -150,6 +151,13 @@ class HomeScreen extends StatelessWidget {
         title: const _DebugTapTitle(),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.workspace_premium),
+            tooltip: l10n.curriculumTooltip,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CurriculumScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.theater_comedy),
             tooltip: l10n.recitalTooltip,

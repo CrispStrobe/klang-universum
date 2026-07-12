@@ -1724,6 +1724,168 @@ abstract class AppLocalizations {
   /// **'Which chord is this?'**
   String get nameThatChordPrompt;
 
+  /// No description provided for @curriculumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges & Curriculum'**
+  String get curriculumTitle;
+
+  /// No description provided for @curriculumTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges & curriculum'**
+  String get curriculumTooltip;
+
+  /// No description provided for @curLeistungsabzeichen.
+  ///
+  /// In en, this message translates to:
+  /// **'Music Badges (D0–D3)'**
+  String get curLeistungsabzeichen;
+
+  /// No description provided for @curSchoolGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'School Music (general)'**
+  String get curSchoolGeneral;
+
+  /// No description provided for @curLevelD0.
+  ///
+  /// In en, this message translates to:
+  /// **'D0 · Junior'**
+  String get curLevelD0;
+
+  /// No description provided for @curLevelD1.
+  ///
+  /// In en, this message translates to:
+  /// **'D1 · Bronze'**
+  String get curLevelD1;
+
+  /// No description provided for @curLevelD2.
+  ///
+  /// In en, this message translates to:
+  /// **'D2 · Silver'**
+  String get curLevelD2;
+
+  /// No description provided for @curLevelD3.
+  ///
+  /// In en, this message translates to:
+  /// **'D3 · Gold'**
+  String get curLevelD3;
+
+  /// No description provided for @curLevelPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary school'**
+  String get curLevelPrimary;
+
+  /// No description provided for @curLevelLowerSecondary.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower secondary'**
+  String get curLevelLowerSecondary;
+
+  /// No description provided for @curLevelUpperSecondary.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper secondary'**
+  String get curLevelUpperSecondary;
+
+  /// No description provided for @curTopicNoteReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Note reading'**
+  String get curTopicNoteReading;
+
+  /// No description provided for @curTopicNoteValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Note values & rhythm'**
+  String get curTopicNoteValues;
+
+  /// No description provided for @curTopicMeter.
+  ///
+  /// In en, this message translates to:
+  /// **'Time & metre'**
+  String get curTopicMeter;
+
+  /// No description provided for @curTopicDynamics.
+  ///
+  /// In en, this message translates to:
+  /// **'Dynamics & tempo'**
+  String get curTopicDynamics;
+
+  /// No description provided for @curTopicScales.
+  ///
+  /// In en, this message translates to:
+  /// **'Scales & keys'**
+  String get curTopicScales;
+
+  /// No description provided for @curTopicIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get curTopicIntervals;
+
+  /// No description provided for @curTopicChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get curTopicChords;
+
+  /// No description provided for @curTopicHarmony.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmony & cadences'**
+  String get curTopicHarmony;
+
+  /// No description provided for @curTopicTransposition.
+  ///
+  /// In en, this message translates to:
+  /// **'Transposition'**
+  String get curTopicTransposition;
+
+  /// No description provided for @curTopicEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Ear training'**
+  String get curTopicEar;
+
+  /// No description provided for @curTopicSightReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Sight-reading'**
+  String get curTopicSightReading;
+
+  /// No description provided for @curReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% ready'**
+  String curReadiness(int pct);
+
+  /// No description provided for @curPracticeLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Practise this level'**
+  String get curPracticeLevel;
+
+  /// No description provided for @curTopicsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics'**
+  String get curTopicsHeader;
+
+  /// No description provided for @curGuideNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A practice guide, not an official alignment — verify against your association\'s catalogue.'**
+  String get curGuideNote;
+
+  /// No description provided for @curNoGames.
+  ///
+  /// In en, this message translates to:
+  /// **'No games for this topic yet'**
+  String get curNoGames;
+
   /// No description provided for @gameChordBuilder.
   ///
   /// In en, this message translates to:

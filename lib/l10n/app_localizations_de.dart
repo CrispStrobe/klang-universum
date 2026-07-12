@@ -924,6 +924,90 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nameThatChordPrompt => 'Welcher Akkord ist das?';
 
   @override
+  String get curriculumTitle => 'Abzeichen & Lehrplan';
+
+  @override
+  String get curriculumTooltip => 'Abzeichen & Lehrplan';
+
+  @override
+  String get curLeistungsabzeichen => 'Leistungsabzeichen (D0–D3)';
+
+  @override
+  String get curSchoolGeneral => 'Schulmusik (allgemein)';
+
+  @override
+  String get curLevelD0 => 'D0 · Junior';
+
+  @override
+  String get curLevelD1 => 'D1 · Bronze';
+
+  @override
+  String get curLevelD2 => 'D2 · Silber';
+
+  @override
+  String get curLevelD3 => 'D3 · Gold';
+
+  @override
+  String get curLevelPrimary => 'Grundschule';
+
+  @override
+  String get curLevelLowerSecondary => 'Sekundarstufe I';
+
+  @override
+  String get curLevelUpperSecondary => 'Sekundarstufe II';
+
+  @override
+  String get curTopicNoteReading => 'Noten lesen';
+
+  @override
+  String get curTopicNoteValues => 'Notenwerte & Rhythmus';
+
+  @override
+  String get curTopicMeter => 'Takt & Taktarten';
+
+  @override
+  String get curTopicDynamics => 'Dynamik & Tempo';
+
+  @override
+  String get curTopicScales => 'Tonleitern & Tonarten';
+
+  @override
+  String get curTopicIntervals => 'Intervalle';
+
+  @override
+  String get curTopicChords => 'Akkorde';
+
+  @override
+  String get curTopicHarmony => 'Harmonik & Kadenzen';
+
+  @override
+  String get curTopicTransposition => 'Transposition';
+
+  @override
+  String get curTopicEar => 'Gehörbildung';
+
+  @override
+  String get curTopicSightReading => 'Blattlesen';
+
+  @override
+  String curReadiness(int pct) {
+    return '$pct% bereit';
+  }
+
+  @override
+  String get curPracticeLevel => 'Diese Stufe üben';
+
+  @override
+  String get curTopicsHeader => 'Themen';
+
+  @override
+  String get curGuideNote =>
+      'Ein Übungsleitfaden, keine offizielle Zuordnung — bitte mit dem Katalog deines Verbands abgleichen.';
+
+  @override
+  String get curNoGames => 'Noch keine Spiele für dieses Thema';
+
+  @override
   String get gameChordBuilder => 'Akkord bauen';
 
   @override
