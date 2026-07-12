@@ -156,6 +156,19 @@ Games built on partitura capabilities the app didn't use before.
   actually sounds; partitura's `transposeBy` computes the exact letter. The B♭
   instruments alone for beginners, E♭ and F added at 2★. A skill nothing else in
   the app covers. SRI `transpose.<instrument>.<written-step>`.
+- **Bowing** (cello corner) — read partitura's string-bowing marks: a note on
+  the bass staff carries a ⊓ down-bow or ∨ up-bow (`Articulation.downBow/upBow`);
+  name it. SRI `cello.bowing.<down|up>`.
+- **Which Beat?** (measures) — a 4/4 bar with one note coloured; tap the beat it
+  starts on (1–4). partitura's **`showBeatNumbers`** overlay draws the count
+  under the staff as a scaffold that fades (on at level 1, off at 2★). SRI
+  `measures.beat.<n>`.
+- **Time Signatures** (measures) — read a signature — including the **C
+  (common)** and **¢ (cut)** glyphs — and give the beats per bar. 3/4·4/4·C for
+  beginners; ¢·6/8·2/4 at 2★. SRI `measures.timesig.<id>`.
+- **ABC export** (Composition Workshop) — an AppBar action renders the current
+  score to **ABC** (`scoreToAbc`) in a dialog and copies it to the clipboard;
+  round-trips with the Song Book's ABC import.
 
 ## Toy-inspired mechanics — shipped
 

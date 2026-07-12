@@ -60,14 +60,13 @@ building on the new APIs would compile locally but fail CI. Verified new
 capabilities and what they unlock:
 
 - **Teaching overlays on `StaffView`** (`showNoteNames`, `showBeatNumbers`,
-  `showMeasureNumbers`). Replace our external note-name/colour scaffold with a
-  *native fading scaffold* (names on the staff at level 1, gone by 3★), and a
-  **rhythm-counting game** that shows "1 & 2 &" under the notes.
-- **ABC notation import/export** (`scoreToAbc`, ABC reader). **ABC import is
-  shipped** — paste an ABC tune in the Song Book importer and it parses via
-  `scoreFromAbc`, stored as MusicXML like everything else, opening the huge
-  public-domain ABC folk-tune libraries. Still open: **ABC export** in the
-  Workshop/My Melody, and a "type-a-tune" mode.
+  `showMeasureNumbers`). **Which Beat?** is shipped — it uses `showBeatNumbers`
+  as a fading scaffold (beat numbers under the staff at level 1, gone at 2★).
+  Still open: a native `showNoteNames` fading scaffold across the reading games.
+- **ABC notation import/export** (`scoreToAbc`, ABC reader). **Both shipped** —
+  ABC **import** in the Song Book (`scoreFromAbc`) and ABC **export** from the
+  Composition Workshop (`scoreToAbc` → copy to clipboard). Still open: a
+  "type-a-tune" mode.
 - **Chord identification** (`identifyChord`, `chordSymbolFor`). **Name That
   Chord** is shipped ([HISTORY.md](HISTORY.md#partitura-powered--shipped)) —
   auto-graded via `identifyChord`, root position for beginners and dim/aug +
@@ -82,12 +81,13 @@ capabilities and what they unlock:
   a B♭/E♭/F instrument, name the concert pitch that sounds (partitura's
   `transposeBy` does the maths). Still open: a written↔concert *toggle* on
   rendered scores.
-- **Up-bow / down-bow articulations.** A **cello/violin bowing game**: read and
-  perform the bowing (⊓ down-bow, ∨ up-bow) — deepens the string corners.
-- **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** Meter games
-  that name C/¢ and spot the **upbeat (Auftakt)**.
-- **Percussion clef** (in progress upstream) → a **drum/rhythm corner** on a
-  neutral staff once it lands.
+- **Up-bow / down-bow articulations.** **Bowing** is shipped (cello corner):
+  read the ⊓ down-bow / ∨ up-bow marks partitura draws.
+- **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** **Time
+  Signatures** is shipped — read the signature (incl. C and ¢) for the beats per
+  bar. Still open: spot the **upbeat (Auftakt)** with anacrusis measures.
+- **Percussion clef** → a **drum/rhythm corner** on the neutral staff. *(Open —
+  a larger new build.)*
 - **Figured bass** (SMuFL figbass) → Baroque continuo reading — advanced, later.
 
 ## Difficulty progression (within each game)

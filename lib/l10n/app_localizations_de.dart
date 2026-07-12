@@ -955,6 +955,60 @@ class AppLocalizationsDe extends AppLocalizations {
   String get concertInstrumentF => 'F-Horn';
 
   @override
+  String get gameBowing => 'Bogenstrich';
+
+  @override
+  String get gameBowingSubtitle => 'Lies Auf- und Abstrich-Zeichen';
+
+  @override
+  String get bowingPrompt => 'Welcher Bogenstrich ist markiert?';
+
+  @override
+  String get bowDown => 'Abstrich';
+
+  @override
+  String get bowUp => 'Aufstrich';
+
+  @override
+  String get gameWhichBeat => 'Welche Zählzeit?';
+
+  @override
+  String get gameWhichBeatSubtitle => 'Tippe die Zählzeit der farbigen Note';
+
+  @override
+  String get whichBeatPrompt => 'Auf welche Zählzeit fällt die farbige Note?';
+
+  @override
+  String get workshopExportAbc => 'ABC exportieren';
+
+  @override
+  String get workshopCopy => 'Kopieren';
+
+  @override
+  String get workshopCopied => 'ABC in die Zwischenablage kopiert';
+
+  @override
+  String get gameTimeSignature => 'Taktarten';
+
+  @override
+  String get gameTimeSignatureSubtitle =>
+      'Lies die Taktart (auch C und Alla breve)';
+
+  @override
+  String get timeSignaturePrompt => 'Wie viele Zählzeiten hat ein Takt?';
+
+  @override
+  String beatsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Schläge',
+      one: '1 Schlag',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get clefBass => 'Bassschlüssel';
 
   @override
@@ -1129,17 +1183,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get quarterBeat => '¼ Schlag';
-
-  @override
-  String beatsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Schläge',
-      one: '1 Schlag',
-    );
-    return '$_temp0';
-  }
 
   @override
   String symbolLength(String name, String length) {

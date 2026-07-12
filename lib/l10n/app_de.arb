@@ -297,6 +297,26 @@
   "concertInstrumentBb": "B-Trompete",
   "concertInstrumentEb": "Es-Altsax",
   "concertInstrumentF": "F-Horn",
+  "gameBowing": "Bogenstrich",
+  "gameBowingSubtitle": "Lies Auf- und Abstrich-Zeichen",
+  "bowingPrompt": "Welcher Bogenstrich ist markiert?",
+  "bowDown": "Abstrich",
+  "bowUp": "Aufstrich",
+  "gameWhichBeat": "Welche Zählzeit?",
+  "gameWhichBeatSubtitle": "Tippe die Zählzeit der farbigen Note",
+  "whichBeatPrompt": "Auf welche Zählzeit fällt die farbige Note?",
+  "workshopExportAbc": "ABC exportieren",
+  "workshopCopy": "Kopieren",
+  "workshopCopied": "ABC in die Zwischenablage kopiert",
+  "gameTimeSignature": "Taktarten",
+  "gameTimeSignatureSubtitle": "Lies die Taktart (auch C und Alla breve)",
+  "timeSignaturePrompt": "Wie viele Zählzeiten hat ein Takt?",
+  "beatsCount": "{count, plural, =1{1 Zählzeit} other{{count} Zählzeiten}}",
+  "@beatsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "clefBass": "Bassschlüssel",
   "gameLineSpace": "Linie oder Zwischenraum?",
   "gameLineSpaceSubtitle": "Wische: Linie oder Zwischenraum?",

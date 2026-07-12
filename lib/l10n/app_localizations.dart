@@ -1778,6 +1778,96 @@ abstract class AppLocalizations {
   /// **'F Horn'**
   String get concertInstrumentF;
 
+  /// No description provided for @gameBowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Bowing'**
+  String get gameBowing;
+
+  /// No description provided for @gameBowingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the up-bow and down-bow marks'**
+  String get gameBowingSubtitle;
+
+  /// No description provided for @bowingPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bow stroke is marked?'**
+  String get bowingPrompt;
+
+  /// No description provided for @bowDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Down-bow'**
+  String get bowDown;
+
+  /// No description provided for @bowUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Up-bow'**
+  String get bowUp;
+
+  /// No description provided for @gameWhichBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Beat?'**
+  String get gameWhichBeat;
+
+  /// No description provided for @gameWhichBeatSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the beat the coloured note starts on'**
+  String get gameWhichBeatSubtitle;
+
+  /// No description provided for @whichBeatPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which beat does the coloured note fall on?'**
+  String get whichBeatPrompt;
+
+  /// No description provided for @workshopExportAbc.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ABC'**
+  String get workshopExportAbc;
+
+  /// No description provided for @workshopCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get workshopCopy;
+
+  /// No description provided for @workshopCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ABC copied to clipboard'**
+  String get workshopCopied;
+
+  /// No description provided for @gameTimeSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Signatures'**
+  String get gameTimeSignature;
+
+  /// No description provided for @gameTimeSignatureSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the signature (incl. C and cut time)'**
+  String get gameTimeSignatureSubtitle;
+
+  /// No description provided for @timeSignaturePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How many beats are in one bar?'**
+  String get timeSignaturePrompt;
+
+  /// No description provided for @beatsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 beat} other{{count} beats}}'**
+  String beatsCount(int count);
+
   /// No description provided for @clefBass.
   ///
   /// In en, this message translates to:
@@ -2089,12 +2179,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'¼ beat'**
   String get quarterBeat;
-
-  /// No description provided for @beatsCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 beat} other{{count} beats}}'**
-  String beatsCount(int count);
 
   /// No description provided for @symbolLength.
   ///

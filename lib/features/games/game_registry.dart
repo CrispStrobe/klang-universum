@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/features/games/cello/bowing_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
@@ -33,6 +34,8 @@ import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
 import 'package:klang_universum/features/games/measures/beat_runner_screen.dart';
 import 'package:klang_universum/features/games/measures/measure_fill_screen.dart';
 import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
+import 'package:klang_universum/features/games/measures/time_signature_screen.dart';
+import 'package:klang_universum/features/games/measures/which_beat_screen.dart';
 import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
 import 'package:klang_universum/features/games/note_reading/ledger_leap_screen.dart';
@@ -336,6 +339,20 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameCharadesSubtitle,
       builder: (_) => const CharadesScreen(),
     ),
+    GameInfo(
+      id: 'which_beat',
+      icon: Icons.pin,
+      title: (l) => l.gameWhichBeat,
+      subtitle: (l) => l.gameWhichBeatSubtitle,
+      builder: (_) => const WhichBeatScreen(),
+    ),
+    GameInfo(
+      id: 'time_signature',
+      icon: Icons.timer_outlined,
+      title: (l) => l.gameTimeSignature,
+      subtitle: (l) => l.gameTimeSignatureSubtitle,
+      builder: (_) => const TimeSignatureScreen(),
+    ),
   ],
   'scales': [
     GameInfo(
@@ -478,6 +495,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCelloFingerQuiz,
       subtitle: (l) => l.gameCelloFingerQuizSubtitle,
       builder: (_) => const CelloFingerQuizScreen(),
+    ),
+    GameInfo(
+      id: 'bowing',
+      icon: Icons.gesture,
+      title: (l) => l.gameBowing,
+      subtitle: (l) => l.gameBowingSubtitle,
+      builder: (_) => const BowingScreen(),
     ),
     GameInfo(
       id: 'note_reading_tenor',

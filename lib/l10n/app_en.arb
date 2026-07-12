@@ -464,6 +464,26 @@
   "concertInstrumentBb": "B♭ Trumpet",
   "concertInstrumentEb": "E♭ Alto Sax",
   "concertInstrumentF": "F Horn",
+  "gameBowing": "Bowing",
+  "gameBowingSubtitle": "Read the up-bow and down-bow marks",
+  "bowingPrompt": "Which bow stroke is marked?",
+  "bowDown": "Down-bow",
+  "bowUp": "Up-bow",
+  "gameWhichBeat": "Which Beat?",
+  "gameWhichBeatSubtitle": "Tap the beat the coloured note starts on",
+  "whichBeatPrompt": "Which beat does the coloured note fall on?",
+  "workshopExportAbc": "Export ABC",
+  "workshopCopy": "Copy",
+  "workshopCopied": "ABC copied to clipboard",
+  "gameTimeSignature": "Time Signatures",
+  "gameTimeSignatureSubtitle": "Read the signature (incl. C and cut time)",
+  "timeSignaturePrompt": "How many beats are in one bar?",
+  "beatsCount": "{count, plural, =1{1 beat} other{{count} beats}}",
+  "@beatsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "clefBass": "Bass clef",
   "gameLineSpace": "Line or Space?",
   "gameLineSpaceSubtitle": "Swipe: is the note on a line or in a space?",

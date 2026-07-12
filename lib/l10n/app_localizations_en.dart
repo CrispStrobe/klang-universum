@@ -948,6 +948,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get concertInstrumentF => 'F Horn';
 
   @override
+  String get gameBowing => 'Bowing';
+
+  @override
+  String get gameBowingSubtitle => 'Read the up-bow and down-bow marks';
+
+  @override
+  String get bowingPrompt => 'Which bow stroke is marked?';
+
+  @override
+  String get bowDown => 'Down-bow';
+
+  @override
+  String get bowUp => 'Up-bow';
+
+  @override
+  String get gameWhichBeat => 'Which Beat?';
+
+  @override
+  String get gameWhichBeatSubtitle =>
+      'Tap the beat the coloured note starts on';
+
+  @override
+  String get whichBeatPrompt => 'Which beat does the coloured note fall on?';
+
+  @override
+  String get workshopExportAbc => 'Export ABC';
+
+  @override
+  String get workshopCopy => 'Copy';
+
+  @override
+  String get workshopCopied => 'ABC copied to clipboard';
+
+  @override
+  String get gameTimeSignature => 'Time Signatures';
+
+  @override
+  String get gameTimeSignatureSubtitle =>
+      'Read the signature (incl. C and cut time)';
+
+  @override
+  String get timeSignaturePrompt => 'How many beats are in one bar?';
+
+  @override
+  String beatsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count beats',
+      one: '1 beat',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get clefBass => 'Bass clef';
 
   @override
@@ -1123,17 +1178,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quarterBeat => '¼ beat';
-
-  @override
-  String beatsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count beats',
-      one: '1 beat',
-    );
-    return '$_temp0';
-  }
 
   @override
   String symbolLength(String name, String length) {
