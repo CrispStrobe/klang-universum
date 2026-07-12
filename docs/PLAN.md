@@ -60,34 +60,36 @@ building on the new APIs would compile locally but fail CI. Verified new
 capabilities and what they unlock:
 
 - **Teaching overlays on `StaffView`** (`showNoteNames`, `showBeatNumbers`,
-  `showMeasureNumbers`). Replace our external note-name/colour scaffold with a
-  *native fading scaffold* (names on the staff at level 1, gone by 3★), and a
-  **rhythm-counting game** that shows "1 & 2 &" under the notes.
-- **ABC notation import/export** (`scoreToAbc`, ABC reader). **ABC import is
-  shipped** — paste an ABC tune in the Song Book importer and it parses via
-  `scoreFromAbc`, stored as MusicXML like everything else, opening the huge
-  public-domain ABC folk-tune libraries. Still open: **ABC export** in the
-  Workshop/My Melody, and a "type-a-tune" mode.
+  `showMeasureNumbers`). **Which Beat?** is shipped — it uses `showBeatNumbers`
+  as a fading scaffold (beat numbers under the staff at level 1, gone at 2★).
+  Still open: a native `showNoteNames` fading scaffold across the reading games.
+- **ABC notation import/export** (`scoreToAbc`, ABC reader). **Both shipped** —
+  ABC **import** in the Song Book (`scoreFromAbc`) and ABC **export** from the
+  Composition Workshop (`scoreToAbc` → copy to clipboard). Still open: a
+  "type-a-tune" mode.
 - **Chord identification** (`identifyChord`, `chordSymbolFor`). **Name That
-  Chord** is shipped ([HISTORY.md](HISTORY.md#partitura-powered--shipped)) —
-  auto-graded via `identifyChord`, root position for beginners and dim/aug +
-  slash-chord inversions at 2★. Still open: auto-grade any built chord in Triad
-  Builder / Chord Grip Hero (not just root position), and chord symbols over the
-  Song Book.
-- **`StaffSystemView`** (N-staff systems). Duet/ensemble reading, a richer Grand
-  Staff, SATB chorale reading.
+  Chord** and **Chord Builder** are shipped
+  ([HISTORY.md](HISTORY.md#partitura-powered--shipped)) — the builder grades
+  **any voicing** (root position or inversion, any octave) via `identifyChord`.
+  Still open: chord symbols over the Song Book (low value — the built-in songs
+  are monophonic).
+- **`StaffSystemView`** (N-staff systems). **Duet** is shipped — read the
+  highlighted part of a two-staff system (lower staff switches to bass clef at
+  2★). Still open: SATB chorale reading, a richer Grand Staff.
 - **Transposing instruments + concert-pitch toggle.** **Shipped** — a new
   **Transposing corner** with **Concert Pitch**
   ([HISTORY.md](HISTORY.md#partitura-powered--shipped)): read a written note for
   a B♭/E♭/F instrument, name the concert pitch that sounds (partitura's
   `transposeBy` does the maths). Still open: a written↔concert *toggle* on
   rendered scores.
-- **Up-bow / down-bow articulations.** A **cello/violin bowing game**: read and
-  perform the bowing (⊓ down-bow, ∨ up-bow) — deepens the string corners.
-- **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** Meter games
-  that name C/¢ and spot the **upbeat (Auftakt)**.
-- **Percussion clef** (in progress upstream) → a **drum/rhythm corner** on a
-  neutral staff once it lands.
+- **Up-bow / down-bow articulations.** **Bowing** is shipped (cello corner):
+  read the ⊓ down-bow / ∨ up-bow marks partitura draws.
+- **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** **Time
+  Signatures** is shipped — read the signature (incl. C and ¢) for the beats per
+  bar. Still open: spot the **upbeat (Auftakt)** with anacrusis measures.
+- **Percussion clef** → **shipped**: a **Drums** corner with **Drum Read** — read
+  a rhythm on the neutral percussion staff and tap it back on the drum pad in
+  time (count-in, then Perfect/Good/Miss vs the notated onsets).
 - **Figured bass** (SMuFL figbass) → Baroque continuo reading — advanced, later.
 
 ## Difficulty progression (within each game)
@@ -157,8 +159,15 @@ the app category the idea comes from. Shipped items live in
 - [ ] Parent view + multi-child profiles. *(kids' practice apps.) M · ♪♪.*
 
 **German-market moat — the thin-market opening**
-- [ ] Lehrplan alignment + German framing (map minigames to Bundesland curricula;
-  German terminology). *(the curriculum-aligned incumbent.) M · ♪♪♪.* Strongest available moat.
+- [x] Lehrplan alignment + German framing. **First cut shipped**: a
+  curriculum-mapping engine (`Curriculum → Level → Topic → gameIds`) with a
+  **Badges & Curriculum** screen. Seeded with the **Leistungsabzeichen D0–D3**
+  (topics → the games that drill them, with a *readiness* meter from the child's
+  stars) and a general **school-music** guide; both frameworks share the model,
+  so per-**Bundesland** Lehrpläne are drop-in data. Labelled in-app as a practice
+  guide, not an official alignment. *Still open: authoritative per-Verband D1–D3
+  catalogues and real per-state Lehrplan data (need sourcing/expert review), and
+  SM-2-based (not just star-based) readiness.*
 - [ ] Sound-toy creative modes that feed notation (grid composer + geometric
   rhythm toy for pre-readers). *(browser music sound-toys.) M · ♪♪.*
 - [ ] Color-coded kids' notation editor with MusicXML/MIDI export. *(kids'

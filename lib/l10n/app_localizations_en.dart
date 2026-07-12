@@ -918,6 +918,112 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameThatChordPrompt => 'Which chord is this?';
 
   @override
+  String get curriculumTitle => 'Badges & Curriculum';
+
+  @override
+  String get curriculumTooltip => 'Badges & curriculum';
+
+  @override
+  String get curLeistungsabzeichen => 'Music Badges (D0–D3)';
+
+  @override
+  String get curSchoolGeneral => 'School Music (general)';
+
+  @override
+  String get curLevelD0 => 'D0 · Junior';
+
+  @override
+  String get curLevelD1 => 'D1 · Bronze';
+
+  @override
+  String get curLevelD2 => 'D2 · Silver';
+
+  @override
+  String get curLevelD3 => 'D3 · Gold';
+
+  @override
+  String get curLevelPrimary => 'Primary school';
+
+  @override
+  String get curLevelLowerSecondary => 'Lower secondary';
+
+  @override
+  String get curLevelUpperSecondary => 'Upper secondary';
+
+  @override
+  String get curTopicNoteReading => 'Note reading';
+
+  @override
+  String get curTopicNoteValues => 'Note values & rhythm';
+
+  @override
+  String get curTopicMeter => 'Time & metre';
+
+  @override
+  String get curTopicDynamics => 'Dynamics & tempo';
+
+  @override
+  String get curTopicScales => 'Scales & keys';
+
+  @override
+  String get curTopicIntervals => 'Intervals';
+
+  @override
+  String get curTopicChords => 'Chords';
+
+  @override
+  String get curTopicHarmony => 'Harmony & cadences';
+
+  @override
+  String get curTopicTransposition => 'Transposition';
+
+  @override
+  String get curTopicEar => 'Ear training';
+
+  @override
+  String get curTopicSightReading => 'Sight-reading';
+
+  @override
+  String curReadiness(int pct) {
+    return '$pct% ready';
+  }
+
+  @override
+  String get curPracticeLevel => 'Practise this level';
+
+  @override
+  String get curTopicsHeader => 'Topics';
+
+  @override
+  String get curGuideNote =>
+      'A practice guide, not an official alignment — verify against your association\'s catalogue.';
+
+  @override
+  String get curNoGames => 'No games for this topic yet';
+
+  @override
+  String get gameChordBuilder => 'Chord Builder';
+
+  @override
+  String get gameChordBuilderSubtitle =>
+      'Build the named chord — any voicing counts';
+
+  @override
+  String chordBuilderPrompt(String chord) {
+    return 'Build a $chord chord';
+  }
+
+  @override
+  String get chordBuilderHint =>
+      'Tap three notes onto the staff. Any octave or inversion works.';
+
+  @override
+  String get chordBuilderClear => 'Clear';
+
+  @override
+  String get chordBuilderCheck => 'Check';
+
+  @override
   String get moduleTranspose => 'Transposing';
 
   @override
@@ -946,6 +1052,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get concertInstrumentF => 'F Horn';
+
+  @override
+  String get gameBowing => 'Bowing';
+
+  @override
+  String get gameBowingSubtitle => 'Read the up-bow and down-bow marks';
+
+  @override
+  String get bowingPrompt => 'Which bow stroke is marked?';
+
+  @override
+  String get bowDown => 'Down-bow';
+
+  @override
+  String get bowUp => 'Up-bow';
+
+  @override
+  String get gameWhichBeat => 'Which Beat?';
+
+  @override
+  String get gameWhichBeatSubtitle =>
+      'Tap the beat the coloured note starts on';
+
+  @override
+  String get whichBeatPrompt => 'Which beat does the coloured note fall on?';
+
+  @override
+  String get workshopExportAbc => 'Export ABC';
+
+  @override
+  String get workshopCopy => 'Copy';
+
+  @override
+  String get workshopCopied => 'ABC copied to clipboard';
+
+  @override
+  String get gameTimeSignature => 'Time Signatures';
+
+  @override
+  String get gameTimeSignatureSubtitle =>
+      'Read the signature (incl. C and cut time)';
+
+  @override
+  String get timeSignaturePrompt => 'How many beats are in one bar?';
+
+  @override
+  String get gameDuet => 'Duet';
+
+  @override
+  String get gameDuetSubtitle =>
+      'Read the highlighted part in a two-staff score';
+
+  @override
+  String get duetPrompt => 'Name the highlighted note';
+
+  @override
+  String get moduleDrums => 'Drums';
+
+  @override
+  String get moduleDrumsSubtitle => 'Read and play rhythms';
+
+  @override
+  String get gameDrumRead => 'Drum Read';
+
+  @override
+  String get gameDrumReadSubtitle => 'Read the rhythm and tap it on the drum';
+
+  @override
+  String get drumReadHint =>
+      'Tap the drum on each note, in time with the click.';
+
+  @override
+  String get drumReadGo => 'Play!';
+
+  @override
+  String beatsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count beats',
+      one: '1 beat',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get clefBass => 'Bass clef';
@@ -1123,17 +1313,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quarterBeat => '¼ beat';
-
-  @override
-  String beatsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count beats',
-      one: '1 beat',
-    );
-    return '$_temp0';
-  }
 
   @override
   String symbolLength(String name, String length) {

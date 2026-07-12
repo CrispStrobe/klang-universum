@@ -1724,6 +1724,204 @@ abstract class AppLocalizations {
   /// **'Which chord is this?'**
   String get nameThatChordPrompt;
 
+  /// No description provided for @curriculumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges & Curriculum'**
+  String get curriculumTitle;
+
+  /// No description provided for @curriculumTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Badges & curriculum'**
+  String get curriculumTooltip;
+
+  /// No description provided for @curLeistungsabzeichen.
+  ///
+  /// In en, this message translates to:
+  /// **'Music Badges (D0–D3)'**
+  String get curLeistungsabzeichen;
+
+  /// No description provided for @curSchoolGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'School Music (general)'**
+  String get curSchoolGeneral;
+
+  /// No description provided for @curLevelD0.
+  ///
+  /// In en, this message translates to:
+  /// **'D0 · Junior'**
+  String get curLevelD0;
+
+  /// No description provided for @curLevelD1.
+  ///
+  /// In en, this message translates to:
+  /// **'D1 · Bronze'**
+  String get curLevelD1;
+
+  /// No description provided for @curLevelD2.
+  ///
+  /// In en, this message translates to:
+  /// **'D2 · Silver'**
+  String get curLevelD2;
+
+  /// No description provided for @curLevelD3.
+  ///
+  /// In en, this message translates to:
+  /// **'D3 · Gold'**
+  String get curLevelD3;
+
+  /// No description provided for @curLevelPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary school'**
+  String get curLevelPrimary;
+
+  /// No description provided for @curLevelLowerSecondary.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower secondary'**
+  String get curLevelLowerSecondary;
+
+  /// No description provided for @curLevelUpperSecondary.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper secondary'**
+  String get curLevelUpperSecondary;
+
+  /// No description provided for @curTopicNoteReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Note reading'**
+  String get curTopicNoteReading;
+
+  /// No description provided for @curTopicNoteValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Note values & rhythm'**
+  String get curTopicNoteValues;
+
+  /// No description provided for @curTopicMeter.
+  ///
+  /// In en, this message translates to:
+  /// **'Time & metre'**
+  String get curTopicMeter;
+
+  /// No description provided for @curTopicDynamics.
+  ///
+  /// In en, this message translates to:
+  /// **'Dynamics & tempo'**
+  String get curTopicDynamics;
+
+  /// No description provided for @curTopicScales.
+  ///
+  /// In en, this message translates to:
+  /// **'Scales & keys'**
+  String get curTopicScales;
+
+  /// No description provided for @curTopicIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get curTopicIntervals;
+
+  /// No description provided for @curTopicChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get curTopicChords;
+
+  /// No description provided for @curTopicHarmony.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmony & cadences'**
+  String get curTopicHarmony;
+
+  /// No description provided for @curTopicTransposition.
+  ///
+  /// In en, this message translates to:
+  /// **'Transposition'**
+  String get curTopicTransposition;
+
+  /// No description provided for @curTopicEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Ear training'**
+  String get curTopicEar;
+
+  /// No description provided for @curTopicSightReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Sight-reading'**
+  String get curTopicSightReading;
+
+  /// No description provided for @curReadiness.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% ready'**
+  String curReadiness(int pct);
+
+  /// No description provided for @curPracticeLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Practise this level'**
+  String get curPracticeLevel;
+
+  /// No description provided for @curTopicsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics'**
+  String get curTopicsHeader;
+
+  /// No description provided for @curGuideNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A practice guide, not an official alignment — verify against your association\'s catalogue.'**
+  String get curGuideNote;
+
+  /// No description provided for @curNoGames.
+  ///
+  /// In en, this message translates to:
+  /// **'No games for this topic yet'**
+  String get curNoGames;
+
+  /// No description provided for @gameChordBuilder.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord Builder'**
+  String get gameChordBuilder;
+
+  /// No description provided for @gameChordBuilderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build the named chord — any voicing counts'**
+  String get gameChordBuilderSubtitle;
+
+  /// No description provided for @chordBuilderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a {chord} chord'**
+  String chordBuilderPrompt(String chord);
+
+  /// No description provided for @chordBuilderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap three notes onto the staff. Any octave or inversion works.'**
+  String get chordBuilderHint;
+
+  /// No description provided for @chordBuilderClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get chordBuilderClear;
+
+  /// No description provided for @chordBuilderCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get chordBuilderCheck;
+
   /// No description provided for @moduleTranspose.
   ///
   /// In en, this message translates to:
@@ -1777,6 +1975,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'F Horn'**
   String get concertInstrumentF;
+
+  /// No description provided for @gameBowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Bowing'**
+  String get gameBowing;
+
+  /// No description provided for @gameBowingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the up-bow and down-bow marks'**
+  String get gameBowingSubtitle;
+
+  /// No description provided for @bowingPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which bow stroke is marked?'**
+  String get bowingPrompt;
+
+  /// No description provided for @bowDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Down-bow'**
+  String get bowDown;
+
+  /// No description provided for @bowUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Up-bow'**
+  String get bowUp;
+
+  /// No description provided for @gameWhichBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Beat?'**
+  String get gameWhichBeat;
+
+  /// No description provided for @gameWhichBeatSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the beat the coloured note starts on'**
+  String get gameWhichBeatSubtitle;
+
+  /// No description provided for @whichBeatPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which beat does the coloured note fall on?'**
+  String get whichBeatPrompt;
+
+  /// No description provided for @workshopExportAbc.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ABC'**
+  String get workshopExportAbc;
+
+  /// No description provided for @workshopCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get workshopCopy;
+
+  /// No description provided for @workshopCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'ABC copied to clipboard'**
+  String get workshopCopied;
+
+  /// No description provided for @gameTimeSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Signatures'**
+  String get gameTimeSignature;
+
+  /// No description provided for @gameTimeSignatureSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the signature (incl. C and cut time)'**
+  String get gameTimeSignatureSubtitle;
+
+  /// No description provided for @timeSignaturePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How many beats are in one bar?'**
+  String get timeSignaturePrompt;
+
+  /// No description provided for @gameDuet.
+  ///
+  /// In en, this message translates to:
+  /// **'Duet'**
+  String get gameDuet;
+
+  /// No description provided for @gameDuetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the highlighted part in a two-staff score'**
+  String get gameDuetSubtitle;
+
+  /// No description provided for @duetPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the highlighted note'**
+  String get duetPrompt;
+
+  /// No description provided for @moduleDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums'**
+  String get moduleDrums;
+
+  /// No description provided for @moduleDrumsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read and play rhythms'**
+  String get moduleDrumsSubtitle;
+
+  /// No description provided for @gameDrumRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Drum Read'**
+  String get gameDrumRead;
+
+  /// No description provided for @gameDrumReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the rhythm and tap it on the drum'**
+  String get gameDrumReadSubtitle;
+
+  /// No description provided for @drumReadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the drum on each note, in time with the click.'**
+  String get drumReadHint;
+
+  /// No description provided for @drumReadGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Play!'**
+  String get drumReadGo;
+
+  /// No description provided for @beatsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 beat} other{{count} beats}}'**
+  String beatsCount(int count);
 
   /// No description provided for @clefBass.
   ///
@@ -2089,12 +2431,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'¼ beat'**
   String get quarterBeat;
-
-  /// No description provided for @beatsCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 beat} other{{count} beats}}'**
-  String beatsCount(int count);
 
   /// No description provided for @symbolLength.
   ///

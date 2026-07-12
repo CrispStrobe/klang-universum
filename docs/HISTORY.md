@@ -147,6 +147,11 @@ Games built on partitura capabilities the app didn't use before.
   for beginners, diminished/augmented and slash-chord inversions (C/E) at 2★.
   Renders the chord as a block on the staff, replay button, keyboard 1–4. SRI
   `chords.name.<root>_<type>`.
+- **Chord Builder** (chords) — build the named chord by tapping three notes onto
+  the staff; partitura's `identifyChord` grades what you built, so **any voicing
+  counts** — root position or an inversion, in any octave. The interactive
+  counterpart to Name That Chord; major/minor for beginners, dim/aug at 2★. SRI
+  `chords.build.<root>_<quality>`.
 - **ABC import** (Song Book) — the importer takes pasted **ABC notation**
   (`scoreFromAbc`) alongside MusicXML / ChordPro / MIDI, stored as MusicXML like
   the rest. Opens the large public-domain ABC folk-tune libraries; the tune's
@@ -156,6 +161,29 @@ Games built on partitura capabilities the app didn't use before.
   actually sounds; partitura's `transposeBy` computes the exact letter. The B♭
   instruments alone for beginners, E♭ and F added at 2★. A skill nothing else in
   the app covers. SRI `transpose.<instrument>.<written-step>`.
+- **Bowing** (cello corner) — read partitura's string-bowing marks: a note on
+  the bass staff carries a ⊓ down-bow or ∨ up-bow (`Articulation.downBow/upBow`);
+  name it. SRI `cello.bowing.<down|up>`.
+- **Which Beat?** (measures) — a 4/4 bar with one note coloured; tap the beat it
+  starts on (1–4). partitura's **`showBeatNumbers`** overlay draws the count
+  under the staff as a scaffold that fades (on at level 1, off at 2★). SRI
+  `measures.beat.<n>`.
+- **Time Signatures** (measures) — read a signature — including the **C
+  (common)** and **¢ (cut)** glyphs — and give the beats per bar. 3/4·4/4·C for
+  beginners; ¢·6/8·2/4 at 2★. SRI `measures.timesig.<id>`.
+- **ABC export** (Composition Workshop) — an AppBar action renders the current
+  score to **ABC** (`scoreToAbc`) in a dialog and copies it to the clipboard;
+  round-trips with the Song Book's ABC import.
+- **Duet** (note reading) — read the **highlighted part of a two-staff system**
+  (partitura's `StaffSystemView`): two parts are shown, one note highlighted;
+  name it, tracking the right line. Both treble for beginners; the lower part
+  becomes bass clef at 2★, like a grand-staff duet. SRI
+  `note_reading.<clef>.*`.
+- **Drum Read** (new **Drums** corner) — read a two-bar rhythm on the neutral
+  **percussion clef** and tap it back on the drum pad. After a one-bar count-in
+  the notation goes live; each tap is judged Perfect/Good/Miss against the
+  notated onsets over a steady click (one Ticker master clock, no drift). A
+  no-fail performance toy.
 
 ## Toy-inspired mechanics — shipped
 

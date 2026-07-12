@@ -12,6 +12,7 @@
 
 // Material's Stepper also exports a `Step`; partitura's wins here.
 import 'package:flutter/material.dart' hide Step;
+import 'package:flutter/services.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -144,6 +145,39 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     ]);
   }
 
+  // Export the score as ABC notation (partitura's scoreToAbc) — a compact text
+  // form that pastes into ABC tools and back into the Song Book importer.
+  Future<void> _exportAbc() async {
+    if (_notes.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final abc = scoreToAbc(_score);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.workshopExportAbc),
+        content: SingleChildScrollView(child: SelectableText(abc)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(MaterialLocalizations.of(ctx).closeButtonLabel),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: abc));
+              Navigator.of(ctx).pop();
+              messenger.showSnackBar(
+                SnackBar(content: Text(l10n.workshopCopied)),
+              );
+            },
+            icon: const Icon(Icons.copy),
+            label: Text(l10n.workshopCopy),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (_notes.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
@@ -195,7 +229,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     );
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.workshopComposeTitle)),
+      appBar: AppBar(
+        title: Text(l10n.workshopComposeTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.abc),
+            tooltip: l10n.workshopExportAbc,
+            onPressed: _notes.isEmpty ? null : _exportAbc,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

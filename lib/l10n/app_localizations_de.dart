@@ -924,6 +924,111 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nameThatChordPrompt => 'Welcher Akkord ist das?';
 
   @override
+  String get curriculumTitle => 'Abzeichen & Lehrplan';
+
+  @override
+  String get curriculumTooltip => 'Abzeichen & Lehrplan';
+
+  @override
+  String get curLeistungsabzeichen => 'Leistungsabzeichen (D0–D3)';
+
+  @override
+  String get curSchoolGeneral => 'Schulmusik (allgemein)';
+
+  @override
+  String get curLevelD0 => 'D0 · Junior';
+
+  @override
+  String get curLevelD1 => 'D1 · Bronze';
+
+  @override
+  String get curLevelD2 => 'D2 · Silber';
+
+  @override
+  String get curLevelD3 => 'D3 · Gold';
+
+  @override
+  String get curLevelPrimary => 'Grundschule';
+
+  @override
+  String get curLevelLowerSecondary => 'Sekundarstufe I';
+
+  @override
+  String get curLevelUpperSecondary => 'Sekundarstufe II';
+
+  @override
+  String get curTopicNoteReading => 'Noten lesen';
+
+  @override
+  String get curTopicNoteValues => 'Notenwerte & Rhythmus';
+
+  @override
+  String get curTopicMeter => 'Takt & Taktarten';
+
+  @override
+  String get curTopicDynamics => 'Dynamik & Tempo';
+
+  @override
+  String get curTopicScales => 'Tonleitern & Tonarten';
+
+  @override
+  String get curTopicIntervals => 'Intervalle';
+
+  @override
+  String get curTopicChords => 'Akkorde';
+
+  @override
+  String get curTopicHarmony => 'Harmonik & Kadenzen';
+
+  @override
+  String get curTopicTransposition => 'Transposition';
+
+  @override
+  String get curTopicEar => 'Gehörbildung';
+
+  @override
+  String get curTopicSightReading => 'Blattlesen';
+
+  @override
+  String curReadiness(int pct) {
+    return '$pct% bereit';
+  }
+
+  @override
+  String get curPracticeLevel => 'Diese Stufe üben';
+
+  @override
+  String get curTopicsHeader => 'Themen';
+
+  @override
+  String get curGuideNote =>
+      'Ein Übungsleitfaden, keine offizielle Zuordnung — bitte mit dem Katalog deines Verbands abgleichen.';
+
+  @override
+  String get curNoGames => 'Noch keine Spiele für dieses Thema';
+
+  @override
+  String get gameChordBuilder => 'Akkord bauen';
+
+  @override
+  String get gameChordBuilderSubtitle => 'Baue den Akkord — jede Lage zählt';
+
+  @override
+  String chordBuilderPrompt(String chord) {
+    return 'Baue einen $chord-Akkord';
+  }
+
+  @override
+  String get chordBuilderHint =>
+      'Tippe drei Noten auf das System. Jede Oktave oder Umkehrung zählt.';
+
+  @override
+  String get chordBuilderClear => 'Löschen';
+
+  @override
+  String get chordBuilderCheck => 'Prüfen';
+
+  @override
   String get moduleTranspose => 'Transponieren';
 
   @override
@@ -953,6 +1058,89 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get concertInstrumentF => 'F-Horn';
+
+  @override
+  String get gameBowing => 'Bogenstrich';
+
+  @override
+  String get gameBowingSubtitle => 'Lies Auf- und Abstrich-Zeichen';
+
+  @override
+  String get bowingPrompt => 'Welcher Bogenstrich ist markiert?';
+
+  @override
+  String get bowDown => 'Abstrich';
+
+  @override
+  String get bowUp => 'Aufstrich';
+
+  @override
+  String get gameWhichBeat => 'Welche Zählzeit?';
+
+  @override
+  String get gameWhichBeatSubtitle => 'Tippe die Zählzeit der farbigen Note';
+
+  @override
+  String get whichBeatPrompt => 'Auf welche Zählzeit fällt die farbige Note?';
+
+  @override
+  String get workshopExportAbc => 'ABC exportieren';
+
+  @override
+  String get workshopCopy => 'Kopieren';
+
+  @override
+  String get workshopCopied => 'ABC in die Zwischenablage kopiert';
+
+  @override
+  String get gameTimeSignature => 'Taktarten';
+
+  @override
+  String get gameTimeSignatureSubtitle =>
+      'Lies die Taktart (auch C und Alla breve)';
+
+  @override
+  String get timeSignaturePrompt => 'Wie viele Zählzeiten hat ein Takt?';
+
+  @override
+  String get gameDuet => 'Duett';
+
+  @override
+  String get gameDuetSubtitle => 'Lies die markierte Stimme im Zweiersystem';
+
+  @override
+  String get duetPrompt => 'Benenne die markierte Note';
+
+  @override
+  String get moduleDrums => 'Schlagzeug';
+
+  @override
+  String get moduleDrumsSubtitle => 'Rhythmen lesen und spielen';
+
+  @override
+  String get gameDrumRead => 'Trommeln lesen';
+
+  @override
+  String get gameDrumReadSubtitle =>
+      'Lies den Rhythmus und tippe ihn auf der Trommel';
+
+  @override
+  String get drumReadHint =>
+      'Tippe die Trommel bei jeder Note, im Takt des Klicks.';
+
+  @override
+  String get drumReadGo => 'Los!';
+
+  @override
+  String beatsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Schläge',
+      one: '1 Schlag',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get clefBass => 'Bassschlüssel';
@@ -1129,17 +1317,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get quarterBeat => '¼ Schlag';
-
-  @override
-  String beatsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Schläge',
-      one: '1 Schlag',
-    );
-    return '$_temp0';
-  }
 
   @override
   String symbolLength(String name, String length) {
