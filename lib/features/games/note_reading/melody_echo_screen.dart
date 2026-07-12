@@ -276,6 +276,7 @@ class _MelodyEchoScreenState extends State<MelodyEchoScreen>
                                                 : BorderSide.none,
                                   ),
                                   child: Stack(
+                                    fit: StackFit.expand,
                                     children: [
                                       Positioned.fill(
                                         child: InkWell(

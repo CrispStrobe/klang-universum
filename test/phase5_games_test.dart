@@ -82,6 +82,10 @@ void main() {
     await tester.tap(find.byType(StaffView).first);
     await tester.pump();
     expect(sri.getDetailedBreakdown()['note_reading']!.keys, ['melody']);
-    await tester.pumpAndSettle();
+    // A wrong tap replays the tapped card with a note-by-note highlight
+    // (chained timers); drain them so none dangle past the test.
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
   });
 }
