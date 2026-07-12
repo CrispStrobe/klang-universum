@@ -464,5 +464,49 @@
   "halfRest": "Halbe Pause",
   "quarterRest": "Viertelpause",
   "eighthRest": "Achtelpause",
-  "sixteenthRest": "Sechzehntelpause"
+  "sixteenthRest": "Sechzehntelpause",
+  "gameTuner": "Stimmgerät",
+  "gameTunerSubtitle": "Live-Intonation – spiele oder singe einen Ton",
+  "gamePlayAlong": "Mitspielen",
+  "gamePlayAlongSubtitle": "Folge der laufenden Partitur in der ersten Lage",
+  "gameSingAlong": "Mitsingen",
+  "gameSingAlongSubtitle": "Triff die laufende Partitur mit deiner Stimme",
+  "gameChordListener": "Akkord-Erkennung",
+  "gameChordListenerSubtitle": "Erkenne den Akkord, den du spielst",
+  "micStart": "Zuhören starten",
+  "micStop": "Stopp",
+  "micPermissionDenied": "Mikrofonzugriff verweigert. Aktiviere ihn in den Systemeinstellungen.",
+  "micUnsupported": "PCM-Aufnahme wird auf diesem Gerät nicht unterstützt.",
+  "micStartFailed": "Mikrofon konnte nicht gestartet werden: {detail}",
+  "@micStartFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "tunerPrompt": "Spiele oder singe einen Ton",
+  "tunerCents": "{cents} Cent",
+  "@tunerCents": {
+    "placeholders": {
+      "cents": {
+        "type": "String"
+      }
+    }
+  },
+  "playAlongScore": "Punkte",
+  "playAlongNow": "Jetzt",
+  "playAlongYou": "Du",
+  "playAlongCountIn": "Einzähler",
+  "playAlongPreview": "Vorhören",
+  "chordListenerPrompt": "Spiele oder zupfe einen Akkord",
+  "chordListenerMatch": "{percent}% Übereinstimmung",
+  "@chordListenerMatch": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "chordListenerHeard": "Gehörte Tonklassen"
 }

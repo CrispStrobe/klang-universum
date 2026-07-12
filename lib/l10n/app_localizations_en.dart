@@ -1407,4 +1407,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sixteenthRest => 'Sixteenth rest';
+
+  @override
+  String get gameTuner => 'Tuner';
+
+  @override
+  String get gameTunerSubtitle => 'Live intonation — play or sing a note';
+
+  @override
+  String get gamePlayAlong => 'Play along';
+
+  @override
+  String get gamePlayAlongSubtitle =>
+      'Follow the moving score in first position';
+
+  @override
+  String get gameSingAlong => 'Sing along';
+
+  @override
+  String get gameSingAlongSubtitle => 'Match the moving score with your voice';
+
+  @override
+  String get gameChordListener => 'Chord listener';
+
+  @override
+  String get gameChordListenerSubtitle => 'Name the chord you strum or play';
+
+  @override
+  String get micStart => 'Start listening';
+
+  @override
+  String get micStop => 'Stop';
+
+  @override
+  String get micPermissionDenied =>
+      'Microphone permission denied. Enable it in system settings.';
+
+  @override
+  String get micUnsupported => 'PCM capture is not supported on this device.';
+
+  @override
+  String micStartFailed(String detail) {
+    return 'Could not start the microphone: $detail';
+  }
+
+  @override
+  String get tunerPrompt => 'Play or sing a note';
+
+  @override
+  String tunerCents(String cents) {
+    return '$cents cents';
+  }
+
+  @override
+  String get playAlongScore => 'Score';
+
+  @override
+  String get playAlongNow => 'Now';
+
+  @override
+  String get playAlongYou => 'You';
+
+  @override
+  String get playAlongCountIn => 'count-in';
+
+  @override
+  String get playAlongPreview => 'Preview';
+
+  @override
+  String get chordListenerPrompt => 'Strum or play a chord';
+
+  @override
+  String chordListenerMatch(int percent) {
+    return '$percent% match';
+  }
+
+  @override
+  String get chordListenerHeard => 'Heard pitch classes';
 }

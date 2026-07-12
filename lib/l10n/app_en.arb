@@ -670,5 +670,49 @@
   "halfRest": "Half rest",
   "quarterRest": "Quarter rest",
   "eighthRest": "Eighth rest",
-  "sixteenthRest": "Sixteenth rest"
+  "sixteenthRest": "Sixteenth rest",
+  "gameTuner": "Tuner",
+  "gameTunerSubtitle": "Live intonation — play or sing a note",
+  "gamePlayAlong": "Play along",
+  "gamePlayAlongSubtitle": "Follow the moving score in first position",
+  "gameSingAlong": "Sing along",
+  "gameSingAlongSubtitle": "Match the moving score with your voice",
+  "gameChordListener": "Chord listener",
+  "gameChordListenerSubtitle": "Name the chord you strum or play",
+  "micStart": "Start listening",
+  "micStop": "Stop",
+  "micPermissionDenied": "Microphone permission denied. Enable it in system settings.",
+  "micUnsupported": "PCM capture is not supported on this device.",
+  "micStartFailed": "Could not start the microphone: {detail}",
+  "@micStartFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "tunerPrompt": "Play or sing a note",
+  "tunerCents": "{cents} cents",
+  "@tunerCents": {
+    "placeholders": {
+      "cents": {
+        "type": "String"
+      }
+    }
+  },
+  "playAlongScore": "Score",
+  "playAlongNow": "Now",
+  "playAlongYou": "You",
+  "playAlongCountIn": "count-in",
+  "playAlongPreview": "Preview",
+  "chordListenerPrompt": "Strum or play a chord",
+  "chordListenerMatch": "{percent}% match",
+  "@chordListenerMatch": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "chordListenerHeard": "Heard pitch classes"
 }

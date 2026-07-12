@@ -1,18 +1,16 @@
 // lib/features/games/chords/chord_listen_spike_screen.dart
 //
-// SPIKE (phase 2) — fuzzy chord recognition from the live mic. Strum a guitar
-// or play a chord on a keyboard; it names the closest chord and shows runner-up
-// guesses plus the 12-bin pitch-class profile it heard. Deliberately
-// approximate — see chroma_analysis.dart for why "name the chord" beats
-// "transcribe every note".
-//
-// Developer harness: not localized, temporary tile in the chords corner.
+// Fuzzy chord recognition from the live mic. Strum a guitar or play a chord on a
+// keyboard; it names the closest chord and shows runner-up guesses plus the
+// 12-bin pitch-class profile it heard. Deliberately approximate — see
+// chroma_analysis.dart for why "name the chord" beats "transcribe every note".
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/chroma_analysis.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 
 const _pcNames = <String>[
   'C',
@@ -42,7 +40,7 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
   StreamSubscription<ChordReading>? _sub;
 
   ChordReading _reading = ChordReading.silent();
-  String? _errorMessage;
+  ({PitchCaptureError reason, String? detail})? _error;
   bool _listening = false;
 
   @override
@@ -63,14 +61,21 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
       return;
     }
 
-    setState(() => _errorMessage = null);
+    setState(() => _error = null);
     try {
       _sub = _service.chords.listen(
         (r) {
           if (mounted) setState(() => _reading = r);
         },
         onError: (Object e) {
-          if (mounted) setState(() => _errorMessage = '$e');
+          if (mounted) {
+            setState(
+              () => _error = (
+                reason: PitchCaptureError.unknown,
+                detail: '$e',
+              ),
+            );
+          }
         },
       );
       await _service.start();
@@ -80,26 +85,27 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
       if (mounted) {
         setState(() {
           _listening = false;
-          _errorMessage = switch (e.reason) {
-            PitchCaptureError.permissionDenied =>
-              'Microphone permission denied. Enable it in system settings.',
-            PitchCaptureError.unsupported =>
-              'PCM capture is not supported on this device.',
-            _ => 'Could not start the microphone: ${e.detail ?? e.reason.name}',
-          };
+          _error = (reason: e.reason, detail: e.detail);
         });
       }
     }
   }
 
+  String _errorText(AppLocalizations l) => switch (_error!.reason) {
+        PitchCaptureError.permissionDenied => l.micPermissionDenied,
+        PitchCaptureError.unsupported => l.micUnsupported,
+        _ => l.micStartFailed(_error!.detail ?? _error!.reason.name),
+      };
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context)!;
     final r = _reading;
     final best = r.best;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chord listener (spike)')),
+      appBar: AppBar(title: Text(l.gameChordListener)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -117,8 +123,8 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
               ),
               Text(
                 best == null
-                    ? 'Strum or play a chord'
-                    : '${(best.score * 100).toStringAsFixed(0)}% match',
+                    ? l.chordListenerPrompt
+                    : l.chordListenerMatch((best.score * 100).round()),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
@@ -140,7 +146,7 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
               ),
               const SizedBox(height: 32),
               Text(
-                'Heard pitch classes',
+                l.chordListenerHeard,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -155,11 +161,11 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
                 ),
               ),
               const Spacer(),
-              if (_errorMessage != null)
+              if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    _errorMessage!,
+                    _errorText(l),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: scheme.error),
                   ),
@@ -167,7 +173,7 @@ class _ChordListenSpikeScreenState extends State<ChordListenSpikeScreen> {
               FilledButton.icon(
                 onPressed: _toggle,
                 icon: Icon(_listening ? Icons.stop : Icons.mic),
-                label: Text(_listening ? 'Stop' : 'Start listening'),
+                label: Text(_listening ? l.micStop : l.micStart),
               ),
               const SizedBox(height: 8),
             ],

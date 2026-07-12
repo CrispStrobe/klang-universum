@@ -49,9 +49,9 @@ Names the chord you strum/play with runner-up guesses + a chroma bar chart.
   cancellation for pitch accuracy). v1 play/sing-along therefore scrolls the
   score without audible backing, with a "preview" listen before you start; real
   backing needs headphones or an AEC path. Documented, not solved.
-- **Localization:** the new modes use literal English strings for velocity.
-  Promote to `l10n` (de/en) before release — one `AppLocalizations` key per
-  title/subtitle, same as existing games.
+- **Localization:** DONE for the four modes (Tuner, Play along, Sing along,
+  Chord listener) — tiles + screens have de/en `AppLocalizations` keys. Chart
+  names and the technical Hz/clarity readout stay language-neutral.
 - **Progress/stars:** play/sing-along report a score but don't yet write to
   `ProgressService` or define `kStarThresholds` brackets. Wire once the scoring
   feel is tuned on-device.

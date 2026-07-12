@@ -7,9 +7,9 @@
 // mic's readings, and paints.
 //
 // One screen serves both modes — pass a cello chart for play-along or an
-// octave-agnostic vocal chart for sing-along. Not yet localized (see PLAN.md);
-// no audible backing on purpose (the mic would hear the speaker — use the
-// Preview button, then play/sing against the scroll).
+// octave-agnostic vocal chart for sing-along, with the localized title. No
+// audible backing on purpose (the mic would hear the speaker — use the Preview
+// button, then play/sing against the scroll).
 
 import 'dart:async';
 
@@ -19,6 +19,7 @@ import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 const _noteNames = <String>[
@@ -60,7 +61,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
 
   PitchReading _latest = PitchReading.silent();
   bool _running = false;
-  String? _error;
+  ({PitchCaptureError reason, String? detail})? _error;
 
   @override
   void initState() {
@@ -99,7 +100,14 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       _sub = _service.readings.listen(
         (r) => _latest = r,
         onError: (Object e) {
-          if (mounted) setState(() => _error = '$e');
+          if (mounted) {
+            setState(
+              () => _error = (
+                reason: PitchCaptureError.unknown,
+                detail: '$e',
+              ),
+            );
+          }
         },
       );
       await _service.start();
@@ -110,15 +118,17 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       if (mounted) {
         setState(() {
           _running = false;
-          _error = switch (e.reason) {
-            PitchCaptureError.permissionDenied =>
-              'Microphone permission denied. Enable it in system settings.',
-            _ => 'Could not start the microphone: ${e.detail ?? e.reason.name}',
-          };
+          _error = (reason: e.reason, detail: e.detail);
         });
       }
     }
   }
+
+  String _errorText(AppLocalizations l) => switch (_error!.reason) {
+        PitchCaptureError.permissionDenied => l.micPermissionDenied,
+        PitchCaptureError.unsupported => l.micUnsupported,
+        _ => l.micStartFailed(_error!.detail ?? _error!.reason.name),
+      };
 
   Future<void> _stop() async {
     _ticker.stop();
@@ -138,6 +148,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context)!;
     final active = _engine.activeNote;
     final liveMidi = _latest.hasPitch ? _latest.midi : null;
 
@@ -153,15 +164,15 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                 children: [
                   _stat(
                     context,
-                    'Score',
+                    l.playAlongScore,
                     '${_engine.hits}/${_engine.notes.length}',
                   ),
                   _stat(
                     context,
-                    'Now',
+                    l.playAlongNow,
                     _running
                         ? (_engine.inCountIn
-                            ? 'count-in'
+                            ? l.playAlongCountIn
                             : (active != null
                                 ? _midiName(active.note.midi)
                                 : '—'))
@@ -169,7 +180,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                   ),
                   _stat(
                     context,
-                    'You',
+                    l.playAlongYou,
                     _latest.hasPitch ? _latest.noteName : '—',
                   ),
                 ],
@@ -197,7 +208,8 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.all(8),
-                child: Text(_error!, style: TextStyle(color: scheme.error)),
+                child:
+                    Text(_errorText(l), style: TextStyle(color: scheme.error)),
               ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -207,13 +219,13 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                   OutlinedButton.icon(
                     onPressed: _running ? null : _preview,
                     icon: const Icon(Icons.volume_up),
-                    label: const Text('Preview'),
+                    label: Text(l.playAlongPreview),
                   ),
                   const SizedBox(width: 12),
                   FilledButton.icon(
                     onPressed: _running ? _stop : _start,
                     icon: Icon(_running ? Icons.stop : Icons.play_arrow),
-                    label: Text(_running ? 'Stop' : 'Play along'),
+                    label: Text(_running ? l.micStop : widget.title),
                   ),
                 ],
               ),

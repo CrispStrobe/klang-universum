@@ -422,13 +422,12 @@ final Map<String, List<GameInfo>> kGamesByModule = {
     ),
   ],
   'chords': [
-    // SPIKE (temporary, not localized): phase-2 fuzzy chord recognition from
-    // the live mic. Remove once a real chord-listening game replaces it.
+    // Fuzzy chord recognition from the live mic.
     GameInfo(
       id: 'chord_listen_spike',
       icon: Icons.hearing,
-      title: (_) => 'Chord listener (spike)',
-      subtitle: (_) => 'Name the chord you strum or play',
+      title: (l) => l.gameChordListener,
+      subtitle: (l) => l.gameChordListenerSubtitle,
       builder: (_) => const ChordListenSpikeScreen(),
     ),
     GameInfo(
@@ -521,23 +520,23 @@ final Map<String, List<GameInfo>> kGamesByModule = {
     ),
   ],
   'cello': [
-    // Live-mic tuner (not yet localized — see PLAN.md).
+    // Live-mic tuner.
     GameInfo(
       id: 'cello_tuner',
       icon: Icons.graphic_eq,
-      title: (_) => 'Tuner',
-      subtitle: (_) => 'Live intonation — play or sing a note',
+      title: (l) => l.gameTuner,
+      subtitle: (l) => l.gameTunerSubtitle,
       builder: (_) => const TunerSpikeScreen(),
     ),
     // Play-along with a moving score.
     GameInfo(
       id: 'cello_play_along',
       icon: Icons.moving,
-      title: (_) => 'Play along',
-      subtitle: (_) => 'Follow the moving score in first position',
-      builder: (_) => const PlayAlongScreen(
+      title: (l) => l.gamePlayAlong,
+      subtitle: (l) => l.gamePlayAlongSubtitle,
+      builder: (ctx) => PlayAlongScreen(
         chart: PlayAlongCharts.celloFirstPosition,
-        title: 'Play along',
+        title: AppLocalizations.of(ctx)!.gamePlayAlong,
       ),
     ),
     GameInfo(
@@ -606,15 +605,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameSongBookSubtitle,
       builder: (_) => const SongListScreen(),
     ),
-    // Sing-along with a moving score (octave-agnostic; not yet localized).
+    // Sing-along with a moving score (octave-agnostic).
     GameInfo(
       id: 'sing_along',
       icon: Icons.mic_external_on,
-      title: (_) => 'Sing along',
-      subtitle: (_) => 'Match the moving score with your voice',
-      builder: (_) => const PlayAlongScreen(
+      title: (l) => l.gameSingAlong,
+      subtitle: (l) => l.gameSingAlongSubtitle,
+      builder: (ctx) => PlayAlongScreen(
         chart: PlayAlongCharts.twinkleSing,
-        title: 'Sing along',
+        title: AppLocalizations.of(ctx)!.gameSingAlong,
       ),
     ),
     GameInfo(

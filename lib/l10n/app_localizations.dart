@@ -2593,6 +2593,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sixteenth rest'**
   String get sixteenthRest;
+
+  /// No description provided for @gameTuner.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuner'**
+  String get gameTuner;
+
+  /// No description provided for @gameTunerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live intonation — play or sing a note'**
+  String get gameTunerSubtitle;
+
+  /// No description provided for @gamePlayAlong.
+  ///
+  /// In en, this message translates to:
+  /// **'Play along'**
+  String get gamePlayAlong;
+
+  /// No description provided for @gamePlayAlongSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the moving score in first position'**
+  String get gamePlayAlongSubtitle;
+
+  /// No description provided for @gameSingAlong.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing along'**
+  String get gameSingAlong;
+
+  /// No description provided for @gameSingAlongSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match the moving score with your voice'**
+  String get gameSingAlongSubtitle;
+
+  /// No description provided for @gameChordListener.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord listener'**
+  String get gameChordListener;
+
+  /// No description provided for @gameChordListenerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the chord you strum or play'**
+  String get gameChordListenerSubtitle;
+
+  /// No description provided for @micStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start listening'**
+  String get micStart;
+
+  /// No description provided for @micStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get micStop;
+
+  /// No description provided for @micPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission denied. Enable it in system settings.'**
+  String get micPermissionDenied;
+
+  /// No description provided for @micUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'PCM capture is not supported on this device.'**
+  String get micUnsupported;
+
+  /// No description provided for @micStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start the microphone: {detail}'**
+  String micStartFailed(String detail);
+
+  /// No description provided for @tunerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Play or sing a note'**
+  String get tunerPrompt;
+
+  /// No description provided for @tunerCents.
+  ///
+  /// In en, this message translates to:
+  /// **'{cents} cents'**
+  String tunerCents(String cents);
+
+  /// No description provided for @playAlongScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get playAlongScore;
+
+  /// No description provided for @playAlongNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get playAlongNow;
+
+  /// No description provided for @playAlongYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get playAlongYou;
+
+  /// No description provided for @playAlongCountIn.
+  ///
+  /// In en, this message translates to:
+  /// **'count-in'**
+  String get playAlongCountIn;
+
+  /// No description provided for @playAlongPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get playAlongPreview;
+
+  /// No description provided for @chordListenerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Strum or play a chord'**
+  String get chordListenerPrompt;
+
+  /// No description provided for @chordListenerMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% match'**
+  String chordListenerMatch(int percent);
+
+  /// No description provided for @chordListenerHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard pitch classes'**
+  String get chordListenerHeard;
 }
 
 class _AppLocalizationsDelegate

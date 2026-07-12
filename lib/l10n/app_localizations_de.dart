@@ -1411,4 +1411,84 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sixteenthRest => 'Sechzehntelpause';
+
+  @override
+  String get gameTuner => 'Stimmgerät';
+
+  @override
+  String get gameTunerSubtitle =>
+      'Live-Intonation – spiele oder singe einen Ton';
+
+  @override
+  String get gamePlayAlong => 'Mitspielen';
+
+  @override
+  String get gamePlayAlongSubtitle =>
+      'Folge der laufenden Partitur in der ersten Lage';
+
+  @override
+  String get gameSingAlong => 'Mitsingen';
+
+  @override
+  String get gameSingAlongSubtitle =>
+      'Triff die laufende Partitur mit deiner Stimme';
+
+  @override
+  String get gameChordListener => 'Akkord-Erkennung';
+
+  @override
+  String get gameChordListenerSubtitle => 'Erkenne den Akkord, den du spielst';
+
+  @override
+  String get micStart => 'Zuhören starten';
+
+  @override
+  String get micStop => 'Stopp';
+
+  @override
+  String get micPermissionDenied =>
+      'Mikrofonzugriff verweigert. Aktiviere ihn in den Systemeinstellungen.';
+
+  @override
+  String get micUnsupported =>
+      'PCM-Aufnahme wird auf diesem Gerät nicht unterstützt.';
+
+  @override
+  String micStartFailed(String detail) {
+    return 'Mikrofon konnte nicht gestartet werden: $detail';
+  }
+
+  @override
+  String get tunerPrompt => 'Spiele oder singe einen Ton';
+
+  @override
+  String tunerCents(String cents) {
+    return '$cents Cent';
+  }
+
+  @override
+  String get playAlongScore => 'Punkte';
+
+  @override
+  String get playAlongNow => 'Jetzt';
+
+  @override
+  String get playAlongYou => 'Du';
+
+  @override
+  String get playAlongCountIn => 'Einzähler';
+
+  @override
+  String get playAlongPreview => 'Vorhören';
+
+  @override
+  String get chordListenerPrompt => 'Spiele oder zupfe einen Akkord';
+
+  @override
+  String chordListenerMatch(int percent) {
+    return '$percent% Übereinstimmung';
+  }
+
+  @override
+  String get chordListenerHeard => 'Gehörte Tonklassen';
 }

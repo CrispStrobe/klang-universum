@@ -1,19 +1,16 @@
 // lib/features/games/cello/tuner_spike_screen.dart
 //
-// SPIKE — capture-layer proof for automatic play-along. A live cello tuner:
-// open the mic, detect the pitch you play/sing, and show how many cents sharp
-// or flat you are. This validates the whole chain (mic → PCM → detector →
-// intonation meter) on a real device before any game/scoring logic is built.
-//
-// Deliberately NOT localized and NOT wired into the game registry as a real
-// module yet — it is a developer harness. Reachable via a temporary tile so it
-// can be exercised on-device. See HANDOVER once the approach is confirmed.
+// Live cello/chromatic tuner: open the mic, detect the pitch you play/sing, and
+// show how many cents sharp or flat you are — the whole chain (mic → PCM →
+// detector → intonation meter). Grew out of the play-along capture spike; now a
+// real, localized tuner tile in the cello corner.
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 
 /// The cello's four open strings, low → high, as intonation reference chips.
 const _celloStrings = <({String name, int midi})>[
@@ -37,7 +34,7 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
   PitchReading _reading = PitchReading.silent();
   // A little smoothing so the readout does not jitter frame-to-frame.
   double? _smoothedCents;
-  String? _errorMessage;
+  ({PitchCaptureError reason, String? detail})? _error;
   bool _listening = false;
 
   @override
@@ -59,12 +56,19 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
       return;
     }
 
-    setState(() => _errorMessage = null);
+    setState(() => _error = null);
     try {
       _sub = _service.readings.listen(
         _onReading,
         onError: (Object e) {
-          if (mounted) setState(() => _errorMessage = '$e');
+          if (mounted) {
+            setState(
+              () => _error = (
+                reason: PitchCaptureError.unknown,
+                detail: '$e',
+              ),
+            );
+          }
         },
       );
       await _service.start();
@@ -74,17 +78,17 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
       if (mounted) {
         setState(() {
           _listening = false;
-          _errorMessage = switch (e.reason) {
-            PitchCaptureError.permissionDenied =>
-              'Microphone permission denied. Enable it in system settings.',
-            PitchCaptureError.unsupported =>
-              'PCM capture is not supported on this device.',
-            _ => 'Could not start the microphone: ${e.detail ?? e.reason.name}',
-          };
+          _error = (reason: e.reason, detail: e.detail);
         });
       }
     }
   }
+
+  String _errorText(AppLocalizations l) => switch (_error!.reason) {
+        PitchCaptureError.permissionDenied => l.micPermissionDenied,
+        PitchCaptureError.unsupported => l.micUnsupported,
+        _ => l.micStartFailed(_error!.detail ?? _error!.reason.name),
+      };
 
   void _onReading(PitchReading r) {
     if (!mounted) return;
@@ -103,11 +107,12 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context)!;
     final r = _reading;
     final inTune = r.hasPitch && r.cents.abs() <= 5;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tuner')),
+      appBar: AppBar(title: Text(l.gameTuner)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -126,7 +131,7 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
               Text(
                 r.hasPitch
                     ? '${r.frequency.toStringAsFixed(1)} Hz  ·  clarity ${r.clarity.toStringAsFixed(2)}'
-                    : 'Play or sing a note',
+                    : l.tunerPrompt,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
@@ -149,7 +154,9 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
               const SizedBox(height: 8),
               Text(
                 r.hasPitch
-                    ? '${r.cents >= 0 ? '+' : ''}${r.cents.toStringAsFixed(0)} cents'
+                    ? l.tunerCents(
+                        '${r.cents >= 0 ? '+' : ''}${r.cents.toStringAsFixed(0)}',
+                      )
                     : ' ',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -171,11 +178,11 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
                 ],
               ),
               const Spacer(),
-              if (_errorMessage != null)
+              if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    _errorMessage!,
+                    _errorText(l),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: scheme.error),
                   ),
@@ -183,7 +190,7 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
               FilledButton.icon(
                 onPressed: _toggle,
                 icon: Icon(_listening ? Icons.stop : Icons.mic),
-                label: Text(_listening ? 'Stop' : 'Start listening'),
+                label: Text(_listening ? l.micStop : l.micStart),
               ),
               const SizedBox(height: 8),
             ],
