@@ -94,10 +94,17 @@ enum FallingMode {
 }
 
 class FallingNotesScreen extends StatefulWidget {
-  const FallingNotesScreen({super.key, this.mode = FallingMode.name});
+  const FallingNotesScreen({
+    super.key,
+    this.mode = FallingMode.name,
+    this.clef = Clef.treble,
+  });
 
   /// Whether the note is answered by naming it or by playing it on the piano.
   final FallingMode mode;
+
+  /// Reading clef (name mode only; play mode is fixed to the piano's range).
+  final Clef clef;
 
   /// Notes per run — the round budget behind the star rating.
   static const _kTotalNotes = 15;
@@ -180,9 +187,12 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
   /// Score multiplier grows every 3 consecutive catches, capped at ×5.
   int get _multiplier => (1 + _combo ~/ 3).clamp(1, 5);
 
-  /// Star-thresholds / progress key: distinct per mode.
-  String get _gameId =>
-      widget.mode == FallingMode.play ? 'falling_keys' : 'falling_notes';
+  /// Star-thresholds / progress key: distinct per mode and clef.
+  String get _gameId => widget.mode == FallingMode.play
+      ? 'falling_keys'
+      : widget.clef == Clef.bass
+          ? 'falling_notes_bass'
+          : 'falling_notes';
 
   @override
   int get score => _score;
@@ -274,7 +284,7 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
     final pos = _wideRange
         ? -3 + _random.nextInt(14) // -3..10 (incl. middle C at -2)
         : _random.nextInt(9); // 0..8, bottom line to top line
-    final pitch = Clef.treble.pitchAt(pos);
+    final pitch = widget.clef.pitchAt(pos);
 
     // Avoid dropping two notes down the same lane back-to-back.
     var column = _random.nextInt(FallingNotesScreen._kColumns);
@@ -439,10 +449,13 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
   // staff→key namespace (both natural-only here, so no accidental token).
   String _sriId(Pitch p) => widget.mode == FallingMode.play
       ? 'keyboard.find.${p.step.name}${p.octave}'
-      : 'note_reading.treble.${p.step.name}${p.octave}';
+      : 'note_reading.${widget.clef.name}.${p.step.name}${p.octave}';
 
   Widget _buildCard(Pitch pitch) => StaffView(
-        score: Score.simple(notes: '${pitch.step.name}${pitch.octave}:w'),
+        score: Score.simple(
+          clef: widget.clef,
+          notes: '${pitch.step.name}${pitch.octave}:w',
+        ),
         staffSpace: 8,
         theme: PartituraTheme.kids,
       );

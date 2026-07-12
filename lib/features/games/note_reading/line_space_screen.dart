@@ -20,7 +20,9 @@ import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class LineSpaceScreen extends StatefulWidget {
-  const LineSpaceScreen({super.key});
+  const LineSpaceScreen({super.key, this.clef = Clef.treble});
+
+  final Clef clef;
 
   static const _swipeThreshold = 90.0;
 
@@ -42,6 +44,10 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
   @override
   String get gameType => 'line_space';
 
+  @override
+  String get progressId =>
+      widget.clef == Clef.bass ? 'line_space_bass' : 'line_space';
+
   // The plucked pitch is the audio feedback.
   @override
   bool get playFeedbackSounds => false;
@@ -56,7 +62,7 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
   void prepareRound() {
     // On-staff positions 0..8: even = line, odd = space.
     final position = _random.nextInt(9);
-    _pitch = Clef.treble.pitchAt(position);
+    _pitch = widget.clef.pitchAt(position);
     _isLine = position.isEven;
     _dragX = 0;
     _lastAnswer = null;
@@ -70,7 +76,8 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
 
     if (!answeredWrong) {
       context.read<SriService>().recordResponse(
-            'note_reading.line_space.${_isLine ? 'line' : 'space'}',
+            'note_reading.line_space.${widget.clef.name}.'
+            '${_isLine ? 'line' : 'space'}',
             correct,
           );
     }
@@ -166,6 +173,7 @@ class _LineSpaceScreenState extends State<LineSpaceScreen> with QuizRoundMixin {
                                           ),
                                           child: StaffView(
                                             score: Score.simple(
+                                              clef: widget.clef,
                                               notes:
                                                   '${_pitch.step.name}${_pitch.octave}:w',
                                             ),

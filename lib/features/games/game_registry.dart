@@ -200,6 +200,35 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameLedgerLeapSubtitle,
       builder: (_) => const LedgerLeapScreen(),
     ),
+    // Bass-clef variants of the reading games (violin/treble + bass).
+    GameInfo(
+      id: 'line_space_bass',
+      icon: Icons.swipe,
+      title: (l) => '${l.gameLineSpace} — ${l.clefBass}',
+      subtitle: (l) => l.gameLineSpaceSubtitle,
+      builder: (_) => const LineSpaceScreen(clef: Clef.bass),
+    ),
+    GameInfo(
+      id: 'note_order_bass',
+      icon: Icons.sort,
+      title: (l) => '${l.gameNoteOrder} — ${l.clefBass}',
+      subtitle: (l) => l.gameNoteOrderSubtitle,
+      builder: (_) => const NoteOrderScreen(clef: Clef.bass),
+    ),
+    GameInfo(
+      id: 'falling_notes_bass',
+      icon: Icons.bolt,
+      title: (l) => '${l.gameFallingNotes} — ${l.clefBass}',
+      subtitle: (l) => l.gameFallingNotesSubtitle,
+      builder: (_) => const FallingNotesScreen(clef: Clef.bass),
+    ),
+    GameInfo(
+      id: 'connect_line_bass',
+      icon: Icons.polyline,
+      title: (l) => '${l.gameConnectLine} — ${l.clefBass}',
+      subtitle: (l) => l.gameConnectLineSubtitle,
+      builder: (_) => const ConnectLineScreen(clef: Clef.bass),
+    ),
   ],
   'measures': [
     GameInfo(

@@ -54,9 +54,16 @@ class _ConnectItem {
 }
 
 class ConnectLineScreen extends StatefulWidget {
-  const ConnectLineScreen({super.key, this.mode = ConnectMode.notes});
+  const ConnectLineScreen({
+    super.key,
+    this.mode = ConnectMode.notes,
+    this.clef = Clef.treble,
+  });
 
   final ConnectMode mode;
+
+  /// Reading clef for notes mode (symbols mode ignores it).
+  final Clef clef;
 
   /// Pairs to connect per round.
   static const pairs = 4;
@@ -113,8 +120,11 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
   String get gameType => 'connect_line';
 
   @override
-  String get progressId =>
-      widget.mode == ConnectMode.symbols ? 'connect_symbols' : 'connect_line';
+  String get progressId => switch (widget.mode) {
+        ConnectMode.symbols => 'connect_symbols',
+        ConnectMode.notes =>
+          widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
+      };
 
   // We play each linked note's own pitch (and a buzz on a miss).
   @override
@@ -151,7 +161,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     final picked = <Pitch>[];
     final usedSteps = <Step>{};
     for (final p in pool) {
-      final pitch = Clef.treble.pitchAt(p);
+      final pitch = widget.clef.pitchAt(p);
       if (usedSteps.add(pitch.step)) {
         picked.add(pitch);
         if (picked.length == ConnectLineScreen.pairs) break;
@@ -162,12 +172,16 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       for (final pitch in picked)
         _ConnectItem(
           card: StaffView(
-            score: Score.simple(notes: '${pitch.step.name}${pitch.octave}:w'),
+            score: Score.simple(
+              clef: widget.clef,
+              notes: '${pitch.step.name}${pitch.octave}:w',
+            ),
             staffSpace: 7,
             theme: PartituraTheme.kids,
           ),
           matchKey: pitch.step.name,
-          sriId: 'note_reading.treble.${pitch.step.name}${pitch.octave}',
+          sriId: 'note_reading.${widget.clef.name}.'
+              '${pitch.step.name}${pitch.octave}',
           playMidi: pitch.midiNumber,
           label: (ctx) => noteNameFor(ctx, pitch.step),
           color: (scheme, colorScaffold) =>

@@ -766,6 +766,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tippe die Noten von tief nach hoch';
 
   @override
+  String get clefBass => 'Bassschlüssel';
+
+  @override
   String get gameLineSpace => 'Linie oder Zwischenraum?';
 
   @override

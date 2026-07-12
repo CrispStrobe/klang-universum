@@ -1436,6 +1436,12 @@ abstract class AppLocalizations {
   /// **'Tap the notes from lowest to highest'**
   String get gameNoteOrderSubtitle;
 
+  /// No description provided for @clefBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass clef'**
+  String get clefBass;
+
   /// No description provided for @gameLineSpace.
   ///
   /// In en, this message translates to:

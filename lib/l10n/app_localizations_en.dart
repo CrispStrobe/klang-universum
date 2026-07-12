@@ -760,6 +760,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tap the notes from lowest to highest';
 
   @override
+  String get clefBass => 'Bass clef';
+
+  @override
   String get gameLineSpace => 'Line or Space?';
 
   @override

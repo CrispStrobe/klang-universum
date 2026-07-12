@@ -396,6 +396,7 @@
   "gameNoteMemorySubtitle": "Memory game: match notes to their names",
   "gameNoteOrder": "Note Order",
   "gameNoteOrderSubtitle": "Tap the notes from lowest to highest",
+  "clefBass": "Bass clef",
   "gameLineSpace": "Line or Space?",
   "gameLineSpaceSubtitle": "Swipe: is the note on a line or in a space?",
   "gameFallingNotes": "Falling Notes",

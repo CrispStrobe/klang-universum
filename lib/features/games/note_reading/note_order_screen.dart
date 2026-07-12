@@ -19,7 +19,9 @@ import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class NoteOrderScreen extends StatefulWidget {
-  const NoteOrderScreen({super.key});
+  const NoteOrderScreen({super.key, this.clef = Clef.treble});
+
+  final Clef clef;
 
   static const cardCount = 4;
 
@@ -40,6 +42,10 @@ class _NoteOrderScreenState extends State<NoteOrderScreen> with QuizRoundMixin {
   @override
   String get gameType => 'note_order';
 
+  @override
+  String get progressId =>
+      widget.clef == Clef.bass ? 'note_order_bass' : 'note_order';
+
   // Each tap plays its own pitch; wrong taps buzz.
   @override
   bool get playFeedbackSounds => false;
@@ -58,7 +64,7 @@ class _NoteOrderScreenState extends State<NoteOrderScreen> with QuizRoundMixin {
     ]..shuffle(_random);
     _cards = [
       for (final p in positions.take(NoteOrderScreen.cardCount))
-        Clef.treble.pitchAt(p),
+        widget.clef.pitchAt(p),
     ];
     // Rank each card by pitch (ties impossible — positions are distinct).
     final order = List.generate(_cards.length, (i) => i)
@@ -81,7 +87,8 @@ class _NoteOrderScreenState extends State<NoteOrderScreen> with QuizRoundMixin {
       if (_placed == NoteOrderScreen.cardCount) {
         if (!answeredWrong) {
           context.read<SriService>().recordResponse(
-                'note_reading.order.len${NoteOrderScreen.cardCount}',
+                'note_reading.order.${widget.clef.name}.'
+                'len${NoteOrderScreen.cardCount}',
                 true,
               );
         }
@@ -92,7 +99,8 @@ class _NoteOrderScreenState extends State<NoteOrderScreen> with QuizRoundMixin {
       audio.playWrong();
       if (!answeredWrong) {
         context.read<SriService>().recordResponse(
-              'note_reading.order.len${NoteOrderScreen.cardCount}',
+              'note_reading.order.${widget.clef.name}.'
+              'len${NoteOrderScreen.cardCount}',
               false,
             );
       }
@@ -133,6 +141,7 @@ class _NoteOrderScreenState extends State<NoteOrderScreen> with QuizRoundMixin {
                             for (var i = 0; i < _cards.length; i++)
                               _OrderCard(
                                 pitch: _cards[i],
+                                clef: widget.clef,
                                 placedOrder:
                                     _rank[i] < _placed ? _rank[i] + 1 : null,
                                 onTap: () => _onTap(i),
@@ -156,6 +165,7 @@ class _NoteOrderScreenState extends State<NoteOrderScreen> with QuizRoundMixin {
 
 class _OrderCard extends StatelessWidget {
   final Pitch pitch;
+  final Clef clef;
 
   /// 1-based lock position once placed, else null (still tappable).
   final int? placedOrder;
@@ -163,6 +173,7 @@ class _OrderCard extends StatelessWidget {
 
   const _OrderCard({
     required this.pitch,
+    required this.clef,
     required this.placedOrder,
     required this.onTap,
   });
@@ -188,6 +199,7 @@ class _OrderCard extends StatelessWidget {
             Center(
               child: StaffView(
                 score: Score.simple(
+                  clef: clef,
                   notes: '${pitch.step.name}${pitch.octave}:w',
                 ),
                 staffSpace: 7,
