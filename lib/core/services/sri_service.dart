@@ -113,6 +113,24 @@ class SriService with ChangeNotifier {
         data.failureCount <= kSm2MaxFailuresForMastery;
   }
 
+  /// SM-2 retention for a namespace: the mean per-item mastery over tracked
+  /// items whose id starts with [prefix] — 1.0 for a mastered item, otherwise
+  /// its progress toward the mastery repetition count. Null when nothing under
+  /// [prefix] has been practised yet, so callers can treat it as "no signal".
+  double? masteryUnder(String prefix) {
+    final items = _sriDatabase.values.where((d) => d.itemId.startsWith(prefix));
+    if (items.isEmpty) return null;
+    var total = 0.0;
+    var count = 0;
+    for (final d in items) {
+      count++;
+      total += isItemMastered(d.itemId)
+          ? 1.0
+          : (d.repetitions / kSm2MinimumRepetitionsForMastery).clamp(0.0, 1.0);
+    }
+    return total / count;
+  }
+
   Future<void> loadSriData() async {
     _log('Loading SRI database from storage...');
     try {

@@ -6,8 +6,8 @@
 //
 //   Curriculum → Level → Topic → [gameIds]
 //
-// "Readiness" for a level/topic is derived from the child's best stars in the
-// mapped games (0..1). Adding a level or a region is pure data.
+// "Readiness" (0..1) blends star coverage in the mapped games with SM-2
+// retention in the mapped SRI namespaces. Adding a level or a region is data.
 //
 // NOTE: the topic scope is a practice guide distilled (in our own words) from
 // public school curricula — no badge/association branding, no verbatim text.
@@ -19,11 +19,13 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 /// model open to other framings without touching consumers.
 enum CurriculumFramework { lehrplan }
 
-/// A syllabus topic and the games that drill it.
+/// A syllabus topic: the games that drill it, plus the SRI namespaces its
+/// mastery is measured over (for SM-2 retention).
 class CurriculumTopic {
-  const CurriculumTopic(this.title, this.gameIds);
+  const CurriculumTopic(this.title, this.gameIds, this.sriPrefixes);
   final String Function(AppLocalizations) title;
   final List<String> gameIds;
+  final List<String> sriPrefixes;
 }
 
 /// One level within a curriculum (a badge tier, or a Klassenstufe band).
@@ -62,26 +64,64 @@ class Curriculum {
   final CurriculumFramework framework;
   final String Function(AppLocalizations) name;
 
-  /// Bundesland / school-type for a [CurriculumFramework.lehrplan]; null for
-  /// the (national) Leistungsabzeichen.
+  /// Optional region (Bundesland / school type) for a per-place variant; null
+  /// for the general progression.
   final String? region;
   final List<CurriculumLevel> levels;
 }
 
 // --- Readiness ---------------------------------------------------------------
+//
+// Readiness blends two signals: star *coverage* (breadth — have you played and
+// performed the topic's games) modulated by SM-2 *retention* (depth — has what
+// you practised actually stuck). [starsFor] gives best-stars 0..3 for a game;
+// [masteryUnder] gives the SM-2 retention 0..1 for a namespace, or null when
+// that namespace hasn't been practised yet (treated as neutral).
 
-/// Topic readiness in 0..1: the mean of best-stars/3 over the topic's games.
-double topicReadiness(CurriculumTopic topic, int Function(String) starsFor) {
+/// Best-stars/3 averaged over the topic's games (breadth + performance).
+double _coverage(CurriculumTopic topic, int Function(String) starsFor) {
   if (topic.gameIds.isEmpty) return 0;
   final total = topic.gameIds.fold<int>(0, (sum, id) => sum + starsFor(id));
   return total / (topic.gameIds.length * 3);
 }
 
+/// SM-2 retention averaged over the topic's namespaces; 1.0 (neutral) until any
+/// of them has been practised.
+double _retention(
+  CurriculumTopic topic,
+  double? Function(String) masteryUnder,
+) {
+  var sum = 0.0;
+  var n = 0;
+  for (final prefix in topic.sriPrefixes) {
+    final m = masteryUnder(prefix);
+    if (m != null) {
+      sum += m;
+      n++;
+    }
+  }
+  return n == 0 ? 1.0 : sum / n;
+}
+
+/// Topic readiness in 0..1: star coverage scaled by SM-2 retention.
+double topicReadiness(
+  CurriculumTopic topic,
+  int Function(String) starsFor,
+  double? Function(String) masteryUnder,
+) =>
+    _coverage(topic, starsFor) * _retention(topic, masteryUnder);
+
 /// Level readiness in 0..1: the mean of its topics' readiness.
-double levelReadiness(CurriculumLevel level, int Function(String) starsFor) {
+double levelReadiness(
+  CurriculumLevel level,
+  int Function(String) starsFor,
+  double? Function(String) masteryUnder,
+) {
   if (level.topics.isEmpty) return 0;
-  final total = level.topics
-      .fold<double>(0, (sum, t) => sum + topicReadiness(t, starsFor));
+  final total = level.topics.fold<double>(
+    0,
+    (sum, t) => sum + topicReadiness(t, starsFor, masteryUnder),
+  );
   return total / level.topics.length;
 }
 
@@ -93,9 +133,12 @@ const _reachedAt = 0.66;
 CurriculumLevel recommendedLevel(
   Curriculum curriculum,
   int Function(String) starsFor,
+  double? Function(String) masteryUnder,
 ) {
   for (final level in curriculum.levels) {
-    if (levelReadiness(level, starsFor) < _reachedAt) return level;
+    if (levelReadiness(level, starsFor, masteryUnder) < _reachedAt) {
+      return level;
+    }
   }
   return curriculum.levels.last;
 }
@@ -105,38 +148,47 @@ CurriculumLevel recommendedLevel(
 CurriculumTopic? weakestTopic(
   CurriculumLevel level,
   int Function(String) starsFor,
+  double? Function(String) masteryUnder,
 ) {
   if (level.topics.isEmpty) return null;
   return level.topics.reduce(
-    (a, b) =>
-        topicReadiness(a, starsFor) <= topicReadiness(b, starsFor) ? a : b,
+    (a, b) => topicReadiness(a, starsFor, masteryUnder) <=
+            topicReadiness(b, starsFor, masteryUnder)
+        ? a
+        : b,
   );
 }
 
 // --- Shared topic labels (reused across levels) ------------------------------
 
 CurriculumTopic _reading(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicNoteReading, ids);
+    CurriculumTopic((l) => l.curTopicNoteReading, ids, const ['note_reading']);
 CurriculumTopic _values(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicNoteValues, ids);
+    CurriculumTopic((l) => l.curTopicNoteValues, ids, const ['note_values']);
 CurriculumTopic _meter(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicMeter, ids);
+    CurriculumTopic((l) => l.curTopicMeter, ids, const ['measures']);
 CurriculumTopic _dynamics(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicDynamics, ids);
+    CurriculumTopic((l) => l.curTopicDynamics, ids, const ['expression']);
 CurriculumTopic _scales(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicScales, ids);
-CurriculumTopic _intervals(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicIntervals, ids);
-CurriculumTopic _chords(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicChords, ids);
+    CurriculumTopic((l) => l.curTopicScales, ids, const ['scales', 'key_sig']);
+CurriculumTopic _intervals(List<String> ids) => CurriculumTopic(
+      (l) => l.curTopicIntervals,
+      ids,
+      const ['chords.interval'],
+    );
+CurriculumTopic _chords(List<String> ids) => CurriculumTopic(
+      (l) => l.curTopicChords,
+      ids,
+      const ['chords.triad', 'chords.build', 'chords.name'],
+    );
 CurriculumTopic _harmony(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicHarmony, ids);
+    CurriculumTopic((l) => l.curTopicHarmony, ids, const ['harmony']);
 CurriculumTopic _transposition(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicTransposition, ids);
+    CurriculumTopic((l) => l.curTopicTransposition, ids, const ['transpose']);
 CurriculumTopic _ear(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicEar, ids);
+    CurriculumTopic((l) => l.curTopicEar, ids, const ['scales.hear']);
 CurriculumTopic _sight(List<String> ids) =>
-    CurriculumTopic((l) => l.curTopicSightReading, ids);
+    CurriculumTopic((l) => l.curTopicSightReading, ids, const ['note_reading']);
 
 // --- Levels by school year (Klassenstufen) -----------------------------------
 //
