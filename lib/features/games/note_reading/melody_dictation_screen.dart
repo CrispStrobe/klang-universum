@@ -37,6 +37,7 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
 
   late List<int> _melody; // target staff positions
   final List<int> _placed = []; // the child's answer so far (index 0 = anchor)
+  int? _editing; // slot selected for correction (its next staff tap re-pitches)
   bool? _lastAnswer;
   bool _recorded = false; // SRI recorded for this round?
 
@@ -78,6 +79,7 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
     _placed
       ..clear()
       ..add(_melody.first);
+    _editing = null;
     _lastAnswer = null;
     _recorded = false;
     if (round > 0) _playMelody();
@@ -118,16 +120,39 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
   }
 
   void _onStaffTap(StaffTarget target) {
-    if (_lastAnswer == true) return; // already solved
-    if (_placed.length >= MelodyDictationScreen.melodyLength) return;
+    final editing = _editing;
+    if (_lastAnswer == true && editing == null) return; // solved
+    if (editing == null &&
+        _placed.length >= MelodyDictationScreen.melodyLength) {
+      return;
+    }
 
     final pitch = target.pitchFor(MelodyDictationScreen._clef);
     final position = pitch.staffPosition(MelodyDictationScreen._clef);
     context.read<AudioService>().playMidiNote(pitch.midiNumber, ms: 400);
 
-    setState(() => _placed.add(position));
+    setState(() {
+      if (editing != null) {
+        _placed[editing] = position; // correct that note in place
+        _editing = null;
+      } else {
+        _placed.add(position);
+      }
+    });
 
     if (_placed.length == MelodyDictationScreen.melodyLength) _evaluate();
+  }
+
+  /// Tap a placed note (not the given anchor) to select it for correction; the
+  /// next staff tap re-pitches it. This is the self-correction the child needs.
+  void _onNoteTap(String elementId) {
+    if (!elementId.startsWith('n')) return;
+    final i = int.tryParse(elementId.substring(1));
+    if (i == null || i <= 0 || i >= _placed.length) return; // anchor / bounds
+    setState(() {
+      _editing = i;
+      _lastAnswer = null; // clear any red marks so it can be re-checked
+    });
   }
 
   /// Remove the last note the child placed (never the given anchor). Clears any
@@ -136,6 +161,7 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
     if (_lastAnswer == true || _placed.length <= 1) return;
     setState(() {
       _placed.removeLast();
+      _editing = null;
       _lastAnswer = null;
     });
   }
@@ -181,6 +207,8 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
             'n$i': (i < _melody.length && _placed[i] == _melody[i])
                 ? Colors.green
                 : Colors.redAccent,
+        // The note being corrected wins, tinted amber.
+        if (_editing != null) 'n$_editing': Colors.amber,
       },
     );
 
@@ -222,6 +250,7 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
                               theme: theme,
                               staffSpace: 16,
                               onStaffTap: _onStaffTap,
+                              onElementTap: _onNoteTap,
                             ),
                           ),
                         ),
