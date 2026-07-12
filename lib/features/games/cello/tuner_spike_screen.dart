@@ -107,7 +107,7 @@ class _TunerSpikeScreenState extends State<TunerSpikeScreen> {
     final inTune = r.hasPitch && r.cents.abs() <= 5;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tuner (spike)')),
+      appBar: AppBar(title: const Text('Tuner')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),

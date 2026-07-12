@@ -5,6 +5,7 @@
 // scores, a bracket in core/tuning.dart's kStarThresholds.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
@@ -54,6 +55,7 @@ import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
+import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
 import 'package:klang_universum/features/games/scales/command_caller_screen.dart';
 import 'package:klang_universum/features/games/scales/echo_sequence_screen.dart';
 import 'package:klang_universum/features/games/scales/key_signature_screen.dart';
@@ -476,15 +478,24 @@ final Map<String, List<GameInfo>> kGamesByModule = {
     ),
   ],
   'cello': [
-    // SPIKE (temporary, not localized): live-mic tuner proving the play-along
-    // capture layer. Remove this tile once the approach is confirmed and a
-    // real play-along game replaces it.
+    // Live-mic tuner (not yet localized — see PLAN.md).
     GameInfo(
-      id: 'cello_tuner_spike',
+      id: 'cello_tuner',
       icon: Icons.graphic_eq,
-      title: (_) => 'Tuner (spike)',
+      title: (_) => 'Tuner',
       subtitle: (_) => 'Live intonation — play or sing a note',
       builder: (_) => const TunerSpikeScreen(),
+    ),
+    // Play-along with a moving score.
+    GameInfo(
+      id: 'cello_play_along',
+      icon: Icons.moving,
+      title: (_) => 'Play along',
+      subtitle: (_) => 'Follow the moving score in first position',
+      builder: (_) => const PlayAlongScreen(
+        chart: PlayAlongCharts.celloFirstPosition,
+        title: 'Play along',
+      ),
     ),
     GameInfo(
       id: 'cello_string_quiz',
@@ -544,6 +555,17 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameSongBook,
       subtitle: (l) => l.gameSongBookSubtitle,
       builder: (_) => const SongListScreen(),
+    ),
+    // Sing-along with a moving score (octave-agnostic; not yet localized).
+    GameInfo(
+      id: 'sing_along',
+      icon: Icons.mic_external_on,
+      title: (_) => 'Sing along',
+      subtitle: (_) => 'Match the moving score with your voice',
+      builder: (_) => const PlayAlongScreen(
+        chart: PlayAlongCharts.twinkleSing,
+        title: 'Sing along',
+      ),
     ),
     GameInfo(
       id: 'tune_quiz',
