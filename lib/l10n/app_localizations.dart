@@ -1028,6 +1028,12 @@ abstract class AppLocalizations {
   /// **'Tap the wrong note in the {name} major scale!'**
   String scaleDetectivePrompt(String name);
 
+  /// No description provided for @scaleDetectivePromptMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the wrong note in the {name} minor scale!'**
+  String scaleDetectivePromptMinor(String name);
+
   /// No description provided for @gameChordQuiz.
   ///
   /// In en, this message translates to:
@@ -1261,6 +1267,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Build the scale step by step'**
   String get gameScaleBuilderSubtitle;
+
+  /// No description provided for @scaleBuilderPromptMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'Build the {name} minor scale — tap the next note!'**
+  String scaleBuilderPromptMinor(String name);
 
   /// No description provided for @scaleBuilderPrompt.
   ///

@@ -535,6 +535,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String scaleDetectivePromptMinor(String name) {
+    return 'Tippe auf den falschen Ton in der $name-Moll-Tonleiter!';
+  }
+
+  @override
   String get gameChordQuiz => 'Akkord-Quiz';
 
   @override
@@ -666,6 +671,11 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get gameScaleBuilderSubtitle =>
       'Baue die Tonleiter Schritt für Schritt';
+
+  @override
+  String scaleBuilderPromptMinor(String name) {
+    return 'Baue die $name-Moll-Tonleiter — tippe auf den nächsten Ton!';
+  }
 
   @override
   String scaleBuilderPrompt(String name) {

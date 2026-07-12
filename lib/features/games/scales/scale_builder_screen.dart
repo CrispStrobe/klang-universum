@@ -12,6 +12,7 @@ import 'dart:math';
 // Material also exports `Step` (Stepper) and `Key`; partitura's win here.
 import 'package:flutter/material.dart' hide Step, Key;
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -30,10 +31,22 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
     with QuizRoundMixin {
   final _random = Random();
 
-  // Beginner keys; more via difficulty progression (see docs/PLAN.md).
-  static const _tonics = [Step.c, Step.f, Step.g];
+  // Difficulty ladder: a few majors → all majors → the natural minors
+  // (docs/PLAN.md) for broader scale exposure.
+  static const _baseTonics = [Step.c, Step.f, Step.g];
+  static const _majorTonics = [
+    Step.c,
+    Step.d,
+    Step.e,
+    Step.f,
+    Step.g,
+    Step.a,
+    Step.b,
+  ];
+  static const _minorTonics = [Step.a, Step.e, Step.d, Step.b, Step.g, Step.c];
 
   late Step _tonic;
+  late ScaleType _scaleType;
   late Key _key;
   late List<Pitch> _scale; // 8 ascending pitches
   late int _tonicPosition;
@@ -59,9 +72,20 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
 
   @override
   void prepareRound() {
-    _tonic = _tonics[_random.nextInt(_tonics.length)];
-    _key = Key.major(Pitch(_tonic));
-    _scale = Scale(Pitch(_tonic), ScaleType.major).pitches;
+    final stars = context.read<ProgressService>().starsFor('scale_builder');
+    if (stars >= 3) {
+      _tonic = _minorTonics[_random.nextInt(_minorTonics.length)];
+      _scaleType = ScaleType.naturalMinor;
+    } else if (stars >= 2) {
+      _tonic = _majorTonics[_random.nextInt(_majorTonics.length)];
+      _scaleType = ScaleType.major;
+    } else {
+      _tonic = _baseTonics[_random.nextInt(_baseTonics.length)];
+      _scaleType = ScaleType.major;
+    }
+    final isMinor = _scaleType != ScaleType.major;
+    _key = isMinor ? Key.minor(Pitch(_tonic)) : Key.major(Pitch(_tonic));
+    _scale = Scale(Pitch(_tonic), _scaleType).pitches;
     _tonicPosition = Pitch(_tonic).staffPosition(Clef.treble);
     _placedCount = 1;
     _lastAnswer = null;
@@ -92,9 +116,10 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
   void _record(bool correct) {
     if (_sriRecorded) return;
     _sriRecorded = true;
+    final mode = _scaleType == ScaleType.major ? 'major' : 'minor';
     context
         .read<SriService>()
-        .recordResponse('scales.build.${_tonic.name}_major', correct);
+        .recordResponse('scales.build.${_tonic.name}_$mode', correct);
   }
 
   void _onStaffTap(StaffTarget target) {
@@ -148,8 +173,13 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt:
-                          l10n.scaleBuilderPrompt(noteNameFor(context, _tonic)),
+                      prompt: _scaleType == ScaleType.major
+                          ? l10n.scaleBuilderPrompt(
+                              noteNameFor(context, _tonic),
+                            )
+                          : l10n.scaleBuilderPromptMinor(
+                              noteNameFor(context, _tonic),
+                            ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(

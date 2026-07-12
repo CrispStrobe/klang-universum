@@ -32,14 +32,27 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
     with QuizRoundMixin {
   final _random = Random();
 
-  // Beginner keys; D and A majors join at 2+ stars (docs/PLAN.md).
+  // Difficulty ladder (docs/PLAN.md): a few major keys → all major keys → the
+  // harmonic minors, where the raised 7th is a *legitimate* accidental, so the
+  // child can no longer just spot "the note with a sharp/flat".
   static const _baseTonics = [Step.c, Step.f, Step.g];
-  static const _advancedTonics = [Step.c, Step.f, Step.g, Step.d, Step.a];
+  static const _majorTonics = [
+    Step.c,
+    Step.d,
+    Step.e,
+    Step.f,
+    Step.g,
+    Step.a,
+    Step.b,
+  ];
+  // Minor keys within a single sharp/flat once the harmonic 7th is raised.
+  static const _minorTonics = [Step.a, Step.e, Step.d, Step.b, Step.g, Step.c];
 
   List<Step>? _reviewTonics;
   bool get _isReview => _reviewTonics != null;
 
   late Step _tonic;
+  late ScaleType _scaleType;
   late Key _key;
   late List<Pitch> _pitches; // with the wrong one substituted
   late int _wrongIndex;
@@ -73,15 +86,23 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
   void prepareRound() {
     if (_isReview) {
       _tonic = _reviewTonics![round];
+      _scaleType = ScaleType.major;
     } else {
-      final tonics =
-          context.read<ProgressService>().starsFor('scale_detective') >= 2
-              ? _advancedTonics
-              : _baseTonics;
-      _tonic = tonics[_random.nextInt(tonics.length)];
+      final stars = context.read<ProgressService>().starsFor('scale_detective');
+      if (stars >= 3) {
+        _tonic = _minorTonics[_random.nextInt(_minorTonics.length)];
+        _scaleType = ScaleType.harmonicMinor;
+      } else if (stars >= 2) {
+        _tonic = _majorTonics[_random.nextInt(_majorTonics.length)];
+        _scaleType = ScaleType.major;
+      } else {
+        _tonic = _baseTonics[_random.nextInt(_baseTonics.length)];
+        _scaleType = ScaleType.major;
+      }
     }
-    _key = Key.major(Pitch(_tonic));
-    final scale = Scale(Pitch(_tonic), ScaleType.major).pitches;
+    final isMinor = _scaleType != ScaleType.major;
+    _key = isMinor ? Key.minor(Pitch(_tonic)) : Key.major(Pitch(_tonic));
+    final scale = Scale(Pitch(_tonic), _scaleType).pitches;
 
     _wrongIndex = 1 + _random.nextInt(scale.length - 2); // not the tonics
     final original = _pitchesOf(scale)[_wrongIndex];
@@ -124,9 +145,10 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
     final correct = elementId == 'e$_wrongIndex';
 
     if (_lastAnswer == null || !answeredWrong) {
+      final mode = _scaleType == ScaleType.major ? 'major' : 'minor';
       context
           .read<SriService>()
-          .recordResponse('scales.spot.${_tonic.name}_major', correct);
+          .recordResponse('scales.spot.${_tonic.name}_$mode', correct);
     }
 
     setState(() {
@@ -166,8 +188,13 @@ class _ScaleDetectiveScreenState extends State<ScaleDetectiveScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n
-                          .scaleDetectivePrompt(noteNameFor(context, _tonic)),
+                      prompt: _scaleType == ScaleType.major
+                          ? l10n.scaleDetectivePrompt(
+                              noteNameFor(context, _tonic),
+                            )
+                          : l10n.scaleDetectivePromptMinor(
+                              noteNameFor(context, _tonic),
+                            ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(

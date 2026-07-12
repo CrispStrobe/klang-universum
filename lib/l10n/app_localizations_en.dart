@@ -533,6 +533,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String scaleDetectivePromptMinor(String name) {
+    return 'Tap the wrong note in the $name minor scale!';
+  }
+
+  @override
   String get gameChordQuiz => 'Chord Quiz';
 
   @override
@@ -661,6 +666,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gameScaleBuilderSubtitle => 'Build the scale step by step';
+
+  @override
+  String scaleBuilderPromptMinor(String name) {
+    return 'Build the $name minor scale — tap the next note!';
+  }
 
   @override
   String scaleBuilderPrompt(String name) {

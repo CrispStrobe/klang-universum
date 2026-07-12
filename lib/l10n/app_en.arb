@@ -257,6 +257,14 @@
       }
     }
   },
+  "scaleDetectivePromptMinor": "Tap the wrong note in the {name} minor scale!",
+  "@scaleDetectivePromptMinor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "gameChordQuiz": "Chord Quiz",
   "gameChordQuizSubtitle": "Name the chord on the staff",
   "chordQuizPrompt": "What chord is this?",
@@ -336,6 +344,14 @@
   },
   "gameScaleBuilder": "Scale Builder",
   "gameScaleBuilderSubtitle": "Build the scale step by step",
+  "scaleBuilderPromptMinor": "Build the {name} minor scale — tap the next note!",
+  "@scaleBuilderPromptMinor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "scaleBuilderPrompt": "Build the {name} major scale — tap the next note!",
   "@scaleBuilderPrompt": {
     "placeholders": {
