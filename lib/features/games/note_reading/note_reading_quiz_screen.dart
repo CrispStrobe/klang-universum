@@ -192,6 +192,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
             Clef.bass || Clef.bass8vb => l10n.gameNoteReadingBass,
             Clef.tenor => l10n.gameNoteReadingTenor,
             Clef.alto => l10n.gameNoteReadingAlto,
+            _ => l10n.gameNoteReadingTreble,
           };
 
     return Scaffold(
