@@ -5,6 +5,7 @@
 // scores, a bracket in core/tuning.dart's kStarThresholds.
 
 import 'package:flutter/material.dart';
+import 'package:klang_universum/core/audio/chord_progression.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/features/games/cello/bowing_screen.dart';
@@ -13,6 +14,7 @@ import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.da
 import 'package:klang_universum/features/games/cello/tuner_spike_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_builder_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_listen_spike_screen.dart';
+import 'package:klang_universum/features/games/chords/chord_progression_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ear_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ladder_screen.dart';
@@ -429,6 +431,18 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameChordListener,
       subtitle: (l) => l.gameChordListenerSubtitle,
       builder: (_) => const ChordListenSpikeScreen(),
+    ),
+    // Chord-progression play-along with a moving chart.
+    GameInfo(
+      id: 'chord_play_along',
+      icon: Icons.moving,
+      title: (l) => l.gameChordProgression,
+      subtitle: (l) => l.gameChordProgressionSubtitle,
+      builder: (ctx) => ChordProgressionScreen(
+        chart: ChordCharts.popTurnaround,
+        title: AppLocalizations.of(ctx)!.gameChordProgression,
+        gameId: 'chord_play_along',
+      ),
     ),
     GameInfo(
       id: 'chord_quiz',

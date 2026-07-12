@@ -1439,6 +1439,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameChordListenerSubtitle => 'Name the chord you strum or play';
 
   @override
+  String get gameChordProgression => 'Chord play-along';
+
+  @override
+  String get gameChordProgressionSubtitle =>
+      'Strum the progression as it scrolls by';
+
+  @override
   String get micStart => 'Start listening';
 
   @override

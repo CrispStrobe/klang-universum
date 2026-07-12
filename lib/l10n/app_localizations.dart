@@ -2648,6 +2648,18 @@ abstract class AppLocalizations {
   /// **'Name the chord you strum or play'**
   String get gameChordListenerSubtitle;
 
+  /// No description provided for @gameChordProgression.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord play-along'**
+  String get gameChordProgression;
+
+  /// No description provided for @gameChordProgressionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Strum the progression as it scrolls by'**
+  String get gameChordProgressionSubtitle;
+
   /// No description provided for @micStart.
   ///
   /// In en, this message translates to:

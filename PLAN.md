@@ -43,6 +43,13 @@ monophonic detection; only the chart/labelling differs.
 ### 4. Chord listener — DONE (spike)
 Names the chord you strum/play with runner-up guesses + a chroma bar chart.
 
+### 5. Chord-progression play-along — DONE
+A moving chord chart (C–G–Am–F): strum the progression as it scrolls; each
+chord is scored by the fuzzy ChordDetector (`ChordProgressionEngine`, top-2
+lenient match). Records to ProgressService + stars. Validated end-to-end via
+the BlackHole loop — all four roots detected on real captured audio (the
+7th/maj7 variants are expected overtone pickup, hence the lenient match).
+
 ## Known constraints / follow-ups (not yet done)
 - **Backing audio vs. mic:** playing the melody through speakers while the mic
   listens causes the mic to detect the *speaker* (we deliberately disable echo

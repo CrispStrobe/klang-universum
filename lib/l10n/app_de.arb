@@ -474,6 +474,8 @@
   "gameSingAlongSubtitle": "Triff die laufende Partitur mit deiner Stimme",
   "gameChordListener": "Akkord-Erkennung",
   "gameChordListenerSubtitle": "Erkenne den Akkord, den du spielst",
+  "gameChordProgression": "Akkorde mitspielen",
+  "gameChordProgressionSubtitle": "Spiele die Akkordfolge, während sie vorbeizieht",
   "micStart": "Zuhören starten",
   "micStop": "Stopp",
   "micPermissionDenied": "Mikrofonzugriff verweigert. Aktiviere ihn in den Systemeinstellungen.",

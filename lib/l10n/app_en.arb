@@ -680,6 +680,8 @@
   "gameSingAlongSubtitle": "Match the moving score with your voice",
   "gameChordListener": "Chord listener",
   "gameChordListenerSubtitle": "Name the chord you strum or play",
+  "gameChordProgression": "Chord play-along",
+  "gameChordProgressionSubtitle": "Strum the progression as it scrolls by",
   "micStart": "Start listening",
   "micStop": "Stop",
   "micPermissionDenied": "Microphone permission denied. Enable it in system settings.",

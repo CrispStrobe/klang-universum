@@ -1445,6 +1445,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameChordListenerSubtitle => 'Erkenne den Akkord, den du spielst';
 
   @override
+  String get gameChordProgression => 'Akkorde mitspielen';
+
+  @override
+  String get gameChordProgressionSubtitle =>
+      'Spiele die Akkordfolge, während sie vorbeizieht';
+
+  @override
   String get micStart => 'Zuhören starten';
 
   @override
