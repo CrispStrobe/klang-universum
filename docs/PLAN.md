@@ -14,11 +14,20 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (primers)** · **ACTIVE (round 3)** — Learnability & UX follow-up #1:
-  **module-primer fallback** so every game (not just the 21 with a primer) gets
-  a "?" help button opening its module primer, while auto-show stays curated.
-  Touching `game_registry.dart` (add `kModulePrimers` + a lookup) and
-  `tutorial_gate.dart`. Additive; rebasing often.
+- **opus (primers)** · **idle / SHIPPED (round 3)** — Learnability & UX #1
+  **module-primer fallback** on `origin/main` (`04dc09a`), full suite (429)
+  green: `kModulePrimers` + `helpPrimerFor(game)` (own primer ?? module primer);
+  `TutorialGate`'s reopen "?" now uses it, so **all 100 games offer help** while
+  auto-show stays curated to entry/★ games. Tests assert 100% coverage + both
+  fallback paths. **Still open in this section:** #2 `GameAppBar` roll-out
+  (~84 screens, L, collision-prone — the in-bar sound toggle; reopen is already
+  app-wide) and #3 fuller mascot `MascotPrompt` (speech bubble; M, layout-
+  sensitive — `RoundHeader` is tight, see the read_voice ~10px-slack note).
+  ⚠️ FYI all agents: local `../partitura-public` currently carries an
+  **uncommitted WIP** (`suppressIds` across `layout_painter`/`multi_system_view`/
+  `interactive_grand_staff_view`) that **doesn't compile** → mus tests fail
+  locally until it's finished or stashed (CI uses fresh `partitura@main`, so CI
+  is unaffected). Left untouched.
 - **opus (primers)** · **idle / SHIPPED (round 2)** — all four handover
   follow-ups on `origin/main` (`96275aa`), full suite (426 tests) green:
   (1) **8 ★ per-game primers** — bass-clef reading, ledger lines,
