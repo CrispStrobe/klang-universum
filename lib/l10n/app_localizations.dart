@@ -2102,6 +2102,30 @@ abstract class AppLocalizations {
   /// **'Skip'**
   String get performItSkip;
 
+  /// No description provided for @gameSingBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing Back'**
+  String get gameSingBack;
+
+  /// No description provided for @gameSingBackSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear a note, then sing it back'**
+  String get gameSingBackSubtitle;
+
+  /// No description provided for @singBackPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing the note you heard!'**
+  String get singBackPrompt;
+
+  /// No description provided for @singBackListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear it again'**
+  String get singBackListen;
+
   /// No description provided for @moduleDrums.
   ///
   /// In en, this message translates to:
