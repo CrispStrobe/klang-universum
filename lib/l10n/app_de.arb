@@ -155,6 +155,24 @@
   "importFailed": "Import fehlgeschlagen: {error}",
   "importedSongs": "Meine importierten Lieder",
   "chordSheets": "Akkord-Blätter",
+  "songbooksTitle": "Meine Liederbücher",
+  "songbookNew": "Neues Liederbuch",
+  "songbookNameTitle": "Benenne das Liederbuch",
+  "songbookDefaultName": "Mein Liederbuch",
+  "songbookRename": "Umbenennen",
+  "songbookDelete": "Liederbuch löschen",
+  "songbookAddSongs": "Lieder hinzufügen",
+  "songbookEmpty": "Noch keine Lieder — tippe auf „Lieder hinzufügen“.",
+  "songbookNoImports": "Importiere oder komponiere zuerst ein Lied, dann füge es hier hinzu.",
+  "songbookRemoveFromBook": "Aus dem Liederbuch entfernen",
+  "songbookSongCount": "{count, plural, =0{leer} =1{1 Lied} other{{count} Lieder}}",
+  "@songbookSongCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "gameTuneQuiz": "Lieder-Quiz",
   "gameTuneQuizSubtitle": "Erkenne das Lied am Anfang",
   "tuneQuizPrompt": "Hör zu! Welches Lied fängt so an?",

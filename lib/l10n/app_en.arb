@@ -193,6 +193,24 @@
   },
   "importedSongs": "My imported songs",
   "chordSheets": "Chord sheets",
+  "songbooksTitle": "My songbooks",
+  "songbookNew": "New songbook",
+  "songbookNameTitle": "Name the songbook",
+  "songbookDefaultName": "My songbook",
+  "songbookRename": "Rename",
+  "songbookDelete": "Delete songbook",
+  "songbookAddSongs": "Add songs",
+  "songbookEmpty": "No songs yet — tap Add songs.",
+  "songbookNoImports": "Import or compose a song first, then add it here.",
+  "songbookRemoveFromBook": "Remove from songbook",
+  "songbookSongCount": "{count, plural, =0{empty} =1{1 song} other{{count} songs}}",
+  "@songbookSongCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "gameTuneQuiz": "Name That Tune",
   "gameTuneQuizSubtitle": "Recognize the song from its opening",
   "tuneQuizPrompt": "Listen! Which song starts like this?",

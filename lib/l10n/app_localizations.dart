@@ -992,6 +992,72 @@ abstract class AppLocalizations {
   /// **'Chord sheets'**
   String get chordSheets;
 
+  /// No description provided for @songbooksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My songbooks'**
+  String get songbooksTitle;
+
+  /// No description provided for @songbookNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New songbook'**
+  String get songbookNew;
+
+  /// No description provided for @songbookNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the songbook'**
+  String get songbookNameTitle;
+
+  /// No description provided for @songbookDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'My songbook'**
+  String get songbookDefaultName;
+
+  /// No description provided for @songbookRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get songbookRename;
+
+  /// No description provided for @songbookDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete songbook'**
+  String get songbookDelete;
+
+  /// No description provided for @songbookAddSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs'**
+  String get songbookAddSongs;
+
+  /// No description provided for @songbookEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No songs yet — tap Add songs.'**
+  String get songbookEmpty;
+
+  /// No description provided for @songbookNoImports.
+  ///
+  /// In en, this message translates to:
+  /// **'Import or compose a song first, then add it here.'**
+  String get songbookNoImports;
+
+  /// No description provided for @songbookRemoveFromBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from songbook'**
+  String get songbookRemoveFromBook;
+
+  /// No description provided for @songbookSongCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{empty} =1{1 song} other{{count} songs}}'**
+  String songbookSongCount(int count);
+
   /// No description provided for @gameTuneQuiz.
   ///
   /// In en, this message translates to:

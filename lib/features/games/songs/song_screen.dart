@@ -13,6 +13,7 @@ import 'package:klang_universum/features/games/songs/chord_sheet_screen.dart';
 import 'package:klang_universum/features/games/songs/import/chordpro.dart';
 import 'package:klang_universum/features/games/songs/import_screen.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
+import 'package:klang_universum/features/games/songs/songbook_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:partitura/partitura.dart'
@@ -184,6 +185,40 @@ class SongListScreen extends StatelessWidget {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => SongScreen(song: song),
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.songbooksTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  tooltip: l10n.songbookNew,
+                  onPressed: () => createSongbook(context),
+                ),
+              ],
+            ),
+          ),
+          for (final book in userSongs.collections)
+            Card(
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                leading: const CircleAvatar(child: Icon(Icons.library_music)),
+                title: Text(book.title),
+                subtitle: Text(l10n.songbookSongCount(book.songIds.length)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SongbookScreen(collectionId: book.id),
                   ),
                 ),
               ),

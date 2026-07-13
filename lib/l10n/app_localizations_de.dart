@@ -503,6 +503,50 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chordSheets => 'Akkord-Blätter';
 
   @override
+  String get songbooksTitle => 'Meine Liederbücher';
+
+  @override
+  String get songbookNew => 'Neues Liederbuch';
+
+  @override
+  String get songbookNameTitle => 'Benenne das Liederbuch';
+
+  @override
+  String get songbookDefaultName => 'Mein Liederbuch';
+
+  @override
+  String get songbookRename => 'Umbenennen';
+
+  @override
+  String get songbookDelete => 'Liederbuch löschen';
+
+  @override
+  String get songbookAddSongs => 'Lieder hinzufügen';
+
+  @override
+  String get songbookEmpty =>
+      'Noch keine Lieder — tippe auf „Lieder hinzufügen“.';
+
+  @override
+  String get songbookNoImports =>
+      'Importiere oder komponiere zuerst ein Lied, dann füge es hier hinzu.';
+
+  @override
+  String get songbookRemoveFromBook => 'Aus dem Liederbuch entfernen';
+
+  @override
+  String songbookSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Lieder',
+      one: '1 Lied',
+      zero: 'leer',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get gameTuneQuiz => 'Lieder-Quiz';
 
   @override

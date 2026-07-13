@@ -503,6 +503,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chordSheets => 'Chord sheets';
 
   @override
+  String get songbooksTitle => 'My songbooks';
+
+  @override
+  String get songbookNew => 'New songbook';
+
+  @override
+  String get songbookNameTitle => 'Name the songbook';
+
+  @override
+  String get songbookDefaultName => 'My songbook';
+
+  @override
+  String get songbookRename => 'Rename';
+
+  @override
+  String get songbookDelete => 'Delete songbook';
+
+  @override
+  String get songbookAddSongs => 'Add songs';
+
+  @override
+  String get songbookEmpty => 'No songs yet — tap Add songs.';
+
+  @override
+  String get songbookNoImports =>
+      'Import or compose a song first, then add it here.';
+
+  @override
+  String get songbookRemoveFromBook => 'Remove from songbook';
+
+  @override
+  String songbookSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+      zero: 'empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get gameTuneQuiz => 'Name That Tune';
 
   @override

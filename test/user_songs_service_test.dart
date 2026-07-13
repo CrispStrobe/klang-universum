@@ -174,7 +174,9 @@ void main() {
     expect(svc.collections.firstWhere((c) => c.id == 'two').songIds, isEmpty);
   });
 
-  test('reorderCollection moves an item with the drag-down convention', () {
+  test(
+      'reorderCollection moves an item (onReorderItem insert-index convention)',
+      () {
     final svc = UserSongsService()
       ..addSong(_song('a'))
       ..addSong(_song('b'))
@@ -184,11 +186,11 @@ void main() {
       svc.addSongToCollection('s', id);
     }
 
-    // Drag 'a' (index 0) down past 'c' (ReorderableListView passes newIndex 3).
-    svc.reorderCollection('s', 0, 3);
+    // Move 'a' (index 0) to the end: after removal it inserts at index 2.
+    svc.reorderCollection('s', 0, 2);
     expect(svc.songsInCollection('s').map((s) => s.id), ['b', 'c', 'a']);
 
-    // Drag it back up to the front.
+    // Move it back to the front.
     svc.reorderCollection('s', 2, 0);
     expect(svc.songsInCollection('s').map((s) => s.id), ['a', 'b', 'c']);
   });

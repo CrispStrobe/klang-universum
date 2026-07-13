@@ -210,16 +210,14 @@ class UserSongsService with ChangeNotifier {
         ),
       );
 
-  /// Reorder within a book using ReorderableListView's index convention (when
-  /// dragging down, [newIndex] counts the item's own slot).
+  /// Move a song within a book. [newIndex] is the insertion index *after* the
+  /// item is removed — the convention of `ReorderableListView.onReorderItem`.
   void reorderCollection(String collectionId, int oldIndex, int newIndex) =>
       _updateCollection(collectionId, (c) {
         final ids = [...c.songIds];
         if (oldIndex < 0 || oldIndex >= ids.length) return c;
-        var target = newIndex > oldIndex ? newIndex - 1 : newIndex;
-        target = target.clamp(0, ids.length - 1);
         final moved = ids.removeAt(oldIndex);
-        ids.insert(target, moved);
+        ids.insert(newIndex.clamp(0, ids.length), moved);
         return c.copyWith(songIds: ids);
       });
 
