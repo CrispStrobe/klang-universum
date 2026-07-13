@@ -14,18 +14,20 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · shipped **Roman Numerals** + **Strong Beat** (Takte,
-  `beatStrength`) on the partitura-public alignment; also stabilised two CI-only
-  off-screen tests (`line_space_test`, `composition_test`). 288 tests green.
-  Next new-partitura ideas: chord-symbol match, handwritten-font theme · touching
-  `game_registry`, `core/tuning`, ARBs, `features/games/**`, test/ · **in
-  progress**.
-  ⚠️ **Heads-up for all agents:** mus CI checks out `partitura@main` **fresh each
-  run**, so partitura-public's live rendering changes (e.g. beam subdivision,
-  voices 3–4) can push tap/drag targets off-screen and red *your* CI even with no
-  mus change. If your CI reds on a `getCenter`/`_getElementPoint` throw, it's this
-  — enlarge the test surface or `ensureVisible` the target. Consider pinning the
-  partitura ref for stability (raising with the maintainer).
+- **opus (this agent)** · shipped **Roman Numerals** + **Strong Beat** on the
+  partitura-public alignment (CI green on `aa39b27`; deploy waiting on the Vercel
+  daily cap). Fixed the alignment's hardcoded `../partitura/` test paths, and
+  **added a shared game-test harness** so this class stops recurring · touching
+  `test/support/game_test_support.dart` (new), several `test/*_test.dart` ·
+  **idle / awaiting next** (next ideas: chord-symbol match, handwritten-font
+  theme).
+  ✅ **For all agents — staff-based game tests:** mus CI tracks `partitura@main`,
+  so its live rendering (caret/drag/beaming/voices…) can push tap/drag targets
+  off CI's small surface and throw `getCenter`/`_getElementPoint` — green locally,
+  red on CI. **Fix:** `import 'support/game_test_support.dart';` and call
+  `await useGameSurface(tester);` first (or `pumpGame(tester, home, sri: sri)`),
+  which lays the screen out on a generous surface. Don't pin the partitura ref —
+  the workshop agent needs `@main`'s C-contract APIs.
 - **opus (play-along/AEC)** · **in progress** — building the **songbook
   browse/reorder UI** on top of the `SongCollection` model: a Songbooks section
   in `song_screen.dart` + a new `songbook_screen.dart` (reorderable list,

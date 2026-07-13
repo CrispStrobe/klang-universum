@@ -13,6 +13,8 @@ import 'package:partitura/partitura.dart' show StaffView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/game_test_support.dart';
+
 Widget _wrap(Widget child, SriService sri) {
   return MultiProvider(
     providers: [
@@ -73,11 +75,8 @@ void main() {
   });
 
   testWidgets('melody echo shows three distinct melody cards', (tester) async {
-    // Three stacked melody staves overflow CI's 800×600 Linux surface, so the
-    // cards render off-screen and untappable (getElementPoint throws). Give room.
-    await tester.binding.setSurfaceSize(const Size(1400, 2400));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
+    // Room for the three stacked melody staves (shared harness).
+    await useGameSurface(tester);
     await tester.pumpWidget(_wrap(const MelodyEchoScreen(), sri));
     await tester.pump();
 
