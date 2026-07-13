@@ -179,6 +179,55 @@ void main() {
     expect(editor.noteCount, 1, reason: 'the pitch stacks, not a new element');
   });
 
+  testWidgets('a second piano tap places another note (not a move)',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.tap(_pianoKeyAt(16));
+    await tester.pump();
+    await tester.tap(_pianoKeyAt(18)); // a different key
+    await tester.pump();
+    expect(editor.noteCount, 2, reason: 'each tap adds a note like a keyboard');
+  });
+
+  testWidgets('the info button opens the keyboard-shortcuts sheet',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byIcon(Icons.info_outline));
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.workshopShortcuts), findsOneWidget);
+    expect(find.textContaining('A – G'), findsOneWidget);
+  });
+
+  testWidgets('selecting a note reveals the inline lyric field',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKey()); // places + selects one note
+    await tester.pump();
+    expect(find.byIcon(Icons.lyrics_outlined), findsOneWidget);
+  });
+
+  testWidgets('slurring a two-note range records a slur', (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.tap(_pianoKeyAt(16));
+    await tester.pump();
+    await tester.tap(_pianoKeyAt(18)); // two notes, second selected
+    await tester.pump();
+    // Extend the selection left to cover both, so a slur can span them.
+    final extend = find.byIcon(Icons.keyboard_double_arrow_left);
+    await tester.ensureVisible(extend);
+    await tester.tap(extend);
+    await tester.pump();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final slur = find.byTooltip(l10n.workshopSlur);
+    await tester.ensureVisible(slur);
+    await tester.tap(slur);
+    await tester.pump();
+    expect(editor.slurCount, 1);
+  });
+
   testWidgets('switching to grand-staff mode shows both clefs', (tester) async {
     await pump(tester);
     expect(find.byType(MultiSystemView), findsOneWidget);

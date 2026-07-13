@@ -242,6 +242,115 @@ void main() {
     });
   });
 
+  group('slurs & lyrics', () {
+    ScoreDocument threeNotes() {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q);
+      d.insertNote(_p(Step.e), _q); // e selected (index 2)
+      return d;
+    }
+
+    test('slurring a range adds one slur from the first to the last note', () {
+      final d = threeNotes();
+      d.selectIndex(0);
+      d.extendRight();
+      d.extendRight(); // c..e
+      d.slurSelected();
+      expect(d.slurs.length, 1);
+      final s = d.slurs.single;
+      expect(s.startId, d.elements.first.id);
+      expect(s.endId, d.elements.last.id);
+      // Rendered on the Score.
+      expect(d.buildScore().slurs.length, 1);
+    });
+
+    test('slurring the same range again removes it (toggle); undo restores', () {
+      final d = threeNotes();
+      d.selectIndex(0);
+      d.extendRight();
+      d.extendRight();
+      d.slurSelected();
+      d.slurSelected(); // toggle off
+      expect(d.slurs, isEmpty);
+      d.undo(); // back to slurred
+      expect(d.slurs.length, 1);
+    });
+
+    test('a slur needs at least two notes', () {
+      final d = threeNotes(); // single note selected
+      expect(d.canSlur, isFalse);
+      d.slurSelected();
+      expect(d.slurs, isEmpty);
+    });
+
+    test('deleting a slurred endpoint prunes the dangling slur', () {
+      final d = threeNotes();
+      d.selectIndex(0);
+      d.extendRight();
+      d.extendRight();
+      d.slurSelected();
+      expect(d.slurs.length, 1);
+      d.selectIndex(2); // the end note
+      d.deleteSelected();
+      expect(d.slurs, isEmpty, reason: 'slur end was removed');
+    });
+
+    test('setting a lyric attaches it to the note and renders it', () {
+      final d = threeNotes();
+      final id = d.elements.first.id;
+      d.setLyricFor(id, 'la');
+      expect(d.lyricOf(id), 'la');
+      final rendered = d.buildScore().lyrics;
+      expect(rendered.length, 1);
+      expect(rendered.single.text, 'la');
+      expect(rendered.single.elementId, id);
+    });
+
+    test('clearing a lyric (empty text) removes it; undo restores', () {
+      final d = threeNotes();
+      final id = d.elements.first.id;
+      d.setLyricFor(id, 'la');
+      d.setLyricFor(id, '  ');
+      expect(d.lyricOf(id), isNull);
+      d.undo();
+      expect(d.lyricOf(id), 'la');
+    });
+
+    test('a lyric cannot attach to a rest', () {
+      final d = ScoreDocument();
+      final id = d.insertRest(_q);
+      d.setLyricFor(id, 'x');
+      expect(d.lyricOf(id), isNull);
+    });
+
+    test('paste carries the lyric onto the pasted copy', () {
+      final d = ScoreDocument();
+      final id = d.insertNote(_p(Step.c), _q);
+      d.setLyricFor(id, 'do');
+      d.copySelection();
+      d.paste();
+      final pasted = d.elements.last;
+      expect(pasted.id, isNot(id));
+      expect(d.lyricOf(pasted.id), 'do');
+    });
+
+    test('MusicXML round-trip preserves slurs and lyrics', () {
+      final src = threeNotes();
+      src.selectIndex(0);
+      src.extendRight();
+      src.extendRight();
+      src.slurSelected();
+      src.setLyricFor(src.elements[0].id, 'ah');
+      final reloaded = ScoreDocument()
+        ..loadScore(scoreFromMusicXml(scoreToMusicXml(src.buildScore())));
+      expect(reloaded.slurs.length, 1);
+      final withLyric =
+          reloaded.elements.where((e) => reloaded.lyricOf(e.id) == 'ah');
+      expect(withLyric.length, 1);
+    });
+  });
+
   group('round-trips', () {
     test('MusicXML preserves pitches and durations', () {
       final src = ScoreDocument();

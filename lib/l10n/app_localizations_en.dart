@@ -251,6 +251,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopChord => 'Chord (stack notes)';
 
   @override
+  String get workshopSlur => 'Slur (phrase the selected notes)';
+
+  @override
+  String get workshopLyric => 'Lyric';
+
+  @override
+  String get workshopLyricHint => 'Syllable…';
+
+  @override
+  String get workshopShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get workshopShortcutPlaceNote => 'Place a note (its pitch)';
+
+  @override
+  String get workshopShortcutNoteValue => 'Note value (whole … sixteenth)';
+
+  @override
+  String get workshopShortcutSelect => 'Select previous / next';
+
+  @override
+  String get workshopShortcutTranspose => 'Move pitch up / down';
+
+  @override
+  String get workshopShortcutUndoRedo => 'Undo / redo';
+
+  @override
+  String get workshopShortcutCopyPaste => 'Copy / cut / paste';
+
+  @override
+  String get workshopExitTitle => 'Leave the workshop?';
+
+  @override
+  String get workshopExitMessage => 'Your score has unsaved changes.';
+
+  @override
+  String get workshopKeepEditing => 'Keep editing';
+
+  @override
+  String get workshopDiscard => 'Discard';
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override

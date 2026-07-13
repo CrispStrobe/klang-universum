@@ -251,6 +251,49 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopChord => 'Akkord (Töne stapeln)';
 
   @override
+  String get workshopSlur => 'Legatobogen (Auswahl phrasieren)';
+
+  @override
+  String get workshopLyric => 'Liedtext';
+
+  @override
+  String get workshopLyricHint => 'Silbe…';
+
+  @override
+  String get workshopShortcuts => 'Tastenkürzel';
+
+  @override
+  String get workshopShortcutPlaceNote => 'Note setzen (ihre Tonhöhe)';
+
+  @override
+  String get workshopShortcutNoteValue => 'Notenwert (ganze … Sechzehntel)';
+
+  @override
+  String get workshopShortcutSelect => 'Vorherige / nächste auswählen';
+
+  @override
+  String get workshopShortcutTranspose => 'Tonhöhe hoch / runter';
+
+  @override
+  String get workshopShortcutUndoRedo => 'Rückgängig / Wiederholen';
+
+  @override
+  String get workshopShortcutCopyPaste => 'Kopieren / ausschneiden / einfügen';
+
+  @override
+  String get workshopExitTitle => 'Werkstatt verlassen?';
+
+  @override
+  String get workshopExitMessage =>
+      'Deine Partitur hat ungespeicherte Änderungen.';
+
+  @override
+  String get workshopKeepEditing => 'Weiter bearbeiten';
+
+  @override
+  String get workshopDiscard => 'Verwerfen';
+
+  @override
   String get instrumentLabel => 'Instrumentenklang';
 
   @override

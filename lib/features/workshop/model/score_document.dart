@@ -142,11 +142,18 @@ class _Snapshot {
     this.timeSignature,
     this.keySignature,
     this.clef,
+    this.slurs,
+    this.lyrics,
   );
   final List<EditorElement> elements;
   final TimeSignature timeSignature;
   final KeySignature keySignature;
   final Clef clef;
+
+  /// Phrase slurs (start→end note ids) and per-note verse-1 lyric syllables —
+  /// spans/attachments that live alongside the element stream, keyed by id.
+  final List<Slur> slurs;
+  final Map<String, String> lyrics;
 }
 
 /// The editable Workshop document: an ordered element stream, the document-level
@@ -173,6 +180,11 @@ class ScoreDocument {
   final List<EditorElement> _clipboard = [];
   final List<_Snapshot> _undo = [];
   final List<_Snapshot> _redo = [];
+
+  // Phrase slurs (start→end note ids) and per-note verse-1 lyric syllables.
+  // Both attach to element ids, so structural edits prune dangling references.
+  final List<Slur> _slurs = [];
+  final Map<String, String> _lyrics = {};
 
   // Memoized renders — invalidated only when the music changes, so hover/select
   // rebuilds don't force partitura to re-lay-out every frame.
@@ -212,12 +224,37 @@ class ScoreDocument {
   bool get canRedo => _redo.isNotEmpty;
   bool get canPaste => _clipboard.isNotEmpty;
 
+  /// The phrase slurs currently on the score.
+  List<Slur> get slurs => List.unmodifiable(_slurs);
+
+  /// The verse-1 lyric syllable under element [id] (null = none).
+  String? lyricOf(String id) => _lyrics[id];
+
+  /// A slur needs at least two selected notes to span.
+  bool get canSlur => _selectedNoteIndices.length >= 2;
+
+  /// Whether the selected range's endpoints already carry a slur (so the UI can
+  /// show the toggle as active).
+  bool get isSlurred {
+    final notes = _selectedNoteIndices;
+    if (notes.length < 2) return false;
+    return _slurs.contains(
+      Slur(_elements[notes.first].id, _elements[notes.last].id),
+    );
+  }
+
   String _newId() => 'w${_nextId++}';
 
   // ---- history -----------------------------------------------------------
 
-  _Snapshot _capture() =>
-      _Snapshot(List.of(_elements), timeSignature, keySignature, clef);
+  _Snapshot _capture() => _Snapshot(
+        List.of(_elements),
+        timeSignature,
+        keySignature,
+        clef,
+        List.of(_slurs),
+        Map.of(_lyrics),
+      );
 
   void _snapshot() {
     _undo.add(_capture());
@@ -232,6 +269,12 @@ class ScoreDocument {
     timeSignature = s.timeSignature;
     keySignature = s.keySignature;
     clef = s.clef;
+    _slurs
+      ..clear()
+      ..addAll(s.slurs);
+    _lyrics
+      ..clear()
+      ..addAll(s.lyrics);
     _invalidate();
     // Keep the selection valid against the restored length.
     if (_elements.isEmpty) {
@@ -413,6 +456,42 @@ class ScoreDocument {
     }
   }
 
+  /// Toggle a phrase slur over the selected range: draws an arc from the first
+  /// selected note to the last (needs ≥2 notes). If that exact slur already
+  /// exists, it is removed. Undoable.
+  void slurSelected() {
+    final notes = _selectedNoteIndices;
+    if (notes.length < 2) return;
+    final slur = Slur(_elements[notes.first].id, _elements[notes.last].id);
+    _snapshot();
+    if (!_slurs.remove(slur)) _slurs.add(slur);
+  }
+
+  /// Set (or clear, with empty/null) the verse-1 lyric syllable under note [id].
+  /// No-op on a rest or when unchanged (so it doesn't clutter undo). Undoable.
+  void setLyricFor(String id, String? text) {
+    final i = _indexOf(id);
+    if (i < 0 || _elements[i].isRest) return;
+    final t = (text ?? '').trim();
+    if ((_lyrics[id] ?? '') == t) return;
+    _snapshot();
+    if (t.isEmpty) {
+      _lyrics.remove(id);
+    } else {
+      _lyrics[id] = t;
+    }
+  }
+
+  /// Drop any slur/lyric that references an id no longer in the stream (called
+  /// after structural edits so spans never dangle).
+  void _pruneOrnaments() {
+    final ids = {for (final e in _elements) e.id};
+    _slurs.removeWhere(
+      (s) => !ids.contains(s.startId) || !ids.contains(s.endId),
+    );
+    _lyrics.removeWhere((id, _) => !ids.contains(id));
+  }
+
   /// Move the focus element so its lowest note lands on [pitch] (a chord moves
   /// as a block). No-op on a rest. Undoable.
   void repitchSelected(Pitch pitch) {
@@ -441,6 +520,7 @@ class ScoreDocument {
     _snapshot();
     final lo = _lo;
     _elements.removeRange(lo, _hi + 1);
+    _pruneOrnaments();
     if (_elements.isEmpty) {
       clearSelection();
     } else {
@@ -483,11 +563,18 @@ class ScoreDocument {
   }
 
   /// Paste the clipboard after the selection (or at the end) and select it.
+  /// Lyrics ride along with each copied element (onto its fresh id).
   void paste() {
     if (_clipboard.isEmpty) return;
     _snapshot();
     final at = _caretIndex();
-    final fresh = [for (final c in _clipboard) c.withId(_newId())];
+    final fresh = <EditorElement>[];
+    for (final c in _clipboard) {
+      final e = c.withId(_newId());
+      fresh.add(e);
+      final syllable = _lyrics[c.id];
+      if (syllable != null) _lyrics[e.id] = syllable;
+    }
     _elements.insertAll(at, fresh);
     _anchor = at;
     _focus = at + fresh.length - 1;
@@ -499,6 +586,8 @@ class ScoreDocument {
     if (_elements.isEmpty) return;
     _snapshot();
     _elements.clear();
+    _slurs.clear();
+    _lyrics.clear();
     clearSelection();
   }
 
@@ -508,18 +597,33 @@ class ScoreDocument {
   void loadScore(Score score) {
     _snapshot();
     _elements.clear();
+    _slurs.clear();
+    _lyrics.clear();
     clef = score.clef;
     keySignature = score.keySignature;
     timeSignature = score.timeSignature ?? TimeSignature.fourFour;
+    // Old element id → the fresh id we assign, so imported slurs/lyrics re-anchor.
+    final remap = <String, String>{};
     for (final measure in score.measures) {
       for (final el in measure.elements) {
         final id = _newId();
+        if (el.id != null) remap[el.id!] = id;
         if (el is NoteElement) {
           _elements
               .add(EditorElement.note(el.pitches.first, el.duration, id: id));
         } else if (el is RestElement) {
           _elements.add(EditorElement.rest(el.duration, id: id));
         }
+      }
+    }
+    for (final s in score.slurs) {
+      final start = remap[s.startId], end = remap[s.endId];
+      if (start != null && end != null) _slurs.add(Slur(start, end));
+    }
+    for (final ly in score.lyrics) {
+      final id = remap[ly.elementId];
+      if (id != null && ly.verse == 1 && ly.text.isNotEmpty) {
+        _lyrics[id] = ly.text;
       }
     }
     clearSelection();
@@ -557,6 +661,11 @@ class ScoreDocument {
       dynamics: [
         for (final e in _elements)
           if (!e.isRest && e.dynamic != null) DynamicMarking(e.id, e.dynamic!),
+      ],
+      slurs: List.of(_slurs),
+      lyrics: [
+        for (final e in _elements)
+          if (_lyrics[e.id] != null) Lyric(e.id, _lyrics[e.id]!),
       ],
     );
   }

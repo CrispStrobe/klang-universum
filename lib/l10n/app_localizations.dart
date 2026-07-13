@@ -524,6 +524,90 @@ abstract class AppLocalizations {
   /// **'Chord (stack notes)'**
   String get workshopChord;
 
+  /// No description provided for @workshopSlur.
+  ///
+  /// In en, this message translates to:
+  /// **'Slur (phrase the selected notes)'**
+  String get workshopSlur;
+
+  /// No description provided for @workshopLyric.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyric'**
+  String get workshopLyric;
+
+  /// No description provided for @workshopLyricHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Syllable…'**
+  String get workshopLyricHint;
+
+  /// No description provided for @workshopShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get workshopShortcuts;
+
+  /// No description provided for @workshopShortcutPlaceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Place a note (its pitch)'**
+  String get workshopShortcutPlaceNote;
+
+  /// No description provided for @workshopShortcutNoteValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Note value (whole … sixteenth)'**
+  String get workshopShortcutNoteValue;
+
+  /// No description provided for @workshopShortcutSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select previous / next'**
+  String get workshopShortcutSelect;
+
+  /// No description provided for @workshopShortcutTranspose.
+  ///
+  /// In en, this message translates to:
+  /// **'Move pitch up / down'**
+  String get workshopShortcutTranspose;
+
+  /// No description provided for @workshopShortcutUndoRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo / redo'**
+  String get workshopShortcutUndoRedo;
+
+  /// No description provided for @workshopShortcutCopyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy / cut / paste'**
+  String get workshopShortcutCopyPaste;
+
+  /// No description provided for @workshopExitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave the workshop?'**
+  String get workshopExitTitle;
+
+  /// No description provided for @workshopExitMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your score has unsaved changes.'**
+  String get workshopExitMessage;
+
+  /// No description provided for @workshopKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get workshopKeepEditing;
+
+  /// No description provided for @workshopDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get workshopDiscard;
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:
