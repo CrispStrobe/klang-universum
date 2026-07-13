@@ -396,6 +396,25 @@ void main() {
       d.insertNote(_p(Step.d), _q);
       expect(d.moveByIdToMeasure(d.elements.first.id, 0), isFalse);
     });
+
+    test('moveByIdToIndex reorders to an exact slot; undo restores', () {
+      final d = ScoreDocument();
+      for (final s in [Step.c, Step.d, Step.e, Step.f]) {
+        d.insertNote(_p(s), _q);
+      }
+      final eId = d.elements[2].id; // E
+      expect(d.moveByIdToIndex(eId, 0), isTrue); // → front
+      expect(_steps(d), [Step.e, Step.c, Step.d, Step.f]);
+      d.undo();
+      expect(_steps(d), [Step.c, Step.d, Step.e, Step.f]);
+    });
+
+    test('moveByIdToIndex to its own slot is a no-op', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q);
+      expect(d.moveByIdToIndex(d.elements.first.id, 0), isFalse);
+    });
   });
 
   group('marquee selection', () {

@@ -637,6 +637,22 @@ class ScoreDocument {
     return true;
   }
 
+  /// Fine drag-reorder: move element [id] to [index] in the flat stream (the
+  /// index is in the post-removal list — i.e. "how many elements end up before
+  /// it"). No-op if it wouldn't move. Undoable.
+  bool moveByIdToIndex(String id, int index) {
+    final from = _indexOf(id);
+    if (from < 0) return false;
+    final target = index.clamp(0, _elements.length - 1);
+    if (target == from) return false;
+    _snapshot();
+    final el = _elements.removeAt(from);
+    final insertAt = index.clamp(0, _elements.length);
+    _elements.insert(insertAt, el);
+    selectIndex(insertAt.clamp(0, _elements.length - 1));
+    return true;
+  }
+
   Pitch? moveById(String id, StaffTarget target, {Clef? clef}) {
     final i = _indexOf(id);
     if (i < 0 || _elements[i].isRest) return null;

@@ -170,6 +170,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   // C7: the view feeds its element hit-regions here so a marquee rect → ids.
   final ElementRegionController _regions = ElementRegionController();
 
+  // The canvas-local pointer position (from a passive Listener), and where a
+  // drag began — used to reorder a note by the horizontal drop position.
+  Offset? _pointerLocal;
+  Offset? _dragStartLocal;
+
   // Start the sweepable piano scrolled to around C3 (24 = C1, 7 white/octave).
   final _pianoScroll =
       ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
@@ -278,28 +283,50 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         _syncControlsToSelection();
       });
 
-  /// Drag a note on the staff to re-pitch it (vertical drag → new pitch). While
-  /// the drag is live the original note is hidden and a ghost follows the
-  /// pointer (see [_dragId] / [_hover] in the canvas), so it reads as the note
-  /// moving with the cursor.
+  /// Drag a note on the staff. A **horizontal** drag reorders it to the drop
+  /// position (fine, using the C7 element regions to read order across bars and
+  /// lines); a **vertical** drag re-pitches it. While the drag is live the
+  /// original note is hidden and a ghost follows the pointer (see [_dragId] /
+  /// [_hover]), so it reads as the note moving with the cursor.
+  void _onElementDragStart(String id) => setState(() {
+        _dragId = id;
+        _dragStartLocal = _pointerLocal;
+      });
+
   void _onElementDragEnd(String id, StaffTarget target) {
-    // Dragging into a different bar reorders (horizontal move); dragging within
-    // the same bar re-pitches (vertical move). Grand staff re-pitches only (its
-    // bars are split across two staves).
-    final fromMeasure = _doc.measureIndexOf(id);
-    if (!_grand && target.measureIndex != fromMeasure && fromMeasure >= 0) {
+    final drop = _pointerLocal;
+    final start = _dragStartLocal;
+    final dx = (drop != null && start != null) ? drop.dx - start.dx : 0.0;
+    final dy = (drop != null && start != null) ? drop.dy - start.dy : 0.0;
+    final horizontal = drop != null && dx.abs() > 20 && dx.abs() > dy.abs();
+
+    if (!_grand && horizontal) {
+      // Reading-order index of the drop: every element before it is one that
+      // sits in an earlier bar, or the same bar but left of the pointer.
+      final targetIndex = _regions.elementRegions
+          .where(
+            (r) =>
+                r.id != id &&
+                (r.measureIndex < target.measureIndex ||
+                    (r.measureIndex == target.measureIndex &&
+                        r.bounds.center.dx < drop.dx)),
+          )
+          .length;
       setState(() {
-        _doc.moveByIdToMeasure(id, target.measureIndex);
+        _doc.moveByIdToIndex(id, targetIndex);
         _hover = null;
         _dragId = null;
+        _dragStartLocal = null;
       });
       return;
     }
+
     Pitch? moved;
     setState(() {
       moved = _doc.moveById(id, target, clef: _clefForTarget(target));
       _hover = null;
       _dragId = null;
+      _dragStartLocal = null;
     });
     if (moved != null) _audio.playMidiNote(moved!.midiNumber, ms: 300);
   }
@@ -975,50 +1002,57 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       padding: const EdgeInsets.all(16),
                       child: SizedBox(
                         width: (constraints.maxWidth - 32).clamp(0.0, 4000.0),
-                        child: Stack(
-                          children: [
-                            _grand
-                                ? InteractiveGrandStaffView(
-                                    grandStaff: _doc.buildGrandStaff(),
-                                    theme: theme,
-                                    staffSpace: _zoom,
-                                    controller: _regions,
-                                    elementColors: elementColors,
-                                    onElementTap: _onElementTap,
-                                    onStaffTap: _onStaffTap,
-                                    onHover: (t) => setState(() => _hover = t),
-                                    ghostTarget: _hover,
-                                    ghostDuration: _ghostDuration,
-                                    caret: caret,
-                                    onElementDragStart: (id) =>
-                                        setState(() => _dragId = id),
-                                    onElementDragUpdate: (id, t) =>
-                                        setState(() => _hover = t),
-                                    onElementDragEnd: _onElementDragEnd,
-                                  )
-                                : MultiSystemView(
-                                    score: _doc.buildScore(),
-                                    theme: theme,
-                                    staffSpace: _zoom,
-                                    controller: _regions,
-                                    elementColors: elementColors,
-                                    onElementTap: _onElementTap,
-                                    onStaffTap: _onStaffTap,
-                                    onHover: (t) => setState(() => _hover = t),
-                                    ghostTarget: _hover,
-                                    ghostDuration: _ghostDuration,
-                                    caret: caret,
-                                    onElementDragStart: (id) =>
-                                        setState(() => _dragId = id),
-                                    onElementDragUpdate: (id, t) =>
-                                        setState(() => _hover = t),
-                                    onElementDragEnd: _onElementDragEnd,
-                                  ),
-                            if (_marquee)
-                              Positioned.fill(
-                                child: _MarqueeOverlay(onSelect: _applyMarquee),
-                              ),
-                          ],
+                        // Passively track the canvas-local pointer so a drag's
+                        // drop position can reorder a note (fine, C7 regions).
+                        child: Listener(
+                          onPointerDown: (e) => _pointerLocal = e.localPosition,
+                          onPointerMove: (e) => _pointerLocal = e.localPosition,
+                          child: Stack(
+                            children: [
+                              _grand
+                                  ? InteractiveGrandStaffView(
+                                      grandStaff: _doc.buildGrandStaff(),
+                                      theme: theme,
+                                      staffSpace: _zoom,
+                                      controller: _regions,
+                                      elementColors: elementColors,
+                                      onElementTap: _onElementTap,
+                                      onStaffTap: _onStaffTap,
+                                      onHover: (t) =>
+                                          setState(() => _hover = t),
+                                      ghostTarget: _hover,
+                                      ghostDuration: _ghostDuration,
+                                      caret: caret,
+                                      onElementDragStart: _onElementDragStart,
+                                      onElementDragUpdate: (id, t) =>
+                                          setState(() => _hover = t),
+                                      onElementDragEnd: _onElementDragEnd,
+                                    )
+                                  : MultiSystemView(
+                                      score: _doc.buildScore(),
+                                      theme: theme,
+                                      staffSpace: _zoom,
+                                      controller: _regions,
+                                      elementColors: elementColors,
+                                      onElementTap: _onElementTap,
+                                      onStaffTap: _onStaffTap,
+                                      onHover: (t) =>
+                                          setState(() => _hover = t),
+                                      ghostTarget: _hover,
+                                      ghostDuration: _ghostDuration,
+                                      caret: caret,
+                                      onElementDragStart: _onElementDragStart,
+                                      onElementDragUpdate: (id, t) =>
+                                          setState(() => _hover = t),
+                                      onElementDragEnd: _onElementDragEnd,
+                                    ),
+                              if (_marquee)
+                                Positioned.fill(
+                                  child:
+                                      _MarqueeOverlay(onSelect: _applyMarquee),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
