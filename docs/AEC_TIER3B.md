@@ -59,12 +59,31 @@ windows**, and `example-build` (a throwaway app depending on the plugin, built
 with `flutter build`) green on linux/macOS/windows. The macOS example app was
 also built locally.
 
-Remaining: **final wiring** — add the plugin to the app `pubspec.yaml` behind a
-runtime capability check + a `NativeAecEngine`→`AecEngine` adapter (kept out
-until we're comfortable it's green on mobile too) → **(e) on-device tuning**
-(iOS/Android; add a double-talk detector / residual suppression, or swap in
-SpeexDSP BSD-3 behind a flag, only if real-room residual echo proves too strong
-for the linear core).
+**Final wiring done — plugin in the app behind a web-safe capability check:**
+the `aec-native` CI now builds an example app on **all five** platforms
+(desktop trio + `flutter build ios --no-codesign` + `flutter build apk`); iOS
+needed the miniaudio implementation TU compiled as **Objective-C** (`.m`,
+AVAudioSession), macOS stays `.c`. With that green, `native/aec` is a path
+dependency of the app, reached only through
+`lib/core/audio/aec_capability.dart`:
+
+```dart
+export 'aec_capability_stub.dart' if (dart.library.ffi) 'aec_capability_ffi.dart';
+AecEngine? createNativeAecEngine(); // native adapter, or null on web
+```
+
+The conditional export keeps **`dart:ffi` out of the web build** (a stub returns
+null there), so `flutter build web` (the deploy path) is unaffected; on native
+platforms it returns a `NativeAecEngine`→app-`AecEngine` adapter. Constructing it
+does not load the native library (that's lazy, on `start()`), so app startup and
+tests never touch it. Tests: `test/aec_capability_test.dart`. The play-along
+screen can now opt in via `MicrophonePitchService(aec: createNativeAecEngine())`
+when speaker-backing is on.
+
+Remaining: **(e) on-device tuning** — exercise the real duplex path on iOS/Android
+hardware (mic permission, session category, latency) and, only if real-room
+residual echo proves too strong for the linear core, add a double-talk detector /
+residual suppression or swap in SpeexDSP (BSD-3) behind a build flag.
 See `native/aec/README.md`.
 
 ## Why a native plugin is required

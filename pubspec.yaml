@@ -39,6 +39,12 @@ dependencies:
   partitura:
     path: ../partitura-public/packages/partitura
   record: ^7.1.1
+  # AEC Tier 3b native full-duplex echo canceller (in-repo Flutter FFI plugin).
+  # Used only on native platforms + only when speaker-backing AEC is wanted;
+  # reached exclusively through core/audio/aec_capability.dart, whose web build
+  # gets a dart:ffi-free stub. See docs/AEC_TIER3B.md.
+  aec_fullduplex:
+    path: native/aec
 
 # partitura_core is not on pub.dev yet; resolve it from the workspace too.
 # Remove this override once the partitura packages are published.

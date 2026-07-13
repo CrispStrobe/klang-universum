@@ -114,8 +114,11 @@ dependency.
 - [x] (c) `AecEngine` seam in `MicrophonePitchService` (app-side, behind an
       abstract interface; fake-driven test)
 - [x] (d) Flutter FFI plugin for all 5 platforms + isolated `aec-native` CI
-      (native lib + offline tests + example build on ubuntu/macOS/windows);
-      macOS example app verified locally
-- [ ] final wiring: add the plugin to the app pubspec behind a capability check
-      + the `NativeAecEngine`→`AecEngine` adapter
-- [ ] (e) on-device tuning (iOS/Android; add DTD / residual suppression as needed)
+      (native lib + offline tests + example `flutter build` on
+      **ubuntu/macOS/windows/iOS/Android**); iOS miniaudio TU compiled as ObjC
+- [x] final wiring: plugin is an app path dep, reached only via
+      `core/audio/aec_capability.dart` (conditional export → `dart:ffi`-free stub
+      on web); `createNativeAecEngine()` returns a `NativeAecEngine`→app
+      `AecEngine` adapter (null on web)
+- [ ] (e) on-device tuning (iOS/Android hardware; add DTD / residual suppression
+      or SpeexDSP only if real-room residual echo demands it)
