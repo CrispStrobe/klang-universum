@@ -1,0 +1,95 @@
+// Covers the tutorial framework: the sheet renders a primer's steps (text +
+// engraved example + a Listen button on audio steps), pages through to the end,
+// and maybeShowTutorial auto-shows only on the first visit.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/tutorial/primers.dart';
+import 'package:klang_universum/shared/tutorial/tutorial_sheet.dart';
+import 'package:partitura/partitura.dart' show StaffView;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/game_test_support.dart';
+
+void main() {
+  testWidgets('the reading primer sheet shows text, notation and a Listen step',
+      (tester) async {
+    await pumpGame(
+      tester,
+      Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => showTutorial(
+                context,
+                readingPrimer(AppLocalizations.of(context)!),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // Step 1: title + staff explanation + an engraved example, no Listen yet.
+    expect(find.text('Reading notes'), findsOneWidget);
+    expect(find.textContaining('five lines'), findsOneWidget);
+    expect(find.byType(StaffView), findsOneWidget);
+    expect(find.text('Listen'), findsNothing);
+
+    // Advance to step 2 — the "higher sounds higher" step has a Listen button.
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Listen'), findsOneWidget);
+    await tester
+        .tap(find.text('Listen')); // plays via AudioService (no-op here)
+    await tester.pump();
+
+    // Page to the last step; the button becomes "Got it!" and dismisses.
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Got it!'), findsOneWidget);
+    await tester.tap(find.text('Got it!'));
+    await tester.pumpAndSettle();
+    expect(find.byType(StaffView), findsNothing); // sheet closed
+  });
+
+  testWidgets('maybeShowTutorial auto-shows once, then not again',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await pumpGame(
+      tester,
+      Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () =>
+                maybeShowTutorial(context, 'demo_game', readingPrimer),
+            child: const Text('maybe'),
+          ),
+        ),
+      ),
+    );
+
+    // First visit → the sheet appears.
+    await tester.tap(find.text('maybe'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reading notes'), findsOneWidget);
+    // Page to the last step, then dismiss.
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Got it!'));
+    await tester.pumpAndSettle();
+
+    // Second visit → nothing (already seen).
+    await tester.tap(find.text('maybe'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reading notes'), findsNothing);
+  });
+}

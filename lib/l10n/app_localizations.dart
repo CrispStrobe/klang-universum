@@ -3272,6 +3272,54 @@ abstract class AppLocalizations {
   /// **'Turn sound on'**
   String get unmuteTooltip;
 
+  /// No description provided for @howToPlayTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'How to play'**
+  String get howToPlayTooltip;
+
+  /// No description provided for @tutorialNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get tutorialNext;
+
+  /// No description provided for @tutorialGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it!'**
+  String get tutorialGotIt;
+
+  /// No description provided for @tutorialListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get tutorialListen;
+
+  /// No description provided for @primerReadingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading notes'**
+  String get primerReadingTitle;
+
+  /// No description provided for @primerReadingStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Music is written on five lines called a staff. Notes sit on the lines and in the spaces between them.'**
+  String get primerReadingStaff;
+
+  /// No description provided for @primerReadingHigher.
+  ///
+  /// In en, this message translates to:
+  /// **'The higher a note sits on the staff, the higher it sounds. Tap Listen and hear these notes climb!'**
+  String get primerReadingHigher;
+
+  /// No description provided for @primerReadingNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Every note has a letter name: A B C D E F G. This one is E — tap Listen to hear it.'**
+  String get primerReadingNames;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:

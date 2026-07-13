@@ -1789,6 +1789,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unmuteTooltip => 'Turn sound on';
 
   @override
+  String get howToPlayTooltip => 'How to play';
+
+  @override
+  String get tutorialNext => 'Next';
+
+  @override
+  String get tutorialGotIt => 'Got it!';
+
+  @override
+  String get tutorialListen => 'Listen';
+
+  @override
+  String get primerReadingTitle => 'Reading notes';
+
+  @override
+  String get primerReadingStaff =>
+      'Music is written on five lines called a staff. Notes sit on the lines and in the spaces between them.';
+
+  @override
+  String get primerReadingHigher =>
+      'The higher a note sits on the staff, the higher it sounds. Tap Listen and hear these notes climb!';
+
+  @override
+  String get primerReadingNames =>
+      'Every note has a letter name: A B C D E F G. This one is E — tap Listen to hear it.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

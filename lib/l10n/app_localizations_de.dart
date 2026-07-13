@@ -1797,6 +1797,33 @@ class AppLocalizationsDe extends AppLocalizations {
   String get unmuteTooltip => 'Ton an';
 
   @override
+  String get howToPlayTooltip => 'Spielhilfe';
+
+  @override
+  String get tutorialNext => 'Weiter';
+
+  @override
+  String get tutorialGotIt => 'Verstanden!';
+
+  @override
+  String get tutorialListen => 'Anhören';
+
+  @override
+  String get primerReadingTitle => 'Noten lesen';
+
+  @override
+  String get primerReadingStaff =>
+      'Musik steht auf fünf Linien, dem Notensystem. Noten sitzen auf den Linien und in den Zwischenräumen.';
+
+  @override
+  String get primerReadingHigher =>
+      'Je höher eine Note im System sitzt, desto höher klingt sie. Tippe auf Anhören und hör, wie sie nach oben steigt!';
+
+  @override
+  String get primerReadingNames =>
+      'Jede Note hat einen Buchstabennamen: A H C D E F G. Diese hier ist E — tippe auf Anhören.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override
