@@ -143,6 +143,16 @@ class ScoreDocument {
   final List<_Snapshot> _undo = [];
   final List<_Snapshot> _redo = [];
 
+  // Memoized renders — invalidated only when the music changes, so hover/select
+  // rebuilds don't force partitura to re-lay-out every frame.
+  Score? _scoreCache;
+  GrandStaff? _grandCache;
+
+  void _invalidate() {
+    _scoreCache = null;
+    _grandCache = null;
+  }
+
   // ---- reads -------------------------------------------------------------
 
   List<EditorElement> get elements => List.unmodifiable(_elements);
@@ -181,6 +191,7 @@ class ScoreDocument {
   void _snapshot() {
     _undo.add(_capture());
     _redo.clear();
+    _invalidate();
   }
 
   void _restore(_Snapshot s) {
@@ -190,6 +201,7 @@ class ScoreDocument {
     timeSignature = s.timeSignature;
     keySignature = s.keySignature;
     clef = s.clef;
+    _invalidate();
     // Keep the selection valid against the restored length.
     if (_elements.isEmpty) {
       _anchor = _focus = null;
@@ -493,7 +505,7 @@ class ScoreDocument {
   /// overflow the current bar starts a new one (no splitting/tying yet). An
   /// empty document renders a single whole-rest bar so the staff stays wide.
   Score buildScore() {
-    return Score(
+    return _scoreCache ??= Score(
       clef: clef,
       keySignature: keySignature,
       timeSignature: timeSignature,
@@ -510,6 +522,8 @@ class ScoreDocument {
   /// other staff so both share the same bar grid. This displays one melody with
   /// both clefs (no jarring whole-score flip) — it is not two independent voices.
   GrandStaff buildGrandStaff() {
+    final cached = _grandCache;
+    if (cached != null) return cached;
     final upper = <MusicElement>[];
     final lower = <MusicElement>[];
     for (final e in _elements) {
@@ -524,7 +538,7 @@ class ScoreDocument {
         upper.add(RestElement(e.duration));
       }
     }
-    return GrandStaff(
+    return _grandCache = GrandStaff(
       upper: Score(
         clef: Clef.treble,
         keySignature: keySignature,

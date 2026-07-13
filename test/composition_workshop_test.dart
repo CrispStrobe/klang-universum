@@ -4,6 +4,7 @@
 // ScoreDocument model tests.
 
 import 'package:flutter/material.dart' hide Step;
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
@@ -39,6 +40,15 @@ CompositionWorkshopTester _editor(WidgetTester tester) =>
     tester.state<State<CompositionWorkshopScreen>>(
       find.byType(CompositionWorkshopScreen),
     ) as CompositionWorkshopTester;
+
+// The piano is a wide, horizontally-scrollable keyboard; its widget centre is
+// off-screen, so tap a specific visible white-key GestureDetector instead.
+Finder _pianoKey() => find
+    .descendant(
+      of: find.byType(PianoKeyboard),
+      matching: find.byType(GestureDetector),
+    )
+    .at(16);
 
 void main() {
   setUp(() {
@@ -93,7 +103,7 @@ void main() {
   testWidgets('tapping the piano places a note and selects it', (tester) async {
     await pump(tester);
     final editor = _editor(tester);
-    await tester.tap(find.byType(PianoKeyboard));
+    await tester.tap(_pianoKey());
     await tester.pump();
     expect(editor.noteCount, 1);
     expect(editor.hasSelection, isTrue);
@@ -102,7 +112,7 @@ void main() {
   testWidgets('copy then paste duplicates the selection', (tester) async {
     await pump(tester);
     final editor = _editor(tester);
-    await tester.tap(find.byType(PianoKeyboard));
+    await tester.tap(_pianoKey());
     await tester.pump();
     expect(editor.noteCount, 1);
 
@@ -125,13 +135,28 @@ void main() {
   testWidgets('the note palette offers articulations and dynamics',
       (tester) async {
     await pump(tester);
-    await tester.tap(find.byType(PianoKeyboard)); // places + selects a note
+    await tester.tap(_pianoKey()); // places + selects a note
     await tester.pump();
     await tester.tap(find.byIcon(Icons.expand_less)); // the palette button
     await tester.pumpAndSettle();
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
     expect(find.text(l10n.workshopStaccato), findsOneWidget);
     expect(find.textContaining('mf'), findsWidgets); // a dynamic entry
+  });
+
+  testWidgets('computer keyboard: letters place notes, Del deletes',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyE);
+    await tester.pump();
+    expect(editor.noteCount, 2);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    await tester.pump();
+    expect(editor.noteCount, 1);
   });
 
   testWidgets('switching to grand-staff mode shows both clefs', (tester) async {

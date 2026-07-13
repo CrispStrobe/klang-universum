@@ -24,8 +24,19 @@
   (`integration_test/workshop_test.dart`, run `-d macos`/`-d chrome`) boots the
   app and composes end-to-end. Unit + widget run headless in CI; integration is
   device/on-demand.
-- **Doing next:** a placement **caret** (C2), marquee range-select (C4), drag
-  horizontal-reorder (C3 follow-up), hairpins, page / print.
+- **Direct feedback batch (in progress):**
+  1. ✅ *Lag* — memoize `buildScore`/`buildGrandStaff` so hover/select rebuilds
+     don't re-lay-out every frame (invalidated only on real edits).
+  2. ✅ *Piano* — octave labels (C1, C2… as small superscripts) + a wide,
+     horizontally **sweepable** keyboard (C1..~A6).
+  3. ✅ *Click-to-move* — clicking a staff line while a note is selected moves it.
+  4. ⏳ *One top row* — fold clef/time/key/zoom into the app bar (back · settings
+     · undo/redo · play · ⋮).
+  5. ⏳ *Physical keyboard* — A–G notes, duration digits, arrows, delete, Ctrl+Z/
+     C/V.
+  6. ⏳ *Chord mode* — place multiple notes at one timeslot (model → chord).
+  7. ⏳ *More:* start off beat 1 (pickup / mid-measure), **slurs** (Bindebögen),
+     **lyrics** typing, caret, marquee-select, drag-reorder, hairpins, page/print.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 

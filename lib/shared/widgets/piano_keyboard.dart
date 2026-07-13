@@ -24,6 +24,10 @@ class PianoKeyboard extends StatelessWidget {
   /// Letter labels on the white keys (localized; German B = H).
   final bool showLabels;
 
+  /// Append the octave number to each label (e.g. C4), as a small superscript,
+  /// so keys across several octaves are unambiguous.
+  final bool showOctaveNumbers;
+
   const PianoKeyboard({
     super.key,
     this.startMidi = 60,
@@ -31,6 +35,7 @@ class PianoKeyboard extends StatelessWidget {
     this.onKeyTap,
     this.keyColors = const {},
     this.showLabels = false,
+    this.showOctaveNumbers = false,
   }) : assert(startMidi % 12 == 0, 'startMidi must be a C');
 
   static const _whiteOffsets = [0, 2, 4, 5, 7, 9, 11];
@@ -49,6 +54,32 @@ class PianoKeyboard extends StatelessWidget {
 
   /// Whether a black key sits between white keys [i] and i+1.
   bool hasBlackAfter(int i) => const {0, 1, 3, 4, 5}.contains(i % 7);
+
+  /// The label on white key [i]: its note name, plus a small octave superscript
+  /// when [showOctaveNumbers] is set.
+  Widget _label(BuildContext context, int i) {
+    final base = Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Colors.black54,
+        );
+    final name = noteNameFor(context, _whiteSteps[i % 7]);
+    if (!showOctaveNumbers) return Text(name, style: base);
+    final octave = whiteMidi(i) ~/ 12 - 1;
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: name, style: base),
+          TextSpan(
+            text: '$octave',
+            style: base?.copyWith(
+              fontSize: (base.fontSize ?? 16) * 0.6,
+              fontFeatures: const [FontFeature.superscripts()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,18 +109,7 @@ class PianoKeyboard extends StatelessWidget {
                         ),
                         alignment: Alignment.bottomCenter,
                         padding: const EdgeInsets.only(bottom: 8),
-                        child: showLabels
-                            ? Text(
-                                noteNameFor(context, _whiteSteps[i % 7]),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black54,
-                                    ),
-                              )
-                            : null,
+                        child: showLabels ? _label(context, i) : null,
                       ),
                     ),
                   ),

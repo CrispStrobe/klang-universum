@@ -99,6 +99,29 @@ const _dynamicOptions = <DynamicLevel>[
   DynamicLevel.ff,
 ];
 
+// The sweepable piano: C1..~A6, a fixed key width so it scrolls horizontally.
+const _pianoWhiteKeys = 42;
+const _pianoKeyWidth = 46.0;
+const _pianoStartMidi = 24; // C1
+
+// Computer-keyboard note entry (letters) and duration selection (digits).
+final _letterSteps = <LogicalKeyboardKey, Step>{
+  LogicalKeyboardKey.keyA: Step.a,
+  LogicalKeyboardKey.keyB: Step.b,
+  LogicalKeyboardKey.keyC: Step.c,
+  LogicalKeyboardKey.keyD: Step.d,
+  LogicalKeyboardKey.keyE: Step.e,
+  LogicalKeyboardKey.keyF: Step.f,
+  LogicalKeyboardKey.keyG: Step.g,
+};
+final _digitBases = <LogicalKeyboardKey, DurationBase>{
+  LogicalKeyboardKey.digit1: DurationBase.whole,
+  LogicalKeyboardKey.digit2: DurationBase.half,
+  LogicalKeyboardKey.digit3: DurationBase.quarter,
+  LogicalKeyboardKey.digit4: DurationBase.eighth,
+  LogicalKeyboardKey.digit5: DurationBase.sixteenth,
+};
+
 class CompositionWorkshopScreen extends StatefulWidget {
   const CompositionWorkshopScreen({super.key});
 
@@ -128,6 +151,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   double _zoom = 16;
   _StaffMode _mode = _StaffMode.treble;
   StaffTarget? _hover; // where a click/tap would land (desktop hover preview)
+
+  // Start the sweepable piano scrolled to around C3 (24 = C1, 7 white/octave).
+  final _pianoScroll =
+      ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
+
+  @override
+  void dispose() {
+    _pianoScroll.dispose();
+    super.dispose();
+  }
 
   bool get _grand => _mode == _StaffMode.grand;
 
@@ -181,13 +214,21 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   void _onPianoKey(int midi) => _placePitch(pitchFromMidi(midi));
 
-  /// Tap on empty staff → place a note at that pitch.
-  void _onStaffTap(StaffTarget target) => _placePitch(
-        target.pitchFor(
-          _clefForTarget(target),
-          preferredAlter: _alterOf(_accidental),
-        ),
-      );
+  /// Click a staff line: if a note is selected, move it there (re-pitch);
+  /// otherwise place a new note at that pitch.
+  void _onStaffTap(StaffTarget target) {
+    final pitch = target.pitchFor(
+      _clefForTarget(target),
+      preferredAlter: _alterOf(_accidental),
+    );
+    final selected = _doc.selected;
+    if (selected != null && !selected.isRest) {
+      setState(() => _doc.repitchSelected(pitch));
+      _audio.playMidiNote(pitch.midiNumber, ms: 300);
+    } else {
+      _placePitch(pitch);
+    }
+  }
 
   void _onElementTap(String id) => setState(() {
         _doc.toggleSelected(id);
@@ -230,6 +271,64 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   void _addRest() {
     if (_doc.length >= CompositionWorkshopScreen.maxNotes) return;
     setState(() => _doc.insertRest(_pendingDuration));
+  }
+
+  /// Computer-keyboard entry: A–G place notes, 1–5 pick a value, arrows move the
+  /// caret / pitch, R a rest, `.` a dot, Del/⌫ deletes, Ctrl/⌘ Z·Y·C·X·V for
+  /// undo/redo/copy/cut/paste.
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    final kb = HardwareKeyboard.instance;
+
+    if (kb.isControlPressed || kb.isMetaPressed) {
+      if (key == LogicalKeyboardKey.keyZ) {
+        setState(kb.isShiftPressed ? _doc.redo : _doc.undo);
+      } else if (key == LogicalKeyboardKey.keyY) {
+        setState(_doc.redo);
+      } else if (key == LogicalKeyboardKey.keyC) {
+        _run(_doc.copySelection);
+      } else if (key == LogicalKeyboardKey.keyX) {
+        _run(_doc.cutSelection);
+      } else if (key == LogicalKeyboardKey.keyV) {
+        _run(_doc.paste);
+      } else {
+        return KeyEventResult.ignored;
+      }
+      return KeyEventResult.handled;
+    }
+
+    final step = _letterSteps[key];
+    if (step != null) {
+      final octave = _doc.selected?.pitch?.octave ?? 4;
+      _placePitch(Pitch(step, alter: _alterOf(_accidental), octave: octave));
+      return KeyEventResult.handled;
+    }
+    final base = _digitBases[key];
+    if (base != null) {
+      _pickValue(base);
+      return KeyEventResult.handled;
+    }
+    switch (key) {
+      case LogicalKeyboardKey.arrowLeft:
+        _run(_doc.selectPrev);
+      case LogicalKeyboardKey.arrowRight:
+        _run(_doc.selectNext);
+      case LogicalKeyboardKey.arrowUp:
+        _transpose(1);
+      case LogicalKeyboardKey.arrowDown:
+        _transpose(-1);
+      case LogicalKeyboardKey.delete:
+      case LogicalKeyboardKey.backspace:
+        _run(_doc.deleteSelected);
+      case LogicalKeyboardKey.keyR:
+        _addRest();
+      case LogicalKeyboardKey.period:
+        _toggleDot();
+      default:
+        return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
   }
 
   // ---- selection / range actions -----------------------------------------
@@ -413,106 +512,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     const theme = PartituraTheme.kids;
     final selectedIds = _doc.selectedIds;
 
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 48,
-        titleSpacing: 8,
-        title: const SizedBox.shrink(),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.undo),
-            tooltip: l10n.myMelodyUndo,
-            onPressed: _doc.canUndo ? () => setState(_doc.undo) : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.redo),
-            tooltip: l10n.workshopRedo,
-            onPressed: _doc.canRedo ? () => setState(_doc.redo) : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.play_arrow),
-            tooltip: l10n.myMelodyPlay,
-            onPressed: _doc.isEmpty ? null : _play,
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (v) {
-              switch (v) {
-                case 'openxml':
-                  _openFile(
-                    extensions: const ['musicxml', 'xml'],
-                    label: 'MusicXML',
-                    parse: (f) async =>
-                        scoreFromMusicXml(await f.readAsString()),
-                  );
-                case 'openmidi':
-                  _openFile(
-                    extensions: const ['mid', 'midi'],
-                    label: 'MIDI',
-                    parse: (f) async => scoreFromMidi(await f.readAsBytes()),
-                  );
-                case 'save':
-                  _save();
-                case 'xml':
-                  _exportText(
-                    l10n.workshopExportXml,
-                    scoreToMusicXml(_doc.buildScore()),
-                  );
-                case 'abc':
-                  _exportText(
-                    l10n.workshopExportAbc,
-                    scoreToAbc(_doc.buildScore()),
-                  );
-                case 'clear':
-                  setState(_doc.clearAll);
-              }
-            },
-            itemBuilder: (ctx) => [
-              _menuItem(
-                'openxml',
-                Icons.file_open_outlined,
-                l10n.importMusicXmlFile,
-                true,
-              ),
-              _menuItem(
-                'openmidi',
-                Icons.file_open_outlined,
-                l10n.importMidiFile,
-                true,
-              ),
-              const PopupMenuDivider(),
-              _menuItem(
-                'save',
-                Icons.bookmark_add_outlined,
-                l10n.myMelodySave,
-                !_doc.isEmpty,
-              ),
-              _menuItem(
-                'xml',
-                Icons.code,
-                l10n.workshopExportXml,
-                !_doc.isEmpty,
-              ),
-              _menuItem(
-                'abc',
-                Icons.abc,
-                l10n.workshopExportAbc,
-                !_doc.isEmpty,
-              ),
-              _menuItem(
-                'clear',
-                Icons.delete_sweep_outlined,
-                l10n.myMelodyClear,
-                !_doc.isEmpty,
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Row A — compact settings + status.
-          _TopBar(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _handleKey,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 48,
+          titleSpacing: 4,
+          // The score settings live inline in the top bar (one row).
+          title: _TopBar(
             mode: _mode,
             timeSignature: _doc.timeSignature,
             fifths: _doc.keySignature.fifths,
@@ -525,96 +533,196 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             onZoomIn: () => _zoomBy(3),
             onZoomOut: () => _zoomBy(-3),
           ),
-          const Divider(height: 1),
-          // Score canvas — multi-line, vertical scroll.
-          Expanded(
-            child: ColoredBox(
-              color: Theme.of(context).colorScheme.surfaceContainerLowest,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: _grand
-                    ? InteractiveGrandStaffView(
-                        grandStaff: _doc.buildGrandStaff(),
-                        theme: theme,
-                        staffSpace: _zoom,
-                        elementColors: {
-                          for (final id in selectedIds) id: Colors.amber,
-                        },
-                        onElementTap: _onElementTap,
-                        onStaffTap: _onStaffTap,
-                        onHover: (t) => setState(() => _hover = t),
-                        ghostTarget: _hover,
-                        ghostDuration: _pendingDuration,
-                        onElementDragUpdate: (id, t) =>
-                            setState(() => _hover = t),
-                        onElementDragEnd: _onElementDragEnd,
-                      )
-                    : MultiSystemView(
-                        score: _doc.buildScore(),
-                        theme: theme,
-                        staffSpace: _zoom,
-                        elementColors: {
-                          for (final id in selectedIds) id: Colors.amber,
-                        },
-                        onElementTap: _onElementTap,
-                        onStaffTap: _onStaffTap,
-                        onHover: (t) => setState(() => _hover = t),
-                        ghostTarget: _hover,
-                        ghostDuration: _pendingDuration,
-                        onElementDragUpdate: (id, t) =>
-                            setState(() => _hover = t),
-                        onElementDragEnd: _onElementDragEnd,
-                      ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.undo),
+              tooltip: l10n.myMelodyUndo,
+              onPressed: _doc.canUndo ? () => setState(_doc.undo) : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.redo),
+              tooltip: l10n.workshopRedo,
+              onPressed: _doc.canRedo ? () => setState(_doc.redo) : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.play_arrow),
+              tooltip: l10n.myMelodyPlay,
+              onPressed: _doc.isEmpty ? null : _play,
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (v) {
+                switch (v) {
+                  case 'openxml':
+                    _openFile(
+                      extensions: const ['musicxml', 'xml'],
+                      label: 'MusicXML',
+                      parse: (f) async =>
+                          scoreFromMusicXml(await f.readAsString()),
+                    );
+                  case 'openmidi':
+                    _openFile(
+                      extensions: const ['mid', 'midi'],
+                      label: 'MIDI',
+                      parse: (f) async => scoreFromMidi(await f.readAsBytes()),
+                    );
+                  case 'save':
+                    _save();
+                  case 'xml':
+                    _exportText(
+                      l10n.workshopExportXml,
+                      scoreToMusicXml(_doc.buildScore()),
+                    );
+                  case 'abc':
+                    _exportText(
+                      l10n.workshopExportAbc,
+                      scoreToAbc(_doc.buildScore()),
+                    );
+                  case 'clear':
+                    setState(_doc.clearAll);
+                }
+              },
+              itemBuilder: (ctx) => [
+                _menuItem(
+                  'openxml',
+                  Icons.file_open_outlined,
+                  l10n.importMusicXmlFile,
+                  true,
+                ),
+                _menuItem(
+                  'openmidi',
+                  Icons.file_open_outlined,
+                  l10n.importMidiFile,
+                  true,
+                ),
+                const PopupMenuDivider(),
+                _menuItem(
+                  'save',
+                  Icons.bookmark_add_outlined,
+                  l10n.myMelodySave,
+                  !_doc.isEmpty,
+                ),
+                _menuItem(
+                  'xml',
+                  Icons.code,
+                  l10n.workshopExportXml,
+                  !_doc.isEmpty,
+                ),
+                _menuItem(
+                  'abc',
+                  Icons.abc,
+                  l10n.workshopExportAbc,
+                  !_doc.isEmpty,
+                ),
+                _menuItem(
+                  'clear',
+                  Icons.delete_sweep_outlined,
+                  l10n.myMelodyClear,
+                  !_doc.isEmpty,
+                ),
+              ],
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Row A — compact settings + status.
+            // Score canvas — multi-line, vertical scroll.
+            Expanded(
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: _grand
+                      ? InteractiveGrandStaffView(
+                          grandStaff: _doc.buildGrandStaff(),
+                          theme: theme,
+                          staffSpace: _zoom,
+                          elementColors: {
+                            for (final id in selectedIds) id: Colors.amber,
+                          },
+                          onElementTap: _onElementTap,
+                          onStaffTap: _onStaffTap,
+                          onHover: (t) => setState(() => _hover = t),
+                          ghostTarget: _hover,
+                          ghostDuration: _pendingDuration,
+                          onElementDragUpdate: (id, t) =>
+                              setState(() => _hover = t),
+                          onElementDragEnd: _onElementDragEnd,
+                        )
+                      : MultiSystemView(
+                          score: _doc.buildScore(),
+                          theme: theme,
+                          staffSpace: _zoom,
+                          elementColors: {
+                            for (final id in selectedIds) id: Colors.amber,
+                          },
+                          onElementTap: _onElementTap,
+                          onStaffTap: _onStaffTap,
+                          onHover: (t) => setState(() => _hover = t),
+                          ghostTarget: _hover,
+                          ghostDuration: _pendingDuration,
+                          onElementDragUpdate: (id, t) =>
+                              setState(() => _hover = t),
+                          onElementDragEnd: _onElementDragEnd,
+                        ),
+                ),
               ),
             ),
-          ),
-          // Row B — value/accidental strip + contextual selection actions.
-          _InputBar(
-            pendingBase: _pendingBase,
-            dotted: _dotted,
-            accidental: _accidental,
-            hasSelection: _doc.hasSelection,
-            canTranspose: _selectionHasNote,
-            canPaste: _doc.canPaste,
-            onPickValue: _pickValue,
-            onToggleDot: _toggleDot,
-            onPickAccidental: _pickAccidental,
-            onRest: _addRest,
-            onSelectPrev: () => _run(_doc.selectPrev),
-            onSelectNext: () => _run(_doc.selectNext),
-            onExtendLeft: () => _run(_doc.extendLeft),
-            onExtendRight: () => _run(_doc.extendRight),
-            onUp: () => _transpose(1),
-            onDown: () => _transpose(-1),
-            onMoveLeft: () => _run(_doc.moveSelectionLeft),
-            onMoveRight: () => _run(_doc.moveSelectionRight),
-            onCopy: () => _run(_doc.copySelection),
-            onCut: () => _run(_doc.cutSelection),
-            onPaste: () => _run(_doc.paste),
-            palette: _paletteButton(l10n),
-            onDelete: () => _run(_doc.deleteSelected),
-          ),
-          // Piano — places notes at the caret.
-          Material(
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            elevation: 3,
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 132,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: PianoKeyboard(
-                    startMidi: 48,
-                    whiteKeyCount: 15,
-                    showLabels: true,
-                    onKeyTap: _onPianoKey,
+            // Row B — value/accidental strip + contextual selection actions.
+            _InputBar(
+              pendingBase: _pendingBase,
+              dotted: _dotted,
+              accidental: _accidental,
+              hasSelection: _doc.hasSelection,
+              canTranspose: _selectionHasNote,
+              canPaste: _doc.canPaste,
+              onPickValue: _pickValue,
+              onToggleDot: _toggleDot,
+              onPickAccidental: _pickAccidental,
+              onRest: _addRest,
+              onSelectPrev: () => _run(_doc.selectPrev),
+              onSelectNext: () => _run(_doc.selectNext),
+              onExtendLeft: () => _run(_doc.extendLeft),
+              onExtendRight: () => _run(_doc.extendRight),
+              onUp: () => _transpose(1),
+              onDown: () => _transpose(-1),
+              onMoveLeft: () => _run(_doc.moveSelectionLeft),
+              onMoveRight: () => _run(_doc.moveSelectionRight),
+              onCopy: () => _run(_doc.copySelection),
+              onCut: () => _run(_doc.cutSelection),
+              onPaste: () => _run(_doc.paste),
+              palette: _paletteButton(l10n),
+              onDelete: () => _run(_doc.deleteSelected),
+            ),
+            // Piano — places notes at the caret.
+            Material(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              elevation: 3,
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 140,
+                  child: SingleChildScrollView(
+                    controller: _pianoScroll,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.all(8),
+                    child: SizedBox(
+                      width: _pianoWhiteKeys * _pianoKeyWidth,
+                      child: PianoKeyboard(
+                        startMidi: _pianoStartMidi,
+                        whiteKeyCount: _pianoWhiteKeys,
+                        showLabels: true,
+                        showOctaveNumbers: true,
+                        onKeyTap: _onPianoKey,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
