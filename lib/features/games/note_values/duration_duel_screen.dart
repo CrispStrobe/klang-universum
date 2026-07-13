@@ -12,6 +12,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/music_glyph.dart';
@@ -74,7 +75,7 @@ class _DurationDuelScreenState extends State<DurationDuelScreen>
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameDurationDuel)),
+      appBar: GameAppBar(title: l10n.gameDurationDuel),
       body: SafeArea(
         child: finished
             ? GameResultView(

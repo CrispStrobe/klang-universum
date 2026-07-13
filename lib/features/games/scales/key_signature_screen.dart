@@ -16,6 +16,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
@@ -139,7 +140,7 @@ class _KeySignatureScreenState extends State<KeySignatureScreen>
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameKeySignature)),
+      appBar: GameAppBar(title: l10n.gameKeySignature),
       body: SafeArea(
         child: finished
             ? GameResultView(

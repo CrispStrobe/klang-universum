@@ -19,6 +19,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
@@ -181,7 +182,7 @@ class _EchoSequenceScreenState extends State<EchoSequenceScreen> {
     final cues = _cues;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameEchoSequence)),
+      appBar: GameAppBar(title: l10n.gameEchoSequence),
       body: SafeArea(
         child: _phase == _Phase.over
             ? GameResultView(

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +83,7 @@ class _TuneQuizScreenState extends State<TuneQuizScreen> with QuizRoundMixin {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameTuneQuiz)),
+      appBar: GameAppBar(title: l10n.gameTuneQuiz),
       body: SafeArea(
         child: finished
             ? GameResultView(

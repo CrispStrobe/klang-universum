@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
@@ -86,7 +87,7 @@ class _KeyNameScreenState extends State<KeyNameScreen> with QuizRoundMixin {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameKeyName)),
+      appBar: GameAppBar(title: l10n.gameKeyName),
       body: SafeArea(
         child: finished
             ? GameResultView(

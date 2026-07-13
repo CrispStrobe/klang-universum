@@ -18,6 +18,7 @@ import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
@@ -158,7 +159,7 @@ class _NoteMemoryScreenState extends State<NoteMemoryScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameNoteMemory)),
+      appBar: GameAppBar(title: l10n.gameNoteMemory),
       body: SafeArea(
         child: _finished
             ? GameResultView(

@@ -11,6 +11,7 @@ import 'package:klang_universum/features/games/measures/measure_fill_screen.dart
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,10 +66,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(StaffView), findsOneWidget);
-    // 4 glyph option cards + the staff card.
-    expect(find.byType(InkWell), findsNWidgets(4));
+    // 4 glyph options (each a MusicGlyph in a tappable card). Counting the
+    // glyphs rather than InkWells keeps this robust to app-bar buttons like
+    // the GameAppBar sound toggle.
+    expect(find.byType(MusicGlyph), findsNWidgets(4));
 
-    await tester.tap(find.byType(InkWell).first);
+    await tester.tap(find.byType(MusicGlyph).first);
     await tester.pump();
     expect(sri.totalTrackedItems, 1);
     expect(sri.getDetailedBreakdown().keys, ['measures']);

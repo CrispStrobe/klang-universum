@@ -21,6 +21,7 @@ import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
@@ -260,7 +261,7 @@ class _NoteSnakeScreenState extends State<NoteSnakeScreen>
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameNoteSnake)),
+      appBar: GameAppBar(title: l10n.gameNoteSnake),
       body: SafeArea(
         child: _finished
             ? GameResultView(

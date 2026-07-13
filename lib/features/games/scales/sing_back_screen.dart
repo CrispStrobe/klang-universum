@@ -18,6 +18,7 @@ import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
@@ -219,7 +220,7 @@ class _SingBackScreenState extends State<SingBackScreen>
     final onTarget = _matches(_reading);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameSingBack)),
+      appBar: GameAppBar(title: l10n.gameSingBack),
       body: SafeArea(
         child: _finished
             ? GameResultView(
