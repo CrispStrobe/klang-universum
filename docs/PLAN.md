@@ -176,17 +176,21 @@ and push to origin/main** before/after touching shared files. Format:
   `lib/features/games/playalong/play_along_screen.dart`, `core/audio/play_along.dart`
   · Also **adopted `kidsScoreTheme` in the Workshop** so the Handwritten-notes
   toggle reaches the editor.
-  ✅ **Live drag — C10a landed & wired.** Shipped **`suppressElementIds`** on
-  `MultiSystemView`/`InteractiveGrandStaffView` to public `partitura@main`
-  (→ `LayoutPainter` skips a note's whole glyph: notehead/stem/flag/beam/ledger;
-  pixel-tested) and wired the Workshop to hide the dragged note with it instead
-  of the old `elementColors`=background trick — a **clean, theme-independent**
-  hide (no ink bleed on Petaluma / coloured staves) with the ghost following the
-  pointer. · touched partitura `layout_painter.dart` / `multi_system_view.dart` /
+  ✅ **Live drag — C10a + C10b landed & wired (the real note follows the
+  pointer).** Shipped two additive inputs on `MultiSystemView`/
+  `InteractiveGrandStaffView` to public `partitura@main`: **`suppressElementIds`**
+  (C10a — `LayoutPainter` skips a note's whole glyph; clean theme-independent
+  hide) and **`dragPreviewOpacity`** (C10b — the view suppresses the dragged
+  element and re-paints the *real* glyph translated to follow the pointer,
+  snapped to pitch). The Workshop now passes `dragPreviewOpacity: 0.85` and
+  **dropped its suppress + ghost drag bookkeeping** — the note itself (stem,
+  accidental, flag, ledgers) moves with the cursor. Painter refactor left all
+  122 goldens unchanged; pixel + gesture tested. · touched partitura
+  `layout_painter.dart` / `multi_system_view.dart` /
   `interactive_grand_staff_view.dart` (+ CONTRACT/CHANGELOG) and mus
-  `composition_workshop_screen.dart`. Analyze clean, 19/19 workshop widget tests
-  green. **C10b** (view-painted drag glyph) stays optional. · **idle** (all
-  shipped to origin/main) · detail:
+  `composition_workshop_screen.dart`. Whole-project analyze clean, workshop
+  widget tests green. **C10 (a+b) complete — no app-side drag fake remains.** ·
+  **idle** (all shipped to origin/main) · detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only

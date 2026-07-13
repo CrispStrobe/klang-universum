@@ -72,19 +72,24 @@
       `kidsScoreTheme` (not the const `PartituraTheme.kids`), so the Settings
       "Handwritten notes" switch swaps the engraving font (Bravura ↔ Petaluma)
       in the Workshop too — canvas, both clefs, and the SVG/PNG exports.
-  18. ✅ *Live drag — clean hide (C10a shipped & wired).* partitura now paints no
-      live drag of its own, but exposes **`suppressElementIds`** on
-      `MultiSystemView` / `InteractiveGrandStaffView` (→ the shared
-      `LayoutPainter` skips those elements' primitives entirely: notehead, stem,
-      flag, beam, ledger). The Workshop drags the note by hiding the original
-      with `suppressElementIds: {_dragId}` (a **clean, theme-independent** hide —
-      no ink bleed, works on the handwritten Petaluma font and coloured staves)
-      while its duration-matched ghost follows the pointer. Replaced the old
-      `elementColors`=background trick. Landed on public `partitura@main`
-      (pixel-tested: a coloured note's ink drops to ~0 when suppressed);
-      app-wired + 19/19 workshop widget tests green. **C10b** (the view paints
-      the dragged glyph itself, dropping the app ghost) stays optional — the
-      ghost stands in cleanly now.
+  18. ✅ *Live drag — the real note follows the pointer (C10a + C10b shipped &
+      wired).* partitura now **owns the live drag**. Two additive inputs on
+      `MultiSystemView` / `InteractiveGrandStaffView` (both → the shared
+      `LayoutPainter`):
+      • **C10a `suppressElementIds`** — skips an element's primitives entirely
+        (notehead/stem/flag/beam/ledger), a clean theme-independent hide (no ink
+        bleed, works on Petaluma / coloured staves); replaced the old
+        `elementColors`=background trick.
+      • **C10b `dragPreviewOpacity`** — while dragging, the view suppresses the
+        element and re-paints the **real glyph** translated to follow the pointer
+        (snapped vertically to pitch, free horizontally) at the given opacity.
+      The Workshop passes `dragPreviewOpacity: 0.85` and **dropped all its own
+      drag bookkeeping** — no `suppressElementIds`, no follower ghost; the note
+      itself (stem, accidental, flag, ledgers) moves with the cursor. Landed on
+      public `partitura@main`; pixel-tested (a green note's ink drops to ~0 when
+      suppressed; dragging it up moves its ink up on screen), 122 goldens
+      unchanged by the painter refactor; app-wired, whole-project analyze clean +
+      workshop widget tests green.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 

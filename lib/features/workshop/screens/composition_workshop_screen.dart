@@ -164,7 +164,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   _StaffMode _mode = _StaffMode.treble;
   bool _chordMode = false; // placed pitches stack onto the selected note
   StaffTarget? _hover; // where a click/tap would land (desktop hover preview)
-  String? _dragId; // the note being dragged (hidden so its ghost stands in)
+  String? _dragId; // the note being dragged (the view re-paints it live, C10b)
+  // Opacity of the view-painted drag preview: the real glyph, slightly lifted.
+  static const double _kDragPreviewOpacity = 0.85;
   int _verse = 1; // which lyric verse the inline field edits
   bool _marquee = false; // rubber-band select mode (drag selects, not places)
 
@@ -287,11 +289,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// Drag a note on the staff. A **horizontal** drag reorders it to the drop
   /// position (fine, using the C7 element regions to read order across bars and
   /// lines); a **vertical** drag re-pitches it. While the drag is live the
-  /// original note is hidden and a ghost follows the pointer (see [_dragId] /
-  /// [_hover]), so it reads as the note moving with the cursor.
+  /// view suppresses the original and re-paints the real glyph following the
+  /// pointer (partitura C10b `dragPreviewOpacity`), so the app clears its own
+  /// hover ghost and keeps no stand-in of its own.
   void _onElementDragStart(String id) => setState(() {
         _dragId = id;
         _dragStartLocal = _pointerLocal;
+        _hover = null; // the view paints the moving note; no app ghost
       });
 
   void _onElementDragEnd(String id, StaffTarget target) {
@@ -836,11 +840,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final elementColors = <String, Color>{
       for (final id in selectedIds) id: Colors.amber,
     };
-    // While a note is dragged, hide the original cleanly (partitura C10a
-    // `suppressElementIds`) so the pointer-following ghost stands in for it.
-    // Skips the whole glyph (notehead/stem/beam/ledger) — theme-independent, no
-    // ink bleed, unlike the old "paint it the canvas colour" trick.
-    final suppressIds = _dragId != null ? {_dragId!} : const <String>{};
+    // Live drag is owned by partitura (C10b `dragPreviewOpacity`): while a note
+    // is dragged the view suppresses it and re-paints the *real* glyph
+    // (notehead/stem/accidental/flag/ledgers) following the pointer, snapped to
+    // pitch — so the app keeps no suppress/ghost bookkeeping for moves.
     // A visible insertion caret before the element the next note would precede.
     final caretId = _doc.caretBeforeId;
     final caret =
@@ -1018,7 +1021,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       staffSpace: _zoom,
                                       controller: _regions,
                                       elementColors: elementColors,
-                                      suppressElementIds: suppressIds,
+                                      dragPreviewOpacity: _kDragPreviewOpacity,
                                       onElementTap: _onElementTap,
                                       onStaffTap: _onStaffTap,
                                       onHover: (t) =>
@@ -1027,8 +1030,6 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       ghostDuration: _ghostDuration,
                                       caret: caret,
                                       onElementDragStart: _onElementDragStart,
-                                      onElementDragUpdate: (id, t) =>
-                                          setState(() => _hover = t),
                                       onElementDragEnd: _onElementDragEnd,
                                     )
                                   : MultiSystemView(
@@ -1037,7 +1038,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       staffSpace: _zoom,
                                       controller: _regions,
                                       elementColors: elementColors,
-                                      suppressElementIds: suppressIds,
+                                      dragPreviewOpacity: _kDragPreviewOpacity,
                                       onElementTap: _onElementTap,
                                       onStaffTap: _onStaffTap,
                                       onHover: (t) =>
@@ -1046,8 +1047,6 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       ghostDuration: _ghostDuration,
                                       caret: caret,
                                       onElementDragStart: _onElementDragStart,
-                                      onElementDragUpdate: (id, t) =>
-                                          setState(() => _hover = t),
                                       onElementDragEnd: _onElementDragEnd,
                                     ),
                               if (_marquee)

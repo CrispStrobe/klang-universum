@@ -307,3 +307,17 @@ input until it ships there — we'll wire it the moment it lands. Thanks!
 > (the view paints the dragged glyph itself) remains an optional later polish;
 > C10a makes the ghost stand in cleanly, so it's no longer needed for a correct
 > live drag.
+
+> **C10b landed & wired too (2026-07-13): `dragPreviewOpacity` on
+> `partitura-public@main`.** `MultiSystemView` / `InteractiveGrandStaffView`
+> gained `double? dragPreviewOpacity`; when set, the view **owns the live drag** —
+> it suppresses the dragged element and re-paints the *real* glyph (notehead,
+> stem, accidental, flag, ledgers) translated to follow the pointer, snapped
+> vertically to the target line/space (pitch) and free horizontally, faded to
+> that opacity; the render object repaints itself on each drag update. The
+> painter's per-primitive switch was refactored into a shared, opacity-aware
+> helper (`paintLayout` byte-identical → all 122 goldens unchanged); a gesture
+> pixel test drags a coloured note up and asserts its ink moves up. **The app now
+> passes `dragPreviewOpacity: 0.85` and dropped its `suppressElementIds` + ghost
+> bookkeeping for moves** — the note itself follows the cursor. The full C10
+> (a+b) is done; no app-side drag fake remains.
