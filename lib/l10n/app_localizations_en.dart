@@ -1009,6 +1009,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tap the notes from lowest to highest';
 
   @override
+  String get gameValueOrder => 'Longest First';
+
+  @override
+  String get gameValueOrderSubtitle => 'Order the note values by length';
+
+  @override
   String get gameOddOneOut => 'Odd One Out';
 
   @override
@@ -1608,6 +1614,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noteOrderHint => 'Each note plays when you tap it.';
+
+  @override
+  String get valueOrderPrompt => 'Tap the notes from longest to shortest!';
+
+  @override
+  String get valueOrderHint => 'Each value plays its length when you tap it.';
 
   @override
   String get noteMemoryPrompt => 'Find the pairs: a note and its name!';

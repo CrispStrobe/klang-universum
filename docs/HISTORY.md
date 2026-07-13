@@ -172,6 +172,11 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 ## Gamified formats — shipped
 
+- **Longest First** (Notenwerte) — the ordering/sequence format on note *values*:
+  four shuffled note-value symbols; tap them longest → shortest, each playing its
+  own duration and locking with a number badge, a wrong tap buzzes. The
+  note-values sibling of Note Order (which orders pitches). SRI
+  `note_values.order.len<N>`.
 - **Note Match** (memory / concentration pairs) — flip a grid to pair a
   note-on-staff with its letter; each flip plays the pitch; fewer moves → more
   stars. SRI on each match.

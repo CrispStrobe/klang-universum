@@ -1017,6 +1017,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameNoteOrderSubtitle => 'Tippe die Noten von tief nach hoch';
 
   @override
+  String get gameValueOrder => 'Von lang nach kurz';
+
+  @override
+  String get gameValueOrderSubtitle => 'Ordne die Notenwerte nach ihrer Länge';
+
+  @override
   String get gameOddOneOut => 'Wer passt nicht?';
 
   @override
@@ -1615,6 +1621,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noteOrderHint => 'Jede Note klingt, wenn du sie antippst.';
+
+  @override
+  String get valueOrderPrompt => 'Tippe die Noten von lang nach kurz!';
+
+  @override
+  String get valueOrderHint =>
+      'Jeder Wert klingt in seiner Länge, wenn du ihn antippst.';
 
   @override
   String get noteMemoryPrompt => 'Finde die Paare: eine Note und ihr Name!';

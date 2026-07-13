@@ -1886,6 +1886,18 @@ abstract class AppLocalizations {
   /// **'Tap the notes from lowest to highest'**
   String get gameNoteOrderSubtitle;
 
+  /// No description provided for @gameValueOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest First'**
+  String get gameValueOrder;
+
+  /// No description provided for @gameValueOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order the note values by length'**
+  String get gameValueOrderSubtitle;
+
   /// No description provided for @gameOddOneOut.
   ///
   /// In en, this message translates to:
@@ -2971,6 +2983,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Each note plays when you tap it.'**
   String get noteOrderHint;
+
+  /// No description provided for @valueOrderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the notes from longest to shortest!'**
+  String get valueOrderPrompt;
+
+  /// No description provided for @valueOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each value plays its length when you tap it.'**
+  String get valueOrderHint;
 
   /// No description provided for @noteMemoryPrompt.
   ///

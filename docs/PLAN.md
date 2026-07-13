@@ -374,8 +374,9 @@ Shipped formats (memory pairs, sequence, sort-into-buckets, swipe, falling-notes
 connect-a-line) live in [HISTORY.md](HISTORY.md#gamified-formats--shipped).
 Remaining open sub-variants:
 
-- [ ] Note-values longest→shortest ordering, and a melody-recall ear variant of
-  the sequence format.
+- [~] Note-values longest→shortest ordering: **shipped Longest First** (Notenwerte
+  — the ordering format on note values; tap longest→shortest, each plays its
+  length). Still open: a melody-recall ear variant of the sequence format.
 - [ ] Further sort dimensions (major/minor, high/low, sharp/flat).
 - [ ] Swipe variants: in-the-scale?, major-or-minor-by-ear.
 - [ ] Falling-notes "catch the longest" (note-values) mode.

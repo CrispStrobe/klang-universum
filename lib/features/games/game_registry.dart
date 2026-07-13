@@ -72,6 +72,7 @@ import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
+import 'package:klang_universum/features/games/note_values/value_order_screen.dart';
 import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
 import 'package:klang_universum/features/games/scales/command_caller_screen.dart';
 import 'package:klang_universum/features/games/scales/echo_sequence_screen.dart';
@@ -158,6 +159,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameBeatSort,
       subtitle: (l) => l.gameBeatSortSubtitle,
       builder: (_) => const BeatSortScreen(),
+    ),
+    // Ordering format on note values: tap longest → shortest.
+    GameInfo(
+      id: 'value_order',
+      icon: Icons.sort,
+      title: (l) => l.gameValueOrder,
+      subtitle: (l) => l.gameValueOrderSubtitle,
+      builder: (_) => const ValueOrderScreen(),
     ),
     GameInfo(
       id: 'connect_symbols',

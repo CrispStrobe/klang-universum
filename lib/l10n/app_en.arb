@@ -492,6 +492,8 @@
   "gameNoteMemorySubtitle": "Memory game: match notes to their names",
   "gameNoteOrder": "Note Order",
   "gameNoteOrderSubtitle": "Tap the notes from lowest to highest",
+  "gameValueOrder": "Longest First",
+  "gameValueOrderSubtitle": "Order the note values by length",
   "gameOddOneOut": "Odd One Out",
   "gameOddOneOutSubtitle": "Two notes share a name — tap the odd one",
   "oddOneOutPrompt": "Which note is the odd one out?",
@@ -740,6 +742,8 @@
   "spaceLabel": "Space",
   "noteOrderPrompt": "Tap the notes from lowest to highest!",
   "noteOrderHint": "Each note plays when you tap it.",
+  "valueOrderPrompt": "Tap the notes from longest to shortest!",
+  "valueOrderHint": "Each value plays its length when you tap it.",
   "noteMemoryPrompt": "Find the pairs: a note and its name!",
   "noteMemoryMoves": "{count, plural, =1{1 move} other{{count} moves}}",
   "@noteMemoryMoves": {
