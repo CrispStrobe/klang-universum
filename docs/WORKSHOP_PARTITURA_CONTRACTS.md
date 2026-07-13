@@ -234,8 +234,13 @@ as they're public.
 >   zone (an app is fine; in `flutter test` use `tester.runAsync`), since PNG
 >   encoding and the font-asset load are genuine async.
 >
-> - **C9** left as-is per "otherwise no action" — `Measure.pickup` renders; no
->   dedicated pickup-uncounted bar-numbering helper was added.
+> - **C9 — done too.** The pickup-uncounted numbering already existed privately
+>   (twice), so it's now a public `int? Score.barNumberAt(int index)` on
+>   `partitura_core`: 1-based over non-pickup measures, `null` for a pickup
+>   itself (conventionally unnumbered). The measure-number overlay and the MEI
+>   writer both route through it now, so the number you get for a bar matches
+>   what partitura draws.
 >
-> mus CI builds against public `partitura@main`, which now carries both — the
-> app code for marquee/drag-reorder and print/page-export can flip on.
+> mus CI builds against public `partitura@main`, which now carries all three —
+> the app code for marquee/drag-reorder, print/page-export and pickup-aware bar
+> labels can flip on. That closes the C1–C9 set.
