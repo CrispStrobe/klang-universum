@@ -4,9 +4,13 @@
 // range clipboard, and switches to the grand staff — asserting no crash and the
 // expected document state throughout.
 //
-// Run headless:            flutter test integration_test/workshop_test.dart
-// Run on a real device/web: flutter test integration_test/workshop_test.dart -d macos
-//                           flutter test integration_test/workshop_test.dart -d chrome
+// Run on a device with a real, foregroundable display:
+//   flutter test integration_test/workshop_test.dart -d macos
+//   flutter test integration_test/workshop_test.dart -d chrome   # needs chromedriver
+// NB: a *headless* macOS run cannot foreground the app window ("Failed to
+// foreground app; open returned 1"), so pointer taps do not land — run it on a
+// real desktop session or a CI runner with a display. The same flows are also
+// covered headlessly (and in CI) by test/composition_workshop_test.dart.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
