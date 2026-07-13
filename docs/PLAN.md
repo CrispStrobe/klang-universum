@@ -47,12 +47,15 @@ and push to origin/main** before/after touching shared files. Format:
   app never imports the plugin. (d): 5-platform plugin packaging (podspecs +
   forwarders + per-OS CMake/gradle; `ma_pcm_rb` rings for MSVC portability),
   verified by an **isolated `aec-native` CI** (native lib + offline tests +
-  example `flutter build` — all green on ubuntu/macOS/**windows**). **CI-safe:**
-  plugin is NOT in the app `pubspec.yaml`, `native/aec/**` excluded in the app's
-  `analysis_options.yaml`; `aec-native.yml` is paths-filtered and never runs for
-  the app. Next: final wiring (plugin → app pubspec behind a capability check +
-  a `NativeAecEngine`→`AecEngine` adapter) → (e) on-device tuning. Detail:
-  `native/aec/README.md`, `AEC_TIER3B.md`.
+  example `flutter build`) **green on all 5 platforms** (desktop trio + iOS +
+  Android; iOS needed the miniaudio TU compiled as ObjC `.m`). **Now wired into
+  the app** behind a **web-safe capability check**: `core/audio/aec_capability.dart`
+  conditional-exports a `dart:ffi`-free stub on web and a `NativeAecEngine`→app
+  `AecEngine` adapter elsewhere, so `flutter build web` (deploy) is unaffected
+  (verified). `native/aec` is now an app path dep; `aec-native.yml` stays
+  paths-filtered. **Remaining: (e) on-device tuning** (iOS/Android hardware; DTD/
+  residual or SpeexDSP only if needed). Detail: `native/aec/README.md`,
+  `AEC_TIER3B.md`.
 - **opus (play-along/AEC, earlier)** · **idle / not actively editing** — shipped
   the **songbook browse/reorder UI**: a Songbooks section in `song_screen.dart` +
   new `songbook_screen.dart` (drag-reorder via `onReorderItem`, add-songs
