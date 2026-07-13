@@ -115,15 +115,26 @@ score-editor shell on top of `ScoreDocument`:
 Keep a **simple default** (glyph strip + piano) and reveal depth progressively —
 one surface serves both the kid-sandbox feel and the full editor.
 
+**Platforms — first-class on all of them, incl. desktop.** Mouse click / drag /
+hover, touch, and keyboard must all work. The user must *see where a note will
+land before committing* (hover/drag **ghost note** preview + the status line),
+and **every placed note must be easily editable** — its duration via the value
+strip, its pitch by drag-on-staff or ▲ ▼, plus accidental/dot — with the change
+previewed. No touch-only gestures without a mouse/keyboard equivalent.
+
 ### Rebuild phases (each mergeable)
 
-- **G1 — New editor shell**: full-bleed canvas (continuous scroll + pinch-zoom)
-  + bottom input dock (duration strip + piano/staff pitch tabs) + status line;
-  undo/redo/play on the top bar. Replaces the chip layout at ≥ current parity.
+- **G1 — New editor shell** ✅ merged: full-bleed zoom/pan canvas with a
+  ghost-note placement preview + bottom input dock (duration/accidental glyph
+  strip + piano / staff-tap surface) + status line + contextual selection bar;
+  undo/redo/play/settings on the top bar. Cross-platform (web build verified).
 - **G2 — Palettes & inspector**: bottom-sheet palettes + a contextual inspector;
   the model gains dynamics, articulations, ties.
-- **G3 — Gestures & views**: long-press range-select, drag-to-re-pitch, page vs
-  continuous toggle, zoom control.
+- **G3 — Gestures & views (all platforms)**: mouse hover-preview of the landing
+  note; drag a note on the staff to re-pitch (mouse + touch); drag-select /
+  long-press range-select; page vs continuous toggle; zoom control (pinch +
+  ctrl-scroll). Keyboard: arrows to move the caret, letters A–G / digits for
+  value.
 - **G4 — Notation depth**: tuplets, 2nd voice, tempo, barlines/repeats, lyrics;
   wire every partitura export; playback moving cursor.
 - **G5 — Open existing scores**: import MusicXML/MIDI/container formats into the
@@ -142,4 +153,4 @@ model to the local partitura — build multi-instrument on the public
 `StaffSystem`/multi-`Score` layout, or port the model to public partitura first
 (applies to **G6**). See memory `partitura-public-vs-private-ci`.
 
-## Status: P0 ✅ · P1 ✅ · P2a ✅ · GUI rebuild G1 next.
+## Status: P0 ✅ · P1 ✅ · P2a ✅ · G1 ✅ · G2 (palettes + inspector) next.

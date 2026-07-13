@@ -171,6 +171,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopDown => 'Einen Halbton tiefer';
 
   @override
+  String get workshopReady => 'Wähle einen Wert und tippe eine Note';
+
+  @override
+  String get workshopTapStaff => 'Tippe ins System, um eine Note zu setzen';
+
+  @override
+  String get workshopScoreSettings => 'Noteneinstellungen';
+
+  @override
   String get instrumentLabel => 'Instrumentenklang';
 
   @override
