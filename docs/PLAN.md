@@ -23,9 +23,17 @@ and push to origin/main** before/after touching shared files. Format:
   diverges (delay ~950 ms + no DTD) → needs **Tier 3b** (native full-duplex +
   SpeexDSP/WebRTC). Full AEC plan in root `PLAN.md` · touched `echo_canceller.dart`
   (new), `bin/listen.dart`, `play_along_screen.dart` · **idle / awaiting next**.
+- **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuild the
+  Composition Workshop into a real score editor — now a full touch-first editor
+  GUI redesign on `ScoreDocument` · touching `lib/features/workshop/**`,
+  `lib/features/settings/screens/`, the ARBs (additive keys), `pubspec.yaml`
+  (`url_launcher`) · **in progress** · detail:
+  [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
-  `MultiSystemView(elementColors:)` param). origin/main green + deployed.
+  `MultiSystemView(elementColors:)` param); and **Workshop P0/P1/P2a** (About
+  screen, editor foundation, caret/selection/transpose/accidentals/key).
+  origin/main green + deployed.
 
 ## Principles
 
