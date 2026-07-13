@@ -12,7 +12,7 @@ import 'package:partitura/partitura.dart';
 void main() {
   setUpAll(() {
     final metadata = File(
-      '../partitura/packages/partitura/assets/smufl/bravura_metadata.json',
+      '../partitura-public/packages/partitura/assets/smufl/bravura_metadata.json',
     ).readAsStringSync();
     Bravura.debugOverrideMetadata(
       SmuflMetadata.fromJson(jsonDecode(metadata) as Map<String, Object?>),
