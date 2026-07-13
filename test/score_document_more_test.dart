@@ -321,9 +321,9 @@ void main() {
     test('verses are independent and both render', () {
       final d = threeNotes();
       final id = d.elements.first.id;
-      d.setLyricFor(id, 'first', verse: 1);
+      d.setLyricFor(id, 'first');
       d.setLyricFor(id, 'second', verse: 2);
-      expect(d.lyricOf(id, verse: 1), 'first');
+      expect(d.lyricOf(id), 'first');
       expect(d.lyricOf(id, verse: 2), 'second');
       expect(d.maxVerse, 2);
       final rendered = d.buildScore().lyrics.where((l) => l.elementId == id);
@@ -333,10 +333,10 @@ void main() {
     test('clearing verse 2 leaves verse 1 intact', () {
       final d = threeNotes();
       final id = d.elements.first.id;
-      d.setLyricFor(id, 'a', verse: 1);
+      d.setLyricFor(id, 'a');
       d.setLyricFor(id, 'b', verse: 2);
       d.setLyricFor(id, '', verse: 2);
-      expect(d.lyricOf(id, verse: 1), 'a');
+      expect(d.lyricOf(id), 'a');
       expect(d.lyricOf(id, verse: 2), isNull);
       expect(d.maxVerse, 1);
     });
