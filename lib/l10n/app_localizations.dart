@@ -2456,6 +2456,24 @@ abstract class AppLocalizations {
   /// **'Bass'**
   String get voiceBass;
 
+  /// No description provided for @gameWhichVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Voice?'**
+  String get gameWhichVoice;
+
+  /// No description provided for @gameWhichVoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The highlighted note — Soprano, Alto, Tenor or Bass?'**
+  String get gameWhichVoiceSubtitle;
+
+  /// No description provided for @whichVoicePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which voice sings the highlighted note?'**
+  String get whichVoicePrompt;
+
   /// No description provided for @gamePerformIt.
   ///
   /// In en, this message translates to:

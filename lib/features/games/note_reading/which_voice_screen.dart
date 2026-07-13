@@ -1,15 +1,13 @@
-// lib/features/games/note_reading/read_voice_screen.dart
+// lib/features/games/note_reading/which_voice_screen.dart
 //
-// "Read the Voice" — reading an individual line out of a multi-voice texture, on
-// partitura's `Measure.voice2` (two voices per staff, stems up/down). A chord is
-// shown with one voice highlighted; the child names the note THAT voice sings —
-// so they must track the right line, not just any note. The 4-voice generalisation
-// of Duet (which highlights one part of a two-staff system).
+// "Which Voice?" — the inverse of Read the Voice: a note in a multi-voice chord
+// is highlighted and the child picks which voice it is (Soprano / Alto / Tenor /
+// Bass). Trains voice-position and range awareness (where each voice lives on
+// the grand staff) rather than pitch naming. Shares the SATB voicing/rendering.
 //
-// Difficulty grows 2 voices (Soprano + Alto, one treble staff) → full SATB (four
-// voices across a grand staff). Voicing/rendering shared via satb_voicing.dart.
+// Difficulty grows 2 voices (Soprano + Alto) → full SATB (four voices).
 //
-// SRI: 'note_reading.<clef>.<step><octave>' on the highlighted note (shared pool).
+// SRI: 'note_reading.voice.<voice>'.
 
 import 'dart:math';
 
@@ -18,7 +16,6 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
-import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/note_reading/satb_voicing.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -26,37 +23,36 @@ import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
-class ReadVoiceScreen extends StatefulWidget {
-  const ReadVoiceScreen({super.key});
+class WhichVoiceScreen extends StatefulWidget {
+  const WhichVoiceScreen({super.key});
 
   @override
-  State<ReadVoiceScreen> createState() => _ReadVoiceScreenState();
+  State<WhichVoiceScreen> createState() => _WhichVoiceScreenState();
 }
 
 /// Test handle onto the running game (the state class is private).
 @visibleForTesting
-abstract interface class ReadVoiceTester {
-  /// Letter of the highlighted voice's note (the correct answer).
-  Step get answerStep;
+abstract interface class WhichVoiceTester {
+  /// The highlighted note's voice (the correct answer).
+  SatbVoice get answerVoice;
   bool get isFinished;
 }
 
-class _ReadVoiceScreenState extends State<ReadVoiceScreen>
+class _WhichVoiceScreenState extends State<WhichVoiceScreen>
     with QuizRoundMixin
-    implements ReadVoiceTester {
+    implements WhichVoiceTester {
   final _random = Random();
 
   int _stars = 0;
   late List<SatbPart> _parts;
   late SatbPart _target;
-  late List<Step> _options;
-  Step? _tapped;
+  SatbVoice? _tapped;
   bool? _lastAnswer;
 
-  bool get _satb => _stars >= 1; // 4 voices once past level 0
+  bool get _satb => _stars >= 1;
 
   @override
-  Step get answerStep => _target.pitch.step;
+  SatbVoice get answerVoice => _target.voice;
   @override
   bool get isFinished => finished;
 
@@ -65,7 +61,7 @@ class _ReadVoiceScreenState extends State<ReadVoiceScreen>
   @override
   bool get playFeedbackSounds => false;
   @override
-  String get gameType => 'read_voice';
+  String get gameType => 'which_voice';
 
   @override
   void initState() {
@@ -78,27 +74,20 @@ class _ReadVoiceScreenState extends State<ReadVoiceScreen>
   void prepareRound() {
     _parts = voiceRandomChord(_random, satb: _satb);
     _target = _parts[_random.nextInt(_parts.length)];
-
-    final distractors = [...Step.values]
-      ..remove(_target.pitch.step)
-      ..shuffle(_random);
-    _options = [_target.pitch.step, ...distractors.take(3)]..shuffle(_random);
     _tapped = null;
     _lastAnswer = null;
   }
 
-  String get _sriId =>
-      'note_reading.${_target.voice.clef.name}.${_target.pitch.step.name}'
-      '${_target.pitch.octave}';
-
   void _hearVoice() =>
       context.read<AudioService>().playMidiNote(_target.pitch.midiNumber);
 
-  void _onAnswer(Step choice) {
+  void _onAnswer(SatbVoice choice) {
     if (_lastAnswer == true) return;
-    final correct = choice == _target.pitch.step;
+    final correct = choice == _target.voice;
     if (_tapped == null || !answeredWrong) {
-      context.read<SriService>().recordResponse(_sriId, correct);
+      context
+          .read<SriService>()
+          .recordResponse('note_reading.voice.${_target.voice.name}', correct);
     }
     if (correct) {
       _hearVoice();
@@ -115,9 +104,10 @@ class _ReadVoiceScreenState extends State<ReadVoiceScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final voices = _parts.map((p) => p.voice).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.gameReadVoice)),
+      appBar: AppBar(title: Text(l10n.gameWhichVoice)),
       body: SafeArea(
         child: finished
             ? GameResultView(
@@ -132,7 +122,7 @@ class _ReadVoiceScreenState extends State<ReadVoiceScreen>
                     RoundHeader(
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.readVoicePrompt(_target.voice.label(l10n)),
+                      prompt: l10n.whichVoicePrompt,
                     ),
                     const SizedBox(height: 12),
                     Expanded(
@@ -169,23 +159,23 @@ class _ReadVoiceScreenState extends State<ReadVoiceScreen>
                     const SizedBox(height: 12),
                     AnswerGrid(
                       children: [
-                        for (final option in _options)
+                        for (final voice in voices)
                           FilledButton(
                             style: FilledButton.styleFrom(
                               backgroundColor: _tapped == null
                                   ? null
-                                  : option == _target.pitch.step
+                                  : voice == _target.voice
                                       ? Colors.green
-                                      : option == _tapped
+                                      : voice == _tapped
                                           ? Colors.redAccent
                                           : null,
                               textStyle: Theme.of(context)
                                   .textTheme
-                                  .titleLarge
+                                  .titleMedium
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            onPressed: () => _onAnswer(option),
-                            child: Text(noteNameFor(context, option)),
+                            onPressed: () => _onAnswer(voice),
+                            child: Text(voice.label(l10n)),
                           ),
                       ],
                     ),

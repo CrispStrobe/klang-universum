@@ -1329,6 +1329,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get voiceBass => 'Bass';
 
   @override
+  String get gameWhichVoice => 'Welche Stimme?';
+
+  @override
+  String get gameWhichVoiceSubtitle =>
+      'Die markierte Note — Sopran, Alt, Tenor oder Bass?';
+
+  @override
+  String get whichVoicePrompt => 'Welche Stimme singt die markierte Note?';
+
+  @override
   String get gamePerformIt => 'Spiel es!';
 
   @override

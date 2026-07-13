@@ -65,6 +65,7 @@ import 'package:klang_universum/features/games/note_reading/perform_it_screen.da
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_reading/read_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
+import 'package:klang_universum/features/games/note_reading/which_voice_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
@@ -299,6 +300,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameReadVoice,
       subtitle: (l) => l.gameReadVoiceSubtitle,
       builder: (_) => const ReadVoiceScreen(),
+      unlockedWhen: (p) => p.starsFor('duet') >= 2,
+      lockedHint: (l) => l.advancedGameHint,
+    ),
+    // Inverse of Read the Voice: which voice is the highlighted note?
+    GameInfo(
+      id: 'which_voice',
+      icon: Icons.record_voice_over,
+      title: (l) => l.gameWhichVoice,
+      subtitle: (l) => l.gameWhichVoiceSubtitle,
+      builder: (_) => const WhichVoiceScreen(),
       unlockedWhen: (p) => p.starsFor('duet') >= 2,
       lockedHint: (l) => l.advancedGameHint,
     ),

@@ -207,7 +207,13 @@ Games built on partitura capabilities the app didn't use before.
   `StaffSystem`). Voiced with a no-crossing `nextChordTone`-above algorithm (bass
   in octave 3, alto pushed to middle C so S/A land on treble, T/B on bass).
   C major; a "hear this voice" button; SRI feeds the shared reading pool. First
-  of three scoped SATB minigames (which-voice + ear-which-voice to follow).
+  of three scoped SATB minigames.
+- **Which Voice?** (Noten lesen, gated behind Duet 2★) — the inverse of Read the
+  Voice: a note in the chord is highlighted and the child picks which voice it is
+  (Soprano/Alto/Tenor/Bass). Trains voice-position and range awareness (where
+  each voice lives on the grand staff) rather than pitch naming. Same 2-voice →
+  SATB progression, shared `satb_voicing.dart`. SRI `note_reading.voice.<voice>`.
+  Second of three scoped SATB minigames (ear-which-voice to follow).
 - **"Handwritten notes" theme** (Settings) — a toggle that renders all notation
   in **Petaluma**, Steinberg's jazz/handwritten SMuFL face (SIL OFL 1.1),
   instead of Bravura. The font (+ metadata + OFL) is vendored in
