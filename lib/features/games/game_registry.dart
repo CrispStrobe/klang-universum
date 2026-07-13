@@ -71,6 +71,7 @@ import 'package:klang_universum/features/games/scales/key_signature_screen.dart'
 import 'package:klang_universum/features/games/scales/major_minor_ear_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_builder_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_detective_screen.dart';
+import 'package:klang_universum/features/games/scales/sing_back_screen.dart';
 import 'package:klang_universum/features/games/songs/song_screen.dart';
 import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
 import 'package:klang_universum/features/games/transpose/concert_pitch_screen.dart';
@@ -401,6 +402,13 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMajorMinorEar,
       subtitle: (l) => l.gameMajorMinorEarSubtitle,
       builder: (_) => const MajorMinorEarScreen(),
+    ),
+    GameInfo(
+      id: 'sing_back',
+      icon: Icons.record_voice_over,
+      title: (l) => l.gameSingBack,
+      subtitle: (l) => l.gameSingBackSubtitle,
+      builder: (_) => const SingBackScreen(),
     ),
     GameInfo(
       id: 'scale_builder',

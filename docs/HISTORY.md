@@ -71,6 +71,11 @@ plugins beyond capture.
   readout, star-gated range, skip button, mic-permission handling; feeds the
   shared `note_reading.<clef>.*` SM-2 pool. The kid-scale core of performance-
   graded sight-reading.
+- **Sing Back** (scales/ear) — ear→voice: a note *plays* (not shown), the child
+  **sings it back**, and the mic checks the pitch (octave-agnostic, held
+  briefly). A "hear it again" button, the answer reveals on a correct sing, skip
+  + mic-permission handling. Trains pitch memory and matching with no instrument;
+  feeds the ear pool `scales.hear.sing_<step>`.
 
 ## Curriculum (Lehrplan alignment)
 

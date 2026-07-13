@@ -1120,6 +1120,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performItSkip => 'Skip';
 
   @override
+  String get gameSingBack => 'Sing Back';
+
+  @override
+  String get gameSingBackSubtitle => 'Hear a note, then sing it back';
+
+  @override
+  String get singBackPrompt => 'Sing the note you heard!';
+
+  @override
+  String get singBackListen => 'Hear it again';
+
+  @override
   String get moduleDrums => 'Drums';
 
   @override

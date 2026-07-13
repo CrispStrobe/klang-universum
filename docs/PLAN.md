@@ -196,8 +196,11 @@ UI exist, these are high value ÷ effort because the hard infra is done:
   (octave-agnostic, sustained-match), instead of tapping a letter. Feeds the
   shared `note_reading.<clef>.*` SM-2 pool. The kid-scale core of the
   generative-sight-reading big swing.
-- [ ] **Sing-back ear training.** Hear a note/interval, sing it back, graded live
-  (octave-agnostic). Deepens ear training for kids without an instrument. *S–M · ♪♪♪.*
+- [x] **Sing-back ear training.** **Shipped**
+  ([HISTORY.md](HISTORY.md#live-microphone--pitch-detection)): a note plays; the
+  child sings it back and the mic grades it (octave-agnostic). Target is *heard*,
+  not shown — trains pitch memory & matching, needs no instrument. Feeds the ear
+  pool `scales.hear.*`.
 - [ ] **Play-along for the Song Book.** Extend play/sing-along to the real
   public-domain songs — play or sing Twinkle & co. against the moving score. *M · ♪♪.*
 - [ ] **Mic grading in the instrument corners.** "Play this note/string/finger"
