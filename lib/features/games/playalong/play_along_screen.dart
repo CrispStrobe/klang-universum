@@ -38,11 +38,13 @@ import 'package:partitura/partitura.dart'
     show
         Clef,
         DurationBase,
+        ElementRegionController,
         Measure,
         MultiSystemView,
         NoteDuration,
         NoteElement,
-        Score;
+        Score,
+        ScoreEditorController;
 import 'package:provider/provider.dart';
 
 /// How the moving score is drawn. The child can switch live.
@@ -823,7 +825,7 @@ class _CoachView extends StatelessWidget {
 
 /// Engraved-notation view: real staff (partitura) with a moving cursor. The
 /// active note is highlighted (the cursor); notes already hit stay highlighted.
-class _NotationView extends StatelessWidget {
+class _NotationView extends StatefulWidget {
   const _NotationView({
     required this.engine,
     required this.score,
@@ -835,31 +837,81 @@ class _NotationView extends StatelessWidget {
   final ColorScheme scheme;
 
   @override
+  State<_NotationView> createState() => _NotationViewState();
+}
+
+class _NotationViewState extends State<_NotationView> {
+  final ScrollController _scroll = ScrollController();
+
+  // C7 regions give each note's rect; the editor controller (partitura) uses
+  // that + our scroll controller to keep the active note in view.
+  final ElementRegionController _regions = ElementRegionController();
+  final ScoreEditorController _editor = ScoreEditorController();
+
+  int _lastActive = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _editor.attachViewport(
+        scrollController: _scroll,
+        rectOfElement: (id) {
+          for (final r in _regions.elementRegions) {
+            if (r.id == id) return r.bounds;
+          }
+          return null;
+        },
+      );
+      _follow();
+    });
+  }
+
+  @override
+  void dispose() {
+    _editor.detachViewport();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Scroll so the active note sits ~a third down the viewport — a smooth
+  /// follow-cursor that keeps the current bar visible on long, wrapped pieces.
+  void _follow() {
+    final ai = widget.engine.activeIndex;
+    if (ai < 0) return;
+    _editor.scrollToNote(
+      'n$ai',
+      alignment: 0.35,
+      duration: const Duration(milliseconds: 220),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Colour scored notes (green = hit, red = missed); highlight the active
-    // note as the cursor (a highlight wins over a per-note colour, which is
-    // fine — the active note is still pending, not yet coloured).
+    // note as the cursor (a highlight wins over a per-note colour).
     final colors = <String, Color>{};
-    for (var i = 0; i < engine.notes.length; i++) {
-      switch (engine.notes[i].result) {
+    for (var i = 0; i < widget.engine.notes.length; i++) {
+      switch (widget.engine.notes[i].result) {
         case NoteResult.hit:
           colors['n$i'] = Colors.green;
         case NoteResult.missed:
-          colors['n$i'] = scheme.error;
+          colors['n$i'] = widget.scheme.error;
         case NoteResult.pending:
           break;
       }
     }
-    final ai = engine.activeIndex;
+    final ai = widget.engine.activeIndex;
+    if (ai != _lastActive) {
+      _lastActive = ai;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _follow());
+    }
     return Center(
       child: SingleChildScrollView(
+        controller: _scroll,
         child: MultiSystemView(
-          score: score,
-          // Hit/miss note colours ride on theme.elementColors, which the shared
-          // LayoutPainter honours on both StaffView and MultiSystemView (a
-          // highlightedId still wins). This avoids depending on the newer
-          // MultiSystemView(elementColors:) constructor param, which isn't on
-          // partitura@main yet — keeps CI (which builds against it) green.
+          score: widget.score,
+          controller: _regions,
           theme: kidsScoreTheme.copyWith(elementColors: colors),
           highlightedIds: {if (ai >= 0) 'n$ai'},
         ),

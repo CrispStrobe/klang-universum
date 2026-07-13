@@ -110,10 +110,12 @@ and push to origin/main** before/after touching shared files. Format:
   drag → exact slot via `elementRegions` reading-order; vertical → re-pitch), and
   **SVG/PNG print-export** (`exportScoreToSvg`/`Png`). Synced local partitura-
   public to public `main`. Workshop feature-complete for the planned scope.
-  **Now:** adopting partitura's **`ScoreEditorController`** (loop band · marks ·
-  highlight · scroll-to-note) in **Play Along** for a smoother follow-cursor ·
-  touching `lib/features/games/playalong/play_along_screen.dart` (HOT) ·
-  **in progress** · detail: [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
+  ✅ **Play Along follow-cursor** — the notation view now owns a `ScrollController`
+  + partitura's **`ScoreEditorController`** (`attachViewport` + `scrollToNote`,
+  fed rects from an `ElementRegionController`), so the staff auto-scrolls to keep
+  the active note ~⅓ down the viewport on long, wrapped pieces. · touched
+  `lib/features/games/playalong/play_along_screen.dart` · **idle** (all shipped to
+  origin/main) · detail: [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
   `MultiSystemView(elementColors:)` param); and **Workshop P0/P1/P2a** (About
