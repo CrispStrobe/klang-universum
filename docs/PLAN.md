@@ -14,16 +14,20 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (UX/tutorials, worktree `../mus-aec` on `feature/ux-tutorials`)** ·
-  **Learnability & UX push** (see the "Learnability & UX" section below):
-  P0 app-silence fix + global sound on/off toggle, then mascot-as-guide, then a
-  per-game tutorial system. **Starting with the P0 audio work now** — touching
-  `core/services/audio_service.dart` + `settings_service.dart` + `main.dart` +
-  a new shared `GameAppBar`; later the hot files `game_widgets.dart`,
-  `note_mascot.dart`, `game_registry.dart`, the **ARBs** (tutorials). ⚠️ heads-up
-  to the SATB/workshop agents: I'll edit `game_widgets.dart`'s `FeedbackLine`
-  (mascot moves to `RoundHeader`) and add a `tutorial` hook to `GameInfo` — will
-  land these in small commits and rebase often. · **in progress**
+- **opus (UX/tutorials)** · **idle / handed over** — **Learnability & UX push**
+  shipped to `origin/main`, CI-green: (1) global **sound on/off** toggle
+  (`AudioService._play` gate + `SettingsService.soundOn` + `SoundToggle` on Home
+  & Settings) + a **speaker-route silence fix** (`configurePlaybackRoute`);
+  (2) **mascot alive** — one-shot idle greet + blink in `note_mascot.dart`;
+  (3) **tutorial system** — framework (`lib/shared/tutorial/`) + `GameInfo.tutorial`
+  hook + `tutorial_gate.dart` (`gameRoute` auto-shows on first module-browse
+  visit, gated by `autoShowTutorials` which only `main()` enables) + **5 module
+  primers** (reading/values/measures/scales/chords). **Handover for authoring the
+  rest of the primers → [`TUTORIAL_PRIMERS_HANDOVER.md`](TUTORIAL_PRIMERS_HANDOVER.md).**
+  Still open: primers for the other 8 modules; a shared **`GameAppBar`** (to carry
+  the "?" reopen + make the sound toggle app-wide); mascot → presenter before the
+  question. ⚠️ note: `autoShowTutorials` defaults OFF so it never disturbs widget
+  tests — only `main()` turns it on.
 - **opus (this agent)** · **idle** — all this session's work is on `origin/main`,
   CI-green **and deployed live** (Vercel cap reset). Shipped: the
   **partitura-public alignment** (+ hardcoded-path fix), the **shared game-test
@@ -294,7 +298,15 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 - pub.dev publication of partitura: deliberately **not yet** (maintainer
   decision); everything is consumed via path/git.
 
-## Learnability & UX — zero-knowledge onboarding (P0→P2, in progress)
+## Learnability & UX — zero-knowledge onboarding (P0/P1 shipped; content ongoing)
+
+> **Status (shipped to origin/main, CI-green):** the **sound on/off toggle** +
+> silence fix, the **mascot idle-greet**, and the **tutorial system** (framework
+> + gate + 5 module primers) are live. **Remaining is mostly content-authoring**
+> — a primer for every game — handed over in
+> **[`TUTORIAL_PRIMERS_HANDOVER.md`](TUTORIAL_PRIMERS_HANDOVER.md)**. Also open:
+> the shared **`GameAppBar`** (carries the "?" reopen + the app-wide sound
+> toggle) and moving the mascot to a presenter before the question.
 
 The bet: a child with **no** prior music knowledge should be able to open any
 minigame, be taught the facts it needs (with heard + seen examples), and play it
