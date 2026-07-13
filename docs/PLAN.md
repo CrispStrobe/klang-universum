@@ -19,11 +19,12 @@ and push to origin/main** before/after touching shared files. Format:
   277 tests green). Now building the **Roman-numeral harmony game** · touching
   `pubspec.yaml`, `.github/workflows/{ci,deploy}.yml`, then `game_registry.dart`,
   `core/tuning.dart`, the ARBs, new `features/games/harmony/` · **in progress**.
-- **opus (play-along/AEC)** · shipped **adjustable-tempo control** (½×/¾×/1×) for
-  play-along; suite so far: 4 scroll views, backing toggle + platform AEC,
-  count-in metronome, tempo, **AEC Tier 3a** (Dart canceller + `bin/listen.dart
-  --aec`; real-audio needs Tier 3b native, full plan in root `PLAN.md`) ·
-  `play_along_screen.dart`, `core/audio/play_along.dart` · **idle / awaiting next**.
+- **opus (play-along/AEC)** · next up (in order): (1) wire play-along into **SRI**
+  so misses feed review, (2) more **charts/songs**, (3) a **free-sing recorder** ·
+  touching `play_along_screen.dart`, `core/audio/play_along.dart`, `game_registry`
+  (maybe), the ARBs · **in progress**. Shipped: 4 scroll views, backing+platform
+  AEC, count-in metronome, tempo, **AEC Tier 3a** (`bin/listen.dart --aec`;
+  real-audio needs Tier 3b native — root `PLAN.md`).
 - **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuild the
   Composition Workshop into a real score editor — now a full touch-first editor
   GUI redesign on `ScoreDocument` · touching `lib/features/workshop/**`,
