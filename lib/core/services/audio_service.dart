@@ -18,10 +18,33 @@ class AudioService {
   /// Wired from the instrument setting in main.dart.
   Instrument instrument = Instrument.piano;
 
+  /// Master sound switch, mirrored from [SettingsService.soundOn] in main.dart.
+  /// When false, every `_play` below is a no-op — the whole app goes quiet with
+  /// one flag. The mic (a separate plugin) is unaffected. On by default.
+  bool soundOn = true;
+
+  /// Route synthesized playback to the loud **speaker** (not the earpiece).
+  /// Called once at startup and again after microphone capture: on iOS/Android
+  /// the `record` plugin flips the shared audio session to record/earpiece and
+  /// can leave it there, which makes the app sound silent afterwards. Re-routing
+  /// to the speaker restores audible playback. Best-effort — audio is juice, so
+  /// failures (and the web, which has no such session) are swallowed.
+  Future<void> configurePlaybackRoute() async {
+    if (kIsWeb) return;
+    try {
+      await AudioPlayer.global.setAudioContext(
+        AudioContextConfig(route: AudioContextConfigRoute.speaker).build(),
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AUDIO] setAudioContext unavailable: $e');
+    }
+  }
+
   Uint8List _wav(List<Segment> segments) =>
       renderWav(segments, timbre: timbreFor(instrument));
 
   Future<void> _play(Uint8List wav) async {
+    if (!soundOn) return; // master mute (SettingsService.soundOn)
     try {
       final player = _player ??= AudioPlayer();
       await player.stop();

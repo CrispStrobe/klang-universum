@@ -1776,6 +1776,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showTimerLabel => 'Show your time';
 
   @override
+  String get soundOnLabel => 'Sound';
+
+  @override
+  String get soundOnSubtitle =>
+      'Notes, chords and sound effects (the microphone still works)';
+
+  @override
+  String get muteTooltip => 'Mute sound';
+
+  @override
+  String get unmuteTooltip => 'Turn sound on';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

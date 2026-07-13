@@ -276,6 +276,10 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     _ticker.stop();
     await _service.stop();
     await _sub?.cancel();
+    // The mic (record) can leave the iOS/Android audio session routed to the
+    // quiet earpiece; put playback back on the speaker so the rest of the app
+    // isn't silent afterwards.
+    if (mounted) await context.read<AudioService>().configurePlaybackRoute();
     _latest = PitchReading.silent();
     if (mounted) setState(() => _running = false);
   }

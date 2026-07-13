@@ -1784,6 +1784,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get showTimerLabel => 'Zeit anzeigen';
 
   @override
+  String get soundOnLabel => 'Ton';
+
+  @override
+  String get soundOnSubtitle =>
+      'Noten, Akkorde und Klangeffekte (das Mikrofon bleibt an)';
+
+  @override
+  String get muteTooltip => 'Ton aus';
+
+  @override
+  String get unmuteTooltip => 'Ton an';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override

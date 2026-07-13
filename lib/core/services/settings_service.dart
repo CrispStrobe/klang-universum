@@ -17,13 +17,20 @@ class SettingsService with ChangeNotifier {
   static const _colorScaffoldKey = 'color_scaffold';
   static const _instrumentKey = 'instrument';
   static const _handwrittenKey = 'handwritten_notes';
+  static const _soundOnKey = 'sound_on';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
   bool _showTimer = false;
   bool _colorScaffold = false;
   bool _handwrittenNotes = false;
+  bool _soundOn = true;
   Instrument _instrument = Instrument.piano;
+
+  /// Master sound switch. When off, all synthesized playback (notes, chords,
+  /// SFX, ticks, backing) is silenced via [AudioService]; the microphone is
+  /// unaffected, so intonation games still work. On by default.
+  bool get soundOn => _soundOn;
 
   /// The voice used for pitched playback across the app.
   Instrument get instrument => _instrument;
@@ -60,6 +67,7 @@ class SettingsService with ChangeNotifier {
     _showTimer = prefs.getBool(_showTimerKey) ?? false;
     _colorScaffold = prefs.getBool(_colorScaffoldKey) ?? false;
     _handwrittenNotes = prefs.getBool(_handwrittenKey) ?? false;
+    _soundOn = prefs.getBool(_soundOnKey) ?? true;
     _applyScoreFont();
     _instrument =
         Instrument.values.asNameMap()[prefs.getString(_instrumentKey)] ??
@@ -101,6 +109,13 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_handwrittenKey, value);
+  }
+
+  Future<void> setSoundOn(bool value) async {
+    _soundOn = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_soundOnKey, value);
   }
 
   Future<void> setInstrument(Instrument instrument) async {

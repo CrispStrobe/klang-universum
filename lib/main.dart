@@ -35,7 +35,9 @@ class KlangUniversumApp extends StatelessWidget {
           create: (_) => SettingsService()..load(),
         ),
         Provider<AudioService>(
-          create: (_) => AudioService(),
+          // Route playback to the speaker up front (see configurePlaybackRoute:
+          // guards against the mic leaving the session on the quiet earpiece).
+          create: (_) => AudioService()..configurePlaybackRoute(),
           dispose: (_, service) => service.dispose(),
         ),
         ChangeNotifierProvider(
@@ -50,8 +52,9 @@ class KlangUniversumApp extends StatelessWidget {
       ],
       child: Consumer<SettingsService>(
         builder: (context, settings, _) {
-          // Keep the audio voice in sync with the chosen instrument.
+          // Keep the audio voice + master sound switch in sync with settings.
           context.read<AudioService>().instrument = settings.instrument;
+          context.read<AudioService>().soundOn = settings.soundOn;
           return MaterialApp(
             onGenerateTitle: (context) =>
                 AppLocalizations.of(context)?.appTitle ?? 'KlangUniversum',

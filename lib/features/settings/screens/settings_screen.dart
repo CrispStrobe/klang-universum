@@ -124,6 +124,23 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Card(
             child: SwitchListTile(
+              secondary: Icon(
+                settings.soundOn
+                    ? Icons.volume_up_rounded
+                    : Icons.volume_off_rounded,
+              ),
+              title: Text(l10n.soundOnLabel),
+              subtitle: Text(l10n.soundOnSubtitle),
+              value: settings.soundOn,
+              onChanged: (v) {
+                settings.setSoundOn(v);
+                if (!v) context.read<AudioService>().stop();
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: SwitchListTile(
               title: Text(l10n.showTimerLabel),
               value: settings.showTimer,
               onChanged: settings.setShowTimer,

@@ -25,6 +25,7 @@ import 'package:klang_universum/features/recital/recital_screen.dart';
 import 'package:klang_universum/features/settings/screens/settings_screen.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/widgets/sound_toggle.dart';
 import 'package:partitura/partitura.dart' show Clef;
 import 'package:provider/provider.dart';
 
@@ -151,6 +152,7 @@ class HomeScreen extends StatelessWidget {
         title: const _DebugTapTitle(),
         centerTitle: true,
         actions: [
+          const SoundToggle(),
           IconButton(
             icon: const Icon(Icons.school),
             tooltip: l10n.curriculumTooltip,

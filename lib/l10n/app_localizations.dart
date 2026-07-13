@@ -3248,6 +3248,30 @@ abstract class AppLocalizations {
   /// **'Show your time'**
   String get showTimerLabel;
 
+  /// No description provided for @soundOnLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get soundOnLabel;
+
+  /// No description provided for @soundOnSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes, chords and sound effects (the microphone still works)'**
+  String get soundOnSubtitle;
+
+  /// No description provided for @muteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute sound'**
+  String get muteTooltip;
+
+  /// No description provided for @unmuteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn sound on'**
+  String get unmuteTooltip;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:
