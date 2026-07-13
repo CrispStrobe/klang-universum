@@ -14,9 +14,11 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · partitura-private→public reconcile + survey new
-  partitura capabilities, then plan/build mus features on them · touching the
-  partitura repos (not mus shared files yet) · **in progress**.
+- **opus (this agent)** · surveyed partitura; the private→public reconcile was
+  already done by the partitura agent (elementColors now on public `main`). Next:
+  align mus path-dep to `../partitura-public` (CI already builds public) + build a
+  **Roman-numeral harmony game**. **Blocked**: partitura-public is mid-rebase;
+  awaiting user greenlight on the path-dep repoint. Not touching mus shared files.
 - **opus (play-along/AEC)** · shipped play-along suite (4 scroll views, backing
   toggle + platform AEC, count-in metronome) and **AEC Tier 3a**: a pure-Dart
   echo-canceller core + `bin/listen.dart --aec`. Real-captured audio still
