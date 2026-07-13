@@ -14,6 +14,11 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (primers)** · **ACTIVE (round 3)** — Learnability & UX follow-up #1:
+  **module-primer fallback** so every game (not just the 21 with a primer) gets
+  a "?" help button opening its module primer, while auto-show stays curated.
+  Touching `game_registry.dart` (add `kModulePrimers` + a lookup) and
+  `tutorial_gate.dart`. Additive; rebasing often.
 - **opus (primers)** · **idle / SHIPPED (round 2)** — all four handover
   follow-ups on `origin/main` (`96275aa`), full suite (426 tests) green:
   (1) **8 ★ per-game primers** — bass-clef reading, ledger lines,
@@ -349,18 +354,39 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 ## Learnability & UX — zero-knowledge onboarding (P0/P1 shipped; content ongoing)
 
 > **Status (shipped to origin/main, CI-green):** the **sound on/off toggle** +
-> silence fix, the **mascot idle-greet**, and the **tutorial system** (framework
-> + gate + 5 module primers) are live. **Remaining is mostly content-authoring**
-> — a primer for every game — handed over in
-> **[`TUTORIAL_PRIMERS_HANDOVER.md`](TUTORIAL_PRIMERS_HANDOVER.md)**. Also open:
-> the shared **`GameAppBar`** (carries the "?" reopen + the app-wide sound
-> toggle) and moving the mascot to a presenter before the question.
+> silence fix, the **mascot idle-greet**, and the **tutorial system** are live —
+> now with **all 13 module primers + 8 ★ per-game primers** (21 total, covered
+> by the `tutorial_test` loop), an **app-wide "?" reopen** (a help FAB overlaid
+> by `TutorialGate` on any game with a primer), a reusable **`GameAppBar`**
+> (title + app-wide `SoundToggle` + optional "?"; adopted on `accidental_sort`
+> so far), and a **mascot presenter** in `RoundHeader` (idle greet per question).
+>
+> **Remaining follow-ups (this section, ranked by value ÷ effort):**
+> 1. **Help on every game.** Only 21/100 games carry a primer, so the other 79
+>    show no "?"/first-run help. **Fix without per-game edits or auto-show spam:**
+>    give `TutorialGate` a **module-primer fallback** — a `kModulePrimers` map
+>    (module → its general primer) so the "?" opens the module primer for any
+>    game lacking its own, while **auto-show stays curated** (entry + ★ games
+>    only, so a module's intro doesn't re-pop on every game). *(S · registry +
+>    tutorial_gate.)*
+> 2. **`GameAppBar` roll-out.** Adopt it across the ~84 remaining screens
+>    (module-by-module) to put the sound toggle in every bar. Mechanical but
+>    collision-prone (hot screen files); the reopen "?" is already app-wide via
+>    the overlay, so this is now mostly about the in-bar toggle. *(L · sweep.)*
+> 3. **Fuller mascot presenter.** Upgrade the idle presenter to a
+>    `MascotPrompt` (mascot + speech bubble that reads the question) and default
+>    `FeedbackLine.showMascot = false`. *(M · `game_widgets`/`note_mascot`.)*
+> 4. **New-game hygiene (see backlog §G):** new games adopt the tutorial hook +
+>    mascot API; audit the recent sort/arcade games for reduced-motion + the
+>    sound toggle.
 
 The bet: a child with **no** prior music knowledge should be able to open any
 minigame, be taught the facts it needs (with heard + seen examples), and play it
-through. Plus fix a sound regression and give sound a global switch. Structural
-map done — there is **no** shared AppBar (every screen builds its own), the
-mascot lives in `FeedbackLine`, and there's **no** tutorial/help system yet.
+through. Plus fix a sound regression and give sound a global switch. (Original
+structural map, now mostly addressed: every screen built its own AppBar — a
+shared `GameAppBar` now exists but isn't swept in yet; the mascot lived only in
+`FeedbackLine` — now also presents in `RoundHeader`; the tutorial/help system is
+built and live.)
 
 ### P0 — App-silence regression
 Symptom: audio goes silent app-wide, suspected after play-along. Likely cause:
