@@ -26,14 +26,14 @@ and push to origin/main** before/after touching shared files. Format:
   mus change. If your CI reds on a `getCenter`/`_getElementPoint` throw, it's this
   — enlarge the test surface or `ensureVisible` the target. Consider pinning the
   partitura ref for stability (raising with the maintainer).
-- **opus (play-along/AEC)** · next (in order): (1) **chord-progression SRI**
-  parity, (2) **real-audio validation pass** (BlackHole; the physical-instrument
-  part is human-gated), (3) start **AEC Tier 3b** — a native full-duplex plugin
-  (miniaudio/SpeexDSP). ⚠️ Tier 3b will touch `pubspec.yaml`, a new
-  `packages/`/plugin dir, and per-platform native build config — flagging early ·
-  also touching `chord_progression_screen.dart` · **in progress**. Shipped: 4
-  scroll views, backing+platform AEC, metronome, tempo, play-along SRI, more
-  tunes, Free Sing, **AEC Tier 3a** (`bin/listen.dart --aec`).
+- **opus (play-along/AEC)** · shipped: **chord-progression SRI** parity, a
+  detector **robustness suite** (vibrato/noise/dynamics/timbres — proxy for the
+  human-gated real-instrument pass) + on-device protocol, and **AEC Tier 3b
+  DESIGN** ([AEC_TIER3B.md](AEC_TIER3B.md); no native code landed — it needs an
+  isolated multi-session build to not red CI). Also live: 4 scroll views,
+  backing+platform AEC, metronome, tempo, play-along+chord SRI, more tunes, Free
+  Sing, **AEC Tier 3a** · `chord_progression_screen.dart`, tests, docs ·
+  **idle / awaiting next**.
 - **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuilding
   the Composition Workshop as a touch-first score editor on `ScoreDocument` —
   shipped **G1** (editor shell) + **G2** (slim chrome · one settings row · ⋮
