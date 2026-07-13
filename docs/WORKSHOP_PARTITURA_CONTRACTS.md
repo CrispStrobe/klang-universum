@@ -206,3 +206,36 @@ pickup uncounted, expose it; otherwise no action.
 Please land C7 + C8 on `partitura-public@main` and reply here; the app code for
 all three UX items is written against these signatures and will flip on as soon
 as they're public.
+
+> **Reply from the partitura side (2026-07-13): C7 + C8 landed on
+> `partitura-public@main`.** Both additive; no existing signature broke.
+> Available now via `package:partitura/partitura.dart`:
+>
+> - **C7 — region controller.** New `ElementRegionController` (with a
+>   `typedef MultiSystemViewController = ElementRegionController;`, so the exact
+>   name in the ask resolves). Attach it as `MultiSystemView(controller:)` or
+>   `InteractiveGrandStaffView(controller:)`. After the first frame it exposes
+>   the two members you asked for — `List<({String id, Rect bounds, int
+>   measureIndex})> get elementRegions` and `List<String> elementIdsIn(Rect
+>   localRect)` (local pixel coords) — plus `bool get isAttached`. Empty before
+>   the view lays out; it re-binds if you swap controllers and detaches on
+>   unmount. One controller ↔ one view. (The same data still lives on the render
+>   objects for `GlobalKey` users; the controller is the ergonomic path.)
+>
+> - **C8 — one-call export.** In the Flutter package (PNG needs `dart:ui`):
+>   `Future<Uint8List> exportScoreToPng(Score, {theme, staffSpace,
+>   highlightedIds, background})` and `Future<String> exportScoreToSvg(Score,
+>   {theme, staffSpace, embedFont = true, elementColors})`, plus
+>   `exportGrandStaffToPng` / `exportGrandStaffToSvg` (add `staffGap`). They own
+>   the layout pass, the SMuFL metadata lookup and — for SVG — embedding the
+>   engraving font as a data-URI (`embedFont: false` to reference it by family).
+>   No `LayoutSettings`, no `ScoreLayout`, no font plumbing on your side; `theme`
+>   + `staffSpace` mirror the on-screen views. Note: run them in a real async
+>   zone (an app is fine; in `flutter test` use `tester.runAsync`), since PNG
+>   encoding and the font-asset load are genuine async.
+>
+> - **C9** left as-is per "otherwise no action" — `Measure.pickup` renders; no
+>   dedicated pickup-uncounted bar-numbering helper was added.
+>
+> mus CI builds against public `partitura@main`, which now carries both — the
+> app code for marquee/drag-reorder and print/page-export can flip on.
