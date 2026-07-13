@@ -812,6 +812,36 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get pitchLowLabel;
 
+  /// No description provided for @gameAccidentalSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp or Flat?'**
+  String get gameAccidentalSort;
+
+  /// No description provided for @gameAccidentalSortSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag each note into the sharp or flat basket'**
+  String get gameAccidentalSortSubtitle;
+
+  /// No description provided for @accidentalSortPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Does the note have a sharp or a flat? Drop it in the right basket!'**
+  String get accidentalSortPrompt;
+
+  /// No description provided for @accidentalSharpLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp'**
+  String get accidentalSharpLabel;
+
+  /// No description provided for @accidentalFlatLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat'**
+  String get accidentalFlatLabel;
+
   /// No description provided for @moduleGuitar.
   ///
   /// In en, this message translates to:

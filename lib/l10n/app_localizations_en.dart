@@ -405,6 +405,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pitchLowLabel => 'Low';
 
   @override
+  String get gameAccidentalSort => 'Sharp or Flat?';
+
+  @override
+  String get gameAccidentalSortSubtitle =>
+      'Drag each note into the sharp or flat basket';
+
+  @override
+  String get accidentalSortPrompt =>
+      'Does the note have a sharp or a flat? Drop it in the right basket!';
+
+  @override
+  String get accidentalSharpLabel => 'Sharp';
+
+  @override
+  String get accidentalFlatLabel => 'Flat';
+
+  @override
   String get moduleGuitar => 'Guitar Corner';
 
   @override

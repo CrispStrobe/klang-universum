@@ -48,6 +48,7 @@ import 'package:klang_universum/features/games/measures/meter_detective_screen.d
 import 'package:klang_universum/features/games/measures/strong_beat_screen.dart';
 import 'package:klang_universum/features/games/measures/time_signature_screen.dart';
 import 'package:klang_universum/features/games/measures/which_beat_screen.dart';
+import 'package:klang_universum/features/games/note_reading/accidental_sort_screen.dart';
 import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
 import 'package:klang_universum/features/games/note_reading/duet_screen.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
@@ -200,6 +201,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gamePitchSort,
       subtitle: (l) => l.gamePitchSortSubtitle,
       builder: (_) => const PitchSortScreen(),
+    ),
+    // Sharp/flat accidental-reading sort (same baskets format).
+    GameInfo(
+      id: 'accidental_sort',
+      icon: Icons.sort_by_alpha,
+      title: (l) => l.gameAccidentalSort,
+      subtitle: (l) => l.gameAccidentalSortSubtitle,
+      builder: (_) => const AccidentalSortScreen(),
     ),
     GameInfo(
       id: 'place_note_treble',

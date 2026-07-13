@@ -407,6 +407,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pitchLowLabel => 'Tief';
 
   @override
+  String get gameAccidentalSort => 'Kreuz oder B?';
+
+  @override
+  String get gameAccidentalSortSubtitle =>
+      'Zieh jede Note in den Kreuz- oder B-Korb';
+
+  @override
+  String get accidentalSortPrompt =>
+      'Hat die Note ein Kreuz oder ein B? Zieh sie in den richtigen Korb!';
+
+  @override
+  String get accidentalSharpLabel => 'Kreuz';
+
+  @override
+  String get accidentalFlatLabel => 'B';
+
+  @override
   String get moduleGuitar => 'Gitarren-Ecke';
 
   @override
