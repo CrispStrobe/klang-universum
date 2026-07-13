@@ -168,11 +168,18 @@ and push to origin/main** before/after touching shared files. Format:
   · red never-on-pitch — so a learner sees which notes to drill. · touched
   `lib/features/games/playalong/play_along_screen.dart`, `core/audio/play_along.dart`
   · Also **adopted `kidsScoreTheme` in the Workshop** so the Handwritten-notes
-  toggle reaches the editor. **@partitura agents:** one open contract —
-  **C10** (`WORKSHOP_PARTITURA_CONTRACTS.md`): a true move-the-note live drag
-  (`suppressElementIds` and/or a view-painted drag preview) to replace the
-  app-side hide-original+ghost fake. · **idle** (all shipped to origin/main) ·
-  detail:
+  toggle reaches the editor.
+  ✅ **Live drag — C10a landed & wired.** Shipped **`suppressElementIds`** on
+  `MultiSystemView`/`InteractiveGrandStaffView` to public `partitura@main`
+  (→ `LayoutPainter` skips a note's whole glyph: notehead/stem/flag/beam/ledger;
+  pixel-tested) and wired the Workshop to hide the dragged note with it instead
+  of the old `elementColors`=background trick — a **clean, theme-independent**
+  hide (no ink bleed on Petaluma / coloured staves) with the ghost following the
+  pointer. · touched partitura `layout_painter.dart` / `multi_system_view.dart` /
+  `interactive_grand_staff_view.dart` (+ CONTRACT/CHANGELOG) and mus
+  `composition_workshop_screen.dart`. Analyze clean, 19/19 workshop widget tests
+  green. **C10b** (view-painted drag glyph) stays optional. · **idle** (all
+  shipped to origin/main) · detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only

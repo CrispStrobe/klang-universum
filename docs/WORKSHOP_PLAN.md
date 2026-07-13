@@ -72,13 +72,19 @@
       `kidsScoreTheme` (not the const `PartituraTheme.kids`), so the Settings
       "Handwritten notes" switch swaps the engraving font (Bravura ↔ Petaluma)
       in the Workshop too — canvas, both clefs, and the SVG/PNG exports.
-  18. ⏳ *Blocked on partitura (contract sent — [WORKSHOP_PARTITURA_CONTRACTS.md]
-      **C10**):* a true move-the-note live drag. Today it's faked (hide-original
-      via `elementColors`=bg + a pointer-following ghost), which breaks on the
-      handwritten theme and never previews a horizontal move. Asked for **C10a**
-      (`suppressElementIds` → clean theme-independent hide) and/or **C10b** (the
-      view paints the dragged glyph following the pointer). App wires it when it
-      ships on public `partitura@main`.
+  18. ✅ *Live drag — clean hide (C10a shipped & wired).* partitura now paints no
+      live drag of its own, but exposes **`suppressElementIds`** on
+      `MultiSystemView` / `InteractiveGrandStaffView` (→ the shared
+      `LayoutPainter` skips those elements' primitives entirely: notehead, stem,
+      flag, beam, ledger). The Workshop drags the note by hiding the original
+      with `suppressElementIds: {_dragId}` (a **clean, theme-independent** hide —
+      no ink bleed, works on the handwritten Petaluma font and coloured staves)
+      while its duration-matched ghost follows the pointer. Replaced the old
+      `elementColors`=background trick. Landed on public `partitura@main`
+      (pixel-tested: a coloured note's ink drops to ~0 when suppressed);
+      app-wired + 19/19 workshop widget tests green. **C10b** (the view paints
+      the dragged glyph itself, dropping the app ghost) stays optional — the
+      ghost stands in cleanly now.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 

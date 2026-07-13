@@ -293,3 +293,17 @@ Either unblocks a true live drag; **C10a alone** already removes the ugly part
 (the fake hide) and lets our existing ghost stand in properly. As with C1–C9,
 mus CI builds against public `partitura@main`, so the app can't call the new
 input until it ships there — we'll wire it the moment it lands. Thanks!
+
+> **Landed & wired (2026-07-13): C10a on `partitura-public@main`.** Additive, no
+> signature broke. `MultiSystemView` and `InteractiveGrandStaffView` gained
+> `suppressElementIds: Set<String>` (→ the shared `LayoutPainter.suppressIds`);
+> `paint()` skips those elements' primitives entirely — notehead, stem, flag,
+> beam, ledger, curve — a **clean, theme-independent hide** with no ink bleed
+> (works on the Petaluma font and coloured staves). Repaint-only; ids match on
+> either staff. Pixel-tested (a green-coloured note's ink drops to ~0 when
+> suppressed) + CONTRACT/CHANGELOG updated. **The app now hides the dragged note
+> with `suppressElementIds: {_dragId}`** and lets its duration-matched ghost
+> follow the pointer — the old `elementColors`=background trick is gone. **C10b**
+> (the view paints the dragged glyph itself) remains an optional later polish;
+> C10a makes the ghost stand in cleanly, so it's no longer needed for a correct
+> live drag.

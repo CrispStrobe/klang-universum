@@ -833,13 +833,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final l10n = AppLocalizations.of(context)!;
     final theme = kidsScoreTheme;
     final selectedIds = _doc.selectedIds;
-    final canvasBg = Theme.of(context).colorScheme.surfaceContainerLowest;
-    // While a note is dragged, paint the original in the canvas colour so it
-    // "disappears" and the pointer-following ghost stands in for it.
     final elementColors = <String, Color>{
       for (final id in selectedIds) id: Colors.amber,
-      if (_dragId != null) _dragId!: canvasBg,
     };
+    // While a note is dragged, hide the original cleanly (partitura C10a
+    // `suppressElementIds`) so the pointer-following ghost stands in for it.
+    // Skips the whole glyph (notehead/stem/beam/ledger) — theme-independent, no
+    // ink bleed, unlike the old "paint it the canvas colour" trick.
+    final suppressIds = _dragId != null ? {_dragId!} : const <String>{};
     // A visible insertion caret before the element the next note would precede.
     final caretId = _doc.caretBeforeId;
     final caret =
@@ -1017,6 +1018,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       staffSpace: _zoom,
                                       controller: _regions,
                                       elementColors: elementColors,
+                                      suppressElementIds: suppressIds,
                                       onElementTap: _onElementTap,
                                       onStaffTap: _onStaffTap,
                                       onHover: (t) =>
@@ -1035,6 +1037,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       staffSpace: _zoom,
                                       controller: _regions,
                                       elementColors: elementColors,
+                                      suppressElementIds: suppressIds,
                                       onElementTap: _onElementTap,
                                       onStaffTap: _onStaffTap,
                                       onHover: (t) =>
