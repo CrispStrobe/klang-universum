@@ -14,15 +14,14 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · shipped **Roman Numerals**, **Strong Beat**, **Chord
-  Chart** + a **"Handwritten notes" (Petaluma) theme** — all on the
-  partitura-public alignment, no partitura change. Also: shared game-test harness
-  (`useGameSurface`/`pumpGame`), fixed hardcoded `../partitura/` test paths ·
-  shipped all **3 scoped SATB reading games** (Noten lesen, gated behind Duet
-  ≥2★, shared `note_reading/satb_voicing.dart` on `Measure.voice2` +
-  `StaffSystem`): **Read the Voice**, **Which Voice?**, **Hear the Voice** (2
-  voices → full SATB, C major) · **idle / awaiting next** (remaining: widen SATB
-  beyond C major; OMR big-swing).
+- **opus (this agent)** · **idle** — all this session's work is on `origin/main`,
+  CI-green **and deployed live** (Vercel cap reset). Shipped: the
+  **partitura-public alignment** (+ hardcoded-path fix), the **shared game-test
+  harness** (`useGameSurface`/`pumpGame`), and 6 games/features on partitura's new
+  APIs — **Roman Numerals**, **Strong Beat**, **Chord Chart**, **Handwritten-notes
+  (Petaluma) theme**, and all 3 **SATB reading games** (Read / Which / Hear the
+  Voice, shared `note_reading/satb_voicing.dart`). Open follow-ups: widen SATB
+  beyond C major; OMR big-swing. No file locks held.
   ⚠️ **For all agents — notation theme migration (just landed):** every
   `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
   (from `shared/score_theme.dart`), so the Settings "Handwritten notes" toggle
