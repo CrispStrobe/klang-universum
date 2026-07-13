@@ -2762,6 +2762,42 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get playAlongPreview;
 
+  /// No description provided for @playAlongViewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get playAlongViewLabel;
+
+  /// No description provided for @playAlongViewHighway.
+  ///
+  /// In en, this message translates to:
+  /// **'Highway'**
+  String get playAlongViewHighway;
+
+  /// No description provided for @playAlongViewNotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Notation'**
+  String get playAlongViewNotation;
+
+  /// No description provided for @playAlongViewFalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Falling'**
+  String get playAlongViewFalling;
+
+  /// No description provided for @playAlongViewCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get playAlongViewCoach;
+
+  /// No description provided for @playAlongNext.
+  ///
+  /// In en, this message translates to:
+  /// **'next'**
+  String get playAlongNext;
+
   /// No description provided for @chordListenerPrompt.
   ///
   /// In en, this message translates to:

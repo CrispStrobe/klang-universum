@@ -1,0 +1,68 @@
+// test/play_along_view_test.dart
+//
+// Switches the play-along screen through all four scroll modes and asserts each
+// renders without throwing — the notation mode in particular builds a partitura
+// Score, which the highway-only smoke test never exercises.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/audio/play_along.dart';
+import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
+import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:partitura/partitura.dart' show MultiSystemView;
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  testWidgets('every scroll mode renders without throwing', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => SettingsService()),
+          Provider<AudioService>(create: (_) => AudioService()),
+          ChangeNotifierProvider(create: (_) => ProgressService()),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [Locale('en'), Locale('de')],
+          home: PlayAlongScreen(
+            chart: PlayAlongCharts.celloFirstPosition,
+            title: 'Play along',
+            gameId: 'cello_play_along',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Default view (highway) is up with no exception.
+    expect(tester.takeException(), isNull);
+
+    // Switch through each mode via the view menu.
+    for (final label in ['Notation', 'Falling', 'Coach', 'Highway']) {
+      await tester.tap(find.byIcon(Icons.grid_view));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label).last);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull, reason: '$label mode threw');
+    }
+
+    // The notation mode leaves a real engraved staff in the tree.
+    await tester.tap(find.byIcon(Icons.grid_view));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Notation').last);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(MultiSystemView), findsOneWidget);
+  });
+}

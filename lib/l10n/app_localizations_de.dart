@@ -1510,6 +1510,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playAlongPreview => 'Vorhören';
 
   @override
+  String get playAlongViewLabel => 'Ansicht';
+
+  @override
+  String get playAlongViewHighway => 'Notenband';
+
+  @override
+  String get playAlongViewNotation => 'Noten';
+
+  @override
+  String get playAlongViewFalling => 'Fallend';
+
+  @override
+  String get playAlongViewCoach => 'Coach';
+
+  @override
+  String get playAlongNext => 'als Nächstes';
+
+  @override
   String get chordListenerPrompt => 'Spiele oder zupfe einen Akkord';
 
   @override

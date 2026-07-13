@@ -1502,6 +1502,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAlongPreview => 'Preview';
 
   @override
+  String get playAlongViewLabel => 'View';
+
+  @override
+  String get playAlongViewHighway => 'Highway';
+
+  @override
+  String get playAlongViewNotation => 'Notation';
+
+  @override
+  String get playAlongViewFalling => 'Falling';
+
+  @override
+  String get playAlongViewCoach => 'Coach';
+
+  @override
+  String get playAlongNext => 'next';
+
+  @override
   String get chordListenerPrompt => 'Strum or play a chord';
 
   @override

@@ -30,11 +30,13 @@ feel (latency, real-instrument chord accuracy) still wants on-device tuning.
 Chromatic/cello tuner: big note, cents needle, in-tune zone. Cello-first
 (fretless intonation is where it matters). Keeper tile.
 
-### 2. Play-along (moving score) — DONE (v1)
-A note-highway: target notes scroll past a "now" line; you play/sing and the
-live pitch is scored against each note (correct pitch within a cents window for
-enough of its duration = hit). `PlayAlongEngine` is pure-Dart and unit-tested.
-Cello exercise chart to start.
+### 2. Play-along (moving score) — DONE
+Target notes are scored against your live pitch (correct pitch within a cents
+window for enough of a note's duration = hit); `PlayAlongEngine` is pure-Dart
+and unit-tested. **Four switchable scroll views** (a menu in the app bar):
+highway (piano-roll), falling (vertical), notation (real engraved staff +
+moving cursor, via partitura), and coach (big current/next note for beginners).
+Cello/guitar/keyboard charts + count-in metronome.
 
 ### 3. Sing-along — DONE (v1)
 The same engine + screen with a vocal-range melody preset. Voice is the same

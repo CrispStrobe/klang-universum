@@ -108,11 +108,27 @@ class PlayAlongEngine {
 
   /// The note whose time window contains [currentBeat], or null (count-in/gap).
   NoteState? get activeNote {
+    final i = activeIndex;
+    return i < 0 ? null : notes[i];
+  }
+
+  /// Index into [notes] of the active note, or -1 (count-in / between notes).
+  int get activeIndex {
     final b = currentBeat;
-    for (final n in notes) {
-      if (b >= n.note.startBeat && b < n.note.endBeat) return n;
+    for (var i = 0; i < notes.length; i++) {
+      if (b >= notes[i].note.startBeat && b < notes[i].note.endBeat) return i;
     }
-    return null;
+    return -1;
+  }
+
+  /// Index of the next upcoming note (the first that starts at/after now), or
+  /// -1 when none remain — used by the coach view.
+  int get nextIndex {
+    final b = currentBeat;
+    for (var i = 0; i < notes.length; i++) {
+      if (notes[i].note.startBeat >= b) return i;
+    }
+    return -1;
   }
 
   /// Advance to [elapsedMs] and sample [reading] against the active note.

@@ -1,15 +1,17 @@
 // lib/features/games/playalong/play_along_screen.dart
 //
-// Play-along / sing-along with a MOVING SCORE. Target notes scroll right-to-left
-// past a fixed "now" line; your live pitch is drawn as a dot so you can see
-// yourself land on (or drift from) each note. Scoring is delegated to the pure
-// PlayAlongEngine; this screen only drives the clock (a Ticker), feeds it the
-// mic's readings, and paints.
+// Play-along / sing-along with a MOVING SCORE. Scoring is delegated to the pure
+// PlayAlongEngine; this screen drives the clock (a Ticker), feeds it the mic's
+// readings, and draws the score in one of four switchable views:
+//   • highway  — piano-roll: notes scroll past a fixed "now" line (pitch on Y)
+//   • falling  — vertical: notes fall toward a hit-line (like Falling Notes)
+//   • notation — a real engraved staff (partitura) with a moving cursor
+//   • coach    — minimal: the current + next note, huge, for beginners
 //
-// One screen serves both modes — pass a cello chart for play-along or an
-// octave-agnostic vocal chart for sing-along, with the localized title. No
-// audible backing on purpose (the mic would hear the speaker — use the Preview
-// button, then play/sing against the scroll).
+// One screen serves both instruments and voice — pass a cello chart for
+// play-along or an octave-agnostic vocal chart for sing-along, with the
+// localized title. No audible backing on purpose (the mic would hear the
+// speaker); a count-in metronome sets the tempo, then use the visual scroll.
 
 import 'dart:async';
 
@@ -25,7 +27,21 @@ import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:partitura/partitura.dart'
+    show
+        Clef,
+        DurationBase,
+        Measure,
+        MultiSystemView,
+        NoteDuration,
+        NoteElement,
+        PartituraTheme,
+        Score;
 import 'package:provider/provider.dart';
+
+/// How the moving score is drawn. The child can switch live.
+enum PlayAlongView { highway, notation, falling, coach }
 
 class PlayAlongScreen extends StatefulWidget {
   const PlayAlongScreen({
@@ -54,9 +70,45 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
 
   PitchReading _latest = PitchReading.silent();
   final CountInClicker _clicker = CountInClicker();
+  PlayAlongView _view = PlayAlongView.highway;
   bool _running = false;
   bool _finished = false;
   ({PitchCaptureError reason, String? detail})? _error;
+
+  /// The chart rendered as engraved notation — built once (id 'n<i>' per note).
+  late final Score _score = _buildScore();
+
+  Score _buildScore() {
+    final notes = widget.chart.notes;
+    final clef = notes.any((n) => n.midi < 55) ? Clef.bass : Clef.treble;
+    NoteDuration durFor(double beats) => switch (beats) {
+          >= 4 => const NoteDuration(DurationBase.whole),
+          >= 2 => const NoteDuration(DurationBase.half),
+          >= 1 => const NoteDuration(DurationBase.quarter),
+          _ => const NoteDuration(DurationBase.eighth),
+        };
+    // Chunk into ~4-beat measures so the staff wraps into readable systems.
+    final measures = <Measure>[];
+    var current = <NoteElement>[];
+    var beatsInBar = 0.0;
+    for (var i = 0; i < notes.length; i++) {
+      if (beatsInBar >= 4 && current.isNotEmpty) {
+        measures.add(Measure(current));
+        current = <NoteElement>[];
+        beatsInBar = 0;
+      }
+      current.add(
+        NoteElement(
+          pitches: [pitchFromMidi(notes[i].midi)],
+          duration: durFor(notes[i].beats),
+          id: 'n$i',
+        ),
+      );
+      beatsInBar += notes[i].beats;
+    }
+    if (current.isNotEmpty) measures.add(Measure(current));
+    return Score(clef: clef, measures: measures);
+  }
 
   @override
   void initState() {
@@ -161,9 +213,30 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     final l = AppLocalizations.of(context)!;
     final active = _engine.activeNote;
     final liveMidi = _latest.hasPitch ? _latest.midi : null;
+    final onPitch = active != null &&
+        _latest.hasPitch &&
+        _latest.cents.abs() <= _engine.centsTolerance &&
+        (widget.chart.octaveAgnostic
+            ? _latest.nearestMidi % 12 == active.note.midi % 12
+            : _latest.nearestMidi == active.note.midi);
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          if (!_finished)
+            PopupMenuButton<PlayAlongView>(
+              icon: const Icon(Icons.grid_view),
+              tooltip: l.playAlongViewLabel,
+              initialValue: _view,
+              onSelected: (v) => setState(() => _view = v),
+              itemBuilder: (context) => [
+                for (final v in PlayAlongView.values)
+                  PopupMenuItem(value: v, child: Text(_viewName(l, v))),
+              ],
+            ),
+        ],
+      ),
       body: SafeArea(
         child: _finished
             ? GameResultView(
@@ -210,21 +283,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: CustomPaint(
-                        painter: _HighwayPainter(
-                          engine: _engine,
-                          liveMidi: liveMidi,
-                          onPitch: active != null &&
-                              _latest.hasPitch &&
-                              _latest.cents.abs() <= _engine.centsTolerance &&
-                              (widget.chart.octaveAgnostic
-                                  ? _latest.nearestMidi % 12 ==
-                                      active.note.midi % 12
-                                  : _latest.nearestMidi == active.note.midi),
-                          scheme: scheme,
-                        ),
-                        child: const SizedBox.expand(),
-                      ),
+                      child: _buildView(context, l, liveMidi, onPitch, scheme),
                     ),
                   ),
                   if (_error != null)
@@ -274,6 +333,53 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
         Text(value, style: Theme.of(context).textTheme.titleLarge),
       ],
     );
+  }
+
+  String _viewName(AppLocalizations l, PlayAlongView v) => switch (v) {
+        PlayAlongView.highway => l.playAlongViewHighway,
+        PlayAlongView.notation => l.playAlongViewNotation,
+        PlayAlongView.falling => l.playAlongViewFalling,
+        PlayAlongView.coach => l.playAlongViewCoach,
+      };
+
+  Widget _buildView(
+    BuildContext context,
+    AppLocalizations l,
+    double? liveMidi,
+    bool onPitch,
+    ColorScheme scheme,
+  ) {
+    switch (_view) {
+      case PlayAlongView.highway:
+        return CustomPaint(
+          painter: _HighwayPainter(
+            engine: _engine,
+            liveMidi: liveMidi,
+            onPitch: onPitch,
+            scheme: scheme,
+          ),
+          child: const SizedBox.expand(),
+        );
+      case PlayAlongView.falling:
+        return CustomPaint(
+          painter: _FallingPainter(
+            engine: _engine,
+            liveMidi: liveMidi,
+            onPitch: onPitch,
+            scheme: scheme,
+          ),
+          child: const SizedBox.expand(),
+        );
+      case PlayAlongView.coach:
+        return _CoachView(
+          engine: _engine,
+          latest: _latest,
+          onPitch: onPitch,
+          scheme: scheme,
+        );
+      case PlayAlongView.notation:
+        return _NotationView(engine: _engine, score: _score, scheme: scheme);
+    }
   }
 }
 
@@ -373,4 +479,190 @@ class _HighwayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_HighwayPainter old) => true; // driven by the ticker
+}
+
+/// Vertical "falling notes": notes fall from the top toward a hit-line near the
+/// bottom; pitch runs left→right, time top→bottom.
+class _FallingPainter extends CustomPainter {
+  _FallingPainter({
+    required this.engine,
+    required this.liveMidi,
+    required this.onPitch,
+    required this.scheme,
+  });
+
+  final PlayAlongEngine engine;
+  final double? liveMidi;
+  final bool onPitch;
+  final ColorScheme scheme;
+
+  static const double _beatsVisible = 6;
+  static const double _hitFrac = 0.82;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final notes = engine.chart.notes;
+    if (notes.isEmpty) return;
+
+    var lo = notes.first.midi, hi = notes.first.midi;
+    for (final n in notes) {
+      lo = n.midi < lo ? n.midi : lo;
+      hi = n.midi > hi ? n.midi : hi;
+    }
+    lo -= 3;
+    hi += 3;
+    final span = (hi - lo).toDouble();
+    double x(num midi) => (midi - lo) / span * size.width;
+
+    final hitY = size.height * _hitFrac;
+    final pxPerBeat = hitY / _beatsVisible;
+    final beat = engine.currentBeat;
+    double y(double b) => hitY - (b - beat) * pxPerBeat;
+    final laneW = size.width / span;
+    final noteW = (laneW * 0.7).clamp(8.0, 44.0);
+
+    final lane = Paint()..color = scheme.onSurface.withValues(alpha: 0.06);
+    for (var m = lo - (lo % 12); m <= hi; m += 12) {
+      canvas.drawRect(Rect.fromLTWH(x(m) - 0.5, 0, 1, size.height), lane);
+    }
+
+    for (final ns in engine.notes) {
+      final n = ns.note;
+      final top = y(n.endBeat);
+      final bottom = y(n.startBeat);
+      if (bottom < 0 || top > size.height) continue;
+      final color = switch (ns.result) {
+        NoteResult.hit => Colors.green,
+        NoteResult.missed => scheme.error,
+        NoteResult.pending => ns == engine.activeNote
+            ? scheme.primary
+            : scheme.primary.withValues(alpha: 0.45),
+      };
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTRB(
+          x(n.midi) - noteW / 2,
+          top + 1,
+          x(n.midi) + noteW / 2,
+          bottom - 1,
+        ),
+        const Radius.circular(5),
+      );
+      canvas.drawRRect(rect, Paint()..color = color);
+    }
+
+    canvas.drawLine(
+      Offset(0, hitY),
+      Offset(size.width, hitY),
+      Paint()
+        ..color = scheme.onSurface.withValues(alpha: 0.35)
+        ..strokeWidth = 2,
+    );
+
+    if (liveMidi != null) {
+      final lx = x(liveMidi!.clamp(lo.toDouble(), hi.toDouble()));
+      final p = Paint()..color = onPitch ? Colors.green : Colors.amber;
+      canvas.drawCircle(Offset(lx, hitY), 9, p);
+      canvas.drawCircle(
+        Offset(lx, hitY),
+        13,
+        Paint()..color = p.color.withValues(alpha: 0.25),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_FallingPainter old) => true;
+}
+
+/// Minimal "coach" view for beginners: the current target note big, the next
+/// one small, and what you're singing/playing — no scrolling.
+class _CoachView extends StatelessWidget {
+  const _CoachView({
+    required this.engine,
+    required this.latest,
+    required this.onPitch,
+    required this.scheme,
+  });
+
+  final PlayAlongEngine engine;
+  final PitchReading latest;
+  final bool onPitch;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final text = Theme.of(context).textTheme;
+    final ai = engine.activeIndex;
+    final nowNote = ai >= 0 ? engine.notes[ai].note : null;
+    final ni = ai >= 0 ? ai + 1 : engine.nextIndex;
+    final nextNote =
+        (ni >= 0 && ni < engine.notes.length) ? engine.notes[ni].note : null;
+
+    final nowLabel = nowNote != null
+        ? spelledMidiName(context, nowNote.midi)
+        : (engine.inCountIn ? l.playAlongCountIn : '—');
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            nowLabel,
+            style: text.displayLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 96,
+              color: onPitch ? Colors.green : scheme.onSurface,
+            ),
+          ),
+          if (nextNote != null)
+            Text(
+              '${l.playAlongNext}: ${spelledMidiName(context, nextNote.midi)}',
+              style: text.titleLarge?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          const SizedBox(height: 32),
+          Text(
+            '${l.playAlongYou}: ${latest.hasPitch ? spelledMidiName(context, latest.nearestMidi) : '—'}'
+            '${latest.hasPitch ? '  ${latest.cents >= 0 ? '+' : ''}${latest.cents.toStringAsFixed(0)}¢' : ''}',
+            style: text.headlineSmall?.copyWith(
+              color: onPitch ? Colors.green : scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Engraved-notation view: real staff (partitura) with a moving cursor. The
+/// active note is highlighted (the cursor); notes already hit stay highlighted.
+class _NotationView extends StatelessWidget {
+  const _NotationView({
+    required this.engine,
+    required this.score,
+    required this.scheme,
+  });
+
+  final PlayAlongEngine engine;
+  final Score score;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final ids = <String>{};
+    final ai = engine.activeIndex;
+    if (ai >= 0) ids.add('n$ai'); // the cursor
+    for (var i = 0; i < engine.notes.length; i++) {
+      if (engine.notes[i].result == NoteResult.hit) ids.add('n$i');
+    }
+    return Center(
+      child: SingleChildScrollView(
+        child: MultiSystemView(
+          score: score,
+          theme: PartituraTheme.kids,
+          highlightedIds: ids,
+        ),
+      ),
+    );
+  }
 }

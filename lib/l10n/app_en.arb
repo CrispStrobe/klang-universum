@@ -713,6 +713,12 @@
   "playAlongYou": "You",
   "playAlongCountIn": "count-in",
   "playAlongPreview": "Preview",
+  "playAlongViewLabel": "View",
+  "playAlongViewHighway": "Highway",
+  "playAlongViewNotation": "Notation",
+  "playAlongViewFalling": "Falling",
+  "playAlongViewCoach": "Coach",
+  "playAlongNext": "next",
   "chordListenerPrompt": "Strum or play a chord",
   "chordListenerMatch": "{percent}% match",
   "@chordListenerMatch": {

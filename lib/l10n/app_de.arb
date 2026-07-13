@@ -507,6 +507,12 @@
   "playAlongYou": "Du",
   "playAlongCountIn": "Einzähler",
   "playAlongPreview": "Vorhören",
+  "playAlongViewLabel": "Ansicht",
+  "playAlongViewHighway": "Notenband",
+  "playAlongViewNotation": "Noten",
+  "playAlongViewFalling": "Fallend",
+  "playAlongViewCoach": "Coach",
+  "playAlongNext": "als Nächstes",
   "chordListenerPrompt": "Spiele oder zupfe einen Akkord",
   "chordListenerMatch": "{percent}% Übereinstimmung",
   "@chordListenerMatch": {
