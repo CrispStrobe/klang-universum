@@ -62,7 +62,7 @@ void main() {
     expect(editor.barCount, 2, reason: '4 quarters fill a 4/4 bar');
   });
 
-  testWidgets('undo removes the last note', (tester) async {
+  testWidgets('undo then redo round-trips a placed note', (tester) async {
     await tester.pumpWidget(_app());
     final editor = _editor(tester);
     await tester.tap(find.byType(InteractiveStaff), warnIfMissed: false);
@@ -72,5 +72,19 @@ void main() {
     await tester.tap(find.byIcon(Icons.undo));
     await tester.pump();
     expect(editor.noteCount, 0);
+
+    await tester.tap(find.byIcon(Icons.redo));
+    await tester.pump();
+    expect(editor.noteCount, 1);
+  });
+
+  testWidgets('the Rest button adds a rest element', (tester) async {
+    await tester.pumpWidget(_app());
+    final editor = _editor(tester);
+    expect(editor.noteCount, 0);
+
+    await tester.tap(find.text('Rest'));
+    await tester.pump();
+    expect(editor.noteCount, 1);
   });
 }

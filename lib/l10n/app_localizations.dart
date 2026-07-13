@@ -326,6 +326,30 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get workshopDelete;
 
+  /// No description provided for @workshopRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get workshopRest;
+
+  /// No description provided for @workshopRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get workshopRedo;
+
+  /// No description provided for @workshopDot.
+  ///
+  /// In en, this message translates to:
+  /// **'Dotted'**
+  String get workshopDot;
+
+  /// No description provided for @workshopAccidental.
+  ///
+  /// In en, this message translates to:
+  /// **'Accidental'**
+  String get workshopAccidental;
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:

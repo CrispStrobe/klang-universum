@@ -144,6 +144,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopDelete => 'Löschen';
 
   @override
+  String get workshopRest => 'Pause';
+
+  @override
+  String get workshopRedo => 'Wiederherstellen';
+
+  @override
+  String get workshopDot => 'Punktiert';
+
+  @override
+  String get workshopAccidental => 'Vorzeichen';
+
+  @override
   String get instrumentLabel => 'Instrumentenklang';
 
   @override

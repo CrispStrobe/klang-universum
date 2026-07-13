@@ -144,6 +144,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopDelete => 'Delete';
 
   @override
+  String get workshopRest => 'Rest';
+
+  @override
+  String get workshopRedo => 'Redo';
+
+  @override
+  String get workshopDot => 'Dotted';
+
+  @override
+  String get workshopAccidental => 'Accidental';
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override

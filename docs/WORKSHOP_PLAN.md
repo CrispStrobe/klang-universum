@@ -62,13 +62,14 @@ are permanent non-goals ("consumers build editing on top of the model").
 
 ## Phases (each ends mergeable)
 
-- **P0 — About parity** (small, independent): dedicated `AboutScreen`
+- **P0 — About parity** ✅ merged: dedicated `AboutScreen`
   (provider/contact/privacy/disclaimer/license sections + license page),
-  localized de/en. **MERGE.**
-- **P1 — Editor foundation**: `ScoreDocument` wrapping `Score` + command/undo/
-  redo + selection/caret; rebuild the workshop on it at ≥ today's parity, add
-  rests, dotted notes, accidentals (♯/♭/♮), insert/replace/delete at caret,
-  undo/redo, blank-score start. Keep existing test green. **MERGE.**
+  localized de/en.
+- **P1 — Editor foundation** ✅ merged: `ScoreDocument` (editable element stream
+  → immutable `Score`) with multi-level undo/redo + selection; workshop rebuilt
+  on it with rests, dotted notes, accidentals (♯/♭/♮), and redo. Model unit-
+  tested (`test/score_document_test.dart`). Next: insert-at-caret (not just
+  append), change-duration-of-selected UI (command already in the model).
 - **P2 — Full single-staff**: ties/slurs, triplets, key sig, tempo, dynamics +
   articulations, barlines/repeats, 2nd voice, pickup, lyrics; wire every
   partitura export; playback w/ moving cursor. **MERGE.**
