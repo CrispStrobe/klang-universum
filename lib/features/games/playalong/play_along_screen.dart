@@ -649,18 +649,28 @@ class _NotationView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ids = <String>{};
-    final ai = engine.activeIndex;
-    if (ai >= 0) ids.add('n$ai'); // the cursor
+    // Colour scored notes (green = hit, red = missed); highlight the active
+    // note as the cursor (a highlight wins over a per-note colour, which is
+    // fine — the active note is still pending, not yet coloured).
+    final colors = <String, Color>{};
     for (var i = 0; i < engine.notes.length; i++) {
-      if (engine.notes[i].result == NoteResult.hit) ids.add('n$i');
+      switch (engine.notes[i].result) {
+        case NoteResult.hit:
+          colors['n$i'] = Colors.green;
+        case NoteResult.missed:
+          colors['n$i'] = scheme.error;
+        case NoteResult.pending:
+          break;
+      }
     }
+    final ai = engine.activeIndex;
     return Center(
       child: SingleChildScrollView(
         child: MultiSystemView(
           score: score,
           theme: PartituraTheme.kids,
-          highlightedIds: ids,
+          highlightedIds: {if (ai >= 0) 'n$ai'},
+          elementColors: colors,
         ),
       ),
     );
