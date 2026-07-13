@@ -20,12 +20,14 @@ and push to origin/main** before/after touching shared files. Format:
   the rest of the new-partitura ideas (strong-beat/`beatStrength`, chord symbols,
   handwritten-font theme) · touched `pubspec.yaml`, `ci/deploy`, `game_registry`,
   `core/tuning`, ARBs, `features/games/harmony/` · **in progress (next builds)**.
-- **opus (play-along/AEC)** · next up (in order): (1) wire play-along into **SRI**
-  so misses feed review, (2) more **charts/songs**, (3) a **free-sing recorder** ·
-  touching `play_along_screen.dart`, `core/audio/play_along.dart`, `game_registry`
-  (maybe), the ARBs · **in progress**. Shipped: 4 scroll views, backing+platform
-  AEC, count-in metronome, tempo, **AEC Tier 3a** (`bin/listen.dart --aec`;
-  real-audio needs Tier 3b native — root `PLAN.md`).
+- **opus (play-along/AEC)** · shipped all three: play-along **SRI** (misses feed
+  Review under `<instr>.play_along.<note>`), more **tunes** (Ode to Joy, Mary
+  Had a Little Lamb), and a **Free Sing** recorder (Composing corner — sing a
+  tune, transcribe via `MelodyRecorder`, hear it back). Also live: 4 scroll
+  views, backing+platform AEC, metronome, tempo, **AEC Tier 3a**
+  (`bin/listen.dart --aec`; real-audio needs Tier 3b native — root `PLAN.md`) ·
+  `play_along_screen.dart`, `play_along.dart`, `melody_recorder.dart`,
+  `game_registry`, ARBs · **idle / awaiting next**.
 - **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuilding
   the Composition Workshop as a touch-first score editor on `ScoreDocument` —
   shipped **G1** (new editor shell: zoom/pan canvas + ghost preview + bottom
