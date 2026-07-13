@@ -44,7 +44,8 @@ void main() {
     expect(find.text(l10n.aboutDisclaimer), findsOneWidget);
     expect(find.text(l10n.aboutCredits), findsOneWidget);
     expect(find.text(l10n.aboutOpenSourceLicenses), findsOneWidget);
-    // Contact email is shown as a tappable link.
-    expect(find.text('cze@mailbox.org'), findsOneWidget);
+    // Contact email + phone are shown as tappable links.
+    expect(find.text('postmaster@crispstro.be'), findsOneWidget);
+    expect(find.text('+49 176 6421 8601'), findsOneWidget);
   });
 }

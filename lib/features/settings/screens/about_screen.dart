@@ -19,7 +19,9 @@ class AboutScreen extends StatelessWidget {
   // apps. Not localised: an address is an address in every language.
   static const _provider =
       'Christian Ströbele\nNikolausstr. 5\n70190 Stuttgart\nDeutschland / Germany';
-  static const _email = 'cze@mailbox.org';
+  static const _email = 'postmaster@crispstro.be';
+  static const _phone = '+49 176 6421 8601';
+  static const _phoneUri = 'tel:+4917664218601';
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,14 @@ class AboutScreen extends StatelessWidget {
           _SectionCard(
             icon: Icons.alternate_email,
             label: l10n.aboutContact,
-            child: const _LinkText(text: _email, uri: 'mailto:$_email'),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _LinkText(text: _email, uri: 'mailto:$_email'),
+                SizedBox(height: 4),
+                _LinkText(text: _phone, uri: _phoneUri),
+              ],
+            ),
           ),
           _SectionCard(
             icon: Icons.privacy_tip_outlined,
