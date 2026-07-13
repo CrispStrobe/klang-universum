@@ -40,8 +40,8 @@ and push to origin/main** before/after touching shared files. Format:
   **Longest First** (note-value ordering), **In the Scale?** (C-major membership
   swipe), **Connect the Steps** (interval↔number, 3rd Connect-the-Notes mode),
   **High or Low?** (pitch-direction sort), **Sharp or Flat?** (accidental-sign
-  sort), **Higher or Lower?** (melodic-direction ear game). Also unblocked
-  shared main twice
+  sort), **Higher or Lower?** (melodic-direction ear game), **Step or Skip?**
+  (melodic-motion reading — 2nd vs bigger leap). Also unblocked shared main twice
   (formatted the workshop agent's test files that were failing CI's lint/format).
   ⚠️ **For all agents — notation theme migration (just landed):** every
   `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
