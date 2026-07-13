@@ -9,9 +9,12 @@
 //   • coach    — minimal: the current + next note, huge, for beginners
 //
 // One screen serves both instruments and voice — pass a cello chart for
-// play-along or an octave-agnostic vocal chart for sing-along, with the
-// localized title. No audible backing on purpose (the mic would hear the
-// speaker); a count-in metronome sets the tempo, then use the visual scroll.
+// play-along or an octave-agnostic vocal chart for sing-along. A count-in
+// metronome sets the tempo. Optional audible backing (Tier 0/1): off by default
+// because the mic would grade the speaker; turning it on plays the melody at the
+// downbeat and flips on the platform echo-canceller — use headphones for the
+// cleanest pitch accuracy. See the AEC notes for why real cancellation of a
+// same-pitch echo needs the OS/native audio path, not a Dart pitch gate.
 
 import 'dart:async';
 
@@ -71,6 +74,9 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   PitchReading _latest = PitchReading.silent();
   final CountInClicker _clicker = CountInClicker();
   PlayAlongView _view = PlayAlongView.highway;
+  bool _backing =
+      false; // play audible backing (Tier 0/1: needs headphones/AEC)
+  bool _backingStarted = false;
   bool _running = false;
   bool _finished = false;
   ({PitchCaptureError reason, String? detail})? _error;
@@ -133,12 +139,23 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     );
     final c = _clicker.update(_engine.currentBeat);
     if (c.click) context.read<AudioService>().playTick(accent: c.accent);
+    // Tier 0/1: at the downbeat, start the backing track (headphones, or the
+    // platform echo-canceller so the mic doesn't grade the speaker).
+    if (_backing && !_backingStarted && _engine.currentBeat >= 0) {
+      _backingStarted = true;
+      context.read<AudioService>().playSequence(_melody());
+    }
     if (_engine.finished) {
       _finish();
     } else {
       setState(() {});
     }
   }
+
+  List<(int, int)> _melody() => [
+        for (final n in widget.chart.notes)
+          (n.midi, (n.beats * widget.chart.beatMs).round()),
+      ];
 
   void _finish() {
     // Record the run so play/sing-along count toward stars like other games.
@@ -153,6 +170,8 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
 
   Future<void> _start() async {
     _clicker.reset();
+    _backingStarted = false;
+    _service.echoCancel = _backing; // cancel the speaker when backing is on
     setState(() {
       _error = null;
       _finished = false;
@@ -200,12 +219,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     if (mounted) setState(() => _running = false);
   }
 
-  void _preview() {
-    context.read<AudioService>().playSequence([
-      for (final n in widget.chart.notes)
-        (n.midi, (n.beats * widget.chart.beatMs).round()),
-    ]);
-  }
+  void _preview() => context.read<AudioService>().playSequence(_melody());
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +238,17 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
+          if (!_finished)
+            IconButton(
+              tooltip: l.playAlongBacking,
+              isSelected: _backing,
+              icon: const Icon(Icons.music_off),
+              selectedIcon: const Icon(Icons.music_note),
+              // Changing it takes effect on the next Play (echoCancel is read
+              // at start), so only allow toggling while stopped.
+              onPressed:
+                  _running ? null : () => setState(() => _backing = !_backing),
+            ),
           if (!_finished)
             PopupMenuButton<PlayAlongView>(
               icon: const Icon(Icons.grid_view),

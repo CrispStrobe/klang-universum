@@ -1532,6 +1532,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAlongNext => 'next';
 
   @override
+  String get playAlongBacking => 'Backing (use headphones)';
+
+  @override
   String get chordListenerPrompt => 'Strum or play a chord';
 
   @override

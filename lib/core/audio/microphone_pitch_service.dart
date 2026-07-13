@@ -54,6 +54,13 @@ class MicrophonePitchService {
 
   final int sampleRate;
 
+  /// Turn on the platform's echo canceller (+ its bundled voice DSP). Off by
+  /// default because that DSP reshapes the waveform and hurts pitch/intonation
+  /// accuracy. Turn it on only when playing audible backing over the speaker
+  /// (so the mic doesn't grade the speaker) — headphones are better. Read at
+  /// [start]; toggle before (re)starting. See docs on AEC tiers.
+  bool echoCancel = false;
+
   final AudioRecorder _recorder = AudioRecorder();
   final StreamController<PitchReading> _readings =
       StreamController<PitchReading>.broadcast();
@@ -99,13 +106,14 @@ class MicrophonePitchService {
       );
     }
 
-    // RecordConfig defaults autoGain/echoCancel/noiseSuppress to false, which is
-    // exactly what we want: those DSP stages reshape the waveform and skew
-    // pitch/intonation. Keep them off if this config is ever expanded.
+    // autoGain/noiseSuppress stay off (they reshape the waveform and skew
+    // pitch/intonation). echoCancel is opt-in: only for audible-backing mode,
+    // where cancelling the speaker is worth the DSP's accuracy cost.
     final config = RecordConfig(
       encoder: AudioEncoder.pcm16bits,
       sampleRate: sampleRate,
       numChannels: 1,
+      echoCancel: echoCancel,
     );
 
     final Stream<Uint8List> pcm;

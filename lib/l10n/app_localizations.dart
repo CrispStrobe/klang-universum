@@ -2822,6 +2822,12 @@ abstract class AppLocalizations {
   /// **'next'**
   String get playAlongNext;
 
+  /// No description provided for @playAlongBacking.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing (use headphones)'**
+  String get playAlongBacking;
+
   /// No description provided for @chordListenerPrompt.
   ///
   /// In en, this message translates to:
