@@ -146,6 +146,7 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.questionAnswerPrompt,

@@ -136,6 +136,7 @@ class _WhichBeatScreenState extends State<WhichBeatScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.whichBeatPrompt,

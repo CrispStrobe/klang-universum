@@ -206,6 +206,7 @@ class _StrongBeatScreenState extends State<StrongBeatScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.strongBeatPrompt(_beat),

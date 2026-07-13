@@ -121,6 +121,7 @@ class _IntervalEarScreenState extends State<IntervalEarScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.listenIntervalPrompt,

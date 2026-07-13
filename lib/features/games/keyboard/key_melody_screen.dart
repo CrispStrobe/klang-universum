@@ -131,6 +131,11 @@ class _KeyMelodyScreenState extends State<KeyMelodyScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _wrongMidi != null
+                          ? false
+                          : _complete
+                              ? true
+                              : null,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.keyMelodyPrompt,

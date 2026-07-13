@@ -100,6 +100,7 @@ class _KeyNameScreenState extends State<KeyNameScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.keyNamePrompt,

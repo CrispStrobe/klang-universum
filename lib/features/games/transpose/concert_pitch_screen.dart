@@ -149,6 +149,7 @@ class _ConcertPitchScreenState extends State<ConcertPitchScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.concertPitchPrompt(_instrument.name(l10n)),

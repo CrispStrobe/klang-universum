@@ -143,6 +143,7 @@ class _GrandStaffReadScreenState extends State<GrandStaffReadScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _tapped == null ? null : _tapped == _target.step,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.whatIsThisNote,

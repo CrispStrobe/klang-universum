@@ -173,6 +173,7 @@ class _ScaleBuilderScreenState extends State<ScaleBuilderScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: _scaleType == ScaleType.major

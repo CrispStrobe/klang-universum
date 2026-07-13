@@ -118,6 +118,7 @@ class _BeatSortScreenState extends State<BeatSortScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: finished ? true : _lastDropOk,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.beatSortPrompt,

@@ -167,6 +167,7 @@ class _NameThatChordScreenState extends State<NameThatChordScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.nameThatChordPrompt,

@@ -140,6 +140,7 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n

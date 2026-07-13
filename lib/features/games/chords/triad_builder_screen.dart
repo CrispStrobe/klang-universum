@@ -158,6 +158,11 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _wrongPosition != null
+                          ? false
+                          : _complete
+                              ? true
+                              : null,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.triadBuilderPrompt(

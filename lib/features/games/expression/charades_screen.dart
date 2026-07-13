@@ -161,6 +161,7 @@ class _CharadesScreenState extends State<CharadesScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: _kind == _Kind.tempo

@@ -88,6 +88,7 @@ class _DurationDuelScreenState extends State<DurationDuelScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _tapped == null ? null : _tapped == _longer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.whichLastsLonger,

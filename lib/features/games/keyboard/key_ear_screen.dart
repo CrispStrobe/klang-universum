@@ -122,6 +122,7 @@ class _KeyEarScreenState extends State<KeyEarScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.keyEarPrompt,

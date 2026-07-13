@@ -152,6 +152,11 @@ class _KeyChordScreenState extends State<KeyChordScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _wrongMidi != null
+                          ? false
+                          : _complete
+                              ? true
+                              : null,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.keyChordPrompt(noteNameFor(context, _root)),

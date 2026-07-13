@@ -117,6 +117,7 @@ class _GuitarTabReadScreenState extends State<GuitarTabReadScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.guitarTabReadPrompt,

@@ -153,6 +153,8 @@ class _KeySignatureScreenState extends State<KeySignatureScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct:
+                          _tapped == null ? null : _tapped == _target.tonic,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.keySignaturePrompt,
@@ -189,7 +191,6 @@ class _KeySignatureScreenState extends State<KeySignatureScreen>
                     FeedbackLine(
                       correct:
                           _tapped == null ? null : _tapped == _target.tonic,
-                      showMascot: false,
                     ),
                     const SizedBox(height: 16),
                     AnswerGrid(

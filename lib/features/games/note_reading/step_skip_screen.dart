@@ -140,6 +140,7 @@ class _StepSkipScreenState extends State<StepSkipScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.stepSkipPrompt,

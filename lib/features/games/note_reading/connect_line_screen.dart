@@ -364,6 +364,9 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _matched.length == ConnectLineScreen.pairs
+                          ? true
+                          : (answeredWrong ? false : null),
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: prompt,

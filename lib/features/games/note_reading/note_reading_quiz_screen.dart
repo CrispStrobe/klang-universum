@@ -212,6 +212,7 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _tapped == null ? null : _tapped == _target.step,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.whatIsThisNote,
@@ -275,7 +276,6 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
                     const SizedBox(height: 8),
                     FeedbackLine(
                       correct: _tapped == null ? null : _tapped == _target.step,
-                      showMascot: false,
                     ),
                     const SizedBox(height: 16),
                     AnswerGrid(

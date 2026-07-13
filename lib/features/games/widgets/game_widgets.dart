@@ -24,12 +24,19 @@ class RoundHeader extends StatelessWidget {
   /// pass false to fall back to the plain centered prompt.
   final bool showMascot;
 
+  /// Last-answer state for the presenting mascot's reaction: null = presenting
+  /// (idle), true = happy, false = oops. Pass the same value the screen gives
+  /// [FeedbackLine], so the header mascot both presents AND reacts (the
+  /// feedback line then shows text only).
+  final bool? correct;
+
   const RoundHeader({
     super.key,
     required this.round,
     required this.totalRounds,
     required this.prompt,
     this.showMascot = true,
+    this.correct,
   });
 
   @override
@@ -43,7 +50,7 @@ class RoundHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         if (showMascot)
-          MascotPrompt(prompt: prompt)
+          MascotPrompt(prompt: prompt, correct: correct)
         else
           Text(
             prompt,
@@ -59,17 +66,27 @@ class RoundHeader extends StatelessWidget {
 /// reading the [prompt]. Keyed by prompt so a fresh mascot greets (one-shot
 /// bob) on each new question. Compact so it fits the shared round header.
 class MascotPrompt extends StatelessWidget {
-  const MascotPrompt({super.key, required this.prompt});
+  const MascotPrompt({super.key, required this.prompt, this.correct});
 
   final String prompt;
+
+  /// null = presenting (idle), true = happy, false = oops.
+  final bool? correct;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Keyed by prompt so a fresh mascot greets each new question; within a
+    // question, changing [correct] animates the reaction via didUpdateWidget.
+    final mood = correct == null
+        ? NoteMascotMood.idle
+        : correct!
+            ? NoteMascotMood.happy
+            : NoteMascotMood.oops;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        NoteMascot(key: ValueKey(prompt), mood: NoteMascotMood.idle, size: 26),
+        NoteMascot(key: ValueKey(prompt), mood: mood, size: 26),
         const SizedBox(width: 6),
         Flexible(
           child: Container(
@@ -95,14 +112,16 @@ class FeedbackLine extends StatelessWidget {
   /// null = not answered yet, true/false = last answer correct/wrong.
   final bool? correct;
 
-  /// Whether to show the reacting mascot. Screens that place their own mascot
-  /// (e.g. by the staff) set this false to avoid a duplicate.
+  /// Whether to show a reacting mascot here. Defaults to **false**: the
+  /// mascot now presents AND reacts in [RoundHeader] (pass it `correct:`), so
+  /// the feedback line shows text only. Set true only for a screen that has no
+  /// [RoundHeader] mascot but still wants a reacting one here.
   final bool showMascot;
 
   const FeedbackLine({
     super.key,
     required this.correct,
-    this.showMascot = true,
+    this.showMascot = false,
   });
 
   @override

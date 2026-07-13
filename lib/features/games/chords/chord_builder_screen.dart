@@ -178,6 +178,7 @@ class _ChordBuilderScreenState extends State<ChordBuilderScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.chordBuilderPrompt(_targetSymbol),

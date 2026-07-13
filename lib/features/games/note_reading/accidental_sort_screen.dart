@@ -146,6 +146,7 @@ class _AccidentalSortScreenState extends State<AccidentalSortScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: finished ? true : _lastDropOk,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.accidentalSortPrompt,

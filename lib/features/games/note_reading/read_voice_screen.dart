@@ -131,6 +131,7 @@ class _ReadVoiceScreenState extends State<ReadVoiceScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.readVoicePrompt(_target.voice.label(l10n)),

@@ -131,6 +131,7 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.endingDetectivePrompt,

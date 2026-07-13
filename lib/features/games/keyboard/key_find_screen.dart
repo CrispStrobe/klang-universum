@@ -123,6 +123,7 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.keyFindPrompt,

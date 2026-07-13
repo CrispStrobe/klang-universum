@@ -154,6 +154,7 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _tapped == null ? null : _tapped == _target,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.whatIsThisSymbol,

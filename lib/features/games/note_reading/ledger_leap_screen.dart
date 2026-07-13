@@ -136,6 +136,7 @@ class _LedgerLeapScreenState extends State<LedgerLeapScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _tapped == null ? null : _tapped == _lines,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.ledgerLeapPrompt,
@@ -175,7 +176,6 @@ class _LedgerLeapScreenState extends State<LedgerLeapScreen>
                     const SizedBox(height: 8),
                     FeedbackLine(
                       correct: _tapped == null ? null : _tapped == _lines,
-                      showMascot: false,
                     ),
                     const SizedBox(height: 16),
                     AnswerGrid(

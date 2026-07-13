@@ -153,6 +153,7 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.measureFillPrompt,

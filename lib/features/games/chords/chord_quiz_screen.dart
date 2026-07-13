@@ -146,6 +146,7 @@ class _ChordQuizScreenState extends State<ChordQuizScreen> with QuizRoundMixin {
                 child: Column(
                   children: [
                     RoundHeader(
+                      correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
                       prompt: l10n.chordQuizPrompt,
