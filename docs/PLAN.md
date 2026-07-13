@@ -19,12 +19,11 @@ and push to origin/main** before/after touching shared files. Format:
   align mus path-dep to `../partitura-public` (CI already builds public) + build a
   **Roman-numeral harmony game**. **Blocked**: partitura-public is mid-rebase;
   awaiting user greenlight on the path-dep repoint. Not touching mus shared files.
-- **opus (play-along/AEC)** · adding an **adjustable-tempo control** to play-along
-  (slow-down for beginners) · touching `play_along_screen.dart`,
-  `core/audio/play_along.dart`, the ARBs (additive `playAlongTempo*` keys) ·
-  **in progress**. Prior: play-along suite (4 scroll views, backing toggle,
-  metronome) + **AEC Tier 3a** (Dart canceller + `bin/listen.dart --aec`;
-  real-audio needs Tier 3b native, full plan in root `PLAN.md`).
+- **opus (play-along/AEC)** · shipped **adjustable-tempo control** (½×/¾×/1×) for
+  play-along; suite so far: 4 scroll views, backing toggle + platform AEC,
+  count-in metronome, tempo, **AEC Tier 3a** (Dart canceller + `bin/listen.dart
+  --aec`; real-audio needs Tier 3b native, full plan in root `PLAN.md`) ·
+  `play_along_screen.dart`, `core/audio/play_along.dart` · **idle / awaiting next**.
 - **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuild the
   Composition Workshop into a real score editor — now a full touch-first editor
   GUI redesign on `ScoreDocument` · touching `lib/features/workshop/**`,
