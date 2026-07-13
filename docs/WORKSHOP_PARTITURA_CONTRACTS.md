@@ -244,3 +244,52 @@ as they're public.
 > mus CI builds against public `partitura@main`, which now carries all three —
 > the app code for marquee/drag-reorder, print/page-export and pickup-aware bar
 > labels can flip on. That closes the C1–C9 set.
+
+---
+
+## C10 — live drag: move the note, not a stand-in (2026-07)
+
+The Workshop's drag-to-re-pitch / drag-to-reorder works, but the drag **preview**
+is faked app-side and we'd like partitura to own it.
+
+**What happens today.** The render objects' drag path only *reports*: on
+`RenderMultiSystemView._handleDragUpdate` (`multi_system_view.dart:638`, and the
+grand-staff twin) it calls `onElementDragUpdate(id, target)` and stops — it never
+`markNeedsPaint()`s the drag, and `paint()` always draws the full, unchanged
+layout. The only moving preview is `_paintGhost`, a translucent notehead drawn
+purely from the caller-set `ghostTarget`. So to make a note *look* like it
+follows the cursor, the app:
+
+1. wires `onElementDragStart` → remembers the id, `onElementDragUpdate` →
+   `setState(ghostTarget = target)` so the ghost trails the pointer, and
+2. **hides the original** by mapping its id to the canvas background colour via
+   `elementColors` (`_dragId → surfaceContainerLowest`).
+
+It reads convincingly, but it's a hack: (a) painting the original in the page
+colour is not a true hide — stems/beams/ledger lines and any non-`elementColors`
+ink can bleed through, and on the **handwritten (Petaluma) theme** or a coloured
+staff the "paint it the background" trick breaks; (b) the follower is a
+translucent *ghost*, not the real glyph; (c) it only nudges pitch — a horizontal
+drag has no live preview at all (we compute the target index only on drop).
+
+**Ask — two options, smallest first:**
+
+- **C10a (minimal, preferred as a first step): a `suppressElementIds` input.**
+  A `Set<String> suppressElementIds` on `MultiSystemView` /
+  `InteractiveGrandStaffView` (→ the render object) that makes `paint()` skip
+  those elements entirely (notehead + stem + beams + ledger + flags). Then the
+  app hides the dragged note *cleanly* (theme-independent) while its own ghost
+  follows — no background-colour trickery. Tiny, additive, no gesture change.
+
+- **C10b (full): the view renders the live drag itself.** While a drag is in
+  progress, paint the dragged element translated to follow the pointer — reuse
+  the existing `resolveStaffTarget` / staff mapping for the vertical (pitch)
+  position and the raw `localPosition` for horizontal — and suppress the
+  original. A real "the note follows your mouse", no app-side ghost at all.
+  Optionally a small `dragPreviewOpacity` / style knob. If you expose the drag
+  as an overlay the app can also drop its `ghostTarget` bookkeeping for moves.
+
+Either unblocks a true live drag; **C10a alone** already removes the ugly part
+(the fake hide) and lets our existing ghost stand in properly. As with C1–C9,
+mus CI builds against public `partitura@main`, so the app can't call the new
+input until it ships there — we'll wire it the moment it lands. Thanks!

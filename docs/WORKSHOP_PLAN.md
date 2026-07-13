@@ -72,8 +72,13 @@
       `kidsScoreTheme` (not the const `PartituraTheme.kids`), so the Settings
       "Handwritten notes" switch swaps the engraving font (Bravura ↔ Petaluma)
       in the Workshop too — canvas, both clefs, and the SVG/PNG exports.
-  18. ⏳ *Later:* a true move-the-note live drag (partitura render change; today
-      faked with hide-original + ghost).
+  18. ⏳ *Blocked on partitura (contract sent — [WORKSHOP_PARTITURA_CONTRACTS.md]
+      **C10**):* a true move-the-note live drag. Today it's faked (hide-original
+      via `elementColors`=bg + a pointer-following ghost), which breaks on the
+      handwritten theme and never previews a horizontal move. Asked for **C10a**
+      (`suppressElementIds` → clean theme-independent hide) and/or **C10b** (the
+      view paints the dragged glyph following the pointer). App wires it when it
+      ships on public `partitura@main`.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 

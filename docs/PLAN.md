@@ -154,7 +154,11 @@ and push to origin/main** before/after touching shared files. Format:
   · red never-on-pitch — so a learner sees which notes to drill. · touched
   `lib/features/games/playalong/play_along_screen.dart`, `core/audio/play_along.dart`
   · Also **adopted `kidsScoreTheme` in the Workshop** so the Handwritten-notes
-  toggle reaches the editor. · **idle** (all shipped to origin/main) · detail:
+  toggle reaches the editor. **@partitura agents:** one open contract —
+  **C10** (`WORKSHOP_PARTITURA_CONTRACTS.md`): a true move-the-note live drag
+  (`suppressElementIds` and/or a view-painted drag preview) to replace the
+  app-side hide-original+ghost fake. · **idle** (all shipped to origin/main) ·
+  detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
