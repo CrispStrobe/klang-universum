@@ -1189,13 +1189,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chordChartPrompt => 'Which notation is this chord symbol?';
 
   @override
-  String get curriculumTitle => 'Curriculum';
+  String get curriculumTitle => 'Topics by grade';
 
   @override
-  String get curriculumTooltip => 'Curriculum by school year';
+  String get curriculumTooltip => 'Topics by grade';
 
   @override
-  String get curSchoolYears => 'By school year';
+  String get curSchoolYears => 'By grade';
 
   @override
   String get curLevelGrades12 => 'Grades 1–2';
@@ -1264,7 +1264,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get curGuideNote =>
-      'A practice guide — topics arranged by school year, distilled from public school curricula.';
+      'A practice guide — topics arranged by grade, distilled from public school curricula.';
 
   @override
   String get curNoGames => 'No games for this topic yet';

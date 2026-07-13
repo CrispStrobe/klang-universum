@@ -26,6 +26,7 @@ import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
@@ -120,7 +121,9 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
 
   PitchReading _latest = PitchReading.silent();
   final CountInClicker _clicker = CountInClicker();
-  PlayAlongView _view = PlayAlongView.highway;
+  // Default to real staff notation (clefs) — the clearest read; the labelled
+  // highway / falling views are a tap away for a game-style scroll.
+  PlayAlongView _view = PlayAlongView.notation;
   double _tempo = 1.0; // slow-down multiplier (1.0 = the chart's own tempo)
   PlayAlongDifficulty _difficulty = PlayAlongDifficulty.medium;
   bool _backing =
@@ -474,6 +477,12 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     bool onPitch,
     ColorScheme scheme,
   ) {
+    // Name each pitch (respecting the note-naming setting) so the moving blocks
+    // read as real notes, e.g. "C4" / "F♯5". Resolve the naming here in build —
+    // a pure labeler, so the painter never touches an inherited widget.
+    final naming = context.read<SettingsService>().noteNaming;
+    String noteLabel(int midi) => spelledMidiNameWith(l, naming, midi);
+
     switch (_view) {
       case PlayAlongView.highway:
         return CustomPaint(
@@ -482,6 +491,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
             liveMidi: liveMidi,
             onPitch: onPitch,
             scheme: scheme,
+            label: noteLabel,
           ),
           child: const SizedBox.expand(),
         );
@@ -492,6 +502,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
             liveMidi: liveMidi,
             onPitch: onPitch,
             scheme: scheme,
+            label: noteLabel,
           ),
           child: const SizedBox.expand(),
         );
@@ -508,18 +519,47 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   }
 }
 
+/// Draws a note name in white over a moving block. [anchor] is the left edge +
+/// vertical centre (or the horizontal centre when [centerX]); [maxH] scales the
+/// font to the block height.
+void _paintNoteLabel(
+  Canvas canvas,
+  String text,
+  Offset anchor,
+  double maxH, {
+  bool centerX = false,
+}) {
+  final tp = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: maxH.clamp(9.0, 13.0),
+        fontWeight: FontWeight.w700,
+        height: 1.0,
+        shadows: const [Shadow(color: Colors.black45, blurRadius: 1.5)],
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final dx = centerX ? anchor.dx - tp.width / 2 : anchor.dx;
+  tp.paint(canvas, Offset(dx, anchor.dy - tp.height / 2));
+}
+
 class _HighwayPainter extends CustomPainter {
   _HighwayPainter({
     required this.engine,
     required this.liveMidi,
     required this.onPitch,
     required this.scheme,
+    required this.label,
   });
 
   final PlayAlongEngine engine;
   final double? liveMidi;
   final bool onPitch;
   final ColorScheme scheme;
+  final String Function(int midi) label;
 
   static const double _beatsVisible = 8; // how many beats span the width
   static const double _nowFrac = 0.28; // where "now" sits, left-ish
@@ -576,6 +616,14 @@ class _HighwayPainter extends CustomPainter {
         const Radius.circular(5),
       );
       canvas.drawRRect(rect, Paint()..color = color);
+      // The note's name, so a block reads as a real pitch. Kept at the block's
+      // left edge (clamped on-screen) so it stays legible as the note scrolls.
+      _paintNoteLabel(
+        canvas,
+        label(n.midi),
+        Offset(left.clamp(2.0, size.width) + 4, y(n.midi)),
+        barH,
+      );
     }
 
     // "Now" line.
@@ -614,12 +662,14 @@ class _FallingPainter extends CustomPainter {
     required this.liveMidi,
     required this.onPitch,
     required this.scheme,
+    required this.label,
   });
 
   final PlayAlongEngine engine;
   final double? liveMidi;
   final bool onPitch;
   final ColorScheme scheme;
+  final String Function(int midi) label;
 
   static const double _beatsVisible = 6;
   static const double _hitFrac = 0.82;
@@ -673,6 +723,14 @@ class _FallingPainter extends CustomPainter {
         const Radius.circular(5),
       );
       canvas.drawRRect(rect, Paint()..color = color);
+      // Centre the note's name on the falling block.
+      _paintNoteLabel(
+        canvas,
+        label(n.midi),
+        Offset(x(n.midi), (top + bottom) / 2),
+        noteW * 0.5,
+        centerX: true,
+      );
     }
 
     canvas.drawLine(

@@ -1196,13 +1196,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chordChartPrompt => 'Welche Noten gehören zu diesem Akkordsymbol?';
 
   @override
-  String get curriculumTitle => 'Lehrplan';
+  String get curriculumTitle => 'Themen nach Klasse';
 
   @override
-  String get curriculumTooltip => 'Lehrplan nach Schuljahr';
+  String get curriculumTooltip => 'Themen nach Klasse';
 
   @override
-  String get curSchoolYears => 'Nach Schuljahr';
+  String get curSchoolYears => 'Nach Klasse';
 
   @override
   String get curLevelGrades12 => 'Klasse 1–2';
@@ -1271,7 +1271,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get curGuideNote =>
-      'Ein Übungsleitfaden — Themen nach Schuljahr, zusammengestellt aus öffentlichen Lehrplänen.';
+      'Ein Übungsleitfaden — Themen nach Klasse, zusammengestellt aus öffentlichen Lehrplänen.';
 
   @override
   String get curNoGames => 'Noch keine Spiele für dieses Thema';

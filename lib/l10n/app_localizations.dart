@@ -2219,19 +2219,19 @@ abstract class AppLocalizations {
   /// No description provided for @curriculumTitle.
   ///
   /// In en, this message translates to:
-  /// **'Curriculum'**
+  /// **'Topics by grade'**
   String get curriculumTitle;
 
   /// No description provided for @curriculumTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Curriculum by school year'**
+  /// **'Topics by grade'**
   String get curriculumTooltip;
 
   /// No description provided for @curSchoolYears.
   ///
   /// In en, this message translates to:
-  /// **'By school year'**
+  /// **'By grade'**
   String get curSchoolYears;
 
   /// No description provided for @curLevelGrades12.
@@ -2363,7 +2363,7 @@ abstract class AppLocalizations {
   /// No description provided for @curGuideNote.
   ///
   /// In en, this message translates to:
-  /// **'A practice guide — topics arranged by school year, distilled from public school curricula.'**
+  /// **'A practice guide — topics arranged by grade, distilled from public school curricula.'**
   String get curGuideNote;
 
   /// No description provided for @curNoGames.
