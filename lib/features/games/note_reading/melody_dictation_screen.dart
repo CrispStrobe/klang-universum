@@ -18,6 +18,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -198,7 +199,7 @@ class _MelodyDictationScreenState extends State<MelodyDictationScreen>
 
     // The given anchor (n0) is tinted so the child knows it's the starting
     // note; on evaluation, placed notes turn green if right, red if wrong.
-    final theme = PartituraTheme.kids.copyWith(
+    final theme = kidsScoreTheme.copyWith(
       elementColors: {
         if (_lastAnswer == null)
           'n0': Theme.of(context).colorScheme.primary

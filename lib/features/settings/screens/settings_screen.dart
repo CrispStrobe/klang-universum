@@ -131,6 +131,15 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Card(
+            child: SwitchListTile(
+              title: Text(l10n.handwrittenNotesLabel),
+              subtitle: Text(l10n.handwrittenNotesSubtitle),
+              value: settings.handwrittenNotes,
+              onChanged: settings.setHandwrittenNotes,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
             child: Column(
               children: [
                 SwitchListTile(

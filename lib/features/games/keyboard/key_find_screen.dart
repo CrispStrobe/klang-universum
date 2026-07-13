@@ -15,6 +15,7 @@ import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
@@ -134,7 +135,7 @@ class _KeyFindScreenState extends State<KeyFindScreen> with QuizRoundMixin {
                             child: StaffView(
                               score: Score.simple(notes: '$_targetToken:w'),
                               staffSpace: 12,
-                              theme: PartituraTheme.kids,
+                              theme: kidsScoreTheme,
                             ),
                           ),
                         ),

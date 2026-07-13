@@ -2918,6 +2918,18 @@ abstract class AppLocalizations {
   /// **'Tint notes by their letter — turn it off once the staff is familiar'**
   String get colorScaffoldSubtitle;
 
+  /// No description provided for @handwrittenNotesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Handwritten notes'**
+  String get handwrittenNotesLabel;
+
+  /// No description provided for @handwrittenNotesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw notation in a hand-written jazz style (Petaluma)'**
+  String get handwrittenNotesSubtitle;
+
   /// No description provided for @debugModeEnabled.
   ///
   /// In en, this message translates to:

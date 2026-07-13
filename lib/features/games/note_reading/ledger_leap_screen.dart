@@ -18,6 +18,7 @@ import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
@@ -157,7 +158,7 @@ class _LedgerLeapScreenState extends State<LedgerLeapScreen>
                                     ],
                                   ),
                                   staffSpace: 14,
-                                  theme: PartituraTheme.kids,
+                                  theme: kidsScoreTheme,
                                 ),
                               ),
                             ),

@@ -16,6 +16,7 @@ import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -135,7 +136,7 @@ class _TriadBuilderScreenState extends State<TriadBuilderScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     // The whole chord element flashes red on a wrong tap, green when done.
-    final theme = PartituraTheme.kids.copyWith(
+    final theme = kidsScoreTheme.copyWith(
       elementColors: {
         if (_wrongPosition != null) 'triad': Colors.redAccent,
         if (_complete) 'triad': Colors.green,

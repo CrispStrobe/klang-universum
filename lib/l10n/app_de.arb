@@ -526,6 +526,8 @@
   "showTimerLabel": "Zeit anzeigen",
   "colorScaffoldLabel": "Farbhilfe für Anfänger",
   "colorScaffoldSubtitle": "Noten nach ihrem Buchstaben einfärben — später einfach ausschalten",
+  "handwrittenNotesLabel": "Handgeschriebene Noten",
+  "handwrittenNotesSubtitle": "Notenschrift im handgeschriebenen Jazz-Stil (Petaluma)",
   "debugModeEnabled": "Debug-Einstellungen freigeschaltet!",
   "debugSectionTitle": "Debug",
   "debugUnlockLabel": "Alle Spiele freischalten",

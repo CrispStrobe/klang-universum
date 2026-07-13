@@ -12,6 +12,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/cello_fingerboard.dart';
 import 'package:klang_universum/shared/widgets/guitar_fretboard.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
@@ -23,7 +24,6 @@ import 'package:partitura/partitura.dart'
         Measure,
         NoteDuration,
         NoteElement,
-        PartituraTheme,
         Pitch,
         RestElement,
         Score,
@@ -173,13 +173,13 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
                       child: _input == NoteInput.staff
                           ? InteractiveStaff(
                               score: _score,
-                              theme: PartituraTheme.kids,
+                              theme: kidsScoreTheme,
                               staffSpace: 14,
                               onStaffTap: _onStaffTap,
                             )
                           : StaffView(
                               score: _score,
-                              theme: PartituraTheme.kids,
+                              theme: kidsScoreTheme,
                               staffSpace: 14,
                             ),
                     ),

@@ -4,15 +4,30 @@
 // license page auto-discovers each *pub package*'s LICENSE file but not fonts
 // shipped as assets, so those must be registered via LicenseRegistry.addLicense.
 //
-// The notation font (Bravura, OFL) is bundled by the partitura package, which
-// now owns its registration (partitura's MusicFonts.load calls it automatically
-// on first render). We call it here too so the license page is complete even if
-// opened from Settings before any notation has been rendered. Add any
-// app-specific bundled-font licenses here if this app ever bundles its own.
+// - Bravura (OFL) is bundled by the partitura package, which owns its
+//   registration (partitura's MusicFonts.load calls it on first render). We call
+//   it here too so the license page is complete even if opened from Settings
+//   before any notation has rendered.
+// - Petaluma (OFL) is bundled by THIS app (assets/smufl/, for the "Handwritten
+//   notes" theme), so the app registers it here.
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:partitura/partitura.dart' show registerBundledFontLicenses;
 
 /// Register the licenses for fonts this app (transitively) bundles. Idempotent.
 Future<void> ensureCustomLicensesRegistered() async {
   registerBundledFontLicenses(); // Bravura (SIL OFL 1.1), owned by partitura.
+  _registerPetalumaOfl();
+}
+
+bool _petalumaRegistered = false;
+
+void _registerPetalumaOfl() {
+  if (_petalumaRegistered) return;
+  _petalumaRegistered = true;
+  LicenseRegistry.addLicense(() async* {
+    final text = await rootBundle.loadString('assets/smufl/PETALUMA-OFL.txt');
+    yield LicenseEntryWithLineBreaks(const ['Petaluma'], text);
+  });
 }

@@ -24,6 +24,7 @@ import 'package:klang_universum/features/games/cello/cello_first_position.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
@@ -282,7 +283,7 @@ class _CelloPlayItScreenState extends State<CelloPlayItScreen>
                                         '${_target.pitch.octave}:w',
                                   ),
                                   staffSpace: 14,
-                                  theme: PartituraTheme.kids,
+                                  theme: kidsScoreTheme,
                                 ),
                                 const SizedBox(height: 12),
                                 Chip(

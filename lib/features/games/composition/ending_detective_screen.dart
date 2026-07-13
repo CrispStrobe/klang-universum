@@ -15,6 +15,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -142,7 +143,7 @@ class _EndingDetectiveScreenState extends State<EndingDetectiveScreen>
                             child: StaffView(
                               score: _score,
                               staffSpace: 10,
-                              theme: PartituraTheme.kids,
+                              theme: kidsScoreTheme,
                             ),
                           ),
                         ),

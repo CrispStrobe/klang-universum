@@ -32,6 +32,7 @@ import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart'
     show
         Clef,
@@ -40,7 +41,6 @@ import 'package:partitura/partitura.dart'
         MultiSystemView,
         NoteDuration,
         NoteElement,
-        PartituraTheme,
         Score;
 import 'package:provider/provider.dart';
 
@@ -798,7 +798,7 @@ class _NotationView extends StatelessWidget {
           // highlightedId still wins). This avoids depending on the newer
           // MultiSystemView(elementColors:) constructor param, which isn't on
           // partitura@main yet — keeps CI (which builds against it) green.
-          theme: PartituraTheme.kids.copyWith(elementColors: colors),
+          theme: kidsScoreTheme.copyWith(elementColors: colors),
           highlightedIds: {if (ai >= 0) 'n$ai'},
         ),
       ),

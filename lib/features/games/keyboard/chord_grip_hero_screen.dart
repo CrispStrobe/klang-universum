@@ -20,6 +20,7 @@ import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
@@ -357,7 +358,7 @@ class _ChordCard extends StatelessWidget {
         child: StaffView(
           score: Score.simple(notes: notes),
           staffSpace: 7,
-          theme: PartituraTheme.kids,
+          theme: kidsScoreTheme,
         ),
       ),
     );

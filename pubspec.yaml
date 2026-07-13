@@ -81,3 +81,11 @@ flutter:
   assets:
     - assets/images/
     - assets/sounds/
+    # Petaluma (jazz/handwritten SMuFL font, SIL OFL 1.1) — its glyph metadata
+    # + license, loaded at runtime for the "Handwritten notes" theme.
+    - assets/smufl/
+
+  fonts:
+    - family: Petaluma
+      fonts:
+        - asset: assets/smufl/Petaluma.otf

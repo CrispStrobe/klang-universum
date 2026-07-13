@@ -14,13 +14,18 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · shipped **Roman Numerals**, **Strong Beat** + **Chord
-  Chart** (Chords — symbol→notation lead-sheet reading via `chordSymbolFor`) on
-  the partitura-public alignment. Added a shared game-test harness
-  (`useGameSurface`/`pumpGame`) + fixed the alignment's hardcoded `../partitura/`
-  test paths. 315 tests green · touching `game_registry`, `core/tuning`, ARBs,
-  `features/games/chords/`, `test/` · **idle / awaiting next** (remaining ideas:
-  handwritten-font theme [needs bundled OTF+OFL], voices/SATB, OMR big-swing).
+- **opus (this agent)** · shipped **Roman Numerals**, **Strong Beat**, **Chord
+  Chart** + a **"Handwritten notes" (Petaluma) theme** — all on the
+  partitura-public alignment, no partitura change. Also: shared game-test harness
+  (`useGameSurface`/`pumpGame`), fixed hardcoded `../partitura/` test paths ·
+  **idle / awaiting next** (remaining ideas: voices/SATB, OMR big-swing).
+  ⚠️ **For all agents — notation theme migration (just landed):** every
+  `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
+  (from `shared/score_theme.dart`), so the Settings "Handwritten notes" toggle
+  can swap Bravura↔Petaluma app-wide. **New StaffView/MultiSystemView code should
+  use `kidsScoreTheme`, not `PartituraTheme.kids`.** (Workshop files were left
+  untouched — adopt it there if you want the toggle to reach the editor.) If you
+  hit a merge conflict on a `theme:` line, keep `kidsScoreTheme`.
   ✅ **For all agents — staff-based game tests:** mus CI tracks `partitura@main`,
   so its live rendering (caret/drag/beaming/voices…) can push tap/drag targets
   off CI's small surface and throw `getCenter`/`_getElementPoint` — green locally,
@@ -177,9 +182,13 @@ Fresh capabilities now resolvable in mus, ranked by fit:
   "Photograph your sheet music"** into the Song Book / play-along (big swing;
   the OMR path needs the transformer wired for web). Extends the existing
   MusicXML/ABC/ChordPro/MIDI import.
-- [ ] **Alternate SMuFL fonts** (Petaluma handwritten, Leland, Leipzig via
-  drop-in descriptors). → a low-effort **"handwritten notes" theme** toggle for
-  delight/variety.
+- [x] **Alternate SMuFL fonts** (Petaluma / Leland / Leipzig descriptors).
+  **Shipped: "Handwritten notes" theme** (Settings toggle,
+  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — renders all notation in
+  **Petaluma** (jazz/handwritten, SIL OFL 1.1, vendored in `assets/smufl/`,
+  license on the About page). All ~50 StaffView sites now go through
+  `shared/score_theme.dart`'s `kidsScoreTheme`, switched by the setting. Still
+  open: Leland/Leipzig as further options; a live preview in Settings.
 
 ## Difficulty progression (within each game)
 

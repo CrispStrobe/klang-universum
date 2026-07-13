@@ -1600,6 +1600,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tint notes by their letter — turn it off once the staff is familiar';
 
   @override
+  String get handwrittenNotesLabel => 'Handwritten notes';
+
+  @override
+  String get handwrittenNotesSubtitle =>
+      'Draw notation in a hand-written jazz style (Petaluma)';
+
+  @override
   String get debugModeEnabled => 'Debug settings unlocked!';
 
   @override

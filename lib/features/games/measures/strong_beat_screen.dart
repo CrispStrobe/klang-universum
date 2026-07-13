@@ -20,6 +20,7 @@ import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -222,7 +223,7 @@ class _StrongBeatScreenState extends State<StrongBeatScreen>
                                   score: _measureScore,
                                   staffSpace: 15,
                                   showBeatNumbers: true,
-                                  theme: PartituraTheme.kids.copyWith(
+                                  theme: kidsScoreTheme.copyWith(
                                     elementColors: {
                                       'b${_beat - 1}': pitchClassColor(Step.g),
                                     },

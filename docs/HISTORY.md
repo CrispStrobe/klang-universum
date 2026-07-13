@@ -198,6 +198,14 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 Games built on partitura capabilities the app didn't use before.
 
+- **"Handwritten notes" theme** (Settings) — a toggle that renders all notation
+  in **Petaluma**, Steinberg's jazz/handwritten SMuFL face (SIL OFL 1.1),
+  instead of Bravura. The font (+ metadata + OFL) is vendored in
+  `assets/smufl/`; its licence shows on the About page. Every StaffView /
+  MultiSystemView site now routes through `shared/score_theme.dart`'s
+  `kidsScoreTheme`, which applies the selected `MusicFont` (Bravura by default);
+  the toggle updates a global so screens entered afterwards pick it up. A
+  cosmetic delight, and the plumbing for further faces (Leland/Leipzig) later.
 - **Chord Chart** (Chords) — lead-sheet literacy: a chord *symbol* is shown
   (G, Dm, D7…) and the child taps the matching *notation* among four little
   staves. The inverse of Name That Chord (notation→symbol); symbols come from

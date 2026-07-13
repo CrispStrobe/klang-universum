@@ -20,6 +20,7 @@ import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -247,7 +248,7 @@ class _MemoryTile extends StatelessWidget {
                   notes: '${card.pitch.step.name}${card.pitch.octave}:w',
                 ),
                 staffSpace: 7,
-                theme: PartituraTheme.kids,
+                theme: kidsScoreTheme,
               )
             : Text(
                 noteNameFor(context, card.pitch.step),

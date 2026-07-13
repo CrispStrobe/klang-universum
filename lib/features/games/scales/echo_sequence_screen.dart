@@ -21,6 +21,7 @@ import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -320,7 +321,7 @@ class _Pad extends StatelessWidget {
                     notes: '${pitch.step.name}${pitch.octave}:w',
                   ),
                   staffSpace: 9,
-                  theme: PartituraTheme.kids,
+                  theme: kidsScoreTheme,
                 ),
               )
             : const SizedBox.shrink(),

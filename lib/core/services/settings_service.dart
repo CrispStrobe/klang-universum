@@ -6,6 +6,8 @@
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/synth.dart' show Instrument;
 import 'package:klang_universum/core/note_naming.dart';
+import 'package:klang_universum/shared/score_theme.dart';
+import 'package:partitura/partitura.dart' show MusicFont;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService with ChangeNotifier {
@@ -14,11 +16,13 @@ class SettingsService with ChangeNotifier {
   static const _showTimerKey = 'show_timer';
   static const _colorScaffoldKey = 'color_scaffold';
   static const _instrumentKey = 'instrument';
+  static const _handwrittenKey = 'handwritten_notes';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
   bool _showTimer = false;
   bool _colorScaffold = false;
+  bool _handwrittenNotes = false;
   Instrument _instrument = Instrument.piano;
 
   /// The voice used for pitched playback across the app.
@@ -40,6 +44,13 @@ class SettingsService with ChangeNotifier {
   /// the staff.
   bool get colorScaffold => _colorScaffold;
 
+  /// Render notation in the handwritten Petaluma face instead of Bravura. A
+  /// cosmetic "jazz chart" look; applies to screens entered after toggling.
+  bool get handwrittenNotes => _handwrittenNotes;
+
+  void _applyScoreFont() =>
+      appScoreFont = _handwrittenNotes ? kPetalumaFont : MusicFont.bravura;
+
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString(_localeKey);
@@ -48,6 +59,8 @@ class SettingsService with ChangeNotifier {
     _noteNaming = NoteNaming.values.asNameMap()[naming] ?? NoteNaming.auto;
     _showTimer = prefs.getBool(_showTimerKey) ?? false;
     _colorScaffold = prefs.getBool(_colorScaffoldKey) ?? false;
+    _handwrittenNotes = prefs.getBool(_handwrittenKey) ?? false;
+    _applyScoreFont();
     _instrument =
         Instrument.values.asNameMap()[prefs.getString(_instrumentKey)] ??
             Instrument.piano;
@@ -80,6 +93,14 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_colorScaffoldKey, value);
+  }
+
+  Future<void> setHandwrittenNotes(bool value) async {
+    _handwrittenNotes = value;
+    _applyScoreFont();
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_handwrittenKey, value);
   }
 
   Future<void> setInstrument(Instrument instrument) async {

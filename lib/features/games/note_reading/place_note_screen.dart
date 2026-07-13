@@ -18,6 +18,7 @@ import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
@@ -113,7 +114,7 @@ class _PlaceNoteScreenState extends State<PlaceNoteScreen> with QuizRoundMixin {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScaffold = context.watch<SettingsService>().colorScaffold;
-    final theme = PartituraTheme.kids.copyWith(
+    final theme = kidsScoreTheme.copyWith(
       elementColors: {
         if (_lastAnswer != null)
           'answer': _lastAnswer! ? Colors.green : Colors.redAccent,

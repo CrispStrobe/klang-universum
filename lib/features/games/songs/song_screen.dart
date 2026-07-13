@@ -16,8 +16,9 @@ import 'package:klang_universum/features/games/songs/song_book.dart';
 import 'package:klang_universum/features/games/songs/songbook_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:partitura/partitura.dart'
-    show MultiSystemView, NoteElement, PartituraTheme, Score;
+    show MultiSystemView, NoteElement, Score;
 import 'package:provider/provider.dart';
 
 class SongScreen extends StatefulWidget {
@@ -118,7 +119,7 @@ class _SongScreenState extends State<SongScreen> {
                     child: MultiSystemView(
                       score: widget.score,
                       staffSpace: 11,
-                      theme: PartituraTheme.kids,
+                      theme: kidsScoreTheme,
                       highlightedIds: {
                         if (_highlightedId != null) _highlightedId!,
                       },

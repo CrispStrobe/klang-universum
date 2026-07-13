@@ -20,6 +20,7 @@ import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/note_reading/reading_hint.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
@@ -178,10 +179,10 @@ class _NoteReadingQuizScreenState extends State<NoteReadingQuizScreen>
     final l10n = AppLocalizations.of(context)!;
     final colorScaffold = context.watch<SettingsService>().colorScaffold;
     final staffTheme = colorScaffold
-        ? PartituraTheme.kids.copyWith(
+        ? kidsScoreTheme.copyWith(
             elementColors: {'target': pitchClassColor(_target.step)},
           )
-        : PartituraTheme.kids;
+        : kidsScoreTheme;
     final title = _isReview
         ? l10n.reviewTitle
         : switch (widget.clef) {

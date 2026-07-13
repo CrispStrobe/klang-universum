@@ -23,6 +23,7 @@ import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
@@ -308,12 +309,12 @@ class _NoteSnakeScreenState extends State<NoteSnakeScreen>
                               ),
                               staffSpace: 6,
                               theme: colorScaffold
-                                  ? PartituraTheme.kids.copyWith(
+                                  ? kidsScoreTheme.copyWith(
                                       elementColors: {
                                         'target': pitchClassColor(_target.step),
                                       },
                                     )
-                                  : PartituraTheme.kids,
+                                  : kidsScoreTheme,
                             ),
                           ),
                         ],

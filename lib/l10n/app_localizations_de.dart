@@ -1606,6 +1606,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Noten nach ihrem Buchstaben einfärben — später einfach ausschalten';
 
   @override
+  String get handwrittenNotesLabel => 'Handgeschriebene Noten';
+
+  @override
+  String get handwrittenNotesSubtitle =>
+      'Notenschrift im handgeschriebenen Jazz-Stil (Petaluma)';
+
+  @override
   String get debugModeEnabled => 'Debug-Einstellungen freigeschaltet!';
 
   @override

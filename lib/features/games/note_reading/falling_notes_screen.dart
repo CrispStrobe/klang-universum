@@ -30,6 +30,7 @@ import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
@@ -479,7 +480,7 @@ class _FallingNotesScreenState extends State<FallingNotesScreen>
           notes: '${pitch.step.name}${pitch.octave}:w',
         ),
         staffSpace: 8,
-        theme: PartituraTheme.kids,
+        theme: kidsScoreTheme,
       );
 
   // --- Geometry --------------------------------------------------------------
