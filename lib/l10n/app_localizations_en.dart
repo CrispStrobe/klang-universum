@@ -2240,6 +2240,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAlongNext => 'next';
 
   @override
+  String get playAlongLoopHint => 'Tap two notes to loop that section';
+
+  @override
+  String get playAlongLoopEnd => 'Now tap the last note of the loop';
+
+  @override
+  String get playAlongLooping => 'Looping this section — tap a note to clear';
+
+  @override
   String get playAlongBacking => 'Backing (use headphones)';
 
   @override

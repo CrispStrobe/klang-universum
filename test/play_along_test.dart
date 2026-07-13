@@ -147,4 +147,54 @@ void main() {
     );
     expect(engine.inCountIn, isFalse);
   });
+
+  group('practice loop', () {
+    const loopChart = PlayAlongChart(
+      name: 'loop',
+      bpm: 60,
+      notes: [
+        TargetNote(midi: 60, startBeat: 0, beats: 1),
+        TargetNote(midi: 62, startBeat: 1, beats: 1),
+        TargetNote(midi: 64, startBeat: 2, beats: 1),
+        TargetNote(midi: 65, startBeat: 3, beats: 1),
+      ],
+    );
+
+    test('keeps musical time inside the loop and never finishes', () {
+      final e = PlayAlongEngine(loopChart, leadInBeats: 0);
+      e.setLoop(1, 3); // loop notes 1 and 2
+      // Far past the loop end — time must have wrapped back into [1, 3).
+      e.update(
+          elapsedMs: 10 * loopChart.beatMs, reading: PitchReading.silent());
+      expect(e.currentBeat, greaterThanOrEqualTo(1.0));
+      expect(e.currentBeat, lessThan(3.0));
+      expect(e.finished, isFalse);
+      // The note after the loop is never reached — stays pending.
+      expect(e.notes[3].result, NoteResult.pending);
+    });
+
+    test('re-arms a hit note on the next pass', () {
+      final e = PlayAlongEngine(loopChart, leadInBeats: 0);
+      e.setLoop(1, 3);
+      // Sample note 1 on-pitch across its beat so it registers as a hit...
+      for (var t = 1.0; t < 2.0; t += 0.1) {
+        e.update(elapsedMs: t * loopChart.beatMs, reading: _reading(62));
+      }
+      // ...cross the loop end so note 1 finalizes, then wraps + re-arms.
+      e.update(
+          elapsedMs: 3.1 * loopChart.beatMs, reading: PitchReading.silent());
+      expect(e.notes[1].result, NoteResult.pending, reason: 're-armed');
+    });
+
+    test('clearing the loop lets playback finish', () {
+      final e = PlayAlongEngine(loopChart, leadInBeats: 0);
+      e.setLoop(1, 3);
+      e.update(
+          elapsedMs: 10 * loopChart.beatMs, reading: PitchReading.silent());
+      e.setLoop(null, null);
+      e.update(
+          elapsedMs: 20 * loopChart.beatMs, reading: PitchReading.silent());
+      expect(e.finished, isTrue);
+    });
+  });
 }

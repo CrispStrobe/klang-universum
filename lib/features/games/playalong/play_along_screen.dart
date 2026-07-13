@@ -849,6 +849,32 @@ class _NotationViewState extends State<_NotationView> {
   final ScoreEditorController _editor = ScoreEditorController();
 
   int _lastActive = -1;
+  int? _loopAnchor; // first tapped note index, awaiting the loop's end note
+
+  /// Tap a note to set a practice loop: first tap = start, second = end (loops
+  /// that span on repeat); tapping while a loop is active clears it.
+  void _onTapNote(String id) {
+    final i = int.tryParse(id.startsWith('n') ? id.substring(1) : id);
+    if (i == null || i < 0 || i >= widget.engine.notes.length) return;
+    setState(() {
+      if (widget.engine.isLooping) {
+        widget.engine.setLoop(null, null);
+        _editor.clearLoop();
+        _loopAnchor = null;
+      } else if (_loopAnchor == null) {
+        _loopAnchor = i;
+      } else {
+        final lo = _loopAnchor! < i ? _loopAnchor! : i;
+        final hi = _loopAnchor! < i ? i : _loopAnchor!;
+        widget.engine.setLoop(
+          widget.engine.notes[lo].note.startBeat,
+          widget.engine.notes[hi].note.endBeat,
+        );
+        _editor.setLoop('n$lo', 'n$hi');
+        _loopAnchor = null;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -906,15 +932,72 @@ class _NotationViewState extends State<_NotationView> {
       _lastActive = ai;
       WidgetsBinding.instance.addPostFrameCallback((_) => _follow());
     }
-    return Center(
-      child: SingleChildScrollView(
-        controller: _scroll,
-        child: MultiSystemView(
-          score: widget.score,
-          controller: _regions,
-          theme: kidsScoreTheme.copyWith(elementColors: colors),
-          highlightedIds: {if (ai >= 0) 'n$ai'},
+    final l = AppLocalizations.of(context)!;
+    final hint = widget.engine.isLooping
+        ? l.playAlongLooping
+        : (_loopAnchor != null ? l.playAlongLoopEnd : l.playAlongLoopHint);
+    return Column(
+      children: [
+        _LoopHint(text: hint, active: widget.engine.isLooping),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              controller: _scroll,
+              child: MultiSystemView(
+                score: widget.score,
+                controller: _regions,
+                theme: kidsScoreTheme.copyWith(elementColors: colors),
+                highlightedIds: {if (ai >= 0) 'n$ai'},
+                loopRange: _editor.loopRange,
+                onElementTap: _onTapNote,
+              ),
+            ),
+          ),
         ),
+      ],
+    );
+  }
+}
+
+/// A slim banner above the staff explaining / confirming the practice-loop tap.
+class _LoopHint extends StatelessWidget {
+  const _LoopHint({required this.text, required this.active});
+
+  final String text;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: active
+          ? scheme.primaryContainer
+          : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            active ? Icons.repeat_on : Icons.repeat,
+            size: 16,
+            color: active ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: active
+                    ? scheme.onPrimaryContainer
+                    : scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

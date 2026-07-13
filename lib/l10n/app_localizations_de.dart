@@ -2251,6 +2251,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playAlongNext => 'als Nächstes';
 
   @override
+  String get playAlongLoopHint =>
+      'Tippe zwei Noten an, um den Abschnitt zu wiederholen';
+
+  @override
+  String get playAlongLoopEnd => 'Tippe jetzt die letzte Note der Schleife an';
+
+  @override
+  String get playAlongLooping =>
+      'Abschnitt läuft in Schleife — tippe eine Note zum Beenden';
+
+  @override
   String get playAlongBacking => 'Begleitung (Kopfhörer nutzen)';
 
   @override

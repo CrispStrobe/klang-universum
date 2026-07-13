@@ -4064,6 +4064,24 @@ abstract class AppLocalizations {
   /// **'next'**
   String get playAlongNext;
 
+  /// No description provided for @playAlongLoopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap two notes to loop that section'**
+  String get playAlongLoopHint;
+
+  /// No description provided for @playAlongLoopEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Now tap the last note of the loop'**
+  String get playAlongLoopEnd;
+
+  /// No description provided for @playAlongLooping.
+  ///
+  /// In en, this message translates to:
+  /// **'Looping this section — tap a note to clear'**
+  String get playAlongLooping;
+
   /// No description provided for @playAlongBacking.
   ///
   /// In en, this message translates to:

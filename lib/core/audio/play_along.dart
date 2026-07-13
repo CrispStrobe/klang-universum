@@ -104,8 +104,34 @@ class PlayAlongEngine {
 
   double _elapsedMs = 0;
 
+  // Practice loop: while set, musical time wraps back to [_loopStartBeat] each
+  // time it reaches [_loopEndBeat]. [_loopRewoundMs] is the total time subtracted
+  // so far, keeping the external (ever-growing) clock and musical time in sync.
+  double _loopRewoundMs = 0;
+  double? _loopStartBeat;
+  double? _loopEndBeat;
+
   /// Musical position now, in beats. Negative during the count-in.
-  double get currentBeat => _elapsedMs / chart.beatMs - leadInBeats;
+  double get currentBeat =>
+      (_elapsedMs - _loopRewoundMs) / chart.beatMs - leadInBeats;
+
+  /// Whether a practice loop is active.
+  bool get isLooping => _loopStartBeat != null && _loopEndBeat != null;
+  double? get loopStartBeat => _loopStartBeat;
+  double? get loopEndBeat => _loopEndBeat;
+
+  /// Set (or clear, with nulls / an empty span) a practice loop over the
+  /// half-open beat range [startBeat, endBeat). While active, playback wraps
+  /// back to [startBeat] on reaching [endBeat], re-arming the notes inside so
+  /// they can be practiced again.
+  void setLoop(double? startBeat, double? endBeat) {
+    if (startBeat == null || endBeat == null || endBeat <= startBeat) {
+      _loopStartBeat = _loopEndBeat = null;
+      return;
+    }
+    _loopStartBeat = startBeat;
+    _loopEndBeat = endBeat;
+  }
 
   bool get inCountIn => currentBeat < 0;
   bool get finished => currentBeat >= chart.totalBeats;
@@ -142,6 +168,18 @@ class PlayAlongEngine {
   /// Advance to [elapsedMs] and sample [reading] against the active note.
   void update({required double elapsedMs, required PitchReading reading}) {
     _elapsedMs = elapsedMs;
+
+    // Practice loop: rewind musical time to the loop start whenever it passes
+    // the loop end, re-arming the loop's notes for another pass.
+    if (isLooping) {
+      final loopLenMs = (_loopEndBeat! - _loopStartBeat!) * chart.beatMs;
+      var guard = 0;
+      while (loopLenMs > 0 && currentBeat >= _loopEndBeat! && guard++ < 4096) {
+        _loopRewoundMs += loopLenMs;
+        _rearmLoopNotes();
+      }
+    }
+
     final b = currentBeat;
 
     // Finalize any pending note that has fully elapsed.
@@ -172,12 +210,28 @@ class PlayAlongEngine {
 
   void reset() {
     _elapsedMs = 0;
+    _loopRewoundMs = 0;
+    _loopStartBeat = _loopEndBeat = null;
     for (final n in notes) {
       n.result = NoteResult.pending;
       n._good = 0;
       n._total = 0;
       n._sumCents = 0;
       n._centsCount = 0;
+    }
+  }
+
+  /// Re-arm (mark pending, clear scoring) every note that begins inside the loop.
+  void _rearmLoopNotes() {
+    for (final n in notes) {
+      if (n.note.startBeat >= _loopStartBeat! &&
+          n.note.startBeat < _loopEndBeat!) {
+        n.result = NoteResult.pending;
+        n._good = 0;
+        n._total = 0;
+        n._sumCents = 0;
+        n._centsCount = 0;
+      }
     }
   }
 }
