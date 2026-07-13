@@ -206,6 +206,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteReadingBass,
       subtitle: (l) => l.gameNoteReadingSubtitle,
       builder: (_) => const NoteReadingQuizScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     // High/low pitch-direction sort (drag-into-baskets format).
     GameInfo(
@@ -222,6 +223,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameAccidentalSort,
       subtitle: (l) => l.gameAccidentalSortSubtitle,
       builder: (_) => const AccidentalSortScreen(),
+      tutorial: accidentalsPrimer,
     ),
     // Step-vs-skip melodic-motion reading (before naming exact intervals).
     GameInfo(
@@ -230,6 +232,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameStepSkip,
       subtitle: (l) => l.gameStepSkipSubtitle,
       builder: (_) => const StepSkipScreen(),
+      tutorial: stepSkipPrimer,
     ),
     GameInfo(
       id: 'place_note_treble',
@@ -300,6 +303,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameLedgerLeap,
       subtitle: (l) => l.gameLedgerLeapSubtitle,
       builder: (_) => const LedgerLeapScreen(),
+      tutorial: ledgerPrimer,
     ),
     GameInfo(
       id: 'odd_one_out',
@@ -482,6 +486,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTimeSignature,
       subtitle: (l) => l.gameTimeSignatureSubtitle,
       builder: (_) => const TimeSignatureScreen(),
+      tutorial: timeSignaturePrimer,
     ),
   ],
   'scales': [
@@ -550,6 +555,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameKeySignature,
       subtitle: (l) => l.gameKeySignatureSubtitle,
       builder: (_) => const KeySignatureScreen(),
+      tutorial: keySignaturePrimer,
     ),
   ],
   'chords': [
@@ -594,6 +600,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameIntervalEar,
       subtitle: (l) => l.gameIntervalEarSubtitle,
       builder: (_) => const IntervalEarScreen(),
+      tutorial: intervalsPrimer,
     ),
     GameInfo(
       id: 'interval_ladder',
@@ -625,6 +632,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameChordChart,
       subtitle: (l) => l.gameChordChartSubtitle,
       builder: (_) => const ChordChartScreen(),
+      tutorial: chordChartPrimer,
     ),
     GameInfo(
       id: 'chord_builder',

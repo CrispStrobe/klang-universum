@@ -13,7 +13,17 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:klang_universum/shared/tutorial/tutorial.dart';
 import 'package:partitura/partitura.dart'
-    show Clef, DurationBase, Measure, NoteDuration, NoteElement, Score;
+    show
+        ChordSymbol,
+        ChordSymbolKind,
+        Clef,
+        DurationBase,
+        KeySignature,
+        Measure,
+        NoteDuration,
+        NoteElement,
+        Score,
+        TimeSignature;
 
 // ---- notation helpers -------------------------------------------------------
 
@@ -23,9 +33,15 @@ Score _notes(
   List<int> midis, {
   DurationBase dur = DurationBase.quarter,
   Clef clef = Clef.treble,
+  KeySignature keySignature = const KeySignature(0),
+  TimeSignature? timeSignature,
+  List<ChordSymbol> chordSymbols = const [],
 }) =>
     Score(
       clef: clef,
+      keySignature: keySignature,
+      timeSignature: timeSignature,
+      chordSymbols: chordSymbols,
       measures: [
         Measure([
           for (var i = 0; i < midis.length; i++)
@@ -331,6 +347,179 @@ Tutorial drumsPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerDrumsLines,
           score: _notes([36, 50, 36, 50], clef: Clef.bass), // kick / snare row
           play: (a) => a.playSequence(_run([36, 50, 36, 50], ms: 360)),
+        ),
+      ],
+    );
+
+// ---- per-game primers (a distinct fact within an already-covered module) ----
+
+/// Reading on the BASS clef — its lines/spaces spell different notes than
+/// treble. Game: note_reading_bass.
+Tutorial readingBassPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerBassTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerBassClef,
+          // The five bass-staff lines, bottom to top: G2 B2 D3 F3 A3.
+          score: _notes([43, 47, 50, 53, 57], clef: Clef.bass),
+          play: (a) => a.playSequence(_run([43, 47, 50, 53, 57], ms: 460)),
+        ),
+        TutorialStep(
+          text: l10n.primerBassMiddleC,
+          score: _notes([60], clef: Clef.bass), // middle C, above the staff
+          play: (a) => a.playMidiNote(60),
+        ),
+      ],
+    );
+
+/// Ledger lines — the little extra lines for notes above/below the staff.
+/// Game: ledger_leap.
+Tutorial ledgerPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerLedgerTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerLedgerMiddleC,
+          score: _notes([60]), // C4 on one ledger line below the treble staff
+          play: (a) => a.playMidiNote(60),
+        ),
+        TutorialStep(
+          text: l10n.primerLedgerHigh,
+          score: _notes([79, 81, 84]), // G5 A5 C6 — ledger lines above
+          play: (a) => a.playSequence(_run([79, 81, 84])),
+        ),
+      ],
+    );
+
+/// Sharps raise, flats lower, by a semitone. Game: accidental_sort.
+Tutorial accidentalsPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerAccidentalsTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerAccidentalsSharp,
+          score: _notes([60, 61]), // C then C#
+          play: (a) => a.playSequence(_run([60, 61], ms: 600)),
+        ),
+        TutorialStep(
+          text: l10n.primerAccidentalsFlat,
+          score: _notes([62, 61]), // D then Db (= same key as C#)
+          play: (a) => a.playSequence(_run([62, 61], ms: 600)),
+        ),
+      ],
+    );
+
+/// Steps go to the neighbour; skips jump over one. Game: step_skip.
+Tutorial stepSkipPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerStepSkipTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerStepSkipStep,
+          score: _notes([60, 62]), // C–D: line to the touching space
+          play: (a) => a.playSequence(_run([60, 62], ms: 600)),
+        ),
+        TutorialStep(
+          text: l10n.primerStepSkipSkip,
+          score: _notes([60, 64]), // C–E: line to the next line
+          play: (a) => a.playSequence(_run([60, 64], ms: 600)),
+        ),
+      ],
+    );
+
+/// An interval is the distance between two notes; wide vs narrow.
+/// Game: interval_ear.
+Tutorial intervalsPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerIntervalsTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerIntervalsCount,
+          score: _notes([60, 64]), // C to E, counting C-D-E = a 3rd
+          play: (a) => a.playSequence(_run([60, 64], ms: 600)),
+        ),
+        TutorialStep(
+          text: l10n.primerIntervalsWide,
+          score: _notes([60, 67]), // C to G = a 5th
+          play: (a) => a.playSequence(_run([60, 67], ms: 600)),
+        ),
+        TutorialStep(
+          text: l10n.primerIntervalsEar,
+          // A narrow 2nd, then a wide 6th, so the ear hears the difference.
+          play: (a) => a.playChordSequence([
+            [60, 62], // a 2nd
+            [60, 69], // a 6th
+          ]),
+        ),
+      ],
+    );
+
+/// A key signature writes the sharps/flats once at the start. Game: key_sig.
+Tutorial keySignaturePrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerKeySigTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerKeySigWhat,
+          // G major: one sharp (F#) drawn once at the front.
+          score: _notes(
+            [67, 69, 71, 72, 74, 76, 78, 79],
+            keySignature: const KeySignature(1),
+          ),
+          play: (a) => a.playSequence(_run([67, 69, 71, 72, 74, 76, 78, 79])),
+        ),
+        TutorialStep(
+          text: l10n.primerKeySigCompare,
+          // C major has none; listen for the one note that differs (F vs F#).
+          play: (a) => a.playSequence(_run(_cMajor)),
+        ),
+      ],
+    );
+
+/// The time signature: the top number is beats per measure. Game: time_signature.
+Tutorial timeSignaturePrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerTimeSigTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerTimeSigFour,
+          score: _notes(
+            [60, 62, 64, 65], // four beats
+            timeSignature: const TimeSignature(4, 4),
+          ),
+          play: (a) => a.playCountedNote(4),
+        ),
+        TutorialStep(
+          text: l10n.primerTimeSigThree,
+          score: _notes(
+            [60, 62, 64], // a waltz's three
+            timeSignature: const TimeSignature(3, 4),
+          ),
+          play: (a) => a.playCountedNote(3),
+        ),
+      ],
+    );
+
+/// Lead-sheet chord symbols: a letter names the chord above the tune.
+/// Game: chord_chart.
+Tutorial chordChartPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerChartTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerChartMajor,
+          // "C" above the note = play a C major chord.
+          score: _notes(
+            [60],
+            chordSymbols: [
+              ChordSymbol('n0', pitchFromMidi(60), ChordSymbolKind.major),
+            ],
+          ),
+          play: (a) => a.playMidiChord([60, 64, 67]),
+        ),
+        TutorialStep(
+          text: l10n.primerChartMinor,
+          // "Am" = A minor.
+          score: _notes(
+            [57],
+            chordSymbols: [
+              ChordSymbol('n0', pitchFromMidi(57), ChordSymbolKind.minor),
+            ],
+          ),
+          play: (a) => a.playMidiChord([57, 60, 64]),
         ),
       ],
     );

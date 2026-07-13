@@ -3674,6 +3674,156 @@ abstract class AppLocalizations {
   /// **'Each line and space is a different drum: low down is the bass drum you kick, higher up are the snare and cymbals. Read left to right and play the beat.'**
   String get primerDrumsLines;
 
+  /// No description provided for @primerBassTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The bass clef'**
+  String get primerBassTitle;
+
+  /// No description provided for @primerBassClef.
+  ///
+  /// In en, this message translates to:
+  /// **'This low staff is the bass clef (the F-clef). A cello or a left hand reads here. Its lines and spaces spell different notes than the treble clef.'**
+  String get primerBassClef;
+
+  /// No description provided for @primerBassMiddleC.
+  ///
+  /// In en, this message translates to:
+  /// **'Middle C — the note in the middle of the piano — sits just above the bass staff, on its own little ledger line.'**
+  String get primerBassMiddleC;
+
+  /// No description provided for @primerLedgerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger lines'**
+  String get primerLedgerTitle;
+
+  /// No description provided for @primerLedgerMiddleC.
+  ///
+  /// In en, this message translates to:
+  /// **'When a note won\'t fit on the five lines, we add a tiny extra line just for it — a ledger line. Middle C hangs on one, right below the treble staff.'**
+  String get primerLedgerMiddleC;
+
+  /// No description provided for @primerLedgerHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'The higher a note climbs above the staff, the more ledger lines it needs. Count them like the rungs of a ladder.'**
+  String get primerLedgerHigh;
+
+  /// No description provided for @primerAccidentalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharps and flats'**
+  String get primerAccidentalsTitle;
+
+  /// No description provided for @primerAccidentalsSharp.
+  ///
+  /// In en, this message translates to:
+  /// **'A sharp ♯ in front of a note lifts it up by the smallest step, a semitone. C♯ is a hair higher than C.'**
+  String get primerAccidentalsSharp;
+
+  /// No description provided for @primerAccidentalsFlat.
+  ///
+  /// In en, this message translates to:
+  /// **'A flat ♭ lowers a note by a semitone. D♭ is the very same key as C♯ — it just leans down from D.'**
+  String get primerAccidentalsFlat;
+
+  /// No description provided for @primerStepSkipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps and skips'**
+  String get primerStepSkipTitle;
+
+  /// No description provided for @primerStepSkipStep.
+  ///
+  /// In en, this message translates to:
+  /// **'A STEP moves to the next-door note — a line to the space touching it, one letter along: C to D.'**
+  String get primerStepSkipStep;
+
+  /// No description provided for @primerStepSkipSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'A SKIP jumps over one — a line straight to the next line: C to E. Skips sound bouncier than steps.'**
+  String get primerStepSkipSkip;
+
+  /// No description provided for @primerIntervalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How far apart?'**
+  String get primerIntervalsTitle;
+
+  /// No description provided for @primerIntervalsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'The distance between two notes is an interval. Count the letters including both ends: C to E is C-D-E — a 3rd.'**
+  String get primerIntervalsCount;
+
+  /// No description provided for @primerIntervalsWide.
+  ///
+  /// In en, this message translates to:
+  /// **'The wider the gap, the bigger the number. C up to G is a 5th: C-D-E-F-G.'**
+  String get primerIntervalsWide;
+
+  /// No description provided for @primerIntervalsEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow intervals sound close and gentle; wide ones sound open and bold. Listen to a small gap, then a big one.'**
+  String get primerIntervalsEar;
+
+  /// No description provided for @primerKeySigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Key signatures'**
+  String get primerKeySigTitle;
+
+  /// No description provided for @primerKeySigWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'Instead of marking every sharp, we write them once at the very start — a key signature. It applies to the whole piece. This is G major: one sharp, F♯.'**
+  String get primerKeySigWhat;
+
+  /// No description provided for @primerKeySigCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'C major has no sharps or flats at all. Listen to C major — every note is a plain white key.'**
+  String get primerKeySigCompare;
+
+  /// No description provided for @primerTimeSigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Time signatures'**
+  String get primerTimeSigTitle;
+
+  /// No description provided for @primerTimeSigFour.
+  ///
+  /// In en, this message translates to:
+  /// **'The two numbers at the start are the time signature. The top number is how many beats fill each measure — 4 means a steady four.'**
+  String get primerTimeSigFour;
+
+  /// No description provided for @primerTimeSigThree.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the top number to 3 and each measure has three beats — the gentle swing of a waltz. Count 1-2-3, 1-2-3.'**
+  String get primerTimeSigThree;
+
+  /// No description provided for @primerChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord symbols'**
+  String get primerChartTitle;
+
+  /// No description provided for @primerChartMajor.
+  ///
+  /// In en, this message translates to:
+  /// **'Above a tune you\'ll see chord symbols. A plain letter means a major chord: ‘C’ tells you to play a C major chord.'**
+  String get primerChartMajor;
+
+  /// No description provided for @primerChartMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'A small ‘m’ after the letter means minor: ‘Am’ is A minor — the same family, but a softer, sadder colour.'**
+  String get primerChartMinor;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:

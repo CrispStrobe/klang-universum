@@ -2030,6 +2030,98 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each line and space is a different drum: low down is the bass drum you kick, higher up are the snare and cymbals. Read left to right and play the beat.';
 
   @override
+  String get primerBassTitle => 'The bass clef';
+
+  @override
+  String get primerBassClef =>
+      'This low staff is the bass clef (the F-clef). A cello or a left hand reads here. Its lines and spaces spell different notes than the treble clef.';
+
+  @override
+  String get primerBassMiddleC =>
+      'Middle C — the note in the middle of the piano — sits just above the bass staff, on its own little ledger line.';
+
+  @override
+  String get primerLedgerTitle => 'Ledger lines';
+
+  @override
+  String get primerLedgerMiddleC =>
+      'When a note won\'t fit on the five lines, we add a tiny extra line just for it — a ledger line. Middle C hangs on one, right below the treble staff.';
+
+  @override
+  String get primerLedgerHigh =>
+      'The higher a note climbs above the staff, the more ledger lines it needs. Count them like the rungs of a ladder.';
+
+  @override
+  String get primerAccidentalsTitle => 'Sharps and flats';
+
+  @override
+  String get primerAccidentalsSharp =>
+      'A sharp ♯ in front of a note lifts it up by the smallest step, a semitone. C♯ is a hair higher than C.';
+
+  @override
+  String get primerAccidentalsFlat =>
+      'A flat ♭ lowers a note by a semitone. D♭ is the very same key as C♯ — it just leans down from D.';
+
+  @override
+  String get primerStepSkipTitle => 'Steps and skips';
+
+  @override
+  String get primerStepSkipStep =>
+      'A STEP moves to the next-door note — a line to the space touching it, one letter along: C to D.';
+
+  @override
+  String get primerStepSkipSkip =>
+      'A SKIP jumps over one — a line straight to the next line: C to E. Skips sound bouncier than steps.';
+
+  @override
+  String get primerIntervalsTitle => 'How far apart?';
+
+  @override
+  String get primerIntervalsCount =>
+      'The distance between two notes is an interval. Count the letters including both ends: C to E is C-D-E — a 3rd.';
+
+  @override
+  String get primerIntervalsWide =>
+      'The wider the gap, the bigger the number. C up to G is a 5th: C-D-E-F-G.';
+
+  @override
+  String get primerIntervalsEar =>
+      'Narrow intervals sound close and gentle; wide ones sound open and bold. Listen to a small gap, then a big one.';
+
+  @override
+  String get primerKeySigTitle => 'Key signatures';
+
+  @override
+  String get primerKeySigWhat =>
+      'Instead of marking every sharp, we write them once at the very start — a key signature. It applies to the whole piece. This is G major: one sharp, F♯.';
+
+  @override
+  String get primerKeySigCompare =>
+      'C major has no sharps or flats at all. Listen to C major — every note is a plain white key.';
+
+  @override
+  String get primerTimeSigTitle => 'Time signatures';
+
+  @override
+  String get primerTimeSigFour =>
+      'The two numbers at the start are the time signature. The top number is how many beats fill each measure — 4 means a steady four.';
+
+  @override
+  String get primerTimeSigThree =>
+      'Change the top number to 3 and each measure has three beats — the gentle swing of a waltz. Count 1-2-3, 1-2-3.';
+
+  @override
+  String get primerChartTitle => 'Chord symbols';
+
+  @override
+  String get primerChartMajor =>
+      'Above a tune you\'ll see chord symbols. A plain letter means a major chord: ‘C’ tells you to play a C major chord.';
+
+  @override
+  String get primerChartMinor =>
+      'A small ‘m’ after the letter means minor: ‘Am’ is A minor — the same family, but a softer, sadder colour.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

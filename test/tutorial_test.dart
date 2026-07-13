@@ -110,6 +110,15 @@ void main() {
       'The piano keys': keyboardPrimer,
       'Read one note, hear another': transposePrimer,
       'Reading drums': drumsPrimer, // bass-clef Score path
+      // Per-game ★ primers (distinct facts within covered modules).
+      'The bass clef': readingBassPrimer,
+      'Ledger lines': ledgerPrimer,
+      'Sharps and flats': accidentalsPrimer,
+      'Steps and skips': stepSkipPrimer,
+      'How far apart?': intervalsPrimer,
+      'Key signatures': keySignaturePrimer, // key-signature Score path
+      'Time signatures': timeSignaturePrimer, // time-signature Score path
+      'Chord symbols': chordChartPrimer, // chord-symbol Score path
     };
     for (final entry in primers.entries) {
       await pumpGame(

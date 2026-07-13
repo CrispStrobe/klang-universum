@@ -2038,6 +2038,98 @@ class AppLocalizationsDe extends AppLocalizations {
       'Jede Linie und jeder Zwischenraum ist eine andere Trommel: ganz unten die große Trommel (Fußtritt), oben Snare und Becken. Von links nach rechts lesen und den Beat spielen.';
 
   @override
+  String get primerBassTitle => 'Der Bassschlüssel';
+
+  @override
+  String get primerBassClef =>
+      'Dieses tiefe System ist der Bassschlüssel (der F-Schlüssel). Ein Cello oder die linke Hand liest hier. Seine Linien und Zwischenräume bedeuten andere Töne als der Violinschlüssel.';
+
+  @override
+  String get primerBassMiddleC =>
+      'Das eingestrichene C — das C in der Mitte des Klaviers — sitzt knapp über dem Bass-System, auf einer eigenen kleinen Hilfslinie.';
+
+  @override
+  String get primerLedgerTitle => 'Hilfslinien';
+
+  @override
+  String get primerLedgerMiddleC =>
+      'Passt eine Note nicht auf die fünf Linien, malen wir eine kleine Extra-Linie nur für sie — eine Hilfslinie. Das eingestrichene C hängt an einer, direkt unter dem Violinsystem.';
+
+  @override
+  String get primerLedgerHigh =>
+      'Je höher eine Note über das System steigt, desto mehr Hilfslinien braucht sie. Zähl sie wie die Sprossen einer Leiter.';
+
+  @override
+  String get primerAccidentalsTitle => 'Kreuz und B';
+
+  @override
+  String get primerAccidentalsSharp =>
+      'Ein Kreuz ♯ vor einer Note hebt sie um den kleinsten Schritt, einen Halbton. Cis liegt einen Hauch höher als C.';
+
+  @override
+  String get primerAccidentalsFlat =>
+      'Ein B ♭ senkt eine Note um einen Halbton. Des ist genau dieselbe Taste wie Cis — es lehnt sich nur von D herunter.';
+
+  @override
+  String get primerStepSkipTitle => 'Schritt und Sprung';
+
+  @override
+  String get primerStepSkipStep =>
+      'Ein SCHRITT geht zur Nachbar-Note — von einer Linie zum berührenden Zwischenraum, einen Buchstaben weiter: C zu D.';
+
+  @override
+  String get primerStepSkipSkip =>
+      'Ein SPRUNG überspringt eine — von einer Linie gleich zur nächsten Linie: C zu E. Sprünge klingen hüpfender als Schritte.';
+
+  @override
+  String get primerIntervalsTitle => 'Wie weit auseinander?';
+
+  @override
+  String get primerIntervalsCount =>
+      'Der Abstand zwischen zwei Tönen ist ein Intervall. Zähl die Buchstaben mit beiden Enden: C bis E ist C-D-E — eine Terz (3).';
+
+  @override
+  String get primerIntervalsWide =>
+      'Je größer der Abstand, desto größer die Zahl. C hinauf bis G ist eine Quinte (5): C-D-E-F-G.';
+
+  @override
+  String get primerIntervalsEar =>
+      'Enge Intervalle klingen nah und sanft, weite offen und kräftig. Hör einen kleinen Abstand, dann einen großen.';
+
+  @override
+  String get primerKeySigTitle => 'Vorzeichen (Tonart)';
+
+  @override
+  String get primerKeySigWhat =>
+      'Statt jedes Kreuz einzeln zu schreiben, setzen wir sie einmal ganz an den Anfang — die Vorzeichen der Tonart. Sie gelten fürs ganze Stück. Das hier ist G-Dur: ein Kreuz, Fis.';
+
+  @override
+  String get primerKeySigCompare =>
+      'C-Dur hat gar keine Vorzeichen. Hör dir C-Dur an — lauter weiße Tasten.';
+
+  @override
+  String get primerTimeSigTitle => 'Taktarten';
+
+  @override
+  String get primerTimeSigFour =>
+      'Die zwei Zahlen am Anfang sind die Taktart. Die obere Zahl sagt, wie viele Schläge in einen Takt passen — 4 heißt ein gleichmäßiger Vierer.';
+
+  @override
+  String get primerTimeSigThree =>
+      'Setz oben eine 3 und jeder Takt hat drei Schläge — der sanfte Schwung eines Walzers. Zähl 1-2-3, 1-2-3.';
+
+  @override
+  String get primerChartTitle => 'Akkordsymbole';
+
+  @override
+  String get primerChartMajor =>
+      'Über einer Melodie stehen oft Akkordsymbole. Ein einfacher Buchstabe meint einen Dur-Akkord: „C“ sagt dir, spiel einen C-Dur-Akkord.';
+
+  @override
+  String get primerChartMinor =>
+      'Ein kleines „m“ hinter dem Buchstaben heißt Moll: „Am“ ist a-Moll — dieselbe Familie, aber weicher und trauriger.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override
