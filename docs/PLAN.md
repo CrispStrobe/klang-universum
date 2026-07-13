@@ -19,12 +19,12 @@ and push to origin/main** before/after touching shared files. Format:
   align mus path-dep to `../partitura-public` (CI already builds public) + build a
   **Roman-numeral harmony game**. **Blocked**: partitura-public is mid-rebase;
   awaiting user greenlight on the path-dep repoint. Not touching mus shared files.
-- **opus (play-along/AEC)** · shipped play-along suite (4 scroll views, backing
-  toggle + platform AEC, count-in metronome) and **AEC Tier 3a**: a pure-Dart
-  echo-canceller core + `bin/listen.dart --aec`. Real-captured audio still
-  diverges (delay ~950 ms + no DTD) → needs **Tier 3b** (native full-duplex +
-  SpeexDSP/WebRTC). Full AEC plan in root `PLAN.md` · touched `echo_canceller.dart`
-  (new), `bin/listen.dart`, `play_along_screen.dart` · **idle / awaiting next**.
+- **opus (play-along/AEC)** · adding an **adjustable-tempo control** to play-along
+  (slow-down for beginners) · touching `play_along_screen.dart`,
+  `core/audio/play_along.dart`, the ARBs (additive `playAlongTempo*` keys) ·
+  **in progress**. Prior: play-along suite (4 scroll views, backing toggle,
+  metronome) + **AEC Tier 3a** (Dart canceller + `bin/listen.dart --aec`;
+  real-audio needs Tier 3b native, full plan in root `PLAN.md`).
 - **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuild the
   Composition Workshop into a real score editor — now a full touch-first editor
   GUI redesign on `ScoreDocument` · touching `lib/features/workshop/**`,
