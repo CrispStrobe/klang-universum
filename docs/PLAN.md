@@ -14,11 +14,12 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · **aligned mus to partitura-public** (pubspec +
-  ci/deploy workflows now resolve `partitura-public`; local + CI both on public,
-  277 tests green). Now building the **Roman-numeral harmony game** · touching
-  `pubspec.yaml`, `.github/workflows/{ci,deploy}.yml`, then `game_registry.dart`,
-  `core/tuning.dart`, the ARBs, new `features/games/harmony/` · **in progress**.
+- **opus (this agent)** · aligned mus to partitura-public (pubspec + ci/deploy
+  resolve `partitura-public`) and **shipped Roman Numerals** (Harmonik) —
+  diatonic triads named by partitura's `romanNumeralOf`. 281 tests green. Next:
+  the rest of the new-partitura ideas (strong-beat/`beatStrength`, chord symbols,
+  handwritten-font theme) · touched `pubspec.yaml`, `ci/deploy`, `game_registry`,
+  `core/tuning`, ARBs, `features/games/harmony/` · **in progress (next builds)**.
 - **opus (play-along/AEC)** · next up (in order): (1) wire play-along into **SRI**
   so misses feed review, (2) more **charts/songs**, (3) a **free-sing recorder** ·
   touching `play_along_screen.dart`, `core/audio/play_along.dart`, `game_registry`
@@ -128,12 +129,13 @@ they unlock:
 
 Fresh capabilities now resolvable in mus, ranked by fit:
 
-- [ ] **Roman-numeral harmonic analysis** (`RomanNumeral` — `.symbol` → "V7",
-  "ii°", `.degree`/`.type`/`.inversion`). **→ Harmony game (building now):** show
-  or play a chord/progression in a key, pick the Roman numeral (I / IV / V / vi…).
-  A real upgrade to the Harmonik module (which today only names T/S/D). SRI
-  `harmony.roman.<numeral>`. Difficulty: I/IV/V in C → all diatonic triads → 7ths
-  & inversions → minor keys.
+- [x] **Roman-numeral harmonic analysis** (`RomanNumeral` — `.symbol` → "V7",
+  "ii°"). **Shipped: Roman Numerals** (Harmonik,
+  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — read/hear a diatonic
+  triad in a key, pick its numeral; the chord is built with `Triad` and named by
+  `romanNumeralOf(pitches, key)`. SRI `harmony.roman.<symbol>`; widens I/IV/V in C
+  → all diatonic triads → all major keys. Still open: **7ths & inversions**
+  (the analyser already returns `V6/5`, `vii°7` etc.) and **minor keys**.
 - [ ] **Metrical-accent hierarchy** (`beatStrength(Fraction) → double`). **→
   Strong-Beat game** in the Takte module (complements *Which Beat?*): which beat
   is the strong one? tap the downbeat / conduct the metre. Also a scaffold: size

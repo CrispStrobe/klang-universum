@@ -632,6 +632,21 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get gameRomanNumeral => 'Stufen-Quiz';
+
+  @override
+  String get gameRomanNumeralSubtitle =>
+      'Welche Akkordstufe ist das? (I, IV, V …)';
+
+  @override
+  String romanNumeralPrompt(String key) {
+    return 'In $key-Dur — welcher Akkord ist das?';
+  }
+
+  @override
+  String get romanNumeralReplay => 'Akkord nochmal hören';
+
+  @override
   String get gameHarmonyQuiz => 'Funktions-Quiz';
 
   @override

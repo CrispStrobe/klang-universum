@@ -301,6 +301,17 @@
       }
     }
   },
+  "gameRomanNumeral": "Roman Numerals",
+  "gameRomanNumeralSubtitle": "Which scale-degree chord is this? (I, IV, V …)",
+  "romanNumeralPrompt": "In {key} major — which chord is this?",
+  "@romanNumeralPrompt": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "romanNumeralReplay": "Hear the chord again",
   "gameHarmonyQuiz": "Function Quiz",
   "gameHarmonyQuizSubtitle": "Tonic, subdominant or dominant?",
   "harmonyPrompt": "What is this chord's function in {key}?",
