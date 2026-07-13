@@ -90,6 +90,8 @@ import 'package:klang_universum/features/games/songs/song_screen.dart';
 import 'package:klang_universum/features/games/songs/tune_quiz_screen.dart';
 import 'package:klang_universum/features/games/transpose/concert_pitch_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/tutorial/primers.dart';
+import 'package:klang_universum/shared/tutorial/tutorial.dart';
 import 'package:partitura/partitura.dart';
 
 /// Every game by ID, across all modules — for curriculum/recital lookups.
@@ -117,6 +119,12 @@ class GameInfo {
   /// Hint shown when [unlockedWhen] keeps the tile locked.
   final String Function(AppLocalizations)? lockedHint;
 
+  /// Optional zero-knowledge tutorial for this game — the musical facts it
+  /// drills, explained with a seen example (notation) and a heard example
+  /// (audio). Shown automatically the first time the game is opened (via the
+  /// [gameRoute] wrapper) and reopenable from the "?" button. Null = none yet.
+  final Tutorial Function(AppLocalizations)? tutorial;
+
   const GameInfo({
     required this.id,
     required this.icon,
@@ -125,6 +133,7 @@ class GameInfo {
     required this.builder,
     this.unlockedWhen,
     this.lockedHint,
+    this.tutorial,
   });
 }
 
@@ -188,6 +197,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteReadingTreble,
       subtitle: (l) => l.gameNoteReadingSubtitle,
       builder: (_) => const NoteReadingQuizScreen(clef: Clef.treble),
+      tutorial: readingPrimer,
     ),
     GameInfo(
       id: 'note_reading_bass',

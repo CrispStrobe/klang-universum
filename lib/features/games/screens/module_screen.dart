@@ -7,6 +7,7 @@ import 'package:klang_universum/core/models/learning_module.dart';
 import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
+import 'package:klang_universum/features/games/tutorial_gate.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -79,9 +80,7 @@ class ModuleScreen extends StatelessWidget {
                                   ),
                                 ),
                               )
-                          : () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: game.builder),
-                              ),
+                          : () => Navigator.of(context).push(gameRoute(game)),
                     ),
                   ),
                 );

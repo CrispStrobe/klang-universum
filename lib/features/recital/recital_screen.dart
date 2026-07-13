@@ -16,6 +16,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
+import 'package:klang_universum/features/games/tutorial_gate.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -50,9 +51,7 @@ class _RecitalScreenState extends State<RecitalScreen> {
       widget.program.isNotEmpty && _performed.length >= widget.program.length;
 
   Future<void> _play(GameInfo game) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: game.builder),
-    );
+    await Navigator.of(context).push(gameRoute(game));
     if (!mounted) return;
     setState(() => _performed.add(game.id));
   }
