@@ -14,10 +14,12 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- _(idle)_ — last shipped: **Cello Play It** (mic grading in the Cello Corner)
-  + play-along CI fix (colours ride `theme.elementColors`, not the
-  private-only `MultiSystemView(elementColors:)` param). origin/main green +
-  deployed.
+- **opus (this agent)** · partitura-private→public reconcile + survey new
+  partitura capabilities, then plan/build mus features on them · touching the
+  partitura repos (not mus shared files yet) · **in progress**.
+- _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
+  play-along CI fix (colours ride `theme.elementColors`, not the private-only
+  `MultiSystemView(elementColors:)` param). origin/main green + deployed.
 
 ## Principles
 
