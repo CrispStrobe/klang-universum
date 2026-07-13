@@ -14,11 +14,11 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · surveyed partitura; the private→public reconcile was
-  already done by the partitura agent (elementColors now on public `main`). Next:
-  align mus path-dep to `../partitura-public` (CI already builds public) + build a
-  **Roman-numeral harmony game**. **Blocked**: partitura-public is mid-rebase;
-  awaiting user greenlight on the path-dep repoint. Not touching mus shared files.
+- **opus (this agent)** · **aligned mus to partitura-public** (pubspec +
+  ci/deploy workflows now resolve `partitura-public`; local + CI both on public,
+  277 tests green). Now building the **Roman-numeral harmony game** · touching
+  `pubspec.yaml`, `.github/workflows/{ci,deploy}.yml`, then `game_registry.dart`,
+  `core/tuning.dart`, the ARBs, new `features/games/harmony/` · **in progress**.
 - **opus (play-along/AEC)** · shipped **adjustable-tempo control** (½×/¾×/1×) for
   play-along; suite so far: 4 scroll views, backing toggle + platform AEC,
   count-in metronome, tempo, **AEC Tier 3a** (Dart canceller + `bin/listen.dart
@@ -81,11 +81,14 @@ with `Tuning.standardBass`.
 
 ## Partitura capabilities → new ideas
 
-The partitura library has grown well past what the app currently uses (local
-`main` is ~63 commits ahead of the ref CI builds against). **These ideas are
-gated on those commits landing on the partitura ref CI checks out** — until then
-building on the new APIs would compile locally but fail CI. Verified new
-capabilities and what they unlock:
+The partitura library has grown well past what the app currently uses. **As of
+2026-07-13 both the mus path-dep and CI resolve `partitura-public`
+(`CrispStrobe/partitura@main`)** — pubspec points at `../partitura-public/...`
+and the CI/deploy workflows check the public repo out to `partitura-public/`, so
+local and CI are aligned and the new APIs are usable everywhere. (The older
+`../partitura` = **partitura-private** clone is no longer the build target; see
+the memory `partitura-public-vs-private-ci`.) Verified new capabilities and what
+they unlock:
 
 - **Teaching overlays on `StaffView`** (`showNoteNames`, `showBeatNumbers`,
   `showMeasureNumbers`). **Which Beat?** is shipped — it uses `showBeatNumbers`
@@ -119,6 +122,35 @@ capabilities and what they unlock:
   a rhythm on the neutral percussion staff and tap it back on the drum pad in
   time (count-in, then Perfect/Good/Miss vs the notated onsets).
 - **Figured bass** (SMuFL figbass) → Baroque continuo reading — advanced, later.
+
+### New in partitura-public (aligned 2026-07-13) — next builds
+
+Fresh capabilities now resolvable in mus, ranked by fit:
+
+- [ ] **Roman-numeral harmonic analysis** (`RomanNumeral` — `.symbol` → "V7",
+  "ii°", `.degree`/`.type`/`.inversion`). **→ Harmony game (building now):** show
+  or play a chord/progression in a key, pick the Roman numeral (I / IV / V / vi…).
+  A real upgrade to the Harmonik module (which today only names T/S/D). SRI
+  `harmony.roman.<numeral>`. Difficulty: I/IV/V in C → all diatonic triads → 7ths
+  & inversions → minor keys.
+- [ ] **Metrical-accent hierarchy** (`beatStrength(Fraction) → double`). **→
+  Strong-Beat game** in the Takte module (complements *Which Beat?*): which beat
+  is the strong one? tap the downbeat / conduct the metre. Also a scaffold: size
+  the beat dots by strength.
+- [ ] **Structured chord symbols** (`ChordSymbol` model, read by the MusicXML/ABC
+  readers). → render/parse "Cmaj7" over the Song Book chord sheets; a
+  symbol↔notation matching game.
+- [ ] **Voices 3–4 per staff** (SATB representability) + **beam subdivision** +
+  **appoggiatura grace notes**. → SATB chorale reading, richer Grand Staff,
+  grace-note reading. Rendering-quality wins across existing staves.
+- [ ] **Import breadth**: MEI, Humdrum **kern/ekern**, LilyPond, GP3/4/5,
+  compressed `.mxl` — plus an **OMR transformer** (image → score). **→
+  "Photograph your sheet music"** into the Song Book / play-along (big swing;
+  the OMR path needs the transformer wired for web). Extends the existing
+  MusicXML/ABC/ChordPro/MIDI import.
+- [ ] **Alternate SMuFL fonts** (Petaluma handwritten, Leland, Leipzig via
+  drop-in descriptors). → a low-effort **"handwritten notes" theme** toggle for
+  delight/variety.
 
 ## Difficulty progression (within each game)
 

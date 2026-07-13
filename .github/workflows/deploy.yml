@@ -42,7 +42,7 @@ jobs:
         with:
           repository: CrispStrobe/partitura
           ref: main
-          path: partitura
+          path: partitura-public
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

@@ -37,14 +37,14 @@ dependencies:
   # Notation rendering — path dep on the local library workspace
   # (see ../partitura/HANDOVER.md + HANDOVER_PARTITURA.md).
   partitura:
-    path: ../partitura/packages/partitura
+    path: ../partitura-public/packages/partitura
   record: ^7.1.1
 
 # partitura_core is not on pub.dev yet; resolve it from the workspace too.
 # Remove this override once the partitura packages are published.
 dependency_overrides:
   partitura_core:
-    path: ../partitura/packages/partitura_core
+    path: ../partitura-public/packages/partitura_core
 
 dev_dependencies:
   flutter_test:
