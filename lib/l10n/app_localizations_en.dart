@@ -1297,6 +1297,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duetPrompt => 'Name the highlighted note';
 
   @override
+  String get gameReadVoice => 'Read the Voice';
+
+  @override
+  String get gameReadVoiceSubtitle =>
+      'Follow one voice in a chord (Soprano to Bass)';
+
+  @override
+  String readVoicePrompt(String voice) {
+    return 'Which note does the $voice sing?';
+  }
+
+  @override
+  String get readVoiceHear => 'Hear this voice';
+
+  @override
+  String get voiceSoprano => 'Soprano';
+
+  @override
+  String get voiceAlto => 'Alto';
+
+  @override
+  String get voiceTenor => 'Tenor';
+
+  @override
+  String get voiceBass => 'Bass';
+
+  @override
   String get gamePerformIt => 'Perform It';
 
   @override

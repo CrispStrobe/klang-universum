@@ -2408,6 +2408,54 @@ abstract class AppLocalizations {
   /// **'Name the highlighted note'**
   String get duetPrompt;
 
+  /// No description provided for @gameReadVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the Voice'**
+  String get gameReadVoice;
+
+  /// No description provided for @gameReadVoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow one voice in a chord (Soprano to Bass)'**
+  String get gameReadVoiceSubtitle;
+
+  /// No description provided for @readVoicePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which note does the {voice} sing?'**
+  String readVoicePrompt(String voice);
+
+  /// No description provided for @readVoiceHear.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear this voice'**
+  String get readVoiceHear;
+
+  /// No description provided for @voiceSoprano.
+  ///
+  /// In en, this message translates to:
+  /// **'Soprano'**
+  String get voiceSoprano;
+
+  /// No description provided for @voiceAlto.
+  ///
+  /// In en, this message translates to:
+  /// **'Alto'**
+  String get voiceAlto;
+
+  /// No description provided for @voiceTenor.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenor'**
+  String get voiceTenor;
+
+  /// No description provided for @voiceBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get voiceBass;
+
   /// No description provided for @gamePerformIt.
   ///
   /// In en, this message translates to:

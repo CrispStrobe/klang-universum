@@ -18,7 +18,12 @@ and push to origin/main** before/after touching shared files. Format:
   Chart** + a **"Handwritten notes" (Petaluma) theme** — all on the
   partitura-public alignment, no partitura change. Also: shared game-test harness
   (`useGameSurface`/`pumpGame`), fixed hardcoded `../partitura/` test paths ·
-  **idle / awaiting next** (remaining ideas: voices/SATB, OMR big-swing).
+  **building SATB reading games** (Noten lesen, gated behind Duet ≥2★, on
+  partitura's `Measure.voice2` + `GrandStaff`/`StaffSystem`): three minigames
+  (read-the-voice, which-voice, ear-which-voice), difficulty 2-voice → full
+  4-voice SATB · touching `game_registry`, `core/tuning`, ARBs, new
+  `features/games/note_reading/` screens · **in progress**. (OMR big-swing still
+  open.)
   ⚠️ **For all agents — notation theme migration (just landed):** every
   `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
   (from `shared/score_theme.dart`), so the Settings "Handwritten notes" toggle
@@ -187,9 +192,14 @@ Fresh capabilities now resolvable in mus, ranked by fit:
   little staves. Lead-sheet literacy; the inverse of Name That Chord. SRI
   `chords.symbol.<symbol>`. Still open: chord symbols rendered over the Song Book
   chord sheets (in the play-along agent's songbook area).
-- [ ] **Voices 3–4 per staff** (SATB representability) + **beam subdivision** +
-  **appoggiatura grace notes**. → SATB chorale reading, richer Grand Staff,
-  grace-note reading. Rendering-quality wins across existing staves.
+- [~] **Voices per staff** (`Measure.voice2`, 2 voices rendered; 3–4 model-only).
+  **Shipped game 1 of 3: Read the Voice** (Noten lesen, gated behind Duet 2★,
+  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — read one line out of a
+  multi-voice chord; difficulty 2 voices (S+A, one staff) → full SATB (4 voices,
+  grand staff). C major. SRI feeds the shared reading pool. **Still to build (per
+  scope):** *Which Voice?* (highlight a note → pick S/A/T/B) and *ear: which voice
+  did you hear?*; then widen keys. (`beam subdivision` / `appoggiatura` grace
+  notes are separate rendering-quality wins, still open.)
 - [ ] **Import breadth**: MEI, Humdrum **kern/ekern**, LilyPond, GP3/4/5,
   compressed `.mxl` — plus an **OMR transformer** (image → score). **→
   "Photograph your sheet music"** into the Song Book / play-along (big swing;

@@ -63,6 +63,7 @@ import 'package:klang_universum/features/games/note_reading/note_whack_screen.da
 import 'package:klang_universum/features/games/note_reading/odd_one_out_screen.dart';
 import 'package:klang_universum/features/games/note_reading/perform_it_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
+import 'package:klang_universum/features/games/note_reading/read_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
@@ -290,6 +291,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDuet,
       subtitle: (l) => l.gameDuetSubtitle,
       builder: (_) => const DuetScreen(),
+    ),
+    // Read one voice out of a chord (2 voices → SATB). Advanced: builds on Duet.
+    GameInfo(
+      id: 'read_voice',
+      icon: Icons.groups,
+      title: (l) => l.gameReadVoice,
+      subtitle: (l) => l.gameReadVoiceSubtitle,
+      builder: (_) => const ReadVoiceScreen(),
+      unlockedWhen: (p) => p.starsFor('duet') >= 2,
+      lockedHint: (l) => l.advancedGameHint,
     ),
     // Bass-clef variants of the reading games (violin/treble + bass).
     GameInfo(

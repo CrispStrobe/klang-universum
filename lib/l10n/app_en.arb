@@ -607,6 +607,21 @@
   "gameDuet": "Duet",
   "gameDuetSubtitle": "Read the highlighted part in a two-staff score",
   "duetPrompt": "Name the highlighted note",
+  "gameReadVoice": "Read the Voice",
+  "gameReadVoiceSubtitle": "Follow one voice in a chord (Soprano to Bass)",
+  "readVoicePrompt": "Which note does the {voice} sing?",
+  "@readVoicePrompt": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "readVoiceHear": "Hear this voice",
+  "voiceSoprano": "Soprano",
+  "voiceAlto": "Alto",
+  "voiceTenor": "Tenor",
+  "voiceBass": "Bass",
   "gamePerformIt": "Perform It",
   "gamePerformItSubtitle": "Play or sing the note you see",
   "performItPrompt": "Play or sing this note!",
