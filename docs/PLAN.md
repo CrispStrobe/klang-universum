@@ -34,15 +34,18 @@ and push to origin/main** before/after touching shared files. Format:
   now spans several **major keys**, and Roman Numerals gained **minor keys +
   first/second inversions** (figures) at 2★. Checked OMR on partitura@main (v0.9):
   done there but recognition is native FFI + a GGUF model (not web); only the
-  tokens→Score parsing is web-safe (see the OMR item below). **Building a batch of
-  quick web-safe wins** (gamified sub-variants) · touching `game_registry`,
-  `core/tuning`, ARBs, `features/games/**` · **in progress**. Shipped so far:
-  **Longest First** (note-value ordering), **In the Scale?** (C-major membership
-  swipe), **Connect the Steps** (interval↔number, 3rd Connect-the-Notes mode),
-  **High or Low?** (pitch-direction sort), **Sharp or Flat?** (accidental-sign
-  sort), **Higher or Lower?** (melodic-direction ear game), **Step or Skip?**
-  (melodic-motion reading — 2nd vs bigger leap). Also unblocked shared main twice
-  (formatted the workshop agent's test files that were failing CI's lint/format).
+  tokens→Score parsing is web-safe (see the OMR item below). **Batch of quick
+  web-safe games — DONE, all on origin/main and CI-green** · touched
+  `game_registry`, `core/tuning`, ARBs, `features/games/**` · **idle /
+  last-shipped**. Shipped this batch (7): **Longest First** (note-value
+  ordering), **In the Scale?** (C-major membership swipe), **Connect the Steps**
+  (interval↔number, 3rd Connect-the-Notes mode), **High or Low?** (pitch-direction
+  sort), **Sharp or Flat?** (accidental-sign sort), **Higher or Lower?**
+  (melodic-direction ear), **Step or Skip?** (melodic-motion reading). All in
+  [HISTORY.md](HISTORY.md#gamified-formats--shipped). Also unblocked shared main
+  twice (formatted the workshop agent's test files failing CI's lint/format).
+  **Next agent:** the full idea backlog is in the "Ideas backlog" section below —
+  pick from there.
   ⚠️ **For all agents — notation theme migration (just landed):** every
   `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
   (from `shared/score_theme.dart`), so the Settings "Handwritten notes" toggle
@@ -452,24 +455,25 @@ are self-reported — verify before external citation.
 New *interaction mechanics* surveyed across `../voc` and `../space_math_academy`.
 Shipped formats (memory pairs, sequence, sort-into-buckets, swipe, falling-notes,
 connect-a-line) live in [HISTORY.md](HISTORY.md#gamified-formats--shipped).
-Remaining open sub-variants:
+Sub-variant sweep **mostly done** (Jul 2026 batch): shipped **Longest First**
+(note-value ordering), **In the Scale?** (swipe membership), **High or Low?** +
+**Sharp or Flat?** (two-basket sorts on pitch-direction / accidental-sign),
+**Higher or Lower?** (direction-by-ear), **Step or Skip?** (motion reading), and
+**Connect the Steps** (interval↔number, a 3rd Connect-the-Notes mode). Details in
+[HISTORY.md](HISTORY.md#gamified-formats--shipped). Still open from this survey:
 
-- [~] Note-values longest→shortest ordering: **shipped Longest First** (Notenwerte
-  — the ordering format on note values; tap longest→shortest, each plays its
-  length). Still open: a melody-recall ear variant of the sequence format.
-- [~] Further sort dimensions: **shipped High or Low?** (pitch-direction sort,
-  SRI `pitch.height.*`) and **Sharp or Flat?** (accidental-sign sort, SRI
-  `accidentals.sign.*`) — both drag notes into two baskets, reusing the
-  Sort-the-Beats bucket format with staff cards. Still open: a major/minor sort.
-- [x] Swipe / binary ear variants: **shipped In the Scale?** (C-major membership
-  swipe/tap) and **Higher or Lower?** (`direction_ear` — melodic-direction ear
-  game, the aural twin of the High or Low? sort; SRI `pitch.hear.*`).
-  Major-or-minor-by-ear already exists as `major_minor_ear`.
-- [ ] Falling-notes "catch the longest" (note-values) mode.
-- [x] Connect an interval↔number column: **shipped Connect the Steps** — a third
-  mode on the Connect the Notes board (`ConnectMode.intervals`): an interval on a
-  staff (two half-notes) ↔ its number; count the note-names. SRI
-  `intervals.size.*`; 6th/7th join at 2★.
+- [ ] **Major/minor sort** — drag written triads into Major / Minor baskets by
+  reading their quality on the staff. *Note: this reads quality visually (harder,
+  ~9+); `major_minor_ear` already covers the aural version. Lower priority — a
+  niche tile for the top of the age range.*
+- [ ] **Falling-notes "catch the longest"** — a note-*values* mode of the arcade.
+  *Caveat: `falling_notes_screen.dart` is ~930 lines of ticker/combo logic and
+  its tests lean on the animation clock — a real lift, and less tap-robust than
+  everything else in the batch. Budget accordingly.*
+- [ ] **Melody-recall ear variant** of the sequence format — hear a 3–5 note
+  tune, tap it back. *Check overlap first: `melody_echo`, `echo_sequence`, and
+  `sound_echo` already exist; only build if it adds a distinct twist (e.g.
+  tap-back on a staff rather than a keyboard).*
 
 ### Toy-inspired mechanics (electronic-toy lineage)
 
@@ -499,3 +503,108 @@ Ladder, Staff Runner, Chord Grip Hero, Dynamics & Tempo Charades, Note Snake, an
 Recital Mode all live now
 ([HISTORY.md](HISTORY.md#original-concepts--shipped)). New original ideas get
 added here as they come up.
+
+## Ideas backlog for the next agent (Jul 2026 handoff)
+
+Brain-dump of every game/feature idea still on the table after the Jul-2026
+web-safe batch, ranked roughly by value ÷ effort. **All are web-safe (no native
+FFI) unless flagged.** Reuse the existing scaffolds — a new game is one `GameInfo`
+in `game_registry.dart` + a screen + a `kStarThresholds` bracket in
+`core/tuning.dart` + ARB keys (EN/DE) + a widget test. Follow the strict
+`dart format` → `flutter analyze` (whole project) → `flutter test` → commit →
+push → watch-CI loop, and keep the board above in sync (parallel agents!).
+
+**Reusable scaffolds proven this batch (copy them, don't reinvent):**
+- *Two-basket sort* — `pitch_sort_screen.dart` / `accidental_sort_screen.dart`
+  (Draggable→DragTarget, `onWillAcceptWithDetails` gates the drop). Test drives
+  real drags and tries each basket until one accepts (`pitch_sort_test.dart`).
+- *Binary ear* — `direction_ear_screen.dart` (replay button + two answer
+  buttons; `@visibleForTesting` tester interface exposes the correct answer so
+  the test taps it).
+- *Binary staff-read* — `step_skip_screen.dart` (staff card + two buttons).
+- *Swipe/tap card* — `in_scale_screen.dart` (swipe + tap labels + arrow keys).
+- *Connect-a-line* — add a `ConnectMode` case to `connect_line_screen.dart`.
+- All staff-based tests **must** use `pumpGame`/`useGameSurface` (CI's 800×600
+  surface throws `getElementPoint` otherwise — see the board's ✅ note).
+
+### A. Tap-robust minigames that fill a real skill gap (best value)
+- [ ] **Whole-step or Half-step?** (binary, ear *and*/or staff) — the distinction
+  *inside* a 2nd (tone vs semitone). The natural sequel to Step or Skip? and the
+  foundation of scale-building; nothing drills it yet. SRI e.g. `reading.tone.*`.
+- [ ] **Same or Different?** (binary ear) — two notes (or two 2-note cells); are
+  they the same or different? The youngest-child discrimination skill (Kodály).
+  Trivial to build on the `direction_ear` scaffold.
+- [ ] **Which Clef?** (binary) — show a bare clef; tap Treble or Bass. Tiny, very
+  young, a 30-minute win. Could extend to alto/tenor at 2★.
+- [ ] **Dotted or Not?** (two-basket sort) — sort note glyphs by whether they
+  carry a dot (½-again longer). Teaches the dot; reuses the sort scaffold.
+- [ ] **Ascending or Descending?** (binary ear) — play a 3–4 note run; is it going
+  up or down overall? A step past Higher or Lower? (more than two notes).
+- [ ] **Count the Notes** (ear) — how many notes did you just hear (2/3/4)? Builds
+  aural attention; playable via `playPhrase`.
+
+### B. Cheap depth — widen games that already exist (S effort each)
+- [ ] **Bass-clef variants** of the new sorts/readers — `High or Low?`,
+  `Sharp or Flat?`, `Step or Skip?`, `Connect the Steps` all hard-code
+  `Clef.treble`; a `clef` constructor param + a second `GameInfo` doubles the
+  content (mirror how `note_reading` / `place_note` ship treble + bass).
+- [ ] **Step, Skip, or Leap?** — make Step or Skip? a 3-way (2nd / 3rd–4th / 5th+)
+  at 2★ for a harder tier.
+- [ ] **3-basket sorts** — the two-basket format extends to 3 (e.g. sharp / natural
+  / flat once partitura can render an explicit natural glyph — verify the API).
+- [ ] **More Connect modes** — note↔piano-key, rest↔note-value, Italian-term↔
+  meaning, dynamic-mark↔meaning, instrument↔clef. Each is one `ConnectMode` case.
+
+### C. Reading vocabulary the curriculum wants but we don't drill
+- [ ] **Louder or Softer?** — read two dynamic marks (p / mf / f …), pick the
+  louder. Binary or an ordering (Longest-First-style) drill. `charades` covers the
+  *aural* side; this is the *reading* side.
+- [ ] **Faster or Slower?** — read two tempo terms (Adagio / Allegro …). Same
+  shape; Italian-vocabulary reading.
+- [ ] **Tie or Slur?** — same-pitch tie vs different-pitch slur curve (needs
+  partitura to render both; the Workshop already draws slurs/ties). Binary read.
+- [ ] **Beam or Flag?** — beamed vs flagged eighths; a beaming-literacy binary.
+
+### D. Ear-training expansion (mic infra is shipped — exploit it)
+- [ ] **Sing/play the interval** — mic-graded: show/play an interval, the child
+  matches it (extends the existing `perform_it` / `sing_back` mic grading).
+- [ ] **Rhythm echo by tap** — hear a rhythm, tap it back in time (reuse the
+  `beat_runner` timing engine). Grades against the pattern.
+- [ ] **Chord-quality-by-ear widening** — major/minor exists; add
+  augmented/diminished and dominant-7 at higher tiers.
+
+### E. Creative / toy modes (higher ceiling, higher effort)
+- [ ] **Loop mixer** — tap cards that trigger synced loops (bass/chords/melody/
+  drums). *L — needs multi-track synced playback.* (Also in the toy list above.)
+- [ ] **Grid composer for pre-readers** — a colour/emoji grid that renders to a
+  real Score behind the scenes (bridge to notation for non-readers). *M.*
+- [ ] **Melody doodle → hear it back** — freehand a contour, quantise to pitches,
+  play it. Feeds the songbook.
+
+### F. Infrastructure / platform (not kid-facing games)
+- [ ] **Web-safe OMR-tokens import bridge** — `bekernToScore` / `bekernToGrandStaff`
+  in `partitura_core/src/omr/omr.dart` are pure-Dart and exported. A "paste/typed
+  bekern → playable Score" path turns text into a reading/play-along exercise and
+  could power user-generated content. *The image→tokens recognition is native
+  (dart:ffi + libcrispembed + a GGUF model) and NOT a web/mus dependency — do not
+  pull that in.* M · genuinely new capability, but plumbing not a game.
+- [ ] **`showNoteNames` scaffold** — an accessibility/beginner toggle overlaying
+  letter names (or a colour key) on noteheads app-wide. Partly stubbed; finish it.
+- [ ] **7th chords in Roman Numerals** — `roman_numeral_screen.dart` is ready for
+  it but needs a partitura **seventh-chord builder** (V7/ii7…). *Partitura handoff
+  — can't ship against an unreleased API since CI tracks public `partitura@main`.*
+- [ ] **Leland / Leipzig font options** — extend the Bravura↔Petaluma switch
+  (`shared/score_theme.dart`) with more SMuFL faces. *Partitura-side bundling.*
+- [ ] **MIDI input** — the one real-instrument input still open (mic side shipped).
+  *L, big swing.*
+- [ ] **Parent view + multi-child profiles** and **Teacher / LMS layer** — see the
+  Opportunity backlog above; both are product-level, per-seat monetisable.
+
+### G. Polish / cross-cutting (small, always welcome)
+- [ ] New games should adopt the just-landed **per-game tutorial** hook on
+  `GameInfo` and the **mascot-as-guide** in `RoundHeader` (UX agent's work — check
+  `game_widgets.dart` for the current API before wiring).
+- [ ] Audit the new games for the **sound on/off toggle** + **reduced-motion**
+  paths (the sorts/arcades animate).
+- [ ] Consider grouping the fast-growing `note_reading` module (it's large) or
+  surfacing the new binary drills as a "Warm-ups" strip for the youngest.

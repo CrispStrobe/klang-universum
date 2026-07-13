@@ -197,7 +197,26 @@ per-game `unlockedWhen` gate on `GameInfo`).
   shuffled right; drag a wire from each note to its name (`CustomPaint`).
   Correct link locks + plays; clears to advance. SRI `note_reading.treble.*`.
   The **symbol↔meaning** column ships as **Connect the Symbols** (Notenwerte,
-  `note_values.symbol.*`) — same engine, a `mode` flag.
+  `note_values.symbol.*`) — same engine, a `mode` flag. A third mode,
+  **Connect the Steps**, links an interval on a staff (two half-notes) to its
+  *number* — count the note-names, C→G spans 5; 6th/7th join at 2★. SRI
+  `intervals.size.*`.
+- **In the Scale?** (swipe/tap binary) — a note on a card; swipe/tap/arrow-key
+  IN if it belongs to C major (a natural), OUT if it's sharpened (chromatic).
+  Wrong bounces back. SRI `scales.member.<in|out>`.
+- **High or Low?** (sort into two baskets) — treble notes above vs below the
+  middle line drag into HIGH / LOW baskets; correct drop sounds the note. The
+  Sort-the-Beats bucket format on pitch *direction*. SRI `pitch.height.*`.
+- **Sharp or Flat?** (sort into two baskets) — each note carries a sharp or a
+  flat; drag it into the matching basket. Reading the accidental sign is the
+  skill. SRI `accidentals.sign.*`.
+- **Higher or Lower?** (ear, binary) — two notes play in sequence; tap whether
+  the second is higher or lower. No staff — the aural twin of High or Low?. Big
+  replay button. SRI `pitch.hear.<up|down>`.
+- **Step or Skip?** (staff reading, binary) — two notes on the staff; read
+  whether the move is a step (the next line/space, a 2nd) or a skip (a bigger
+  leap). The motion vocabulary that precedes naming exact intervals. Correct
+  answer sounds both notes. SRI `reading.motion.<step|skip>`.
 
 ## Partitura-powered — shipped
 
