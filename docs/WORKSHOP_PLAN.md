@@ -30,11 +30,12 @@
   2. ✅ *Piano* — octave labels (C1, C2… as small superscripts) + a wide,
      horizontally **sweepable** keyboard (C1..~A6).
   3. ✅ *Click-to-move* — clicking a staff line while a note is selected moves it.
-  4. ⏳ *One top row* — fold clef/time/key/zoom into the app bar (back · settings
-     · undo/redo · play · ⋮).
-  5. ⏳ *Physical keyboard* — A–G notes, duration digits, arrows, delete, Ctrl+Z/
-     C/V.
-  6. ⏳ *Chord mode* — place multiple notes at one timeslot (model → chord).
+  4. ✅ *One top row* — clef/time/key/zoom folded into the app bar (back ·
+     settings · undo/redo · play · ⋮); Row A removed.
+  5. ✅ *Physical keyboard* — A–G notes, 1–5 values, arrows (caret/pitch), R
+     rest, `.` dot, Del delete, Ctrl/⌘ Z·Y·C·X·V.
+  6. ⏳ *Chord mode* — place multiple notes at one timeslot (model → chord;
+     `EditorElement` becomes multi-pitch).
   7. ⏳ *More:* start off beat 1 (pickup / mid-measure), **slurs** (Bindebögen),
      **lyrics** typing, caret, marquee-select, drag-reorder, hairpins, page/print.
 - **Git note:** after every main push, `feature/score-workshop` is reset to

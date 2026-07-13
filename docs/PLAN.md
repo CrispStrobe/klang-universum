@@ -66,16 +66,16 @@ and push to origin/main** before/after touching shared files. Format:
   tempo, play-along+chord SRI, tunes, robustness suite, AEC 3a/3b-design.
   Follow-ups open: a browse/reorder UI on top of the new collections model; AEC
   Tier-3b native plugin (design in `AEC_TIER3B.md`).
-- **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuilding
-  the Composition Workshop as a touch-first score editor on `ScoreDocument` —
-  shipped **G1/G2** (editor shell · multiline canvas · piano) + **G3a**
-  (two-row chrome · range select + move/copy/cut/paste) + **G5a** (open
-  MusicXML/MIDI files into the editor). Wrote a partitura **contract handover**
-  ([WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)) for
-  drag-move / hover-caret / interactive multiline grand-staff (needs a partitura
-  agent). shipped dynamics + anchored palette (no bottom sheets). Partitura C1–C5 landed (staff-tap/hover/caret/drag-move/regions/grand-staff) → shipped staff-tap + hover + drag-to-move (C1/C2/C3); shipped grand staff (C5, both clefs); next: caret + marquee select ·
-  touching `lib/features/workshop/**` only · **in progress** · detail:
-  [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
+- **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · Composition
+  Workshop = a full touch+desktop score editor on `ScoreDocument`. Shipped:
+  editor shell · multiline canvas · dynamics/articulations/ties palette (anchored
+  dropdown) · range select + move/copy/cut/paste · open MusicXML/MIDI · wired
+  partitura **C1–C5** (staff-tap · hover ghost · drag-to-move · grand staff) ·
+  **perf memoization · sweepable piano (C1 labels) · one-row app bar ·
+  click-to-move · physical-keyboard entry** · big unit+widget+integration test
+  suite (350 tests). Next: **chord mode** (multi-pitch model), slurs, lyrics,
+  caret, marquee-select, hairpins, print · touching `lib/features/workshop/**` ·
+  **in progress** · detail: [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
   `MultiSystemView(elementColors:)` param); and **Workshop P0/P1/P2a** (About
