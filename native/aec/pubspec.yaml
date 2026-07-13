@@ -1,0 +1,19 @@
+name: aec_fullduplex
+description: >-
+  Native full-duplex acoustic echo cancellation for Klang Universum — a
+  miniaudio (MIT-0) duplex host plus our own MIT echo-canceller core (a C port
+  of lib/core/audio/echo_canceller.dart). Standalone package; deliberately NOT a
+  dependency of the app until it builds green on every CI platform (see
+  docs/AEC_TIER3B.md).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  ffi: ^2.1.0
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^4.0.0

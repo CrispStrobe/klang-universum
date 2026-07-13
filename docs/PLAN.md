@@ -33,8 +33,20 @@ and push to origin/main** before/after touching shared files. Format:
   `await useGameSurface(tester);` first (or `pumpGame(tester, home, sri: sri)`),
   which lays the screen out on a generous surface. Don't pin the partitura ref —
   the workshop agent needs `@main`'s C-contract APIs.
-- **opus (play-along/AEC)** · **idle / not actively editing** — shipped the
-  **songbook browse/reorder UI**: a Songbooks section in `song_screen.dart` +
+- **opus (AEC Tier 3b, worktree `../mus-aec`)** · **idle / last-shipped** —
+  shipped **AEC Tier-3b milestone (a)**: a standalone native plugin package at
+  **`native/aec/`** (miniaudio MIT-0 duplex host + our own **cleanroom C port**
+  of `echo_canceller.dart` — dropped BSD-3 SpeexDSP to keep the tree MIT). C
+  shim + `dart:ffi` `AecEngine`/`AecDsp` + offline **ERLE cross-check** test
+  (C twin of `echo_canceller_test.dart`); both libs build on macOS, all tests
+  green. **CI-safe:** package has its own pubspec, is NOT in the app's
+  `pubspec.yaml`, and `native/aec/**` is excluded in the app's
+  `analysis_options.yaml` (only shared file I touched besides the docs). Next:
+  BlackHole loopback → wire into `MicrophonePitchService` behind a flag →
+  Android/iOS/Win/Linux plugin wrappers. Detail: `native/aec/README.md`,
+  `AEC_TIER3B.md`.
+- **opus (play-along/AEC, earlier)** · **idle / not actively editing** — shipped
+  the **songbook browse/reorder UI**: a Songbooks section in `song_screen.dart` +
   new `songbook_screen.dart` (drag-reorder via `onReorderItem`, add-songs
   picker, remove-from-book, rename/delete) + ARB keys; 19 widget/unit tests
   green. Before that, the 4-task batch: (1) **Free Sing → Song Book** (sung melody → Score, `dd8150a`),

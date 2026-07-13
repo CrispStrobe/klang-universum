@@ -17,6 +17,9 @@ analyzer:
   exclude:
     - lib/l10n/app_localizations*.dart # generated
     - lib/**.g.dart
+    # Standalone native/FFI plugin (AEC Tier 3b) — its own package with its own
+    # analysis_options; not part of the app and deliberately out of pubspec.yaml.
+    - native/aec/**
 
 linter:
   rules:

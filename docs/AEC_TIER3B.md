@@ -1,9 +1,34 @@
 # AEC Tier 3b — native full-duplex echo cancellation (design)
 
-Status: **design / not started in code.** Tiers 0 (headphones) + 1 (platform
-`echoCancel`) shipped; Tier 3a (pure-Dart `echo_canceller.dart`) is a verified
-linear canceller that starves in-app on alignment. This doc is the plan for the
-real fix so a dedicated build can execute it without re-deriving the shape.
+Status: **milestone (a) shipped** (was: design / not started). Tiers 0
+(headphones) + 1 (platform `echoCancel`) shipped; Tier 3a (pure-Dart
+`echo_canceller.dart`) is a verified linear canceller that starves in-app on
+alignment. This doc is the plan for the real fix.
+
+### Progress — 2026-07-13
+The standalone plugin package lives at **`native/aec/`** (its own pubspec,
+deliberately **NOT** a dependency of the app, so CI never compiles or analyzes
+it — see CI safety below). Milestone (a) is done and verified on this Mac:
+- **`src/aec_dsp.c`** — the AEC core, a line-for-line **cleanroom C port of
+  `lib/core/audio/echo_canceller.dart`** + the FFT from `chroma_analysis.dart`.
+- **`src/aec_shim.c` + `src/miniaudio_impl.c`** — the miniaudio full-duplex host
+  (aligned mic/reference on one clock) feeding lock-free SPSC rings.
+- **`lib/aec_dsp.dart` / `lib/aec_engine.dart`** — hand-written `dart:ffi`
+  bindings; `NativeAecEngine` implements the `AecEngine` API below.
+- **`test/aec_erle_test.dart`** — offline **ERLE cross-check** over FFI, the C
+  twin of `test/echo_canceller_test.dart` (same IR/seeds/thresholds → proves the
+  port has no algorithmic drift). Both libs build on macOS; all tests green.
+
+**Licensing decision (MIT-clean):** the original stack below recommended
+SpeexDSP (BSD-3). To keep the tree MIT we instead **cleanroom-ported our own
+AEC** (already ours, already ERLE-tested) and kept only **miniaudio (MIT-0)** as
+the duplex host. SpeexDSP stays an *optional* future component behind a build
+flag if residual/nonlinear performance ever demands it — a separate, explicit
+licensing call, not baked in.
+
+Next: (b) BlackHole loopback → (c) wire into `MicrophonePitchService` behind a
+capability flag → (d) Android/iOS/Windows/Linux plugin wrappers, CI-green → (e)
+on-device tuning. See `native/aec/README.md`.
 
 ## Why a native plugin is required
 

@@ -1,0 +1,4 @@
+# Build artifacts + Dart tooling — never commit compiled output.
+build/
+.dart_tool/
+pubspec.lock

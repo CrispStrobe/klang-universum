@@ -1,0 +1,6 @@
+# This package is a standalone native/FFI plugin, not part of the app. It uses
+# its own (recommended) lint set rather than the app's stricter house style, so
+# `dart analyze` here is meaningful without inheriting app-only rules. The app's
+# own analysis_options.yaml additionally *excludes* native/aec/ so a root
+# `flutter analyze` never applies app rules to these files either.
+include: package:lints/recommended.yaml
