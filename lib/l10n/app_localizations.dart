@@ -2474,6 +2474,30 @@ abstract class AppLocalizations {
   /// **'Which voice sings the highlighted note?'**
   String get whichVoicePrompt;
 
+  /// No description provided for @gameHearVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear the Voice'**
+  String get gameHearVoice;
+
+  /// No description provided for @gameHearVoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen — which voice do you hear alone?'**
+  String get gameHearVoiceSubtitle;
+
+  /// No description provided for @hearVoicePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'The chord plays, then one voice. Which voice was it?'**
+  String get hearVoicePrompt;
+
+  /// No description provided for @hearVoiceReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play again'**
+  String get hearVoiceReplay;
+
   /// No description provided for @gamePerformIt.
   ///
   /// In en, this message translates to:

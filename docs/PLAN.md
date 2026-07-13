@@ -18,11 +18,11 @@ and push to origin/main** before/after touching shared files. Format:
   Chart** + a **"Handwritten notes" (Petaluma) theme** — all on the
   partitura-public alignment, no partitura change. Also: shared game-test harness
   (`useGameSurface`/`pumpGame`), fixed hardcoded `../partitura/` test paths ·
-  **building SATB reading games** (Noten lesen, gated behind Duet ≥2★, shared
-  `note_reading/satb_voicing.dart` on `Measure.voice2` + `StaffSystem`): shipped
-  **Read the Voice** + **Which Voice?**; next = **ear: which voice did you hear?**,
-  then widen keys · touching `game_registry`, `core/tuning`, ARBs,
-  `features/games/note_reading/` · **in progress**. (OMR big-swing still open.)
+  shipped all **3 scoped SATB reading games** (Noten lesen, gated behind Duet
+  ≥2★, shared `note_reading/satb_voicing.dart` on `Measure.voice2` +
+  `StaffSystem`): **Read the Voice**, **Which Voice?**, **Hear the Voice** (2
+  voices → full SATB, C major) · **idle / awaiting next** (remaining: widen SATB
+  beyond C major; OMR big-swing).
   ⚠️ **For all agents — notation theme migration (just landed):** every
   `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
   (from `shared/score_theme.dart`), so the Settings "Handwritten notes" toggle
@@ -198,13 +198,13 @@ Fresh capabilities now resolvable in mus, ranked by fit:
   `chords.symbol.<symbol>`. Still open: chord symbols rendered over the Song Book
   chord sheets (in the play-along agent's songbook area).
 - [~] **Voices per staff** (`Measure.voice2`, 2 voices rendered; 3–4 model-only).
-  **Shipped 2 of 3 SATB minigames** (Noten lesen, gated behind Duet 2★, shared
-  `satb_voicing.dart`, [HISTORY.md](HISTORY.md#partitura-powered--shipped)):
-  **Read the Voice** (name the note a highlighted voice sings) + **Which Voice?**
-  (highlight a note → pick S/A/T/B). Both 2 voices (S+A) → full SATB, C major.
-  **Still to build (per scope):** *ear: which voice did you hear?*; then widen
-  keys. (`beam subdivision` / `appoggiatura` grace notes are separate
-  rendering-quality wins, still open.)
+  **Shipped all 3 scoped SATB minigames** (Noten lesen, gated behind Duet 2★,
+  shared `satb_voicing.dart`, [HISTORY.md](HISTORY.md#partitura-powered--shipped)):
+  **Read the Voice** (name the note a voice sings), **Which Voice?** (highlight →
+  pick S/A/T/B), **Hear the Voice** (aural: chord then one voice → which?). All 2
+  voices (S+A) → full SATB, C major. **Remaining:** widen beyond C major (keys /
+  inversions / 7ths). (`beam subdivision` / `appoggiatura` grace notes are
+  separate rendering-quality wins, still open.)
 - [ ] **Import breadth**: MEI, Humdrum **kern/ekern**, LilyPond, GP3/4/5,
   compressed `.mxl` — plus an **OMR transformer** (image → score). **→
   "Photograph your sheet music"** into the Song Book / play-along (big swing;

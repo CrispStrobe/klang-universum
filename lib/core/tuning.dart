@@ -116,6 +116,8 @@ const Map<String, List<int>> kStarThresholds = {
   'read_voice': [100, 600, 900],
   // Which Voice? (identify S/A/T/B of a highlighted note): 10 rounds x 100.
   'which_voice': [100, 600, 900],
+  // Hear the Voice (aural: identify the voice played alone): 10 rounds x 100.
+  'hear_voice': [100, 600, 900],
   // Perform It (mic-graded reading): 8 notes x 10 performed; skips score 0.
   'perform_read': [30, 60, 80],
   // Sing Back (ear→voice): 8 notes x 10 sung back; skips score 0.

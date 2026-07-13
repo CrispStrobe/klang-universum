@@ -1339,6 +1339,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get whichVoicePrompt => 'Welche Stimme singt die markierte Note?';
 
   @override
+  String get gameHearVoice => 'Stimme hören';
+
+  @override
+  String get gameHearVoiceSubtitle => 'Hör zu — welche Stimme hörst du allein?';
+
+  @override
+  String get hearVoicePrompt =>
+      'Der Akkord klingt, dann eine Stimme. Welche war es?';
+
+  @override
+  String get hearVoiceReplay => 'Nochmal abspielen';
+
+  @override
   String get gamePerformIt => 'Spiel es!';
 
   @override

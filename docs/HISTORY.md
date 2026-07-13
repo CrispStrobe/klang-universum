@@ -213,7 +213,14 @@ Games built on partitura capabilities the app didn't use before.
   (Soprano/Alto/Tenor/Bass). Trains voice-position and range awareness (where
   each voice lives on the grand staff) rather than pitch naming. Same 2-voice →
   SATB progression, shared `satb_voicing.dart`. SRI `note_reading.voice.<voice>`.
-  Second of three scoped SATB minigames (ear-which-voice to follow).
+  Second of three scoped SATB minigames.
+- **Hear the Voice** (Noten lesen, gated behind Duet 2★) — the aural SATB game:
+  the full chord plays, then one voice alone, and the child identifies which
+  voice they heard (S/A/T/B). No notation — pure ear-training; at 2 voices it's
+  "higher or lower?", at full SATB the inner voices make it a real listening
+  challenge. Shared voicing, cancellable audio timers, a replay button. SRI
+  `note_reading.ear_voice.<voice>`. Completes the three scoped SATB minigames
+  (Read / Which / Hear the Voice).
 - **"Handwritten notes" theme** (Settings) — a toggle that renders all notation
   in **Petaluma**, Steinberg's jazz/handwritten SMuFL face (SIL OFL 1.1),
   instead of Bravura. The font (+ metadata + OFL) is vendored in

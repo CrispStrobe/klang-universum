@@ -51,6 +51,7 @@ import 'package:klang_universum/features/games/measures/which_beat_screen.dart';
 import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
 import 'package:klang_universum/features/games/note_reading/duet_screen.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
+import 'package:klang_universum/features/games/note_reading/hear_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/ledger_leap_screen.dart';
 import 'package:klang_universum/features/games/note_reading/line_space_screen.dart';
 import 'package:klang_universum/features/games/note_reading/melody_dictation_screen.dart';
@@ -310,6 +311,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameWhichVoice,
       subtitle: (l) => l.gameWhichVoiceSubtitle,
       builder: (_) => const WhichVoiceScreen(),
+      unlockedWhen: (p) => p.starsFor('duet') >= 2,
+      lockedHint: (l) => l.advancedGameHint,
+    ),
+    // Aural SATB: hear the chord then one voice — which voice was it?
+    GameInfo(
+      id: 'hear_voice',
+      icon: Icons.hearing,
+      title: (l) => l.gameHearVoice,
+      subtitle: (l) => l.gameHearVoiceSubtitle,
+      builder: (_) => const HearVoiceScreen(),
       unlockedWhen: (p) => p.starsFor('duet') >= 2,
       lockedHint: (l) => l.advancedGameHint,
     ),
