@@ -778,6 +778,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameScaleDetectiveSubtitle => 'Finde den Ton, der nicht passt';
 
   @override
+  String get gameInScale => 'In der Tonleiter?';
+
+  @override
+  String get gameInScaleSubtitle =>
+      'Gehört der Ton zu C-Dur? Wische oder tippe';
+
+  @override
+  String get inScalePrompt => 'Ist dieser Ton in der C-Dur-Tonleiter?';
+
+  @override
+  String get inScaleLabel => 'Drin';
+
+  @override
+  String get notInScaleLabel => 'Raus';
+
+  @override
   String scaleDetectivePrompt(String name) {
     return 'Tippe auf den falschen Ton in der $name-Dur-Tonleiter!';
   }

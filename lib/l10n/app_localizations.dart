@@ -1472,6 +1472,36 @@ abstract class AppLocalizations {
   /// **'Find the note that doesn\'t belong'**
   String get gameScaleDetectiveSubtitle;
 
+  /// No description provided for @gameInScale.
+  ///
+  /// In en, this message translates to:
+  /// **'In the Scale?'**
+  String get gameInScale;
+
+  /// No description provided for @gameInScaleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Does the note belong to C major? Swipe or tap'**
+  String get gameInScaleSubtitle;
+
+  /// No description provided for @inScalePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this note in the C major scale?'**
+  String get inScalePrompt;
+
+  /// No description provided for @inScaleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'In'**
+  String get inScaleLabel;
+
+  /// No description provided for @notInScaleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Out'**
+  String get notInScaleLabel;
+
   /// No description provided for @scaleDetectivePrompt.
   ///
   /// In en, this message translates to:

@@ -56,6 +56,8 @@ const Map<String, List<int>> kStarThresholds = {
   'measure_fill': [100, 600, 900],
   // 8 rounds: max 800.
   'scale_detective': [100, 500, 750],
+  // In the Scale? (scale membership swipe): 10 rounds x 100.
+  'in_scale': [100, 600, 900],
   'chord_quiz': [100, 600, 900],
   'harmony_quiz': [100, 600, 900],
   // Roman Numerals: 10 rounds × 100; clean run tops near 1000.

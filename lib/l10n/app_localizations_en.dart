@@ -774,6 +774,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameScaleDetectiveSubtitle => 'Find the note that doesn\'t belong';
 
   @override
+  String get gameInScale => 'In the Scale?';
+
+  @override
+  String get gameInScaleSubtitle =>
+      'Does the note belong to C major? Swipe or tap';
+
+  @override
+  String get inScalePrompt => 'Is this note in the C major scale?';
+
+  @override
+  String get inScaleLabel => 'In';
+
+  @override
+  String get notInScaleLabel => 'Out';
+
+  @override
   String scaleDetectivePrompt(String name) {
     return 'Tap the wrong note in the $name major scale!';
   }

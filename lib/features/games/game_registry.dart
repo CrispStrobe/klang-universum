@@ -76,6 +76,7 @@ import 'package:klang_universum/features/games/note_values/value_order_screen.da
 import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
 import 'package:klang_universum/features/games/scales/command_caller_screen.dart';
 import 'package:klang_universum/features/games/scales/echo_sequence_screen.dart';
+import 'package:klang_universum/features/games/scales/in_scale_screen.dart';
 import 'package:klang_universum/features/games/scales/key_signature_screen.dart';
 import 'package:klang_universum/features/games/scales/major_minor_ear_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_builder_screen.dart';
@@ -450,6 +451,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameScaleDetective,
       subtitle: (l) => l.gameScaleDetectiveSubtitle,
       builder: (_) => const ScaleDetectiveScreen(),
+    ),
+    // Swipe drill: is this note in the C major scale?
+    GameInfo(
+      id: 'in_scale',
+      icon: Icons.rule,
+      title: (l) => l.gameInScale,
+      subtitle: (l) => l.gameInScaleSubtitle,
+      builder: (_) => const InScaleScreen(),
     ),
     GameInfo(
       id: 'major_minor_ear',
