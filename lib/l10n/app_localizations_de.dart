@@ -254,6 +254,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopSlur => 'Legatobogen (Auswahl phrasieren)';
 
   @override
+  String get workshopCrescendo => 'Crescendo (lauter werden)';
+
+  @override
+  String get workshopDiminuendo => 'Diminuendo (leiser werden)';
+
+  @override
+  String get workshopPickup => 'Auftakt';
+
+  @override
+  String get workshopPickupNone => 'Kein Auftakt';
+
+  @override
   String get workshopLyric => 'Liedtext';
 
   @override

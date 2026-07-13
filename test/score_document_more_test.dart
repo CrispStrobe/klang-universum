@@ -352,6 +352,74 @@ void main() {
     });
   });
 
+  group('hairpins', () {
+    ScoreDocument twoSelected() {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q);
+      d.selectIndex(0);
+      d.extendRight(); // c..d
+      return d;
+    }
+
+    test('applying a crescendo adds one wedge over the range', () {
+      final d = twoSelected();
+      d.hairpinSelected(HairpinType.crescendo);
+      expect(d.hairpins.length, 1);
+      expect(d.hairpins.single.type, HairpinType.crescendo);
+      expect(d.buildScore().hairpins.length, 1);
+    });
+
+    test('same type toggles off; a different type replaces it', () {
+      final d = twoSelected();
+      d.hairpinSelected(HairpinType.crescendo);
+      d.hairpinSelected(HairpinType.diminuendo); // replace
+      expect(d.hairpins.length, 1);
+      expect(d.hairpins.single.type, HairpinType.diminuendo);
+      d.hairpinSelected(HairpinType.diminuendo); // toggle off
+      expect(d.hairpins, isEmpty);
+    });
+
+    test('deleting an endpoint prunes the hairpin', () {
+      final d = twoSelected();
+      d.hairpinSelected(HairpinType.crescendo);
+      d.selectIndex(1);
+      d.deleteSelected();
+      expect(d.hairpins, isEmpty);
+    });
+  });
+
+  group('pickup (anacrusis)', () {
+    test('a quarter pickup makes the first bar hold one beat', () {
+      final d = ScoreDocument(); // 4/4
+      d.setPickup(_q); // one-beat upbeat
+      d.insertNote(_p(Step.g), _q); // the upbeat
+      d.insertNote(_p(Step.c), _q); // downbeat → new (full) bar
+      d.insertNote(_p(Step.d), _q);
+      final measures = d.buildScore().measures;
+      expect(measures.first.pickup, isTrue);
+      expect(measures.first.elements.length, 1, reason: 'only the upbeat');
+      expect(measures[1].elements.length, 2);
+    });
+
+    test('setPickup is undoable', () {
+      final d = ScoreDocument();
+      d.setPickup(_q);
+      expect(d.pickup, _q);
+      d.undo();
+      expect(d.pickup, isNull);
+    });
+
+    test('no pickup keeps the first bar full', () {
+      final d = ScoreDocument();
+      for (var i = 0; i < 4; i++) {
+        d.insertNote(_p(Step.c), _q);
+      }
+      expect(d.buildScore().measures.first.pickup, isFalse);
+      expect(d.buildScore().measures.length, 1);
+    });
+  });
+
   group('round-trips', () {
     test('MusicXML preserves pitches and durations', () {
       final src = ScoreDocument();

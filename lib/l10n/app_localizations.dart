@@ -530,6 +530,30 @@ abstract class AppLocalizations {
   /// **'Slur (phrase the selected notes)'**
   String get workshopSlur;
 
+  /// No description provided for @workshopCrescendo.
+  ///
+  /// In en, this message translates to:
+  /// **'Crescendo (getting louder)'**
+  String get workshopCrescendo;
+
+  /// No description provided for @workshopDiminuendo.
+  ///
+  /// In en, this message translates to:
+  /// **'Diminuendo (getting softer)'**
+  String get workshopDiminuendo;
+
+  /// No description provided for @workshopPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup (upbeat)'**
+  String get workshopPickup;
+
+  /// No description provided for @workshopPickupNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No pickup'**
+  String get workshopPickupNone;
+
   /// No description provided for @workshopLyric.
   ///
   /// In en, this message translates to:

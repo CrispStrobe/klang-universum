@@ -143,17 +143,23 @@ class _Snapshot {
     this.keySignature,
     this.clef,
     this.slurs,
+    this.hairpins,
     this.lyrics,
+    this.pickup,
   );
   final List<EditorElement> elements;
   final TimeSignature timeSignature;
   final KeySignature keySignature;
   final Clef clef;
 
-  /// Phrase slurs (start→end note ids) and per-note verse-1 lyric syllables —
+  /// Phrase slurs / hairpins (start→end note ids) and per-note lyric syllables —
   /// spans/attachments that live alongside the element stream, keyed by id.
   final List<Slur> slurs;
+  final List<Hairpin> hairpins;
   final Map<String, String> lyrics;
+
+  /// The anacrusis length (null = the piece starts on beat 1).
+  final NoteDuration? pickup;
 }
 
 /// The editable Workshop document: an ordered element stream, the document-level
@@ -181,10 +187,15 @@ class ScoreDocument {
   final List<_Snapshot> _undo = [];
   final List<_Snapshot> _redo = [];
 
-  // Phrase slurs (start→end note ids) and per-note verse-1 lyric syllables.
-  // Both attach to element ids, so structural edits prune dangling references.
+  // Phrase slurs / hairpins (start→end note ids) and per-note verse-1 lyric
+  // syllables. All attach to element ids, so structural edits prune danglers.
   final List<Slur> _slurs = [];
+  final List<Hairpin> _hairpins = [];
   final Map<String, String> _lyrics = {};
+
+  /// The anacrusis: when set, the first bar holds only this much music before
+  /// the downbeat (the piece "starts before beat 1"). Null = no pickup.
+  NoteDuration? pickup;
 
   // Memoized renders — invalidated only when the music changes, so hover/select
   // rebuilds don't force partitura to re-lay-out every frame.
@@ -230,8 +241,9 @@ class ScoreDocument {
   /// The verse-1 lyric syllable under element [id] (null = none).
   String? lyricOf(String id) => _lyrics[id];
 
-  /// A slur needs at least two selected notes to span.
+  /// A slur/hairpin needs at least two selected notes to span.
   bool get canSlur => _selectedNoteIndices.length >= 2;
+  bool get canHairpin => canSlur;
 
   /// Whether the selected range's endpoints already carry a slur (so the UI can
   /// show the toggle as active).
@@ -241,6 +253,20 @@ class ScoreDocument {
     return _slurs.contains(
       Slur(_elements[notes.first].id, _elements[notes.last].id),
     );
+  }
+
+  /// The crescendo/diminuendo wedges currently on the score.
+  List<Hairpin> get hairpins => List.unmodifiable(_hairpins);
+
+  /// The hairpin type on the selected range's endpoints (null = none).
+  HairpinType? get hairpinType {
+    final notes = _selectedNoteIndices;
+    if (notes.length < 2) return null;
+    final start = _elements[notes.first].id, end = _elements[notes.last].id;
+    for (final h in _hairpins) {
+      if (h.startId == start && h.endId == end) return h.type;
+    }
+    return null;
   }
 
   String _newId() => 'w${_nextId++}';
@@ -253,7 +279,9 @@ class ScoreDocument {
         keySignature,
         clef,
         List.of(_slurs),
+        List.of(_hairpins),
         Map.of(_lyrics),
+        pickup,
       );
 
   void _snapshot() {
@@ -272,9 +300,13 @@ class ScoreDocument {
     _slurs
       ..clear()
       ..addAll(s.slurs);
+    _hairpins
+      ..clear()
+      ..addAll(s.hairpins);
     _lyrics
       ..clear()
       ..addAll(s.lyrics);
+    pickup = s.pickup;
     _invalidate();
     // Keep the selection valid against the restored length.
     if (_elements.isEmpty) {
@@ -467,6 +499,21 @@ class ScoreDocument {
     if (!_slurs.remove(slur)) _slurs.add(slur);
   }
 
+  /// Toggle a crescendo/diminuendo wedge over the selected range (needs ≥2
+  /// notes). Applying the same type again removes it; a different type replaces
+  /// it. Undoable.
+  void hairpinSelected(HairpinType type) {
+    final notes = _selectedNoteIndices;
+    if (notes.length < 2) return;
+    final start = _elements[notes.first].id, end = _elements[notes.last].id;
+    _snapshot();
+    final existing =
+        _hairpins.where((h) => h.startId == start && h.endId == end).toList();
+    final wasSameType = existing.any((h) => h.type == type);
+    _hairpins.removeWhere((h) => h.startId == start && h.endId == end);
+    if (!wasSameType) _hairpins.add(Hairpin(start, end, type));
+  }
+
   /// Set (or clear, with empty/null) the verse-1 lyric syllable under note [id].
   /// No-op on a rest or when unchanged (so it doesn't clutter undo). Undoable.
   void setLyricFor(String id, String? text) {
@@ -489,7 +536,18 @@ class ScoreDocument {
     _slurs.removeWhere(
       (s) => !ids.contains(s.startId) || !ids.contains(s.endId),
     );
+    _hairpins.removeWhere(
+      (h) => !ids.contains(h.startId) || !ids.contains(h.endId),
+    );
     _lyrics.removeWhere((id, _) => !ids.contains(id));
+  }
+
+  /// Set the anacrusis length (null clears it). The first bar then holds only
+  /// this much music before the downbeat. Undoable.
+  void setPickup(NoteDuration? value) {
+    if (value == pickup) return;
+    _snapshot();
+    pickup = value;
   }
 
   /// Move the focus element so its lowest note lands on [pitch] (a chord moves
@@ -587,6 +645,7 @@ class ScoreDocument {
     _snapshot();
     _elements.clear();
     _slurs.clear();
+    _hairpins.clear();
     _lyrics.clear();
     clearSelection();
   }
@@ -598,7 +657,9 @@ class ScoreDocument {
     _snapshot();
     _elements.clear();
     _slurs.clear();
+    _hairpins.clear();
     _lyrics.clear();
+    pickup = null;
     clef = score.clef;
     keySignature = score.keySignature;
     timeSignature = score.timeSignature ?? TimeSignature.fourFour;
@@ -619,6 +680,12 @@ class ScoreDocument {
     for (final s in score.slurs) {
       final start = remap[s.startId], end = remap[s.endId];
       if (start != null && end != null) _slurs.add(Slur(start, end));
+    }
+    for (final h in score.hairpins) {
+      final start = remap[h.startId], end = remap[h.endId];
+      if (start != null && end != null) {
+        _hairpins.add(Hairpin(start, end, h.type));
+      }
     }
     for (final ly in score.lyrics) {
       final id = remap[ly.elementId];
@@ -663,6 +730,7 @@ class ScoreDocument {
           if (!e.isRest && e.dynamic != null) DynamicMarking(e.id, e.dynamic!),
       ],
       slurs: List.of(_slurs),
+      hairpins: List.of(_hairpins),
       lyrics: [
         for (final e in _elements)
           if (_lyrics[e.id] != null) Lyric(e.id, _lyrics[e.id]!),
@@ -716,21 +784,29 @@ class ScoreDocument {
       ];
     }
     final zero = Fraction(0, 1);
-    final capacity = timeSignature.toFraction();
+    final full = timeSignature.toFraction();
+    final pickupCap = pickup?.toFraction();
     final bars = <Measure>[];
     var current = <MusicElement>[];
     var filled = zero;
+    var isFirst = true;
+    // The opening bar holds only the anacrusis (when set); every later bar is
+    // a full measure. The short opening bar is flagged as a pickup.
+    Fraction capacity() => (isFirst && pickupCap != null) ? pickupCap : full;
+    void flush() {
+      bars.add(Measure(current, pickup: isFirst && pickupCap != null));
+      current = [];
+      filled = zero;
+      isFirst = false;
+    }
+
     for (final el in els) {
       final d = el.duration.toFraction();
-      if (filled > zero && (filled + d) > capacity) {
-        bars.add(Measure(current));
-        current = [];
-        filled = zero;
-      }
+      if (filled > zero && (filled + d) > capacity()) flush();
       current.add(el);
       filled = filled + d;
     }
-    if (current.isNotEmpty) bars.add(Measure(current));
+    if (current.isNotEmpty) flush();
     return bars;
   }
 

@@ -228,6 +228,33 @@ void main() {
     expect(editor.slurCount, 1);
   });
 
+  testWidgets('a crescendo over a two-note range records a hairpin',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.tap(_pianoKeyAt(16));
+    await tester.pump();
+    await tester.tap(_pianoKeyAt(18));
+    await tester.pump();
+    final extend = find.byIcon(Icons.keyboard_double_arrow_left);
+    await tester.ensureVisible(extend);
+    await tester.tap(extend);
+    await tester.pump();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final cresc = find.byTooltip(l10n.workshopCrescendo);
+    await tester.ensureVisible(cresc);
+    await tester.tap(cresc);
+    await tester.pump();
+    expect(editor.hairpinCount, 1);
+  });
+
+  testWidgets('the pickup dropdown is present in the top bar', (tester) async {
+    await pump(tester);
+    // The pickup control renders its "no pickup" dash; behaviour is covered by
+    // the model tests (a quarter pickup shortens the opening bar).
+    expect(find.text('—'), findsWidgets);
+  });
+
   testWidgets('switching to grand-staff mode shows both clefs', (tester) async {
     await pump(tester);
     expect(find.byType(MultiSystemView), findsOneWidget);

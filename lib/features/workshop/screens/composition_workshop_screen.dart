@@ -60,6 +60,15 @@ const _accidentalGlyph = {
 
 const _keyChoices = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 
+// Anacrusis lengths offered in the top bar (null = the piece starts on beat 1).
+const _pickupChoices = <NoteDuration?>[
+  null,
+  NoteDuration(DurationBase.eighth),
+  NoteDuration(DurationBase.quarter),
+  NoteDuration(DurationBase.quarter, dots: 1),
+  NoteDuration(DurationBase.half),
+];
+
 String _keyLabel(int fifths) =>
     fifths == 0 ? '♮' : (fifths > 0 ? '$fifths♯' : '${-fifths}♭');
 
@@ -140,6 +149,7 @@ abstract interface class CompositionWorkshopTester {
   bool get hasSelection;
   int get selectedCount;
   int get slurCount;
+  int get hairpinCount;
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
@@ -192,6 +202,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   @override
   int get slurCount => _doc.slurs.length;
+
+  @override
+  int get hairpinCount => _doc.hairpins.length;
 
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
@@ -512,6 +525,36 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     );
   }
 
+  /// Crescendo / diminuendo toggles — shown when ≥2 notes are selected. Each is
+  /// highlighted when that wedge already spans the range.
+  Widget? _hairpinButtons(AppLocalizations l10n) {
+    if (!_doc.canHairpin) return null;
+    final active = _doc.hairpinType;
+    final scheme = Theme.of(context).colorScheme;
+    Widget button(HairpinType type, String glyph, String tooltip) => IconButton(
+          iconSize: 22,
+          visualDensity: VisualDensity.compact,
+          isSelected: active == type,
+          tooltip: tooltip,
+          onPressed: () => _run(() => _doc.hairpinSelected(type)),
+          icon: Text(
+            glyph,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: active == type ? scheme.primary : null,
+            ),
+          ),
+        );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        button(HairpinType.crescendo, '<', l10n.workshopCrescendo),
+        button(HairpinType.diminuendo, '>', l10n.workshopDiminuendo),
+      ],
+    );
+  }
+
   /// An inline lyric field — shown when a single note is selected. Keyed by the
   /// note id so it resets to that note's syllable as the selection moves.
   Widget? _lyricField(AppLocalizations l10n) {
@@ -687,6 +730,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               mode: _mode,
               timeSignature: _doc.timeSignature,
               fifths: _doc.keySignature.fifths,
+              pickup: _doc.pickup,
               armedGlyph:
                   _values.firstWhere((v) => v.base == _pendingBase).glyph,
               dotted: _dotted,
@@ -695,6 +739,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               onTime: (t) => setState(() => _doc.setTimeSignature(t)),
               onKey: (f) =>
                   setState(() => _doc.setKeySignature(KeySignature(f))),
+              onPickup: (p) => setState(() => _doc.setPickup(p)),
               onZoomIn: () => _zoomBy(3),
               onZoomOut: () => _zoomBy(-3),
             ),
@@ -873,6 +918,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 onCut: () => _run(_doc.cutSelection),
                 onPaste: () => _run(_doc.paste),
                 slur: _slurButton(l10n),
+                hairpin: _hairpinButtons(l10n),
                 lyric: _lyricField(l10n),
                 palette: _paletteButton(l10n),
                 onDelete: () => _run(_doc.deleteSelected),
@@ -946,12 +992,14 @@ class _TopBar extends StatelessWidget {
     required this.mode,
     required this.timeSignature,
     required this.fifths,
+    required this.pickup,
     required this.armedGlyph,
     required this.dotted,
     required this.status,
     required this.onMode,
     required this.onTime,
     required this.onKey,
+    required this.onPickup,
     required this.onZoomIn,
     required this.onZoomOut,
   });
@@ -959,12 +1007,14 @@ class _TopBar extends StatelessWidget {
   final _StaffMode mode;
   final TimeSignature timeSignature;
   final int fifths;
+  final NoteDuration? pickup;
   final String armedGlyph;
   final bool dotted;
   final String status;
   final ValueChanged<_StaffMode> onMode;
   final ValueChanged<TimeSignature> onTime;
   final ValueChanged<int> onKey;
+  final ValueChanged<NoteDuration?> onPickup;
   final VoidCallback onZoomIn, onZoomOut;
 
   @override
@@ -1000,6 +1050,25 @@ class _TopBar extends StatelessWidget {
               items: {for (final f in _keyChoices) f: _keyLabel(f)},
               onChanged: onKey,
               tooltip: l10n.workshopKey,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Tooltip(
+                message: l10n.workshopPickup,
+                child: DropdownButton<NoteDuration?>(
+                  value: pickup,
+                  isDense: true,
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    for (final p in _pickupChoices)
+                      DropdownMenuItem(
+                        value: p,
+                        child: _pickupLabel(p, l10n),
+                      ),
+                  ],
+                  onChanged: onPickup,
+                ),
+              ),
             ),
             IconButton(
               iconSize: 20,
@@ -1053,6 +1122,25 @@ class _TopBar extends StatelessWidget {
           ),
         ),
       );
+
+  /// The pickup dropdown's label: a dash for "none", else the note-value glyph
+  /// (with a dot for dotted values).
+  Widget _pickupLabel(NoteDuration? p, AppLocalizations l10n) {
+    if (p == null) return const Text('—', style: TextStyle(fontSize: 16));
+    final glyph = switch (p.base) {
+      DurationBase.eighth => Smufl.eighthNote,
+      DurationBase.half => Smufl.halfNote,
+      _ => Smufl.quarterNote,
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MusicGlyph(glyph, size: 16),
+        if (p.dots > 0)
+          const Text('.', style: TextStyle(fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
 }
 
 /// Row B — the value/accidental/rest strip, plus contextual selection actions.
@@ -1082,6 +1170,7 @@ class _InputBar extends StatelessWidget {
     required this.onCut,
     required this.onPaste,
     required this.slur,
+    required this.hairpin,
     required this.lyric,
     required this.palette,
     required this.onDelete,
@@ -1099,6 +1188,7 @@ class _InputBar extends StatelessWidget {
   final VoidCallback onUp, onDown, onMoveLeft, onMoveRight;
   final VoidCallback onCopy, onCut, onPaste, onDelete;
   final Widget? slur;
+  final Widget? hairpin;
   final Widget? lyric;
   final Widget? palette;
 
@@ -1186,6 +1276,7 @@ class _InputBar extends StatelessWidget {
                   canPaste ? onPaste : null,
                 ),
                 if (slur != null) slur!,
+                if (hairpin != null) hairpin!,
                 if (palette != null) palette!,
                 _act(Icons.delete_outline, l10n.workshopDelete, onDelete),
                 if (lyric != null) ...[const _Sep(), lyric!],

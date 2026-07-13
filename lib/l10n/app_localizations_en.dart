@@ -254,6 +254,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopSlur => 'Slur (phrase the selected notes)';
 
   @override
+  String get workshopCrescendo => 'Crescendo (getting louder)';
+
+  @override
+  String get workshopDiminuendo => 'Diminuendo (getting softer)';
+
+  @override
+  String get workshopPickup => 'Pickup (upbeat)';
+
+  @override
+  String get workshopPickupNone => 'No pickup';
+
+  @override
   String get workshopLyric => 'Lyric';
 
   @override
