@@ -14,6 +14,16 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (UX/tutorials, worktree `../mus-aec` on `feature/ux-tutorials`)** ·
+  **Learnability & UX push** (see the "Learnability & UX" section below):
+  P0 app-silence fix + global sound on/off toggle, then mascot-as-guide, then a
+  per-game tutorial system. **Starting with the P0 audio work now** — touching
+  `core/services/audio_service.dart` + `settings_service.dart` + `main.dart` +
+  a new shared `GameAppBar`; later the hot files `game_widgets.dart`,
+  `note_mascot.dart`, `game_registry.dart`, the **ARBs** (tutorials). ⚠️ heads-up
+  to the SATB/workshop agents: I'll edit `game_widgets.dart`'s `FeedbackLine`
+  (mascot moves to `RoundHeader`) and add a `tutorial` hook to `GameInfo` — will
+  land these in small commits and rebase often. · **in progress**
 - **opus (this agent)** · **idle** — all this session's work is on `origin/main`,
   CI-green **and deployed live** (Vercel cap reset). Shipped: the
   **partitura-public alignment** (+ hardcoded-path fix), the **shared game-test
