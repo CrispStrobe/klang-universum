@@ -69,6 +69,7 @@ import 'package:klang_universum/features/games/note_reading/place_note_screen.da
 import 'package:klang_universum/features/games/note_reading/read_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
 import 'package:klang_universum/features/games/note_reading/step_skip_screen.dart';
+import 'package:klang_universum/features/games/note_reading/which_clef_screen.dart';
 import 'package:klang_universum/features/games/note_reading/which_voice_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
@@ -266,6 +267,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameStepSkipSubtitle,
       builder: (_) => const StepSkipScreen(),
       tutorial: stepSkipPrimer,
+    ),
+    // Read the clef sign itself — Treble vs Bass (Alto/Tenor at 2★).
+    GameInfo(
+      id: 'which_clef',
+      icon: Icons.vpn_key_outlined,
+      title: (l) => l.gameWhichClef,
+      subtitle: (l) => l.gameWhichClefSubtitle,
+      builder: (_) => const WhichClefScreen(),
     ),
     GameInfo(
       id: 'place_note_treble',

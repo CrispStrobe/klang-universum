@@ -342,6 +342,12 @@ Games built on partitura capabilities the app didn't use before.
   the notation goes live; each tap is judged Perfect/Good/Miss against the
   notated onsets over a steady click (one Ticker master clock, no drift). A
   no-fail performance toy.
+- **Which Clef?** (Noten lesen) — the youngest clef-literacy drill: a bare clef
+  is drawn on an empty staff (`StaffView` over `Measure([])`) and the child taps
+  which clef it is. Treble vs Bass for beginners, widening to **Alto and Tenor**
+  at 2★ (all four rendered by partitura's `Clef`). A binary `AnswerGrid`, no-fail;
+  nothing else in the app taught reading the clef *sign* itself. SRI
+  `reading.clef.<treble|bass|alto|tenor>`.
 
 ## Toy-inspired mechanics — shipped
 

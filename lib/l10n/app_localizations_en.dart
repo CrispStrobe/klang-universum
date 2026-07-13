@@ -468,6 +468,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skipLabel => 'Skip';
 
   @override
+  String get gameWhichClef => 'Which Clef?';
+
+  @override
+  String get gameWhichClefSubtitle =>
+      'Is it the treble clef or the bass clef? (Alto & tenor at 2★.)';
+
+  @override
+  String get whichClefPrompt => 'Which clef is this?';
+
+  @override
+  String get trebleClefLabel => 'Treble';
+
+  @override
+  String get bassClefLabel => 'Bass';
+
+  @override
+  String get altoClefLabel => 'Alto';
+
+  @override
+  String get tenorClefLabel => 'Tenor';
+
+  @override
   String get moduleGuitar => 'Guitar Corner';
 
   @override

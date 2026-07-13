@@ -926,6 +926,48 @@ abstract class AppLocalizations {
   /// **'Skip'**
   String get skipLabel;
 
+  /// No description provided for @gameWhichClef.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Clef?'**
+  String get gameWhichClef;
+
+  /// No description provided for @gameWhichClefSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is it the treble clef or the bass clef? (Alto & tenor at 2★.)'**
+  String get gameWhichClefSubtitle;
+
+  /// No description provided for @whichClefPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which clef is this?'**
+  String get whichClefPrompt;
+
+  /// No description provided for @trebleClefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Treble'**
+  String get trebleClefLabel;
+
+  /// No description provided for @bassClefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get bassClefLabel;
+
+  /// No description provided for @altoClefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Alto'**
+  String get altoClefLabel;
+
+  /// No description provided for @tenorClefLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenor'**
+  String get tenorClefLabel;
+
   /// No description provided for @moduleGuitar.
   ///
   /// In en, this message translates to:

@@ -14,12 +14,13 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (workshop→games)** · **🚧 ACTIVE — new minigame "Which Clef?"** (binary:
-  show a clef, tap Treble/Bass; +alto/tenor at 2★). Will touch hot shared files
-  `game_registry.dart`, `core/tuning.dart` (`kStarThresholds`), ARBs
-  (`app_en.arb`/`app_de.arb`) **additively** + a new
-  `features/games/note_reading/which_clef_screen.dart` + a widget test. Pulling
-  --rebase before each commit; keeping edits additive to avoid collisions. ·
+- **opus (workshop→games)** · **idle / SHIPPED — new minigame "Which Clef?"**
+  (Noten lesen). A bare clef on an empty staff (`StaffView` + `Measure([])`);
+  tap **Treble/Bass**, widening to **Alto/Tenor at 2★** (`starsFor>=2`). Binary
+  `AnswerGrid`, no-fail `QuizRoundMixin`; SRI `reading.clef.<name>`. Added one
+  `GameInfo` (`game_registry.dart`), a `[100,600,900]` bracket (`core/tuning.dart`),
+  EN+DE ARB keys, `which_clef_screen.dart` + `which_clef_test.dart`. Consistency
+  suite + whole-project analyze green; on origin/main. ·
   _also this session: shipped **partitura C10a+C10b** (live drag) + the Workshop
   **live drop caret** — all on origin/main, CI-green._
 - **opus (primers)** · **idle / SHIPPED (round 3)** — Learnability & UX #1–#3
@@ -659,8 +660,9 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [ ] **Same or Different?** (binary ear) — two notes (or two 2-note cells); are
   they the same or different? The youngest-child discrimination skill (Kodály).
   Trivial to build on the `direction_ear` scaffold.
-- [ ] **Which Clef?** (binary) — show a bare clef; tap Treble or Bass. Tiny, very
-  young, a 30-minute win. Could extend to alto/tenor at 2★.
+- [x] **Which Clef?** (binary) — **shipped** (Noten lesen): a bare clef on an
+  empty staff; tap Treble or Bass, widening to Alto/Tenor at 2★. SRI
+  `reading.clef.<name>`. See [HISTORY.md](HISTORY.md#partitura-powered--shipped).
 - [ ] **Dotted or Not?** (two-basket sort) — sort note glyphs by whether they
   carry a dot (½-again longer). Teaches the dot; reuses the sort scaffold.
 - [ ] **Ascending or Descending?** (binary ear) — play a 3–4 note run; is it going

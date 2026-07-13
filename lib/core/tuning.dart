@@ -139,6 +139,7 @@ const Map<String, List<int>> kStarThresholds = {
   'accidental_sort': [100, 400, 550],
   // Step or Skip? (melodic-motion reading): 10 rounds x 100.
   'step_skip': [100, 600, 900],
+  'which_clef': [100, 600, 900],
   // Falling Notes: 15 notes, points = 10 x combo multiplier (1..5). A flawless
   // combo run tops out near 450; 3 stars rewards a near-perfect streak.
   'falling_notes': [50, 250, 400],

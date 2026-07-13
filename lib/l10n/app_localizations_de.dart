@@ -470,6 +470,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String get skipLabel => 'Sprung';
 
   @override
+  String get gameWhichClef => 'Welcher Schlüssel?';
+
+  @override
+  String get gameWhichClefSubtitle =>
+      'Violin- oder Bassschlüssel? (Alt & Tenor ab 2★.)';
+
+  @override
+  String get whichClefPrompt => 'Welcher Notenschlüssel ist das?';
+
+  @override
+  String get trebleClefLabel => 'Violin';
+
+  @override
+  String get bassClefLabel => 'Bass';
+
+  @override
+  String get altoClefLabel => 'Alt';
+
+  @override
+  String get tenorClefLabel => 'Tenor';
+
+  @override
   String get moduleGuitar => 'Gitarren-Ecke';
 
   @override
