@@ -569,6 +569,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         chart: PlayAlongCharts.celloFirstPosition,
         title: AppLocalizations.of(ctx)!.gamePlayAlong,
         gameId: 'cello_play_along',
+        sriPrefix: 'cello.play_along',
       ),
     ),
     GameInfo(
@@ -625,6 +626,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         chart: PlayAlongCharts.guitarRiff,
         title: AppLocalizations.of(ctx)!.gamePlayAlong,
         gameId: 'guitar_play_along',
+        sriPrefix: 'guitar.play_along',
       ),
     ),
     GameInfo(
@@ -667,6 +669,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         chart: PlayAlongCharts.twinkleSing,
         title: AppLocalizations.of(ctx)!.gameSingAlong,
         gameId: 'sing_along',
+        sriPrefix: 'voice.sing_along',
       ),
     ),
     GameInfo(
@@ -688,6 +691,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         chart: PlayAlongCharts.keyboardScale,
         title: AppLocalizations.of(ctx)!.gamePlayAlong,
         gameId: 'keyboard_play_along',
+        sriPrefix: 'keyboard.play_along',
       ),
     ),
     GameInfo(

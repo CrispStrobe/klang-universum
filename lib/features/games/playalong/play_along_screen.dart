@@ -26,6 +26,7 @@ import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -46,12 +47,23 @@ import 'package:provider/provider.dart';
 /// How the moving score is drawn. The child can switch live.
 enum PlayAlongView { highway, notation, falling, coach }
 
+/// The spaced-repetition item id for a play-along note, e.g.
+/// `cello.play_along.fs3`. The accidental is spelled (s/f) so C and C# don't
+/// collide onto the same review item.
+String playAlongSriId(String prefix, int midi) {
+  final p = pitchFromMidi(midi);
+  final acc =
+      p.alter > 0 ? 's' * p.alter : (p.alter < 0 ? 'f' * (-p.alter) : '');
+  return '$prefix.${p.step.name}$acc${p.octave}';
+}
+
 class PlayAlongScreen extends StatefulWidget {
   const PlayAlongScreen({
     super.key,
     required this.chart,
     required this.title,
     required this.gameId,
+    required this.sriPrefix,
   });
 
   final PlayAlongChart chart;
@@ -59,6 +71,10 @@ class PlayAlongScreen extends StatefulWidget {
 
   /// Key into [kStarThresholds] and [ProgressService] (e.g. 'cello_play_along').
   final String gameId;
+
+  /// SRI namespace for the notes (e.g. 'cello.play_along'); each note's outcome
+  /// is recorded under `<sriPrefix>.<note>` for spaced-repetition review.
+  final String sriPrefix;
 
   @override
   State<PlayAlongScreen> createState() => _PlayAlongScreenState();
@@ -170,6 +186,15 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
           score: _engine.hits,
           stars: scoreToStars(widget.gameId, _engine.hits, _engine.hits > 0),
         );
+    // Feed each note's outcome to spaced repetition, so notes the child keeps
+    // missing come back in Review — same as every other game.
+    final sri = context.read<SriService>();
+    for (final ns in _engine.notes) {
+      sri.recordResponse(
+        playAlongSriId(widget.sriPrefix, ns.note.midi),
+        ns.result == NoteResult.hit,
+      );
+    }
     _stop();
     if (mounted) setState(() => _finished = true);
   }

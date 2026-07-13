@@ -40,6 +40,7 @@ void main() {
             chart: PlayAlongCharts.celloFirstPosition,
             title: 'Play along',
             gameId: 'cello_play_along',
+            sriPrefix: 'cello.play_along',
           ),
         ),
       ),
@@ -64,5 +65,14 @@ void main() {
     await tester.tap(find.text('Notation').last);
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(MultiSystemView), findsOneWidget);
+  });
+
+  test('playAlongSriId spells the note with its accidental', () {
+    expect(playAlongSriId('cello.play_along', 57), 'cello.play_along.a3');
+    expect(
+      playAlongSriId('cello.play_along', 54),
+      'cello.play_along.fs3',
+    ); // F#3
+    expect(playAlongSriId('keyboard.play_along', 60), 'keyboard.play_along.c4');
   });
 }
