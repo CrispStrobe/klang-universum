@@ -46,10 +46,14 @@ void main() {
 
     // Swipe left (Line). If that was wrong, the round stays put — then the
     // note must be a space, so swipe right. Either way it should advance.
-    await tester.drag(find.byType(StaffView), const Offset(-150, 0));
+    // Drag from the Scaffold centre (the card sits under it): dragging the
+    // StaffView directly can't get a centre — it's inside a Transform.rotate,
+    // which throws on CI's smaller default surface.
+    final center = tester.getCenter(find.byType(Scaffold));
+    await tester.dragFrom(center, const Offset(-150, 0));
     await tester.pumpAndSettle();
     if (find.text('Round 1 of 10').evaluate().isNotEmpty) {
-      await tester.drag(find.byType(StaffView), const Offset(150, 0));
+      await tester.dragFrom(center, const Offset(150, 0));
       await tester.pumpAndSettle();
     }
 
@@ -82,10 +86,11 @@ void main() {
     await tester.pump();
     expect(find.byType(StaffView), findsOneWidget);
 
-    await tester.drag(find.byType(StaffView), const Offset(-150, 0));
+    final center = tester.getCenter(find.byType(Scaffold));
+    await tester.dragFrom(center, const Offset(-150, 0));
     await tester.pumpAndSettle();
     if (find.text('Round 1 of 10').evaluate().isNotEmpty) {
-      await tester.drag(find.byType(StaffView), const Offset(150, 0));
+      await tester.dragFrom(center, const Offset(150, 0));
       await tester.pumpAndSettle();
     }
     expect(find.text('Round 2 of 10'), findsOneWidget);
