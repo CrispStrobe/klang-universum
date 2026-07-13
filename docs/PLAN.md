@@ -40,7 +40,8 @@ and push to origin/main** before/after touching shared files. Format:
   **Longest First** (note-value ordering), **In the Scale?** (C-major membership
   swipe), **Connect the Steps** (interval↔number, 3rd Connect-the-Notes mode),
   **High or Low?** (pitch-direction sort), **Sharp or Flat?** (accidental-sign
-  sort). Also unblocked shared main twice
+  sort), **Higher or Lower?** (melodic-direction ear game). Also unblocked
+  shared main twice
   (formatted the workshop agent's test files that were failing CI's lint/format).
   ⚠️ **For all agents — notation theme migration (just landed):** every
   `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
@@ -460,8 +461,10 @@ Remaining open sub-variants:
   SRI `pitch.height.*`) and **Sharp or Flat?** (accidental-sign sort, SRI
   `accidentals.sign.*`) — both drag notes into two baskets, reusing the
   Sort-the-Beats bucket format with staff cards. Still open: a major/minor sort.
-- [~] Swipe variants: **shipped In the Scale?** (C-major membership swipe/tap
-  drill — natural = in, sharpened = out). Still open: major-or-minor-by-ear.
+- [x] Swipe / binary ear variants: **shipped In the Scale?** (C-major membership
+  swipe/tap) and **Higher or Lower?** (`direction_ear` — melodic-direction ear
+  game, the aural twin of the High or Low? sort; SRI `pitch.hear.*`).
+  Major-or-minor-by-ear already exists as `major_minor_ear`.
 - [ ] Falling-notes "catch the longest" (note-values) mode.
 - [x] Connect an interval↔number column: **shipped Connect the Steps** — a third
   mode on the Connect the Notes board (`ConnectMode.intervals`): an interval on a
