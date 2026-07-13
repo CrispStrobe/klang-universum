@@ -68,6 +68,7 @@ import 'package:klang_universum/features/games/note_reading/pitch_sort_screen.da
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_reading/read_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
+import 'package:klang_universum/features/games/note_reading/step_skip_screen.dart';
 import 'package:klang_universum/features/games/note_reading/which_voice_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
@@ -210,6 +211,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameAccidentalSort,
       subtitle: (l) => l.gameAccidentalSortSubtitle,
       builder: (_) => const AccidentalSortScreen(),
+    ),
+    // Step-vs-skip melodic-motion reading (before naming exact intervals).
+    GameInfo(
+      id: 'step_skip',
+      icon: Icons.moving,
+      title: (l) => l.gameStepSkip,
+      subtitle: (l) => l.gameStepSkipSubtitle,
+      builder: (_) => const StepSkipScreen(),
     ),
     GameInfo(
       id: 'place_note_treble',

@@ -872,6 +872,36 @@ abstract class AppLocalizations {
   /// **'Lower'**
   String get directionDownLabel;
 
+  /// No description provided for @gameStepSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Step or Skip?'**
+  String get gameStepSkip;
+
+  /// No description provided for @gameStepSkipSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Do the two notes step to a neighbour or skip a gap?'**
+  String get gameStepSkipSubtitle;
+
+  /// No description provided for @stepSkipPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Does the second note step next door, or skip over a gap?'**
+  String get stepSkipPrompt;
+
+  /// No description provided for @stepLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Step'**
+  String get stepLabel;
+
+  /// No description provided for @skipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skipLabel;
+
   /// No description provided for @moduleGuitar.
   ///
   /// In en, this message translates to:

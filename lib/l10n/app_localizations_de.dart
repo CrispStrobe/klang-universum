@@ -441,6 +441,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get directionDownLabel => 'Tiefer';
 
   @override
+  String get gameStepSkip => 'Schritt oder Sprung?';
+
+  @override
+  String get gameStepSkipSubtitle =>
+      'Gehen die zwei Noten zum Nachbarn oder springen sie?';
+
+  @override
+  String get stepSkipPrompt =>
+      'Geht die zweite Note zum Nachbarn, oder springt sie über eine Lücke?';
+
+  @override
+  String get stepLabel => 'Schritt';
+
+  @override
+  String get skipLabel => 'Sprung';
+
+  @override
   String get moduleGuitar => 'Gitarren-Ecke';
 
   @override
