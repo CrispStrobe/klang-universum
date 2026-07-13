@@ -3104,6 +3104,30 @@ abstract class AppLocalizations {
   /// **'Tempo'**
   String get playAlongTempo;
 
+  /// No description provided for @playAlongDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get playAlongDifficulty;
+
+  /// No description provided for @playAlongDifficultyEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get playAlongDifficultyEasy;
+
+  /// No description provided for @playAlongDifficultyMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get playAlongDifficultyMedium;
+
+  /// No description provided for @playAlongDifficultyHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get playAlongDifficultyHard;
+
   /// No description provided for @chordListenerPrompt.
   ///
   /// In en, this message translates to:

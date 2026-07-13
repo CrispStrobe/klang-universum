@@ -571,6 +571,10 @@
   "playAlongNext": "als Nächstes",
   "playAlongBacking": "Begleitung (Kopfhörer nutzen)",
   "playAlongTempo": "Tempo",
+  "playAlongDifficulty": "Schwierigkeit",
+  "playAlongDifficultyEasy": "Leicht",
+  "playAlongDifficultyMedium": "Mittel",
+  "playAlongDifficultyHard": "Schwer",
   "chordListenerPrompt": "Spiele oder zupfe einen Akkord",
   "chordListenerMatch": "{percent}% Übereinstimmung",
   "@chordListenerMatch": {

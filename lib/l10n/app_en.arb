@@ -815,6 +815,10 @@
   "playAlongNext": "next",
   "playAlongBacking": "Backing (use headphones)",
   "playAlongTempo": "Tempo",
+  "playAlongDifficulty": "Difficulty",
+  "playAlongDifficultyEasy": "Easy",
+  "playAlongDifficultyMedium": "Medium",
+  "playAlongDifficultyHard": "Hard",
   "chordListenerPrompt": "Strum or play a chord",
   "chordListenerMatch": "{percent}% match",
   "@chordListenerMatch": {

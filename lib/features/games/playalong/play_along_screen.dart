@@ -47,6 +47,26 @@ import 'package:provider/provider.dart';
 /// How the moving score is drawn. The child can switch live.
 enum PlayAlongView { highway, notation, falling, coach }
 
+/// How forgiving the scoring is (independent of tempo): easy = wide cents
+/// window + less coverage needed; hard = tight intonation.
+enum PlayAlongDifficulty { easy, medium, hard }
+
+extension PlayAlongDifficultyParams on PlayAlongDifficulty {
+  /// Cents a note may be off and still count.
+  double get centsTolerance => switch (this) {
+        PlayAlongDifficulty.easy => 70,
+        PlayAlongDifficulty.medium => 45,
+        PlayAlongDifficulty.hard => 25,
+      };
+
+  /// Fraction of a note's frames that must be on pitch to count as a hit.
+  double get hitCoverage => switch (this) {
+        PlayAlongDifficulty.easy => 0.3,
+        PlayAlongDifficulty.medium => 0.4,
+        PlayAlongDifficulty.hard => 0.5,
+      };
+}
+
 /// The spaced-repetition item id for a play-along note, e.g.
 /// `cello.play_along.fs3`. The accidental is spelled (s/f) so C and C# don't
 /// collide onto the same review item.
@@ -85,7 +105,13 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   final MicrophonePitchService _service = MicrophonePitchService();
   late final Ticker _ticker;
   StreamSubscription<PitchReading>? _sub;
-  late PlayAlongEngine _engine = PlayAlongEngine(_chart);
+  late PlayAlongEngine _engine = _buildEngine();
+
+  PlayAlongEngine _buildEngine() => PlayAlongEngine(
+        _chart,
+        centsTolerance: _difficulty.centsTolerance,
+        hitCoverage: _difficulty.hitCoverage,
+      );
 
   /// The chart at the selected tempo (notes unchanged, bpm scaled).
   PlayAlongChart get _chart => _tempo == 1.0
@@ -96,6 +122,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   final CountInClicker _clicker = CountInClicker();
   PlayAlongView _view = PlayAlongView.highway;
   double _tempo = 1.0; // slow-down multiplier (1.0 = the chart's own tempo)
+  PlayAlongDifficulty _difficulty = PlayAlongDifficulty.medium;
   bool _backing =
       false; // play audible backing (Tier 0/1: needs headphones/AEC)
   bool _backingStarted = false;
@@ -206,7 +233,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     setState(() {
       _error = null;
       _finished = false;
-      _engine = PlayAlongEngine(_chart);
+      _engine = _buildEngine();
     });
     try {
       _sub = _service.readings.listen(
@@ -283,6 +310,19 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                     value: t,
                     child: Text(t == 1.0 ? '1×' : '${_fracLabel(t)}×'),
                   ),
+              ],
+            ),
+          if (!_finished)
+            PopupMenuButton<PlayAlongDifficulty>(
+              icon: const Icon(Icons.tune),
+              tooltip: l.playAlongDifficulty,
+              initialValue: _difficulty,
+              // Read when the engine is built at Play, so only change stopped.
+              enabled: !_running,
+              onSelected: (d) => setState(() => _difficulty = d),
+              itemBuilder: (context) => [
+                for (final d in PlayAlongDifficulty.values)
+                  PopupMenuItem(value: d, child: Text(_difficultyName(l, d))),
               ],
             ),
           if (!_finished)
@@ -411,6 +451,13 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
         0.5 => '½',
         0.75 => '¾',
         _ => '$t',
+      };
+
+  String _difficultyName(AppLocalizations l, PlayAlongDifficulty d) =>
+      switch (d) {
+        PlayAlongDifficulty.easy => l.playAlongDifficultyEasy,
+        PlayAlongDifficulty.medium => l.playAlongDifficultyMedium,
+        PlayAlongDifficulty.hard => l.playAlongDifficultyHard,
       };
 
   String _viewName(AppLocalizations l, PlayAlongView v) => switch (v) {

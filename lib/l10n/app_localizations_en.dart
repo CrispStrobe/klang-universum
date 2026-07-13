@@ -1693,6 +1693,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAlongTempo => 'Tempo';
 
   @override
+  String get playAlongDifficulty => 'Difficulty';
+
+  @override
+  String get playAlongDifficultyEasy => 'Easy';
+
+  @override
+  String get playAlongDifficultyMedium => 'Medium';
+
+  @override
+  String get playAlongDifficultyHard => 'Hard';
+
+  @override
   String get chordListenerPrompt => 'Strum or play a chord';
 
   @override

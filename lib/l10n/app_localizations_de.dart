@@ -1702,6 +1702,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playAlongTempo => 'Tempo';
 
   @override
+  String get playAlongDifficulty => 'Schwierigkeit';
+
+  @override
+  String get playAlongDifficultyEasy => 'Leicht';
+
+  @override
+  String get playAlongDifficultyMedium => 'Mittel';
+
+  @override
+  String get playAlongDifficultyHard => 'Schwer';
+
+  @override
   String get chordListenerPrompt => 'Spiele oder zupfe einen Akkord';
 
   @override

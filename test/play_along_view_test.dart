@@ -67,6 +67,18 @@ void main() {
     expect(find.byType(MultiSystemView), findsOneWidget);
   });
 
+  test('difficulty loosens the pitch window and coverage as it eases', () {
+    // Easy is the most forgiving, hard the strictest — a monotone ordering
+    // so the levels can never silently invert.
+    const easy = PlayAlongDifficulty.easy;
+    const medium = PlayAlongDifficulty.medium;
+    const hard = PlayAlongDifficulty.hard;
+    expect(easy.centsTolerance, greaterThan(medium.centsTolerance));
+    expect(medium.centsTolerance, greaterThan(hard.centsTolerance));
+    expect(easy.hitCoverage, lessThan(medium.hitCoverage));
+    expect(medium.hitCoverage, lessThan(hard.hitCoverage));
+  });
+
   test('playAlongSriId spells the note with its accidental', () {
     expect(playAlongSriId('cello.play_along', 57), 'cello.play_along.a3');
     expect(
