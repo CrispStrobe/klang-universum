@@ -180,6 +180,22 @@ void main() {
     expect(doc.isEmpty, isTrue);
   });
 
+  test('buildGrandStaff splits the line across both clefs, bars aligned', () {
+    final doc = ScoreDocument();
+    doc.insertNote(_p(Step.g, octave: 4), _quarter); // G4 (midi 67) → treble
+    doc.insertNote(_p(Step.c, octave: 3), _quarter); // C3 (midi 48) → bass
+    final gs = doc.buildGrandStaff();
+    final upper = gs.upper.measures.expand((m) => m.elements).toList();
+    final lower = gs.lower.measures.expand((m) => m.elements).toList();
+    // Both staves carry the same number of events (aligned time grid).
+    expect(upper.length, 2);
+    expect(lower.length, 2);
+    expect(upper[0], isA<NoteElement>()); // G4 on the treble staff
+    expect(upper[1], isA<RestElement>()); // filler while the bass note sounds
+    expect(lower[0], isA<RestElement>());
+    expect(lower[1], isA<NoteElement>()); // C3 on the bass staff
+  });
+
   test('empty document renders a single whole-rest bar', () {
     final doc = ScoreDocument();
     expect(doc.isEmpty, isTrue);

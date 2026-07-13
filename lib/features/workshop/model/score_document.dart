@@ -368,11 +368,12 @@ class ScoreDocument {
   /// Re-pitch the note [id] to the staff position of a dragged [target]
   /// (keeps its accidental). Used by drag-to-move. Returns the new pitch, or
   /// null if nothing changed. Undoable.
-  Pitch? moveById(String id, StaffTarget target) {
+  Pitch? moveById(String id, StaffTarget target, {Clef? clef}) {
     final i = _indexOf(id);
     if (i < 0 || _elements[i].isRest) return null;
     final current = _elements[i].pitch!;
-    final moved = target.pitchFor(clef, preferredAlter: current.alter);
+    final moved =
+        target.pitchFor(clef ?? this.clef, preferredAlter: current.alter);
     if (moved.midiNumber == current.midiNumber) return null;
     _snapshot();
     _elements[i] = _elements[i].withPitch(moved);
@@ -492,45 +493,78 @@ class ScoreDocument {
   /// overflow the current bar starts a new one (no splitting/tying yet). An
   /// empty document renders a single whole-rest bar so the staff stays wide.
   Score buildScore() {
-    if (_elements.isEmpty) {
-      return Score(
-        clef: clef,
-        keySignature: keySignature,
-        timeSignature: timeSignature,
-        measures: const [
-          Measure([RestElement(NoteDuration(DurationBase.whole))]),
-        ],
-      );
-    }
-
-    final zero = Fraction(0, 1);
-    final capacity = timeSignature.toFraction();
-    final bars = <Measure>[];
-    var current = <MusicElement>[];
-    var filled = zero;
-
-    for (final e in _elements) {
-      final d = e.duration.toFraction();
-      if (filled > zero && (filled + d) > capacity) {
-        bars.add(Measure(current));
-        current = [];
-        filled = zero;
-      }
-      current.add(e.toElement());
-      filled = filled + d;
-    }
-    if (current.isNotEmpty) bars.add(Measure(current));
-
     return Score(
       clef: clef,
       keySignature: keySignature,
       timeSignature: timeSignature,
-      measures: bars,
+      measures: _packMeasures([for (final e in _elements) e.toElement()]),
       dynamics: [
         for (final e in _elements)
           if (!e.isRest && e.dynamic != null) DynamicMarking(e.id, e.dynamic!),
       ],
     );
+  }
+
+  /// The score rendered across two clefs: each note goes on the treble staff
+  /// (from middle C up) or the bass staff (below), with a matching rest on the
+  /// other staff so both share the same bar grid. This displays one melody with
+  /// both clefs (no jarring whole-score flip) — it is not two independent voices.
+  GrandStaff buildGrandStaff() {
+    final upper = <MusicElement>[];
+    final lower = <MusicElement>[];
+    for (final e in _elements) {
+      if (e.isRest) {
+        upper.add(RestElement(e.duration, id: e.id));
+        lower.add(RestElement(e.duration));
+      } else if (e.pitch!.midiNumber >= 60) {
+        upper.add(e.toElement());
+        lower.add(RestElement(e.duration));
+      } else {
+        lower.add(e.toElement());
+        upper.add(RestElement(e.duration));
+      }
+    }
+    return GrandStaff(
+      upper: Score(
+        clef: Clef.treble,
+        keySignature: keySignature,
+        timeSignature: timeSignature,
+        measures: _packMeasures(upper),
+      ),
+      lower: Score(
+        clef: Clef.bass,
+        keySignature: keySignature,
+        timeSignature: timeSignature,
+        measures: _packMeasures(lower),
+      ),
+    );
+  }
+
+  /// Pack a flat element list into bar-lined measures (empty → one whole-rest
+  /// bar so the staff stays wide and tappable).
+  List<Measure> _packMeasures(List<MusicElement> els) {
+    if (els.isEmpty) {
+      return const [
+        Measure([RestElement(NoteDuration(DurationBase.whole))]),
+      ];
+    }
+    final zero = Fraction(0, 1);
+    final capacity = timeSignature.toFraction();
+    final bars = <Measure>[];
+    var current = <MusicElement>[];
+    var filled = zero;
+    for (final el in els) {
+      final d = el.duration.toFraction();
+      if (filled > zero && (filled + d) > capacity) {
+        bars.add(Measure(current));
+        current = [];
+        filled = zero;
+      }
+      current.add(el);
+      filled = filled + d;
+    }
+    if (current.isNotEmpty) bars.add(Measure(current));
+    return bars;
   }
 
   int get barCount => buildScore().measures.length;

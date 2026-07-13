@@ -11,12 +11,13 @@
   `caret`/`ghostTarget`, `onElementDrag*` (drag-move), `elementRegions`/
   `elementIdsIn` (marquee), and **`InteractiveGrandStaffView`** (wrapped,
   interactive, both clefs). These unblock the deferred gestures.
-- **Wired (C1/C2/C3):** ✅ staff-tap placement on the multiline canvas, ✅ hover
-  ghost preview (desktop), ✅ **drag-to-move** notes (drag a note to re-pitch,
-  keeps its accidental — `ScoreDocument.moveById`).
-- **Doing next:** **grand staff** via `InteractiveGrandStaffView` (C5 — both
-  clefs), a placement **caret** (C2), marquee range-select (C4), then hairpins /
-  page / print. (Drag horizontal-reorder is a follow-up on C3.)
+- **Wired (C1/C2/C3/C5):** ✅ staff-tap placement, ✅ hover ghost preview, ✅
+  **drag-to-move** notes (keeps accidental), ✅ **grand staff** — a third staff
+  mode (𝄞 / 𝄢 / 𝄞𝄢) renders the line across both clefs via
+  `InteractiveGrandStaffView` + `ScoreDocument.buildGrandStaff` (auto-splits by
+  pitch at middle C; both staves share the bar grid). No more whole-score flip.
+- **Doing next:** a placement **caret** (C2), marquee range-select (C4), drag
+  horizontal-reorder (C3 follow-up), hairpins, page / print.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 

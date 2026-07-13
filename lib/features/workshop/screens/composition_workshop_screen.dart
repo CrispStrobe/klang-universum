@@ -63,7 +63,15 @@ const _keyChoices = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 String _keyLabel(int fifths) =>
     fifths == 0 ? '♮' : (fifths > 0 ? '$fifths♯' : '${-fifths}♭');
 
-const _clefGlyph = {Clef.treble: '𝄞', Clef.bass: '𝄢'};
+/// How the staff is shown: a single treble or bass staff, or both clefs at once
+/// (a grand staff that auto-splits the line by pitch).
+enum _StaffMode { treble, bass, grand }
+
+const _staffModeGlyph = {
+  _StaffMode.treble: '𝄞',
+  _StaffMode.bass: '𝄢',
+  _StaffMode.grand: '𝄞𝄢',
+};
 
 const _articulationOptions = <Articulation>[
   Articulation.staccato,
@@ -116,7 +124,21 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   bool _dotted = false;
   _Accidental _accidental = _Accidental.natural;
   double _zoom = 16;
+  _StaffMode _mode = _StaffMode.treble;
   StaffTarget? _hover; // where a click/tap would land (desktop hover preview)
+
+  bool get _grand => _mode == _StaffMode.grand;
+
+  /// The clef to interpret a staff position under: in grand mode it depends on
+  /// which staff was hit (0 = treble, 1 = bass); otherwise the document clef.
+  Clef _clefForTarget(StaffTarget t) =>
+      _grand ? (t.staffIndex == 0 ? Clef.treble : Clef.bass) : _doc.clef;
+
+  void _setMode(_StaffMode m) => setState(() {
+        _mode = m;
+        if (m == _StaffMode.treble) _doc.setClef(Clef.treble);
+        if (m == _StaffMode.bass) _doc.setClef(Clef.bass);
+      });
 
   @override
   int get noteCount => _doc.length;
@@ -153,7 +175,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   /// Tap on empty staff → place a note at that pitch.
   void _onStaffTap(StaffTarget target) => _placePitch(
-        target.pitchFor(_doc.clef, preferredAlter: _alterOf(_accidental)),
+        target.pitchFor(
+          _clefForTarget(target),
+          preferredAlter: _alterOf(_accidental),
+        ),
       );
 
   void _onElementTap(String id) => setState(() {
@@ -165,7 +190,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   void _onElementDragEnd(String id, StaffTarget target) {
     Pitch? moved;
     setState(() {
-      moved = _doc.moveById(id, target);
+      moved = _doc.moveById(id, target, clef: _clefForTarget(target));
       _hover = null;
     });
     if (moved != null) _audio.playMidiNote(moved!.midiNumber, ms: 300);
@@ -480,13 +505,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         children: [
           // Row A — compact settings + status.
           _TopBar(
-            clef: _doc.clef,
+            mode: _mode,
             timeSignature: _doc.timeSignature,
             fifths: _doc.keySignature.fifths,
             armedGlyph: _values.firstWhere((v) => v.base == _pendingBase).glyph,
             dotted: _dotted,
             status: _statusText(context, l10n),
-            onClef: (c) => setState(() => _doc.setClef(c)),
+            onMode: _setMode,
             onTime: (t) => setState(() => _doc.setTimeSignature(t)),
             onKey: (f) => setState(() => _doc.setKeySignature(KeySignature(f))),
             onZoomIn: () => _zoomBy(3),
@@ -499,21 +524,39 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               color: Theme.of(context).colorScheme.surfaceContainerLowest,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: MultiSystemView(
-                  score: _doc.buildScore(),
-                  theme: theme,
-                  staffSpace: _zoom,
-                  elementColors: {
-                    for (final id in selectedIds) id: Colors.amber,
-                  },
-                  onElementTap: _onElementTap,
-                  onStaffTap: _onStaffTap,
-                  onHover: (t) => setState(() => _hover = t),
-                  ghostTarget: _hover,
-                  ghostDuration: _pendingDuration,
-                  onElementDragUpdate: (id, t) => setState(() => _hover = t),
-                  onElementDragEnd: _onElementDragEnd,
-                ),
+                child: _grand
+                    ? InteractiveGrandStaffView(
+                        grandStaff: _doc.buildGrandStaff(),
+                        theme: theme,
+                        staffSpace: _zoom,
+                        elementColors: {
+                          for (final id in selectedIds) id: Colors.amber,
+                        },
+                        onElementTap: _onElementTap,
+                        onStaffTap: _onStaffTap,
+                        onHover: (t) => setState(() => _hover = t),
+                        ghostTarget: _hover,
+                        ghostDuration: _pendingDuration,
+                        onElementDragUpdate: (id, t) =>
+                            setState(() => _hover = t),
+                        onElementDragEnd: _onElementDragEnd,
+                      )
+                    : MultiSystemView(
+                        score: _doc.buildScore(),
+                        theme: theme,
+                        staffSpace: _zoom,
+                        elementColors: {
+                          for (final id in selectedIds) id: Colors.amber,
+                        },
+                        onElementTap: _onElementTap,
+                        onStaffTap: _onStaffTap,
+                        onHover: (t) => setState(() => _hover = t),
+                        ghostTarget: _hover,
+                        ghostDuration: _pendingDuration,
+                        onElementDragUpdate: (id, t) =>
+                            setState(() => _hover = t),
+                        onElementDragEnd: _onElementDragEnd,
+                      ),
               ),
             ),
           ),
@@ -601,26 +644,26 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 /// Row A — compact clef/time/key/zoom dropdowns + a status readout.
 class _TopBar extends StatelessWidget {
   const _TopBar({
-    required this.clef,
+    required this.mode,
     required this.timeSignature,
     required this.fifths,
     required this.armedGlyph,
     required this.dotted,
     required this.status,
-    required this.onClef,
+    required this.onMode,
     required this.onTime,
     required this.onKey,
     required this.onZoomIn,
     required this.onZoomOut,
   });
 
-  final Clef clef;
+  final _StaffMode mode;
   final TimeSignature timeSignature;
   final int fifths;
   final String armedGlyph;
   final bool dotted;
   final String status;
-  final ValueChanged<Clef> onClef;
+  final ValueChanged<_StaffMode> onMode;
   final ValueChanged<TimeSignature> onTime;
   final ValueChanged<int> onKey;
   final VoidCallback onZoomIn, onZoomOut;
@@ -635,10 +678,12 @@ class _TopBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            _dropdown<Clef>(
-              value: clef == Clef.bass ? Clef.bass : Clef.treble,
-              items: {for (final c in _clefGlyph.keys) c: _clefGlyph[c]!},
-              onChanged: onClef,
+            _dropdown<_StaffMode>(
+              value: mode,
+              items: {
+                for (final m in _StaffMode.values) m: _staffModeGlyph[m]!,
+              },
+              onChanged: onMode,
               tooltip: l10n.workshopClef,
             ),
             _dropdown<TimeSignature>(
