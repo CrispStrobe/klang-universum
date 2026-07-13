@@ -128,8 +128,10 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
   ghost-note placement preview + bottom input dock (duration/accidental glyph
   strip + piano / staff-tap surface) + status line + contextual selection bar;
   undo/redo/play/settings on the top bar. Cross-platform (web build verified).
-- **G2 — Palettes & inspector**: bottom-sheet palettes + a contextual inspector;
-  the model gains dynamics, articulations, ties.
+- **G2 — Palettes & inspector** ◐: bottom-sheet **articulations palette**
+  (staccato/tenuto/accent/marcato/fermata) + **ties**, applied over the
+  selection (model: `EditorElement.articulations`/`tieToNext`). Still to do:
+  dynamics + a fuller contextual inspector.
 
   **Direct UX feedback:**
   1. ✅ *Cleaner chrome* — consolidated to **two slim rows** (Row A: compact
@@ -178,7 +180,8 @@ model to the local partitura — build multi-instrument on the public
 ## Status
 P0 ✅ · P1 ✅ · P2a ✅ · G1 ✅ · G2 ✅ (multiline canvas · piano placement) ·
 G3a ✅ (two-row chrome · range selection + move/copy/cut/paste) · G5a ✅ (open
-MusicXML/MIDI files into the editor). **Pending
+MusicXML/MIDI files into the editor) · G2 articulations+ties palette ✅.
+**Pending
 partitura** (see [WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)):
 staff-tap on multiline (C1), hover/caret (C2), **drag-to-move (C3)**, marquee
 select (C4), **interactive multiline grand staff (C5)**. App-side next while

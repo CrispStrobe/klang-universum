@@ -95,6 +95,41 @@ void main() {
     expect(doc.clef, Clef.treble);
   });
 
+  test('toggling an articulation adds/removes it and is undoable', () {
+    final doc = ScoreDocument();
+    doc.insertNote(_p(Step.c), _quarter); // auto-selected
+    doc.toggleArticulationOfSelected(Articulation.staccato);
+    expect(doc.elements.single.articulations, contains(Articulation.staccato));
+    doc.toggleArticulationOfSelected(Articulation.staccato); // off again
+    expect(doc.elements.single.articulations, isEmpty);
+    doc.undo(); // back to staccato
+    expect(doc.elements.single.articulations, contains(Articulation.staccato));
+  });
+
+  test('tie toggles across the whole selection, and rests are skipped', () {
+    final doc = ScoreDocument();
+    doc.insertNote(_p(Step.c), _quarter);
+    doc.insertRest(_quarter);
+    doc.insertNote(_p(Step.d), _quarter); // d selected
+    doc.selectPrev(); // rest
+    doc.selectPrev(); // c
+    doc.extendRight(); // c..rest
+    doc.extendRight(); // c..d (whole run)
+    doc.toggleTieOfSelected();
+    // Both notes tied; the rest is untouched.
+    expect(doc.elements[0].tieToNext, isTrue);
+    expect(doc.elements[2].tieToNext, isTrue);
+    expect(doc.elements[1].tieToNext, isFalse);
+  });
+
+  test('an articulation survives export to MusicXML', () {
+    final doc = ScoreDocument();
+    doc.insertNote(_p(Step.c), _quarter);
+    doc.toggleArticulationOfSelected(Articulation.accent);
+    final note = doc.buildScore().measures.first.elements.first as NoteElement;
+    expect(note.articulations, contains(Articulation.accent));
+  });
+
   test('loadScore imports a parsed Score and is undoable', () {
     final src = ScoreDocument();
     src.insertNote(_p(Step.c), _quarter);

@@ -464,6 +464,48 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
   String workshopSelectedCount(int count);
 
+  /// No description provided for @workshopArticulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Articulations & ties'**
+  String get workshopArticulations;
+
+  /// No description provided for @workshopStaccato.
+  ///
+  /// In en, this message translates to:
+  /// **'Staccato'**
+  String get workshopStaccato;
+
+  /// No description provided for @workshopTenuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenuto'**
+  String get workshopTenuto;
+
+  /// No description provided for @workshopAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'Accent'**
+  String get workshopAccent;
+
+  /// No description provided for @workshopMarcato.
+  ///
+  /// In en, this message translates to:
+  /// **'Marcato'**
+  String get workshopMarcato;
+
+  /// No description provided for @workshopFermata.
+  ///
+  /// In en, this message translates to:
+  /// **'Fermata'**
+  String get workshopFermata;
+
+  /// No description provided for @workshopTie.
+  ///
+  /// In en, this message translates to:
+  /// **'Tie'**
+  String get workshopTie;
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:

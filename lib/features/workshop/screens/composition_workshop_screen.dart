@@ -65,6 +65,23 @@ String _keyLabel(int fifths) =>
 
 const _clefGlyph = {Clef.treble: '𝄞', Clef.bass: '𝄢'};
 
+const _articulationOptions = <Articulation>[
+  Articulation.staccato,
+  Articulation.tenuto,
+  Articulation.accent,
+  Articulation.marcato,
+  Articulation.fermata,
+];
+
+String _articulationLabel(AppLocalizations l, Articulation a) => switch (a) {
+      Articulation.staccato => l.workshopStaccato,
+      Articulation.tenuto => l.workshopTenuto,
+      Articulation.accent => l.workshopAccent,
+      Articulation.marcato => l.workshopMarcato,
+      Articulation.fermata => l.workshopFermata,
+      _ => a.name,
+    };
+
 class CompositionWorkshopScreen extends StatefulWidget {
   const CompositionWorkshopScreen({super.key});
 
@@ -234,6 +251,60 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         SnackBar(content: Text(l10n.importFailed(e.toString()))),
       );
     }
+  }
+
+  void _openArticulations() {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final note = _doc.selected;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.workshopArticulations,
+                    style: Theme.of(ctx).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      for (final a in _articulationOptions)
+                        FilterChip(
+                          label: Text(_articulationLabel(l10n, a)),
+                          selected: note?.articulations.contains(a) ?? false,
+                          onSelected: (_) {
+                            setState(
+                              () => _doc.toggleArticulationOfSelected(a),
+                            );
+                            setSheet(() {});
+                          },
+                        ),
+                      FilterChip(
+                        label: Text(l10n.workshopTie),
+                        selected: note?.tieToNext ?? false,
+                        onSelected: (_) {
+                          setState(_doc.toggleTieOfSelected);
+                          setSheet(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -439,6 +510,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             onCopy: () => _run(_doc.copySelection),
             onCut: () => _run(_doc.cutSelection),
             onPaste: () => _run(_doc.paste),
+            onPalette: _openArticulations,
             onDelete: () => _run(_doc.deleteSelected),
           ),
           // Piano — places notes at the caret.
@@ -633,6 +705,7 @@ class _InputBar extends StatelessWidget {
     required this.onCopy,
     required this.onCut,
     required this.onPaste,
+    required this.onPalette,
     required this.onDelete,
   });
 
@@ -645,7 +718,7 @@ class _InputBar extends StatelessWidget {
   final ValueChanged<_Accidental> onPickAccidental;
   final VoidCallback onSelectPrev, onSelectNext, onExtendLeft, onExtendRight;
   final VoidCallback onUp, onDown, onMoveLeft, onMoveRight;
-  final VoidCallback onCopy, onCut, onPaste, onDelete;
+  final VoidCallback onCopy, onCut, onPaste, onPalette, onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -723,6 +796,11 @@ class _InputBar extends StatelessWidget {
                   Icons.content_paste,
                   l10n.workshopPaste,
                   canPaste ? onPaste : null,
+                ),
+                _act(
+                  Icons.expand_less,
+                  l10n.workshopArticulations,
+                  canTranspose ? onPalette : null,
                 ),
                 _act(Icons.delete_outline, l10n.workshopDelete, onDelete),
               ] else if (canPaste)
