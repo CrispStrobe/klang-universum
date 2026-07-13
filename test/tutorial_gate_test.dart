@@ -69,4 +69,35 @@ void main() {
     expect(find.text('game screen'), findsOneWidget);
     expect(find.text('Reading notes'), findsNothing);
   });
+
+  testWidgets('the "?" overlay reopens the primer on demand', (tester) async {
+    // Reopen must work regardless of the (first-run) auto-show.
+    autoShowTutorials = false;
+    SharedPreferences.setMockInitialValues({});
+
+    await pumpGame(
+      tester,
+      Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).push(gameRoute(_game)),
+              child: const Text('open game'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open game'));
+    await tester.pumpAndSettle();
+    // No auto-show (flag off), but the game exposes a "?" reopen button.
+    expect(find.text('Reading notes'), findsNothing);
+    expect(find.byIcon(Icons.help_outline_rounded), findsOneWidget);
+
+    // Tapping it opens the primer.
+    await tester.tap(find.byIcon(Icons.help_outline_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Reading notes'), findsOneWidget);
+  });
 }

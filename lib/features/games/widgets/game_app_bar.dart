@@ -1,0 +1,50 @@
+// lib/features/games/widgets/game_app_bar.dart
+//
+// A shared app bar for minigame screens: the title, the app-wide [SoundToggle],
+// and an optional "?" [TutorialButton] that reopens the game's primer. A screen
+// adopts it by swapping `appBar: AppBar(title: ...)` for
+// `appBar: GameAppBar(title: ..., tutorial: myPrimer)`.
+//
+// Adopting it puts the sound toggle on that screen too (it's otherwise only on
+// Home/Settings). Note the reopen "?" is ALSO provided app-wide by the overlay
+// in tutorial_gate.dart, so passing `tutorial:` here is only needed if a screen
+// wants the button in its bar rather than as the floating overlay.
+
+import 'package:flutter/material.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/tutorial/tutorial.dart';
+import 'package:klang_universum/shared/tutorial/tutorial_button.dart';
+import 'package:klang_universum/shared/widgets/sound_toggle.dart';
+
+class GameAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const GameAppBar({
+    super.key,
+    required this.title,
+    this.tutorial,
+    this.actions = const [],
+  });
+
+  /// The bar's title text.
+  final String title;
+
+  /// The primer to (re)open from the "?" action; null hides the button.
+  final Tutorial Function(AppLocalizations)? tutorial;
+
+  /// Screen-specific actions, placed before the sound toggle and "?".
+  final List<Widget> actions;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(title),
+      actions: [
+        ...actions,
+        const SoundToggle(),
+        if (tutorial != null) TutorialButton(builder: tutorial!),
+      ],
+    );
+  }
+}

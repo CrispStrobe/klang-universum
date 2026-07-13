@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
+import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/tutorial/tutorial_sheet.dart';
 
 /// Whether opening a game auto-pops its first-run tutorial. `main()` turns this
@@ -43,5 +44,31 @@ class _TutorialGateState extends State<TutorialGate> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.game.builder(context);
+  Widget build(BuildContext context) {
+    final tutorial = widget.game.tutorial;
+    final child = widget.game.builder(context);
+    // No primer → transparent passthrough (unchanged).
+    if (tutorial == null) return child;
+    // A primer exists: overlay a small "?" so the child can reopen it any time,
+    // without every screen having to wire up its own button. No game screen
+    // uses a FloatingActionButton, so this never collides with one.
+    final l10n = AppLocalizations.of(context)!;
+    return Stack(
+      children: [
+        child,
+        Positioned(
+          right: 8,
+          bottom: 8,
+          child: SafeArea(
+            child: FloatingActionButton.small(
+              heroTag: null, // avoid hero collisions with the child
+              tooltip: l10n.howToPlayTooltip,
+              onPressed: () => showTutorial(context, tutorial(l10n)),
+              child: const Icon(Icons.help_outline_rounded),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
