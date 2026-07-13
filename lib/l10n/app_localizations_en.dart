@@ -630,6 +630,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get gameRomanNumeral => 'Roman Numerals';
+
+  @override
+  String get gameRomanNumeralSubtitle =>
+      'Which scale-degree chord is this? (I, IV, V …)';
+
+  @override
+  String romanNumeralPrompt(String key) {
+    return 'In $key major — which chord is this?';
+  }
+
+  @override
+  String get romanNumeralReplay => 'Hear the chord again';
+
+  @override
   String get gameHarmonyQuiz => 'Function Quiz';
 
   @override

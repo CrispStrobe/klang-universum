@@ -1208,6 +1208,30 @@ abstract class AppLocalizations {
   /// **'{name} major'**
   String majorChordName(String name);
 
+  /// No description provided for @gameRomanNumeral.
+  ///
+  /// In en, this message translates to:
+  /// **'Roman Numerals'**
+  String get gameRomanNumeral;
+
+  /// No description provided for @gameRomanNumeralSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which scale-degree chord is this? (I, IV, V …)'**
+  String get gameRomanNumeralSubtitle;
+
+  /// No description provided for @romanNumeralPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'In {key} major — which chord is this?'**
+  String romanNumeralPrompt(String key);
+
+  /// No description provided for @romanNumeralReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear the chord again'**
+  String get romanNumeralReplay;
+
   /// No description provided for @gameHarmonyQuiz.
   ///
   /// In en, this message translates to:

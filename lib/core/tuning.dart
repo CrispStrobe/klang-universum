@@ -58,6 +58,8 @@ const Map<String, List<int>> kStarThresholds = {
   'scale_detective': [100, 500, 750],
   'chord_quiz': [100, 600, 900],
   'harmony_quiz': [100, 600, 900],
+  // Roman Numerals: 10 rounds × 100; clean run tops near 1000.
+  'roman_numeral': [100, 600, 900],
   'major_minor_ear': [100, 600, 900],
   'function_ear': [100, 600, 900],
   'interval_ear': [100, 600, 900],

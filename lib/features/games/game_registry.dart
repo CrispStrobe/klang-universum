@@ -33,6 +33,7 @@ import 'package:klang_universum/features/games/guitar/strum_toy_screen.dart';
 import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:klang_universum/features/games/harmony/function_ear_screen.dart';
 import 'package:klang_universum/features/games/harmony/harmony_quiz_screen.dart';
+import 'package:klang_universum/features/games/harmony/roman_numeral_screen.dart';
 import 'package:klang_universum/features/games/keyboard/chord_grip_hero_screen.dart';
 import 'package:klang_universum/features/games/keyboard/grand_staff_read_screen.dart';
 import 'package:klang_universum/features/games/keyboard/key_chord_screen.dart';
@@ -512,6 +513,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameHarmonyQuiz,
       subtitle: (l) => l.gameHarmonyQuizSubtitle,
       builder: (_) => const HarmonyQuizScreen(),
+    ),
+    // Roman numerals — every diatonic degree, named by partitura's analyser.
+    GameInfo(
+      id: 'roman_numeral',
+      icon: Icons.stairs,
+      title: (l) => l.gameRomanNumeral,
+      subtitle: (l) => l.gameRomanNumeralSubtitle,
+      builder: (_) => const RomanNumeralScreen(),
     ),
     GameInfo(
       id: 'cadence_workshop',

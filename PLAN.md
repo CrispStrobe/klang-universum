@@ -52,6 +52,27 @@ lenient match). Records to ProgressService + stars. Validated end-to-end via
 the BlackHole loop — all four roots detected on real captured audio (the
 7th/maj7 variants are expected overtone pickup, hence the lenient match).
 
+## Songbook — scan sheet music into playable songs (PLANNED)
+
+Product feature, not a detector: let the user build **songbooks** from real sheet
+music. Flow: import/scan a score photo → **Optical Music Recognition** → notation
+→ store as a song the existing play-along/notation modes can drive → group songs
+into named collections (browse / search / reorder / export).
+
+- **OMR engine — reuse CrispEmbed, don't rebuild.** `CrispEmbed` already ships
+  two validated OMR engines with Dart FFI bindings (`CrispEmbedOmr`): **SMT**
+  (printed pianoform → bekern) and **Polyphonic-TrOMR** (printed/camera-robust →
+  rhythm/pitch/lift → symbolic notation, `cstr/tromr-GGUF`). Auto-detected from
+  the GGUF; a plain photo of a staff system works. So this app consumes those
+  GGUFs via the FFI wrapper rather than porting any model here.
+- **Scope TBD:** persistence format (song = source image + recognized notation +
+  metadata), per-song metadata (title/composer/key/tempo), collection model,
+  and an edit/re-run flow for correcting recognition mistakes before it becomes a
+  chart. Bridge OMR notation → the app's internal note/chart representation that
+  `PlayAlongEngine` / the `partitura` notation view already consume.
+- Flagged here so the OMR work in CrispEmbed and this app's songbook UI stay
+  aligned; sequencing vs. the AEC/backing work is open.
+
 ## Known constraints / follow-ups (not yet done)
 - **Backing audio vs. mic (AEC):** see the dedicated section below — count-in
   metronome + optional backing (tiers 0/1) shipped; a Dart AEC core is the next

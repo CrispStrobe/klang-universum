@@ -198,6 +198,16 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 Games built on partitura capabilities the app didn't use before.
 
+- **Roman Numerals** (Harmonik) — read *and* hear a diatonic triad in a key and
+  pick its Roman numeral (I, ii, iii, IV, V, vi, vii°). The chord is built with
+  `Triad(root, quality)` and named by partitura-public's new
+  `romanNumeralOf(pitches, key)` — the same analyser will later carry sevenths
+  (`V6/5`), inversions and minor keys. A step up from the Function Quiz (T/S/D
+  only): every diatonic degree is in play. Renders the chord with the key
+  signature, arpeggio-then-chord audio + replay, four numeral buttons. Widens
+  I/IV/V in C major → all seven degrees → all easy major keys. SRI
+  `harmony.roman.<symbol>`. *(First game on the partitura-public alignment — mus
+  now builds against `CrispStrobe/partitura@main` locally and on CI.)*
 - **Name That Chord** (chords) — read or hear a chord and pick its symbol; the
   answer is graded by partitura's `identifyChord`, so it names quality **and**
   inversion. Roots C–A (no accidental in the symbol); major/minor root position
