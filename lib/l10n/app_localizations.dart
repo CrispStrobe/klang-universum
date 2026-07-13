@@ -380,6 +380,24 @@ abstract class AppLocalizations {
   /// **'Down a semitone'**
   String get workshopDown;
 
+  /// No description provided for @workshopReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a value, then tap a note'**
+  String get workshopReady;
+
+  /// No description provided for @workshopTapStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the staff to place a note'**
+  String get workshopTapStaff;
+
+  /// No description provided for @workshopScoreSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Score settings'**
+  String get workshopScoreSettings;
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:

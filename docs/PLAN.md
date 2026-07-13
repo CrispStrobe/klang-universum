@@ -25,11 +25,11 @@ and push to origin/main** before/after touching shared files. Format:
   (maybe), the ARBs · **in progress**. Shipped: 4 scroll views, backing+platform
   AEC, count-in metronome, tempo, **AEC Tier 3a** (`bin/listen.dart --aec`;
   real-audio needs Tier 3b native — root `PLAN.md`).
-- **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuild the
-  Composition Workshop into a real score editor — now a full touch-first editor
-  GUI redesign on `ScoreDocument` · touching `lib/features/workshop/**`,
-  `lib/features/settings/screens/`, the ARBs (additive keys), `pubspec.yaml`
-  (`url_launcher`) · **in progress** · detail:
+- **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuilding
+  the Composition Workshop as a touch-first score editor on `ScoreDocument` —
+  shipped **G1** (new editor shell: zoom/pan canvas + ghost preview + bottom
+  input dock + piano); now **G2** (palettes + contextual inspector) · touching
+  `lib/features/workshop/**` only · **in progress** · detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only

@@ -171,6 +171,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopDown => 'Down a semitone';
 
   @override
+  String get workshopReady => 'Pick a value, then tap a note';
+
+  @override
+  String get workshopTapStaff => 'Tap the staff to place a note';
+
+  @override
+  String get workshopScoreSettings => 'Score settings';
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override
