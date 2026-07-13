@@ -4,11 +4,19 @@
 
 - **Shipped & merged:** P0 About · P1 model+undo · P2a cursor editing · G1 editor
   shell · G2 multiline canvas + piano · G3a two-row chrome + range/copy/paste/
-  move · G5a open MusicXML/MIDI · G2-palette articulations+ties+dynamics.
-- **Doing next (app-side):** hairpins (cresc/dim over a range) + a fuller
-  contextual inspector; then more import formats + page/print.
-- **Handed to a partitura agent** (`WORKSHOP_PARTITURA_CONTRACTS.md`): drag-move,
-  hover/caret, interactive multiline grand staff, multi-instrument.
+  move · G5a open MusicXML/MIDI · palette articulations+ties+dynamics (anchored
+  dropdown, **no bottom sheets**).
+- **🎉 Partitura shipped C1–C5** on `partitura-public@main` (see
+  `WORKSHOP_PARTITURA_CONTRACTS.md`): `MultiSystemView.onStaffTap`/`onHover`/
+  `caret`/`ghostTarget`, `onElementDrag*` (drag-move), `elementRegions`/
+  `elementIdsIn` (marquee), and **`InteractiveGrandStaffView`** (wrapped,
+  interactive, both clefs). These unblock the deferred gestures.
+- **Doing next (now buildable app-side):** wire **staff-tap placement** on the
+  multiline canvas (C1), **drag-to-move** notes (C3), **hover preview + caret**
+  (C2), and **grand staff** via `InteractiveGrandStaffView` (C5); then marquee
+  range-select (C4), hairpins, page/print.
+- **Git note:** after every main push, `feature/score-workshop` is reset to
+  `origin/main` (keep them equal) to avoid hash divergence.
 
 ---
 
