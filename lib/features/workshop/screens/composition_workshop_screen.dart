@@ -142,6 +142,39 @@ class CompositionWorkshopScreen extends StatefulWidget {
       _CompositionWorkshopScreenState();
 }
 
+/// Reading-order drop slot for a horizontal reorder drag: among [regions]
+/// (excluding [draggedId]), the count sitting before pointer x [dropX] in
+/// measure [targetMeasure] is the insertion [index]; [beforeId] is the id the
+/// drop caret should sit before (null past the last element). Ordering is by
+/// measure then notehead x, so it holds across bars and wrapped lines. Pure (no
+/// render state) so it's unit-testable; [_dropSlotFor] feeds it the live C7
+/// element regions, and both the drop-caret preview and the drop itself use it.
+@visibleForTesting
+({int index, String? beforeId}) computeDropSlot(
+  Iterable<({String id, Rect bounds, int measureIndex})> regions,
+  String draggedId,
+  double dropX,
+  int targetMeasure,
+) {
+  final ordered = regions.where((r) => r.id != draggedId).toList()
+    ..sort(
+      (a, b) => a.measureIndex != b.measureIndex
+          ? a.measureIndex.compareTo(b.measureIndex)
+          : a.bounds.center.dx.compareTo(b.bounds.center.dx),
+    );
+  final index = ordered
+      .where(
+        (r) =>
+            r.measureIndex < targetMeasure ||
+            (r.measureIndex == targetMeasure && r.bounds.center.dx < dropX),
+      )
+      .length;
+  return (
+    index: index,
+    beforeId: index < ordered.length ? ordered[index].id : null,
+  );
+}
+
 /// Typed window into the editor for widget tests.
 @visibleForTesting
 abstract interface class CompositionWorkshopTester {
@@ -165,6 +198,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   bool _chordMode = false; // placed pitches stack onto the selected note
   StaffTarget? _hover; // where a click/tap would land (desktop hover preview)
   String? _dragId; // the note being dragged (the view re-paints it live, C10b)
+  String? _dropCaretId; // live drop slot during a horizontal reorder drag
   // Opacity of the view-painted drag preview: the real glyph, slightly lifted.
   static const double _kDragPreviewOpacity = 0.85;
   int _verse = 1; // which lyric verse the inline field edits
@@ -296,7 +330,24 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         _dragId = id;
         _dragStartLocal = _pointerLocal;
         _hover = null; // the view paints the moving note; no app ghost
+        _dropCaretId = null;
       });
+
+  /// As a horizontal reorder drag moves, mark the live drop slot with the
+  /// insertion caret (a vertical re-pitch shows none — the moving glyph already
+  /// shows the new pitch). Repaint only; the model isn't touched until drop.
+  void _onElementDragUpdate(String id, StaffTarget target) {
+    final drop = _pointerLocal;
+    final start = _dragStartLocal;
+    if (drop == null || start == null) return;
+    final dx = drop.dx - start.dx;
+    final dy = drop.dy - start.dy;
+    final horizontal = dx.abs() > 20 && dx.abs() > dy.abs();
+    final beforeId = (!_grand && horizontal)
+        ? _dropSlotFor(id, drop, target).beforeId
+        : null;
+    if (beforeId != _dropCaretId) setState(() => _dropCaretId = beforeId);
+  }
 
   void _onElementDragEnd(String id, StaffTarget target) {
     final drop = _pointerLocal;
@@ -306,22 +357,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final horizontal = drop != null && dx.abs() > 20 && dx.abs() > dy.abs();
 
     if (!_grand && horizontal) {
-      // Reading-order index of the drop: every element before it is one that
-      // sits in an earlier bar, or the same bar but left of the pointer.
-      final targetIndex = _regions.elementRegions
-          .where(
-            (r) =>
-                r.id != id &&
-                (r.measureIndex < target.measureIndex ||
-                    (r.measureIndex == target.measureIndex &&
-                        r.bounds.center.dx < drop.dx)),
-          )
-          .length;
       setState(() {
-        _doc.moveByIdToIndex(id, targetIndex);
+        _doc.moveByIdToIndex(id, _dropSlotFor(id, drop, target).index);
         _hover = null;
         _dragId = null;
         _dragStartLocal = null;
+        _dropCaretId = null;
       });
       return;
     }
@@ -332,9 +373,24 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       _hover = null;
       _dragId = null;
       _dragStartLocal = null;
+      _dropCaretId = null;
     });
     if (moved != null) _audio.playMidiNote(moved!.midiNumber, ms: 300);
   }
+
+  /// The reading-order drop slot for dragging [id] to pointer [drop] / [target],
+  /// over the live element regions. Delegates to the pure [computeDropSlot].
+  ({int index, String? beforeId}) _dropSlotFor(
+    String id,
+    Offset drop,
+    StaffTarget target,
+  ) =>
+      computeDropSlot(
+        _regions.elementRegions,
+        id,
+        drop.dx,
+        target.measureIndex,
+      );
 
   // ---- value / accidental controls ---------------------------------------
 
@@ -844,10 +900,17 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     // is dragged the view suppresses it and re-paints the *real* glyph
     // (notehead/stem/accidental/flag/ledgers) following the pointer, snapped to
     // pitch — so the app keeps no suppress/ghost bookkeeping for moves.
-    // A visible insertion caret before the element the next note would precede.
-    final caretId = _doc.caretBeforeId;
-    final caret =
-        caretId != null ? EditorCaret(beforeElementId: caretId) : null;
+    // A visible insertion caret: during a horizontal reorder drag it marks the
+    // live drop slot; otherwise it sits before the element the next note precedes.
+    final EditorCaret? caret;
+    if (_dragId != null) {
+      caret = _dropCaretId != null
+          ? EditorCaret(beforeElementId: _dropCaretId)
+          : null;
+    } else {
+      final caretId = _doc.caretBeforeId;
+      caret = caretId != null ? EditorCaret(beforeElementId: caretId) : null;
+    }
 
     return PopScope(
       // When there's content, intercept the back gesture to ask keep/discard/save.
@@ -1030,6 +1093,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       ghostDuration: _ghostDuration,
                                       caret: caret,
                                       onElementDragStart: _onElementDragStart,
+                                      onElementDragUpdate: _onElementDragUpdate,
                                       onElementDragEnd: _onElementDragEnd,
                                     )
                                   : MultiSystemView(
@@ -1047,6 +1111,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       ghostDuration: _ghostDuration,
                                       caret: caret,
                                       onElementDragStart: _onElementDragStart,
+                                      onElementDragUpdate: _onElementDragUpdate,
                                       onElementDragEnd: _onElementDragEnd,
                                     ),
                               if (_marquee)

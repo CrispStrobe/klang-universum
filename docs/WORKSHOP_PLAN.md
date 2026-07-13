@@ -90,6 +90,12 @@
       suppressed; dragging it up moves its ink up on screen), 122 goldens
       unchanged by the painter refactor; app-wired, whole-project analyze clean +
       workshop widget tests green.
+      • **Live drop caret** — during a **horizontal** reorder drag the insertion
+        caret now marks the live drop slot (before, the target index was only
+        computed on release). App-side (partitura's `EditorCaret` already
+        exists); the drop-slot math is a pure `computeDropSlot` shared by the
+        caret preview and the drop, unit-tested (bars-then-x ordering, end-of-
+        score, self-exclusion).
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 
