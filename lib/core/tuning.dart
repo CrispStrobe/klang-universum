@@ -139,7 +139,9 @@ const Map<String, List<int>> kStarThresholds = {
   'cello_play_along': [1, 6, 9],
   'guitar_play_along': [1, 6, 9],
   'keyboard_play_along': [1, 10, 14],
+  'keyboard_ode': [1, 10, 14],
   'sing_along': [1, 9, 13],
+  'sing_mary': [1, 9, 12],
   // Chord-progression play-along: score = chords hit (4-chord progressions).
   'chord_play_along': [1, 3, 4],
   'guitar_string_quiz': [100, 600, 900],

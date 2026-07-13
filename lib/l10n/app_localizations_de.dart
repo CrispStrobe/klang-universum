@@ -1523,6 +1523,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Triff die laufende Partitur mit deiner Stimme';
 
   @override
+  String get gameOdeToJoy => 'An die Freude';
+
+  @override
+  String get gameMaryLamb => 'Marys Lämmchen';
+
+  @override
   String get gameChordListener => 'Akkord-Erkennung';
 
   @override

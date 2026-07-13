@@ -1516,6 +1516,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameSingAlongSubtitle => 'Match the moving score with your voice';
 
   @override
+  String get gameOdeToJoy => 'Ode to Joy';
+
+  @override
+  String get gameMaryLamb => 'Mary\'s Lamb';
+
+  @override
   String get gameChordListener => 'Chord listener';
 
   @override

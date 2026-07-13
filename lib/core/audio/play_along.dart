@@ -241,6 +241,51 @@ class PlayAlongCharts {
     ],
   );
 
+  /// "Ode to Joy" (Beethoven, public domain) in C — a keyboard/cello tune.
+  static const odeToJoy = PlayAlongChart(
+    name: 'Ode to Joy',
+    bpm: 100,
+    notes: [
+      TargetNote(midi: 64, startBeat: 0, beats: 1), // E
+      TargetNote(midi: 64, startBeat: 1, beats: 1),
+      TargetNote(midi: 65, startBeat: 2, beats: 1), // F
+      TargetNote(midi: 67, startBeat: 3, beats: 1), // G
+      TargetNote(midi: 67, startBeat: 4, beats: 1),
+      TargetNote(midi: 65, startBeat: 5, beats: 1),
+      TargetNote(midi: 64, startBeat: 6, beats: 1),
+      TargetNote(midi: 62, startBeat: 7, beats: 1), // D
+      TargetNote(midi: 60, startBeat: 8, beats: 1), // C
+      TargetNote(midi: 60, startBeat: 9, beats: 1),
+      TargetNote(midi: 62, startBeat: 10, beats: 1),
+      TargetNote(midi: 64, startBeat: 11, beats: 1),
+      TargetNote(midi: 64, startBeat: 12, beats: 1.5),
+      TargetNote(midi: 62, startBeat: 13.5, beats: 0.5),
+      TargetNote(midi: 62, startBeat: 14, beats: 2), // D (hold)
+    ],
+  );
+
+  /// "Mary Had a Little Lamb" for singing — octave-agnostic, easy range.
+  static const marySing = PlayAlongChart(
+    name: 'Sing: Mary Had a Little Lamb',
+    bpm: 100,
+    octaveAgnostic: true,
+    notes: [
+      TargetNote(midi: 64, startBeat: 0, beats: 1), // E
+      TargetNote(midi: 62, startBeat: 1, beats: 1), // D
+      TargetNote(midi: 60, startBeat: 2, beats: 1), // C
+      TargetNote(midi: 62, startBeat: 3, beats: 1), // D
+      TargetNote(midi: 64, startBeat: 4, beats: 1), // E
+      TargetNote(midi: 64, startBeat: 5, beats: 1),
+      TargetNote(midi: 64, startBeat: 6, beats: 2),
+      TargetNote(midi: 62, startBeat: 8, beats: 1), // D
+      TargetNote(midi: 62, startBeat: 9, beats: 1),
+      TargetNote(midi: 62, startBeat: 10, beats: 2),
+      TargetNote(midi: 64, startBeat: 12, beats: 1), // E
+      TargetNote(midi: 67, startBeat: 13, beats: 1), // G
+      TargetNote(midi: 67, startBeat: 14, beats: 2),
+    ],
+  );
+
   /// "Twinkle, Twinkle" for singing — octave-agnostic, comfortable range.
   static const twinkleSing = PlayAlongChart(
     name: 'Sing: Twinkle, Twinkle',

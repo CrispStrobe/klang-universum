@@ -2792,6 +2792,18 @@ abstract class AppLocalizations {
   /// **'Match the moving score with your voice'**
   String get gameSingAlongSubtitle;
 
+  /// No description provided for @gameOdeToJoy.
+  ///
+  /// In en, this message translates to:
+  /// **'Ode to Joy'**
+  String get gameOdeToJoy;
+
+  /// No description provided for @gameMaryLamb.
+  ///
+  /// In en, this message translates to:
+  /// **'Mary\'s Lamb'**
+  String get gameMaryLamb;
+
   /// No description provided for @gameChordListener.
   ///
   /// In en, this message translates to:

@@ -672,6 +672,19 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         sriPrefix: 'voice.sing_along',
       ),
     ),
+    // Sing-along: Mary Had a Little Lamb.
+    GameInfo(
+      id: 'sing_mary',
+      icon: Icons.mic_external_on,
+      title: (l) => l.gameMaryLamb,
+      subtitle: (l) => l.gameSingAlongSubtitle,
+      builder: (ctx) => PlayAlongScreen(
+        chart: PlayAlongCharts.marySing,
+        title: AppLocalizations.of(ctx)!.gameMaryLamb,
+        gameId: 'sing_mary',
+        sriPrefix: 'voice.sing_along',
+      ),
+    ),
     GameInfo(
       id: 'tune_quiz',
       icon: Icons.hearing,
@@ -691,6 +704,19 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         chart: PlayAlongCharts.keyboardScale,
         title: AppLocalizations.of(ctx)!.gamePlayAlong,
         gameId: 'keyboard_play_along',
+        sriPrefix: 'keyboard.play_along',
+      ),
+    ),
+    // Ode to Joy — a real tune to play along on the keys.
+    GameInfo(
+      id: 'keyboard_ode',
+      icon: Icons.piano,
+      title: (l) => l.gameOdeToJoy,
+      subtitle: (l) => l.gamePlayAlongKeyboardSubtitle,
+      builder: (ctx) => PlayAlongScreen(
+        chart: PlayAlongCharts.odeToJoy,
+        title: AppLocalizations.of(ctx)!.gameOdeToJoy,
+        gameId: 'keyboard_ode',
         sriPrefix: 'keyboard.play_along',
       ),
     ),
