@@ -21,6 +21,7 @@ import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/workshop/model/score_document.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart';
@@ -558,12 +559,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final svg = _grand
         ? await exportGrandStaffToSvg(
             _doc.buildGrandStaff(),
-            theme: PartituraTheme.kids,
+            theme: kidsScoreTheme,
             staffSpace: _zoom,
           )
         : await exportScoreToSvg(
             _doc.buildScore(),
-            theme: PartituraTheme.kids,
+            theme: kidsScoreTheme,
             staffSpace: _zoom,
           );
     if (!mounted) return;
@@ -578,12 +579,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       final bytes = _grand
           ? await exportGrandStaffToPng(
               _doc.buildGrandStaff(),
-              theme: PartituraTheme.kids,
+              theme: kidsScoreTheme,
               staffSpace: _zoom,
             )
           : await exportScoreToPng(
               _doc.buildScore(),
-              theme: PartituraTheme.kids,
+              theme: kidsScoreTheme,
               staffSpace: _zoom,
             );
       final location = await getSaveLocation(
@@ -830,7 +831,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    const theme = PartituraTheme.kids;
+    final theme = kidsScoreTheme;
     final selectedIds = _doc.selectedIds;
     final canvasBg = Theme.of(context).colorScheme.surfaceContainerLowest;
     // While a note is dragged, paint the original in the canvas colour so it

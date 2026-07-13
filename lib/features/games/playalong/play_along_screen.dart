@@ -38,6 +38,7 @@ import 'package:partitura/partitura.dart'
     show
         Clef,
         DurationBase,
+        EditorMark,
         ElementRegionController,
         Measure,
         MultiSystemView,
@@ -914,15 +915,25 @@ class _NotationViewState extends State<_NotationView> {
 
   @override
   Widget build(BuildContext context) {
-    // Colour scored notes (green = hit, red = missed); highlight the active
-    // note as the cursor (a highlight wins over a per-note colour).
+    final l = AppLocalizations.of(context)!;
+    // Green for hits; missed notes get an EditorMark (a wedge flag + a reason),
+    // coloured by *why* — blue = flat, orange = sharp, red = never on pitch —
+    // so after a run (or a loop) the learner sees which notes to drill.
     final colors = <String, Color>{};
+    final marks = <String, EditorMark>{};
     for (var i = 0; i < widget.engine.notes.length; i++) {
-      switch (widget.engine.notes[i].result) {
+      final n = widget.engine.notes[i];
+      switch (n.result) {
         case NoteResult.hit:
           colors['n$i'] = Colors.green;
         case NoteResult.missed:
-          colors['n$i'] = widget.scheme.error;
+          final ac = n.avgCents;
+          final (Color c, String msg) = ac == null
+              ? (widget.scheme.error, l.playAlongMarkMiss)
+              : ac < 0
+                  ? (const Color(0xFF1E88E5), l.playAlongMarkFlat)
+                  : (const Color(0xFFF57C00), l.playAlongMarkSharp);
+          marks['n$i'] = EditorMark(c, message: msg);
         case NoteResult.pending:
           break;
       }
@@ -932,7 +943,6 @@ class _NotationViewState extends State<_NotationView> {
       _lastActive = ai;
       WidgetsBinding.instance.addPostFrameCallback((_) => _follow());
     }
-    final l = AppLocalizations.of(context)!;
     final hint = widget.engine.isLooping
         ? l.playAlongLooping
         : (_loopAnchor != null ? l.playAlongLoopEnd : l.playAlongLoopHint);
@@ -948,6 +958,7 @@ class _NotationViewState extends State<_NotationView> {
                 controller: _regions,
                 theme: kidsScoreTheme.copyWith(elementColors: colors),
                 highlightedIds: {if (ai >= 0) 'n$ai'},
+                errorOverlay: marks,
                 loopRange: _editor.loopRange,
                 onElementTap: _onTapNote,
               ),

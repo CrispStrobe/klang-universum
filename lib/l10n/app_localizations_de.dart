@@ -2354,6 +2354,15 @@ class AppLocalizationsDe extends AppLocalizations {
       'Abschnitt läuft in Schleife — tippe eine Note zum Beenden';
 
   @override
+  String get playAlongMarkFlat => 'zu tief';
+
+  @override
+  String get playAlongMarkSharp => 'zu hoch';
+
+  @override
+  String get playAlongMarkMiss => 'verpasst';
+
+  @override
   String get playAlongBacking => 'Begleitung (Kopfhörer nutzen)';
 
   @override

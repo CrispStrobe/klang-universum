@@ -68,9 +68,12 @@
       embedded, print-ready, shown copyable) and **PNG** (saved via the system
       dialog), via partitura's one-call `exportScoreToSvg` / `exportScoreToPng`
       (+ grand-staff overloads). No viewport-capture hacks.
-  17. ⏳ *Later:* adopt `kidsScoreTheme` for the Handwritten-notes toggle; a true
-      move-the-note live drag (partitura render change; today faked with
-      hide-original + ghost).
+  17. ✅ *Handwritten-notes toggle* — the editor now renders through
+      `kidsScoreTheme` (not the const `PartituraTheme.kids`), so the Settings
+      "Handwritten notes" switch swaps the engraving font (Bravura ↔ Petaluma)
+      in the Workshop too — canvas, both clefs, and the SVG/PNG exports.
+  18. ⏳ *Later:* a true move-the-note live drag (partitura render change; today
+      faked with hide-original + ghost).
 - **Git note:** after every main push, `feature/score-workshop` is reset to
   `origin/main` (keep them equal) to avoid hash divergence.
 

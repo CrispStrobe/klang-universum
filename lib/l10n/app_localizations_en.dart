@@ -2341,6 +2341,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAlongLooping => 'Looping this section — tap a note to clear';
 
   @override
+  String get playAlongMarkFlat => 'flat';
+
+  @override
+  String get playAlongMarkSharp => 'sharp';
+
+  @override
+  String get playAlongMarkMiss => 'missed';
+
+  @override
   String get playAlongBacking => 'Backing (use headphones)';
 
   @override

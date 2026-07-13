@@ -4232,6 +4232,24 @@ abstract class AppLocalizations {
   /// **'Looping this section — tap a note to clear'**
   String get playAlongLooping;
 
+  /// No description provided for @playAlongMarkFlat.
+  ///
+  /// In en, this message translates to:
+  /// **'flat'**
+  String get playAlongMarkFlat;
+
+  /// No description provided for @playAlongMarkSharp.
+  ///
+  /// In en, this message translates to:
+  /// **'sharp'**
+  String get playAlongMarkSharp;
+
+  /// No description provided for @playAlongMarkMiss.
+  ///
+  /// In en, this message translates to:
+  /// **'missed'**
+  String get playAlongMarkMiss;
+
   /// No description provided for @playAlongBacking.
   ///
   /// In en, this message translates to:

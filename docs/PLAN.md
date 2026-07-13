@@ -137,9 +137,12 @@ and push to origin/main** before/after touching shared files. Format:
   staff auto-scrolls to keep the active note ~⅓ down the viewport. (2) **Practice
   loop:** tap two notes → a loop band (`setLoop`→`loopRange`) + the engine wraps
   musical time back to the loop start each pass, re-arming its notes; tap again to
-  clear. Engine loop is unit-tested. · touched
+  clear. Engine loop is unit-tested. (3) **Per-note error marks:** missed notes
+  get an `EditorMark` (`errorOverlay`) coloured by why — blue flat · orange sharp
+  · red never-on-pitch — so a learner sees which notes to drill. · touched
   `lib/features/games/playalong/play_along_screen.dart`, `core/audio/play_along.dart`
-  · **idle** (all shipped to origin/main) · detail:
+  · Also **adopted `kidsScoreTheme` in the Workshop** so the Handwritten-notes
+  toggle reaches the editor. · **idle** (all shipped to origin/main) · detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
