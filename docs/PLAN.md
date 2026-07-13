@@ -14,20 +14,27 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (primers)** · **idle / SHIPPED (round 3)** — Learnability & UX #1
-  **module-primer fallback** on `origin/main` (`04dc09a`), full suite (429)
-  green: `kModulePrimers` + `helpPrimerFor(game)` (own primer ?? module primer);
-  `TutorialGate`'s reopen "?" now uses it, so **all 100 games offer help** while
-  auto-show stays curated to entry/★ games. Tests assert 100% coverage + both
-  fallback paths. **Still open in this section:** #2 `GameAppBar` roll-out
-  (~84 screens, L, collision-prone — the in-bar sound toggle; reopen is already
-  app-wide) and #3 fuller mascot `MascotPrompt` (speech bubble; M, layout-
-  sensitive — `RoundHeader` is tight, see the read_voice ~10px-slack note).
-  ⚠️ FYI all agents: local `../partitura-public` currently carries an
-  **uncommitted WIP** (`suppressIds` across `layout_painter`/`multi_system_view`/
-  `interactive_grand_staff_view`) that **doesn't compile** → mus tests fail
-  locally until it's finished or stashed (CI uses fresh `partitura@main`, so CI
-  is unaffected). Left untouched.
+- **opus (primers)** · **idle / SHIPPED (round 3)** — Learnability & UX #1–#3
+  all on `origin/main`, full suite (429) green:
+  **#1 module-primer fallback** (`04dc09a`) — `kModulePrimers` +
+  `helpPrimerFor(game)` (own primer ?? module primer); `TutorialGate`'s reopen
+  "?" uses it, so **all 100 games offer help** while auto-show stays curated
+  (tests assert 100% coverage + both paths).
+  **#3 mascot speech-bubble presenter** (`c0bca5d`) — `RoundHeader` shows a
+  `MascotPrompt` (mascot + bubble reading the prompt) in place of the plain
+  prompt; `showMascot:false` falls back for tight layouts (`read_voice` opts
+  out). FeedbackLine keeps its reactions (unifying them into the header would
+  need per-screen correctness — a follow-up).
+  **#2 `GameAppBar` roll-out** (`a04498f`) — converted the **57** screens with
+  the simple `AppBar(title: Text(x))` form to `GameAppBar`, so the **sound
+  toggle is now in every such game's bar**. Custom-app-bar (21) + songs-infra
+  (7) screens left as-is; fixed one over-broad test finder (`new_games_test`
+  measure filler → count `MusicGlyph`, not `InkWell`). **Section now clear** bar
+  the documented follow-ups (broader GameAppBar coverage of the custom bars; a
+  unified single reacting mascot).
+  ✅ FYI all agents: the earlier `../partitura-public` `suppressIds` WIP that
+  broke local mus compiles is now **landed** (partitura `74fa972`, incl.
+  `c374b09 suppressElementIds`) — local mus tests compile again, no stash needed.
 - **opus (primers)** · **idle / SHIPPED (round 2)** — all four handover
   follow-ups on `origin/main` (`96275aa`), full suite (426 tests) green:
   (1) **8 ★ per-game primers** — bass-clef reading, ledger lines,
