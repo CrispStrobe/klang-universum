@@ -6,9 +6,11 @@
 // demand (packing the flat list into bar-lined measures). All mutations go
 // through commands that snapshot first, giving multi-level undo/redo.
 //
-// This is the foundation the Workshop grows on: later phases add ties, tuplets,
-// a second voice, dynamics and more as new fields/commands here, without the
-// screen having to know how a Score is assembled.
+// Selection is a contiguous index range (a single element is a range of one),
+// which the editing commands (transpose / duration / accidental / delete /
+// move / copy / cut / paste) all operate over.
+
+import 'dart:math' as math;
 
 import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:partitura/partitura.dart';
@@ -40,6 +42,10 @@ class EditorElement {
   EditorElement withDuration(NoteDuration duration) => isRest
       ? EditorElement.rest(duration, id: id)
       : EditorElement.note(pitch!, duration, id: id);
+
+  EditorElement withId(String id) => isRest
+      ? EditorElement.rest(duration, id: id)
+      : EditorElement.note(pitch!, duration, id: id);
 }
 
 /// An undo/redo snapshot of the document's mutable state.
@@ -56,8 +62,8 @@ class _Snapshot {
   final Clef clef;
 }
 
-/// The editable Workshop document: an ordered element stream plus the
-/// document-level time/key signature, a selection, and undo/redo.
+/// The editable Workshop document: an ordered element stream, the document-level
+/// clef/time/key, a range selection, a clipboard, and undo/redo.
 class ScoreDocument {
   ScoreDocument({
     this.timeSignature = TimeSignature.fourFour,
@@ -72,9 +78,12 @@ class ScoreDocument {
   /// The staff clef — chosen by the user; no automatic mid-score flipping.
   Clef clef;
 
-  String? _selectedId;
+  // Selection range: [anchor..focus] inclusive; null = nothing selected.
+  int? _anchor;
+  int? _focus;
   var _nextId = 0;
 
+  final List<EditorElement> _clipboard = [];
   final List<_Snapshot> _undo = [];
   final List<_Snapshot> _redo = [];
 
@@ -83,26 +92,38 @@ class ScoreDocument {
   List<EditorElement> get elements => List.unmodifiable(_elements);
   int get length => _elements.length;
   bool get isEmpty => _elements.isEmpty;
-  String? get selectedId => _selectedId;
 
-  EditorElement? get selected {
-    final id = _selectedId;
-    if (id == null) return null;
-    for (final e in _elements) {
-      if (e.id == id) return e;
-    }
-    return null;
-  }
+  bool get hasSelection => _anchor != null && _focus != null;
+  bool get hasRange => hasSelection && _lo != _hi;
+  int get _lo => math.min(_anchor!, _focus!);
+  int get _hi => math.max(_anchor!, _focus!);
+
+  /// The focus element's id (used for single-note controls + status).
+  String? get selectedId => hasSelection ? _elements[_focus!].id : null;
+
+  /// Every id in the selection range (for highlighting).
+  Set<String> get selectedIds =>
+      hasSelection ? {for (var i = _lo; i <= _hi; i++) _elements[i].id} : {};
+
+  /// The focus element (or null).
+  EditorElement? get selected => hasSelection ? _elements[_focus!] : null;
+
+  List<EditorElement> get selectedElements =>
+      hasSelection ? _elements.sublist(_lo, _hi + 1) : const [];
 
   bool get canUndo => _undo.isNotEmpty;
   bool get canRedo => _redo.isNotEmpty;
+  bool get canPaste => _clipboard.isNotEmpty;
 
   String _newId() => 'w${_nextId++}';
 
   // ---- history -----------------------------------------------------------
 
+  _Snapshot _capture() =>
+      _Snapshot(List.of(_elements), timeSignature, keySignature, clef);
+
   void _snapshot() {
-    _undo.add(_Snapshot(List.of(_elements), timeSignature, keySignature, clef));
+    _undo.add(_capture());
     _redo.clear();
   }
 
@@ -113,39 +134,84 @@ class ScoreDocument {
     timeSignature = s.timeSignature;
     keySignature = s.keySignature;
     clef = s.clef;
-    if (!_elements.any((e) => e.id == _selectedId)) _selectedId = null;
+    // Keep the selection valid against the restored length.
+    if (_elements.isEmpty) {
+      _anchor = _focus = null;
+    } else {
+      _anchor = _anchor?.clamp(0, _elements.length - 1);
+      _focus = _focus?.clamp(0, _elements.length - 1);
+    }
   }
 
   void undo() {
     if (_undo.isEmpty) return;
-    _redo.add(_Snapshot(List.of(_elements), timeSignature, keySignature, clef));
+    _redo.add(_capture());
     _restore(_undo.removeLast());
   }
 
   void redo() {
     if (_redo.isEmpty) return;
-    _undo.add(_Snapshot(List.of(_elements), timeSignature, keySignature, clef));
+    _undo.add(_capture());
     _restore(_redo.removeLast());
   }
 
-  // ---- commands ----------------------------------------------------------
+  // ---- selection (navigation only — not undoable) ------------------------
 
-  /// The caret: new elements are inserted here — just after the selection, or
-  /// at the end when nothing is selected.
-  int _caretIndex() {
-    final i = _indexOfSelected();
-    return i < 0 ? _elements.length : i + 1;
+  void selectIndex(int i) {
+    if (_elements.isEmpty) return;
+    _anchor = _focus = i.clamp(0, _elements.length - 1);
   }
+
+  int _indexOf(String id) => _elements.indexWhere((e) => e.id == id);
+
+  /// Toggle single-selection of [id] (tapping the sole selected element clears
+  /// it; tapping any element while a range is active collapses to it).
+  void toggleSelected(String id) {
+    final i = _indexOf(id);
+    if (i < 0) return;
+    if (!hasRange && _focus == i) {
+      clearSelection();
+    } else {
+      selectIndex(i);
+    }
+  }
+
+  void clearSelection() => _anchor = _focus = null;
+
+  /// Collapse to a single selection and step it forward/back.
+  void selectNext() {
+    if (_elements.isEmpty) return;
+    selectIndex(hasSelection ? _focus! + 1 : 0);
+  }
+
+  void selectPrev() {
+    if (_elements.isEmpty) return;
+    selectIndex(hasSelection ? _focus! - 1 : _elements.length - 1);
+  }
+
+  /// Grow/shrink the range by moving the focus end.
+  void extendRight() {
+    if (!hasSelection) return;
+    _focus = (_focus! + 1).clamp(0, _elements.length - 1);
+  }
+
+  void extendLeft() {
+    if (!hasSelection) return;
+    _focus = (_focus! - 1).clamp(0, _elements.length - 1);
+  }
+
+  // ---- insertion ---------------------------------------------------------
+
+  /// Insert position: just after the selection, or at the end.
+  int _caretIndex() => hasSelection ? _hi + 1 : _elements.length;
 
   /// Insert a note at the caret and select it. Returns the new element's id.
   String insertNote(Pitch pitch, NoteDuration duration) {
     _snapshot();
     final id = _newId();
-    _elements.insert(
-      _caretIndex(),
-      EditorElement.note(pitch, duration, id: id),
-    );
-    _selectedId = id;
+    final at = _caretIndex();
+    _elements.insert(at, EditorElement.note(pitch, duration, id: id));
+    selectIndex(at);
     return id;
   }
 
@@ -153,84 +219,120 @@ class ScoreDocument {
   String insertRest(NoteDuration duration) {
     _snapshot();
     final id = _newId();
-    _elements.insert(_caretIndex(), EditorElement.rest(duration, id: id));
-    _selectedId = id;
+    final at = _caretIndex();
+    _elements.insert(at, EditorElement.rest(duration, id: id));
+    selectIndex(at);
     return id;
   }
 
-  /// Re-pitch the selected element (no-op if nothing / a rest is selected).
-  void repitchSelected(Pitch pitch) {
-    final i = _indexOfSelected();
-    if (i < 0 || _elements[i].isRest) return;
-    _snapshot();
-    _elements[i] = _elements[i].withPitch(pitch);
-  }
+  // ---- edits over the selection range ------------------------------------
 
-  /// Nudge the selected note up/down by [semitones], respelling as needed.
-  /// Clamped to a sensible instrument range.
+  /// Nudge every selected note up/down by [semitones] (rests skipped, notes
+  /// clamped to A0..C8 individually). Undoable.
   void transposeSelected(int semitones) {
-    final i = _indexOfSelected();
-    if (i < 0 || _elements[i].isRest) return;
-    final midi = _elements[i].pitch!.midiNumber + semitones;
-    if (midi < 21 || midi > 108) return; // A0..C8
+    if (!hasSelection) return;
     _snapshot();
-    _elements[i] = _elements[i].withPitch(pitchFromMidi(midi));
+    for (var i = _lo; i <= _hi; i++) {
+      final e = _elements[i];
+      if (e.isRest) continue;
+      final midi = e.pitch!.midiNumber + semitones;
+      if (midi < 21 || midi > 108) continue;
+      _elements[i] = e.withPitch(pitchFromMidi(midi));
+    }
   }
 
-  /// Set the selected note's accidental ([alter]: -1 flat, 0 natural, 1 sharp),
-  /// keeping its letter and octave.
+  /// Set the accidental of every selected note (rests skipped). Undoable.
   void setAccidentalOfSelected(int alter) {
-    final i = _indexOfSelected();
-    if (i < 0 || _elements[i].isRest) return;
-    final p = _elements[i].pitch!;
-    if (p.alter == alter) return;
+    if (!hasSelection) return;
     _snapshot();
-    _elements[i] =
-        _elements[i].withPitch(Pitch(p.step, alter: alter, octave: p.octave));
+    for (var i = _lo; i <= _hi; i++) {
+      final e = _elements[i];
+      if (e.isRest) continue;
+      final p = e.pitch!;
+      _elements[i] = e.withPitch(Pitch(p.step, alter: alter, octave: p.octave));
+    }
   }
 
-  /// Change the selected element's duration (note or rest).
+  /// Set the duration of every selected element. Undoable.
   void setDurationOfSelected(NoteDuration duration) {
-    final i = _indexOfSelected();
-    if (i < 0 || _elements[i].duration == duration) return;
+    if (!hasSelection) return;
     _snapshot();
-    _elements[i] = _elements[i].withDuration(duration);
+    for (var i = _lo; i <= _hi; i++) {
+      _elements[i] = _elements[i].withDuration(duration);
+    }
+  }
+
+  /// Re-pitch the focus element (single note; no-op on a rest). Undoable.
+  void repitchSelected(Pitch pitch) {
+    if (!hasSelection || _elements[_focus!].isRest) return;
+    _snapshot();
+    _elements[_focus!] = _elements[_focus!].withPitch(pitch);
   }
 
   void deleteSelected() {
-    final i = _indexOfSelected();
-    if (i < 0) return;
+    if (!hasSelection) return;
     _snapshot();
-    _elements.removeAt(i);
-    // Select the element that slid into this slot (the former next), or the
-    // new last one, so editing can continue fluently.
-    _selectedId = _elements.isEmpty
-        ? null
-        : _elements[i.clamp(0, _elements.length - 1)].id;
+    final lo = _lo;
+    _elements.removeRange(lo, _hi + 1);
+    if (_elements.isEmpty) {
+      clearSelection();
+    } else {
+      selectIndex(lo.clamp(0, _elements.length - 1));
+    }
   }
 
-  /// Move the selection to the next / previous element (navigation only — not
-  /// undoable). With nothing selected, selects the first / last.
-  void selectNext() {
-    if (_elements.isEmpty) return;
-    final i = _indexOfSelected();
-    final next = i < 0 ? 0 : (i + 1).clamp(0, _elements.length - 1);
-    _selectedId = _elements[next].id;
+  /// Move the selected block one slot left / right in the score.
+  void moveSelectionLeft() {
+    if (!hasSelection || _lo == 0) return;
+    _snapshot();
+    final e = _elements.removeAt(_lo - 1);
+    _elements.insert(_hi, e);
+    _anchor = _anchor! - 1;
+    _focus = _focus! - 1;
   }
 
-  void selectPrev() {
-    if (_elements.isEmpty) return;
-    final i = _indexOfSelected();
-    final prev =
-        i < 0 ? _elements.length - 1 : (i - 1).clamp(0, _elements.length - 1);
-    _selectedId = _elements[prev].id;
+  void moveSelectionRight() {
+    if (!hasSelection || _hi == _elements.length - 1) return;
+    _snapshot();
+    final e = _elements.removeAt(_hi + 1);
+    _elements.insert(_lo, e);
+    _anchor = _anchor! + 1;
+    _focus = _focus! + 1;
   }
+
+  // ---- clipboard ---------------------------------------------------------
+
+  void copySelection() {
+    if (!hasSelection) return;
+    _clipboard
+      ..clear()
+      ..addAll(selectedElements);
+  }
+
+  void cutSelection() {
+    if (!hasSelection) return;
+    copySelection();
+    deleteSelected();
+  }
+
+  /// Paste the clipboard after the selection (or at the end) and select it.
+  void paste() {
+    if (_clipboard.isEmpty) return;
+    _snapshot();
+    final at = _caretIndex();
+    final fresh = [for (final c in _clipboard) c.withId(_newId())];
+    _elements.insertAll(at, fresh);
+    _anchor = at;
+    _focus = at + fresh.length - 1;
+  }
+
+  // ---- document settings -------------------------------------------------
 
   void clearAll() {
     if (_elements.isEmpty) return;
     _snapshot();
     _elements.clear();
-    _selectedId = null;
+    clearSelection();
   }
 
   void setTimeSignature(TimeSignature value) {
@@ -251,19 +353,11 @@ class ScoreDocument {
     clef = value;
   }
 
-  /// Toggle selection of [id] (tapping the selected element clears it).
-  void toggleSelected(String id) => _selectedId = _selectedId == id ? null : id;
-
-  void clearSelection() => _selectedId = null;
-
-  int _indexOfSelected() => _elements.indexWhere((e) => e.id == _selectedId);
-
   // ---- rendering ---------------------------------------------------------
 
   /// Pack the flat element stream into bar-lined [Measure]s. A note that would
-  /// overflow the current bar starts a new one (no splitting/tying yet — that
-  /// arrives with P2). Empty document → a single whole-rest bar so the staff
-  /// stays wide and tappable.
+  /// overflow the current bar starts a new one (no splitting/tying yet). An
+  /// empty document renders a single whole-rest bar so the staff stays wide.
   Score buildScore() {
     if (_elements.isEmpty) {
       return Score(

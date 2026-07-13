@@ -132,15 +132,18 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
   the model gains dynamics, articulations, ties.
 
   **Direct UX feedback:**
-  1. ✅ *Cleaner chrome* — slim action bar (no big title), one compact settings
-     row (clef · time · key · zoom), ⋮ menu (save / export MusicXML / export ABC
-     / clear; import to come).
+  1. ✅ *Cleaner chrome* — consolidated to **two slim rows** (Row A: compact
+     clef/time/key/zoom **dropdowns** + status; Row B: value/accidental strip +
+     contextual selection actions) so the canvas gets the space; slim action bar
+     (no big title) + ⋮ menu (save / export MusicXML / ABC / clear).
   2. ✅ *Gesture fix* — placement is now from the piano at the caret; the staff
      is view + select only, so pan/zoom can never drop a stray note.
   3. ⏳ *Drag placed notes* (G3) — needs a drag-move hook (partitura-side or an
      app-side custom canvas).
-  4. ⏳ *Select ranges + move/copy/cut/paste* (G3) — single-select + edit works
-     now (select → value/accidental/▲▼/delete); ranges/clipboard next.
+  4. ✅ *Select ranges + move/copy/cut/paste* — the model is now range-based
+     (`ScoreDocument` selection = index range + clipboard); Row B offers
+     extend-selection, move-in-score, transpose, copy/cut/paste, delete over a
+     note or a whole range. (Marquee/drag-select still needs C4 — see contracts.)
   5. ◐ *Both clefs / grand staff* — auto-flip removed; clef is now a manual
      treble/bass control (no surprise flip). True simultaneous **grand staff**
      with multiline is not in the public renderer yet → G3+ (needs partitura
@@ -170,7 +173,11 @@ model to the local partitura — build multi-instrument on the public
 `StaffSystem`/multi-`Score` layout, or port the model to public partitura first
 (applies to **G6**). See memory `partitura-public-vs-private-ci`.
 
-## Status: P0 ✅ · P1 ✅ · P2a ✅ · G1 ✅ · G2 ✅ (slim chrome · one settings
-row · ⋮ menu · multiline `MultiSystemView` canvas · piano placement · manual
-clef) · G3 next (drag-to-move · range select + copy/paste · grand staff ·
-palettes/inspector).
+## Status
+P0 ✅ · P1 ✅ · P2a ✅ · G1 ✅ · G2 ✅ (multiline canvas · piano placement) ·
+G3a ✅ (two-row chrome · range selection + move/copy/cut/paste). **Pending
+partitura** (see [WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)):
+staff-tap on multiline (C1), hover/caret (C2), **drag-to-move (C3)**, marquee
+select (C4), **interactive multiline grand staff (C5)**. App-side next while
+partitura lands those: palettes/inspector (dynamics/articulations/ties), open
+existing score files.

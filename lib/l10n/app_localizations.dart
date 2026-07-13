@@ -422,6 +422,48 @@ abstract class AppLocalizations {
   /// **'Export MusicXML'**
   String get workshopExportXml;
 
+  /// No description provided for @workshopCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut'**
+  String get workshopCut;
+
+  /// No description provided for @workshopPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get workshopPaste;
+
+  /// No description provided for @workshopMoveLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move left'**
+  String get workshopMoveLeft;
+
+  /// No description provided for @workshopMoveRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move right'**
+  String get workshopMoveRight;
+
+  /// No description provided for @workshopExtendLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend selection left'**
+  String get workshopExtendLeft;
+
+  /// No description provided for @workshopExtendRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend selection right'**
+  String get workshopExtendRight;
+
+  /// No description provided for @workshopSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
+  String workshopSelectedCount(int count);
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:

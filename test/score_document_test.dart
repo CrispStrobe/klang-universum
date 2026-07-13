@@ -148,6 +148,80 @@ void main() {
     expect(doc.selected!.pitch!.alter, 1);
   });
 
+  test('extendRight grows the selection into a range', () {
+    final doc = ScoreDocument();
+    doc.insertNote(_p(Step.c), _quarter);
+    doc.insertNote(_p(Step.d), _quarter);
+    doc.insertNote(_p(Step.e), _quarter); // e selected (index 2)
+    doc.selectPrev(); // d
+    doc.selectPrev(); // c
+    expect(doc.hasRange, isFalse);
+    doc.extendRight(); // c..d
+    expect(doc.hasRange, isTrue);
+    expect(doc.selectedIds.length, 2);
+    expect(
+      doc.selectedElements.map((e) => e.pitch!.step),
+      [Step.c, Step.d],
+    );
+  });
+
+  test('transpose and delete operate over the whole range', () {
+    final doc = ScoreDocument();
+    for (final s in [Step.c, Step.d, Step.e]) {
+      doc.insertNote(_p(s), _quarter);
+    }
+    doc.selectPrev(); // d (e was selected after the last insert)
+    doc.extendRight(); // d..e
+    doc.transposeSelected(1); // both up a semitone
+    expect(doc.elements[1].pitch!.midiNumber, _p(Step.d).midiNumber + 1);
+    expect(doc.elements[2].pitch!.midiNumber, _p(Step.e).midiNumber + 1);
+    doc.deleteSelected(); // removes d..e
+    expect(doc.elements.map((e) => e.pitch!.step), [Step.c]);
+  });
+
+  test('copy + paste duplicates the range with fresh ids', () {
+    final doc = ScoreDocument();
+    doc.insertNote(_p(Step.c), _quarter);
+    doc.insertNote(_p(Step.d), _quarter); // [c, d], d selected
+    doc.selectPrev(); // c
+    doc.extendRight(); // c..d
+    doc.copySelection();
+    doc.paste(); // → [c, d, c, d], the pasted c..d selected
+    expect(
+      doc.elements.map((e) => e.pitch!.step),
+      [Step.c, Step.d, Step.c, Step.d],
+    );
+    expect(doc.selectedIds.length, 2);
+    // Ids are unique (no duplicates from the paste).
+    final ids = doc.elements.map((e) => e.id).toList();
+    expect(ids.toSet().length, ids.length);
+  });
+
+  test('cut removes the range and pastes it back elsewhere', () {
+    final doc = ScoreDocument();
+    for (final s in [Step.c, Step.d, Step.e]) {
+      doc.insertNote(_p(s), _quarter);
+    }
+    doc.selectPrev(); // d
+    doc.selectPrev(); // c (single-selected)
+    doc.cutSelection(); // [d, e], clipboard = [c]
+    expect(doc.elements.map((e) => e.pitch!.step), [Step.d, Step.e]);
+    doc.toggleSelected(doc.elements[1].id); // select e
+    doc.paste(); // insert c after e → [d, e, c]
+    expect(doc.elements.map((e) => e.pitch!.step), [Step.d, Step.e, Step.c]);
+  });
+
+  test('moveSelectionRight reorders the selected block', () {
+    final doc = ScoreDocument();
+    for (final s in [Step.c, Step.d, Step.e]) {
+      doc.insertNote(_p(s), _quarter);
+    }
+    doc.toggleSelected(doc.elements[0].id); // select c (index 0)
+    doc.moveSelectionRight(); // c swaps past d → [d, c, e]
+    expect(doc.elements.map((e) => e.pitch!.step), [Step.d, Step.c, Step.e]);
+    expect(doc.selected!.pitch!.step, Step.c);
+  });
+
   test('deleting selects the neighbour so editing continues', () {
     final doc = ScoreDocument();
     doc.insertNote(_p(Step.c), _quarter);

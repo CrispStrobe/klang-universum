@@ -192,6 +192,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopExportXml => 'Export MusicXML';
 
   @override
+  String get workshopCut => 'Cut';
+
+  @override
+  String get workshopPaste => 'Paste';
+
+  @override
+  String get workshopMoveLeft => 'Move left';
+
+  @override
+  String get workshopMoveRight => 'Move right';
+
+  @override
+  String get workshopExtendLeft => 'Extend selection left';
+
+  @override
+  String get workshopExtendRight => 'Extend selection right';
+
+  @override
+  String workshopSelectedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override

@@ -81,6 +81,20 @@
   "workshopZoomIn": "Zoom in",
   "workshopZoomOut": "Zoom out",
   "workshopExportXml": "Export MusicXML",
+  "workshopCut": "Cut",
+  "workshopPaste": "Paste",
+  "workshopMoveLeft": "Move left",
+  "workshopMoveRight": "Move right",
+  "workshopExtendLeft": "Extend selection left",
+  "workshopExtendRight": "Extend selection right",
+  "workshopSelectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
+  "@workshopSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "instrumentLabel": "Instrument sound",
   "instrumentPiano": "Piano",
   "instrumentCello": "Cello",

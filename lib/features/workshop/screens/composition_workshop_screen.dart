@@ -1,14 +1,15 @@
 // lib/features/workshop/screens/composition_workshop_screen.dart
 //
-// "Kompositions-Werkstatt" / "Composition Workshop" — a touch-first score
-// editor (see docs/WORKSHOP_PLAN.md). Layout, top→bottom: a slim action bar
-// (undo/redo/play + a ⋮ menu of import/export/etc.), one compact settings row
-// (clef · time · key · zoom), a multi-line score canvas that wraps cleanly and
-// scrolls vertically, a status line (armed value + selection), a contextual
-// selection bar, and a bottom input dock (duration/accidental strip + on-screen
-// piano). Notes are placed from the piano at the caret — the staff is for
-// viewing and selecting, so panning/zooming never drops a stray note. Every
-// edit runs through [ScoreDocument] (editable model + multi-level undo/redo).
+// "Kompositions-Werkstatt" / "Composition Workshop" — a touch- and desktop-first
+// score editor (see docs/WORKSHOP_PLAN.md). Chrome is kept to two slim rows so
+// the score gets the space:
+//   • a slim action bar (undo/redo/play + a ⋮ menu of save/export/…),
+//   • Row A — compact clef/time/key/zoom dropdowns + a status readout,
+//   • the multi-line score canvas (wraps + scrolls),
+//   • Row B — the value/accidental/rest strip + contextual selection actions
+//     (move · pitch · copy/cut/paste · delete over a note or a range),
+//   • the on-screen piano (places notes at the caret).
+// Every edit runs through [ScoreDocument] (editable model + multi-level undo).
 
 // Material's Stepper also exports a `Step`; partitura's pitch Step wins here.
 import 'package:flutter/material.dart' hide Step;
@@ -35,7 +36,7 @@ const _values = <_Value>[
   (glyph: Smufl.sixteenthNote, base: DurationBase.sixteenth),
 ];
 
-/// The accidental the selected note is set to.
+/// The accidental the selected note is set to (or the next placed note gets).
 enum _Accidental { natural, sharp, flat }
 
 int _alterOf(_Accidental a) => switch (a) {
@@ -61,10 +62,12 @@ const _keyChoices = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 String _keyLabel(int fifths) =>
     fifths == 0 ? '♮' : (fifths > 0 ? '$fifths♯' : '${-fifths}♭');
 
+const _clefGlyph = {Clef.treble: '𝄞', Clef.bass: '𝄢'};
+
 class CompositionWorkshopScreen extends StatefulWidget {
   const CompositionWorkshopScreen({super.key});
 
-  static const maxNotes = 128;
+  static const maxNotes = 256;
 
   @override
   State<CompositionWorkshopScreen> createState() =>
@@ -85,7 +88,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   DurationBase _pendingBase = DurationBase.quarter;
   bool _dotted = false;
   _Accidental _accidental = _Accidental.natural;
-  double _zoom = 16; // staff space (px)
+  double _zoom = 16;
 
   @override
   int get noteCount => _doc.length;
@@ -97,6 +100,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
 
   AudioService get _audio => context.read<AudioService>();
+
+  bool get _selectionHasNote => _doc.selectedElements.any((e) => !e.isRest);
 
   void _syncControlsToSelection() {
     final e = _doc.selected;
@@ -120,18 +125,18 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         _syncControlsToSelection();
       });
 
-  // ---- controls ----------------------------------------------------------
+  // ---- value / accidental controls ---------------------------------------
 
   void _pickValue(DurationBase base) => setState(() {
         _pendingBase = base;
-        if (_doc.selected != null) {
+        if (_doc.hasSelection) {
           _doc.setDurationOfSelected(NoteDuration(base, dots: _dotted ? 1 : 0));
         }
       });
 
   void _toggleDot() => setState(() {
         _dotted = !_dotted;
-        if (_doc.selected != null) {
+        if (_doc.hasSelection) {
           _doc.setDurationOfSelected(
             NoteDuration(_pendingBase, dots: _dotted ? 1 : 0),
           );
@@ -140,7 +145,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   void _pickAccidental(_Accidental a) => setState(() {
         _accidental = a;
-        if (_doc.selected != null) _doc.setAccidentalOfSelected(_alterOf(a));
+        if (_doc.hasSelection) _doc.setAccidentalOfSelected(_alterOf(a));
       });
 
   void _addRest() {
@@ -148,28 +153,24 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     setState(() => _doc.insertRest(_pendingDuration));
   }
 
-  void _selectPrev() => setState(() {
-        _doc.selectPrev();
-        _syncControlsToSelection();
-      });
+  // ---- selection / range actions -----------------------------------------
 
-  void _selectNext() => setState(() {
-        _doc.selectNext();
+  void _run(void Function() action) => setState(() {
+        action();
         _syncControlsToSelection();
       });
 
   void _transpose(int semitones) {
     final before = _doc.selected?.pitch?.midiNumber;
-    setState(() {
-      _doc.transposeSelected(semitones);
-      _syncControlsToSelection();
-    });
+    _run(() => _doc.transposeSelected(semitones));
     final now = _doc.selected?.pitch?.midiNumber;
     if (now != null && now != before) _audio.playMidiNote(now, ms: 300);
   }
 
-  void _zoomBy(double delta) =>
-      setState(() => _zoom = (_zoom + delta).clamp(10.0, 30.0));
+  // ---- transport / menu --------------------------------------------------
+
+  void _zoomBy(double d) =>
+      setState(() => _zoom = (_zoom + d).clamp(10.0, 32.0));
 
   void _play() {
     if (_doc.isEmpty) return;
@@ -182,8 +183,6 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
           ),
     ]);
   }
-
-  // ---- menu actions ------------------------------------------------------
 
   Future<void> _exportText(String title, String text) async {
     final l10n = AppLocalizations.of(context)!;
@@ -260,9 +259,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final selectedId = _doc.selectedId;
-    final hasSelection = selectedId != null;
     const theme = PartituraTheme.kids;
+    final selectedIds = _doc.selectedIds;
 
     return Scaffold(
       appBar: AppBar(
@@ -306,26 +304,29 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               }
             },
             itemBuilder: (ctx) => [
-              PopupMenuItem(
-                value: 'save',
-                enabled: !_doc.isEmpty,
-                child: _menuRow(Icons.bookmark_add_outlined, l10n.myMelodySave),
+              _menuItem(
+                'save',
+                Icons.bookmark_add_outlined,
+                l10n.myMelodySave,
+                !_doc.isEmpty,
               ),
-              PopupMenuItem(
-                value: 'xml',
-                enabled: !_doc.isEmpty,
-                child: _menuRow(Icons.code, l10n.workshopExportXml),
+              _menuItem(
+                'xml',
+                Icons.code,
+                l10n.workshopExportXml,
+                !_doc.isEmpty,
               ),
-              PopupMenuItem(
-                value: 'abc',
-                enabled: !_doc.isEmpty,
-                child: _menuRow(Icons.abc, l10n.workshopExportAbc),
+              _menuItem(
+                'abc',
+                Icons.abc,
+                l10n.workshopExportAbc,
+                !_doc.isEmpty,
               ),
-              PopupMenuItem(
-                value: 'clear',
-                enabled: !_doc.isEmpty,
-                child:
-                    _menuRow(Icons.delete_sweep_outlined, l10n.myMelodyClear),
+              _menuItem(
+                'clear',
+                Icons.delete_sweep_outlined,
+                l10n.myMelodyClear,
+                !_doc.isEmpty,
               ),
             ],
           ),
@@ -333,10 +334,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       ),
       body: Column(
         children: [
-          _SettingsRow(
+          // Row A — compact settings + status.
+          _TopBar(
             clef: _doc.clef,
             timeSignature: _doc.timeSignature,
             fifths: _doc.keySignature.fifths,
+            armedGlyph: _values.firstWhere((v) => v.base == _pendingBase).glyph,
+            dotted: _dotted,
+            status: _statusText(context, l10n),
             onClef: (c) => setState(() => _doc.setClef(c)),
             onTime: (t) => setState(() => _doc.setTimeSignature(t)),
             onKey: (f) => setState(() => _doc.setKeySignature(KeySignature(f))),
@@ -344,7 +349,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             onZoomOut: () => _zoomBy(-3),
           ),
           const Divider(height: 1),
-          // Multi-line, vertically scrolling score canvas.
+          // Score canvas — multi-line, vertical scroll.
           Expanded(
             child: ColoredBox(
               color: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -354,52 +359,87 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                   score: _doc.buildScore(),
                   theme: theme,
                   staffSpace: _zoom,
-                  elementColors: {if (hasSelection) selectedId: Colors.amber},
+                  elementColors: {
+                    for (final id in selectedIds) id: Colors.amber,
+                  },
                   onElementTap: _onElementTap,
                 ),
               ),
             ),
           ),
-          if (hasSelection)
-            _SelectionBar(
-              canTranspose: _doc.selected?.isRest == false,
-              onPrev: _selectPrev,
-              onNext: _selectNext,
-              onUp: () => _transpose(1),
-              onDown: () => _transpose(-1),
-              onDelete: () => setState(_doc.deleteSelected),
-            ),
-          _StatusLine(
-            glyph: _values.firstWhere((v) => v.base == _pendingBase).glyph,
-            dotted: _dotted,
-            text: _selectionText(context, l10n),
-          ),
-          _InputDock(
+          // Row B — value/accidental strip + contextual selection actions.
+          _InputBar(
             pendingBase: _pendingBase,
             dotted: _dotted,
             accidental: _accidental,
+            hasSelection: _doc.hasSelection,
+            canTranspose: _selectionHasNote,
+            canPaste: _doc.canPaste,
             onPickValue: _pickValue,
             onToggleDot: _toggleDot,
             onPickAccidental: _pickAccidental,
             onRest: _addRest,
-            onPianoKey: _onPianoKey,
+            onSelectPrev: () => _run(_doc.selectPrev),
+            onSelectNext: () => _run(_doc.selectNext),
+            onExtendLeft: () => _run(_doc.extendLeft),
+            onExtendRight: () => _run(_doc.extendRight),
+            onUp: () => _transpose(1),
+            onDown: () => _transpose(-1),
+            onMoveLeft: () => _run(_doc.moveSelectionLeft),
+            onMoveRight: () => _run(_doc.moveSelectionRight),
+            onCopy: () => _run(_doc.copySelection),
+            onCut: () => _run(_doc.cutSelection),
+            onPaste: () => _run(_doc.paste),
+            onDelete: () => _run(_doc.deleteSelected),
+          ),
+          // Piano — places notes at the caret.
+          Material(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            elevation: 3,
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 132,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: PianoKeyboard(
+                    startMidi: 48,
+                    whiteKeyCount: 15,
+                    showLabels: true,
+                    onKeyTap: _onPianoKey,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _menuRow(IconData icon, String label) => Row(
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          Text(label),
-        ],
+  PopupMenuItem<String> _menuItem(
+    String value,
+    IconData icon,
+    String label,
+    bool enabled,
+  ) =>
+      PopupMenuItem(
+        value: value,
+        enabled: enabled,
+        child: Row(
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 12),
+            Text(label),
+          ],
+        ),
       );
 
-  String _selectionText(BuildContext context, AppLocalizations l10n) {
-    final e = _doc.selected;
-    if (e == null) return l10n.workshopReady;
+  String _statusText(BuildContext context, AppLocalizations l10n) {
+    if (!_doc.hasSelection) return l10n.workshopReady;
+    final ids = _doc.selectedIds;
+    if (ids.length > 1) return l10n.workshopSelectedCount(ids.length);
+    final e = _doc.selected!;
     if (e.isRest) return l10n.workshopRest;
     final p = e.pitch!;
     final acc = p.alter > 0 ? '♯' : (p.alter < 0 ? '♭' : '');
@@ -407,12 +447,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   }
 }
 
-/// One compact row: clef · time · key · zoom.
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
+/// Row A — compact clef/time/key/zoom dropdowns + a status readout.
+class _TopBar extends StatelessWidget {
+  const _TopBar({
     required this.clef,
     required this.timeSignature,
     required this.fifths,
+    required this.armedGlyph,
+    required this.dotted,
+    required this.status,
     required this.onClef,
     required this.onTime,
     required this.onKey,
@@ -423,6 +466,9 @@ class _SettingsRow extends StatelessWidget {
   final Clef clef;
   final TimeSignature timeSignature;
   final int fifths;
+  final String armedGlyph;
+  final bool dotted;
+  final String status;
   final ValueChanged<Clef> onClef;
   final ValueChanged<TimeSignature> onTime;
   final ValueChanged<int> onKey;
@@ -431,251 +477,224 @@ class _SettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: [
-          _label(context, l10n.workshopClef),
-          SegmentedButton<Clef>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: Clef.treble, label: Text('𝄞')),
-              ButtonSegment(value: Clef.bass, label: Text('𝄢')),
-            ],
-            selected: {clef == Clef.bass ? Clef.bass : Clef.treble},
-            onSelectionChanged: (s) => onClef(s.first),
-          ),
-          const SizedBox(width: 16),
-          _label(context, l10n.workshopTimeSignature),
-          SegmentedButton<TimeSignature>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: TimeSignature.twoFour, label: Text('2/4')),
-              ButtonSegment(value: TimeSignature.threeFour, label: Text('3/4')),
-              ButtonSegment(value: TimeSignature.fourFour, label: Text('4/4')),
-            ],
-            selected: {timeSignature},
-            onSelectionChanged: (s) => onTime(s.first),
-          ),
-          const SizedBox(width: 16),
-          _label(context, l10n.workshopKey),
-          DropdownButton<int>(
-            value: fifths,
-            items: [
-              for (final f in _keyChoices)
-                DropdownMenuItem(value: f, child: Text(_keyLabel(f))),
-            ],
-            onChanged: (f) => onKey(f ?? 0),
-          ),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: onZoomOut,
-            icon: const Icon(Icons.zoom_out),
-            tooltip: l10n.workshopZoomOut,
-          ),
-          IconButton(
-            onPressed: onZoomIn,
-            icon: const Icon(Icons.zoom_in),
-            tooltip: l10n.workshopZoomIn,
-          ),
-        ],
+    return SizedBox(
+      height: 44,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            _dropdown<Clef>(
+              value: clef == Clef.bass ? Clef.bass : Clef.treble,
+              items: {for (final c in _clefGlyph.keys) c: _clefGlyph[c]!},
+              onChanged: onClef,
+              tooltip: l10n.workshopClef,
+            ),
+            _dropdown<TimeSignature>(
+              value: timeSignature,
+              items: {
+                TimeSignature.twoFour: '2/4',
+                TimeSignature.threeFour: '3/4',
+                TimeSignature.fourFour: '4/4',
+              },
+              onChanged: onTime,
+              tooltip: l10n.workshopTimeSignature,
+            ),
+            _dropdown<int>(
+              value: fifths,
+              items: {for (final f in _keyChoices) f: _keyLabel(f)},
+              onChanged: onKey,
+              tooltip: l10n.workshopKey,
+            ),
+            IconButton(
+              iconSize: 20,
+              visualDensity: VisualDensity.compact,
+              onPressed: onZoomOut,
+              icon: const Icon(Icons.zoom_out),
+              tooltip: l10n.workshopZoomOut,
+            ),
+            IconButton(
+              iconSize: 20,
+              visualDensity: VisualDensity.compact,
+              onPressed: onZoomIn,
+              icon: const Icon(Icons.zoom_in),
+              tooltip: l10n.workshopZoomIn,
+            ),
+            const SizedBox(width: 8),
+            const VerticalDivider(width: 1),
+            const SizedBox(width: 8),
+            MusicGlyph(armedGlyph, size: 18),
+            if (dotted)
+              const Text(' .', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+            Text(status, style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _label(BuildContext context, String text) => Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: Text(text, style: Theme.of(context).textTheme.labelMedium),
+  Widget _dropdown<T>({
+    required T value,
+    required Map<T, String> items,
+    required ValueChanged<T> onChanged,
+    required String tooltip,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Tooltip(
+          message: tooltip,
+          child: DropdownButton<T>(
+            value: value,
+            isDense: true,
+            underline: const SizedBox.shrink(),
+            items: [
+              for (final e in items.entries)
+                DropdownMenuItem(value: e.key, child: Text(e.value)),
+            ],
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
+        ),
       );
 }
 
-/// Armed value glyph + a line of text (selection / prompt).
-class _StatusLine extends StatelessWidget {
-  const _StatusLine({
-    required this.glyph,
-    required this.dotted,
-    required this.text,
-  });
-
-  final String glyph;
-  final bool dotted;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      child: Row(
-        children: [
-          MusicGlyph(glyph, size: 20),
-          if (dotted)
-            const Text(' .', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Contextual controls for the current selection.
-class _SelectionBar extends StatelessWidget {
-  const _SelectionBar({
-    required this.canTranspose,
-    required this.onPrev,
-    required this.onNext,
-    required this.onUp,
-    required this.onDown,
-    required this.onDelete,
-  });
-
-  final bool canTranspose;
-  final VoidCallback onPrev, onNext, onUp, onDown, onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      color: Theme.of(context).colorScheme.secondaryContainer,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: onPrev,
-            icon: const Icon(Icons.chevron_left),
-            tooltip: l10n.workshopSelectPrev,
-          ),
-          IconButton(
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right),
-            tooltip: l10n.workshopSelectNext,
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: canTranspose ? onUp : null,
-            icon: const Icon(Icons.arrow_upward),
-            tooltip: l10n.workshopUp,
-          ),
-          IconButton(
-            onPressed: canTranspose ? onDown : null,
-            icon: const Icon(Icons.arrow_downward),
-            tooltip: l10n.workshopDown,
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline),
-            tooltip: l10n.workshopDelete,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The bottom input dock: a duration/accidental glyph strip above the piano.
-class _InputDock extends StatelessWidget {
-  const _InputDock({
+/// Row B — the value/accidental/rest strip, plus contextual selection actions.
+class _InputBar extends StatelessWidget {
+  const _InputBar({
     required this.pendingBase,
     required this.dotted,
     required this.accidental,
+    required this.hasSelection,
+    required this.canTranspose,
+    required this.canPaste,
     required this.onPickValue,
     required this.onToggleDot,
     required this.onPickAccidental,
     required this.onRest,
-    required this.onPianoKey,
+    required this.onSelectPrev,
+    required this.onSelectNext,
+    required this.onExtendLeft,
+    required this.onExtendRight,
+    required this.onUp,
+    required this.onDown,
+    required this.onMoveLeft,
+    required this.onMoveRight,
+    required this.onCopy,
+    required this.onCut,
+    required this.onPaste,
+    required this.onDelete,
   });
 
   final DurationBase pendingBase;
   final bool dotted;
   final _Accidental accidental;
+  final bool hasSelection, canTranspose, canPaste;
   final ValueChanged<DurationBase> onPickValue;
-  final VoidCallback onToggleDot;
+  final VoidCallback onToggleDot, onRest;
   final ValueChanged<_Accidental> onPickAccidental;
-  final VoidCallback onRest;
-  final ValueChanged<int> onPianoKey;
+  final VoidCallback onSelectPrev, onSelectNext, onExtendLeft, onExtendRight;
+  final VoidCallback onUp, onDown, onMoveLeft, onMoveRight;
+  final VoidCallback onCopy, onCut, onPaste, onDelete;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surfaceContainer,
-      elevation: 3,
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  for (final v in _values)
-                    _GlyphButton(
-                      selected: pendingBase == v.base,
-                      onTap: () => onPickValue(v.base),
-                      child: MusicGlyph(v.glyph, size: 24),
-                    ),
-                  _GlyphButton(
-                    selected: dotted,
-                    onTap: onToggleDot,
-                    tooltip: l10n.workshopDot,
-                    child: const Text(
-                      '.',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const _DockDivider(),
-                  for (final a in _Accidental.values)
-                    _GlyphButton(
-                      selected: accidental == a,
-                      onTap: () => onPickAccidental(a),
-                      child: Text(
-                        _accidentalGlyph[a]!,
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                    ),
-                  const _DockDivider(),
-                  _GlyphButton(
-                    selected: false,
-                    onTap: onRest,
-                    tooltip: l10n.workshopRest,
-                    child: const Icon(Icons.music_off_outlined),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            SizedBox(
-              height: 132,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                child: PianoKeyboard(
-                  startMidi: 48, // C3
-                  whiteKeyCount: 15,
-                  showLabels: true,
-                  onKeyTap: onPianoKey,
+      color: scheme.surfaceContainerHigh,
+      child: SizedBox(
+        height: 52,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Row(
+            children: [
+              for (final v in _values)
+                _GlyphButton(
+                  selected: pendingBase == v.base,
+                  onTap: () => onPickValue(v.base),
+                  child: MusicGlyph(v.glyph, size: 22),
+                ),
+              _GlyphButton(
+                selected: dotted,
+                onTap: onToggleDot,
+                tooltip: l10n.workshopDot,
+                child: const Text(
+                  '.',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
-            ),
-          ],
+              const _Sep(),
+              for (final a in _Accidental.values)
+                _GlyphButton(
+                  selected: accidental == a,
+                  onTap: () => onPickAccidental(a),
+                  child: Text(
+                    _accidentalGlyph[a]!,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
+              const _Sep(),
+              _act(Icons.music_off_outlined, l10n.workshopRest, onRest),
+              if (hasSelection) ...[
+                const _Sep(),
+                _act(Icons.chevron_left, l10n.workshopSelectPrev, onSelectPrev),
+                _act(
+                  Icons.chevron_right,
+                  l10n.workshopSelectNext,
+                  onSelectNext,
+                ),
+                _act(
+                  Icons.keyboard_double_arrow_left,
+                  l10n.workshopExtendLeft,
+                  onExtendLeft,
+                ),
+                _act(
+                  Icons.keyboard_double_arrow_right,
+                  l10n.workshopExtendRight,
+                  onExtendRight,
+                ),
+                _act(
+                  Icons.arrow_upward,
+                  l10n.workshopUp,
+                  canTranspose ? onUp : null,
+                ),
+                _act(
+                  Icons.arrow_downward,
+                  l10n.workshopDown,
+                  canTranspose ? onDown : null,
+                ),
+                _act(Icons.west, l10n.workshopMoveLeft, onMoveLeft),
+                _act(Icons.east, l10n.workshopMoveRight, onMoveRight),
+                _act(Icons.copy, l10n.workshopCopy, onCopy),
+                _act(Icons.content_cut, l10n.workshopCut, onCut),
+                _act(
+                  Icons.content_paste,
+                  l10n.workshopPaste,
+                  canPaste ? onPaste : null,
+                ),
+                _act(Icons.delete_outline, l10n.workshopDelete, onDelete),
+              ] else if (canPaste)
+                _act(Icons.content_paste, l10n.workshopPaste, onPaste),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _act(IconData icon, String tooltip, VoidCallback? onTap) => IconButton(
+        iconSize: 22,
+        visualDensity: VisualDensity.compact,
+        onPressed: onTap,
+        icon: Icon(icon),
+        tooltip: tooltip,
+      );
 }
 
-/// A square, selectable glyph button used across the input dock.
+/// A square, selectable glyph button for the value/accidental strip.
 class _GlyphButton extends StatelessWidget {
   const _GlyphButton({
     required this.selected,
@@ -693,19 +712,19 @@ class _GlyphButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final button = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
       child: Material(
         color: selected ? scheme.primaryContainer : scheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(9),
           side: BorderSide(
             color: selected ? scheme.primary : scheme.outlineVariant,
           ),
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(9),
           onTap: onTap,
-          child: SizedBox(width: 48, height: 44, child: Center(child: child)),
+          child: SizedBox(width: 44, height: 40, child: Center(child: child)),
         ),
       ),
     );
@@ -713,12 +732,12 @@ class _GlyphButton extends StatelessWidget {
   }
 }
 
-class _DockDivider extends StatelessWidget {
-  const _DockDivider();
+class _Sep extends StatelessWidget {
+  const _Sep();
 
   @override
   Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6),
-        child: SizedBox(height: 32, child: VerticalDivider(width: 1)),
+        padding: EdgeInsets.symmetric(horizontal: 5),
+        child: SizedBox(height: 28, child: VerticalDivider(width: 1)),
       );
 }
