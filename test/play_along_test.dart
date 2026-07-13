@@ -162,10 +162,10 @@ void main() {
 
     test('keeps musical time inside the loop and never finishes', () {
       final e = PlayAlongEngine(loopChart, leadInBeats: 0);
+      final ms = loopChart.beatMs;
       e.setLoop(1, 3); // loop notes 1 and 2
       // Far past the loop end — time must have wrapped back into [1, 3).
-      e.update(
-          elapsedMs: 10 * loopChart.beatMs, reading: PitchReading.silent());
+      e.update(elapsedMs: 10 * ms, reading: PitchReading.silent());
       expect(e.currentBeat, greaterThanOrEqualTo(1.0));
       expect(e.currentBeat, lessThan(3.0));
       expect(e.finished, isFalse);
@@ -175,25 +175,24 @@ void main() {
 
     test('re-arms a hit note on the next pass', () {
       final e = PlayAlongEngine(loopChart, leadInBeats: 0);
+      final ms = loopChart.beatMs;
       e.setLoop(1, 3);
       // Sample note 1 on-pitch across its beat so it registers as a hit...
       for (var t = 1.0; t < 2.0; t += 0.1) {
-        e.update(elapsedMs: t * loopChart.beatMs, reading: _reading(62));
+        e.update(elapsedMs: t * ms, reading: _reading(62));
       }
       // ...cross the loop end so note 1 finalizes, then wraps + re-arms.
-      e.update(
-          elapsedMs: 3.1 * loopChart.beatMs, reading: PitchReading.silent());
+      e.update(elapsedMs: 3.1 * ms, reading: PitchReading.silent());
       expect(e.notes[1].result, NoteResult.pending, reason: 're-armed');
     });
 
     test('clearing the loop lets playback finish', () {
       final e = PlayAlongEngine(loopChart, leadInBeats: 0);
+      final ms = loopChart.beatMs;
       e.setLoop(1, 3);
-      e.update(
-          elapsedMs: 10 * loopChart.beatMs, reading: PitchReading.silent());
+      e.update(elapsedMs: 10 * ms, reading: PitchReading.silent());
       e.setLoop(null, null);
-      e.update(
-          elapsedMs: 20 * loopChart.beatMs, reading: PitchReading.silent());
+      e.update(elapsedMs: 20 * ms, reading: PitchReading.silent());
       expect(e.finished, isTrue);
     });
   });
