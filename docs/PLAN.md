@@ -74,10 +74,13 @@ and push to origin/main** before/after touching shared files. Format:
   dropdown) · range select + move/copy/cut/paste · open MusicXML/MIDI · wired
   partitura **C1–C5** (staff-tap · hover ghost · drag-to-move · grand staff) ·
   **perf memoization · sweepable piano (C1 labels) · one-row app bar ·
-  click-to-move · physical-keyboard entry** · big unit+widget+integration test
-  suite (350 tests). Next: **chord mode** (multi-pitch model), slurs, lyrics,
-  caret, marquee-select, hairpins, print · touching `lib/features/workshop/**` ·
-  **in progress** · detail: [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
+  click-to-move · physical-keyboard entry · chord mode (multi-pitch model —
+  stack notes at one timeslot)** · big unit+widget+integration test suite
+  (359 tests, CI-green + web build). Next: slurs (Bindebögen), lyrics, pickup/
+  off-beat-1 start, caret, marquee-select, hairpins, print; adopt `kidsScoreTheme`
+  so the Handwritten-notes toggle reaches the editor · touching
+  `lib/features/workshop/**` · **idle** (chord mode on origin/main) · detail:
+  [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
   `MultiSystemView(elementColors:)` param); and **Workshop P0/P1/P2a** (About

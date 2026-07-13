@@ -34,8 +34,9 @@
      settings · undo/redo · play · ⋮); Row A removed.
   5. ✅ *Physical keyboard* — A–G notes, 1–5 values, arrows (caret/pitch), R
      rest, `.` dot, Del delete, Ctrl/⌘ Z·Y·C·X·V.
-  6. ⏳ *Chord mode* — place multiple notes at one timeslot (model → chord;
-     `EditorElement` becomes multi-pitch).
+  6. ✅ *Chord mode* — place multiple notes at one timeslot. `EditorElement` is
+     now multi-pitch (low→high `List<Pitch>`); a ⧉ toggle stacks the next
+     pitch onto the selected note. Transpose/accidental/move/copy all chord-aware.
   7. ⏳ *More:* start off beat 1 (pickup / mid-measure), **slurs** (Bindebögen),
      **lyrics** typing, caret, marquee-select, drag-reorder, hairpins, page/print.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
