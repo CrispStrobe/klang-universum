@@ -2126,6 +2126,36 @@ abstract class AppLocalizations {
   /// **'Hear it again'**
   String get singBackListen;
 
+  /// No description provided for @gameCelloPlayIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Play It'**
+  String get gameCelloPlayIt;
+
+  /// No description provided for @gameCelloPlayItSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the note on your real cello — the mic listens'**
+  String get gameCelloPlayItSubtitle;
+
+  /// No description provided for @celloPlayItPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Play this note on your cello!'**
+  String get celloPlayItPrompt;
+
+  /// No description provided for @celloPlayItOpenString.
+  ///
+  /// In en, this message translates to:
+  /// **'{string} string — open'**
+  String celloPlayItOpenString(String string);
+
+  /// No description provided for @celloPlayItFingered.
+  ///
+  /// In en, this message translates to:
+  /// **'{string} string — finger {finger}'**
+  String celloPlayItFingered(String string, int finger);
+
   /// No description provided for @moduleDrums.
   ///
   /// In en, this message translates to:

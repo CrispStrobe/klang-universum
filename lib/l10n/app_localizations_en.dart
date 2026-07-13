@@ -1132,6 +1132,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get singBackListen => 'Hear it again';
 
   @override
+  String get gameCelloPlayIt => 'Play It';
+
+  @override
+  String get gameCelloPlayItSubtitle =>
+      'Play the note on your real cello — the mic listens';
+
+  @override
+  String get celloPlayItPrompt => 'Play this note on your cello!';
+
+  @override
+  String celloPlayItOpenString(String string) {
+    return '$string string — open';
+  }
+
+  @override
+  String celloPlayItFingered(String string, int finger) {
+    return '$string string — finger $finger';
+  }
+
+  @override
   String get moduleDrums => 'Drums';
 
   @override

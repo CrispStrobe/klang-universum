@@ -1137,6 +1137,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get singBackListen => 'Nochmal hören';
 
   @override
+  String get gameCelloPlayIt => 'Spiel es!';
+
+  @override
+  String get gameCelloPlayItSubtitle =>
+      'Spiele die Note auf deinem echten Cello — das Mikro hört zu';
+
+  @override
+  String get celloPlayItPrompt => 'Spiele diese Note auf deinem Cello!';
+
+  @override
+  String celloPlayItOpenString(String string) {
+    return '$string-Saite — leer';
+  }
+
+  @override
+  String celloPlayItFingered(String string, int finger) {
+    return '$string-Saite — Finger $finger';
+  }
+
+  @override
   String get moduleDrums => 'Schlagzeug';
 
   @override
