@@ -203,8 +203,11 @@ UI exist, these are high value ÷ effort because the hard infra is done:
   pool `scales.hear.*`.
 - [ ] **Play-along for the Song Book.** Extend play/sing-along to the real
   public-domain songs — play or sing Twinkle & co. against the moving score. *M · ♪♪.*
-- [ ] **Mic grading in the instrument corners.** "Play this note/string/finger"
-  verified by the mic across the cello / guitar / piano corners. *M · ♪♪.*
+- [~] **Mic grading in the instrument corners.** "Play this note/string/finger"
+  verified by the mic. **Cello shipped**
+  ([HISTORY.md](HISTORY.md#live-microphone--pitch-detection)): a first-position
+  note + string/finger hint, played on the real cello and graded by the mic
+  (octave-agnostic, feeds `cello.play.*`). Guitar & piano corners still open. *M · ♪♪.*
 - [ ] **Parent view + multi-child profiles.** *(kids' practice apps. M · ♪♪.)* A
   parent dashboard over the curriculum **readiness** — each child's school-year
   progress at a glance; per-child profiles. (Also listed under Strategic bets.)

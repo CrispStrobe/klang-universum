@@ -10,6 +10,7 @@ import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/features/games/cello/bowing_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_finger_quiz_screen.dart';
+import 'package:klang_universum/features/games/cello/cello_play_it_screen.dart';
 import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.dart';
 import 'package:klang_universum/features/games/cello/tuner_spike_screen.dart';
 import 'package:klang_universum/features/games/chords/chord_builder_screen.dart';
@@ -583,6 +584,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCelloFingerQuiz,
       subtitle: (l) => l.gameCelloFingerQuizSubtitle,
       builder: (_) => const CelloFingerQuizScreen(),
+    ),
+    // Mic grading on the real cello: play the shown first-position note.
+    GameInfo(
+      id: 'cello_play_it',
+      icon: Icons.mic,
+      title: (l) => l.gameCelloPlayIt,
+      subtitle: (l) => l.gameCelloPlayItSubtitle,
+      builder: (_) => const CelloPlayItScreen(),
     ),
     GameInfo(
       id: 'bowing',

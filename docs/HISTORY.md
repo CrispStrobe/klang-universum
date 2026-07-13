@@ -76,6 +76,13 @@ plugins beyond capture.
   briefly). A "hear it again" button, the answer reveals on a correct sing, skip
   + mic-permission handling. Trains pitch memory and matching with no instrument;
   feeds the ear pool `scales.hear.sing_<step>`.
+- **Cello Play It** (Cello Corner) — mic grading on the *real instrument*: a
+  first-position note is shown on the bass staff with a string + finger hint;
+  the child bows it on their cello and the mic verifies the pitch
+  (octave-agnostic — kind to the low C string — held a touch longer to shrug off
+  the bow's scratchy attack). "Hear it" + skip buttons, mic-permission handling.
+  Turns the finger/string knowledge active; feeds the cello play pool
+  `cello.play.<step><octave>`.
 
 ## Curriculum (Lehrplan alignment)
 

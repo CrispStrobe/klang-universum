@@ -532,6 +532,28 @@
   "gameSingBackSubtitle": "Hear a note, then sing it back",
   "singBackPrompt": "Sing the note you heard!",
   "singBackListen": "Hear it again",
+  "gameCelloPlayIt": "Play It",
+  "gameCelloPlayItSubtitle": "Play the note on your real cello — the mic listens",
+  "celloPlayItPrompt": "Play this note on your cello!",
+  "celloPlayItOpenString": "{string} string — open",
+  "@celloPlayItOpenString": {
+    "placeholders": {
+      "string": {
+        "type": "String"
+      }
+    }
+  },
+  "celloPlayItFingered": "{string} string — finger {finger}",
+  "@celloPlayItFingered": {
+    "placeholders": {
+      "string": {
+        "type": "String"
+      },
+      "finger": {
+        "type": "int"
+      }
+    }
+  },
   "moduleDrums": "Drums",
   "moduleDrumsSubtitle": "Read and play rhythms",
   "gameDrumRead": "Drum Read",
