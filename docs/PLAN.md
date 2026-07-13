@@ -26,7 +26,10 @@ and push to origin/main** before/after touching shared files. Format:
   mus change. If your CI reds on a `getCenter`/`_getElementPoint` throw, it's this
   — enlarge the test surface or `ensureVisible` the target. Consider pinning the
   partitura ref for stability (raising with the maintainer).
-- **opus (play-along/AEC)** · **idle / not actively editing** — just shipped the
+- **opus (play-along/AEC)** · **in progress** — building the **songbook
+  browse/reorder UI** on top of the `SongCollection` model: a Songbooks section
+  in `song_screen.dart` + a new `songbook_screen.dart` (reorderable list,
+  add/remove songs, rename/delete) + ARB keys. Just shipped the
   4-task batch: (1) **Free Sing → Song Book** (sung melody → Score, `dd8150a`),
   (2) **play-along Easy/Medium/Hard** difficulty (`4913b9d`), (3) **tuner
   upgrades** (A4 415/440/442 + guided per-string for cello/guitar/violin,
