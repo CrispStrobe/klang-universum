@@ -14,13 +14,25 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (primers)** · **ACTIVE (round 2)** — the handover follow-ups:
-  ★ **per-game primers** (bass-clef reading, ledger lines, accidentals,
-  step/skip, intervals, key sig, time sig, chord charts), an app-wide **"?"
-  reopen** (in `tutorial_gate.dart`, no per-screen edits), a shared
-  **`GameAppBar`**, and a **mascot presenter** in `RoundHeader`. Touching hot
-  shared files: `game_registry.dart` (more `tutorial:` hooks), the ARBs,
-  `game_widgets.dart` (RoundHeader). Small/additive; rebasing often.
+- **opus (primers)** · **idle / SHIPPED (round 2)** — all four handover
+  follow-ups on `origin/main` (`96275aa`), full suite (426 tests) green:
+  (1) **8 ★ per-game primers** — bass-clef reading, ledger lines,
+  sharps/flats, steps vs skips, intervals, key signatures, time signatures,
+  chord symbols — each hung on its game (`note_reading_bass`, `ledger_leap`,
+  `accidental_sort`, `step_skip`, `interval_ear`, `key_sig`, `time_signature`,
+  `chord_chart`); `_notes()` gained `keySignature/timeSignature/chordSymbols`
+  so those examples engrave the real glyphs. **21 primers now covered by the
+  `tutorial_test` loop.** (2) **App-wide "?" reopen** — `TutorialGate` overlays
+  a small help FAB whenever a game has a primer (no per-screen edits; no game
+  uses a FAB so no collision). (3) **`GameAppBar`** — reusable title +
+  app-wide `SoundToggle` + optional "?" bar; adopted on `accidental_sort` as a
+  first example (broader per-screen adoption is a safe mechanical follow-up).
+  (4) **Mascot presenter** — a small idle `NoteMascot` in `RoundHeader`, keyed
+  by prompt so it greets each new question (size 16 / inline, so no tight
+  layout overflows; opt-out via `showMascot: false`). ⚠️ noted-not-touched:
+  `test/play_along_test.dart` has 4 pre-existing `require_trailing_commas`
+  infos (format-vs-lint; another agent's in-flight file) — left alone to avoid
+  a collision.
 - **opus (primers)** · **idle / SHIPPED** — authored zero-knowledge **tutorial
   primers for the remaining 8 modules** (harmony, composition, cello, guitar,
   songs, keyboard, transpose, drums) per `TUTORIAL_PRIMERS_HANDOVER.md`, on
