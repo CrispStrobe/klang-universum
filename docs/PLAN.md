@@ -14,12 +14,16 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (workshop→games)** · **🚧 ACTIVE — new minigame "Whole or Half Step?"**
-  (binary staff-read: two neighbour notes — whole step/tone or half step/
-  semitone; hears the interval). Touching hot shared files `game_registry.dart`,
-  `core/tuning.dart`, ARBs **additively** + new `whole_half_screen.dart` + test.
-  Pulling --rebase per commit; additive edits only. SRI `reading.tone.<whole|half>`.
-- **opus (workshop→games)** · **idle / SHIPPED — new minigame "Which Clef?"**
+- **opus (workshop→games)** · **idle / SHIPPED — 2 new minigames.** (2) **Whole
+  or Half Step?** (Noten lesen) — two neighbour notes (a 2nd); tap whole step
+  (tone) vs half step (semitone), and *hear* the interval. Half steps hide at
+  E–F/B–C, so a plain 2nd isn't enough — you read the letters. Balanced
+  generation from `Clef.pitchAt`; treble at 1★, +bass at 2★. SRI
+  `reading.tone.<whole|half>`. (1) **Which Clef?** — a bare clef, tap Treble/Bass
+  (+Alto/Tenor at 2★), SRI `reading.clef.<name>`. Each: one `GameInfo`, a
+  `[100,600,900]` bracket, EN+DE ARB keys, a screen + a widget test; consistency
+  suite + whole-project analyze green; on origin/main. · _earlier this session:
+  partitura **C10a+C10b** live drag + Workshop **live drop caret** (all CI-green)._
   (Noten lesen). A bare clef on an empty staff (`StaffView` + `Measure([])`);
   tap **Treble/Bass**, widening to **Alto/Tenor at 2★** (`starsFor>=2`). Binary
   `AnswerGrid`, no-fail `QuizRoundMixin`; SRI `reading.clef.<name>`. Added one
@@ -659,9 +663,10 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   surface throws `getElementPoint` otherwise — see the board's ✅ note).
 
 ### A. Tap-robust minigames that fill a real skill gap (best value)
-- [ ] **Whole-step or Half-step?** (binary, ear *and*/or staff) — the distinction
-  *inside* a 2nd (tone vs semitone). The natural sequel to Step or Skip? and the
-  foundation of scale-building; nothing drills it yet. SRI e.g. `reading.tone.*`.
+- [x] **Whole-step or Half-step?** — **shipped** (Noten lesen): read a 2nd on the
+  staff and tap tone vs semitone (half steps hide at E–F/B–C), and hear the
+  interval; treble at 1★, +bass at 2★. SRI `reading.tone.<whole|half>`. See
+  [HISTORY.md](HISTORY.md#partitura-powered--shipped).
 - [ ] **Same or Different?** (binary ear) — two notes (or two 2-note cells); are
   they the same or different? The youngest-child discrimination skill (Kodály).
   Trivial to build on the `direction_ear` scaffold.

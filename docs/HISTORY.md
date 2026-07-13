@@ -348,6 +348,13 @@ Games built on partitura capabilities the app didn't use before.
   at 2★ (all four rendered by partitura's `Clef`). A binary `AnswerGrid`, no-fail;
   nothing else in the app taught reading the clef *sign* itself. SRI
   `reading.clef.<treble|bass|alto|tenor>`.
+- **Whole or Half Step?** (Noten lesen) — the tone-vs-semitone drill and the
+  foundation of scale-building: two neighbour notes (a 2nd) are shown; tap
+  whether the gap is a whole step or a half step, then hear it played. Because
+  half steps hide only at E–F and B–C, a plain 2nd isn't enough — the child must
+  read the letters. Balanced generation (`Clef.pitchAt`), naturals only; treble
+  for beginners, +bass clef at 2★. The natural sequel to Step or Skip?. SRI
+  `reading.tone.<whole|half>`.
 
 ## Toy-inspired mechanics — shipped
 

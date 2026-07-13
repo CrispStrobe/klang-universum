@@ -490,6 +490,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tenorClefLabel => 'Tenor';
 
   @override
+  String get gameWholeHalf => 'Whole or Half Step?';
+
+  @override
+  String get gameWholeHalfSubtitle =>
+      'Two neighbour notes — a whole step (tone) or a half step (semitone)?';
+
+  @override
+  String get wholeHalfPrompt => 'Is the gap a whole step or a half step?';
+
+  @override
+  String get wholeStepLabel => 'Whole step';
+
+  @override
+  String get halfStepLabel => 'Half step';
+
+  @override
   String get moduleGuitar => 'Guitar Corner';
 
   @override

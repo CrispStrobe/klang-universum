@@ -968,6 +968,36 @@ abstract class AppLocalizations {
   /// **'Tenor'**
   String get tenorClefLabel;
 
+  /// No description provided for @gameWholeHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole or Half Step?'**
+  String get gameWholeHalf;
+
+  /// No description provided for @gameWholeHalfSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two neighbour notes — a whole step (tone) or a half step (semitone)?'**
+  String get gameWholeHalfSubtitle;
+
+  /// No description provided for @wholeHalfPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Is the gap a whole step or a half step?'**
+  String get wholeHalfPrompt;
+
+  /// No description provided for @wholeStepLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole step'**
+  String get wholeStepLabel;
+
+  /// No description provided for @halfStepLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Half step'**
+  String get halfStepLabel;
+
   /// No description provided for @moduleGuitar.
   ///
   /// In en, this message translates to:

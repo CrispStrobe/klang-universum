@@ -492,6 +492,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tenorClefLabel => 'Tenor';
 
   @override
+  String get gameWholeHalf => 'Ganz- oder Halbton?';
+
+  @override
+  String get gameWholeHalfSubtitle =>
+      'Zwei Nachbarnoten — ein Ganzton oder ein Halbton?';
+
+  @override
+  String get wholeHalfPrompt => 'Ist der Abstand ein Ganzton oder ein Halbton?';
+
+  @override
+  String get wholeStepLabel => 'Ganzton';
+
+  @override
+  String get halfStepLabel => 'Halbton';
+
+  @override
   String get moduleGuitar => 'Gitarren-Ecke';
 
   @override

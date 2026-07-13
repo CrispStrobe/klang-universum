@@ -71,6 +71,7 @@ import 'package:klang_universum/features/games/note_reading/staff_runner_screen.
 import 'package:klang_universum/features/games/note_reading/step_skip_screen.dart';
 import 'package:klang_universum/features/games/note_reading/which_clef_screen.dart';
 import 'package:klang_universum/features/games/note_reading/which_voice_screen.dart';
+import 'package:klang_universum/features/games/note_reading/whole_half_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_count_screen.dart';
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
@@ -275,6 +276,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameWhichClef,
       subtitle: (l) => l.gameWhichClefSubtitle,
       builder: (_) => const WhichClefScreen(),
+    ),
+    // Tone vs semitone — read a 2nd's real size (half steps hide at E–F, B–C).
+    GameInfo(
+      id: 'whole_half',
+      icon: Icons.height,
+      title: (l) => l.gameWholeHalf,
+      subtitle: (l) => l.gameWholeHalfSubtitle,
+      builder: (_) => const WholeHalfScreen(),
     ),
     GameInfo(
       id: 'place_note_treble',
