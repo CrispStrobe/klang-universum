@@ -182,7 +182,7 @@ void main() {
 
   test('buildGrandStaff splits the line across both clefs, bars aligned', () {
     final doc = ScoreDocument();
-    doc.insertNote(_p(Step.g, octave: 4), _quarter); // G4 (midi 67) → treble
+    doc.insertNote(_p(Step.g), _quarter); // G4 (midi 67) → treble
     doc.insertNote(_p(Step.c, octave: 3), _quarter); // C3 (midi 48) → bass
     final gs = doc.buildGrandStaff();
     final upper = gs.upper.measures.expand((m) => m.elements).toList();
