@@ -144,6 +144,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopDelete => 'Delete';
 
   @override
+  String get workshopRest => 'Rest';
+
+  @override
+  String get workshopRedo => 'Redo';
+
+  @override
+  String get workshopDot => 'Dotted';
+
+  @override
+  String get workshopAccidental => 'Accidental';
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override
@@ -1573,4 +1585,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appLegalese => '© 2026 Christian Ströbele';
+
+  @override
+  String get aboutTagline =>
+      'Music notation & harmony — from primary school onward';
+
+  @override
+  String aboutVersionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutProvider => 'Provider';
+
+  @override
+  String get aboutContact => 'Contact';
+
+  @override
+  String get aboutPrivacy => 'Privacy';
+
+  @override
+  String get aboutPrivacyText =>
+      'KlangUniversum works entirely on your device. Microphone audio (for the tuner and play-along) is analysed locally in real time — never recorded, stored, or sent anywhere. There are no accounts, no ads, and no tracking.';
+
+  @override
+  String get aboutDisclaimer => 'Disclaimer';
+
+  @override
+  String get aboutDisclaimerText =>
+      'KlangUniversum is a learning aid, provided as is and without warranty. Curriculum levels are generic guidance, not an official syllabus.';
+
+  @override
+  String get aboutCredits => 'Credits';
+
+  @override
+  String get aboutCreditsText =>
+      'Music engraving uses the Bravura font (SIL Open Font License).';
+
+  @override
+  String get aboutOpenSourceLicenses => 'Open-source licenses';
 }

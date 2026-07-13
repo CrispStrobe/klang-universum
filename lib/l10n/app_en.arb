@@ -65,6 +65,10 @@
   "workshopHint": "Pick a note value, then tap the staff to write your tune.",
   "workshopEditHint": "Tap the staff to move this note, or Delete it.",
   "workshopDelete": "Delete",
+  "workshopRest": "Rest",
+  "workshopRedo": "Redo",
+  "workshopDot": "Dotted",
+  "workshopAccidental": "Accidental",
   "instrumentLabel": "Instrument sound",
   "instrumentPiano": "Piano",
   "instrumentCello": "Cello",
@@ -758,5 +762,23 @@
   "chordListenerHeard": "Heard pitch classes",
   "aboutTitle": "About",
   "aboutSubtitle": "Version, licenses and credits",
-  "appLegalese": "© 2026 Christian Ströbele"
+  "appLegalese": "© 2026 Christian Ströbele",
+  "aboutTagline": "Music notation & harmony — from primary school onward",
+  "aboutVersionLabel": "Version {version}",
+  "@aboutVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutProvider": "Provider",
+  "aboutContact": "Contact",
+  "aboutPrivacy": "Privacy",
+  "aboutPrivacyText": "KlangUniversum works entirely on your device. Microphone audio (for the tuner and play-along) is analysed locally in real time — never recorded, stored, or sent anywhere. There are no accounts, no ads, and no tracking.",
+  "aboutDisclaimer": "Disclaimer",
+  "aboutDisclaimerText": "KlangUniversum is a learning aid, provided as is and without warranty. Curriculum levels are generic guidance, not an official syllabus.",
+  "aboutCredits": "Credits",
+  "aboutCreditsText": "Music engraving uses the Bravura font (SIL Open Font License).",
+  "aboutOpenSourceLicenses": "Open-source licenses"
 }

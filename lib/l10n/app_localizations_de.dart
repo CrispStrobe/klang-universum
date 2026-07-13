@@ -144,6 +144,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopDelete => 'Löschen';
 
   @override
+  String get workshopRest => 'Pause';
+
+  @override
+  String get workshopRedo => 'Wiederherstellen';
+
+  @override
+  String get workshopDot => 'Punktiert';
+
+  @override
+  String get workshopAccidental => 'Vorzeichen';
+
+  @override
   String get instrumentLabel => 'Instrumentenklang';
 
   @override
@@ -1581,4 +1593,43 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get appLegalese => '© 2026 Christian Ströbele';
+
+  @override
+  String get aboutTagline =>
+      'Notenschrift & Harmonielehre – ab der Grundschule';
+
+  @override
+  String aboutVersionLabel(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get aboutProvider => 'Anbieter';
+
+  @override
+  String get aboutContact => 'Kontakt';
+
+  @override
+  String get aboutPrivacy => 'Datenschutz';
+
+  @override
+  String get aboutPrivacyText =>
+      'KlangUniversum läuft vollständig auf deinem Gerät. Mikrofon-Audio (für Stimmgerät und Mitspielen) wird lokal in Echtzeit analysiert – niemals aufgezeichnet, gespeichert oder übertragen. Es gibt keine Konten, keine Werbung und kein Tracking.';
+
+  @override
+  String get aboutDisclaimer => 'Haftungsausschluss';
+
+  @override
+  String get aboutDisclaimerText =>
+      'KlangUniversum ist eine Lernhilfe und wird ohne Gewähr bereitgestellt. Die Lehrplan-Stufen sind allgemeine Orientierung, kein offizieller Lehrplan.';
+
+  @override
+  String get aboutCredits => 'Danksagungen';
+
+  @override
+  String get aboutCreditsText =>
+      'Der Notensatz verwendet die Schriftart Bravura (SIL Open Font License).';
+
+  @override
+  String get aboutOpenSourceLicenses => 'Open-Source-Lizenzen';
 }

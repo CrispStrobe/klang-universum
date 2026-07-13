@@ -326,6 +326,30 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get workshopDelete;
 
+  /// No description provided for @workshopRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get workshopRest;
+
+  /// No description provided for @workshopRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get workshopRedo;
+
+  /// No description provided for @workshopDot.
+  ///
+  /// In en, this message translates to:
+  /// **'Dotted'**
+  String get workshopDot;
+
+  /// No description provided for @workshopAccidental.
+  ///
+  /// In en, this message translates to:
+  /// **'Accidental'**
+  String get workshopAccidental;
+
   /// No description provided for @instrumentLabel.
   ///
   /// In en, this message translates to:
@@ -2893,6 +2917,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'© 2026 Christian Ströbele'**
   String get appLegalese;
+
+  /// No description provided for @aboutTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Music notation & harmony — from primary school onward'**
+  String get aboutTagline;
+
+  /// No description provided for @aboutVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String aboutVersionLabel(String version);
+
+  /// No description provided for @aboutProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get aboutProvider;
+
+  /// No description provided for @aboutContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get aboutContact;
+
+  /// No description provided for @aboutPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get aboutPrivacy;
+
+  /// No description provided for @aboutPrivacyText.
+  ///
+  /// In en, this message translates to:
+  /// **'KlangUniversum works entirely on your device. Microphone audio (for the tuner and play-along) is analysed locally in real time — never recorded, stored, or sent anywhere. There are no accounts, no ads, and no tracking.'**
+  String get aboutPrivacyText;
+
+  /// No description provided for @aboutDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Disclaimer'**
+  String get aboutDisclaimer;
+
+  /// No description provided for @aboutDisclaimerText.
+  ///
+  /// In en, this message translates to:
+  /// **'KlangUniversum is a learning aid, provided as is and without warranty. Curriculum levels are generic guidance, not an official syllabus.'**
+  String get aboutDisclaimerText;
+
+  /// No description provided for @aboutCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits'**
+  String get aboutCredits;
+
+  /// No description provided for @aboutCreditsText.
+  ///
+  /// In en, this message translates to:
+  /// **'Music engraving uses the Bravura font (SIL Open Font License).'**
+  String get aboutCreditsText;
+
+  /// No description provided for @aboutOpenSourceLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get aboutOpenSourceLicenses;
 }
 
 class _AppLocalizationsDelegate

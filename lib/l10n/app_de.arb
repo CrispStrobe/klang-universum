@@ -41,6 +41,10 @@
   "workshopHint": "Wähle einen Notenwert und tippe ins System, um deine Melodie zu schreiben.",
   "workshopEditHint": "Tippe ins System, um die Note zu verschieben, oder lösche sie.",
   "workshopDelete": "Löschen",
+  "workshopRest": "Pause",
+  "workshopRedo": "Wiederherstellen",
+  "workshopDot": "Punktiert",
+  "workshopAccidental": "Vorzeichen",
   "instrumentLabel": "Instrumentenklang",
   "instrumentPiano": "Klavier",
   "instrumentCello": "Cello",
@@ -535,5 +539,16 @@
   "chordListenerHeard": "Gehörte Tonklassen",
   "aboutTitle": "Über",
   "aboutSubtitle": "Version, Lizenzen und Danksagungen",
-  "appLegalese": "© 2026 Christian Ströbele"
+  "appLegalese": "© 2026 Christian Ströbele",
+  "aboutTagline": "Notenschrift & Harmonielehre – ab der Grundschule",
+  "aboutVersionLabel": "Version {version}",
+  "aboutProvider": "Anbieter",
+  "aboutContact": "Kontakt",
+  "aboutPrivacy": "Datenschutz",
+  "aboutPrivacyText": "KlangUniversum läuft vollständig auf deinem Gerät. Mikrofon-Audio (für Stimmgerät und Mitspielen) wird lokal in Echtzeit analysiert – niemals aufgezeichnet, gespeichert oder übertragen. Es gibt keine Konten, keine Werbung und kein Tracking.",
+  "aboutDisclaimer": "Haftungsausschluss",
+  "aboutDisclaimerText": "KlangUniversum ist eine Lernhilfe und wird ohne Gewähr bereitgestellt. Die Lehrplan-Stufen sind allgemeine Orientierung, kein offizieller Lehrplan.",
+  "aboutCredits": "Danksagungen",
+  "aboutCreditsText": "Der Notensatz verwendet die Schriftart Bravura (SIL Open Font License).",
+  "aboutOpenSourceLicenses": "Open-Source-Lizenzen"
 }
