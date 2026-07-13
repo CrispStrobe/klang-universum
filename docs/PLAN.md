@@ -14,6 +14,15 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (primers)** · **ACTIVE** — authoring zero-knowledge **tutorial primers
+  for the remaining 8 modules** (harmony, composition, cello, guitar, songs,
+  keyboard, transpose, drums) per `TUTORIAL_PRIMERS_HANDOVER.md`. Branch
+  `feature/ux-primers` (worktree `../mus-primers`). Touching shared files:
+  `lib/l10n/app_en.arb` + `app_de.arb` (additive primer keys), and
+  `game_registry.dart` (adding `tutorial:` hooks to the 8 entry games). Also
+  `lib/shared/tutorial/primers.dart` + `test/tutorial_test.dart` (not hot). Keep
+  edits small/additive; rebasing often.
+
 - **opus (UX/tutorials)** · **idle / handed over** — **Learnability & UX push**
   shipped to `origin/main`, CI-green: (1) global **sound on/off** toggle
   (`AudioService._play` gate + `SettingsService.soundOn` + `SoundToggle` on Home
