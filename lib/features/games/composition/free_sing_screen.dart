@@ -5,6 +5,7 @@
 // MelodyRecorder (transcribe) + AudioService (replay). Not scored; no stars.
 
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/melody_recorder.dart';
@@ -12,7 +13,18 @@ import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:partitura/partitura.dart'
+    show
+        Clef,
+        DurationBase,
+        Measure,
+        NoteDuration,
+        NoteElement,
+        Score,
+        scoreToMusicXml;
 import 'package:provider/provider.dart';
 
 class FreeSingScreen extends StatefulWidget {
@@ -106,6 +118,75 @@ class _FreeSingScreenState extends State<FreeSingScreen> {
     );
   }
 
+  /// Turn the captured notes into a Score for the Song Book. Durations are
+  /// quantised from the held ms; notes go four-to-a-measure (a rough 4/4).
+  Score _buildScore() {
+    NoteDuration durForMs(int ms) => switch (ms) {
+          >= 700 => const NoteDuration(DurationBase.half),
+          >= 350 => const NoteDuration(DurationBase.quarter),
+          >= 175 => const NoteDuration(DurationBase.eighth),
+          _ => const NoteDuration(DurationBase.sixteenth),
+        };
+    final notes = _recorder.notes;
+    final clef = notes.any((n) => n.$1 < 55) ? Clef.bass : Clef.treble;
+    final elements = [
+      for (var i = 0; i < notes.length; i++)
+        NoteElement.note(
+          pitchFromMidi(notes[i].$1),
+          durForMs(notes[i].$2),
+          id: 'fs$i',
+        ),
+    ];
+    const perMeasure = 4;
+    final measures = [
+      for (var i = 0; i < elements.length; i += perMeasure)
+        Measure(elements.sublist(i, min(i + perMeasure, elements.length))),
+    ];
+    return Score(clef: clef, measures: measures);
+  }
+
+  Future<void> _saveToSongBook() async {
+    if (_recorder.notes.isEmpty) return;
+    final l = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final songs = context.read<UserSongsService>();
+
+    final controller = TextEditingController(text: l.gameFreeSing);
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.myMelodySaveTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(l.myMelodySave),
+          ),
+        ],
+      ),
+    );
+    if (title == null) return;
+
+    final name = title.trim().isEmpty ? l.gameFreeSing : title.trim();
+    songs.addSong(
+      ImportedSong(
+        id: 'freesing-${_recorder.notes.length}-${name.hashCode}',
+        title: name,
+        musicXml: scoreToMusicXml(_buildScore()),
+      ),
+    );
+    messenger.showSnackBar(SnackBar(content: Text(l.myMelodySaved)));
+  }
+
   String _errorText(AppLocalizations l) => switch (_error!.reason) {
         PitchCaptureError.permissionDenied => l.micPermissionDenied,
         PitchCaptureError.unsupported => l.micUnsupported,
@@ -169,13 +250,20 @@ class _FreeSingScreenState extends State<FreeSingScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (!_recording && captured > 0)
+                  if (!_recording && captured > 0) ...[
                     OutlinedButton.icon(
                       onPressed: _playback,
                       icon: const Icon(Icons.play_arrow),
                       label: Text(l.myMelodyPlay),
                     ),
-                  if (!_recording && captured > 0) const SizedBox(width: 12),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: _saveToSongBook,
+                      icon: const Icon(Icons.save_alt),
+                      label: Text(l.myMelodySave),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                   FilledButton.icon(
                     onPressed: _toggle,
                     icon: Icon(_recording ? Icons.stop : Icons.mic),
