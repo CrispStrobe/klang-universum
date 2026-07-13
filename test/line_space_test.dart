@@ -11,12 +11,15 @@ import 'package:partitura/partitura.dart' show Clef, StaffView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/game_test_support.dart';
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets('line or space: a correct swipe advances the round',
       (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await useGameSurface(tester);
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -63,6 +66,7 @@ void main() {
 
   testWidgets('bass-clef variant renders and answers', (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await useGameSurface(tester);
     await tester.pumpWidget(
       MultiProvider(
         providers: [

@@ -14,6 +14,8 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/game_test_support.dart';
+
 Widget _wrap(SriService sri) => MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
@@ -50,6 +52,7 @@ void main() {
   testWidgets('grades the highlighted beat and records under measures.accent',
       (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await useGameSurface(tester);
     await tester.pumpWidget(_wrap(sri));
     await tester.pump();
 
@@ -67,6 +70,7 @@ void main() {
   testWidgets('clearing all ten rounds finishes with a result screen',
       (tester) async {
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await useGameSurface(tester);
     await tester.pumpWidget(_wrap(sri));
     await tester.pump();
 

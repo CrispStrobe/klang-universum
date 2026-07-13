@@ -15,6 +15,8 @@ import 'package:partitura/partitura.dart'
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/game_test_support.dart';
+
 Widget _wrap(Widget child, SriService sri, {UserSongsService? songs}) {
   return MultiProvider(
     providers: [
@@ -65,12 +67,9 @@ void main() {
 
   testWidgets('question & answer shows the question and two answer cards',
       (tester) async {
-    // Give the surface room: the three stacked staves overflow CI's 800×600
-    // Linux default, so the 2nd answer staff would be off-screen and untappable.
-    // (Real Bravura metrics come from test/flutter_test_config.dart.)
-    await tester.binding.setSurfaceSize(const Size(1400, 2400));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
+    // Room for the three stacked staves so the 2nd is on-screen and tappable
+    // on CI's small surface (shared harness).
+    await useGameSurface(tester);
     await tester.pumpWidget(_wrap(const QuestionAnswerScreen(), sri));
     await tester.pump();
 
