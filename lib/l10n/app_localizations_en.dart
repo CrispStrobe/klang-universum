@@ -1922,6 +1922,114 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can also play a chord one note at a time, bottom to top — that\'s an arpeggio.';
 
   @override
+  String get primerHarmonyTitle => 'Chords have jobs';
+
+  @override
+  String get primerHarmonyHome =>
+      'One chord feels like HOME — settled and finished. We call it the Tonic. Listen: this is C major, home base.';
+
+  @override
+  String get primerHarmonyPull =>
+      'Other chords pull AWAY and want to return home. The Dominant tugs the hardest — hear how it leans right back to home.';
+
+  @override
+  String get primerHarmonyCadence =>
+      'When chords travel home → away → home, that little journey to a resting point is a cadence. Listen to the whole trip.';
+
+  @override
+  String get primerCompositionTitle => 'Make a melody';
+
+  @override
+  String get primerCompositionJourney =>
+      'A melody is a little journey of notes — some step up, some come down. Hum along as it rises and falls!';
+
+  @override
+  String get primerCompositionQuestion =>
+      'A tune can ask a QUESTION — it stops high up in the air, sounding unfinished, as if it\'s waiting.';
+
+  @override
+  String get primerCompositionAnswer =>
+      '…then it gives an ANSWER, coming back down to rest at home. A question and its answer make a phrase.';
+
+  @override
+  String get primerCelloTitle => 'Your four strings';
+
+  @override
+  String get primerCelloStrings =>
+      'The cello has four strings. From low to high they are C, G, D, A — the lowest string is the thickest.';
+
+  @override
+  String get primerCelloBass =>
+      'Cello notes live on the bass clef, the staff for low sounds. This deep note is C, your thickest string.';
+
+  @override
+  String get primerCelloFinger =>
+      'Press a finger onto a string to shorten it and the note gets higher. The tuner listens and shows if you\'re spot on.';
+
+  @override
+  String get primerGuitarTitle => 'Six strings and tab';
+
+  @override
+  String get primerGuitarStrings =>
+      'A guitar has six strings. From low (thick) to high (thin): E, A, D, G, B, E — yes, an E at each end!';
+
+  @override
+  String get primerGuitarTab =>
+      'Guitar can be written as tab: six lines, one per string. A number is the fret to press; 0 means play the open string.';
+
+  @override
+  String get primerGuitarPlay =>
+      'Play the note shown, or strum along. The thinner the string, the higher it sings — from low E up to high E.';
+
+  @override
+  String get primerSongsTitle => 'Follow the tune';
+
+  @override
+  String get primerSongsPick =>
+      'Pick a song you know. The screen shows its tune as a line of notes, read left to right.';
+
+  @override
+  String get primerSongsMarker =>
+      'A marker slides along the tune. Sing or play each note as it reaches the line — like following a bouncing ball.';
+
+  @override
+  String get primerKeyboardTitle => 'The piano keys';
+
+  @override
+  String get primerKeyboardWhite =>
+      'The white keys are named A B C D E F G, repeating up the whole piano. The black keys sit in little groups of two and three.';
+
+  @override
+  String get primerKeyboardFindC =>
+      'Find C: it\'s the white key just to the LEFT of every group of TWO black keys. From C, climb up C D E F G A B C.';
+
+  @override
+  String get primerKeyboardHands =>
+      'Piano music uses two staves at once: the top staff for your right hand, the bottom staff for your left. Hear both together.';
+
+  @override
+  String get primerTransposeTitle => 'Read one note, hear another';
+
+  @override
+  String get primerTransposeSame =>
+      'Most instruments sound the note they read. Read a C, hear a C — simple.';
+
+  @override
+  String get primerTransposeShift =>
+      'But some are ‘transposing’: a trumpet in B♭ reads a C yet a B♭ comes out — a little lower. This game does that swap for you.';
+
+  @override
+  String get primerDrumsTitle => 'Reading drums';
+
+  @override
+  String get primerDrumsWhat =>
+      'Drums don\'t play high and low tunes — a drum just goes THUMP or TSS. So drum music shows WHICH drum and WHEN, not a pitch.';
+
+  @override
+  String get primerDrumsLines =>
+      'Each line and space is a different drum: low down is the bass drum you kick, higher up are the snare and cymbals. Read left to right and play the beat.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

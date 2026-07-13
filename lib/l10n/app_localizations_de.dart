@@ -1930,6 +1930,114 @@ class AppLocalizationsDe extends AppLocalizations {
       'Du kannst einen Akkord auch Ton für Ton von unten nach oben spielen — das ist ein Arpeggio.';
 
   @override
+  String get primerHarmonyTitle => 'Akkorde haben Aufgaben';
+
+  @override
+  String get primerHarmonyHome =>
+      'Ein Akkord fühlt sich wie ZUHAUSE an — ruhig und fertig. Wir nennen ihn Tonika. Hör hin: Das ist C-Dur, das Zuhause.';
+
+  @override
+  String get primerHarmonyPull =>
+      'Andere Akkorde ziehen WEG und wollen zurück nach Hause. Die Dominante zieht am stärksten — hör, wie sie gleich zum Zuhause zurücklehnt.';
+
+  @override
+  String get primerHarmonyCadence =>
+      'Wenn Akkorde nach Hause → weg → nach Hause wandern, heißt diese kleine Reise zum Ruhepunkt eine Kadenz. Hör dir die ganze Reise an.';
+
+  @override
+  String get primerCompositionTitle => 'Eine Melodie erfinden';
+
+  @override
+  String get primerCompositionJourney =>
+      'Eine Melodie ist eine kleine Reise aus Tönen — mal geht es aufwärts, mal wieder herunter. Summ mit, wenn sie steigt und fällt!';
+
+  @override
+  String get primerCompositionQuestion =>
+      'Eine Melodie kann eine FRAGE stellen — sie bleibt oben in der Luft stehen, klingt noch nicht fertig, wie wartend.';
+
+  @override
+  String get primerCompositionAnswer =>
+      '…dann gibt sie eine ANTWORT und kommt zum Zuhause herunter, zur Ruhe. Frage und Antwort ergeben einen Satz.';
+
+  @override
+  String get primerCelloTitle => 'Deine vier Saiten';
+
+  @override
+  String get primerCelloStrings =>
+      'Das Cello hat vier Saiten. Von tief nach hoch heißen sie C, G, D, A — die tiefste Saite ist die dickste.';
+
+  @override
+  String get primerCelloBass =>
+      'Cello-Töne stehen im Bassschlüssel, dem System für tiefe Klänge. Dieser tiefe Ton ist C, deine dickste Saite.';
+
+  @override
+  String get primerCelloFinger =>
+      'Drück einen Finger auf eine Saite, um sie zu verkürzen, dann wird der Ton höher. Das Stimmgerät hört zu und zeigt, ob du genau triffst.';
+
+  @override
+  String get primerGuitarTitle => 'Sechs Saiten und Tabulatur';
+
+  @override
+  String get primerGuitarStrings =>
+      'Eine Gitarre hat sechs Saiten. Von tief (dick) nach hoch (dünn): E, A, D, G, H, E — ja, an beiden Enden ein E!';
+
+  @override
+  String get primerGuitarTab =>
+      'Gitarre kann man als Tabulatur (Tab) schreiben: sechs Linien, eine pro Saite. Eine Zahl ist der Bund zum Greifen; 0 heißt leere Saite.';
+
+  @override
+  String get primerGuitarPlay =>
+      'Spiel den gezeigten Ton oder schrumme mit. Je dünner die Saite, desto höher klingt sie — vom tiefen E bis zum hohen E.';
+
+  @override
+  String get primerSongsTitle => 'Der Melodie folgen';
+
+  @override
+  String get primerSongsPick =>
+      'Wähl ein Lied, das du kennst. Der Bildschirm zeigt seine Melodie als Notenreihe, von links nach rechts zu lesen.';
+
+  @override
+  String get primerSongsMarker =>
+      'Eine Marke gleitet über die Melodie. Sing oder spiel jeden Ton, wenn er die Linie erreicht — wie einem hüpfenden Ball folgen.';
+
+  @override
+  String get primerKeyboardTitle => 'Die Klaviertasten';
+
+  @override
+  String get primerKeyboardWhite =>
+      'Die weißen Tasten heißen A H C D E F G und wiederholen sich das ganze Klavier hinauf. Die schwarzen Tasten stehen in kleinen Gruppen aus zwei und drei.';
+
+  @override
+  String get primerKeyboardFindC =>
+      'Finde das C: die weiße Taste direkt LINKS von jeder ZWEIER-Gruppe schwarzer Tasten. Von C aus hinauf: C D E F G A H C.';
+
+  @override
+  String get primerKeyboardHands =>
+      'Klaviernoten nutzen zwei Systeme zugleich: das obere für die rechte Hand, das untere für die linke. Hör dir beide zusammen an.';
+
+  @override
+  String get primerTransposeTitle => 'Einen Ton lesen, einen anderen hören';
+
+  @override
+  String get primerTransposeSame =>
+      'Die meisten Instrumente klingen so, wie sie notiert sind. Lies ein C, hör ein C — ganz einfach.';
+
+  @override
+  String get primerTransposeShift =>
+      'Manche aber sind „transponierend“: eine Trompete in B liest ein C, doch heraus kommt ein B — etwas tiefer. Dieses Spiel rechnet das für dich um.';
+
+  @override
+  String get primerDrumsTitle => 'Schlagzeug lesen';
+
+  @override
+  String get primerDrumsWhat =>
+      'Trommeln spielen keine hohen und tiefen Melodien — eine Trommel macht einfach BUMM oder TSS. Drum-Noten zeigen also WELCHE Trommel und WANN, keine Tonhöhe.';
+
+  @override
+  String get primerDrumsLines =>
+      'Jede Linie und jeder Zwischenraum ist eine andere Trommel: ganz unten die große Trommel (Fußtritt), oben Snare und Becken. Von links nach rechts lesen und den Beat spielen.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override

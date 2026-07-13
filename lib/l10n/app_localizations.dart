@@ -3500,6 +3500,180 @@ abstract class AppLocalizations {
   /// **'You can also play a chord one note at a time, bottom to top — that\'s an arpeggio.'**
   String get primerChordsArpeggio;
 
+  /// No description provided for @primerHarmonyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords have jobs'**
+  String get primerHarmonyTitle;
+
+  /// No description provided for @primerHarmonyHome.
+  ///
+  /// In en, this message translates to:
+  /// **'One chord feels like HOME — settled and finished. We call it the Tonic. Listen: this is C major, home base.'**
+  String get primerHarmonyHome;
+
+  /// No description provided for @primerHarmonyPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Other chords pull AWAY and want to return home. The Dominant tugs the hardest — hear how it leans right back to home.'**
+  String get primerHarmonyPull;
+
+  /// No description provided for @primerHarmonyCadence.
+  ///
+  /// In en, this message translates to:
+  /// **'When chords travel home → away → home, that little journey to a resting point is a cadence. Listen to the whole trip.'**
+  String get primerHarmonyCadence;
+
+  /// No description provided for @primerCompositionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a melody'**
+  String get primerCompositionTitle;
+
+  /// No description provided for @primerCompositionJourney.
+  ///
+  /// In en, this message translates to:
+  /// **'A melody is a little journey of notes — some step up, some come down. Hum along as it rises and falls!'**
+  String get primerCompositionJourney;
+
+  /// No description provided for @primerCompositionQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'A tune can ask a QUESTION — it stops high up in the air, sounding unfinished, as if it\'s waiting.'**
+  String get primerCompositionQuestion;
+
+  /// No description provided for @primerCompositionAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'…then it gives an ANSWER, coming back down to rest at home. A question and its answer make a phrase.'**
+  String get primerCompositionAnswer;
+
+  /// No description provided for @primerCelloTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your four strings'**
+  String get primerCelloTitle;
+
+  /// No description provided for @primerCelloStrings.
+  ///
+  /// In en, this message translates to:
+  /// **'The cello has four strings. From low to high they are C, G, D, A — the lowest string is the thickest.'**
+  String get primerCelloStrings;
+
+  /// No description provided for @primerCelloBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Cello notes live on the bass clef, the staff for low sounds. This deep note is C, your thickest string.'**
+  String get primerCelloBass;
+
+  /// No description provided for @primerCelloFinger.
+  ///
+  /// In en, this message translates to:
+  /// **'Press a finger onto a string to shorten it and the note gets higher. The tuner listens and shows if you\'re spot on.'**
+  String get primerCelloFinger;
+
+  /// No description provided for @primerGuitarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Six strings and tab'**
+  String get primerGuitarTitle;
+
+  /// No description provided for @primerGuitarStrings.
+  ///
+  /// In en, this message translates to:
+  /// **'A guitar has six strings. From low (thick) to high (thin): E, A, D, G, B, E — yes, an E at each end!'**
+  String get primerGuitarStrings;
+
+  /// No description provided for @primerGuitarTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar can be written as tab: six lines, one per string. A number is the fret to press; 0 means play the open string.'**
+  String get primerGuitarTab;
+
+  /// No description provided for @primerGuitarPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the note shown, or strum along. The thinner the string, the higher it sings — from low E up to high E.'**
+  String get primerGuitarPlay;
+
+  /// No description provided for @primerSongsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the tune'**
+  String get primerSongsTitle;
+
+  /// No description provided for @primerSongsPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a song you know. The screen shows its tune as a line of notes, read left to right.'**
+  String get primerSongsPick;
+
+  /// No description provided for @primerSongsMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'A marker slides along the tune. Sing or play each note as it reaches the line — like following a bouncing ball.'**
+  String get primerSongsMarker;
+
+  /// No description provided for @primerKeyboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The piano keys'**
+  String get primerKeyboardTitle;
+
+  /// No description provided for @primerKeyboardWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'The white keys are named A B C D E F G, repeating up the whole piano. The black keys sit in little groups of two and three.'**
+  String get primerKeyboardWhite;
+
+  /// No description provided for @primerKeyboardFindC.
+  ///
+  /// In en, this message translates to:
+  /// **'Find C: it\'s the white key just to the LEFT of every group of TWO black keys. From C, climb up C D E F G A B C.'**
+  String get primerKeyboardFindC;
+
+  /// No description provided for @primerKeyboardHands.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano music uses two staves at once: the top staff for your right hand, the bottom staff for your left. Hear both together.'**
+  String get primerKeyboardHands;
+
+  /// No description provided for @primerTransposeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read one note, hear another'**
+  String get primerTransposeTitle;
+
+  /// No description provided for @primerTransposeSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Most instruments sound the note they read. Read a C, hear a C — simple.'**
+  String get primerTransposeSame;
+
+  /// No description provided for @primerTransposeShift.
+  ///
+  /// In en, this message translates to:
+  /// **'But some are ‘transposing’: a trumpet in B♭ reads a C yet a B♭ comes out — a little lower. This game does that swap for you.'**
+  String get primerTransposeShift;
+
+  /// No description provided for @primerDrumsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading drums'**
+  String get primerDrumsTitle;
+
+  /// No description provided for @primerDrumsWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums don\'t play high and low tunes — a drum just goes THUMP or TSS. So drum music shows WHICH drum and WHEN, not a pitch.'**
+  String get primerDrumsWhat;
+
+  /// No description provided for @primerDrumsLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Each line and space is a different drum: low down is the bass drum you kick, higher up are the snare and cymbals. Read left to right and play the beat.'**
+  String get primerDrumsLines;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:

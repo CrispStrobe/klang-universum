@@ -102,6 +102,14 @@ void main() {
       'Filling a measure': measuresPrimer,
       'What is a scale?': scalesPrimer,
       'Building a chord': chordsPrimer, // the multi-pitch NoteElement path
+      'Chords have jobs': harmonyPrimer,
+      'Make a melody': compositionPrimer,
+      'Your four strings': celloPrimer, // bass-clef Score path
+      'Six strings and tab': guitarPrimer,
+      'Follow the tune': songsPrimer,
+      'The piano keys': keyboardPrimer,
+      'Read one note, hear another': transposePrimer,
+      'Reading drums': drumsPrimer, // bass-clef Score path
     };
     for (final entry in primers.entries) {
       await pumpGame(

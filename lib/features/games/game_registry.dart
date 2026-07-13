@@ -641,6 +641,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameHarmonyQuiz,
       subtitle: (l) => l.gameHarmonyQuizSubtitle,
       builder: (_) => const HarmonyQuizScreen(),
+      tutorial: harmonyPrimer,
     ),
     // Roman numerals — every diatonic degree, named by partitura's analyser.
     GameInfo(
@@ -673,6 +674,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameFreeSing,
       subtitle: (l) => l.gameFreeSingSubtitle,
       builder: (_) => const FreeSingScreen(),
+      tutorial: compositionPrimer,
     ),
     GameInfo(
       id: 'ending_detective',
@@ -704,6 +706,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTuner,
       subtitle: (l) => l.gameTunerSubtitle,
       builder: (_) => const TunerSpikeScreen(),
+      tutorial: celloPrimer,
     ),
     // Play-along with a moving score.
     GameInfo(
@@ -774,6 +777,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         gameId: 'guitar_play_along',
         sriPrefix: 'guitar.play_along',
       ),
+      tutorial: guitarPrimer,
     ),
     GameInfo(
       id: 'guitar_string_quiz',
@@ -804,6 +808,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameSongBook,
       subtitle: (l) => l.gameSongBookSubtitle,
       builder: (_) => const SongListScreen(),
+      tutorial: songsPrimer,
     ),
     // Sing-along with a moving score (octave-agnostic).
     GameInfo(
@@ -852,6 +857,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         gameId: 'keyboard_play_along',
         sriPrefix: 'keyboard.play_along',
       ),
+      tutorial: keyboardPrimer,
     ),
     // Ode to Joy — a real tune to play along on the keys.
     GameInfo(
@@ -930,6 +936,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConcertPitch,
       subtitle: (l) => l.gameConcertPitchSubtitle,
       builder: (_) => const ConcertPitchScreen(),
+      tutorial: transposePrimer,
     ),
   ],
   'drums': [
@@ -939,6 +946,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDrumRead,
       subtitle: (l) => l.gameDrumReadSubtitle,
       builder: (_) => const DrumReadScreen(),
+      tutorial: drumsPrimer,
     ),
   ],
 };
