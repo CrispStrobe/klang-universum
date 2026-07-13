@@ -12,7 +12,8 @@ import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart' show MultiSystemView;
+import 'package:partitura/partitura.dart'
+    show InteractiveGrandStaffView, MultiSystemView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -87,5 +88,61 @@ void main() {
     await tester.tap(find.byIcon(Icons.redo));
     await tester.pump();
     expect(editor.noteCount, 1);
+  });
+
+  testWidgets('tapping the piano places a note and selects it', (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.tap(find.byType(PianoKeyboard));
+    await tester.pump();
+    expect(editor.noteCount, 1);
+    expect(editor.hasSelection, isTrue);
+  });
+
+  testWidgets('copy then paste duplicates the selection', (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.tap(find.byType(PianoKeyboard));
+    await tester.pump();
+    expect(editor.noteCount, 1);
+
+    await tester.tap(find.byIcon(Icons.copy));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.content_paste));
+    await tester.pump();
+    expect(editor.noteCount, 2);
+  });
+
+  testWidgets('the overflow menu offers open and export', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.importMusicXmlFile), findsOneWidget);
+    expect(find.text(l10n.workshopExportXml), findsOneWidget);
+  });
+
+  testWidgets('the note palette offers articulations and dynamics',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byType(PianoKeyboard)); // places + selects a note
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.expand_less)); // the palette button
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.workshopStaccato), findsOneWidget);
+    expect(find.textContaining('mf'), findsWidgets); // a dynamic entry
+  });
+
+  testWidgets('switching to grand-staff mode shows both clefs', (tester) async {
+    await pump(tester);
+    expect(find.byType(MultiSystemView), findsOneWidget);
+    // Open the staff-mode dropdown (currently the treble glyph) and pick grand.
+    await tester.tap(find.text('𝄞').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('𝄞𝄢').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(InteractiveGrandStaffView), findsOneWidget);
+    expect(find.byType(MultiSystemView), findsNothing);
   });
 }

@@ -114,6 +114,8 @@ class CompositionWorkshopScreen extends StatefulWidget {
 abstract interface class CompositionWorkshopTester {
   int get noteCount;
   int get barCount;
+  bool get hasSelection;
+  int get selectedCount;
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
@@ -145,6 +147,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   @override
   int get barCount => _doc.barCount;
+
+  @override
+  bool get hasSelection => _doc.hasSelection;
+
+  @override
+  int get selectedCount => _doc.selectedIds.length;
 
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
@@ -624,7 +632,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
           children: [
             Icon(icon, size: 20),
             const SizedBox(width: 12),
-            Text(label),
+            Flexible(child: Text(label)),
           ],
         ),
       );

@@ -1,0 +1,232 @@
+// ScoreDocument — deeper coverage: bar-packing across meters, clipboard/range
+// invariants, grand-staff boundaries, ornament ranges, and format round-trips
+// (compose → export → re-import). Complements score_document_test.dart.
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/features/workshop/model/score_document.dart';
+import 'package:partitura/partitura.dart';
+
+Pitch _p(Step step, {int alter = 0, int octave = 4}) =>
+    Pitch(step, alter: alter, octave: octave);
+
+const _q = NoteDuration(DurationBase.quarter);
+const _h = NoteDuration(DurationBase.half);
+const _e = NoteDuration(DurationBase.eighth);
+
+/// The note steps of every element in the document, in order.
+List<Step> _steps(ScoreDocument d) => [
+      for (final el in d.elements)
+        if (!el.isRest) el.pitch!.step,
+    ];
+
+void main() {
+  group('bar packing', () {
+    test('3/4 fits three quarters per bar', () {
+      final d = ScoreDocument(timeSignature: TimeSignature.threeFour);
+      for (var i = 0; i < 6; i++) {
+        d.insertNote(_p(Step.c), _q);
+      }
+      expect(d.barCount, 2);
+    });
+
+    test('6/8 fits six eighths per bar', () {
+      final d = ScoreDocument(timeSignature: TimeSignature.sixEight);
+      for (var i = 0; i < 7; i++) {
+        d.insertNote(_p(Step.c), _e);
+      }
+      expect(d.barCount, 2, reason: '6 eighths fill a 6/8 bar');
+    });
+
+    test('barCount stays consistent with buildScore', () {
+      final d = ScoreDocument();
+      for (final dur in [_q, _h, _e, _q, _h]) {
+        d.insertNote(_p(Step.c), dur);
+      }
+      expect(d.barCount, d.buildScore().measures.length);
+    });
+
+    test('a mid-range note never overflows a bar', () {
+      final d = ScoreDocument(); // 4/4
+      d.insertNote(_p(Step.c), _h); // 2 beats
+      d.insertNote(_p(Step.d), _h); // fills the bar (4)
+      d.insertNote(_p(Step.e), _q); // new bar
+      final firstBarBeats = d
+          .buildScore()
+          .measures
+          .first
+          .elements
+          .fold<double>(0, (a, el) => a + el.duration.toFraction().toDouble());
+      expect(firstBarBeats, lessThanOrEqualTo(1.0)); // ≤ a whole note
+    });
+  });
+
+  group('clipboard & range invariants', () {
+    test('copy with nothing selected is a no-op', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.clearSelection();
+      d.copySelection();
+      expect(d.canPaste, isFalse);
+    });
+
+    test('paste with an empty clipboard is a no-op', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      final before = d.length;
+      d.paste();
+      expect(d.length, before);
+    });
+
+    test('paste preserves articulations, dynamics and ties', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.toggleArticulationOfSelected(Articulation.staccato);
+      d.setDynamicOfSelected(DynamicLevel.f);
+      d.toggleTieOfSelected();
+      d.copySelection();
+      d.paste();
+      final pasted = d.elements.last;
+      expect(pasted.articulations, contains(Articulation.staccato));
+      expect(pasted.dynamic, DynamicLevel.f);
+      expect(pasted.tieToNext, isTrue);
+    });
+
+    test('extendLeft/Right clamp at the ends', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q); // d selected (index 1)
+      d.extendRight(); // already at the end → clamps
+      expect(d.selectedIds.length, 1);
+      d.selectPrev(); // c
+      d.extendLeft(); // already at the start → clamps
+      expect(d.selectedIds.length, 1);
+    });
+
+    test('move is a no-op at the boundaries', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q);
+      d.toggleSelected(d.elements.first.id); // select c (index 0)
+      d.moveSelectionLeft(); // can't go left of 0
+      expect(_steps(d), [Step.c, Step.d]);
+      d.toggleSelected(d.elements.last.id); // select d (last)
+      d.moveSelectionRight(); // can't go past the end
+      expect(_steps(d), [Step.c, Step.d]);
+    });
+
+    test('clearAll empties the document and the selection', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.clearAll();
+      expect(d.isEmpty, isTrue);
+      expect(d.hasSelection, isFalse);
+      d.undo();
+      expect(d.length, 1);
+    });
+  });
+
+  group('grand staff split', () {
+    List<bool> isNote(Score s) => [
+          for (final el in s.measures.expand((m) => m.elements))
+            el is NoteElement,
+        ];
+
+    test('middle C (60) goes on the treble staff', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q); // C4 = midi 60
+      final gs = d.buildGrandStaff();
+      expect(isNote(gs.upper).first, isTrue); // note on treble
+      expect(isNote(gs.lower).first, isFalse); // rest on bass
+    });
+
+    test('B3 (59) goes on the bass staff', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.b, octave: 3), _q); // B3 = midi 59
+      final gs = d.buildGrandStaff();
+      expect(isNote(gs.upper).first, isFalse);
+      expect(isNote(gs.lower).first, isTrue);
+    });
+
+    test('an all-treble line leaves the bass staff all rests', () {
+      final d = ScoreDocument();
+      for (final s in [Step.c, Step.e, Step.g]) {
+        d.insertNote(_p(s, octave: 5), _q); // high notes
+      }
+      final gs = d.buildGrandStaff();
+      expect(isNote(gs.lower).every((n) => !n), isTrue);
+    });
+  });
+
+  group('ornament ranges', () {
+    test('toggling an articulation on a mixed range adds it to all', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q);
+      d.insertNote(_p(Step.e), _q); // e selected
+      // Give only the middle note staccato first.
+      d.selectPrev(); // d
+      d.toggleArticulationOfSelected(Articulation.staccato);
+      // Now select c..e and toggle: since not all have it, all get it.
+      d.selectPrev(); // c
+      d.extendRight();
+      d.extendRight(); // c..e
+      d.toggleArticulationOfSelected(Articulation.staccato);
+      expect(
+        d.elements
+            .every((el) => el.articulations.contains(Articulation.staccato)),
+        isTrue,
+      );
+    });
+
+    test('a dynamic lands only on the first selected note', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.insertNote(_p(Step.d), _q); // d selected
+      d.selectPrev(); // c
+      d.extendRight(); // c..d
+      d.setDynamicOfSelected(DynamicLevel.mf);
+      expect(d.elements[0].dynamic, DynamicLevel.mf);
+      expect(d.elements[1].dynamic, isNull);
+    });
+  });
+
+  group('round-trips', () {
+    test('MusicXML preserves pitches and durations', () {
+      final src = ScoreDocument();
+      src.insertNote(_p(Step.c), _q);
+      src.insertNote(_p(Step.d), _h);
+      src.insertNote(_p(Step.g, octave: 3), _e);
+      final reloaded = ScoreDocument()
+        ..loadScore(scoreFromMusicXml(scoreToMusicXml(src.buildScore())));
+      expect(_steps(reloaded), [Step.c, Step.d, Step.g]);
+      expect(
+        reloaded.elements.map((e) => e.duration.base).toList(),
+        [DurationBase.quarter, DurationBase.half, DurationBase.eighth],
+      );
+    });
+
+    test('MIDI preserves the sounding pitches', () {
+      final src = ScoreDocument();
+      src.insertNote(_p(Step.c), _q);
+      src.insertNote(_p(Step.f, alter: 1), _q); // F#4
+      final midi = src.elements.map((e) => e.pitch!.midiNumber).toList();
+      final reloaded = ScoreDocument()
+        ..loadScore(scoreFromMidi(scoreToMidi(src.buildScore())));
+      final back = reloaded.elements
+          .where((e) => !e.isRest)
+          .map((e) => e.pitch!.midiNumber)
+          .toList();
+      expect(back, midi);
+    });
+
+    test('ABC preserves step and octave', () {
+      final src = ScoreDocument();
+      src.insertNote(_p(Step.c), _q);
+      src.insertNote(_p(Step.e), _q);
+      src.insertNote(_p(Step.g), _q);
+      final reloaded = ScoreDocument()
+        ..loadScore(scoreFromAbc(scoreToAbc(src.buildScore())));
+      expect(_steps(reloaded), [Step.c, Step.e, Step.g]);
+    });
+  });
+}

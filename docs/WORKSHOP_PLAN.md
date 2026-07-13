@@ -16,6 +16,14 @@
   mode (𝄞 / 𝄢 / 𝄞𝄢) renders the line across both clefs via
   `InteractiveGrandStaffView` + `ScoreDocument.buildGrandStaff` (auto-splits by
   pitch at middle C; both staves share the bar grid). No more whole-score flip.
+- **Testing:** `ScoreDocument` unit tests + `score_document_more_test.dart`
+  (bar-packing across meters, clipboard/range invariants, grand-staff split,
+  ornament ranges, **MusicXML/MIDI/ABC round-trips**); widget tests drive the
+  real screen (piano placement, copy/paste, ⋮ menu, palette, grand-staff switch)
+  — caught & fixed a menu-overflow bug; a **live integration test**
+  (`integration_test/workshop_test.dart`, run `-d macos`/`-d chrome`) boots the
+  app and composes end-to-end. Unit + widget run headless in CI; integration is
+  device/on-demand.
 - **Doing next:** a placement **caret** (C2), marquee range-select (C4), drag
   horizontal-reorder (C3 follow-up), hairpins, page / print.
 - **Git note:** after every main push, `feature/score-workshop` is reset to
