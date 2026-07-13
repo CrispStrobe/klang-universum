@@ -16,11 +16,22 @@ import 'package:klang_universum/core/audio/metronome.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
+import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/core/tuning.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:provider/provider.dart';
+
+/// SRI item id for a play-along chord, e.g. `chords.play_along.g7`,
+/// `chords.play_along.am` — the root spelled (s/f) + the quality suffix.
+String chordProgressionSriId(String prefix, int rootPc, String suffix) {
+  final p = pitchFromMidi(60 + rootPc);
+  final acc =
+      p.alter > 0 ? 's' * p.alter : (p.alter < 0 ? 'f' * (-p.alter) : '');
+  return '$prefix.${p.step.name}$acc$suffix';
+}
 
 class ChordProgressionScreen extends StatefulWidget {
   const ChordProgressionScreen({
@@ -86,6 +97,18 @@ class _ChordProgressionScreenState extends State<ChordProgressionScreen>
           score: _engine.hits,
           stars: scoreToStars(widget.gameId, _engine.hits, _engine.hits > 0),
         );
+    // Feed each chord's outcome to spaced repetition, like the note play-along.
+    final sri = context.read<SriService>();
+    for (final cs in _engine.chords) {
+      sri.recordResponse(
+        chordProgressionSriId(
+          'chords.play_along',
+          cs.target.rootPc,
+          cs.target.suffix,
+        ),
+        cs.result == ChordResult.hit,
+      );
+    }
     _stop();
     if (mounted) setState(() => _finished = true);
   }

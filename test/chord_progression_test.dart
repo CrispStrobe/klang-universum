@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/chord_progression.dart';
 import 'package:klang_universum/core/audio/chroma_analysis.dart';
 import 'package:klang_universum/core/tuning.dart';
+import 'package:klang_universum/features/games/chords/chord_progression_screen.dart'
+    show chordProgressionSriId;
 
 ChordReading _reading(List<ChordCandidate> candidates) =>
     ChordReading(candidates: candidates, chroma: List.filled(12, 0), energy: 1);
@@ -79,6 +81,14 @@ void main() {
           : _reading([_cand(active.target.rootPc, active.target.suffix, 0.95)]),
     );
     expect(scoreToStars('chord_play_along', engine.hits, engine.hits > 0), 3);
+  });
+
+  test('chordProgressionSriId spells root + quality', () {
+    String id(int pc, String s) => chordProgressionSriId('cp', pc, s);
+    expect(id(0, ''), 'cp.c');
+    expect(id(9, 'm'), 'cp.am');
+    expect(id(7, '7'), 'cp.g7');
+    expect(id(6, 'dim'), 'cp.fsdim'); // F#dim
   });
 
   test('TargetChord.midis voices the right notes', () {
