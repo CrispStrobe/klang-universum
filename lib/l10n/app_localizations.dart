@@ -3404,6 +3404,102 @@ abstract class AppLocalizations {
   /// **'Every note has a letter name: A B C D E F G. This one is E — tap Listen to hear it.'**
   String get primerReadingNames;
 
+  /// No description provided for @primerValuesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How long is a note?'**
+  String get primerValuesTitle;
+
+  /// No description provided for @primerValuesWhole.
+  ///
+  /// In en, this message translates to:
+  /// **'A note\'s shape shows how LONG to hold it. This open oval with no stem is a whole note — a long sound (4 beats).'**
+  String get primerValuesWhole;
+
+  /// No description provided for @primerValuesQuarter.
+  ///
+  /// In en, this message translates to:
+  /// **'A filled note with a stem is a quarter note — one short beat. Four quarter notes last as long as one whole note.'**
+  String get primerValuesQuarter;
+
+  /// No description provided for @primerValuesRest.
+  ///
+  /// In en, this message translates to:
+  /// **'A rest is a beat of SILENCE. Count it in your head, but don\'t play. Tap Listen to hear a beat of rest.'**
+  String get primerValuesRest;
+
+  /// No description provided for @primerMeasuresTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filling a measure'**
+  String get primerMeasuresTitle;
+
+  /// No description provided for @primerMeasuresBars.
+  ///
+  /// In en, this message translates to:
+  /// **'Music is split into measures (bars) by barlines. A time signature like 4/4 means each measure holds 4 beats.'**
+  String get primerMeasuresBars;
+
+  /// No description provided for @primerMeasuresFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill each measure so the beats add up. Four quarter notes make 4 beats — one full 4/4 measure.'**
+  String get primerMeasuresFill;
+
+  /// No description provided for @primerMeasuresHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'A half note lasts 2 beats, so two half notes also fill a 4/4 measure.'**
+  String get primerMeasuresHalf;
+
+  /// No description provided for @primerScalesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is a scale?'**
+  String get primerScalesTitle;
+
+  /// No description provided for @primerScalesLadder.
+  ///
+  /// In en, this message translates to:
+  /// **'A scale is a ladder of notes climbing step by step. This is C major: C D E F G A B C.'**
+  String get primerScalesLadder;
+
+  /// No description provided for @primerScalesMajor.
+  ///
+  /// In en, this message translates to:
+  /// **'A major scale sounds bright and cheerful. Listen to C major climb up.'**
+  String get primerScalesMajor;
+
+  /// No description provided for @primerScalesMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'A minor scale sounds darker, a little sad. Listen to A minor.'**
+  String get primerScalesMinor;
+
+  /// No description provided for @primerChordsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Building a chord'**
+  String get primerChordsTitle;
+
+  /// No description provided for @primerChordsStack.
+  ///
+  /// In en, this message translates to:
+  /// **'A chord is notes played at the SAME time. Stack three notes a gap apart and you get a triad — here, C E G.'**
+  String get primerChordsStack;
+
+  /// No description provided for @primerChordsColour.
+  ///
+  /// In en, this message translates to:
+  /// **'A major triad sounds bright; a minor triad sounds softer and sadder. Listen to both.'**
+  String get primerChordsColour;
+
+  /// No description provided for @primerChordsArpeggio.
+  ///
+  /// In en, this message translates to:
+  /// **'You can also play a chord one note at a time, bottom to top — that\'s an arpeggio.'**
+  String get primerChordsArpeggio;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:

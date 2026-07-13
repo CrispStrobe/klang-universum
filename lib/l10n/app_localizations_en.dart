@@ -1862,6 +1862,66 @@ class AppLocalizationsEn extends AppLocalizations {
       'Every note has a letter name: A B C D E F G. This one is E — tap Listen to hear it.';
 
   @override
+  String get primerValuesTitle => 'How long is a note?';
+
+  @override
+  String get primerValuesWhole =>
+      'A note\'s shape shows how LONG to hold it. This open oval with no stem is a whole note — a long sound (4 beats).';
+
+  @override
+  String get primerValuesQuarter =>
+      'A filled note with a stem is a quarter note — one short beat. Four quarter notes last as long as one whole note.';
+
+  @override
+  String get primerValuesRest =>
+      'A rest is a beat of SILENCE. Count it in your head, but don\'t play. Tap Listen to hear a beat of rest.';
+
+  @override
+  String get primerMeasuresTitle => 'Filling a measure';
+
+  @override
+  String get primerMeasuresBars =>
+      'Music is split into measures (bars) by barlines. A time signature like 4/4 means each measure holds 4 beats.';
+
+  @override
+  String get primerMeasuresFill =>
+      'Fill each measure so the beats add up. Four quarter notes make 4 beats — one full 4/4 measure.';
+
+  @override
+  String get primerMeasuresHalf =>
+      'A half note lasts 2 beats, so two half notes also fill a 4/4 measure.';
+
+  @override
+  String get primerScalesTitle => 'What is a scale?';
+
+  @override
+  String get primerScalesLadder =>
+      'A scale is a ladder of notes climbing step by step. This is C major: C D E F G A B C.';
+
+  @override
+  String get primerScalesMajor =>
+      'A major scale sounds bright and cheerful. Listen to C major climb up.';
+
+  @override
+  String get primerScalesMinor =>
+      'A minor scale sounds darker, a little sad. Listen to A minor.';
+
+  @override
+  String get primerChordsTitle => 'Building a chord';
+
+  @override
+  String get primerChordsStack =>
+      'A chord is notes played at the SAME time. Stack three notes a gap apart and you get a triad — here, C E G.';
+
+  @override
+  String get primerChordsColour =>
+      'A major triad sounds bright; a minor triad sounds softer and sadder. Listen to both.';
+
+  @override
+  String get primerChordsArpeggio =>
+      'You can also play a chord one note at a time, bottom to top — that\'s an arpeggio.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

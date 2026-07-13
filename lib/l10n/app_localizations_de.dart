@@ -1870,6 +1870,66 @@ class AppLocalizationsDe extends AppLocalizations {
       'Jede Note hat einen Buchstabennamen: A H C D E F G. Diese hier ist E — tippe auf Anhören.';
 
   @override
+  String get primerValuesTitle => 'Wie lang ist eine Note?';
+
+  @override
+  String get primerValuesWhole =>
+      'Die Form einer Note zeigt, wie LANG du sie hältst. Dieser offene Kopf ohne Hals ist eine ganze Note — ein langer Klang (4 Schläge).';
+
+  @override
+  String get primerValuesQuarter =>
+      'Eine ausgefüllte Note mit Hals ist eine Viertelnote — ein kurzer Schlag. Vier Viertel dauern so lang wie eine ganze Note.';
+
+  @override
+  String get primerValuesRest =>
+      'Eine Pause ist ein Schlag STILLE. Zähl sie mit, aber spiel nicht. Tippe auf Anhören und hör eine Pause.';
+
+  @override
+  String get primerMeasuresTitle => 'Einen Takt füllen';
+
+  @override
+  String get primerMeasuresBars =>
+      'Musik wird durch Taktstriche in Takte geteilt. Eine Taktangabe wie 4/4 heißt: jeder Takt hat 4 Schläge.';
+
+  @override
+  String get primerMeasuresFill =>
+      'Füll jeden Takt, bis die Schläge aufgehen. Vier Viertelnoten ergeben 4 Schläge — ein voller 4/4-Takt.';
+
+  @override
+  String get primerMeasuresHalf =>
+      'Eine halbe Note dauert 2 Schläge, also füllen auch zwei Halbe einen 4/4-Takt.';
+
+  @override
+  String get primerScalesTitle => 'Was ist eine Tonleiter?';
+
+  @override
+  String get primerScalesLadder =>
+      'Eine Tonleiter ist eine Leiter aus Tönen, Stufe für Stufe nach oben. Das ist C-Dur: C D E F G A H C.';
+
+  @override
+  String get primerScalesMajor =>
+      'Eine Dur-Tonleiter klingt hell und fröhlich. Hör, wie C-Dur nach oben steigt.';
+
+  @override
+  String get primerScalesMinor =>
+      'Eine Moll-Tonleiter klingt dunkler, etwas traurig. Hör a-Moll.';
+
+  @override
+  String get primerChordsTitle => 'Einen Akkord bauen';
+
+  @override
+  String get primerChordsStack =>
+      'Ein Akkord sind Töne, die GLEICHZEITIG klingen. Stapel drei Töne im Abstand und du hast einen Dreiklang — hier C E G.';
+
+  @override
+  String get primerChordsColour =>
+      'Ein Dur-Dreiklang klingt hell, ein Moll-Dreiklang weicher und trauriger. Hör dir beide an.';
+
+  @override
+  String get primerChordsArpeggio =>
+      'Du kannst einen Akkord auch Ton für Ton von unten nach oben spielen — das ist ein Arpeggio.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override

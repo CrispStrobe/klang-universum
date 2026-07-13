@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/tutorial/primers.dart';
+import 'package:klang_universum/shared/tutorial/tutorial.dart';
 import 'package:klang_universum/shared/tutorial/tutorial_sheet.dart';
 import 'package:partitura/partitura.dart' show StaffView;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,5 +92,41 @@ void main() {
     await tester.tap(find.text('maybe'));
     await tester.pumpAndSettle();
     expect(find.text('Reading notes'), findsNothing);
+  });
+
+  testWidgets('every module primer builds and renders (incl. a stacked chord)',
+      (tester) async {
+    final primers = <String, Tutorial Function(AppLocalizations)>{
+      'Reading notes': readingPrimer,
+      'How long is a note?': noteValuesPrimer,
+      'Filling a measure': measuresPrimer,
+      'What is a scale?': scalesPrimer,
+      'Building a chord': chordsPrimer, // the multi-pitch NoteElement path
+    };
+    for (final entry in primers.entries) {
+      await pumpGame(
+        tester,
+        Builder(
+          builder: (context) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showTutorial(context, entry.value(AppLocalizations.of(context)!));
+            });
+            return const Scaffold(body: SizedBox.shrink());
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      // The title showing proves the primer built (ARB keys resolve) and its
+      // first step rendered without throwing — for chordsPrimer that first step
+      // IS the stacked-triad StaffView, so this covers the multi-pitch path.
+      expect(
+        find.text(entry.key),
+        findsOneWidget,
+        reason: '${entry.key} primer should show its title',
+      );
+      // Dismiss the modal (tap the scrim above the sheet) before the next one.
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+    }
   });
 }

@@ -9,7 +9,6 @@ import 'package:klang_universum/core/curriculum/curriculum.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
-import 'package:klang_universum/features/games/tutorial_gate.dart';
 import 'package:klang_universum/features/recital/recital_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -158,8 +157,9 @@ class _TopicTile extends StatelessWidget {
                     ActionChip(
                       avatar: Icon(game.icon, size: 18),
                       label: Text(game.title(l10n)),
-                      onPressed: () =>
-                          Navigator.of(context).push(gameRoute(game)),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: game.builder),
+                      ),
                     ),
                 ],
               ),

@@ -145,6 +145,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteValueQuiz,
       subtitle: (l) => l.gameNoteValueQuizSubtitle,
       builder: (_) => const NoteValueQuizScreen(),
+      tutorial: noteValuesPrimer,
     ),
     GameInfo(
       id: 'duration_duel',
@@ -437,6 +438,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMeasureFill,
       subtitle: (l) => l.gameMeasureFillSubtitle,
       builder: (_) => const MeasureFillScreen(),
+      tutorial: measuresPrimer,
     ),
     GameInfo(
       id: 'meter_detective',
@@ -489,6 +491,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameScaleDetective,
       subtitle: (l) => l.gameScaleDetectiveSubtitle,
       builder: (_) => const ScaleDetectiveScreen(),
+      tutorial: scalesPrimer,
     ),
     // Swipe drill: is this note in the C major scale?
     GameInfo(
@@ -583,6 +586,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTriadBuilder,
       subtitle: (l) => l.gameTriadBuilderSubtitle,
       builder: (_) => const TriadBuilderScreen(),
+      tutorial: chordsPrimer,
     ),
     GameInfo(
       id: 'interval_ear',
