@@ -121,4 +121,104 @@ void main() {
     expect(back.title, sheet.title);
     expect(back.source, sheet.source);
   });
+
+  // --- Songbook collections ------------------------------------------------
+
+  test('createCollection makes an empty, named book', () {
+    final svc = UserSongsService();
+    final book = svc.createCollection('Favourites', id: 'fav');
+    expect(book.id, 'fav');
+    expect(book.title, 'Favourites');
+    expect(svc.collections.single.id, 'fav');
+    expect(svc.collections.single.songIds, isEmpty);
+  });
+
+  test('adding a song to a book is ordered and deduped', () {
+    final svc = UserSongsService()
+      ..addSong(_song('a'))
+      ..addSong(_song('b'));
+    svc.createCollection('Set', id: 's');
+
+    svc
+      ..addSongToCollection('s', 'b')
+      ..addSongToCollection('s', 'a')
+      ..addSongToCollection('s', 'b'); // duplicate ignored
+
+    expect(svc.collections.single.songIds, ['b', 'a']);
+    expect(svc.songsInCollection('s').map((s) => s.id), ['b', 'a']);
+  });
+
+  test('songsInCollection skips ids that no longer resolve', () {
+    final svc = UserSongsService()..addSong(_song('a'));
+    svc.createCollection('Set', id: 's');
+    svc
+      ..addSongToCollection('s', 'a')
+      ..addSongToCollection('s', 'ghost');
+    expect(svc.songsInCollection('s').map((s) => s.id), ['a']);
+  });
+
+  test('removing a song prunes it from every book', () {
+    final svc = UserSongsService()
+      ..addSong(_song('a'))
+      ..addSong(_song('b'));
+    svc.createCollection('One', id: 'one');
+    svc.createCollection('Two', id: 'two');
+    svc
+      ..addSongToCollection('one', 'a')
+      ..addSongToCollection('one', 'b')
+      ..addSongToCollection('two', 'a');
+
+    svc.removeSong('a');
+
+    expect(svc.collections.firstWhere((c) => c.id == 'one').songIds, ['b']);
+    expect(svc.collections.firstWhere((c) => c.id == 'two').songIds, isEmpty);
+  });
+
+  test('reorderCollection moves an item with the drag-down convention', () {
+    final svc = UserSongsService()
+      ..addSong(_song('a'))
+      ..addSong(_song('b'))
+      ..addSong(_song('c'));
+    svc.createCollection('Set', id: 's');
+    for (final id in ['a', 'b', 'c']) {
+      svc.addSongToCollection('s', id);
+    }
+
+    // Drag 'a' (index 0) down past 'c' (ReorderableListView passes newIndex 3).
+    svc.reorderCollection('s', 0, 3);
+    expect(svc.songsInCollection('s').map((s) => s.id), ['b', 'c', 'a']);
+
+    // Drag it back up to the front.
+    svc.reorderCollection('s', 2, 0);
+    expect(svc.songsInCollection('s').map((s) => s.id), ['a', 'b', 'c']);
+  });
+
+  test('rename and remove a book', () {
+    final svc = UserSongsService()..createCollection('Old', id: 'x');
+    svc.renameCollection('x', 'New');
+    expect(svc.collections.single.title, 'New');
+    svc.removeCollection('x');
+    expect(svc.collections, isEmpty);
+  });
+
+  test('collections persist across instances', () async {
+    final first = UserSongsService()..addSong(_song('a'));
+    first.createCollection('Set', id: 's');
+    first.addSongToCollection('s', 'a');
+    await _settle();
+
+    final second = UserSongsService();
+    await second.load();
+    expect(second.collections.single.id, 's');
+    expect(second.collections.single.songIds, ['a']);
+    expect(second.songsInCollection('s').map((s) => s.id), ['a']);
+  });
+
+  test('SongCollection JSON round-trips', () {
+    const book = SongCollection(id: 'x', title: 'B', songIds: ['a', 'b']);
+    final back = SongCollection.fromJson(book.toJson());
+    expect(back.id, 'x');
+    expect(back.title, 'B');
+    expect(back.songIds, ['a', 'b']);
+  });
 }

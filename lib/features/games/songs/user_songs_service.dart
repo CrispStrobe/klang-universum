@@ -53,14 +53,49 @@ class ImportedChordSheet {
       );
 }
 
+/// A named, ordered grouping of imported songs — a "songbook". Holds only song
+/// *ids* (not copies) so a song lives in one place and can sit in many books;
+/// missing ids are skipped when resolving, so a deleted song just drops out.
+class SongCollection {
+  final String id;
+  final String title;
+  final List<String> songIds;
+
+  const SongCollection({
+    required this.id,
+    required this.title,
+    this.songIds = const [],
+  });
+
+  SongCollection copyWith({String? title, List<String>? songIds}) =>
+      SongCollection(
+        id: id,
+        title: title ?? this.title,
+        songIds: songIds ?? this.songIds,
+      );
+
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'title': title, 'songIds': songIds};
+
+  factory SongCollection.fromJson(Map<String, dynamic> json) => SongCollection(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        songIds: [
+          for (final s in (json['songIds'] as List? ?? [])) s as String,
+        ],
+      );
+}
+
 class UserSongsService with ChangeNotifier {
   static const _storageKey = 'user_songs';
 
   List<ImportedSong> _songs = [];
   List<ImportedChordSheet> _sheets = [];
+  List<SongCollection> _collections = [];
 
   List<ImportedSong> get songs => List.unmodifiable(_songs);
   List<ImportedChordSheet> get sheets => List.unmodifiable(_sheets);
+  List<SongCollection> get collections => List.unmodifiable(_collections);
 
   Future<void> load() async {
     try {
@@ -75,6 +110,10 @@ class UserSongsService with ChangeNotifier {
         _sheets = [
           for (final s in (map['sheets'] as List? ?? []))
             ImportedChordSheet.fromJson(s as Map<String, dynamic>),
+        ];
+        _collections = [
+          for (final c in (map['collections'] as List? ?? []))
+            SongCollection.fromJson(c as Map<String, dynamic>),
         ];
       }
     } catch (e) {
@@ -91,6 +130,7 @@ class UserSongsService with ChangeNotifier {
         json.encode({
           'songs': [for (final s in _songs) s.toJson()],
           'sheets': [for (final s in _sheets) s.toJson()],
+          'collections': [for (final c in _collections) c.toJson()],
         }),
       );
     } catch (e) {
@@ -112,12 +152,102 @@ class UserSongsService with ChangeNotifier {
 
   void removeSong(String id) {
     _songs = _songs.where((s) => s.id != id).toList();
+    // Drop it from any songbook it was in so no book points at a ghost.
+    _collections = [
+      for (final c in _collections)
+        c.songIds.contains(id)
+            ? c.copyWith(songIds: c.songIds.where((s) => s != id).toList())
+            : c,
+    ];
     notifyListeners();
     _save();
   }
 
   void removeSheet(String id) {
     _sheets = _sheets.where((s) => s.id != id).toList();
+    notifyListeners();
+    _save();
+  }
+
+  // --- Songbook collections -------------------------------------------------
+
+  /// Create an empty songbook and return it. [id] is provided by callers that
+  /// need determinism (tests); otherwise one is derived from the title.
+  SongCollection createCollection(String title, {String? id}) {
+    final book = SongCollection(
+      id: id ?? 'book-${_collections.length}-${title.hashCode}',
+      title: title,
+    );
+    _collections = [..._collections, book];
+    notifyListeners();
+    _save();
+    return book;
+  }
+
+  void renameCollection(String id, String title) =>
+      _updateCollection(id, (c) => c.copyWith(title: title));
+
+  void removeCollection(String id) {
+    _collections = _collections.where((c) => c.id != id).toList();
+    notifyListeners();
+    _save();
+  }
+
+  /// Add a song to a book (no-op if already present, so it can't appear twice).
+  void addSongToCollection(String collectionId, String songId) =>
+      _updateCollection(
+        collectionId,
+        (c) => c.songIds.contains(songId)
+            ? c
+            : c.copyWith(songIds: [...c.songIds, songId]),
+      );
+
+  void removeSongFromCollection(String collectionId, String songId) =>
+      _updateCollection(
+        collectionId,
+        (c) => c.copyWith(
+          songIds: c.songIds.where((s) => s != songId).toList(),
+        ),
+      );
+
+  /// Reorder within a book using ReorderableListView's index convention (when
+  /// dragging down, [newIndex] counts the item's own slot).
+  void reorderCollection(String collectionId, int oldIndex, int newIndex) =>
+      _updateCollection(collectionId, (c) {
+        final ids = [...c.songIds];
+        if (oldIndex < 0 || oldIndex >= ids.length) return c;
+        var target = newIndex > oldIndex ? newIndex - 1 : newIndex;
+        target = target.clamp(0, ids.length - 1);
+        final moved = ids.removeAt(oldIndex);
+        ids.insert(target, moved);
+        return c.copyWith(songIds: ids);
+      });
+
+  /// The songs in a book, in order, skipping any whose id no longer resolves.
+  List<ImportedSong> songsInCollection(String collectionId) {
+    final matches = _collections.where((c) => c.id == collectionId);
+    if (matches.isEmpty) return const [];
+    final book = matches.first;
+    final byId = {for (final s in _songs) s.id: s};
+    return [
+      for (final id in book.songIds)
+        if (byId[id] != null) byId[id]!,
+    ];
+  }
+
+  void _updateCollection(String id, SongCollection Function(SongCollection) f) {
+    var changed = false;
+    final next = <SongCollection>[];
+    for (final c in _collections) {
+      if (c.id == id) {
+        changed = true;
+        next.add(f(c));
+      } else {
+        next.add(c);
+      }
+    }
+    if (!changed) return;
+    _collections = next;
     notifyListeners();
     _save();
   }
