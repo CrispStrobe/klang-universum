@@ -21,6 +21,10 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# On MSVC a DLL exports nothing unless symbols are marked __declspec(dllexport);
+# auto-export everything so the FFI lookups resolve (harmless elsewhere).
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 # --- pure DSP core (portable, offline-testable) ------------------------------
 add_library(aec_dsp SHARED src/aec_dsp.c)
 target_include_directories(aec_dsp PUBLIC src)

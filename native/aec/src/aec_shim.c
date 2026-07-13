@@ -4,63 +4,50 @@
 #include "aec_shim.h"
 
 #include <math.h>
-#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "aec_dsp.h"
 
 // miniaudio.h is included for declarations only here; MA_IMPLEMENTATION lives in
-// miniaudio_impl.c so the 4MB header compiles exactly once.
+// miniaudio_impl.c so the 4MB header compiles exactly once. We use miniaudio's
+// own lock-free SPSC ring (ma_pcm_rb) rather than hand-rolled C11 atomics — it's
+// already vendored (MIT-0) and portable across every target, including MSVC
+// (which historically lacks <stdatomic.h>).
 #include "vendor/miniaudio.h"
 
-// ---- lock-free SPSC ring of int16 (power-of-two capacity) -------------------
+// ---- single-frame SPSC ring helpers (int16 mono over ma_pcm_rb) -------------
 //
-// One producer, one consumer per ring: reference is Dart-writes / audio-reads;
-// cleaned and raw are audio-writes / Dart-reads. Acquire/release on the two
-// indices is enough — no locks, safe to touch from the realtime callback.
-typedef struct {
-  int16_t* buf;
-  int mask;  // capacity-1
-  atomic_int head;  // next write (producer)
-  atomic_int tail;  // next read  (consumer)
-} Ring;
-
-static int ring_init(Ring* r, int capacityPow2) {
-  r->buf = (int16_t*)calloc((size_t)capacityPow2, sizeof(int16_t));
-  if (!r->buf) return -1;
-  r->mask = capacityPow2 - 1;
-  atomic_init(&r->head, 0);
-  atomic_init(&r->tail, 0);
-  return 0;
-}
-static void ring_free(Ring* r) {
-  free(r->buf);
-  r->buf = NULL;
-}
-// Push one sample; returns 0 if full (caller decides drop policy).
-static int ring_push(Ring* r, int16_t v) {
-  int head = atomic_load_explicit(&r->head, memory_order_relaxed);
-  int next = (head + 1) & r->mask;
-  if (next == atomic_load_explicit(&r->tail, memory_order_acquire)) return 0;
-  r->buf[head] = v;
-  atomic_store_explicit(&r->head, next, memory_order_release);
+// One producer + one consumer per ring: reference is Dart-writes / audio-reads;
+// cleaned and raw are audio-writes / Dart-reads. ma_pcm_rb is safe for exactly
+// that pattern with no extra synchronization.
+static int rb_push1(ma_pcm_rb* rb, int16_t v) {
+  ma_uint32 n = 1;
+  void* p;
+  if (ma_pcm_rb_acquire_write(rb, &n, &p) != MA_SUCCESS || n < 1) return 0;
+  *(int16_t*)p = v;
+  ma_pcm_rb_commit_write(rb, 1);
   return 1;
 }
-// Pop one sample into *v; returns 0 if empty.
-static int ring_pop(Ring* r, int16_t* v) {
-  int tail = atomic_load_explicit(&r->tail, memory_order_relaxed);
-  if (tail == atomic_load_explicit(&r->head, memory_order_acquire)) return 0;
-  *v = r->buf[tail];
-  atomic_store_explicit(&r->tail, (tail + 1) & r->mask, memory_order_release);
+static int rb_pop1(ma_pcm_rb* rb, int16_t* v) {
+  ma_uint32 n = 1;
+  void* p;
+  if (ma_pcm_rb_acquire_read(rb, &n, &p) != MA_SUCCESS || n < 1) return 0;
+  *v = *(const int16_t*)p;
+  ma_pcm_rb_commit_read(rb, 1);
   return 1;
 }
-static int ring_drain(Ring* r, int16_t* out, int maxFrames) {
-  int i = 0;
-  for (; i < maxFrames; i++) {
-    if (!ring_pop(r, &out[i])) break;
+static int rb_drain(ma_pcm_rb* rb, int16_t* out, int maxFrames) {
+  int total = 0;
+  while (total < maxFrames) {
+    ma_uint32 n = (ma_uint32)(maxFrames - total);
+    void* p;
+    if (ma_pcm_rb_acquire_read(rb, &n, &p) != MA_SUCCESS || n == 0) break;
+    memcpy(out + total, p, (size_t)n * sizeof(int16_t));
+    ma_pcm_rb_commit_read(rb, n);
+    total += (int)n;
   }
-  return i;
+  return total;
 }
 
 // ---- engine -----------------------------------------------------------------
@@ -75,9 +62,10 @@ struct AecEngine {
   int started;
   int hasContext;
 
-  Ring refRing;      // Dart -> audio (reference to play + cancel)
-  Ring cleanedRing;  // audio -> Dart (near-end estimate)
-  Ring rawRing;      // audio -> Dart (raw mic, diagnostics)
+  ma_pcm_rb refRing;      // Dart -> audio (reference to play + cancel)
+  ma_pcm_rb cleanedRing;  // audio -> Dart (near-end estimate)
+  ma_pcm_rb rawRing;      // audio -> Dart (raw mic, diagnostics)
+  int ringsReady;
 
   // Block accumulators, touched only by whoever runs the sample loop.
   double* micBlock;
@@ -85,13 +73,6 @@ struct AecEngine {
   double* outBlock;
   int fill;
 };
-
-// Smallest power of two >= v (v>0).
-static int next_pow2(int v) {
-  int p = 1;
-  while (p < v) p <<= 1;
-  return p;
-}
 
 static int16_t clamp_i16(double v) {
   long iv = lround(v);
@@ -108,11 +89,11 @@ static void engine_run(AecEngine* e, const int16_t* mic, int16_t* spk,
                        ma_uint32 frameCount) {
   for (ma_uint32 i = 0; i < frameCount; i++) {
     int16_t r = 0;
-    ring_pop(&e->refRing, &r);  // reference for this instant (0 on underrun)
-    if (spk) spk[i] = r;        // play it out the speaker
+    rb_pop1(&e->refRing, &r);  // reference for this instant (0 on underrun)
+    if (spk) spk[i] = r;       // play it out the speaker
 
     int16_t m = mic ? mic[i] : 0;
-    ring_push(&e->rawRing, m);  // raw pre-cancellation mic tap (diagnostics)
+    rb_push1(&e->rawRing, m);  // raw pre-cancellation mic tap (diagnostics)
 
     // Accumulate the sample-aligned (reference, mic) pair into the AEC block.
     e->refBlock[e->fill] = r / 32768.0;
@@ -122,7 +103,7 @@ static void engine_run(AecEngine* e, const int16_t* mic, int16_t* spk,
     if (e->fill == e->frame) {
       aec_dsp_process(e->aec, e->refBlock, e->micBlock, e->outBlock);
       for (int j = 0; j < e->frame; j++) {
-        ring_push(&e->cleanedRing, clamp_i16(e->outBlock[j] * 32768.0));
+        rb_push1(&e->cleanedRing, clamp_i16(e->outBlock[j] * 32768.0));
       }
       e->fill = 0;
     }
@@ -148,13 +129,17 @@ AecEngine* aec_engine_create(int sampleRate, int frame) {
   e->refBlock = (double*)calloc((size_t)frame, sizeof(double));
   e->outBlock = (double*)calloc((size_t)frame, sizeof(double));
 
-  // ~1 s of buffering each way (rounded up to a power of two) — slack for
-  // scheduling jitter, and enough that a batch test can pump a second of audio
-  // before it must drain.
-  int cap = next_pow2(sampleRate);
-  int okRings = ring_init(&e->refRing, cap) == 0 &&
-                ring_init(&e->cleanedRing, cap) == 0 &&
-                ring_init(&e->rawRing, cap) == 0;
+  // ~1 s of buffering each way — slack for scheduling jitter, and enough that a
+  // batch test can pump a second of audio before it must drain.
+  ma_uint32 cap = (ma_uint32)sampleRate;
+  int okRings =
+      ma_pcm_rb_init(ma_format_s16, 1, cap, NULL, NULL, &e->refRing) ==
+          MA_SUCCESS &&
+      ma_pcm_rb_init(ma_format_s16, 1, cap, NULL, NULL, &e->cleanedRing) ==
+          MA_SUCCESS &&
+      ma_pcm_rb_init(ma_format_s16, 1, cap, NULL, NULL, &e->rawRing) ==
+          MA_SUCCESS;
+  e->ringsReady = okRings;
 
   if (!e->aec || !e->micBlock || !e->refBlock || !e->outBlock || !okRings) {
     aec_engine_destroy(e);
@@ -276,13 +261,11 @@ void aec_engine_set_period(AecEngine* e, int period) {
 
 void aec_engine_reference(AecEngine* e, const int16_t* pcm, int frames) {
   if (!e || !pcm) return;
+  // Drop-newest on overflow: keeps the ring strictly single-producer (the audio
+  // thread is the only reader) and bounds latency. In steady state we feed at
+  // ~playback rate, so the ring stays near-empty and nothing is dropped.
   for (int i = 0; i < frames; i++) {
-    if (!ring_push(&e->refRing, pcm[i])) {
-      // Full: drop the oldest to bound latency, then retry once.
-      int16_t discard;
-      ring_pop(&e->refRing, &discard);
-      ring_push(&e->refRing, pcm[i]);
-    }
+    rb_push1(&e->refRing, pcm[i]);
   }
 }
 
@@ -293,12 +276,12 @@ void aec_engine_test_pump(AecEngine* e, const int16_t* mic, int frames) {
 
 int aec_engine_read(AecEngine* e, int16_t* out, int maxFrames) {
   if (!e || !out || maxFrames <= 0) return 0;
-  return ring_drain(&e->cleanedRing, out, maxFrames);
+  return rb_drain(&e->cleanedRing, out, maxFrames);
 }
 
 int aec_engine_read_raw(AecEngine* e, int16_t* out, int maxFrames) {
   if (!e || !out || maxFrames <= 0) return 0;
-  return ring_drain(&e->rawRing, out, maxFrames);
+  return rb_drain(&e->rawRing, out, maxFrames);
 }
 
 int aec_engine_stop(AecEngine* e) {
@@ -318,9 +301,11 @@ void aec_engine_destroy(AecEngine* e) {
   if (!e) return;
   aec_engine_stop(e);
   aec_dsp_destroy(e->aec);
-  ring_free(&e->refRing);
-  ring_free(&e->cleanedRing);
-  ring_free(&e->rawRing);
+  if (e->ringsReady) {
+    ma_pcm_rb_uninit(&e->refRing);
+    ma_pcm_rb_uninit(&e->cleanedRing);
+    ma_pcm_rb_uninit(&e->rawRing);
+  }
   free(e->micBlock);
   free(e->refBlock);
   free(e->outBlock);

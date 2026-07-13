@@ -1,0 +1,49 @@
+name: aec-native
+
+# Builds + tests the standalone native AEC plugin (native/aec/) on all three
+# desktop OSes. This is deliberately SEPARATE from the app CI (ci.yml): the
+# plugin is not a dependency of the app yet (AEC_TIER3B.md CI-safety rule), so
+# its cross-platform C portability is verified here without any risk to the app
+# build. Only runs when the plugin itself changes.
+
+on:
+  push:
+    paths:
+      - 'native/aec/**'
+      - '.github/workflows/aec-native.yml'
+  pull_request:
+    paths:
+      - 'native/aec/**'
+      - '.github/workflows/aec-native.yml'
+
+concurrency:
+  group: aec-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: native/aec
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dart-lang/setup-dart@v1
+
+      - name: Configure + build native (aec_dsp + aec)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: pub get
+        run: dart pub get
+
+      # Offline ERLE cross-check + headless engine tests. The test auto-locates
+      # build/libaec(.so|.dylib) or build/Release/aec.dll.
+      - name: Test (offline ERLE + engine)
+        run: dart test
