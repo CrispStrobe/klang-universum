@@ -165,6 +165,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   StaffTarget? _hover; // where a click/tap would land (desktop hover preview)
   String? _dragId; // the note being dragged (hidden so its ghost stands in)
   int _verse = 1; // which lyric verse the inline field edits
+  bool _marquee = false; // rubber-band select mode (drag selects, not places)
+
+  // C7: the view feeds its element hit-regions here so a marquee rect → ids.
+  final ElementRegionController _regions = ElementRegionController();
 
   // Start the sweepable piano scrolled to around C3 (24 = C1, 7 white/octave).
   final _pianoScroll =
@@ -265,6 +269,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   void _onElementTap(String id) => setState(() {
         _doc.toggleSelected(id);
+        _syncControlsToSelection();
+      });
+
+  /// Marquee result: select every note the rubber-band rect enclosed (C7).
+  void _applyMarquee(Rect rect) => setState(() {
+        _doc.selectByIds(_regions.elementIdsIn(rect));
         _syncControlsToSelection();
       });
 
@@ -512,6 +522,59 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         ];
       },
     );
+  }
+
+  /// Export the score as a standalone SVG (engraving font embedded) shown in the
+  /// copyable dialog — a print-ready vector the user can save and print.
+  Future<void> _exportSvg() async {
+    final l10n = AppLocalizations.of(context)!;
+    final svg = _grand
+        ? await exportGrandStaffToSvg(
+            _doc.buildGrandStaff(),
+            theme: PartituraTheme.kids,
+            staffSpace: _zoom,
+          )
+        : await exportScoreToSvg(
+            _doc.buildScore(),
+            theme: PartituraTheme.kids,
+            staffSpace: _zoom,
+          );
+    if (!mounted) return;
+    await _exportText(l10n.workshopExportSvg, svg);
+  }
+
+  /// Rasterize the score to a PNG and save it via the system file dialog.
+  Future<void> _exportPng() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bytes = _grand
+          ? await exportGrandStaffToPng(
+              _doc.buildGrandStaff(),
+              theme: PartituraTheme.kids,
+              staffSpace: _zoom,
+            )
+          : await exportScoreToPng(
+              _doc.buildScore(),
+              theme: PartituraTheme.kids,
+              staffSpace: _zoom,
+            );
+      final location = await getSaveLocation(
+        suggestedName: 'score.png',
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'PNG', extensions: ['png']),
+        ],
+      );
+      if (location == null) return;
+      await XFile.fromData(bytes, mimeType: 'image/png', name: 'score.png')
+          .saveTo(location.path);
+      messenger
+          .showSnackBar(SnackBar(content: Text(l10n.workshopExportedImage)));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importFailed(e.toString()))),
+      );
+    }
   }
 
   /// A slur toggle — shown only when ≥2 notes are selected. Active (filled) when
@@ -836,6 +899,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                         l10n.workshopExportAbc,
                         scoreToAbc(_doc.buildScore()),
                       );
+                    case 'svg':
+                      _exportSvg();
+                    case 'png':
+                      _exportPng();
                     case 'clear':
                       setState(_doc.clearAll);
                   }
@@ -873,6 +940,18 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     !_doc.isEmpty,
                   ),
                   _menuItem(
+                    'svg',
+                    Icons.image_outlined,
+                    l10n.workshopExportSvg,
+                    !_doc.isEmpty,
+                  ),
+                  _menuItem(
+                    'png',
+                    Icons.photo_outlined,
+                    l10n.workshopExportImage,
+                    !_doc.isEmpty,
+                  ),
+                  _menuItem(
                     'clear',
                     Icons.delete_sweep_outlined,
                     l10n.myMelodyClear,
@@ -896,41 +975,51 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       padding: const EdgeInsets.all(16),
                       child: SizedBox(
                         width: (constraints.maxWidth - 32).clamp(0.0, 4000.0),
-                        child: _grand
-                            ? InteractiveGrandStaffView(
-                                grandStaff: _doc.buildGrandStaff(),
-                                theme: theme,
-                                staffSpace: _zoom,
-                                elementColors: elementColors,
-                                onElementTap: _onElementTap,
-                                onStaffTap: _onStaffTap,
-                                onHover: (t) => setState(() => _hover = t),
-                                ghostTarget: _hover,
-                                ghostDuration: _ghostDuration,
-                                caret: caret,
-                                onElementDragStart: (id) =>
-                                    setState(() => _dragId = id),
-                                onElementDragUpdate: (id, t) =>
-                                    setState(() => _hover = t),
-                                onElementDragEnd: _onElementDragEnd,
-                              )
-                            : MultiSystemView(
-                                score: _doc.buildScore(),
-                                theme: theme,
-                                staffSpace: _zoom,
-                                elementColors: elementColors,
-                                onElementTap: _onElementTap,
-                                onStaffTap: _onStaffTap,
-                                onHover: (t) => setState(() => _hover = t),
-                                ghostTarget: _hover,
-                                ghostDuration: _ghostDuration,
-                                caret: caret,
-                                onElementDragStart: (id) =>
-                                    setState(() => _dragId = id),
-                                onElementDragUpdate: (id, t) =>
-                                    setState(() => _hover = t),
-                                onElementDragEnd: _onElementDragEnd,
+                        child: Stack(
+                          children: [
+                            _grand
+                                ? InteractiveGrandStaffView(
+                                    grandStaff: _doc.buildGrandStaff(),
+                                    theme: theme,
+                                    staffSpace: _zoom,
+                                    controller: _regions,
+                                    elementColors: elementColors,
+                                    onElementTap: _onElementTap,
+                                    onStaffTap: _onStaffTap,
+                                    onHover: (t) => setState(() => _hover = t),
+                                    ghostTarget: _hover,
+                                    ghostDuration: _ghostDuration,
+                                    caret: caret,
+                                    onElementDragStart: (id) =>
+                                        setState(() => _dragId = id),
+                                    onElementDragUpdate: (id, t) =>
+                                        setState(() => _hover = t),
+                                    onElementDragEnd: _onElementDragEnd,
+                                  )
+                                : MultiSystemView(
+                                    score: _doc.buildScore(),
+                                    theme: theme,
+                                    staffSpace: _zoom,
+                                    controller: _regions,
+                                    elementColors: elementColors,
+                                    onElementTap: _onElementTap,
+                                    onStaffTap: _onStaffTap,
+                                    onHover: (t) => setState(() => _hover = t),
+                                    ghostTarget: _hover,
+                                    ghostDuration: _ghostDuration,
+                                    caret: caret,
+                                    onElementDragStart: (id) =>
+                                        setState(() => _dragId = id),
+                                    onElementDragUpdate: (id, t) =>
+                                        setState(() => _hover = t),
+                                    onElementDragEnd: _onElementDragEnd,
+                                  ),
+                            if (_marquee)
+                              Positioned.fill(
+                                child: _MarqueeOverlay(onSelect: _applyMarquee),
                               ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -950,6 +1039,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 onRest: _addRest,
                 chordMode: _chordMode,
                 onChord: () => setState(() => _chordMode = !_chordMode),
+                marquee: _marquee,
+                onMarquee: () => setState(() => _marquee = !_marquee),
                 onSelectPrev: () => _run(_doc.selectPrev),
                 onSelectNext: () => _run(_doc.selectNext),
                 onExtendLeft: () => _run(_doc.extendLeft),
@@ -1202,6 +1293,8 @@ class _InputBar extends StatelessWidget {
     required this.onRest,
     required this.chordMode,
     required this.onChord,
+    required this.marquee,
+    required this.onMarquee,
     required this.onSelectPrev,
     required this.onSelectNext,
     required this.onExtendLeft,
@@ -1225,8 +1318,9 @@ class _InputBar extends StatelessWidget {
   final _Accidental accidental;
   final bool hasSelection, canTranspose, canPaste;
   final ValueChanged<DurationBase> onPickValue;
-  final VoidCallback onToggleDot, onRest, onChord;
+  final VoidCallback onToggleDot, onRest, onChord, onMarquee;
   final bool chordMode;
+  final bool marquee;
   final ValueChanged<_Accidental> onPickAccidental;
   final VoidCallback onSelectPrev, onSelectNext, onExtendLeft, onExtendRight;
   final VoidCallback onUp, onDown, onMoveLeft, onMoveRight;
@@ -1281,6 +1375,12 @@ class _InputBar extends StatelessWidget {
                 onTap: onChord,
                 tooltip: l10n.workshopChord,
                 child: const Icon(Icons.layers, size: 22),
+              ),
+              _GlyphButton(
+                selected: marquee,
+                onTap: onMarquee,
+                tooltip: l10n.workshopMarquee,
+                child: const Icon(Icons.highlight_alt, size: 22),
               ),
               if (hasSelection) ...[
                 const _Sep(),
@@ -1388,6 +1488,75 @@ class _Sep extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 5),
         child: SizedBox(height: 28, child: VerticalDivider(width: 1)),
       );
+}
+
+/// A rubber-band selection overlay. Drag to sweep a rectangle; on release it
+/// reports the rect (in the canvas's local pixels, aligned with the view's
+/// element regions) so the screen can select the enclosed notes.
+class _MarqueeOverlay extends StatefulWidget {
+  const _MarqueeOverlay({required this.onSelect});
+
+  final void Function(Rect rect) onSelect;
+
+  @override
+  State<_MarqueeOverlay> createState() => _MarqueeOverlayState();
+}
+
+class _MarqueeOverlayState extends State<_MarqueeOverlay> {
+  Offset? _start;
+  Offset? _current;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: (d) => setState(() {
+        _start = d.localPosition;
+        _current = d.localPosition;
+      }),
+      onPanUpdate: (d) => setState(() => _current = d.localPosition),
+      onPanEnd: (_) {
+        final s = _start, c = _current;
+        if (s != null && c != null) widget.onSelect(Rect.fromPoints(s, c));
+        setState(() {
+          _start = null;
+          _current = null;
+        });
+      },
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _MarqueePainter(_start, _current, color),
+      ),
+    );
+  }
+}
+
+class _MarqueePainter extends CustomPainter {
+  _MarqueePainter(this.start, this.current, this.color);
+
+  final Offset? start;
+  final Offset? current;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = start, c = current;
+    if (s == null || c == null) return;
+    final rect = Rect.fromPoints(s, c);
+    canvas.drawRect(rect, Paint()..color = color.withValues(alpha: 0.12));
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_MarqueePainter old) =>
+      old.start != start || old.current != current;
 }
 
 /// An inline lyric editor for the selected note. Keyed by note id so a fresh one

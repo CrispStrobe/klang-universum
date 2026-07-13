@@ -192,6 +192,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopExportXml => 'MusicXML exportieren';
 
   @override
+  String get workshopExportSvg => 'SVG exportieren (Druck)';
+
+  @override
+  String get workshopExportImage => 'Bild exportieren (PNG)';
+
+  @override
+  String get workshopExportedImage => 'Bild gespeichert';
+
+  @override
+  String get workshopMarquee => 'Noten auswählen (Gummiband)';
+
+  @override
   String get workshopCut => 'Ausschneiden';
 
   @override

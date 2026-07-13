@@ -56,16 +56,17 @@
       wedge (partitura `Hairpin`, pruned on delete, MusicXML round-trip).
   14. ✅ *Caret* — a visible insertion caret (partitura `EditorCaret`) sits before
       the element the next placed note would precede.
-  15. ◑ *Drag horizontal-reorder — bar level ships now.* Dragging a note into a
-      **different bar** reorders the stream (the drag's `StaffTarget.measureIndex`
-      is enough); dragging within a bar still re-pitches. **Fine (intra-bar)
-      reorder** + **marquee-select** need element hit-regions on the public
-      widget (they live on the private render object → [WORKSHOP_PARTITURA_
-      CONTRACTS.md] C7). A one-call **print / page-export** (`Score → PNG/SVG`
-      owning layout + font) is C8. mus CI tracks public `partitura@main`, so the
-      app can't call an unreleased API without redding CI — the app code for the
-      fine version is written against the contract and flips on when it ships.
-  16. ⏳ *Later:* adopt `kidsScoreTheme` for the Handwritten-notes toggle; a true
+  15. ✅ *Marquee-select* (C7 shipped) — a ⛶ toggle turns the canvas into a
+      rubber-band; the swept rect → `ElementRegionController.elementIdsIn` → the
+      enclosed notes are selected. Drag horizontal-reorder ships at **bar level**
+      (drag a note into another bar); fine intra-bar reorder is a follow-up on
+      the same region geometry.
+  16. ✅ *Print / page-export* (C8 shipped) — the ⋮ menu exports **SVG** (font
+      embedded, print-ready, shown copyable) and **PNG** (saved via the system
+      dialog), via partitura's one-call `exportScoreToSvg` / `exportScoreToPng`
+      (+ grand-staff overloads). No viewport-capture hacks.
+  17. ⏳ *Later:* adopt `kidsScoreTheme` for the Handwritten-notes toggle; fine
+      intra-bar drag-reorder (map the drop pixel onto `elementRegions`); a true
       move-the-note live drag (partitura render change; today faked with
       hide-original + ghost).
 - **Git note:** after every main push, `feature/score-workshop` is reset to

@@ -101,12 +101,11 @@ and push to origin/main** before/after touching shared files. Format:
   entry · chord mode · slurs · multi-verse lyrics · hairpins · pickup/anacrusis ·
   caret · fixed staff-tap entry (place-not-move) · live-drag ghost · (i)
   shortcuts sheet · exit guard · viewport-bound width** · big unit+widget suite.
-  ⛔ **Needs partitura (contract sent — WORKSHOP_PARTITURA_CONTRACTS.md C7–C8):**
-  marquee-select + drag horizontal-reorder need element hit-regions exposed on
-  the public widget; one-call `Score→PNG/SVG` print/export is C8. App code is
-  written against the contract; can't ship against an unreleased API (CI tracks
-  public `partitura@main`). **@partitura agents: C7 (region controller) + C8
-  (export helper) would unblock these.** · touching `lib/features/workshop/**` ·
+  ✅ **partitura C7 + C8 landed** (`2342565`) and are now **used**: **marquee-
+  select** (⛶ toggle → `ElementRegionController.elementIdsIn`) and **SVG/PNG
+  print-export** (`exportScoreToSvg`/`Png`) ship; drag-reorder is bar-level
+  (fine intra-bar is a follow-up on the same region geometry). Synced local
+  partitura-public to public `main`. · touching `lib/features/workshop/**` ·
   **idle** (all shippable work on origin/main) · detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +

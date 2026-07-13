@@ -368,6 +368,21 @@ class ScoreDocument {
 
   void clearSelection() => _anchor = _focus = null;
 
+  /// Select the contiguous range spanning every id in [ids] (a marquee result).
+  /// Clears the selection if none are found. Selection only — not undoable.
+  void selectByIds(Iterable<String> ids) {
+    final indices = [
+      for (final id in ids)
+        if (_indexOf(id) >= 0) _indexOf(id),
+    ]..sort();
+    if (indices.isEmpty) {
+      clearSelection();
+      return;
+    }
+    _anchor = indices.first;
+    _focus = indices.last;
+  }
+
   /// Collapse to a single selection and step it forward/back.
   void selectNext() {
     if (_elements.isEmpty) return;

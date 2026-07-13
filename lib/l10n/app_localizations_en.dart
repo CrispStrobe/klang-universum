@@ -192,6 +192,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopExportXml => 'Export MusicXML';
 
   @override
+  String get workshopExportSvg => 'Export SVG (print)';
+
+  @override
+  String get workshopExportImage => 'Export image (PNG)';
+
+  @override
+  String get workshopExportedImage => 'Image saved';
+
+  @override
+  String get workshopMarquee => 'Select notes (rubber-band)';
+
+  @override
   String get workshopCut => 'Cut';
 
   @override

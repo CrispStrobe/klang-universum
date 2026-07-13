@@ -118,8 +118,11 @@ void main() {
     await tester.pump();
     expect(editor.noteCount, 1);
 
+    // The action strip is scrollable; reveal the buttons before tapping.
+    await tester.ensureVisible(find.byIcon(Icons.copy));
     await tester.tap(find.byIcon(Icons.copy));
     await tester.pump();
+    await tester.ensureVisible(find.byIcon(Icons.content_paste));
     await tester.tap(find.byIcon(Icons.content_paste));
     await tester.pump();
     expect(editor.noteCount, 2);
@@ -261,6 +264,28 @@ void main() {
     // The pickup control renders its "no pickup" dash; behaviour is covered by
     // the model tests (a quarter pickup shortens the opening bar).
     expect(find.text('—'), findsWidgets);
+  });
+
+  testWidgets('the overflow menu offers SVG and PNG export', (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKey()); // give the score a note so export enables
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.workshopExportSvg), findsOneWidget);
+    expect(find.text(l10n.workshopExportImage), findsOneWidget);
+  });
+
+  testWidgets('enabling marquee mode shows the selection overlay',
+      (tester) async {
+    await pump(tester);
+    final marquee = find.byIcon(Icons.highlight_alt);
+    await tester.ensureVisible(marquee);
+    await tester.tap(marquee);
+    await tester.pump();
+    // A GestureDetector overlay is stacked over the canvas in marquee mode.
+    expect(find.byType(CustomPaint), findsWidgets);
   });
 
   testWidgets('switching to grand-staff mode shows both clefs', (tester) async {

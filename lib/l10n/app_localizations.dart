@@ -422,6 +422,30 @@ abstract class AppLocalizations {
   /// **'Export MusicXML'**
   String get workshopExportXml;
 
+  /// No description provided for @workshopExportSvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Export SVG (print)'**
+  String get workshopExportSvg;
+
+  /// No description provided for @workshopExportImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Export image (PNG)'**
+  String get workshopExportImage;
+
+  /// No description provided for @workshopExportedImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image saved'**
+  String get workshopExportedImage;
+
+  /// No description provided for @workshopMarquee.
+  ///
+  /// In en, this message translates to:
+  /// **'Select notes (rubber-band)'**
+  String get workshopMarquee;
+
   /// No description provided for @workshopCut.
   ///
   /// In en, this message translates to:

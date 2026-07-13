@@ -398,6 +398,30 @@ void main() {
     });
   });
 
+  group('marquee selection', () {
+    test('selectByIds spans a contiguous range from the enclosed ids', () {
+      final d = ScoreDocument();
+      for (final s in [Step.c, Step.d, Step.e, Step.f]) {
+        d.insertNote(_p(s), _q);
+      }
+      d.clearSelection();
+      // The marquee returns d (1) and f (3) → the selection spans d..f.
+      d.selectByIds([d.elements[3].id, d.elements[1].id]);
+      expect(d.selectedIds.length, 3);
+      expect(
+        d.selectedElements.map((e) => e.pitch!.step).toList(),
+        [Step.d, Step.e, Step.f],
+      );
+    });
+
+    test('selectByIds with no matches clears the selection', () {
+      final d = ScoreDocument();
+      d.insertNote(_p(Step.c), _q);
+      d.selectByIds(const ['nope']);
+      expect(d.hasSelection, isFalse);
+    });
+  });
+
   group('caret', () {
     test('sits before the element after the selection', () {
       final d = ScoreDocument();
