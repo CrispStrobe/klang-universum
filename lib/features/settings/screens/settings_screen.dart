@@ -7,12 +7,12 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/audio/synth.dart' show Instrument;
 import 'package:klang_universum/core/note_naming.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
-import 'package:klang_universum/core/services/custom_licenses_registry.dart';
 import 'package:klang_universum/core/services/debug_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/settings/screens/about_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:partitura/partitura.dart';
@@ -221,7 +221,9 @@ class SettingsScreen extends StatelessWidget {
               title: Text(l10n.appTitle),
               subtitle: Text(l10n.aboutSubtitle),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showAbout(context, l10n),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AboutScreen()),
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -239,26 +241,6 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
         ],
-      ),
-    );
-  }
-
-  /// The standard Flutter About dialog — app name, version, legalese, and a
-  /// built-in "View licenses" button that opens showLicensePage. We register
-  /// the bundled Bravura (OFL) font license first so it shows there alongside
-  /// the auto-discovered pub-package licenses.
-  Future<void> _showAbout(BuildContext context, AppLocalizations l10n) async {
-    final info = await PackageInfo.fromPlatform();
-    await ensureCustomLicensesRegistered();
-    if (!context.mounted) return;
-    showAboutDialog(
-      context: context,
-      applicationName: l10n.appTitle,
-      applicationVersion: '${info.version}+${info.buildNumber}',
-      applicationLegalese: l10n.appLegalese,
-      applicationIcon: const Padding(
-        padding: EdgeInsets.all(8),
-        child: Icon(Icons.music_note, size: 40),
       ),
     );
   }
