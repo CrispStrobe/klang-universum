@@ -1,10 +1,10 @@
 name: aec-native
 
-# Builds + tests the standalone native AEC plugin (native/aec/) on all three
-# desktop OSes. This is deliberately SEPARATE from the app CI (ci.yml): the
-# plugin is not a dependency of the app yet (AEC_TIER3B.md CI-safety rule), so
-# its cross-platform C portability is verified here without any risk to the app
-# build. Only runs when the plugin itself changes.
+# Builds + tests the standalone native AEC Flutter FFI plugin (native/aec/) on
+# all three desktop OSes. Separate from the app CI (ci.yml): the plugin is not a
+# dependency of the app yet (AEC_TIER3B.md CI-safety rule), so its cross-platform
+# C portability + plugin packaging are verified here with no risk to the app.
+# Only runs when the plugin itself changes.
 
 on:
   push:
@@ -21,7 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  # 1) C portability + AEC correctness: build the standalone lib via the
+  #    top-level CMake and run the offline ERLE + engine tests against it.
+  lib-and-tests:
     strategy:
       fail-fast: false
       matrix:
@@ -32,18 +34,51 @@ jobs:
         working-directory: native/aec
     steps:
       - uses: actions/checkout@v5
-
-      - uses: dart-lang/setup-dart@v1
-
-      - name: Configure + build native (aec_dsp + aec)
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build standalone lib (aec_dsp + aec)
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
+      - run: flutter pub get
+      - name: Offline tests (ERLE + engine)
+        # The tests auto-locate build/libaec(.so|.dylib) or build/Release/aec.dll.
+        run: flutter test
 
-      - name: pub get
-        run: dart pub get
-
-      # Offline ERLE cross-check + headless engine tests. The test auto-locates
-      # build/libaec(.so|.dylib) or build/Release/aec.dll.
-      - name: Test (offline ERLE + engine)
-        run: dart test
+  # 2) Plugin packaging: generate a throwaway example app that depends on the
+  #    plugin and build it for the host desktop platform — this compiles + links
+  #    the plugin's real per-platform build files (podspec / src CMake).
+  example-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: macos
+          - os: ubuntu-latest
+            target: linux
+          - os: windows-latest
+            target: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Linux desktop build deps
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev clang cmake pkg-config
+      - name: Generate example, add plugin, build (${{ matrix.target }})
+        shell: bash
+        run: |
+          flutter config --enable-${{ matrix.target }}-desktop
+          EXDIR="${RUNNER_TEMP}/aec_example"
+          flutter create --template=app --platforms=${{ matrix.target }} --project-name aec_example "$EXDIR"
+          cd "$EXDIR"
+          flutter pub add "aec_fullduplex:{\"path\":\"${GITHUB_WORKSPACE}/native/aec\"}"
+          flutter build ${{ matrix.target }} --debug

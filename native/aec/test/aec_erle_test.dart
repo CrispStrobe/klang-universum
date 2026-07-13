@@ -20,7 +20,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:aec_fullduplex/aec_dsp.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 String? _resolveLibrary() {
   final env = Platform.environment['AEC_LIBRARY_PATH'];
