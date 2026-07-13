@@ -14,6 +14,11 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (workshop→games)** · **🚧 ACTIVE — new minigame "Whole or Half Step?"**
+  (binary staff-read: two neighbour notes — whole step/tone or half step/
+  semitone; hears the interval). Touching hot shared files `game_registry.dart`,
+  `core/tuning.dart`, ARBs **additively** + new `whole_half_screen.dart` + test.
+  Pulling --rebase per commit; additive edits only. SRI `reading.tone.<whole|half>`.
 - **opus (workshop→games)** · **idle / SHIPPED — new minigame "Which Clef?"**
   (Noten lesen). A bare clef on an empty staff (`StaffView` + `Measure([])`);
   tap **Treble/Bass**, widening to **Alto/Tenor at 2★** (`starsFor>=2`). Binary
