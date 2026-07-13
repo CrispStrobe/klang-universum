@@ -77,8 +77,11 @@ jobs:
         shell: bash
         run: |
           flutter config --enable-${{ matrix.target }}-desktop
-          EXDIR="${RUNNER_TEMP}/aec_example"
+          # Forward slashes: on Windows the runner paths use backslashes, which
+          # are invalid JSON escapes inside `pub add`'s inline dependency map.
+          EXDIR="${RUNNER_TEMP//\\//}/aec_example"
+          PLUGIN_PATH="${GITHUB_WORKSPACE//\\//}/native/aec"
           flutter create --template=app --platforms=${{ matrix.target }} --project-name aec_example "$EXDIR"
           cd "$EXDIR"
-          flutter pub add "aec_fullduplex:{\"path\":\"${GITHUB_WORKSPACE}/native/aec\"}"
+          flutter pub add "aec_fullduplex:{\"path\":\"${PLUGIN_PATH}\"}"
           flutter build ${{ matrix.target }} --debug

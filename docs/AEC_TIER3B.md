@@ -39,10 +39,32 @@ licensing call, not baked in.
   **block** (`frame: 4096`) — the standard short-hop / long-filter arrangement,
   so the acoustic round-trip delay stays inside the filter tail.
 
-Next: (c) wire into `MicrophonePitchService` behind a capability flag → (d)
-Android/iOS/Windows/Linux plugin wrappers, CI-green → (e) on-device tuning (add
-a double-talk detector / residual suppression, or swap in SpeexDSP BSD-3 behind
-a flag, only if real-room residual echo proves too strong for the linear core).
+**Milestone (c) done — app-side AEC seam:** `lib/core/audio/aec_engine.dart` is
+an app-owned abstract `AecEngine`; `MicrophonePitchService` takes an optional
+one and, when present, analyses its echo-cancelled `cleaned` stream instead of
+the raw `record` mic (recorder is now lazy so AEC mode is headless), with a
+`pushReference()` for the backing PCM. The app never imports the native package,
+so CI stays green with no native code. Fake-driven test:
+`test/microphone_aec_seam_test.dart`.
+
+**Milestone (d) done — Flutter FFI plugin for all 5 platforms:** `native/aec` is
+now a real Flutter FFI plugin (`pubspec` `ffiPlugin: true` ×5; `src/CMakeLists.txt`
+for Android/Linux/Windows; podspecs + `Classes/` forwarders for macOS/iOS;
+android gradle). Portability hardening: the SPSC rings use miniaudio's
+`ma_pcm_rb` instead of hand-rolled C11 atomics (MSVC has no `<stdatomic.h>`), and
+`CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS` exports the FFI symbols on MSVC. Verified by
+the isolated **`aec-native` CI** (paths-filtered, never touches the app):
+`lib-and-tests` (build + offline ERLE/engine tests) green on **ubuntu + macOS +
+windows**, and `example-build` (a throwaway app depending on the plugin, built
+with `flutter build`) green on linux/macOS/windows. The macOS example app was
+also built locally.
+
+Remaining: **final wiring** — add the plugin to the app `pubspec.yaml` behind a
+runtime capability check + a `NativeAecEngine`→`AecEngine` adapter (kept out
+until we're comfortable it's green on mobile too) → **(e) on-device tuning**
+(iOS/Android; add a double-talk detector / residual suppression, or swap in
+SpeexDSP BSD-3 behind a flag, only if real-room residual echo proves too strong
+for the linear core).
 See `native/aec/README.md`.
 
 ## Why a native plugin is required

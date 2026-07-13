@@ -4,11 +4,15 @@ The native fix for speaker-mode play-along: cancel the app's own backing out of
 the mic so pitch scoring grades the *user*, not the speaker. Implements the plan
 in [`docs/AEC_TIER3B.md`](../../docs/AEC_TIER3B.md).
 
-> **Status: milestone (a).** DSP core + FFI + macOS build + offline ERLE test
-> land here. The miniaudio duplex host compiles; on-device capture (BlackHole
-> loopback, then hardware) and the per-platform Flutter-plugin wrappers are the
-> next milestones. **This package is intentionally NOT a dependency of the app**
-> and is invisible to CI until it builds green on every platform.
+> **Status: milestones (a)–(d).** A real **Flutter FFI plugin** for all five
+> platforms. DSP core + FFI + offline ERLE test (a); BlackHole loopback ≈44 dB
+> ERLE + engine tests (b); app-side seam in `MicrophonePitchService` (c, in the
+> app); cross-platform native build + plugin packaging (d) — verified on macOS
+> locally (example app builds) and in the isolated `aec-native` CI on
+> ubuntu/macOS/windows. **This package is intentionally NOT a dependency of the
+> app yet** (per `AEC_TIER3B.md`), so the app CI never touches it; wiring it in
+> behind a capability check + iOS/Android on-device tuning are the remaining
+> steps.
 
 ## Why a native plugin
 
@@ -36,20 +40,31 @@ would be a separate, explicit licensing decision.
 
 Bundled third-party license text lives in [`LICENSES/`](LICENSES/).
 
-## Build & test (macOS, this session's verified path)
+## Build & test
 
 ```bash
 cd native/aec
-cmake -S . -B build && cmake --build build      # builds libaec_dsp + libaec
-dart pub get
-dart test                                         # unit tests (no device)
+cmake -S . -B build && cmake --build build      # standalone libs: libaec_dsp + libaec
+flutter pub get
+AEC_LIBRARY_PATH="$PWD/build/libaec.dylib" flutter test   # unit tests (no device)
 ```
 
-`dart test` auto-locates `build/libaec*`; override with `AEC_LIBRARY_PATH`. On
-this Mac, wrap the build with the GEM-env fix from the repo `CLAUDE.md` if pod
-tooling interferes (`build.sh` does this for you).
+Two native builds coexist on purpose: the **top-level `CMakeLists.txt`** builds
+`libaec`/`libaec_dsp` for the offline tests + `tool/live_check.dart`; the
+**Flutter plugin** build (`src/CMakeLists.txt` + the podspecs) is what compiles
+into an app. `flutter test` auto-locates `build/libaec*`; override with
+`AEC_LIBRARY_PATH`.
 
-### Unit tests (`dart test`, no audio device)
+> **Gotcha:** do NOT wrap `flutter test` in the repo `CLAUDE.md` GEM-env fix
+> (`env -u GEM_HOME …`) — it hangs the test runner. That wrapper is only for
+> `pod`/`xcodebuild`/`flutter build` on this Mac. `build.sh` uses it for the
+> CMake build only.
+
+Plugin packaging is verified by building a throwaway example app that depends on
+the plugin (`flutter build macos|linux|windows`) — see `aec-native.yml`. Locally
+on macOS this produces `✓ Built …/aec_example.app`.
+
+### Unit tests (`flutter test`, no audio device)
 - **`test/aec_erle_test.dart`** — the C twin of the app's
   `test/echo_canceller_test.dart` (same IR/seeds/thresholds): drives the pure
   `aec_dsp_*` core over FFI, proving the port has no algorithmic drift.
@@ -84,15 +99,23 @@ aec.cleaned.listen(analyzer.addPcm16);  // mic minus echo
 await aec.stop();
 ```
 
-`MicrophonePitchService` will gain an optional `AecEngine`: when present and
-backing is audible, feed the backing PCM to `reference()` and analyse `cleaned`
-instead of the raw `record` stream — everything above stays identical.
+`MicrophonePitchService` already has the optional `AecEngine` seam (done in the
+app, milestone c): when present and backing is audible, it feeds the backing PCM
+to `reference()` and analyses `cleaned` instead of the raw `record` stream —
+everything above stays identical. A thin adapter (`NativeAecEngine` → the app's
+`AecEngine` interface) is the remaining wiring, added once the plugin is a
+dependency.
 
 ## Roadmap (from AEC_TIER3B.md)
 
 - [x] (a) C shim + FFI + macOS build + offline ERLE test
 - [x] (b) BlackHole loopback verification on this Mac (≈44 dB ERLE) + headless
       engine unit test + null-backend lifecycle check
-- [ ] (c) wire into `MicrophonePitchService` behind a capability flag
-- [ ] (d) Android / iOS / Windows / Linux Flutter-plugin wrappers, CI-green
-- [ ] (e) on-device tuning (add DTD / residual suppression as needed)
+- [x] (c) `AecEngine` seam in `MicrophonePitchService` (app-side, behind an
+      abstract interface; fake-driven test)
+- [x] (d) Flutter FFI plugin for all 5 platforms + isolated `aec-native` CI
+      (native lib + offline tests + example build on ubuntu/macOS/windows);
+      macOS example app verified locally
+- [ ] final wiring: add the plugin to the app pubspec behind a capability check
+      + the `NativeAecEngine`→`AecEngine` adapter
+- [ ] (e) on-device tuning (iOS/Android; add DTD / residual suppression as needed)
