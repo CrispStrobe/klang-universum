@@ -42,16 +42,35 @@ Bundled third-party license text lives in [`LICENSES/`](LICENSES/).
 cd native/aec
 cmake -S . -B build && cmake --build build      # builds libaec_dsp + libaec
 dart pub get
-dart test                                         # offline ERLE cross-check
+dart test                                         # unit tests (no device)
 ```
 
 `dart test` auto-locates `build/libaec*`; override with `AEC_LIBRARY_PATH`. On
 this Mac, wrap the build with the GEM-env fix from the repo `CLAUDE.md` if pod
 tooling interferes (`build.sh` does this for you).
 
-The offline test (`test/aec_erle_test.dart`) is the C twin of the app's
-`test/echo_canceller_test.dart`: same impulse response, same seeds, same
-thresholds — so matching them proves the port introduced no algorithmic drift.
+### Unit tests (`dart test`, no audio device)
+- **`test/aec_erle_test.dart`** — the C twin of the app's
+  `test/echo_canceller_test.dart` (same IR/seeds/thresholds): drives the pure
+  `aec_dsp_*` core over FFI, proving the port has no algorithmic drift.
+- **`test/aec_engine_test.dart`** — drives the *engine* layer (`aec_engine_*`)
+  via a test pump: PCM16 reference + mic through the exact realtime-callback
+  rings/framing/int16↔double path, asserting ERLE + near-end preservation +
+  raw-tap round-trip. Covers the plumbing the DSP-only test can't reach.
+
+### Live check (`dart run tool/live_check.dart`, real device)
+Deliberately outside `test/` so CI never opens a device. Two checks:
+1. **Lifecycle** — starts the duplex device on miniaudio's `null` backend and
+   confirms the realtime callback fires (cleaned frames flow at ~sample rate).
+2. **BlackHole loopback** — routes playback+capture through "BlackHole 2ch"
+   (system default untouched), plays white-noise reference, and measures ERLE.
+   **Verified on this Mac: raw RMS ~2079 → cleaned RMS ~13, ≈44 dB ERLE** — the
+   native AEC cancels real device-audio echo. (Skips gracefully if BlackHole
+   isn't installed.)
+
+`tool/live_check.dart` decouples a short device **period** (`setPeriod(256)`,
+low round-trip delay) from a longer AEC **block** (`frame: 4096`, filter tail
+that covers the delay) — the standard short-hop / long-filter AEC arrangement.
 
 ## Dart API
 
@@ -72,7 +91,8 @@ instead of the raw `record` stream — everything above stays identical.
 ## Roadmap (from AEC_TIER3B.md)
 
 - [x] (a) C shim + FFI + macOS build + offline ERLE test
-- [ ] (b) BlackHole loopback verification on this Mac
+- [x] (b) BlackHole loopback verification on this Mac (≈44 dB ERLE) + headless
+      engine unit test + null-backend lifecycle check
 - [ ] (c) wire into `MicrophonePitchService` behind a capability flag
 - [ ] (d) Android / iOS / Windows / Linux Flutter-plugin wrappers, CI-green
 - [ ] (e) on-device tuning (add DTD / residual suppression as needed)

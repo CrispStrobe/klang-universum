@@ -1,0 +1,132 @@
+// Headless unit test of the native ENGINE layer (aec_engine_*), with no audio
+// device. It drives the exact realtime-callback processing via the test pump:
+// PCM16 reference + mic go in through the same rings/framing/int16<->double
+// conversion the device path uses, and the cleaned near-end comes back out.
+// This pins down the plumbing around the DSP core that test/aec_erle_test.dart
+// (pure aec_dsp) can't reach — ring alignment, block accumulation, clamping.
+
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:aec_fullduplex/src/engine_ffi.dart';
+import 'package:test/test.dart';
+
+import 'support/lib_resolver.dart';
+
+Int16List _toPcm16(List<double> x) {
+  final out = Int16List(x.length);
+  for (var i = 0; i < x.length; i++) {
+    out[i] = (x[i] * 32767).round().clamp(-32768, 32767);
+  }
+  return out;
+}
+
+void main() {
+  final libPath = resolveAecLibrary(requireEngine: true);
+
+  // The same short room impulse response as the offline test, scaled reference
+  // so echo (+ near) stays inside int16 range without clipping.
+  final h = <double>[0.6, 0.0, -0.35, 0.0, 0.2, 0.0, -0.12, 0.08, 0.05, -0.03];
+  double echoAt(List<double> ref, int t) {
+    var s = 0.0;
+    for (var j = 0; j < h.length; j++) {
+      if (t - j >= 0) s += h[j] * ref[t - j];
+    }
+    return s;
+  }
+
+  group('AecEngineFfi (headless int16 data path)', () {
+    test('raw mic tap round-trips the pumped PCM16 verbatim', () {
+      final e = AecEngineFfi.create(frame: 256, libraryPath: libPath);
+      addTearDown(e.dispose);
+      final mic = _toPcm16(List.generate(256, (i) => 0.4 * sin(i * 0.21)));
+      e.reference(Int16List(256)); // silence reference (nothing to cancel)
+      e.pump(mic);
+      final raw = e.readRaw();
+      expect(raw.length, 256);
+      expect(raw, orderedEquals(mic));
+    });
+
+    test('cancels a linear echo through the int16 engine — high ERLE', () {
+      const frame = 256;
+      const blocks = 200;
+      final e = AecEngineFfi.create(frame: frame, libraryPath: libPath);
+      addTearDown(e.dispose);
+
+      final rng = Random(7);
+      final ref = List<double>.generate(
+          blocks * frame, (_) => (rng.nextDouble() * 2 - 1) * 0.4);
+
+      var micEnergy = 0.0, cleanedEnergy = 0.0;
+      for (var bi = 0; bi < blocks; bi++) {
+        final r = <double>[];
+        final m = <double>[];
+        for (var i = 0; i < frame; i++) {
+          final t = bi * frame + i;
+          r.add(ref[t]);
+          m.add(echoAt(ref, t)); // mic = echo only
+        }
+        e.reference(_toPcm16(r));
+        e.pump(_toPcm16(m));
+        final cleaned = e.read();
+        expect(cleaned.length, frame); // exactly one block emitted per pump
+        if (bi >= blocks - 20) {
+          final micPcm = _toPcm16(m);
+          for (var i = 0; i < frame; i++) {
+            micEnergy += micPcm[i] * micPcm[i].toDouble();
+            cleanedEnergy += cleaned[i] * cleaned[i].toDouble();
+          }
+        }
+      }
+      final erleDb = 10 * (log(micEnergy / (cleanedEnergy + 1e-9)) / ln10);
+      expect(
+        erleDb,
+        greaterThan(20),
+        reason: 'engine ERLE = ${erleDb.toStringAsFixed(1)} dB (want > 20)',
+      );
+    });
+
+    test('preserves the near-end through the engine (double-talk)', () {
+      const frame = 256;
+      const blocks = 200;
+      final e = AecEngineFfi.create(frame: frame, libraryPath: libPath);
+      addTearDown(e.dispose);
+
+      final rng = Random(11);
+      final ref = List<double>.generate(
+          blocks * frame, (_) => (rng.nextDouble() * 2 - 1) * 0.4);
+      double near(int t) => 0.25 * sin(2 * pi * 220 * t / 44100);
+
+      var nearErr = 0.0, nearEnergy = 0.0;
+      for (var bi = 0; bi < blocks; bi++) {
+        final r = <double>[];
+        final m = <double>[];
+        for (var i = 0; i < frame; i++) {
+          final t = bi * frame + i;
+          r.add(ref[t]);
+          m.add(echoAt(ref, t) + near(t));
+        }
+        e.reference(_toPcm16(r));
+        e.pump(_toPcm16(m));
+        final cleaned = e.read();
+        if (bi >= blocks - 20) {
+          for (var i = 0; i < frame; i++) {
+            final t = bi * frame + i;
+            final nearPcm = near(t) * 32767;
+            nearErr += (cleaned[i] - nearPcm) * (cleaned[i] - nearPcm);
+            nearEnergy += nearPcm * nearPcm;
+          }
+        }
+      }
+      expect(
+        nearErr,
+        lessThan(nearEnergy * 0.3),
+        reason:
+            'near-end error ${(nearErr / nearEnergy * 100).toStringAsFixed(0)}%',
+      );
+    });
+  },
+      skip: libPath == null
+          ? 'native library not built — run: cmake --build native/aec/build'
+          : false);
+}

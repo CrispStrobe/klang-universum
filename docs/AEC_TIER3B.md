@@ -26,9 +26,24 @@ the duplex host. SpeexDSP stays an *optional* future component behind a build
 flag if residual/nonlinear performance ever demands it — a separate, explicit
 licensing call, not baked in.
 
-Next: (b) BlackHole loopback → (c) wire into `MicrophonePitchService` behind a
-capability flag → (d) Android/iOS/Windows/Linux plugin wrappers, CI-green → (e)
-on-device tuning. See `native/aec/README.md`.
+**Milestone (b) also done — tested on real device audio (2026-07-13):**
+- **Headless engine unit test** (`test/aec_engine_test.dart`): drives the
+  `aec_engine_*` int16 ring/framing/conversion path via a test pump (no device)
+  — ERLE + near-end + raw-tap round-trip all green.
+- **Live check** (`tool/live_check.dart`, outside `test/` so CI never opens a
+  device): (1) null-backend duplex **lifecycle** — the realtime callback fires,
+  frames flow; (2) **BlackHole 2ch loopback** (system default untouched) — plays
+  a white-noise reference and cancels its loopback echo at **≈44 dB ERLE** (raw
+  RMS ~2079 → cleaned RMS ~13). Real device audio, self-driven, no human/mic.
+- Key: a short device **period** (`setPeriod(256)`) decoupled from a longer AEC
+  **block** (`frame: 4096`) — the standard short-hop / long-filter arrangement,
+  so the acoustic round-trip delay stays inside the filter tail.
+
+Next: (c) wire into `MicrophonePitchService` behind a capability flag → (d)
+Android/iOS/Windows/Linux plugin wrappers, CI-green → (e) on-device tuning (add
+a double-talk detector / residual suppression, or swap in SpeexDSP BSD-3 behind
+a flag, only if real-room residual echo proves too strong for the linear core).
+See `native/aec/README.md`.
 
 ## Why a native plugin is required
 

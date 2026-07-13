@@ -34,17 +34,18 @@ and push to origin/main** before/after touching shared files. Format:
   which lays the screen out on a generous surface. Don't pin the partitura ref —
   the workshop agent needs `@main`'s C-contract APIs.
 - **opus (AEC Tier 3b, worktree `../mus-aec`)** · **idle / last-shipped** —
-  shipped **AEC Tier-3b milestone (a)**: a standalone native plugin package at
-  **`native/aec/`** (miniaudio MIT-0 duplex host + our own **cleanroom C port**
-  of `echo_canceller.dart` — dropped BSD-3 SpeexDSP to keep the tree MIT). C
-  shim + `dart:ffi` `AecEngine`/`AecDsp` + offline **ERLE cross-check** test
-  (C twin of `echo_canceller_test.dart`); both libs build on macOS, all tests
-  green. **CI-safe:** package has its own pubspec, is NOT in the app's
-  `pubspec.yaml`, and `native/aec/**` is excluded in the app's
-  `analysis_options.yaml` (only shared file I touched besides the docs). Next:
-  BlackHole loopback → wire into `MicrophonePitchService` behind a flag →
-  Android/iOS/Win/Linux plugin wrappers. Detail: `native/aec/README.md`,
-  `AEC_TIER3B.md`.
+  shipped **AEC Tier-3b milestones (a)+(b)**: a standalone native plugin package
+  at **`native/aec/`** (miniaudio MIT-0 duplex host + our own **cleanroom C
+  port** of `echo_canceller.dart` — dropped BSD-3 SpeexDSP to keep the tree
+  MIT). C shim + `dart:ffi` `AecEngine`/`AecDsp`/`AecEngineFfi`. **Tests:**
+  offline ERLE cross-check (C twin of `echo_canceller_test.dart`) + headless
+  engine int16-path test (6 unit tests green); **live** `tool/live_check.dart`
+  (outside `test/`) — null-backend duplex lifecycle + **BlackHole loopback
+  cancels real device echo at ≈44 dB ERLE** on this Mac. **CI-safe:** own
+  pubspec, NOT in the app `pubspec.yaml`, `native/aec/**` excluded in the app's
+  `analysis_options.yaml` (only shared file I touched besides docs). Next: wire
+  into `MicrophonePitchService` behind a flag → Android/iOS/Win/Linux plugin
+  wrappers. Detail: `native/aec/README.md`, `AEC_TIER3B.md`.
 - **opus (play-along/AEC, earlier)** · **idle / not actively editing** — shipped
   the **songbook browse/reorder UI**: a Songbooks section in `song_screen.dart` +
   new `songbook_screen.dart` (drag-reorder via `onReorderItem`, add-songs
