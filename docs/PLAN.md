@@ -26,14 +26,14 @@ and push to origin/main** before/after touching shared files. Format:
   mus change. If your CI reds on a `getCenter`/`_getElementPoint` throw, it's this
   — enlarge the test surface or `ensureVisible` the target. Consider pinning the
   partitura ref for stability (raising with the maintainer).
-- **opus (play-along/AEC)** · shipped: **chord-progression SRI** parity, a
-  detector **robustness suite** (vibrato/noise/dynamics/timbres — proxy for the
-  human-gated real-instrument pass) + on-device protocol, and **AEC Tier 3b
-  DESIGN** ([AEC_TIER3B.md](AEC_TIER3B.md); no native code landed — it needs an
-  isolated multi-session build to not red CI). Also live: 4 scroll views,
-  backing+platform AEC, metronome, tempo, play-along+chord SRI, more tunes, Free
-  Sing, **AEC Tier 3a** · `chord_progression_screen.dart`, tests, docs ·
-  **idle / awaiting next**.
+- **opus (play-along/AEC)** · next (in order): (1) **Free Sing → Song Book**
+  (save the sung melody as a Score), (2) **play-along difficulty levels**, (3)
+  **tuner upgrades** (A4 415/442, guided per-string), (4) **Songbook collections
+  foundation** (group user songs; no OMR yet) · touching
+  `features/games/composition/free_sing_screen.dart`, `play_along_screen.dart`,
+  `tuner_spike_screen.dart`, `songs/`, `game_registry`, `core/tuning`, ARBs ·
+  **in progress**. Shipped: 4 scroll views, backing+platform AEC, metronome,
+  tempo, play-along+chord SRI, tunes, Free Sing, robustness suite, AEC 3a/3b-design.
 - **claude (`feature/score-workshop`, worktree `../mus-workshop`)** · rebuilding
   the Composition Workshop as a touch-first score editor on `ScoreDocument` —
   shipped **G1/G2** (editor shell · multiline canvas · piano) + **G3a**
