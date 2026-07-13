@@ -24,6 +24,11 @@ final _game = GameInfo(
 );
 
 void main() {
+  // The auto-show is off by default (so it never disturbs other tests); this
+  // test is exactly the one exercising it.
+  setUp(() => autoShowTutorials = true);
+  tearDown(() => autoShowTutorials = false);
+
   testWidgets('gameRoute auto-shows the tutorial on the first visit only',
       (tester) async {
     SharedPreferences.setMockInitialValues({});

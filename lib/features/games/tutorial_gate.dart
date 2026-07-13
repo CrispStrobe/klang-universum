@@ -10,6 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
 import 'package:klang_universum/shared/tutorial/tutorial_sheet.dart';
 
+/// Whether opening a game auto-pops its first-run tutorial. `main()` turns this
+/// on for the real app; it stays **off** by default so widget tests that drive a
+/// game flow aren't interrupted by a modal (they never call `main`). Tests that
+/// specifically exercise the auto-show set it true themselves.
+bool autoShowTutorials = false;
+
 /// A route to [game] that auto-shows its tutorial (if any) on the first visit.
 Route<void> gameRoute(GameInfo game) =>
     MaterialPageRoute<void>(builder: (_) => TutorialGate(game: game));
@@ -29,7 +35,7 @@ class _TutorialGateState extends State<TutorialGate> {
   void initState() {
     super.initState();
     final tutorial = widget.game.tutorial;
-    if (tutorial != null) {
+    if (autoShowTutorials && tutorial != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) maybeShowTutorial(context, widget.game.id, tutorial);
       });

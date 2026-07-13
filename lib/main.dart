@@ -7,6 +7,7 @@ import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/game_registry.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
+import 'package:klang_universum/features/games/tutorial_gate.dart';
 import 'package:klang_universum/features/home/screens/home_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/theme.dart';
@@ -18,6 +19,9 @@ Future<void> main() async {
   // Per the partitura contract (CONTRACT.md §6): await the SMuFL metadata
   // up front so the first StaffView frame is never empty.
   await Bravura.load();
+  // Real app only: auto-pop a game's first-run tutorial (off by default so it
+  // never interrupts widget tests, which don't run main()).
+  autoShowTutorials = true;
   runApp(const KlangUniversumApp());
 }
 
