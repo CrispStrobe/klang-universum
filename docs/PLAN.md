@@ -17,6 +17,12 @@ and push to origin/main** before/after touching shared files. Format:
 - **opus (this agent)** · partitura-private→public reconcile + survey new
   partitura capabilities, then plan/build mus features on them · touching the
   partitura repos (not mus shared files yet) · **in progress**.
+- **opus (play-along/AEC)** · shipped play-along suite (4 scroll views, backing
+  toggle + platform AEC, count-in metronome) and **AEC Tier 3a**: a pure-Dart
+  echo-canceller core + `bin/listen.dart --aec`. Real-captured audio still
+  diverges (delay ~950 ms + no DTD) → needs **Tier 3b** (native full-duplex +
+  SpeexDSP/WebRTC). Full AEC plan in root `PLAN.md` · touched `echo_canceller.dart`
+  (new), `bin/listen.dart`, `play_along_screen.dart` · **idle / awaiting next**.
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
   play-along CI fix (colours ride `theme.elementColors`, not the private-only
   `MultiSystemView(elementColors:)` param). origin/main green + deployed.
