@@ -8,6 +8,19 @@ iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
 This file tracks **what is pending and planned**. What's already built and live
 is recorded in [HISTORY.md](HISTORY.md).
 
+## 🚧 Actively working on (agent coordination — keep in sync with origin/main)
+
+Live board so parallel agents don't collide. **Update this at every checkpoint
+and push to origin/main** before/after touching shared files. Format:
+`agent · task · files touched · status`.
+
+- **opus (this agent)** · partitura-private→public reconcile + survey new
+  partitura capabilities, then plan/build mus features on them · touching the
+  partitura repos (not mus shared files yet) · **in progress**.
+- _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +
+  play-along CI fix (colours ride `theme.elementColors`, not the private-only
+  `MultiSystemView(elementColors:)` param). origin/main green + deployed.
+
 ## Principles
 
 1. **Minigames, not lessons.** Every skill is drilled through a game with
