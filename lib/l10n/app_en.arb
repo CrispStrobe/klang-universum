@@ -755,6 +755,7 @@
   "playAlongViewCoach": "Coach",
   "playAlongNext": "next",
   "playAlongBacking": "Backing (use headphones)",
+  "playAlongTempo": "Tempo",
   "chordListenerPrompt": "Strum or play a chord",
   "chordListenerMatch": "{percent}% match",
   "@chordListenerMatch": {

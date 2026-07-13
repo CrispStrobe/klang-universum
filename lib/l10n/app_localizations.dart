@@ -2912,6 +2912,12 @@ abstract class AppLocalizations {
   /// **'Backing (use headphones)'**
   String get playAlongBacking;
 
+  /// No description provided for @playAlongTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get playAlongTempo;
+
   /// No description provided for @chordListenerPrompt.
   ///
   /// In en, this message translates to:

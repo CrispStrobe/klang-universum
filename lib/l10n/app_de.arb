@@ -532,6 +532,7 @@
   "playAlongViewCoach": "Coach",
   "playAlongNext": "als Nächstes",
   "playAlongBacking": "Begleitung (Kopfhörer nutzen)",
+  "playAlongTempo": "Tempo",
   "chordListenerPrompt": "Spiele oder zupfe einen Akkord",
   "chordListenerMatch": "{percent}% Übereinstimmung",
   "@chordListenerMatch": {

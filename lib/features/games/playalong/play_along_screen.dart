@@ -69,11 +69,17 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   final MicrophonePitchService _service = MicrophonePitchService();
   late final Ticker _ticker;
   StreamSubscription<PitchReading>? _sub;
-  late PlayAlongEngine _engine = PlayAlongEngine(widget.chart);
+  late PlayAlongEngine _engine = PlayAlongEngine(_chart);
+
+  /// The chart at the selected tempo (notes unchanged, bpm scaled).
+  PlayAlongChart get _chart => _tempo == 1.0
+      ? widget.chart
+      : widget.chart.copyWith(bpm: (widget.chart.bpm * _tempo).round());
 
   PitchReading _latest = PitchReading.silent();
   final CountInClicker _clicker = CountInClicker();
   PlayAlongView _view = PlayAlongView.highway;
+  double _tempo = 1.0; // slow-down multiplier (1.0 = the chart's own tempo)
   bool _backing =
       false; // play audible backing (Tier 0/1: needs headphones/AEC)
   bool _backingStarted = false;
@@ -153,8 +159,8 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
   }
 
   List<(int, int)> _melody() => [
-        for (final n in widget.chart.notes)
-          (n.midi, (n.beats * widget.chart.beatMs).round()),
+        for (final n in _chart.notes)
+          (n.midi, (n.beats * _chart.beatMs).round()),
       ];
 
   void _finish() {
@@ -175,7 +181,7 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
     setState(() {
       _error = null;
       _finished = false;
-      _engine = PlayAlongEngine(widget.chart);
+      _engine = PlayAlongEngine(_chart);
     });
     try {
       _sub = _service.readings.listen(
@@ -238,6 +244,22 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
+          if (!_finished)
+            PopupMenuButton<double>(
+              icon: const Icon(Icons.speed),
+              tooltip: l.playAlongTempo,
+              initialValue: _tempo,
+              // Read when the engine is built at Play, so only change stopped.
+              enabled: !_running,
+              onSelected: (t) => setState(() => _tempo = t),
+              itemBuilder: (context) => [
+                for (final t in const [0.5, 0.75, 1.0])
+                  PopupMenuItem(
+                    value: t,
+                    child: Text(t == 1.0 ? '1×' : '${_fracLabel(t)}×'),
+                  ),
+              ],
+            ),
           if (!_finished)
             IconButton(
               tooltip: l.playAlongBacking,
@@ -359,6 +381,12 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       ],
     );
   }
+
+  String _fracLabel(double t) => switch (t) {
+        0.5 => '½',
+        0.75 => '¾',
+        _ => '$t',
+      };
 
   String _viewName(AppLocalizations l, PlayAlongView v) => switch (v) {
         PlayAlongView.highway => l.playAlongViewHighway,

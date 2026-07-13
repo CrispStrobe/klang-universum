@@ -123,6 +123,20 @@ void main() {
     expect(scoreToStars('cello_play_along', silent.hits, silent.hits > 0), 0);
   });
 
+  test('slowing the tempo lengthens the chart but keeps the notes/hits', () {
+    final base = PlayAlongCharts.celloFirstPosition;
+    final slow = base.copyWith(bpm: (base.bpm * 0.5).round());
+    expect(slow.notes, same(base.notes));
+    expect(slow.totalMs, closeTo(base.totalMs * 2, base.totalMs * 0.02));
+    // A perfect run at half tempo still hits every note.
+    final engine = _run(
+      slow,
+      (active) =>
+          active == null ? PitchReading.silent() : _reading(active.note.midi),
+    );
+    expect(engine.hits, engine.notes.length);
+  });
+
   test('counts in before the first note', () {
     final engine = PlayAlongEngine(PlayAlongCharts.twinkleSing);
     expect(engine.inCountIn, isTrue);

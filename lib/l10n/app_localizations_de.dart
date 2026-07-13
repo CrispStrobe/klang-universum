@@ -1590,6 +1590,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playAlongBacking => 'Begleitung (Kopfhörer nutzen)';
 
   @override
+  String get playAlongTempo => 'Tempo';
+
+  @override
   String get chordListenerPrompt => 'Spiele oder zupfe einen Akkord';
 
   @override

@@ -48,6 +48,14 @@ class PlayAlongChart {
   double get totalBeats =>
       notes.isEmpty ? 0 : notes.map((n) => n.endBeat).reduce(max);
   double get totalMs => totalBeats * beatMs;
+
+  /// Same chart at a different tempo (used by the slow-down control).
+  PlayAlongChart copyWith({int? bpm}) => PlayAlongChart(
+        name: name,
+        bpm: bpm ?? this.bpm,
+        notes: notes,
+        octaveAgnostic: octaveAgnostic,
+      );
 }
 
 enum NoteResult { pending, hit, missed }
