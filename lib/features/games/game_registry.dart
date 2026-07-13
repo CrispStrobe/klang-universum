@@ -63,6 +63,7 @@ import 'package:klang_universum/features/games/note_reading/note_snake_screen.da
 import 'package:klang_universum/features/games/note_reading/note_whack_screen.dart';
 import 'package:klang_universum/features/games/note_reading/odd_one_out_screen.dart';
 import 'package:klang_universum/features/games/note_reading/perform_it_screen.dart';
+import 'package:klang_universum/features/games/note_reading/pitch_sort_screen.dart';
 import 'package:klang_universum/features/games/note_reading/place_note_screen.dart';
 import 'package:klang_universum/features/games/note_reading/read_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
@@ -191,6 +192,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameNoteReadingBass,
       subtitle: (l) => l.gameNoteReadingSubtitle,
       builder: (_) => const NoteReadingQuizScreen(clef: Clef.bass),
+    ),
+    // High/low pitch-direction sort (drag-into-baskets format).
+    GameInfo(
+      id: 'pitch_sort',
+      icon: Icons.height,
+      title: (l) => l.gamePitchSort,
+      subtitle: (l) => l.gamePitchSortSubtitle,
+      builder: (_) => const PitchSortScreen(),
     ),
     GameInfo(
       id: 'place_note_treble',

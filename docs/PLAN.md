@@ -278,6 +278,67 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 - pub.dev publication of partitura: deliberately **not yet** (maintainer
   decision); everything is consumed via path/git.
 
+## Learnability & UX — zero-knowledge onboarding (P0→P2, in progress)
+
+The bet: a child with **no** prior music knowledge should be able to open any
+minigame, be taught the facts it needs (with heard + seen examples), and play it
+through. Plus fix a sound regression and give sound a global switch. Structural
+map done — there is **no** shared AppBar (every screen builds its own), the
+mascot lives in `FeedbackLine`, and there's **no** tutorial/help system yet.
+
+### P0 — App-silence regression
+Symptom: audio goes silent app-wide, suspected after play-along. Likely cause:
+there is **no global audio-session / `AudioContext`** (`main.dart`, `AudioService`),
+so the `record` mic flips the iOS/Android session to record/`playAndRecord` (routes
+to the quiet earpiece) and does not restore it, muting `audioplayers` afterwards.
+Fix: set a global playback `AudioContext` (speaker-routed, mixes/ducks) once at
+startup; have `MicrophonePitchService.stop()` restore it; verify metronome +
+backing + SFX are audible before **and after** using the mic. (No repro device
+here — validate on macOS/web locally + reason from the session model; confirm on
+hardware in (e)-style testing.)
+
+### P0 — Global sound on/off toggle in the top bar
+- **Behavior:** one chokepoint — gate `AudioService._play()` with `if (!soundOn) return;`
+  (`core/services/audio_service.dart`). Mutes notes/chords/SFX/ticks/backing for
+  all 97 games at once; the **mic is unaffected** (intonation games still work).
+- **State:** add `soundOn` to `SettingsService` (SharedPreferences, mirrors the
+  existing `showTimer`/`instrument` pattern), synced to `AudioService` at
+  `main.dart` where `instrument` already is.
+- **UI (app-wide):** there is no shared AppBar, so introduce a shared
+  **`GameAppBar`** helper (a `PreferredSizeWidget`) that carries the speaker
+  on/off action **and** the tutorial "?" button (below), and migrate game
+  screens onto it module-by-module. Ship the toggle immediately on Home +
+  Settings; the per-game top-bar icon lands as screens adopt `GameAppBar`.
+
+### P1 — Mascot: from idle prop to guide
+`NoteMascot` (`shared/widgets/note_mascot.dart`, moods idle/happy/oops) currently
+sits in `FeedbackLine` (between the question and the 4 options, 53 screens) doing
+nothing at rest. Move it to a **presenter** role: a `MascotPrompt` (mascot +
+speech bubble that reads the question) inside `RoundHeader`, **before** the
+question; default `FeedbackLine.showMascot = false` (feedback text stays). Give
+the mascot a gentle **idle animation** (breathe/blink/sway) so it's alive, and
+keep the happy/oops reactions. Editing the two shared widgets
+(`game_widgets.dart`, `note_mascot.dart`) reaches every game uniformly.
+
+### P1→P2 — Tutorials for every minigame (the big one)
+Each game gets a short, **illustrated + playable** explanation of exactly the
+musical facts it drills, so a zero-knowledge child can clear it.
+- **Framework:** a `Tutorial` model = ordered steps, each with text + optional
+  **notation** (`StaffView`/`kidsScoreTheme`) + optional **"listen" example**
+  (`AudioService.playSequence`/`playMidiChord`/…). A `TutorialSheet` renders it.
+  Shown **auto on first entry** (persist "seen" per game id) and reopenable via
+  the **"?"** in `GameAppBar`. New optional hook on `GameInfo`
+  (`game_registry.dart`), e.g. `Tutorial Function(AppLocalizations)? tutorial`.
+- **Content:** author module-by-module (10 modules, 97 games), EN/DE in the
+  ARBs, teaching the underlying knowledge — staff & clefs, note/rest values &
+  beats, meter/measures, scales (Dur/Moll), intervals & chords, harmony (T/S/D),
+  the cello/guitar/piano corners — each with a heard example and a shown example.
+  Reuse one shared "primer" per module where games overlap, specialized per game.
+- **Phasing:** (1) framework + "?" + first-run gating + `GameAppBar`; (2)
+  author the note-reading + note-values primers (highest-traffic); (3) sweep the
+  remaining modules. Coordinate ARB/`game_registry` edits (hot files) with the
+  parallel agents.
+
 ## Competitive analysis & opportunity roadmap
 
 Benchmarked against 30+ music-learning apps (mid-2026, four research sweeps:

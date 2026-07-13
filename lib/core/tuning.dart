@@ -131,6 +131,8 @@ const Map<String, List<int>> kStarThresholds = {
   // Drum Read: ~12 notes x 10-20 (Perfect/Good); a clean run tops out near 200.
   'drum_read': [60, 140, 200],
   'line_space': [100, 600, 900],
+  // High or Low? (pitch-direction sort): 6 rounds x 100, max 600.
+  'pitch_sort': [100, 400, 550],
   // Falling Notes: 15 notes, points = 10 x combo multiplier (1..5). A flawless
   // combo run tops out near 450; 3 stars rewards a near-perfect streak.
   'falling_notes': [50, 250, 400],

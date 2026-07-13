@@ -782,6 +782,36 @@ abstract class AppLocalizations {
   /// **'Name the note on the staff'**
   String get gameNoteReadingSubtitle;
 
+  /// No description provided for @gamePitchSort.
+  ///
+  /// In en, this message translates to:
+  /// **'High or Low?'**
+  String get gamePitchSort;
+
+  /// No description provided for @gamePitchSortSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag each note into the high or low basket'**
+  String get gamePitchSortSubtitle;
+
+  /// No description provided for @pitchSortPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Is each note high or low? Drop it in the right basket!'**
+  String get pitchSortPrompt;
+
+  /// No description provided for @pitchHighLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get pitchHighLabel;
+
+  /// No description provided for @pitchLowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get pitchLowLabel;
+
   /// No description provided for @moduleGuitar.
   ///
   /// In en, this message translates to:

@@ -388,6 +388,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameNoteReadingSubtitle => 'Name the note on the staff';
 
   @override
+  String get gamePitchSort => 'High or Low?';
+
+  @override
+  String get gamePitchSortSubtitle =>
+      'Drag each note into the high or low basket';
+
+  @override
+  String get pitchSortPrompt =>
+      'Is each note high or low? Drop it in the right basket!';
+
+  @override
+  String get pitchHighLabel => 'High';
+
+  @override
+  String get pitchLowLabel => 'Low';
+
+  @override
   String get moduleGuitar => 'Guitar Corner';
 
   @override
