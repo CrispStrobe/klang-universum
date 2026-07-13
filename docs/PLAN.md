@@ -14,14 +14,19 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (primers)** · **ACTIVE** — authoring zero-knowledge **tutorial primers
-  for the remaining 8 modules** (harmony, composition, cello, guitar, songs,
-  keyboard, transpose, drums) per `TUTORIAL_PRIMERS_HANDOVER.md`. Branch
-  `feature/ux-primers` (worktree `../mus-primers`). Touching shared files:
-  `lib/l10n/app_en.arb` + `app_de.arb` (additive primer keys), and
-  `game_registry.dart` (adding `tutorial:` hooks to the 8 entry games). Also
-  `lib/shared/tutorial/primers.dart` + `test/tutorial_test.dart` (not hot). Keep
-  edits small/additive; rebasing often.
+- **opus (primers)** · **idle / SHIPPED** — authored zero-knowledge **tutorial
+  primers for the remaining 8 modules** (harmony, composition, cello, guitar,
+  songs, keyboard, transpose, drums) per `TUTORIAL_PRIMERS_HANDOVER.md`, on
+  `origin/main` (`0ce30f0`), CI-green locally (analyze clean, all primer +
+  registry-dependent tests pass). Each hung on its module's **entry game** via
+  `GameInfo.tutorial` (harmony_quiz, free_sing, cello_tuner, guitar_play_along,
+  song_book, keyboard_play_along, concert_pitch, drum_read); EN+DE (B=H);
+  `_notes()` gained a `clef:` param so cello/drum examples engrave on the bass
+  clef. **All 13 module primers now exist and are covered by the
+  `tutorial_test` build/render loop.** Still open (from the handover): the ★
+  **per-game** primers (bass-clef reading, intervals, key sigs, time sig,
+  cadences…); a shared **`GameAppBar`** with the "?" reopen button; mascot →
+  presenter before the question.
 
 - **opus (UX/tutorials)** · **idle / handed over** — **Learnability & UX push**
   shipped to `origin/main`, CI-green: (1) global **sound on/off** toggle
