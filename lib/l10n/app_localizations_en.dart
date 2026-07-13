@@ -1168,6 +1168,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whichBeatPrompt => 'Which beat does the coloured note fall on?';
 
   @override
+  String get gameStrongBeat => 'Strong Beat?';
+
+  @override
+  String get gameStrongBeatSubtitle => 'Is the marked beat strong or weak?';
+
+  @override
+  String strongBeatPrompt(int beat) {
+    return 'Beat $beat: is it a strong or a weak beat?';
+  }
+
+  @override
+  String get strongBeatStrong => 'Strong';
+
+  @override
+  String get strongBeatWeak => 'Weak';
+
+  @override
+  String get strongBeatReplay => 'Hear the beats again';
+
+  @override
   String get workshopExportAbc => 'Export ABC';
 
   @override

@@ -2180,6 +2180,42 @@ abstract class AppLocalizations {
   /// **'Which beat does the coloured note fall on?'**
   String get whichBeatPrompt;
 
+  /// No description provided for @gameStrongBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong Beat?'**
+  String get gameStrongBeat;
+
+  /// No description provided for @gameStrongBeatSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is the marked beat strong or weak?'**
+  String get gameStrongBeatSubtitle;
+
+  /// No description provided for @strongBeatPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Beat {beat}: is it a strong or a weak beat?'**
+  String strongBeatPrompt(int beat);
+
+  /// No description provided for @strongBeatStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get strongBeatStrong;
+
+  /// No description provided for @strongBeatWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak'**
+  String get strongBeatWeak;
+
+  /// No description provided for @strongBeatReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear the beats again'**
+  String get strongBeatReplay;
+
   /// No description provided for @workshopExportAbc.
   ///
   /// In en, this message translates to:

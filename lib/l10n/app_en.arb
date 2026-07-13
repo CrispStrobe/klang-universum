@@ -555,6 +555,19 @@
   "gameWhichBeat": "Which Beat?",
   "gameWhichBeatSubtitle": "Tap the beat the coloured note starts on",
   "whichBeatPrompt": "Which beat does the coloured note fall on?",
+  "gameStrongBeat": "Strong Beat?",
+  "gameStrongBeatSubtitle": "Is the marked beat strong or weak?",
+  "strongBeatPrompt": "Beat {beat}: is it a strong or a weak beat?",
+  "@strongBeatPrompt": {
+    "placeholders": {
+      "beat": {
+        "type": "int"
+      }
+    }
+  },
+  "strongBeatStrong": "Strong",
+  "strongBeatWeak": "Weak",
+  "strongBeatReplay": "Hear the beats again",
   "workshopExportAbc": "Export ABC",
   "workshopCopy": "Copy",
   "workshopCopied": "ABC copied to clipboard",

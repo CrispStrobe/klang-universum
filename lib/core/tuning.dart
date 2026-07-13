@@ -104,6 +104,8 @@ const Map<String, List<int>> kStarThresholds = {
   'bowing': [100, 600, 900],
   // Which Beat? (rhythmic placement): 10 rounds x 100.
   'which_beat': [100, 600, 900],
+  // Strong Beat? (metric accent, strong/weak): 10 rounds x 100.
+  'strong_beat': [100, 600, 900],
   // Time Signatures (read C/cut/numeric): 10 rounds x 100.
   'time_signature': [100, 600, 900],
   // Duet (read the highlighted part of a two-staff system): 10 rounds x 100.

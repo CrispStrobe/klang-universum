@@ -198,6 +198,13 @@ per-game `unlockedWhen` gate on `GameInfo`).
 
 Games built on partitura capabilities the app didn't use before.
 
+- **Strong Beat?** (Takte) — metric-accent training on partitura-public's
+  `beatStrength`. A measure is shown with its beat numbers (partitura's
+  `showBeatNumbers`), one beat highlighted; the child says whether it's a strong
+  (accented) or weak beat. The answer is graded by
+  `TimeSignature.beatStrength(position)`, not hard-coded — correct for 4/4 (1 & 3
+  strong), 3/4 (only 1) and 6/8 (1 & 4). A metric click accents the strong beats.
+  Widens 4/4 → +3/4, 2/4 → +6/8. SRI `measures.accent.<ts>_<beat>`.
 - **Roman Numerals** (Harmonik) — read *and* hear a diatonic triad in a key and
   pick its Roman numeral (I, ii, iii, IV, V, vi, vii°). The chord is built with
   `Triad(root, quality)` and named by partitura-public's new

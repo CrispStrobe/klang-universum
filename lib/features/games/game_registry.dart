@@ -44,6 +44,7 @@ import 'package:klang_universum/features/games/keyboard/key_name_screen.dart';
 import 'package:klang_universum/features/games/measures/beat_runner_screen.dart';
 import 'package:klang_universum/features/games/measures/measure_fill_screen.dart';
 import 'package:klang_universum/features/games/measures/meter_detective_screen.dart';
+import 'package:klang_universum/features/games/measures/strong_beat_screen.dart';
 import 'package:klang_universum/features/games/measures/time_signature_screen.dart';
 import 'package:klang_universum/features/games/measures/which_beat_screen.dart';
 import 'package:klang_universum/features/games/note_reading/connect_line_screen.dart';
@@ -382,6 +383,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameWhichBeat,
       subtitle: (l) => l.gameWhichBeatSubtitle,
       builder: (_) => const WhichBeatScreen(),
+    ),
+    // Metric-accent training — strong vs weak beats via partitura's beatStrength.
+    GameInfo(
+      id: 'strong_beat',
+      icon: Icons.graphic_eq,
+      title: (l) => l.gameStrongBeat,
+      subtitle: (l) => l.gameStrongBeatSubtitle,
+      builder: (_) => const StrongBeatScreen(),
     ),
     GameInfo(
       id: 'time_signature',

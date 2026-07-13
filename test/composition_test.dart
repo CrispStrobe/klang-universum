@@ -65,6 +65,12 @@ void main() {
 
   testWidgets('question & answer shows the question and two answer cards',
       (tester) async {
+    // Give the surface room: the three stacked staves overflow CI's 800×600
+    // Linux default, so the 2nd answer staff would be off-screen and untappable
+    // (getCenter throws). Passes locally on a larger window either way.
+    await tester.binding.setSurfaceSize(const Size(1400, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(_wrap(const QuestionAnswerScreen(), sri));
     await tester.pump();
 
@@ -72,6 +78,7 @@ void main() {
     // 1 question staff + 2 answer cards.
     expect(find.byType(StaffView), findsNWidgets(3));
 
+    await tester.ensureVisible(find.byType(StaffView).at(1));
     await tester.tap(find.byType(StaffView).at(1));
     await tester.pump();
     expect(sri.getDetailedBreakdown()['composition']!.keys, ['answer']);

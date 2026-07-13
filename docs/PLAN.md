@@ -14,12 +14,12 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (this agent)** · aligned mus to partitura-public + shipped **Roman
-  Numerals**; now building **Strong Beat** (Takte, `beatStrength`) · touching
-  `game_registry`, `core/tuning`, ARBs, `features/games/measures/`. Also
-  **stabilising a CI-only test class** (`getCenter` throws on CI's 800×600 Linux
-  surface when a game stacks staves taller than the viewport — passes locally):
-  fixed `line_space_test`, fixing `composition_test` · **in progress**.
+- **opus (this agent)** · shipped **Roman Numerals** + **Strong Beat** (Takte,
+  `beatStrength`) on the partitura-public alignment; also stabilised two CI-only
+  off-screen tests (`line_space_test`, `composition_test`). 288 tests green.
+  Next new-partitura ideas: chord-symbol match, handwritten-font theme · touching
+  `game_registry`, `core/tuning`, ARBs, `features/games/**`, test/ · **in
+  progress**.
   ⚠️ **Heads-up for all agents:** mus CI checks out `partitura@main` **fresh each
   run**, so partitura-public's live rendering changes (e.g. beam subdivision,
   voices 3–4) can push tap/drag targets off-screen and red *your* CI even with no
@@ -147,10 +147,13 @@ Fresh capabilities now resolvable in mus, ranked by fit:
   `romanNumeralOf(pitches, key)`. SRI `harmony.roman.<symbol>`; widens I/IV/V in C
   → all diatonic triads → all major keys. Still open: **7ths & inversions**
   (the analyser already returns `V6/5`, `vii°7` etc.) and **minor keys**.
-- [ ] **Metrical-accent hierarchy** (`beatStrength(Fraction) → double`). **→
-  Strong-Beat game** in the Takte module (complements *Which Beat?*): which beat
-  is the strong one? tap the downbeat / conduct the metre. Also a scaffold: size
-  the beat dots by strength.
+- [x] **Metrical-accent hierarchy** (`beatStrength(Fraction) → double`).
+  **Shipped: Strong Beat?** (Takte,
+  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — a measure with beat
+  numbers, one beat highlighted; strong-or-weak, graded by `beatStrength` (not
+  hard-coded, so correct for 4/4, 3/4, 6/8…). Metric click accents the strong
+  beats. SRI `measures.accent.<ts>_<beat>`; widens 4/4 → +3/4,2/4 → +6/8. Still
+  open: a "conduct the metre" / tap-all-strong-beats variant.
 - [ ] **Structured chord symbols** (`ChordSymbol` model, read by the MusicXML/ABC
   readers). → render/parse "Cmaj7" over the Song Book chord sheets; a
   symbol↔notation matching game.

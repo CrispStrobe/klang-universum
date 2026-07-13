@@ -1173,6 +1173,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get whichBeatPrompt => 'Auf welche Zählzeit fällt die farbige Note?';
 
   @override
+  String get gameStrongBeat => 'Starke Zählzeit?';
+
+  @override
+  String get gameStrongBeatSubtitle =>
+      'Ist die markierte Zählzeit betont oder unbetont?';
+
+  @override
+  String strongBeatPrompt(int beat) {
+    return 'Zählzeit $beat: betont oder unbetont?';
+  }
+
+  @override
+  String get strongBeatStrong => 'Betont';
+
+  @override
+  String get strongBeatWeak => 'Unbetont';
+
+  @override
+  String get strongBeatReplay => 'Zählzeiten nochmal hören';
+
+  @override
   String get workshopExportAbc => 'ABC exportieren';
 
   @override
