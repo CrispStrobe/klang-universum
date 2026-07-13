@@ -95,6 +95,13 @@
       }
     }
   },
+  "workshopArticulations": "Articulations & ties",
+  "workshopStaccato": "Staccato",
+  "workshopTenuto": "Tenuto",
+  "workshopAccent": "Accent",
+  "workshopMarcato": "Marcato",
+  "workshopFermata": "Fermata",
+  "workshopTie": "Tie",
   "instrumentLabel": "Instrument sound",
   "instrumentPiano": "Piano",
   "instrumentCello": "Cello",

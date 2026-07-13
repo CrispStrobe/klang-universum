@@ -221,6 +221,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get workshopArticulations => 'Articulations & ties';
+
+  @override
+  String get workshopStaccato => 'Staccato';
+
+  @override
+  String get workshopTenuto => 'Tenuto';
+
+  @override
+  String get workshopAccent => 'Accent';
+
+  @override
+  String get workshopMarcato => 'Marcato';
+
+  @override
+  String get workshopFermata => 'Fermata';
+
+  @override
+  String get workshopTie => 'Tie';
+
+  @override
   String get instrumentLabel => 'Instrument sound';
 
   @override

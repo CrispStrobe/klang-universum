@@ -41,7 +41,7 @@ and push to origin/main** before/after touching shared files. Format:
   MusicXML/MIDI files into the editor). Wrote a partitura **contract handover**
   ([WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)) for
   drag-move / hover-caret / interactive multiline grand-staff (needs a partitura
-  agent). Next app-side: palettes/inspector (dynamics/articulations/ties) ·
+  agent). shipped articulations+ties palette; next: dynamics + inspector ·
   touching `lib/features/workshop/**` only · **in progress** · detail:
   [WORKSHOP_PLAN.md](WORKSHOP_PLAN.md).
 - _last shipped_: **Cello Play It** (mic grading in the Cello Corner) +

@@ -18,12 +18,19 @@ import 'package:partitura/partitura.dart';
 /// One editable event in the flat stream: a note (single pitch for now; chords
 /// come later) or a rest, with a stable [id] so it can be selected and edited.
 class EditorElement {
-  const EditorElement.note(Pitch this.pitch, this.duration, {required this.id})
-      : isRest = false;
+  const EditorElement.note(
+    Pitch this.pitch,
+    this.duration, {
+    required this.id,
+    this.articulations = const {},
+    this.tieToNext = false,
+  }) : isRest = false;
 
   const EditorElement.rest(this.duration, {required this.id})
       : pitch = null,
-        isRest = true;
+        isRest = true,
+        articulations = const {},
+        tieToNext = false;
 
   /// The pitch, or null for a rest.
   final Pitch? pitch;
@@ -31,21 +38,54 @@ class EditorElement {
   final String id;
   final bool isRest;
 
+  /// Note-only ornaments (rests ignore these).
+  final Set<Articulation> articulations;
+  final bool tieToNext;
+
   /// This event as an immutable partitura element.
   MusicElement toElement() => isRest
       ? RestElement(duration, id: id)
-      : NoteElement.note(pitch!, duration, id: id);
+      : NoteElement.note(
+          pitch!,
+          duration,
+          id: id,
+          articulations: articulations,
+          tieToNext: tieToNext,
+        );
 
-  EditorElement withPitch(Pitch pitch) =>
-      EditorElement.note(pitch, duration, id: id);
+  EditorElement _note(
+    Pitch pitch,
+    NoteDuration duration, {
+    Set<Articulation>? articulations,
+    bool? tieToNext,
+  }) =>
+      EditorElement.note(
+        pitch,
+        duration,
+        id: id,
+        articulations: articulations ?? this.articulations,
+        tieToNext: tieToNext ?? this.tieToNext,
+      );
 
-  EditorElement withDuration(NoteDuration duration) => isRest
-      ? EditorElement.rest(duration, id: id)
-      : EditorElement.note(pitch!, duration, id: id);
+  EditorElement withPitch(Pitch pitch) => _note(pitch, duration);
+
+  EditorElement withDuration(NoteDuration duration) =>
+      isRest ? EditorElement.rest(duration, id: id) : _note(pitch!, duration);
 
   EditorElement withId(String id) => isRest
       ? EditorElement.rest(duration, id: id)
-      : EditorElement.note(pitch!, duration, id: id);
+      : EditorElement.note(
+          pitch!,
+          duration,
+          id: id,
+          articulations: articulations,
+          tieToNext: tieToNext,
+        );
+
+  EditorElement withArticulations(Set<Articulation> a) =>
+      _note(pitch!, duration, articulations: a);
+
+  EditorElement withTie(bool tie) => _note(pitch!, duration, tieToNext: tie);
 }
 
 /// An undo/redo snapshot of the document's mutable state.
@@ -259,6 +299,38 @@ class ScoreDocument {
     _snapshot();
     for (var i = _lo; i <= _hi; i++) {
       _elements[i] = _elements[i].withDuration(duration);
+    }
+  }
+
+  List<int> get _selectedNoteIndices => hasSelection
+      ? [
+          for (var i = _lo; i <= _hi; i++)
+            if (!_elements[i].isRest) i,
+        ]
+      : const [];
+
+  /// Toggle an articulation across the selected notes: if every selected note
+  /// already has it, remove it from all; otherwise add it to all. Undoable.
+  void toggleArticulationOfSelected(Articulation a) {
+    final notes = _selectedNoteIndices;
+    if (notes.isEmpty) return;
+    final allHave = notes.every((i) => _elements[i].articulations.contains(a));
+    _snapshot();
+    for (final i in notes) {
+      final set = {..._elements[i].articulations};
+      allHave ? set.remove(a) : set.add(a);
+      _elements[i] = _elements[i].withArticulations(set);
+    }
+  }
+
+  /// Tie every selected note to the next (or untie, if all are already tied).
+  void toggleTieOfSelected() {
+    final notes = _selectedNoteIndices;
+    if (notes.isEmpty) return;
+    final allTied = notes.every((i) => _elements[i].tieToNext);
+    _snapshot();
+    for (final i in notes) {
+      _elements[i] = _elements[i].withTie(!allTied);
     }
   }
 
