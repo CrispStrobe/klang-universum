@@ -53,13 +53,9 @@ the BlackHole loop — all four roots detected on real captured audio (the
 7th/maj7 variants are expected overtone pickup, hence the lenient match).
 
 ## Known constraints / follow-ups (not yet done)
-- **Backing audio vs. mic:** playing the melody through speakers while the mic
-  listens causes the mic to detect the *speaker* (we deliberately disable echo
-  cancellation for pitch accuracy). Play/sing-along scrolls the score without
-  audible backing, with a "preview" listen before you start. Partly addressed:
-  an audible **count-in metronome** (metronome.dart) sets the tempo — it only
-  clicks during the unscored count-in, so it needs no AEC. Full backing *during*
-  play still needs headphones or an AEC path. Not solved.
+- **Backing audio vs. mic (AEC):** see the dedicated section below — count-in
+  metronome + optional backing (tiers 0/1) shipped; a Dart AEC core is the next
+  step; a native full-duplex plugin is the production fix.
 - **Localization:** DONE — the four modes have de/en `AppLocalizations` keys,
   and the tuner/chord/play-along note readouts respect the note-naming setting
   (German H, solfège) via `spelledMidiName`. Chart names + the Hz/clarity
@@ -80,6 +76,48 @@ the BlackHole loop — all four roots detected on real captured audio (the
   Still worth a pass with a *real acoustic instrument* into a physical mic.
 - **Phase 3 (full polyphonic transcription):** still out of scope; would layer
   on the same chromagram.
+
+## Backing audio & echo cancellation (AEC)
+
+Goal: play audible backing through the speaker *during* play/sing-along without
+the mic grading the speaker. Two corrections shape the design:
+1. **Pitch-domain gating is self-defeating here.** In play-along the user
+   *matches* the backing, so echo and desired signal share the same pitch — you
+   can't gate "the backing's pitch" without gating the user. Real cancellation
+   must be **waveform-domain** (subtract a reference-derived echo estimate).
+2. **A pure-Dart AEC starves on alignment.** `audioplayers` (out) and `record`
+   (in) are two plugins on two clocks — no shared timebase. The *algorithm*
+   ports fine (we have an FFT); the *deployment* needs sample-accurate ref+mic,
+   which only an OS-integrated or native full-duplex path provides.
+
+### Tiers
+- **Tier 0 — headphones (DONE).** No acoustic coupling → backing works with zero
+  AEC and zero pitch loss. Backing toggle plays the melody at the downbeat;
+  label says "use headphones". The clean answer for real practice.
+- **Tier 1 — platform AEC (DONE).** Backing toggle also flips on
+  `RecordConfig.echoCancel` (iOS VoiceProcessingIO / Android VOICE_COMMUNICATION
+  / macOS voice-processing). Real OS AEC, but its AGC/NS reshape the waveform and
+  cost pitch accuracy. **Needs on-device measurement** (can't be tested via the
+  BlackHole digital loopback — no speaker→mic path).
+- **Tier 2 — Dart pitch gate: SKIPPED** (self-defeating for play-along, per #1).
+- **Tier 3a — Dart AEC core (IN PROGRESS).** `core/audio/echo_canceller.dart`: a
+  compact **constrained frequency-domain block-NLMS** echo canceller (the linear
+  core of Speex MDF / WebRTC AEC3), reusing the FFT. Testable headlessly with a
+  perfectly-aligned digital mix (ERLE assertion). Deployment still needs Tier 3b
+  to feed it aligned ref+mic.
+- **Tier 3b — native full-duplex plugin (FUTURE).** One native audio engine that
+  owns playback+capture on a shared clock and runs a real AEC. This is the
+  production fix. Build host: **miniaudio** (public-domain/MIT-0) or **Oboe**
+  (Android, Apache-2.0) / **AVAudioEngine** (Apple). AEC: **SpeexDSP MDF** (BSD)
+  or **WebRTC AEC3** / `webrtc-audio-processing` (BSD). Days–weeks.
+- **Tier 4 — neural (IF NEEDED).** `DTLN-aec` (MIT, TFLite, tiny, on-device) or
+  `DeepFilterNet` (MIT/Apache). Watch: speech-trained nets may not preserve a
+  sung/played note's *pitch*.
+
+### Permissive libraries (all BSD/MIT/Apache — usable or portable)
+SpeexDSP echo canceller (BSD, port/FFI) · WebRTC AEC3 / webrtc-audio-processing
+(BSD, FFI) · DTLN-aec (MIT, TFLite) · DeepFilterNet (MIT/Apache) · miniaudio
+(MIT-0) · Oboe (Apache) · KISS FFT / PFFFT (BSD).
 
 ## Testing
 - `flutter test` — unit tests for every detector + the play-along engine.
