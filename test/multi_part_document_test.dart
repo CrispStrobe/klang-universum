@@ -1,0 +1,240 @@
+// MultiPartDocument — the multi-instrument container behind the Composition
+// Workshop (G6). Mirrors the ScoreDocument test style. Covers add/remove/
+// reorder/active, cross-part id namespacing + selection, bar-grid padding,
+// bracket/barline re-indexing, transposing-instrument tags, and import.
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/features/workshop/model/multi_part_document.dart';
+import 'package:klang_universum/features/workshop/model/score_document.dart';
+import 'package:partitura/partitura.dart';
+
+Pitch _p(Step step, {int alter = 0, int octave = 4}) =>
+    Pitch(step, alter: alter, octave: octave);
+
+const _quarter = NoteDuration(DurationBase.quarter);
+
+void main() {
+  test('a fresh document has one treble part, active 0', () {
+    final doc = MultiPartDocument();
+    expect(doc.partCount, 1);
+    expect(doc.active, 0);
+    expect(doc.clefOf(0), Clef.treble);
+    expect(doc.nameOf(0), 'Part 1');
+    expect(doc.activePart, same(doc.parts.first));
+  });
+
+  test('addPart appends, names, and makes the new part active', () {
+    final doc = MultiPartDocument();
+    final i = doc.addPart(clef: Clef.bass);
+    expect(i, 1);
+    expect(doc.partCount, 2);
+    expect(doc.active, 1);
+    expect(doc.clefOf(1), Clef.bass);
+    expect(doc.nameOf(1), 'Part 2');
+  });
+
+  test('removePart keeps at least one part and clamps the active index', () {
+    final doc = MultiPartDocument()
+      ..addPart()
+      ..addPart(); // 3 parts, active = 2
+    expect(doc.partCount, 3);
+    doc.removePart(2); // remove the active (last) part
+    expect(doc.partCount, 2);
+    expect(doc.active, 1, reason: 'active clamps down to the new last part');
+    doc.removePart(0);
+    doc.removePart(0);
+    expect(doc.partCount, 1, reason: 'a document always keeps one part');
+  });
+
+  test('setActive switches the edited part and notifies', () {
+    final doc = MultiPartDocument()..addPart();
+    var notes = 0;
+    doc.addListener(() => notes++);
+    doc.setActive(0);
+    expect(doc.active, 0);
+    expect(notes, 1);
+    doc.setActive(0); // no-op, no notification
+    expect(notes, 1);
+  });
+
+  test('buildMultiPart pads every part to the longest part\'s bar count', () {
+    final doc = MultiPartDocument();
+    // Part 0: 5 quarters -> 2 bars in 4/4.
+    for (var i = 0; i < 5; i++) {
+      doc.parts[0].insertNote(_p(Step.c), _quarter);
+    }
+    doc.addPart(); // Part 1: empty -> 1 bar
+    doc.parts[1].insertNote(_p(Step.g), _quarter);
+
+    final mps = doc.buildMultiPart();
+    expect(mps.parts, hasLength(2));
+    expect(
+      mps.parts[0].measures.length,
+      mps.parts[1].measures.length,
+      reason: 'both parts share one aligned bar grid',
+    );
+    expect(mps.measureCount, 2);
+  });
+
+  test('buildMultiPart namespaces element ids so they are unique across parts',
+      () {
+    final doc = MultiPartDocument();
+    doc.parts[0].insertNote(_p(Step.c), _quarter);
+    doc.addPart();
+    doc.parts[1].insertNote(_p(Step.g), _quarter);
+
+    final mps = doc.buildMultiPart();
+    final ids = [
+      for (final part in mps.parts)
+        for (final m in part.measures)
+          for (final e in m.elements)
+            if (e.id != null) e.id!,
+    ];
+    expect(ids.toSet().length, ids.length, reason: 'no id collisions');
+    expect(ids, contains('p0:w0'));
+    expect(ids, contains('p1:w0'));
+  });
+
+  test('partIndexOf / rawIdOf decode a global id', () {
+    expect(MultiPartDocument.partIndexOf('p2:w7'), 2);
+    expect(MultiPartDocument.rawIdOf('p2:w7'), 'w7');
+    expect(MultiPartDocument.partIndexOf('w7'), -1);
+    expect(MultiPartDocument.rawIdOf('w7'), 'w7');
+  });
+
+  test('selectByGlobalId switches to the owning part and selects the element',
+      () {
+    final doc = MultiPartDocument();
+    doc.parts[0].insertNote(_p(Step.c), _quarter);
+    doc.addPart();
+    final gId =
+        doc.parts[1].insertNote(_p(Step.g), _quarter); // raw id in part 1
+    doc.setActive(0); // move focus away
+
+    final owner = doc.selectByGlobalId('${MultiPartDocument.prefixFor(1)}$gId');
+    expect(owner, 1);
+    expect(doc.active, 1);
+    expect(doc.parts[1].selectedId, gId);
+  });
+
+  test('selectByGlobalId ignores an id with no valid part prefix', () {
+    final doc = MultiPartDocument();
+    expect(doc.selectByGlobalId('w0'), -1);
+    expect(doc.selectByGlobalId('p9:w0'), -1); // part 9 does not exist
+  });
+
+  test('movePart reorders parts, follows the active part, and clears grouping',
+      () {
+    final doc = MultiPartDocument()
+      ..addPart()
+      ..addPart(); // 3 parts
+    doc.addBracket(0, 1, kind: StaffBracketKind.brace);
+    doc.setActive(0);
+    final moved = doc.parts[0];
+    doc.movePart(0, 2); // part 0 -> index 2
+    expect(doc.parts[2], same(moved));
+    expect(doc.active, 2, reason: 'active follows the moved part');
+    expect(doc.brackets, isEmpty, reason: 'index grouping cleared on reorder');
+  });
+
+  test('addBracket rejects degenerate spans and dedupes', () {
+    final doc = MultiPartDocument()..addPart();
+    doc.addBracket(0, 0); // single staff -> rejected
+    expect(doc.brackets, isEmpty);
+    doc.addBracket(0, 1, kind: StaffBracketKind.brace);
+    doc.addBracket(0, 1, kind: StaffBracketKind.brace); // duplicate
+    expect(doc.brackets, hasLength(1));
+    expect(doc.brackets.first.kind, StaffBracketKind.brace);
+  });
+
+  test('removePart re-indexes brackets and barline groups', () {
+    final doc = MultiPartDocument()
+      ..addPart()
+      ..addPart()
+      ..addPart(); // 4 parts: 0,1,2,3
+    doc.addBracket(2, 3);
+    doc.setBarlineGroups([const BarlineGroup(2, 3)]);
+    doc.removePart(0); // everything shifts down by one
+    expect(doc.brackets.single.first, 1);
+    expect(doc.brackets.single.last, 2);
+    expect(doc.barlineGroups.single.first, 1);
+    expect(doc.barlineGroups.single.last, 2);
+  });
+
+  test('removing a staff inside a two-staff bracket drops the bracket', () {
+    final doc = MultiPartDocument()..addPart(); // 2 parts
+    doc.addBracket(0, 1, kind: StaffBracketKind.brace);
+    doc.removePart(1); // now only one staff -> bracket is degenerate
+    expect(doc.brackets, isEmpty);
+    expect(doc.partCount, 1);
+  });
+
+  test('a transposing part is tagged in buildMultiPart and un-transposes', () {
+    final doc = MultiPartDocument();
+    doc.parts[0].insertNote(_p(Step.c), _quarter);
+    doc.addPart();
+    doc.parts[1].insertNote(_p(Step.d), _quarter);
+    doc.setTransposition(1, Transposition.bFlat);
+
+    final mps = doc.buildMultiPart();
+    expect(mps.parts[0].transposition, isNull);
+    expect(mps.parts[1].transposition, Transposition.bFlat);
+    // Concert-pitch view clears the tag (the public toggle).
+    final concert = mps.atConcertPitch();
+    expect(concert.parts[1].transposition, isNull);
+  });
+
+  test('setClefOfPart / setPartName mutate the right part and notify', () {
+    final doc = MultiPartDocument()..addPart();
+    var notes = 0;
+    doc.addListener(() => notes++);
+    doc.setClefOfPart(1, Clef.bass);
+    doc.setPartName(1, 'Cello');
+    expect(doc.clefOf(1), Clef.bass);
+    expect(doc.nameOf(1), 'Cello');
+    expect(notes, 2);
+  });
+
+  test('buildMultiPart carries a slur with a namespaced id', () {
+    final doc = MultiPartDocument();
+    final part = doc.parts[0]
+      ..insertNote(_p(Step.c), _quarter)
+      ..insertNote(_p(Step.d), _quarter);
+    part.selectPrev(); // c
+    part.extendRight(); // c..d
+    part.slurSelected();
+
+    final mps = doc.buildMultiPart();
+    expect(mps.parts[0].slurs, hasLength(1));
+    expect(mps.parts[0].slurs.first.startId, startsWith('p0:'));
+  });
+
+  test('fromMultiPartScore imports a two-part MusicXML round-trip', () {
+    // grandStaffToMusicXml emits two parts; read them back as a MultiPartScore.
+    final src = ScoreDocument()
+      ..insertNote(_p(Step.g), _quarter) // treble
+      ..insertNote(_p(Step.c, octave: 3), _quarter); // bass
+    final xml = grandStaffToMusicXml(src.buildGrandStaff());
+    final mps = multiPartScoreFromMusicXml(xml);
+    expect(mps.parts.length, 2);
+
+    final doc = MultiPartDocument.fromMultiPartScore(mps);
+    expect(doc.partCount, 2);
+    // Each imported part is an independently editable ScoreDocument.
+    expect(doc.parts[0], isA<ScoreDocument>());
+    // The upper part carries the treble G; the lower carries the bass C.
+    final upperSteps =
+        doc.parts[0].elements.where((e) => !e.isRest).map((e) => e.pitch!.step);
+    expect(upperSteps, contains(Step.g));
+  });
+
+  test('buildMultiPart yields a valid MultiPartScore for a single part too',
+      () {
+    final doc = MultiPartDocument();
+    doc.parts[0].insertNote(_p(Step.c), _quarter);
+    final mps = doc.buildMultiPart();
+    expect(mps.parts, hasLength(1));
+    expect(mps.measureCount, greaterThanOrEqualTo(1));
+    expect(mps.parts.first.measures.first.elements.first, isA<NoteElement>());
+  });
+}
