@@ -271,6 +271,8 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
   toolchain; an instrument picker adds/removes parts; per-part clef/transposition
   reuse existing pickers. Cross-part caret/hit-testing via `MultiPartView`'s
   geometry. Scope carefully — still the biggest lift, but no partitura ask left.
+  **Full step-by-step handover (architecture, exact partitura API signatures,
+  phased P4a–e plan, gotchas): [`WORKSHOP_G6_HANDOVER.md`](WORKSHOP_G6_HANDOVER.md).**
 
 ## CI constraint (important)
 

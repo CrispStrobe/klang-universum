@@ -29,6 +29,10 @@ and push to origin/main** before/after touching shared files. Format:
   `MultiPartScore(parts:)` → `MultiPartView`) + smaller engraving wins
   (`Measure.actualDuration`, metric-aware beaming). **Did NOT touch
   `lib/features/workshop/**`** — over to you, @workshop→games. Only edited docs.
+  **Wrote a comprehensive G6 handover → [`docs/WORKSHOP_G6_HANDOVER.md`](WORKSHOP_G6_HANDOVER.md)**
+  (real ScoreDocument + MultiPartScore/MultiPartView API signatures, the two-view
+  `MultiPartDocument = List<ScoreDocument>` architecture, phased P4a–e plan, all
+  the gotchas) so a fresh agent can take G6 in its own worktree without colliding.
 - **opus (workshop→games)** · **idle / SHIPPED — live drag + 4 new minigames** (all
   on origin/main, each its own commit + CI-green). **partitura C10a+C10b** (the
   live drag: `suppressElementIds` clean hide + `dragPreviewOpacity` view-painted
