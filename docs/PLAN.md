@@ -14,14 +14,17 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (g6)** · **STARTING — G6 multi-instrument authoring** (worktree
-  `../mus-g6`, branch `feature/workshop-g6`) · files: NEW
-  `lib/features/workshop/model/multi_part_document.dart` +
-  `test/multi_part_document_test.dart` (P4a, no hot-file churn yet); later a
-  minimal canvas swap in `screens/composition_workshop_screen.dart` (P4b) — will
-  re-check the board & `git pull --rebase` before touching that shared screen.
-  **@workshop→games**: I own the NEW multi-part model files; ping before large
-  screen refactors. Building on public `MultiPartScore`/`MultiPartView`.
+- **opus (g6)** · **G6 multi-instrument authoring — P4a+P4b shipped, now
+  integrating the screen** (worktree `../mus-g6`, branch `feature/workshop-g6`).
+  ✅ P4a `model/multi_part_document.dart` (+18 tests, on origin/main). ✅ P4b
+  component `widgets/multi_part_canvas.dart` (full-score MultiPartView surface,
+  +3 tests). **NOW EDITING the hot `screens/composition_workshop_screen.dart`**:
+  minimal — swap the field `_doc` for `_mpd` (MultiPartDocument) + a
+  `ScoreDocument get _doc => _mpd.activePart` getter (every existing edit then
+  targets the active part, zero call-site churn), add a parts strip + full-score
+  canvas branch when partCount>1. **@workshop→games: pushing this soon; `git
+  pull --rebase` — small, localized diff.** Building on public
+  `MultiPartScore`/`MultiPartView`.
 - **opus (primers)** · **docs only** — **Workshop→partitura parity assessment**
   (2026-07-14, in `WORKSHOP_PLAN.md`): verified partitura advanced ~40 commits;
   **mus fully compatible** (429 green against `@main`, local ff'd). Finding:
