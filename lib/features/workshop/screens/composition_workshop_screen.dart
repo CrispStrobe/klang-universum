@@ -11,6 +11,8 @@
 //   • the on-screen piano (places notes at the caret).
 // Every edit runs through [ScoreDocument] (editable model + multi-level undo).
 
+import 'dart:convert';
+
 // Material's Stepper also exports a `Step`; partitura's pitch Step wins here.
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart' hide Step;
@@ -131,6 +133,72 @@ final _digitBases = <LogicalKeyboardKey, DurationBase>{
   LogicalKeyboardKey.digit4: DurationBase.eighth,
   LogicalKeyboardKey.digit5: DurationBase.sixteenth,
 };
+
+// ---- File I/O (unified, multi-format) ------------------------------------
+
+/// Every score file type the Workshop can open (one picker, auto-detected by
+/// extension). All parsers are pure Dart (web-safe).
+const _kImportExtensions = [
+  'musicxml', 'xml', 'mxl', // MusicXML (+ compressed)
+  'mid', 'midi', // MIDI
+  'abc', // ABC
+  'mei', // MEI
+  'krn', // Humdrum **kern
+  'mscx', 'mscz', // MuseScore (+ compressed)
+  'gp', 'gpx', // Guitar Pro
+];
+
+const _kImportGroups = <XTypeGroup>[
+  XTypeGroup(label: 'Music scores', extensions: _kImportExtensions),
+];
+
+/// Parses an opened file into a [Score] by its extension. Pure (given the raw
+/// [bytes]) so it is unit-testable without a file picker. Throws a
+/// [FormatException] on an unknown extension and rethrows any parser error.
+@visibleForTesting
+Score importScore(String fileName, Uint8List bytes) {
+  final dot = fileName.lastIndexOf('.');
+  final ext = dot < 0 ? '' : fileName.substring(dot + 1).toLowerCase();
+  String text() => utf8.decode(bytes);
+  return switch (ext) {
+    'musicxml' || 'xml' => scoreFromMusicXml(text()),
+    'mxl' => scoreFromMusicXml(readMusicXmlFromMxl(bytes)),
+    'mid' || 'midi' => scoreFromMidi(bytes),
+    'abc' => scoreFromAbc(text()),
+    'mei' => scoreFromMei(text()),
+    'krn' => scoreFromKern(text()),
+    'mscx' => scoreFromMscx(text()),
+    'mscz' => scoreFromMscx(readMscxFromMscz(bytes)),
+    'gp' => scoreFromGpif(readGpifFromGp(bytes)),
+    'gpx' => scoreFromGpif(readGpifFromGpx(bytes)),
+    _ => throw FormatException('Unsupported file type: .$ext'),
+  };
+}
+
+/// One export target: display [label], file [ext], and MIME type. [binary]
+/// formats are raw bytes; the rest are UTF-8 text (and so can fall back to the
+/// copyable dialog where the platform has no save picker).
+typedef ExportFormat = ({String label, String ext, String mime, bool binary});
+
+/// Everything the Workshop can write out (one "Export…" menu → this list).
+const kExportFormats = <ExportFormat>[
+  (label: 'MusicXML', ext: 'musicxml', mime: 'application/xml', binary: false),
+  (
+    label: 'MusicXML (compressed)',
+    ext: 'mxl',
+    mime: 'application/vnd.recordare.musicxml',
+    binary: true,
+  ),
+  (label: 'MIDI', ext: 'mid', mime: 'audio/midi', binary: true),
+  (label: 'ABC', ext: 'abc', mime: 'text/plain', binary: false),
+  (label: 'MEI', ext: 'mei', mime: 'application/xml', binary: false),
+  (label: 'Humdrum **kern', ext: 'krn', mime: 'text/plain', binary: false),
+  (label: 'MuseScore', ext: 'mscx', mime: 'application/xml', binary: false),
+  (label: 'LilyPond', ext: 'ly', mime: 'text/plain', binary: false),
+  (label: 'Braille music', ext: 'brf', mime: 'text/plain', binary: false),
+  (label: 'SVG (vector)', ext: 'svg', mime: 'image/svg+xml', binary: false),
+  (label: 'PNG (image)', ext: 'png', mime: 'image/png', binary: true),
+];
 
 class CompositionWorkshopScreen extends StatefulWidget {
   const CompositionWorkshopScreen({super.key});
@@ -540,21 +608,19 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     );
   }
 
-  Future<void> _openFile({
-    required List<String> extensions,
-    required String label,
-    required Future<Score> Function(XFile file) parse,
-  }) async {
+  /// Open any supported score file — one picker for every format; the type is
+  /// detected from the extension by [importScore].
+  Future<void> _open() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final file = await openFile(
-        acceptedTypeGroups: [XTypeGroup(label: label, extensions: extensions)],
-      );
+      final file = await openFile(acceptedTypeGroups: _kImportGroups);
       if (file == null) return;
-      final score = await parse(file);
+      final bytes = await file.readAsBytes();
+      final score = importScore(file.name, bytes);
       if (!mounted) return;
       setState(() => _doc.loadScore(score));
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importDone)));
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.importFailed(e.toString()))),
@@ -612,56 +678,122 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     );
   }
 
-  /// Export the score as a standalone SVG (engraving font embedded) shown in the
-  /// copyable dialog — a print-ready vector the user can save and print.
-  Future<void> _exportSvg() async {
+  /// The unified export flow: pick a format, generate it, and save it via the
+  /// system dialog. Where the platform has no save picker (web / mobile), text
+  /// formats fall back to the copyable dialog. Replaces the per-format menu.
+  Future<void> _showExportSheet() async {
     final l10n = AppLocalizations.of(context)!;
-    final svg = _grand
-        ? await exportGrandStaffToSvg(
-            _doc.buildGrandStaff(),
-            theme: kidsScoreTheme,
-            staffSpace: _zoom,
-          )
-        : await exportScoreToSvg(
-            _doc.buildScore(),
-            theme: kidsScoreTheme,
-            staffSpace: _zoom,
-          );
-    if (!mounted) return;
-    await _exportText(l10n.workshopExportSvg, svg);
+    final fmt = await showDialog<ExportFormat>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.workshopExportChoose),
+        children: [
+          for (final f in kExportFormats)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(ctx).pop(f),
+              child: Text('${f.label}  ·  .${f.ext}'),
+            ),
+        ],
+      ),
+    );
+    if (fmt != null) await _export(fmt);
   }
 
-  /// Rasterize the score to a PNG and save it via the system file dialog.
-  Future<void> _exportPng() async {
+  /// Renders [fmt] from the current score — bytes for binary formats, UTF-8 text
+  /// otherwise. SVG/PNG are grand-staff aware; the rest export the single-staff
+  /// score (as MusicXML / save-to-Song-Book always have).
+  Future<(Uint8List?, String?)> _generateExport(ExportFormat fmt) async {
+    final score = _doc.buildScore();
+    switch (fmt.ext) {
+      case 'musicxml':
+        return (null, scoreToMusicXml(score));
+      case 'mxl':
+        return (writeMusicXmlToMxl(scoreToMusicXml(score)), null);
+      case 'mid':
+        return (scoreToMidi(score), null);
+      case 'abc':
+        return (null, scoreToAbc(score));
+      case 'mei':
+        return (null, scoreToMei(score));
+      case 'krn':
+        return (null, scoreToKern(score));
+      case 'mscx':
+        return (null, scoreToMscx(score));
+      case 'ly':
+        return (null, scoreToLilyPond(score));
+      case 'brf':
+        return (null, scoreToBraille(score));
+      case 'svg':
+        return (
+          null,
+          _grand
+              ? await exportGrandStaffToSvg(
+                  _doc.buildGrandStaff(),
+                  theme: kidsScoreTheme,
+                  staffSpace: _zoom,
+                )
+              : await exportScoreToSvg(
+                  score,
+                  theme: kidsScoreTheme,
+                  staffSpace: _zoom,
+                ),
+        );
+      case 'png':
+        return (
+          _grand
+              ? await exportGrandStaffToPng(
+                  _doc.buildGrandStaff(),
+                  theme: kidsScoreTheme,
+                  staffSpace: _zoom,
+                )
+              : await exportScoreToPng(
+                  score,
+                  theme: kidsScoreTheme,
+                  staffSpace: _zoom,
+                ),
+          null,
+        );
+      default:
+        return (null, null);
+    }
+  }
+
+  Future<void> _export(ExportFormat fmt) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final bytes = _grand
-          ? await exportGrandStaffToPng(
-              _doc.buildGrandStaff(),
-              theme: kidsScoreTheme,
-              staffSpace: _zoom,
-            )
-          : await exportScoreToPng(
-              _doc.buildScore(),
-              theme: kidsScoreTheme,
-              staffSpace: _zoom,
-            );
-      final location = await getSaveLocation(
-        suggestedName: 'score.png',
-        acceptedTypeGroups: const [
-          XTypeGroup(label: 'PNG', extensions: ['png']),
-        ],
-      );
-      if (location == null) return;
-      await XFile.fromData(bytes, mimeType: 'image/png', name: 'score.png')
-          .saveTo(location.path);
-      messenger
-          .showSnackBar(SnackBar(content: Text(l10n.workshopExportedImage)));
+      final (bytes, text) = await _generateExport(fmt);
+      if (!mounted) return;
+      final data = bytes ?? Uint8List.fromList(utf8.encode(text!));
+      try {
+        final location = await getSaveLocation(
+          suggestedName: 'score.${fmt.ext}',
+          acceptedTypeGroups: [
+            XTypeGroup(label: fmt.label, extensions: [fmt.ext]),
+          ],
+        );
+        if (location == null) return; // cancelled
+        await XFile.fromData(data, mimeType: fmt.mime, name: 'score.${fmt.ext}')
+            .saveTo(location.path);
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
+        );
+      } catch (_) {
+        // No save dialog on this platform (web / mobile): a text format can
+        // still be copied out; a binary one needs a desktop save.
+        if (text != null && mounted) {
+          await _exportText(fmt.label, text);
+        } else {
+          rethrow;
+        }
+      }
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.importFailed(e.toString()))),
-      );
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.importFailed(e.toString()))),
+        );
+      }
     }
   }
 
@@ -968,51 +1100,21 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 icon: const Icon(Icons.more_vert),
                 onSelected: (v) {
                   switch (v) {
-                    case 'openxml':
-                      _openFile(
-                        extensions: const ['musicxml', 'xml'],
-                        label: 'MusicXML',
-                        parse: (f) async =>
-                            scoreFromMusicXml(await f.readAsString()),
-                      );
-                    case 'openmidi':
-                      _openFile(
-                        extensions: const ['mid', 'midi'],
-                        label: 'MIDI',
-                        parse: (f) async =>
-                            scoreFromMidi(await f.readAsBytes()),
-                      );
+                    case 'open':
+                      _open();
                     case 'save':
                       _save();
-                    case 'xml':
-                      _exportText(
-                        l10n.workshopExportXml,
-                        scoreToMusicXml(_doc.buildScore()),
-                      );
-                    case 'abc':
-                      _exportText(
-                        l10n.workshopExportAbc,
-                        scoreToAbc(_doc.buildScore()),
-                      );
-                    case 'svg':
-                      _exportSvg();
-                    case 'png':
-                      _exportPng();
+                    case 'export':
+                      _showExportSheet();
                     case 'clear':
                       setState(_doc.clearAll);
                   }
                 },
                 itemBuilder: (ctx) => [
                   _menuItem(
-                    'openxml',
+                    'open',
                     Icons.file_open_outlined,
-                    l10n.importMusicXmlFile,
-                    true,
-                  ),
-                  _menuItem(
-                    'openmidi',
-                    Icons.file_open_outlined,
-                    l10n.importMidiFile,
+                    l10n.workshopOpen,
                     true,
                   ),
                   const PopupMenuDivider(),
@@ -1023,27 +1125,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     !_doc.isEmpty,
                   ),
                   _menuItem(
-                    'xml',
-                    Icons.code,
-                    l10n.workshopExportXml,
-                    !_doc.isEmpty,
-                  ),
-                  _menuItem(
-                    'abc',
-                    Icons.abc,
-                    l10n.workshopExportAbc,
-                    !_doc.isEmpty,
-                  ),
-                  _menuItem(
-                    'svg',
-                    Icons.image_outlined,
-                    l10n.workshopExportSvg,
-                    !_doc.isEmpty,
-                  ),
-                  _menuItem(
-                    'png',
-                    Icons.photo_outlined,
-                    l10n.workshopExportImage,
+                    'export',
+                    Icons.ios_share,
+                    l10n.workshopExport,
                     !_doc.isEmpty,
                   ),
                   _menuItem(

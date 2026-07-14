@@ -56,6 +56,17 @@
   "workshopClef": "Schlüssel",
   "workshopZoomIn": "Vergrößern",
   "workshopZoomOut": "Verkleinern",
+  "workshopOpen": "Datei öffnen…",
+  "workshopExport": "Exportieren…",
+  "workshopExportChoose": "Format wählen",
+  "workshopSavedTo": "Gespeichert: {path}",
+  "@workshopSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "workshopExportXml": "MusicXML exportieren",
   "workshopExportSvg": "SVG exportieren (Druck)",
   "workshopExportImage": "Bild exportieren (PNG)",

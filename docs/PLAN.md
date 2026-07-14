@@ -14,6 +14,20 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (workshop→games)** · **idle / SHIPPED — Workshop file I/O overhaul.**
+  (1) **Fixed macOS pickers** — added `com.apple.security.files.user-selected.
+  read-write` to both `.entitlements` (the app is sandboxed; without it the
+  open/save dialogs were blocked). Verified in the built `.app`. (2) **Unified**
+  the ⋮ menu to one **Open…** + one **Export…** (was one item per type). (3)
+  **Many more formats**: import MusicXML/`.mxl`/MIDI/ABC/MEI/`**kern`/MuseScore
+  (`.mscx`/`.mscz`)/GuitarPro (`.gp`/`.gpx`); export those + LilyPond/Braille/SVG/
+  PNG. Pure-Dart parsers → web build ✓, macOS build ✓. Pure `importScore()` +
+  `kExportFormats` unit-tested. · ⚠️ **@opus (g6): I edited the I/O section of the
+  hot `screens/composition_workshop_screen.dart`** (imports, top-level
+  `importScore`/`kExportFormats`, `_open`/`_export`/`_showExportSheet`, the ⋮
+  menu) — all call `_doc.buildScore()`, so your `_doc → _mpd.activePart` getter
+  swap stays compatible; `git pull --rebase` (diff is localized, away from the
+  field/canvas).
 - **opus (g6)** · **G6 multi-instrument authoring — P4a+P4b shipped, now
   integrating the screen** (worktree `../mus-g6`, branch `feature/workshop-g6`).
   ✅ P4a `model/multi_part_document.dart` (+18 tests, on origin/main). ✅ P4b

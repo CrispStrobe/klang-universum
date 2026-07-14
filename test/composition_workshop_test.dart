@@ -128,13 +128,16 @@ void main() {
     expect(editor.noteCount, 2);
   });
 
-  testWidgets('the overflow menu offers open and export', (tester) async {
+  testWidgets('the overflow menu offers a single Open and Export', (
+    tester,
+  ) async {
     await pump(tester);
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-    expect(find.text(l10n.importMusicXmlFile), findsOneWidget);
-    expect(find.text(l10n.workshopExportXml), findsOneWidget);
+    // One unified Open and one unified Export (not one item per file type).
+    expect(find.text(l10n.workshopOpen), findsOneWidget);
+    expect(find.text(l10n.workshopExport), findsOneWidget);
   });
 
   testWidgets('the note palette offers articulations and dynamics',
@@ -266,15 +269,23 @@ void main() {
     expect(find.text('—'), findsWidgets);
   });
 
-  testWidgets('the overflow menu offers SVG and PNG export', (tester) async {
+  testWidgets('the export sheet lists many formats', (tester) async {
     await pump(tester);
-    await tester.tap(_pianoKey()); // give the score a note so export enables
+    await tester.tap(_pianoKey()); // a note so export enables
     await tester.pump();
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-    expect(find.text(l10n.workshopExportSvg), findsOneWidget);
-    expect(find.text(l10n.workshopExportImage), findsOneWidget);
+    await tester.tap(find.text(l10n.workshopExport));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.workshopExportChoose), findsOneWidget);
+    // A rich set of formats, not just the old MusicXML/ABC/SVG/PNG four.
+    expect(find.textContaining('MusicXML'), findsWidgets);
+    expect(find.textContaining('MIDI'), findsOneWidget);
+    expect(find.textContaining('MEI'), findsOneWidget);
+    expect(find.textContaining('LilyPond'), findsOneWidget);
+    expect(find.textContaining('SVG'), findsOneWidget);
+    expect(find.textContaining('PNG'), findsOneWidget);
   });
 
   testWidgets('enabling marquee mode shows the selection overlay',

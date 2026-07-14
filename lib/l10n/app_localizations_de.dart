@@ -189,6 +189,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopZoomOut => 'Verkleinern';
 
   @override
+  String get workshopOpen => 'Datei öffnen…';
+
+  @override
+  String get workshopExport => 'Exportieren…';
+
+  @override
+  String get workshopExportChoose => 'Format wählen';
+
+  @override
+  String workshopSavedTo(String path) {
+    return 'Gespeichert: $path';
+  }
+
+  @override
   String get workshopExportXml => 'MusicXML exportieren';
 
   @override

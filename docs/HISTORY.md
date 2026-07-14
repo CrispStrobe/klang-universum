@@ -61,8 +61,15 @@ sibling of the My Melody sandbox. What it does now:
 - **Chrome** — clef/time/key/zoom/pickup fold into one top row; an (i) sheet
   lists the keyboard shortcuts; leaving with unsaved work asks keep/discard/save;
   the engraving width is bound to the viewport so systems break on-screen.
-- **I/O** — open MusicXML/MIDI; export MusicXML · ABC · **SVG** (font embedded,
-  print-ready) · **PNG** (system save dialog); save to the Song Book.
+- **I/O** — a single **Open…** picker reads any supported score by extension —
+  MusicXML (+ compressed `.mxl`), MIDI, ABC, MEI, Humdrum `**kern`, MuseScore
+  (`.mscx`/`.mscz`), Guitar Pro (`.gp`/`.gpx`) — and a single **Export…** sheet
+  writes MusicXML/`.mxl` · MIDI · ABC · MEI · `**kern` · MuseScore · LilyPond ·
+  Braille · **SVG** (font embedded) · **PNG**, saving via the system dialog (text
+  formats fall back to a copyable view where a platform has no save picker). All
+  parsers/writers are pure-Dart (web-safe). Also save to the Song Book. The macOS
+  file pickers work now (added the `files.user-selected.read-write` sandbox
+  entitlement — the app is sandboxed, so without it the dialogs were blocked).
 
 Editing extras that lean on partitura's editor contracts: caret (C2), drag-move
 (C3), grand staff (C5), element hit-regions for marquee + fine reorder

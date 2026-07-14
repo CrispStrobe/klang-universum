@@ -80,6 +80,17 @@
   "workshopClef": "Clef",
   "workshopZoomIn": "Zoom in",
   "workshopZoomOut": "Zoom out",
+  "workshopOpen": "Open a file…",
+  "workshopExport": "Export…",
+  "workshopExportChoose": "Choose a format",
+  "workshopSavedTo": "Saved: {path}",
+  "@workshopSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "workshopExportXml": "Export MusicXML",
   "workshopExportSvg": "Export SVG (print)",
   "workshopExportImage": "Export image (PNG)",

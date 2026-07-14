@@ -416,6 +416,30 @@ abstract class AppLocalizations {
   /// **'Zoom out'**
   String get workshopZoomOut;
 
+  /// No description provided for @workshopOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a file…'**
+  String get workshopOpen;
+
+  /// No description provided for @workshopExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export…'**
+  String get workshopExport;
+
+  /// No description provided for @workshopExportChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a format'**
+  String get workshopExportChoose;
+
+  /// No description provided for @workshopSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved: {path}'**
+  String workshopSavedTo(String path);
+
   /// No description provided for @workshopExportXml.
   ///
   /// In en, this message translates to:
