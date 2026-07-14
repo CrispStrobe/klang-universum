@@ -366,6 +366,61 @@ Fresh capabilities now resolvable in mus, ranked by fit:
   `shared/score_theme.dart`'s `kidsScoreTheme`, switched by the setting. Still
   open: Leland/Leipzig as further options; a live preview in Settings.
 
+### partitura moved a LOT further (checked 2026-07-14)
+
+Since the 07-13 alignment, `CrispStrobe/partitura@main` advanced ~40+ commits
+(still v0.4.0). **mus is fully compatible** — after fast-forwarding the local
+`../partitura-public` to match CI, `flutter analyze` is clean and the **full
+suite (429) is green** against it, so none of the churn broke anything mus uses.
+(Local checkout was behind CI's `@main`; now realigned. mus rides all of this
+for free.) The genuinely new capabilities, ranked by mus fit:
+
+- [ ] **Multi-part / full-score rendering (the "C6" line)** — new `MultiPartScore`
+  model + **paginated `MultiPartView`/`MultiPartPageView`** (render several
+  instruments/staves as line-broken pages), **cross-part hit-testing**, per-group
+  barlines (`BarlineGroup`), multi-part PNG/SVG/CLI export ("every part"). This is
+  a real new tier above our single-staff + `StaffSystemView` duet. *mus fit:* an
+  **ensemble / full-score reader** (e.g. a real SATB chorale on 2–4 staves, or a
+  score-following view for a multi-instrument tune). M–L, genuinely new surface.
+- [ ] **MuseScore `<Drumset>` import + TAB-clef import** — MusicXML now reads a TAB
+  clef (was aborting) and MuseScore files yield **drum hits on their line +
+  notehead**. *mus fit:* feeds the **Drums** and **Guitar** corners with imported
+  material; pairs with the existing Song Book import screen. S–M.
+- [ ] **Interchange breadth + fidelity now hardened** — multi-voice **kern**
+  (`*^` split spines) and **ABC** (`&` overlay) round-trip; **MEI** multi-staff
+  importer (`staffSystemFromMei`); UTF-16/BOM file decoding; a round-trip
+  **fidelity harness** + music21 oracle. Supersedes the older "import breadth"
+  item above — MEI/kern/ABC/MuseScore import is now robust enough to wire into the
+  Song Book. S each (additive, web-safe).
+- [ ] **Workshop-facing editor APIs** — `suppressElementIds` (clean element hide
+  during live drag, **mus already uses this**) + **view-owned live-drag preview
+  `dragPreviewOpacity`** (C10b). Plus engraving the Workshop gets for free:
+  **metric-aware secondary beaming** (beams grouped by the meter hierarchy),
+  **`Measure.actualDuration`** (explicit irregular/pickup-bar length), every-N
+  **measure numbering**, per-group barlines, and layout crash-hardening on
+  degenerate spans. → see the **Workshop parity** pass below.
+- [ ] **Braille music export** (`.brl`, incl. key/time sigs + chords; tab
+  notation complete) — an accessibility angle, not obviously kid-facing. Later.
+
+### Workshop → partitura feature-parity (2026-07-14)
+
+The Composition Workshop is a full touch/desktop score editor
+(`feature/score-workshop`, worktree `../mus-workshop`), but it predates several
+partitura editor/engraving features now on `@main`. Bringing it to parity =
+adopting the APIs above where they improve the editor, without new partitura
+asks. Candidate work (assess in the worktree, verify against `@main`):
+- **`dragPreviewOpacity` live-drag preview** — replace/augment the current
+  drag handling with partitura's view-owned preview (C10b) for a cleaner drag
+  (`suppressElementIds` is already wired).
+- **Metric-aware beaming + `Measure.actualDuration`** — let the editor honor the
+  meter hierarchy for beam grouping and support explicit irregular/pickup bars.
+- **Measure numbering / per-group barlines** — surface every-N numbering in the
+  editor chrome.
+- **Multi-part authoring (stretch)** — if the editor should ever edit >1 staff,
+  `MultiPartScore`/`MultiPartView` is the path (big; scope carefully).
+Details + the running contract log: `docs/WORKSHOP_PLAN.md` +
+`docs/WORKSHOP_PARTITURA_CONTRACTS.md`.
+
 ## Difficulty progression (within each game)
 
 Games start at the easiest concrete slice and widen per level (driven by
