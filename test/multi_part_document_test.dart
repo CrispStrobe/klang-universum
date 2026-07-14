@@ -237,4 +237,25 @@ void main() {
     expect(mps.measureCount, greaterThanOrEqualTo(1));
     expect(mps.parts.first.measures.first.elements.first, isA<NoteElement>());
   });
+
+  test('loadMultiPart replaces the whole document in place and notifies', () {
+    final doc = MultiPartDocument()
+      ..addPart()
+      ..addPart(); // 3 parts, active 2
+    var notes = 0;
+    doc.addListener(() => notes++);
+
+    // A fresh two-part score to load over the top.
+    final src = ScoreDocument()
+      ..insertNote(_p(Step.g), _quarter)
+      ..insertNote(_p(Step.c, octave: 3), _quarter);
+    final incoming =
+        multiPartScoreFromMusicXml(grandStaffToMusicXml(src.buildGrandStaff()));
+
+    doc.loadMultiPart(incoming);
+    expect(doc.partCount, 2, reason: 'replaced 3 parts with the 2 loaded');
+    expect(doc.active, 0, reason: 'active resets to the first part');
+    expect(notes, greaterThan(0));
+    expect(doc.parts[0].isEmpty, isFalse);
+  });
 }

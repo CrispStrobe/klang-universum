@@ -177,6 +177,27 @@ Score importScore(String fileName, Uint8List bytes) {
   };
 }
 
+/// Parses an opened file into a [MultiPartScore] (all instrument parts) by its
+/// extension — the multi-part sibling of [importScore]. Formats with a
+/// multi-part reader (MusicXML/`.mxl`/ABC/MEI/`**kern`) keep every part; the
+/// rest fall back to a single-part document wrapping [importScore]. Pure (given
+/// the raw [bytes]) so it is unit-testable without a file picker.
+@visibleForTesting
+MultiPartScore importMultiPart(String fileName, Uint8List bytes) {
+  final dot = fileName.lastIndexOf('.');
+  final ext = dot < 0 ? '' : fileName.substring(dot + 1).toLowerCase();
+  String text() => utf8.decode(bytes);
+  return switch (ext) {
+    'musicxml' || 'xml' => multiPartScoreFromMusicXml(text()),
+    'mxl' => multiPartScoreFromMusicXml(readMusicXmlFromMxl(bytes)),
+    'abc' => multiPartScoreFromAbc(text()),
+    'mei' => multiPartScoreFromMei(text()),
+    'krn' => multiPartScoreFromKern(text()),
+    // MIDI / MuseScore / Guitar Pro have no multi-part reader here yet.
+    _ => MultiPartScore([importScore(fileName, bytes)]),
+  };
+}
+
 /// One export target: display [label], file [ext], and MIME type. [binary]
 /// formats are raw bytes; the rest are UTF-8 text (and so can fall back to the
 /// copyable dialog where the platform has no save picker).
@@ -829,9 +850,17 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       final file = await openFile(acceptedTypeGroups: _kImportGroups);
       if (file == null) return;
       final bytes = await file.readAsBytes();
-      final score = importScore(file.name, bytes);
+      final score = importMultiPart(file.name, bytes);
       if (!mounted) return;
-      setState(() => _doc.loadScore(score));
+      setState(() {
+        // A true multi-part file replaces the whole document; a single-part
+        // file loads into the active part (keeping any other instruments).
+        if (score.parts.length > 1) {
+          _mpd.loadMultiPart(score);
+        } else {
+          _doc.loadScore(score.parts.first);
+        }
+      });
       messenger.showSnackBar(SnackBar(content: Text(l10n.importDone)));
     } catch (e) {
       messenger.showSnackBar(

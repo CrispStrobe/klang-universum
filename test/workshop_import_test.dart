@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/features/workshop/model/score_document.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:partitura/partitura.dart';
 
@@ -37,6 +38,32 @@ void main() {
   test('rejects an unknown extension with a FormatException', () {
     expect(
       () => importScore('mystery.foo', Uint8List(0)),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  // ---- importMultiPart (G6): all instrument parts, not just the first ------
+
+  test('importMultiPart keeps both parts of a two-part MusicXML', () {
+    const q = NoteDuration(DurationBase.quarter);
+    final doc = ScoreDocument()
+      ..insertNote(const Pitch(Step.g), q)
+      ..insertNote(const Pitch(Step.c, octave: 3), q);
+    final xml = grandStaffToMusicXml(doc.buildGrandStaff());
+    final mps = importMultiPart('score.musicxml', _bytes(xml));
+    expect(mps.parts.length, 2);
+  });
+
+  test('importMultiPart wraps a single-part file as one part', () {
+    final xml = scoreToMusicXml(Score.simple(notes: 'c4:q d4'));
+    final mps = importMultiPart('tune.musicxml', _bytes(xml));
+    expect(mps.parts, hasLength(1));
+    expect(mps.parts.first.measures, isNotEmpty);
+  });
+
+  test('importMultiPart falls back through importScore for unknown types', () {
+    expect(
+      () => importMultiPart('mystery.foo', Uint8List(0)),
       throwsA(isA<FormatException>()),
     );
   });

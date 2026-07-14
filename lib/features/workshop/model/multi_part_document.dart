@@ -82,6 +82,25 @@ class MultiPartDocument extends ChangeNotifier {
     );
   }
 
+  /// Replace the whole document in place with the parts of [score] (one
+  /// [ScoreDocument] per part), resetting the active part to the first and
+  /// notifying. Used by the multi-part "open file" flow for a score that has
+  /// more than one part; a single-part file loads into the active part instead.
+  void loadMultiPart(MultiPartScore score, {List<String>? names}) {
+    _parts
+      ..clear()
+      ..addAll([for (final p in score.parts) ScoreDocument()..loadScore(p)]);
+    _names = List.generate(
+      _parts.length,
+      (i) => names != null && i < names.length ? names[i] : 'Part ${i + 1}',
+    );
+    _transpositions = [for (final p in score.parts) _transpositionOf(p)];
+    brackets = List.of(score.brackets);
+    barlineGroups = List.of(score.barlineGroups);
+    _active = 0;
+    notifyListeners();
+  }
+
   final List<ScoreDocument> _parts;
   late List<String> _names;
   late List<Transposition?> _transpositions;
