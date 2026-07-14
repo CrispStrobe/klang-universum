@@ -14,6 +14,11 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (workshop→games)** · **🚧 ACTIVE — "Ascending or Descending?"** (binary
+  ear: a 3–4 note run plays → climbs up or steps down; 4 notes at 2★). Touching
+  `game_registry.dart`, `core/tuning.dart`, ARBs **additively** + new
+  `scales/run_direction_screen.dart` + test. --rebase per commit. SRI
+  `pitch.hear.<asc|desc>`.
 - **opus (primers)** · **docs only** — **Workshop→partitura parity assessment**
   (2026-07-14, in `WORKSHOP_PLAN.md`): verified partitura advanced ~40 commits;
   **mus fully compatible** (429 green against `@main`, local ff'd). Finding:
