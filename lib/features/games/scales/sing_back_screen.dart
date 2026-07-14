@@ -9,7 +9,8 @@
 import 'dart:async';
 import 'dart:math';
 
-// Material also exports `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
@@ -22,7 +23,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class SingBackScreen extends StatefulWidget {

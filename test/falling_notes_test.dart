@@ -3,6 +3,7 @@
 // it (score + SRI), letting one cross the hit-line costs a life, and catching
 // the whole run finishes with a result screen.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -14,7 +15,6 @@ import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/falling_notes_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

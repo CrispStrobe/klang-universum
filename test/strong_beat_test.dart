@@ -1,4 +1,4 @@
-// Strong Beat? — metric-accent training via partitura's beatStrength. Driven
+// Strong Beat? — metric-accent training via crisp_notation's beatStrength. Driven
 // through the UI: the correct answer (strong/weak) varies per round, so read the
 // game's target and tap the matching button.
 

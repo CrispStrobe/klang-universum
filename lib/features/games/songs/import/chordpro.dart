@@ -4,8 +4,8 @@
 // chords over lyrics. Chords map to playable triads (C, Am, F7 -> F, ...) so
 // every chord chip in the sheet can sound.
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
-import 'package:partitura/partitura.dart' show ChordQuality, Pitch, Step, Triad;
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
+import 'package:crisp_notation/crisp_notation.dart' show ChordQuality, Pitch, Step, Triad;
 
 /// One lyric fragment with an optional chord starting on it.
 class ChordSegment {

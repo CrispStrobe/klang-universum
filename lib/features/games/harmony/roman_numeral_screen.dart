@@ -1,7 +1,7 @@
 // lib/features/games/harmony/roman_numeral_screen.dart
 //
 // "Roman Numerals" (Stufen-Quiz) — read/hear a diatonic triad in a key and name
-// its Roman numeral (I, ii, iii, IV, V, vi, vii°). Built on partitura_core's
+// its Roman numeral (I, ii, iii, IV, V, vi, vii°). Built on crisp_notation_core's
 // new harmonic analysis: the chord is built with `Triad`, then read back with
 // `romanNumeralOf(pitches, key)` so the *library* names the numeral — the same
 // engine will later carry sevenths, inversions and minor keys.
@@ -11,8 +11,9 @@
 
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart';
 // Material also exports `Step` (Stepper), `Key` (widget key) and `Interval`
-// (animation); partitura's win here.
+// (animation); crisp_notation's win here.
 import 'package:flutter/material.dart' hide Interval, Key, Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -22,7 +23,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class RomanNumeralScreen extends StatefulWidget {

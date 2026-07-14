@@ -1,4 +1,4 @@
-// Concert Pitch — transposing-instrument reading (partitura Transposition).
+// Concert Pitch — transposing-instrument reading (crisp_notation Transposition).
 // Verifies the round loop: the correct concert-pitch letter is offered, picking
 // it scores + records SRI under transpose.*, and clearing all rounds finishes.
 

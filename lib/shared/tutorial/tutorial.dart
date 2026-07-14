@@ -3,7 +3,7 @@
 // The data model for a minigame's "how to play + what you need to know"
 // tutorial. A [Tutorial] is a short deck of [TutorialStep]s; each step is a bit
 // of plain-language explanation, optionally paired with a **notated example** (a
-// partitura Score rendered on a StaffView) and/or a **playable audio example**
+// crisp_notation Score rendered on a StaffView) and/or a **playable audio example**
 // (a callback onto AudioService). Together they let a child with zero music
 // knowledge see it, hear it, then play the game.
 //
@@ -13,9 +13,9 @@
 // "?" entry point + first-run gating. Rendering-only: no BuildContext here, so
 // tutorials stay easy to unit-test.
 
+import 'package:crisp_notation/crisp_notation.dart' show Score;
 import 'package:flutter/foundation.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
-import 'package:partitura/partitura.dart' show Score;
 
 /// One page of a tutorial.
 @immutable

@@ -5,14 +5,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:partitura/partitura.dart';
 
 void main() {
   setUpAll(() {
     final metadata = File(
-      '../partitura-public/packages/partitura/assets/smufl/bravura_metadata.json',
+      '../crisp_notation-public/packages/crisp_notation/assets/smufl/bravura_metadata.json',
     ).readAsStringSync();
     Bravura.debugOverrideMetadata(
       SmuflMetadata.fromJson(jsonDecode(metadata) as Map<String, Object?>),

@@ -1,8 +1,8 @@
 // lib/shared/widgets/music_glyph.dart
 //
 // Renders a single SMuFL glyph using the Bravura font that ships with the
-// partitura package. For single symbols (a quarter note, a rest) this is all
-// we need; staff-based rendering comes from partitura's StaffView.
+// crisp_notation package. For single symbols (a quarter note, a rest) this is all
+// we need; staff-based rendering comes from crisp_notation's StaffView.
 
 import 'package:flutter/material.dart';
 
@@ -35,7 +35,7 @@ class MusicGlyph extends StatelessWidget {
       textAlign: TextAlign.center,
       style: TextStyle(
         fontFamily: 'Bravura',
-        package: 'partitura',
+        package: 'crisp_notation',
         fontSize: size,
         height: 1,
         color: color ?? Theme.of(context).colorScheme.onSurface,

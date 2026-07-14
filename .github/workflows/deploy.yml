@@ -3,7 +3,7 @@ name: Deploy
 # Auto-redeploy the web build to Vercel after CI passes on main. Runs only when
 # the "CI" workflow completes successfully (so we never publish a red commit),
 # and can also be triggered by hand. Mirrors ci.yml's sibling layout so the
-# ../partitura path dependency resolves, then builds web and ships it.
+# ../crisp_notation path dependency resolves, then builds web and ships it.
 #
 # Requires one repository secret: VERCEL_TOKEN (Account Settings → Tokens).
 # The org/project IDs are not secret and are set below.
@@ -36,13 +36,13 @@ jobs:
           # For an automatic run, deploy the exact commit CI validated.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      # partitura + partitura_core are resolved via ../partitura/... path deps.
-      - name: Checkout partitura (sibling path dependency)
+      # crisp_notation + crisp_notation_core are resolved via ../crisp_notation/... path deps.
+      - name: Checkout crisp_notation (sibling path dependency)
         uses: actions/checkout@v5
         with:
-          repository: CrispStrobe/partitura
+          repository: CrispStrobe/crisp_notation
           ref: main
-          path: partitura-public
+          path: crisp_notation-public
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

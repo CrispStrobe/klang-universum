@@ -144,6 +144,20 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  crisp_notation:
+    dependency: "direct main"
+    description:
+      path: "../crisp_notation-public/packages/crisp_notation"
+      relative: true
+    source: path
+    version: "0.4.1"
+  crisp_notation_core:
+    dependency: "direct overridden"
+    description:
+      path: "../crisp_notation-public/packages/crisp_notation_core"
+      relative: true
+    source: path
+    version: "0.4.1"
   cross_file:
     dependency: transitive
     description:
@@ -491,20 +505,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.1"
-  partitura:
-    dependency: "direct main"
-    description:
-      path: "../partitura-public/packages/partitura"
-      relative: true
-    source: path
-    version: "0.4.0"
-  partitura_core:
-    dependency: "direct overridden"
-    description:
-      path: "../partitura-public/packages/partitura_core"
-      relative: true
-    source: path
-    version: "0.4.0"
   path:
     dependency: transitive
     description:

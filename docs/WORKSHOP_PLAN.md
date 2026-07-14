@@ -6,8 +6,8 @@
   shell · G2 multiline canvas + piano · G3a two-row chrome + range/copy/paste/
   move · G5a open MusicXML/MIDI · palette articulations+ties+dynamics (anchored
   dropdown, **no bottom sheets**).
-- **🎉 Partitura shipped C1–C5** on `partitura-public@main` (see
-  `WORKSHOP_PARTITURA_CONTRACTS.md`): `MultiSystemView.onStaffTap`/`onHover`/
+- **🎉 CrispNotation shipped C1–C5** on `crisp_notation-public@main` (see
+  `WORKSHOP_CRISP_NOTATION_CONTRACTS.md`): `MultiSystemView.onStaffTap`/`onHover`/
   `caret`/`ghostTarget`, `onElementDrag*` (drag-move), `elementRegions`/
   `elementIdsIn` (marquee), and **`InteractiveGrandStaffView`** (wrapped,
   interactive, both clefs). These unblock the deferred gestures.
@@ -38,7 +38,7 @@
      now multi-pitch (low→high `List<Pitch>`); a ⧉ toggle stacks the next
      pitch onto the selected note. Transpose/accidental/move/copy all chord-aware.
   7. ✅ *Slurs* — select ≥2 notes → ⌒ toggle (or `S`) draws a phrase slur from
-     first to last; stored as partitura `Slur`s, pruned on delete, kept through
+     first to last; stored as crisp_notation `Slur`s, pruned on delete, kept through
      MusicXML.
   8. ✅ *Lyrics* — a single-note selection reveals an inline syllable field
      (commits on Enter/blur; rides paste + MusicXML). **Multi-verse:** a verse
@@ -47,14 +47,14 @@
      like a piano key instead of re-pitching the selection; chord-mode staff
      clicks stack at the clicked pitch. Re-pitch = drag / ↑↓.
   10. ✅ *Live drag* — the dragged note is hidden and a duration-matched ghost
-      follows the pointer (partitura paints no live drag of its own).
+      follows the pointer (crisp_notation paints no live drag of its own).
   11. ✅ *(i) shortcuts sheet* + *exit guard* (keep / discard / save) + *width
       bound to viewport* so systems break on-screen.
   12. ✅ *Pickup (anacrusis)* — a top-bar dropdown (♪/♩/♩./𝅗𝅥) shortens the opening
       bar before the downbeat and flags `Measure.pickup`; later bars stay full.
   13. ✅ *Hairpins* — select ≥2 notes → `<` / `>` toggles a crescendo/diminuendo
-      wedge (partitura `Hairpin`, pruned on delete, MusicXML round-trip).
-  14. ✅ *Caret* — a visible insertion caret (partitura `EditorCaret`) sits before
+      wedge (crisp_notation `Hairpin`, pruned on delete, MusicXML round-trip).
+  14. ✅ *Caret* — a visible insertion caret (crisp_notation `EditorCaret`) sits before
       the element the next placed note would precede.
   15. ✅ *Marquee-select* (C7) — a ⛶ toggle turns the canvas into a rubber-band;
       the swept rect → `ElementRegionController.elementIdsIn` → the enclosed
@@ -66,14 +66,14 @@
       re-pitches.
   16. ✅ *Print / page-export* (C8 shipped) — the ⋮ menu exports **SVG** (font
       embedded, print-ready, shown copyable) and **PNG** (saved via the system
-      dialog), via partitura's one-call `exportScoreToSvg` / `exportScoreToPng`
+      dialog), via crisp_notation's one-call `exportScoreToSvg` / `exportScoreToPng`
       (+ grand-staff overloads). No viewport-capture hacks.
   17. ✅ *Handwritten-notes toggle* — the editor now renders through
-      `kidsScoreTheme` (not the const `PartituraTheme.kids`), so the Settings
+      `kidsScoreTheme` (not the const `CrispNotationTheme.kids`), so the Settings
       "Handwritten notes" switch swaps the engraving font (Bravura ↔ Petaluma)
       in the Workshop too — canvas, both clefs, and the SVG/PNG exports.
   18. ✅ *Live drag — the real note follows the pointer (C10a + C10b shipped &
-      wired).* partitura now **owns the live drag**. Two additive inputs on
+      wired).* crisp_notation now **owns the live drag**. Two additive inputs on
       `MultiSystemView` / `InteractiveGrandStaffView` (both → the shared
       `LayoutPainter`):
       • **C10a `suppressElementIds`** — skips an element's primitives entirely
@@ -86,13 +86,13 @@
       The Workshop passes `dragPreviewOpacity: 0.85` and **dropped all its own
       drag bookkeeping** — no `suppressElementIds`, no follower ghost; the note
       itself (stem, accidental, flag, ledgers) moves with the cursor. Landed on
-      public `partitura@main`; pixel-tested (a green note's ink drops to ~0 when
+      public `crisp_notation@main`; pixel-tested (a green note's ink drops to ~0 when
       suppressed; dragging it up moves its ink up on screen), 122 goldens
       unchanged by the painter refactor; app-wired, whole-project analyze clean +
       workshop widget tests green.
       • **Live drop caret** — during a **horizontal** reorder drag the insertion
         caret now marks the live drop slot (before, the target index was only
-        computed on release). App-side (partitura's `EditorCaret` already
+        computed on release). App-side (crisp_notation's `EditorCaret` already
         exists); the drop-slot math is a pure `computeDropSlot` shared by the
         caret preview and the drop, unit-tested (bars-then-x ordering, end-of-
         score, self-exclusion).
@@ -103,7 +103,7 @@
 
 
 Branch `feature/score-workshop`, worktree `../mus-workshop` (sibling of `mus/`
-so the `../partitura` path dep resolves). Merge to `origin/main` at each phase's
+so the `../crisp_notation` path dep resolves). Merge to `origin/main` at each phase's
 stopping point. **Beware parallel agents** (`../mus-playalong` on
 `feature/pitch-detection-spike`, and uncommitted l10n/sing-back work on local
 `main`) — rebase before each merge, keep l10n edits additive.
@@ -115,13 +115,13 @@ allude to other products in code or docs, and don't frame the design as matching
 anyone else — describe only our own design. Interchange **formats** are referred
 to by their standard name / file extension only.)
 
-## Reality check — partitura already does ~70% of a notation program
+## Reality check — crisp_notation already does ~70% of a notation program
 
-Verified against the `partitura`/`partitura_core` barrels + model source. The
+Verified against the `crisp_notation`/`crisp_notation_core` barrels + model source. The
 library is deliberately **render + theory only** — editing/note-entry and audio
 are permanent non-goals ("consumers build editing on top of the model").
 
-- **Model** (`partitura_core`, immutable value classes; `Measure.copyWith`
+- **Model** (`crisp_notation_core`, immutable value classes; `Measure.copyWith`
   exists, `Score` has **none**): single staff, **2 voices/measure**, tuplets
   (`TupletSpan`), ties, slurs, dynamics, hairpins, articulations, ornaments,
   grace notes, fingerings, arpeggio, tremolo, notehead shapes; per-measure
@@ -131,7 +131,7 @@ are permanent non-goals ("consumers build editing on top of the model").
   metadata. Professional-grade richness **for a single part**.
 - **Layout engine**: `LayoutEngine`, multi-system line-wrapping, page layout,
   grand staff, tab — all single-`Score` (no cross-part pagination yet).
-- **Rendering** (`partitura`): `StaffView`, `InteractiveStaff` (ghost-note
+- **Rendering** (`crisp_notation`): `StaffView`, `InteractiveStaff` (ghost-note
   preview, drag, `highlightedIds` selection, measure-indexed hit-testing via
   `StaffTarget`), `MultiSystemView`, `ScorePageView`, `GrandStaffView`,
   `TabStaffView`. Bravura SMuFL bundled. `RenderStaffView` exposes hit-testing
@@ -159,8 +159,8 @@ are permanent non-goals ("consumers build editing on top of the model").
   PDF/PNG/MusicXML/MIDI, print.
 - **G6 Multi-instrument** — `Score` is single-part; multi-staff is layout-only
   (loose `List<Score>` with global ids). True ensemble scores need a `Part`
-  document model added to `partitura_core` + cross-part page layout. Biggest
-  lift; coordinate in the partitura repo. Deferred to P4.
+  document model added to `crisp_notation_core` + cross-part page layout. Biggest
+  lift; coordinate in the crisp_notation repo. Deferred to P4.
 - **G7 Page/print view, layout options, PDF.**
 
 ## Phases (each ends mergeable)
@@ -235,7 +235,7 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
      (no big title) + ⋮ menu (save / export MusicXML / ABC / clear).
   2. ✅ *Gesture fix* — placement is now from the piano at the caret; the staff
      is view + select only, so pan/zoom can never drop a stray note.
-  3. ⏳ *Drag placed notes* (G3) — needs a drag-move hook (partitura-side or an
+  3. ⏳ *Drag placed notes* (G3) — needs a drag-move hook (crisp_notation-side or an
      app-side custom canvas).
   4. ✅ *Select ranges + move/copy/cut/paste* — the model is now range-based
      (`ScoreDocument` selection = index range + clipboard); Row B offers
@@ -243,7 +243,7 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
      note or a whole range. (Marquee/drag-select still needs C4 — see contracts.)
   5. ◐ *Both clefs / grand staff* — auto-flip removed; clef is now a manual
      treble/bass control (no surprise flip). True simultaneous **grand staff**
-     with multiline is not in the public renderer yet → G3+ (needs partitura
+     with multiline is not in the public renderer yet → G3+ (needs crisp_notation
      work; `GrandStaffView` is single-system only).
   6. ✅ *Multiline* — canvas is now `MultiSystemView`; the score wraps into
      systems and scrolls vertically.
@@ -253,13 +253,13 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
   ctrl-scroll). Keyboard: arrows to move the caret, letters A–G / digits for
   value.
 - **G4 — Notation depth**: tuplets, 2nd voice, tempo, barlines/repeats, lyrics;
-  wire every partitura export; playback moving cursor.
+  wire every crisp_notation export; playback moving cursor.
 - **G5 — Open existing scores** ◐: ⋮ menu now opens **MusicXML / MIDI** files
   into the editor (`ScoreDocument.loadScore` flattens voice 1 → editable
   elements; undoable). Still to do: `.mxl`/`.mscz`/ABC, chords/2nd-voice import
   fidelity, page/print/PDF.
-- **G6 — Multi-instrument** ⬆️ **NOW UNBLOCKED (2026-07-14).** partitura shipped
-  **`MultiPartScore`** (`partitura_core`: `List<Score> parts` + `StaffBracket`s +
+- **G6 — Multi-instrument** ⬆️ **NOW UNBLOCKED (2026-07-14).** crisp_notation shipped
+  **`MultiPartScore`** (`crisp_notation_core`: `List<Score> parts` + `StaffBracket`s +
   `BarlineGroup`s) and **`MultiPartView`**/`layoutMultiPartPages` (paginated,
   line-broken, cross-part hit-testing) — **both exported from the public barrel**
   (`export 'src/layout/multi_part.dart'` / `src/rendering/multi_part_view.dart`),
@@ -270,40 +270,40 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
   and render with `MultiPartView`; edit the **active** part with the current
   toolchain; an instrument picker adds/removes parts; per-part clef/transposition
   reuse existing pickers. Cross-part caret/hit-testing via `MultiPartView`'s
-  geometry. Scope carefully — still the biggest lift, but no partitura ask left.
-  **Full step-by-step handover (architecture, exact partitura API signatures,
+  geometry. Scope carefully — still the biggest lift, but no crisp_notation ask left.
+  **Full step-by-step handover (architecture, exact crisp_notation API signatures,
   phased P4a–e plan, gotchas): [`WORKSHOP_G6_HANDOVER.md`](WORKSHOP_G6_HANDOVER.md).**
 
 ## CI constraint (important)
 
-mus CI/deploy resolve the `../partitura` path-dep against the **public**
-`CrispStrobe/partitura@main`, which can lag the local partitura. So every
-partitura API used must exist on public partitura or CI reds even though it
+mus CI/deploy resolve the `../crisp_notation` path-dep against the **public**
+`CrispStrobe/crisp_notation@main`, which can lag the local crisp_notation. So every
+crisp_notation API used must exist on public crisp_notation or CI reds even though it
 compiles locally. **Update (2026-07-14):** the old worry that G6 needed a
 private-only `Part` model is **moot** — `MultiPartScore`/`MultiPartView` are on
-public `@main` now, so build G6 directly on them (no private model, no partitura
+public `@main` now, so build G6 directly on them (no private model, no crisp_notation
 port needed). Still verify any API against `@main` before relying on it. See
-memory `partitura-public-vs-private-ci`.
+memory `crisp_notation-public-vs-private-ci`.
 
 ## Status
 P0 ✅ · P1 ✅ · P2a ✅ · G1 ✅ · G2 ✅ (multiline canvas · piano placement) ·
 G3a ✅ (two-row chrome · range selection + move/copy/cut/paste) · G5a ✅ (open
 MusicXML/MIDI files into the editor) · G2 articulations+ties+dynamics palette ✅.
 
-**Partitura contracts C1–C10 — all landed & wired** (2026-07-14; see
-[WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)): staff-tap on
+**CrispNotation contracts C1–C10 — all landed & wired** (2026-07-14; see
+[WORKSHOP_CRISP_NOTATION_CONTRACTS.md](WORKSHOP_CRISP_NOTATION_CONTRACTS.md)): staff-tap on
 multiline (C1), hover/caret (C2), drag-to-move (C3), marquee select (C4),
 interactive multiline grand staff (C5), region controller + export helpers
 (C7–C9), and the **live drag** — `suppressElementIds` clean hide + view-painted
 `dragPreviewOpacity` (C10a/b) + a live drop caret (`computeDropSlot`), shipped by
-the workshop→games agent. **No partitura ask is currently blocking the Workshop.**
+the workshop→games agent. **No crisp_notation ask is currently blocking the Workshop.**
 
-**Parity assessment vs partitura @main (2026-07-14):** the editor now uses every
+**Parity assessment vs crisp_notation @main (2026-07-14):** the editor now uses every
 landed editor contract. The one remaining major gap is **G6 multi-instrument**,
 which is **now unblocked** by public `MultiPartScore`/`MultiPartView` (approach
-above). Smaller, mostly-free engraving wins from partitura's recent layout work:
+above). Smaller, mostly-free engraving wins from crisp_notation's recent layout work:
 **metric-aware secondary beaming** (beam grouping by the meter hierarchy — the
-editor gets it automatically through partitura's layout), **`Measure.actualDuration`**
+editor gets it automatically through crisp_notation's layout), **`Measure.actualDuration`**
 (explicit irregular/pickup-bar length — could tighten the existing pickup
 dropdown), every-N **measure numbering**, and per-group barlines. Next concrete
 steps: (1) confirm the editor's rendered output already reflects metric-aware

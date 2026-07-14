@@ -1,8 +1,8 @@
 // lib/features/games/measures/which_beat_screen.dart
 //
-// "Which Beat?" — rhythmic placement (docs/PLAN.md, built on partitura's
+// "Which Beat?" — rhythmic placement (docs/PLAN.md, built on crisp_notation's
 // beat-number teaching overlay). A 4/4 bar of notes is shown with one note
-// highlighted; the child taps the beat it starts on (1–4). partitura draws the
+// highlighted; the child taps the beat it starts on (1–4). crisp_notation draws the
 // "1 2 3 4" counting under the staff as a scaffold that fades: on for beginners,
 // off at 2★ so the child must count the durations themselves.
 //
@@ -10,6 +10,7 @@
 
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -18,7 +19,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// A bar pattern: note durations (in beats) that sum to 4, all on integer beats.

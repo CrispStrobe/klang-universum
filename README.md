@@ -41,10 +41,10 @@ Live web build: https://mus-theta.vercel.app
   screen renders from that list. Adding a module = registry entry + ARB keys.
 - **i18n**: `lib/l10n/app_{en,de}.arb`, generated via `flutter gen-l10n`
   (`generate: true`).
-- **Notation rendering**: comes from `partitura`, the standalone MIT library
-  being built in `../partitura` (path dependency). Its contract is
-  `../partitura/HANDOVER.md` as amended by
-  `../partitura/HANDOVER_PARTITURA.md`.
+- **Notation rendering**: comes from `crisp_notation`, the standalone MIT library
+  being built in `../crisp_notation` (path dependency). Its contract is
+  `../crisp_notation/HANDOVER.md` as amended by
+  `../crisp_notation/HANDOVER_CRISP_NOTATION.md`.
 
 ## Development
 
@@ -56,7 +56,7 @@ flutter run -d chrome    # or macos, etc.
 ```
 
 CI (`.github/workflows/ci.yml`) runs format + analyze + test on every push and
-PR, checking out the sibling `partitura` repo alongside so the path dependency
+PR, checking out the sibling `crisp_notation` repo alongside so the path dependency
 resolves. The `build/` symlink (a dev-only SSD path) is intentionally untracked.
 The test suite (140 tests) covers ~85% of `lib/`, including the services, the
 import round-trips, and a render smoke test per game screen.

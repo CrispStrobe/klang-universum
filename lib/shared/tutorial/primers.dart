@@ -9,10 +9,7 @@
 // Adding a module's primer: write it here, add its ARB strings, and hang it on
 // the module's entry game. See PLAN.md "Learnability & UX".
 
-import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:klang_universum/shared/midi_pitch.dart';
-import 'package:klang_universum/shared/tutorial/tutorial.dart';
-import 'package:partitura/partitura.dart'
+import 'package:crisp_notation/crisp_notation.dart'
     show
         ChordSymbol,
         ChordSymbolKind,
@@ -24,6 +21,9 @@ import 'package:partitura/partitura.dart'
         NoteElement,
         Score,
         TimeSignature;
+import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/midi_pitch.dart';
+import 'package:klang_universum/shared/tutorial/tutorial.dart';
 
 // ---- notation helpers -------------------------------------------------------
 

@@ -6,6 +6,7 @@
 
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -14,7 +15,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 const _halfNote = NoteDuration(DurationBase.half);

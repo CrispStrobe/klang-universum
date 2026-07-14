@@ -1,12 +1,14 @@
 // lib/features/games/songs/song_screen.dart
 //
 // The song player: full notation with lyrics across wrapped systems
-// (partitura MultiSystemView), a play button, and a karaoke-style cursor —
-// the sounding note highlights in sync (repaint-only per the partitura
+// (crisp_notation MultiSystemView), a play button, and a karaoke-style cursor —
+// the sounding note highlights in sync (repaint-only per the crisp_notation
 // contract). Tapping any note plays it.
 
 import 'dart:async';
 
+import 'package:crisp_notation/crisp_notation.dart'
+    show MultiSystemView, NoteElement, Score;
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/features/games/songs/chord_sheet_screen.dart';
@@ -17,8 +19,6 @@ import 'package:klang_universum/features/games/songs/songbook_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart'
-    show MultiSystemView, NoteElement, Score;
 import 'package:provider/provider.dart';
 
 class SongScreen extends StatefulWidget {

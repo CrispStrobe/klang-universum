@@ -11,7 +11,8 @@
 
 import 'dart:math';
 
-// Material also exports `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
@@ -24,7 +25,6 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// A diatonic triad of C major (all white keys).
@@ -37,7 +37,7 @@ class _Grip {
 
   List<int> get midis => pitches.map((p) => p.midiNumber).toList();
 
-  /// partitura note tokens for the block chord, e.g. "c4+e4+g4:w".
+  /// crisp_notation note tokens for the block chord, e.g. "c4+e4+g4:w".
   String get card {
     String tok(Pitch p) {
       final acc = switch (p.alter) { 1 => '#', -1 => 'b', _ => '' };

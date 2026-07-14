@@ -1,3 +1,4 @@
+import 'package:crisp_notation/crisp_notation.dart' hide Key;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,7 +10,6 @@ import 'package:klang_universum/features/games/harmony/cadence_workshop_screen.d
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
 import 'package:klang_universum/features/games/scales/scale_builder_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart' hide Key;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

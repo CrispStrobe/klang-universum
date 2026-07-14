@@ -1,3 +1,4 @@
+import 'package:crisp_notation/crisp_notation.dart' show Step;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +11,6 @@ import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:klang_universum/shared/widgets/cello_fingerboard.dart';
 import 'package:klang_universum/shared/widgets/guitar_fretboard.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart' show Step;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

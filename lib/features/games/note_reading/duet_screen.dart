@@ -1,7 +1,7 @@
 // lib/features/games/note_reading/duet_screen.dart
 //
 // "Duet" — score reading across a two-staff system (docs/PLAN.md, built on
-// partitura's StaffSystemView). Two parts are shown one above the other with one
+// crisp_notation's StaffSystemView). Two parts are shown one above the other with one
 // note highlighted; the child names the highlighted note — so they have to track
 // the right line of a multi-staff score. At 2★ the lower part switches to the
 // bass clef, like a real grand-staff duet.
@@ -10,7 +10,8 @@
 
 import 'dart:math';
 
-// Material also exports `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -20,7 +21,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 const _wholeNote = NoteDuration(DurationBase.whole);

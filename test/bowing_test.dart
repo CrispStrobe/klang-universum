@@ -1,4 +1,4 @@
-// Bowing — reading up-bow / down-bow marks (partitura articulations). Verifies
+// Bowing — reading up-bow / down-bow marks (crisp_notation articulations). Verifies
 // the round loop: choosing the correct stroke scores + records SRI under
 // cello.bowing.*, and clearing all rounds finishes.
 

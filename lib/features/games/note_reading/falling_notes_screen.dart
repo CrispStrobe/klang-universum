@@ -3,7 +3,7 @@
 // "Notenregen" / "Falling Notes" — the app's first arcade format (docs/PLAN.md,
 // gamified backlog: "notes fall to a staff/keyboard, name them before they
 // land; combo + speed-up. Highest kid-appeal."). Notes drift down a starlit
-// lane on real partitura staves; the child names the most urgent (lowest) one
+// lane on real crisp_notation staves; the child names the most urgent (lowest) one
 // with a letter pad before it crosses the glowing hit-line. Catches burst into
 // sparks, grow a combo multiplier and ramp the fall speed; three misses end the
 // run. A fixed run of [_kTotalNotes] notes keeps the rounds/score/stars loop of
@@ -17,7 +17,8 @@
 
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +35,6 @@ import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// One note falling down the lane.
@@ -59,7 +59,7 @@ class _FallingNote {
   /// Which horizontal lane (0.._kColumns-1) the note drifts down.
   final int column;
 
-  /// The partitura staff card, built once at spawn. StaffView is a
+  /// The crisp_notation staff card, built once at spawn. StaffView is a
   /// LeafRenderObjectWidget, so re-parenting it into a moving Positioned every
   /// frame only re-composites — it never re-lays-out.
   final Widget card;

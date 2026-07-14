@@ -1,4 +1,4 @@
-// Duet — reading the highlighted part of a two-staff system (partitura
+// Duet — reading the highlighted part of a two-staff system (crisp_notation
 // StaffSystemView). Verifies the round loop scores + records SRI under
 // note_reading.* and finishes; also exercises rendering a StaffSystemView.
 

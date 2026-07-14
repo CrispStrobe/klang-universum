@@ -71,7 +71,7 @@ sibling of the My Melody sandbox. What it does now:
   file pickers work now (added the `files.user-selected.read-write` sandbox
   entitlement — the app is sandboxed, so without it the dialogs were blocked).
 
-Editing extras that lean on partitura's editor contracts: caret (C2), drag-move
+Editing extras that lean on crisp_notation's editor contracts: caret (C2), drag-move
 (C3), grand staff (C5), element hit-regions for marquee + fine reorder
 (**C7** `ElementRegionController`), and one-call `Score→PNG/SVG` export
 (**C8**). Detail + roadmap: `docs/WORKSHOP_PLAN.md`.
@@ -217,7 +217,7 @@ per-game `unlockedWhen` gate on `GameInfo`).
   1 / 2 / 4-beat bucket; wrong drop bounces + buzzes. SRI `note_values.symbol.*`.
 - **Line or Space?** (swipe binary drill) — swipe a note-card left = line,
   right = space; wrong swipe bounces back. SRI `note_reading.line_space.*`.
-- **Falling Notes** (arcade) — notes rain down real partitura staves; name the
+- **Falling Notes** (arcade) — notes rain down real crisp_notation staves; name the
   glowing one on a 7-letter pad before it crosses the neon hit-line. Combo
   ×1–×5, speed ramps every four catches, three hearts, fixed 15-note run,
   star-driven range, colour-scaffold, reduced-motion aware. Feeds
@@ -261,12 +261,12 @@ per-game `unlockedWhen` gate on `GameInfo`).
   leap). The motion vocabulary that precedes naming exact intervals. Correct
   answer sounds both notes. SRI `reading.motion.<step|skip>`.
 
-## Partitura-powered — shipped
+## CrispNotation-powered — shipped
 
-Games built on partitura capabilities the app didn't use before.
+Games built on crisp_notation capabilities the app didn't use before.
 
 - **Read the Voice** (Noten lesen, gated behind Duet 2★) — reading one line out
-  of a multi-voice texture, on partitura's `Measure.voice2` (two voices per
+  of a multi-voice texture, on crisp_notation's `Measure.voice2` (two voices per
   staff, stems up/down). A chord is shown with one voice highlighted; the child
   names the note *that* voice sings, so they must track the right line. The
   4-voice generalization of Duet: difficulty grows 2 voices (Soprano + Alto, one
@@ -302,8 +302,8 @@ Games built on partitura capabilities the app didn't use before.
   `chordSymbolFor` so they're spelled as the library names them. Correct tap
   plays the chord; widens major/minor triads (roots C/F/G) → all roots → +
   diminished. SRI `chords.symbol.<symbol>`. Uses the shared game-test harness.
-- **Strong Beat?** (Takte) — metric-accent training on partitura-public's
-  `beatStrength`. A measure is shown with its beat numbers (partitura's
+- **Strong Beat?** (Takte) — metric-accent training on crisp_notation-public's
+  `beatStrength`. A measure is shown with its beat numbers (crisp_notation's
   `showBeatNumbers`), one beat highlighted; the child says whether it's a strong
   (accented) or weak beat. The answer is graded by
   `TimeSignature.beatStrength(position)`, not hard-coded — correct for 4/4 (1 & 3
@@ -311,22 +311,22 @@ Games built on partitura capabilities the app didn't use before.
   Widens 4/4 → +3/4, 2/4 → +6/8. SRI `measures.accent.<ts>_<beat>`.
 - **Roman Numerals** (Harmonik) — read *and* hear a diatonic triad in a key and
   pick its Roman numeral (I, ii, iii, IV, V, vi, vii°). The chord is built with
-  `Triad(root, quality)` and named by partitura-public's new
+  `Triad(root, quality)` and named by crisp_notation-public's new
   `romanNumeralOf(pitches, key)` — the same analyser will later carry sevenths
   (`V6/5`), inversions and minor keys. A step up from the Function Quiz (T/S/D
   only): every diatonic degree is in play. Renders the chord with the key
   signature, arpeggio-then-chord audio + replay, four numeral buttons. Widens
   I/IV/V in C major → all seven degrees → all easy major keys. SRI
-  `harmony.roman.<symbol>`. *(First game on the partitura-public alignment — mus
-  now builds against `CrispStrobe/partitura@main` locally and on CI.)*
+  `harmony.roman.<symbol>`. *(First game on the crisp_notation-public alignment — mus
+  now builds against `CrispStrobe/crisp_notation@main` locally and on CI.)*
 - **Name That Chord** (chords) — read or hear a chord and pick its symbol; the
-  answer is graded by partitura's `identifyChord`, so it names quality **and**
+  answer is graded by crisp_notation's `identifyChord`, so it names quality **and**
   inversion. Roots C–A (no accidental in the symbol); major/minor root position
   for beginners, diminished/augmented and slash-chord inversions (C/E) at 2★.
   Renders the chord as a block on the staff, replay button, keyboard 1–4. SRI
   `chords.name.<root>_<type>`.
 - **Chord Builder** (chords) — build the named chord by tapping three notes onto
-  the staff; partitura's `identifyChord` grades what you built, so **any voicing
+  the staff; crisp_notation's `identifyChord` grades what you built, so **any voicing
   counts** — root position or an inversion, in any octave. The interactive
   counterpart to Name That Chord; major/minor for beginners, dim/aug at 2★. SRI
   `chords.build.<root>_<quality>`.
@@ -336,14 +336,14 @@ Games built on partitura capabilities the app didn't use before.
   `T:` line seeds the title.
 - **Concert Pitch** (new **Transposing** module/corner) — read a written note
   for a **B♭ trumpet / E♭ alto sax / F horn** and name the concert pitch that
-  actually sounds; partitura's `transposeBy` computes the exact letter. The B♭
+  actually sounds; crisp_notation's `transposeBy` computes the exact letter. The B♭
   instruments alone for beginners, E♭ and F added at 2★. A skill nothing else in
   the app covers. SRI `transpose.<instrument>.<written-step>`.
-- **Bowing** (cello corner) — read partitura's string-bowing marks: a note on
+- **Bowing** (cello corner) — read crisp_notation's string-bowing marks: a note on
   the bass staff carries a ⊓ down-bow or ∨ up-bow (`Articulation.downBow/upBow`);
   name it. SRI `cello.bowing.<down|up>`.
 - **Which Beat?** (measures) — a 4/4 bar with one note coloured; tap the beat it
-  starts on (1–4). partitura's **`showBeatNumbers`** overlay draws the count
+  starts on (1–4). crisp_notation's **`showBeatNumbers`** overlay draws the count
   under the staff as a scaffold that fades (on at level 1, off at 2★). SRI
   `measures.beat.<n>`.
 - **Time Signatures** (measures) — read a signature — including the **C
@@ -353,7 +353,7 @@ Games built on partitura capabilities the app didn't use before.
   score to **ABC** (`scoreToAbc`) in a dialog and copies it to the clipboard;
   round-trips with the Song Book's ABC import.
 - **Duet** (note reading) — read the **highlighted part of a two-staff system**
-  (partitura's `StaffSystemView`): two parts are shown, one note highlighted;
+  (crisp_notation's `StaffSystemView`): two parts are shown, one note highlighted;
   name it, tracking the right line. Both treble for beginners; the lower part
   becomes bass clef at 2★, like a grand-staff duet. SRI
   `note_reading.<clef>.*`.
@@ -365,7 +365,7 @@ Games built on partitura capabilities the app didn't use before.
 - **Which Clef?** (Noten lesen) — the youngest clef-literacy drill: a bare clef
   is drawn on an empty staff (`StaffView` over `Measure([])`) and the child taps
   which clef it is. Treble vs Bass for beginners, widening to **Alto and Tenor**
-  at 2★ (all four rendered by partitura's `Clef`). A binary `AnswerGrid`, no-fail;
+  at 2★ (all four rendered by crisp_notation's `Clef`). A binary `AnswerGrid`, no-fail;
   nothing else in the app taught reading the clef *sign* itself. SRI
   `reading.clef.<treble|bass|alto|tenor>`.
 - **Whole or Half Step?** (Noten lesen) — the tone-vs-semitone drill and the
@@ -445,7 +445,7 @@ Games built on partitura capabilities the app didn't use before.
   (never a space, so the count is unambiguous); tap 1 / 2 / 3. Star-gated
   (treble/middle-C region first; +bass, above, 3 lines at 2★). A correct count
   plays the pitch. SRI `note_reading.ledger.<clef>.<below|above><n>`.
-- **Key Detective** (scales) — partitura renders a key signature
+- **Key Detective** (scales) — crisp_notation renders a key signature
   (`KeySignature(fifths)`); name the major key. Natural-letter tonics
   (C G D A E B F) so buttons never need an accidental; German B = H via the
   naming toggle. Star-gated (C/F/G/D → +A/E/B); correct answer plays the tonic

@@ -7,6 +7,15 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart'
+    show
+        Clef,
+        DurationBase,
+        Measure,
+        NoteDuration,
+        NoteElement,
+        Score,
+        scoreToMusicXml;
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/melody_recorder.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
@@ -17,15 +26,6 @@ import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
-import 'package:partitura/partitura.dart'
-    show
-        Clef,
-        DurationBase,
-        Measure,
-        NoteDuration,
-        NoteElement,
-        Score,
-        scoreToMusicXml;
 import 'package:provider/provider.dart';
 
 class FreeSingScreen extends StatefulWidget {

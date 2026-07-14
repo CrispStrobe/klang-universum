@@ -2,7 +2,7 @@
 //
 // "Verbinde die Noten" / "Connect the Notes" — a connect-a-line matching drill
 // (docs/PLAN.md gamified backlog, the last of the surveyed interaction
-// mechanics). Two columns: a symbol on the left (a note on a real partitura
+// mechanics). Two columns: a symbol on the left (a note on a real crisp_notation
 // staff, or a note-value glyph), its names shuffled down the right. The child
 // drags a line from each symbol to its name; a correct link locks in colour
 // (and plays the pitch, when there is one), a wrong drop buzzes and snaps back
@@ -16,7 +16,8 @@
 
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -30,7 +31,6 @@ import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/music_glyph.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// What the two columns hold.

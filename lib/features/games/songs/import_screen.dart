@@ -4,14 +4,14 @@
 // with [C] chords) into the text field, or pick a simple MIDI file.
 // Imported songs live in the Song Book (persisted via UserSongsService).
 
+import 'package:crisp_notation/crisp_notation.dart'
+    show scoreFromAbc, scoreFromMusicXml, scoreToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/features/games/songs/import/chordpro.dart';
 import 'package:klang_universum/features/games/songs/import/midi_import.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart'
-    show scoreFromAbc, scoreFromMusicXml, scoreToMusicXml;
 import 'package:provider/provider.dart';
 
 class ImportScreen extends StatefulWidget {
@@ -111,7 +111,7 @@ class _ImportScreenState extends State<ImportScreen> {
   }
 
   // ABC is a compact text notation used by huge public-domain tune libraries.
-  // Parse it to a Score (partitura), then store it as MusicXML like the rest.
+  // Parse it to a Score (crisp_notation), then store it as MusicXML like the rest.
   void _importAbc() {
     try {
       final abc = _text.text.trim();

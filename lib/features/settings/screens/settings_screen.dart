@@ -2,7 +2,8 @@
 //
 // Language override (system/EN/DE) and a compact SRI statistics summary.
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/audio/synth.dart' show Instrument;
 import 'package:klang_universum/core/note_naming.dart';
@@ -15,7 +16,6 @@ import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/settings/screens/about_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {

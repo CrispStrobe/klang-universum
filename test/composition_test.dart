@@ -1,3 +1,5 @@
+import 'package:crisp_notation/crisp_notation.dart'
+    show InteractiveStaff, StaffView, scoreFromMusicXml;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,8 +12,6 @@ import 'package:klang_universum/features/games/composition/my_melody_screen.dart
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart'
-    show InteractiveStaff, StaffView, scoreFromMusicXml;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

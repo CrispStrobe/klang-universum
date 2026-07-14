@@ -1,7 +1,7 @@
 // lib/features/games/guitar/guitar_tab.dart
 //
 // Guitar first-position map for the Gitarren-Ecke (instrument corner), the
-// same recipe as the Cello-Ecke but on tablature (partitura v0.8 TabStaffView
+// same recipe as the Cello-Ecke but on tablature (crisp_notation v0.8 TabStaffView
 // + Tuning). Standard tuning, top tab line = string 1 (high E4), bottom line =
 // string 6 (low E2). Only naturals in the open position (frets 0–4).
 //
@@ -9,7 +9,7 @@
 // engine renders (Tuning.fretFor) — asserted in guitar_tab_test.dart — so what
 // the child sees on the staff always matches this table.
 
-import 'package:partitura/partitura.dart';
+import 'package:crisp_notation/crisp_notation.dart';
 
 /// Standard six-string tuning; top tab line first (E4 B3 G3 D3 A2 E2).
 final Tuning kGuitarTuning = Tuning.standardGuitar;

@@ -5,9 +5,9 @@
 
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart' show Clef;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/features/games/note_reading/satb_voicing.dart';
-import 'package:partitura/partitura.dart' show Clef;
 
 void main() {
   final random = Random(1234); // seeded for determinism

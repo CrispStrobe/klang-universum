@@ -1,3 +1,4 @@
+import 'package:crisp_notation/crisp_notation.dart' show Bravura;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
@@ -11,12 +12,11 @@ import 'package:klang_universum/features/games/tutorial_gate.dart';
 import 'package:klang_universum/features/home/screens/home_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/theme.dart';
-import 'package:partitura/partitura.dart' show Bravura;
 import 'package:provider/provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Per the partitura contract (CONTRACT.md §6): await the SMuFL metadata
+  // Per the crisp_notation contract (CONTRACT.md §6): await the SMuFL metadata
   // up front so the first StaffView frame is never empty.
   await Bravura.load();
   // Real app only: auto-pop a game's first-run tutorial (off by default so it

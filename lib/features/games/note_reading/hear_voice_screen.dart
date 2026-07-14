@@ -13,7 +13,7 @@
 import 'dart:async';
 import 'dart:math';
 
-// Material also exports `Step`; partitura's wins here.
+// Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';

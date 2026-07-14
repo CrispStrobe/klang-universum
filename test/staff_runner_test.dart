@@ -1,6 +1,7 @@
 // Staff Runner — the endless sight-reading sprint. Verifies: naming the note
 // scores + records a read, a timeout costs a life, and three misses end the run.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,7 +12,6 @@ import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

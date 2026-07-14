@@ -5,10 +5,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/features/workshop/model/score_document.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
-import 'package:partitura/partitura.dart';
 
 Uint8List _bytes(String s) => Uint8List.fromList(utf8.encode(s));
 

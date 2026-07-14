@@ -4,6 +4,7 @@
 // entry here plus its screen under features/games/<module>/ and, if it has
 // scores, a bracket in core/tuning.dart's kStarThresholds.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/audio/chord_progression.dart';
 import 'package:klang_universum/core/audio/play_along.dart';
@@ -97,7 +98,6 @@ import 'package:klang_universum/features/games/transpose/concert_pitch_screen.da
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/tutorial/primers.dart';
 import 'package:klang_universum/shared/tutorial/tutorial.dart';
-import 'package:partitura/partitura.dart';
 
 /// Every game by ID, across all modules — for curriculum/recital lookups.
 final Map<String, GameInfo> kGamesById = {
@@ -534,7 +534,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameWhichBeatSubtitle,
       builder: (_) => const WhichBeatScreen(),
     ),
-    // Metric-accent training — strong vs weak beats via partitura's beatStrength.
+    // Metric-accent training — strong vs weak beats via crisp_notation's beatStrength.
     GameInfo(
       id: 'strong_beat',
       icon: Icons.graphic_eq,
@@ -729,7 +729,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const HarmonyQuizScreen(),
       tutorial: harmonyPrimer,
     ),
-    // Roman numerals — every diatonic degree, named by partitura's analyser.
+    // Roman numerals — every diatonic degree, named by crisp_notation's analyser.
     GameInfo(
       id: 'roman_numeral',
       icon: Icons.stairs,

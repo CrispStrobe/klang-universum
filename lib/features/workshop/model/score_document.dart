@@ -1,6 +1,6 @@
 // lib/features/workshop/model/score_document.dart
 //
-// The editable document behind the Composition Workshop. partitura's Score is
+// The editable document behind the Composition Workshop. crisp_notation's Score is
 // an immutable value tree with no in-place editing, so the editor keeps its own
 // flat, mutable list of [EditorElement]s and rebuilds an immutable [Score] on
 // demand (packing the flat list into bar-lined measures). All mutations go
@@ -12,8 +12,8 @@
 
 import 'dart:math' as math;
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
-import 'package:partitura/partitura.dart';
 
 /// One editable event in the flat stream: a note, a chord (several simultaneous
 /// pitches), or a rest, with a stable [id] so it can be selected and edited.
@@ -63,7 +63,7 @@ class EditorElement {
 
   bool get isChord => pitches.length > 1;
 
-  /// This event as an immutable partitura element.
+  /// This event as an immutable crisp_notation element.
   MusicElement toElement() => isRest
       ? RestElement(duration, id: id)
       : NoteElement(
@@ -201,7 +201,7 @@ class ScoreDocument {
   NoteDuration? pickup;
 
   // Memoized renders — invalidated only when the music changes, so hover/select
-  // rebuilds don't force partitura to re-lay-out every frame.
+  // rebuilds don't force crisp_notation to re-lay-out every frame.
   Score? _scoreCache;
   GrandStaff? _grandCache;
 

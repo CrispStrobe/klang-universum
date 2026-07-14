@@ -1,4 +1,4 @@
-// Which Beat? — rhythmic placement (partitura beat-number overlay). Verifies the
+// Which Beat? — rhythmic placement (crisp_notation beat-number overlay). Verifies the
 // round loop: tapping the correct beat scores + records SRI under measures.beat.*,
 // and clearing all rounds finishes.
 

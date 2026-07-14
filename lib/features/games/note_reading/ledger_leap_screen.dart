@@ -11,7 +11,8 @@
 
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -21,7 +22,6 @@ import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class LedgerLeapScreen extends StatefulWidget {

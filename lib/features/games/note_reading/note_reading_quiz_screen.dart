@@ -1,6 +1,6 @@
 // lib/features/games/note_reading/note_reading_quiz_screen.dart
 //
-// "Wie heißt diese Note?" — a note is rendered on a real staff (partitura
+// "Wie heißt diese Note?" — a note is rendered on a real staff (crisp_notation
 // StaffView, kid theme) and the child picks its letter name. One screen
 // serves both clefs; the game registry creates a treble and a bass entry.
 //
@@ -9,7 +9,8 @@
 import 'dart:async';
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -23,7 +24,6 @@ import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class NoteReadingQuizScreen extends StatefulWidget {

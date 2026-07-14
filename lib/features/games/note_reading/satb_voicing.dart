@@ -3,14 +3,14 @@
 // Shared voicing + rendering for the SATB reading games (Read the Voice, Which
 // Voice?, and the ear variant). A random diatonic triad (C major, or several
 // major keys when `wide`) is voiced into 2 (Soprano + Alto) or 4 (SATB) parts
-// and laid out on a one- or two-staff system, using partitura's `Measure.voice2`
+// and laid out on a one- or two-staff system, using crisp_notation's `Measure.voice2`
 // (two voices per staff, stems up/down) — no voice crossing, Soprano/Alto on
 // treble, Tenor/Bass on bass.
 
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart';
 
 const _whole = NoteDuration(DurationBase.whole);
 

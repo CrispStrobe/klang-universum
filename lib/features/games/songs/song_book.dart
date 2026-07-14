@@ -1,11 +1,11 @@
 // lib/features/games/songs/song_book.dart
 //
-// The song book: public-domain children's songs as partitura DSL melodies
+// The song book: public-domain children's songs as crisp_notation DSL melodies
 // with lyrics. Titles stay in their original language (that's the song's
 // name); everything around them is localized.
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
-import 'package:partitura/partitura.dart'
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
+import 'package:crisp_notation/crisp_notation.dart'
     show NoteElement, Score, TimeSignature;
 
 /// Playable sequence for any single-voice [score]:

@@ -5,14 +5,15 @@
 // noteheads onto an interactive staff, left to right. Each placement sounds
 // its pitch; an undo fixes mistakes. When the melody is complete it is checked
 // against the target note-for-note. This is classic ear-training dictation,
-// reusing partitura's InteractiveStaff (the same input the composing sandbox
+// reusing crisp_notation's InteractiveStaff (the same input the composing sandbox
 // uses).
 //
 // SRI: 'note_reading.dictation.len<N>'.
 
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
@@ -20,7 +21,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class MelodyDictationScreen extends StatefulWidget {

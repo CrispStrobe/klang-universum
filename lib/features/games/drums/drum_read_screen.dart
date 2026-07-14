@@ -1,6 +1,6 @@
 // lib/features/games/drums/drum_read_screen.dart
 //
-// "Drum Read" — read a rhythm on the neutral percussion staff (partitura's
+// "Drum Read" — read a rhythm on the neutral percussion staff (crisp_notation's
 // percussion clef) and tap it back on the drum pad in time. After a one-bar
 // count-in, the two shown bars are "live"; each tap is judged Perfect/Good/Miss
 // against the notated onsets over a steady click. A no-fail rhythm-reading toy,
@@ -11,7 +11,8 @@
 
 import 'dart:math';
 
-// Material also exports `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +24,6 @@ import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/note_mascot.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class DrumReadScreen extends StatefulWidget {

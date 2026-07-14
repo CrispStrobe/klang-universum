@@ -1,7 +1,7 @@
 // lib/features/games/keyboard/grand_staff_read_screen.dart
 //
 // "Klaviersystem lesen" — the real piano-reading skill: a note is shown on the
-// grand staff (treble + bass joined by a brace, partitura's GrandStaffView) and
+// grand staff (treble + bass joined by a brace, crisp_notation's GrandStaffView) and
 // the child names it. Notes appear on whichever staff fits; 2★ widens the range
 // into the middle-C ledger region between the staves, exactly where pianists
 // need it.
@@ -10,7 +10,8 @@
 
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -20,7 +21,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class GrandStaffReadScreen extends StatefulWidget {

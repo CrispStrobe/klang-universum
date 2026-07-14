@@ -35,7 +35,7 @@ Target notes are scored against your live pitch (correct pitch within a cents
 window for enough of a note's duration = hit); `PlayAlongEngine` is pure-Dart
 and unit-tested. **Four switchable scroll views** (a menu in the app bar):
 highway (piano-roll), falling (vertical), notation (real engraved staff +
-moving cursor, via partitura), and coach (big current/next note for beginners).
+moving cursor, via crisp_notation), and coach (big current/next note for beginners).
 Cello/guitar/keyboard charts + count-in metronome.
 
 ### 3. Sing-along — DONE (v1)
@@ -69,7 +69,7 @@ into named collections (browse / search / reorder / export).
   metadata), per-song metadata (title/composer/key/tempo), collection model,
   and an edit/re-run flow for correcting recognition mistakes before it becomes a
   chart. Bridge OMR notation → the app's internal note/chart representation that
-  `PlayAlongEngine` / the `partitura` notation view already consume.
+  `PlayAlongEngine` / the `crisp_notation` notation view already consume.
 - Flagged here so the OMR work in CrispEmbed and this app's songbook UI stay
   aligned; sequencing vs. the AEC/backing work is open.
 

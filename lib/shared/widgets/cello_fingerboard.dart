@@ -5,7 +5,7 @@
 // Reports the MIDI note tapped; the caller decides what it means and sounds
 // like — the same contract as PianoKeyboard.
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';

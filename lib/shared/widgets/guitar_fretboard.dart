@@ -5,8 +5,8 @@
 // decides what a tap means and what it sounds like — the same contract as
 // PianoKeyboard.
 
+import 'package:crisp_notation/crisp_notation.dart' show Tuning;
 import 'package:flutter/material.dart';
-import 'package:partitura/partitura.dart' show Tuning;
 
 class GuitarFretboard extends StatelessWidget {
   final Tuning? tuning;

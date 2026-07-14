@@ -5,7 +5,7 @@
 // readings, and draws the score in one of four switchable views:
 //   • highway  — piano-roll: notes scroll past a fixed "now" line (pitch on Y)
 //   • falling  — vertical: notes fall toward a hit-line (like Falling Notes)
-//   • notation — a real engraved staff (partitura) with a moving cursor
+//   • notation — a real engraved staff (crisp_notation) with a moving cursor
 //   • coach    — minimal: the current + next note, huge, for beginners
 //
 // One screen serves both instruments and voice — pass a cello chart for
@@ -18,6 +18,18 @@
 
 import 'dart:async';
 
+import 'package:crisp_notation/crisp_notation.dart'
+    show
+        Clef,
+        DurationBase,
+        EditorMark,
+        ElementRegionController,
+        Measure,
+        MultiSystemView,
+        NoteDuration,
+        NoteElement,
+        Score,
+        ScoreEditorController;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:klang_universum/core/audio/metronome.dart';
@@ -35,18 +47,6 @@ import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart'
-    show
-        Clef,
-        DurationBase,
-        EditorMark,
-        ElementRegionController,
-        Measure,
-        MultiSystemView,
-        NoteDuration,
-        NoteElement,
-        Score,
-        ScoreEditorController;
 import 'package:provider/provider.dart';
 
 /// How the moving score is drawn. The child can switch live.
@@ -825,7 +825,7 @@ class _CoachView extends StatelessWidget {
   }
 }
 
-/// Engraved-notation view: real staff (partitura) with a moving cursor. The
+/// Engraved-notation view: real staff (crisp_notation) with a moving cursor. The
 /// active note is highlighted (the cursor); notes already hit stay highlighted.
 class _NotationView extends StatefulWidget {
   const _NotationView({
@@ -845,7 +845,7 @@ class _NotationView extends StatefulWidget {
 class _NotationViewState extends State<_NotationView> {
   final ScrollController _scroll = ScrollController();
 
-  // C7 regions give each note's rect; the editor controller (partitura) uses
+  // C7 regions give each note's rect; the editor controller (crisp_notation) uses
   // that + our scroll controller to keep the active note in view.
   final ElementRegionController _regions = ElementRegionController();
   final ScoreEditorController _editor = ScoreEditorController();

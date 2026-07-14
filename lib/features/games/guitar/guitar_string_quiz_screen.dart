@@ -2,13 +2,14 @@
 //
 // "Welche Saite?" — an open string (fret 0) is shown on the tablature; the
 // child names the note it plays (learning E–A–D–G–B–E). The first, easy tier
-// of the Gitarren-Ecke, on partitura's TabStaffView.
+// of the Gitarren-Ecke, on crisp_notation's TabStaffView.
 //
 // SRI: 'guitar.string.s<number>'.
 
 import 'dart:math';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
@@ -18,7 +19,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class GuitarStringQuizScreen extends StatefulWidget {

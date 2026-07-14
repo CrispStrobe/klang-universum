@@ -1,9 +1,9 @@
 // lib/features/games/transpose/concert_pitch_screen.dart
 //
 // "Concert Pitch" — transposing-instrument reading (docs/PLAN.md, built on
-// partitura's Transposition support). A written note is shown for a named
+// crisp_notation's Transposition support). A written note is shown for a named
 // transposing instrument (B♭ trumpet, E♭ alto sax, F horn); the child names the
-// concert pitch that actually sounds. partitura's `transposeBy` does the maths,
+// concert pitch that actually sounds. crisp_notation's `transposeBy` does the maths,
 // so the letter answer is exact.
 //
 // Star-gated: the B♭ instruments alone for beginners; E♭ and F added at 2★.
@@ -11,7 +11,8 @@
 
 import 'dart:math';
 
-// Material also exports `Step` and `Interval`; partitura's win here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material also exports `Step` and `Interval`; crisp_notation's win here.
 import 'package:flutter/material.dart' hide Interval, Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -21,7 +22,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// A transposing instrument: its transposition and a display name.

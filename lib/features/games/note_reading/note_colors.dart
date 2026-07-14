@@ -5,8 +5,8 @@
 // note is always the same colour across the reading games; saturated enough to
 // read as a notehead fill and, softened, to tint an answer button.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:partitura/partitura.dart';
 
 const Map<Step, Color> kPitchClassColors = {
   Step.c: Color(0xFFE53935), // red

@@ -1,7 +1,7 @@
 name: CI
 
 # Analyze + test on every push to main and every PR. The app has a path
-# dependency on the sibling `partitura` library (../partitura), so we lay the
+# dependency on the sibling `crisp_notation` library (../crisp_notation), so we lay the
 # two repos out as siblings in the workspace and run from within this one.
 
 on:
@@ -22,13 +22,13 @@ jobs:
         with:
           path: klang-universum
 
-      # partitura + partitura_core are resolved via ../partitura/... path deps.
-      - name: Checkout partitura (sibling path dependency)
+      # crisp_notation + crisp_notation_core are resolved via ../crisp_notation/... path deps.
+      - name: Checkout crisp_notation (sibling path dependency)
         uses: actions/checkout@v5
         with:
-          repository: CrispStrobe/partitura
+          repository: CrispStrobe/crisp_notation
           ref: main
-          path: partitura-public
+          path: crisp_notation-public
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

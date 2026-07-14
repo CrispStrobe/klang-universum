@@ -2,7 +2,7 @@
 //
 // The multi-instrument container behind the Composition Workshop (G6). It is a
 // thin shell over N single-part [ScoreDocument]s — one per instrument staff —
-// that assembles them into an immutable partitura [MultiPartScore] for the
+// that assembles them into an immutable crisp_notation [MultiPartScore] for the
 // full-score canvas ([MultiPartView]). Each part keeps its own element stream,
 // clef and undo/redo; the toolbar always edits [activePart], so the whole
 // single-part editing pipeline is reused unchanged.
@@ -22,9 +22,9 @@
 // Per the G6 handover this deliberately does NOT rewrite [ScoreDocument]; it
 // composes it. Undo/redo stays per part for v1.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:klang_universum/features/workshop/model/score_document.dart';
-import 'package:partitura/partitura.dart';
 
 /// A whole piece as an ordered list of instrument [parts], plus the layout
 /// grouping (brackets/braces and barline connections) drawn down the left edge.

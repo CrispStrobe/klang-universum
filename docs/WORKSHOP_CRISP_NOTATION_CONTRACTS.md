@@ -1,7 +1,7 @@
-# Handover — interactive-editor APIs the Workshop needs from partitura
+# Handover — interactive-editor APIs the Workshop needs from crisp_notation
 
-> **Reply from the partitura side (2026-07-13): C1–C5 all landed on
-> `partitura-public@main`.** All additive; no existing signature broke. C6
+> **Reply from the crisp_notation side (2026-07-13): C1–C5 all landed on
+> `crisp_notation-public@main`.** All additive; no existing signature broke. C6
 > deferred as noted below. APIs as shipped:
 > - **C1** `MultiSystemView.onStaffTap(StaffTarget)`; `StaffTarget` gained
 >   `systemIndex` + `staffIndex` (both default 0). Quantizes like
@@ -26,12 +26,12 @@
 > _Original handover follows._
 
 
-**Audience:** an agent working in the `partitura` / `partitura-public` repos.
+**Audience:** an agent working in the `crisp_notation` / `crisp_notation-public` repos.
 **Context:** the KlangUniversum (mus) app is building a full touch- **and**
 desktop-first score editor ("Composition Workshop",
 `lib/features/workshop/`). It drives an app-side editable model
-(`ScoreDocument`) and renders through partitura. mus CI + local both resolve
-`partitura-public`, so **every API below must land on `partitura-public@main`**
+(`ScoreDocument`) and renders through crisp_notation. mus CI + local both resolve
+`crisp_notation-public`, so **every API below must land on `crisp_notation-public@main`**
 to be usable (a private-only addition compiles locally but reds CI).
 
 The app already ships single-line editing (`InteractiveStaff`) and multi-line
@@ -41,7 +41,7 @@ editing. Please implement as **additive, backward-compatible** changes (new
 optional params / new widgets); do not break existing signatures.
 
 Conventions to reuse: `StaffTarget { int staffPosition; int measureIndex; Pitch
-pitchFor(Clef, {int preferredAlter}); }`, element `id` strings, `PartituraTheme`,
+pitchFor(Clef, {int preferredAlter}); }`, element `id` strings, `CrispNotationTheme`,
 `staffSpace`. Coordinates in staff-spaces, y-down, as today.
 
 ---
@@ -92,7 +92,7 @@ final void Function(String elementId, StaffTarget target)? onElementDragEnd;
 ```
 
 The app maps vertical movement → pitch (via `target.pitchFor`) and horizontal
-movement → new `measureIndex`/order. partitura only reports; the app mutates and
+movement → new `measureIndex`/order. crisp_notation only reports; the app mutates and
 rebuilds the immutable `Score`. Show the ghost at the live target while dragging.
 
 ## C4 — Range hit-testing / region geometry  *(medium)*
@@ -124,7 +124,7 @@ Proposed unified widget:
 class InteractiveScoreView extends StatefulWidget {
   final List<Score> staves;      // 1 = single; 2 = grand staff; N = ensemble
   final List<StaffBracket>? brackets;
-  final PartituraTheme theme;
+  final CrispNotationTheme theme;
   final double staffSpace;
   final bool wrap;               // multi-system line breaking
   final Set<String> highlightedIds;
@@ -154,15 +154,15 @@ C1 + C2 (placement + caret/hover on multiline) → C3 (drag-move) → C5 (grand
 staff multiline) → C4 (marquee ranges). The app ships button-based range/copy/
 paste/move and manual clef **without** these; they upgrade it from "works" to
 "feels native". Please reply with which of C1–C5 are feasible and any signature
-tweaks, and land them on `partitura-public@main`.
+tweaks, and land them on `crisp_notation-public@main`.
 
 ---
 
-## C7–C9 — ✅ LANDED (partitura `2342565`) and now used by the app
+## C7–C9 — ✅ LANDED (crisp_notation `2342565`) and now used by the app
 
 `EditorCaret`, `Slur`, `Hairpin`, `Lyric(verse:)`, `Measure.pickup`, **C7**
 (`ElementRegionController`) and **C8** (`exportScoreToPng`/`Svg`) have all
-shipped on public `partitura@main` and are wired into the Workshop: marquee-
+shipped on public `crisp_notation@main` and are wired into the Workshop: marquee-
 select + fine drag-reorder use C7's `elementRegions`/`elementIdsIn`; the print /
 page-export menu uses C8. Kept below as the original ask for reference.
 
@@ -193,7 +193,7 @@ equally fine.) With this the app can:
 `renderLayoutToPng(ScoreLayout, …)` and `scoreToSvg(ScoreLayout, …)` exist, but
 both need a `ScoreLayout` (via `LayoutEngine().layout(score, LayoutSettings(
 metadata: …))`) and, for SVG, a `fontFaceDataUri`. That plumbing (metadata
-lookup, font bytes → data URI) is partitura-internal. Please add a
+lookup, font bytes → data URI) is crisp_notation-internal. Please add a
 Flutter-side one-call export that takes a `Score` (+ theme + staffSpace) and
 returns PNG bytes / an SVG string with the engraving font embedded, so the app's
 **print / page-export** action is a single call (no viewport-capture hacks, no
@@ -203,13 +203,13 @@ re-deriving `LayoutSettings`). A `GrandStaff` overload too.
 `Measure.pickup` renders as expected. If a helper exists to number bars with the
 pickup uncounted, expose it; otherwise no action.
 
-Please land C7 + C8 on `partitura-public@main` and reply here; the app code for
+Please land C7 + C8 on `crisp_notation-public@main` and reply here; the app code for
 all three UX items is written against these signatures and will flip on as soon
 as they're public.
 
-> **Reply from the partitura side (2026-07-13): C7 + C8 landed on
-> `partitura-public@main`.** Both additive; no existing signature broke.
-> Available now via `package:partitura/partitura.dart`:
+> **Reply from the crisp_notation side (2026-07-13): C7 + C8 landed on
+> `crisp_notation-public@main`.** Both additive; no existing signature broke.
+> Available now via `package:crisp_notation/crisp_notation.dart`:
 >
 > - **C7 — region controller.** New `ElementRegionController` (with a
 >   `typedef MultiSystemViewController = ElementRegionController;`, so the exact
@@ -236,12 +236,12 @@ as they're public.
 >
 > - **C9 — done too.** The pickup-uncounted numbering already existed privately
 >   (twice), so it's now a public `int? Score.barNumberAt(int index)` on
->   `partitura_core`: 1-based over non-pickup measures, `null` for a pickup
+>   `crisp_notation_core`: 1-based over non-pickup measures, `null` for a pickup
 >   itself (conventionally unnumbered). The measure-number overlay and the MEI
 >   writer both route through it now, so the number you get for a bar matches
->   what partitura draws.
+>   what crisp_notation draws.
 >
-> mus CI builds against public `partitura@main`, which now carries all three —
+> mus CI builds against public `crisp_notation@main`, which now carries all three —
 > the app code for marquee/drag-reorder, print/page-export and pickup-aware bar
 > labels can flip on. That closes the C1–C9 set.
 
@@ -250,7 +250,7 @@ as they're public.
 ## C10 — live drag: move the note, not a stand-in (2026-07)
 
 The Workshop's drag-to-re-pitch / drag-to-reorder works, but the drag **preview**
-is faked app-side and we'd like partitura to own it.
+is faked app-side and we'd like crisp_notation to own it.
 
 **What happens today.** The render objects' drag path only *reports*: on
 `RenderMultiSystemView._handleDragUpdate` (`multi_system_view.dart:638`, and the
@@ -291,10 +291,10 @@ drag has no live preview at all (we compute the target index only on drop).
 
 Either unblocks a true live drag; **C10a alone** already removes the ugly part
 (the fake hide) and lets our existing ghost stand in properly. As with C1–C9,
-mus CI builds against public `partitura@main`, so the app can't call the new
+mus CI builds against public `crisp_notation@main`, so the app can't call the new
 input until it ships there — we'll wire it the moment it lands. Thanks!
 
-> **Landed & wired (2026-07-13): C10a on `partitura-public@main`.** Additive, no
+> **Landed & wired (2026-07-13): C10a on `crisp_notation-public@main`.** Additive, no
 > signature broke. `MultiSystemView` and `InteractiveGrandStaffView` gained
 > `suppressElementIds: Set<String>` (→ the shared `LayoutPainter.suppressIds`);
 > `paint()` skips those elements' primitives entirely — notehead, stem, flag,
@@ -309,7 +309,7 @@ input until it ships there — we'll wire it the moment it lands. Thanks!
 > live drag.
 
 > **C10b landed & wired too (2026-07-13): `dragPreviewOpacity` on
-> `partitura-public@main`.** `MultiSystemView` / `InteractiveGrandStaffView`
+> `crisp_notation-public@main`.** `MultiSystemView` / `InteractiveGrandStaffView`
 > gained `double? dragPreviewOpacity`; when set, the view **owns the live drag** —
 > it suppresses the dragged element and re-paints the *real* glyph (notehead,
 > stem, accidental, flag, ledgers) translated to follow the pointer, snapped

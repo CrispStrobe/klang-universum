@@ -3,6 +3,8 @@
 // and undoes/redoes. Note placement (from the piano) is covered by the
 // ScoreDocument model tests.
 
+import 'package:crisp_notation/crisp_notation.dart'
+    show InteractiveGrandStaffView, MultiPartView, MultiSystemView;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,8 +15,6 @@ import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart'
-    show InteractiveGrandStaffView, MultiPartView, MultiSystemView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

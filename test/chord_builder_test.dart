@@ -1,8 +1,9 @@
-// Chord Builder — build the named chord, graded by partitura's identifyChord so
+// Chord Builder — build the named chord, graded by crisp_notation's identifyChord so
 // any voicing (incl. inversions) counts. Verifies: placing the target notes and
 // checking scores + records SRI under chords.build.*; an inverted voicing is
 // also accepted; clearing all rounds finishes.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +13,6 @@ import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/chords/chord_builder_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

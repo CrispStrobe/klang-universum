@@ -1,11 +1,11 @@
 // lib/shared/midi_pitch.dart
 //
-// Spell a MIDI number as a partitura [Pitch]. Instrument input surfaces (piano,
+// Spell a MIDI number as a crisp_notation [Pitch]. Instrument input surfaces (piano,
 // guitar, cello) produce MIDI numbers; the notation model needs a spelled
 // pitch. Naturals stay natural; the five black keys are spelled as sharps —
 // the plain choice for a kids' sandbox.
 
-import 'package:partitura/partitura.dart';
+import 'package:crisp_notation/crisp_notation.dart';
 
 const List<(Step, int)> _spelling = [
   (Step.c, 0), // 0  C

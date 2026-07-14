@@ -6,13 +6,13 @@ shared one per module) that teaches exactly the facts it drills — each fact
 **shown** (engraved notation) *and* **heard** (playable audio). The tutorial
 framework is built and live; this is a **content-authoring** job (plus a little
 wiring). Work in a feature branch + a worktree that is a **sibling of `mus/`**
-(so the `../partitura` path dep resolves). Keep `origin/main` green.
+(so the `../crisp_notation` path dep resolves). Keep `origin/main` green.
 
 ## What already exists (your starting point — don't rebuild it)
 
 Framework in `lib/shared/tutorial/`:
 - **`tutorial.dart`** — the model. `Tutorial(title, steps)`; each
-  `TutorialStep(text, {score, play, playLabel})` = text + an optional partitura
+  `TutorialStep(text, {score, play, playLabel})` = text + an optional crisp_notation
   `Score` (drawn on a StaffView) + an optional `void Function(AudioService)`
   audio example.
 - **`tutorial_sheet.dart`** — renders a `Tutorial` as a paged modal.

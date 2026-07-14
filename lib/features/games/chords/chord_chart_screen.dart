@@ -3,14 +3,15 @@
 // "Chord Chart" — lead-sheet literacy: a chord SYMBOL is shown (G, Dm, D7…) and
 // the child taps the matching NOTATION among four little staves. The inverse of
 // Name That Chord (notation → symbol); here you read the symbol, as on a real
-// song chart, and recognise the chord shape. Symbols come from partitura's
+// song chart, and recognise the chord shape. Symbols come from crisp_notation's
 // `chordSymbolFor`, so they're spelled the same way the library names them.
 //
 // SRI: 'chords.symbol.<symbol>'.
 
 import 'dart:math';
 
-// Material's Stepper also exports `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -19,7 +20,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// One answer option: a chord's notation plus the symbol it spells.

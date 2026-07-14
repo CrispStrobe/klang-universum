@@ -6,13 +6,13 @@
 // strategy real methods teach; here it is a scaffold that fades as the child
 // earns stars (see note_reading_quiz_screen.dart).
 //
-// The computation is pure and clef-agnostic (driven by partitura's diatonic
+// The computation is pure and clef-agnostic (driven by crisp_notation's diatonic
 // staff arithmetic) so it is unit-testable without a widget tree.
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart';
 
 /// The nearest landmark to a target note and the signed diatonic distance to
 /// it (`steps` > 0 means the target is *above* the landmark).

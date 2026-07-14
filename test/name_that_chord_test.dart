@@ -1,4 +1,4 @@
-// Name That Chord — chord identification quiz (partitura identifyChord). Verifies
+// Name That Chord — chord identification quiz (crisp_notation identifyChord). Verifies
 // the round loop: options appear, the answer symbol is among them, picking it
 // scores + records SRI under chords.name.*, and clearing all rounds finishes.
 

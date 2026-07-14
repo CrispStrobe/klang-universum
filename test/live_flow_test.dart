@@ -7,6 +7,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crisp_notation/crisp_notation.dart' show Bravura, SmuflMetadata;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart' show ByteData, FontLoader;
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -19,12 +20,11 @@ import 'package:klang_universum/features/games/game_registry.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/main.dart';
-import 'package:partitura/partitura.dart' show Bravura, SmuflMetadata;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> loadRealBravura() async {
-  const base = '../partitura-public/packages/partitura/assets';
+  const base = '../crisp_notation-public/packages/crisp_notation/assets';
   Bravura.debugOverrideMetadata(
     SmuflMetadata.fromJson(
       jsonDecode(File('$base/smufl/bravura_metadata.json').readAsStringSync())
@@ -32,7 +32,7 @@ Future<void> loadRealBravura() async {
     ),
   );
   final bytes = File('$base/fonts/Bravura.otf').readAsBytesSync();
-  final loader = FontLoader('packages/partitura/Bravura')
+  final loader = FontLoader('packages/crisp_notation/Bravura')
     ..addFont(Future.value(ByteData.view(bytes.buffer)));
   await loader.load();
 }

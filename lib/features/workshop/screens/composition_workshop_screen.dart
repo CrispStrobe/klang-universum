@@ -13,7 +13,8 @@
 
 import 'dart:convert';
 
-// Material's Stepper also exports a `Step`; partitura's pitch Step wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material's Stepper also exports a `Step`; crisp_notation's pitch Step wins here.
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
@@ -28,7 +29,6 @@ import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:klang_universum/shared/score_theme.dart';
 import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 /// A choosable note value: glyph + base duration.
@@ -647,7 +647,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// position (fine, using the C7 element regions to read order across bars and
   /// lines); a **vertical** drag re-pitches it. While the drag is live the
   /// view suppresses the original and re-paints the real glyph following the
-  /// pointer (partitura C10b `dragPreviewOpacity`), so the app clears its own
+  /// pointer (crisp_notation C10b `dragPreviewOpacity`), so the app clears its own
   /// hover ghost and keeps no stand-in of its own.
   void _onElementDragStart(String id) => setState(() {
         _dragId = id;
@@ -1291,7 +1291,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final elementColors = <String, Color>{
       for (final id in selectedIds) id: Colors.amber,
     };
-    // Live drag is owned by partitura (C10b `dragPreviewOpacity`): while a note
+    // Live drag is owned by crisp_notation (C10b `dragPreviewOpacity`): while a note
     // is dragged the view suppresses it and re-paints the *real* glyph
     // (notehead/stem/accidental/flag/ledgers) following the pointer, snapped to
     // pitch — so the app keeps no suppress/ghost bookkeeping for moves.

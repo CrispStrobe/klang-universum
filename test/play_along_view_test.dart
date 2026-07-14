@@ -1,9 +1,10 @@
 // test/play_along_view_test.dart
 //
 // Switches the play-along screen through all four scroll modes and asserts each
-// renders without throwing — the notation mode in particular builds a partitura
+// renders without throwing — the notation mode in particular builds a crisp_notation
 // Score, which the highway-only smoke test never exercises.
 
+import 'package:crisp_notation/crisp_notation.dart' show MultiSystemView;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +14,6 @@ import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart' show MultiSystemView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

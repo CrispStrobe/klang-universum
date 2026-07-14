@@ -4,13 +4,13 @@
 **multi-instrument score editor** — edit several parts (e.g. flute + piano, or an
 SATB choir), lay them out as a real full score, and import/export multi-part
 files. This was the Workshop's last big deferred feature (P4/G6), blocked only on
-a public multi-part model. **That blocker is now gone:** partitura shipped
+a public multi-part model. **That blocker is now gone:** crisp_notation shipped
 `MultiPartScore` + `MultiPartView` and **both are exported from the public
-barrel**, so mus and CI can use them. No partitura ask is required for the core
+barrel**, so mus and CI can use them. No crisp_notation ask is required for the core
 of this — build on the public API.
 
 Work in a **feature branch + a worktree that is a sibling of `mus/`** (so the
-`../partitura-public/...` path dep resolves — a worktree under `.claude/` breaks
+`../crisp_notation-public/...` path dep resolves — a worktree under `.claude/` breaks
 it). Keep `origin/main` green. **`lib/features/workshop/**` is a HOT file set** —
 another agent (`workshop→games` on the board) ships there; `git pull --rebase`
 often, keep commits small, and update the `docs/PLAN.md` 🚧 board at every
@@ -24,7 +24,7 @@ The whole Workshop is just **two source files** + four tests:
 
 - **`lib/features/workshop/model/score_document.dart`** — `ScoreDocument`: a rich
   **single-part** editable document (an ordered `List<EditorElement>` → an
-  immutable partitura `Score`). It already has everything you need *per part*:
+  immutable crisp_notation `Score`). It already has everything you need *per part*:
   - Metadata fields: `clef` (`Clef`), `timeSignature` (`TimeSignature`),
     `keySignature` (`KeySignature`).
   - Build outputs: **`Score buildScore()`** and **`GrandStaff buildGrandStaff()`**.
@@ -35,7 +35,7 @@ The whole Workshop is just **two source files** + four tests:
     `selectedIds`, range ops), multi-level **undo/redo** (`undo`, `redo`,
     `canUndo`, `canRedo`), and **`loadScore(Score)`** (flattens voice 1 into
     editable elements; undoable).
-  - It is a plain `ChangeNotifier`-style model (no Flutter deps beyond partitura
+  - It is a plain `ChangeNotifier`-style model (no Flutter deps beyond crisp_notation
     types) — unit-tested in `test/score_document_test.dart` +
     `score_document_more_test.dart`.
 - **`lib/features/workshop/screens/composition_workshop_screen.dart`** — the
@@ -52,19 +52,19 @@ The whole Workshop is just **two source files** + four tests:
 - Tests: `composition_workshop_test.dart`, `score_document_test.dart`,
   `score_document_more_test.dart`, `workshop_drop_slot_test.dart`.
 
-**Everything landed contract-wise:** partitura contracts **C1–C10 are all landed
+**Everything landed contract-wise:** crisp_notation contracts **C1–C10 are all landed
 and wired** (staff-tap, hover/caret, drag-to-move, marquee, interactive grand
 staff, region controller, export helpers, live drag). See
-`docs/WORKSHOP_PARTITURA_CONTRACTS.md` and `docs/WORKSHOP_PLAN.md`.
+`docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md` and `docs/WORKSHOP_PLAN.md`.
 
 ---
 
-## The partitura APIs you'll build G6 on (all public @main)
+## The crisp_notation APIs you'll build G6 on (all public @main)
 
-Verified exported from the public barrels (`partitura.dart` /
-`partitura_core.dart`) as of 2026-07-14:
+Verified exported from the public barrels (`crisp_notation.dart` /
+`crisp_notation_core.dart`) as of 2026-07-14:
 
-- **`MultiPartScore`** (`partitura_core/src/layout/multi_part.dart`):
+- **`MultiPartScore`** (`crisp_notation_core/src/layout/multi_part.dart`):
   ```dart
   const MultiPartScore(
     List<Score> parts, {                 // top to bottom, ≥1
@@ -79,13 +79,13 @@ Verified exported from the public barrels (`partitura.dart` /
   `StaffBracketKind.brace` (`{`, one instrument on multiple staves — piano) or
   `.bracket` (`[`, a section — strings). `BarlineGroup(first, last)` = a
   contiguous part-index run whose barlines connect.
-- **`MultiPartView`** (`partitura/src/rendering/multi_part_view.dart`) — the
+- **`MultiPartView`** (`crisp_notation/src/rendering/multi_part_view.dart`) — the
   render widget (a `LeafRenderObjectWidget`):
   ```dart
   const MultiPartView({
     required MultiPartScore document,
-    required PageMetrics metrics,        // from partitura_core/src/layout/page_layout.dart
-    PartituraTheme theme = PartituraTheme.standard,   // ← pass kidsScoreTheme instead!
+    required PageMetrics metrics,        // from crisp_notation_core/src/layout/page_layout.dart
+    CrispNotationTheme theme = CrispNotationTheme.standard,   // ← pass kidsScoreTheme instead!
     double staffSpace = 8, staffGap = 4, systemGap = 10,
     bool justifyVertically = true, hideEmptyStaves = false,
     int pageIndex = 0, bool drawPageBorder = false,
@@ -104,7 +104,7 @@ expose the full interactive ghost-note/drag entry that single-part
 note entry directly on `MultiPartView`. Use the two-view approach below (edit the
 active part with the existing interactive pipeline; `MultiPartView` is the
 full-score layout + selection surface). Full in-place multi-part interaction
-would be a *new* partitura ask (a "C11") — out of scope; note it, don't block on
+would be a *new* crisp_notation ask (a "C11") — out of scope; note it, don't block on
 it.
 
 ---
@@ -151,7 +151,7 @@ polish.
 
 **Per-part instrument setup:** each `ScoreDocument` already carries `clef`; add a
 tiny instrument table (name + default clef + `Tuning`/transposition). Transposing
-instruments reuse partitura's `transposeBy` (already used by the Concert Pitch
+instruments reuse crisp_notation's `transposeBy` (already used by the Concert Pitch
 game). Brackets: a piano part = two `ScoreDocument`s (RH treble + LH bass) under
 one `StaffBracket(kind: brace)`.
 
@@ -174,9 +174,9 @@ one `StaffBracket(kind: brace)`.
 - **P4d — multi-part I/O.** Import: `MultiPartScore.fromStaffSystem(
   staffSystemFromMusicXml/​Mei/​Abc(...))` → seed the document (each part → one
   `ScoreDocument.loadScore`). Export every part (multi-part MusicXML; the
-  partitura CLI already renders multi-part PNG/SVG — reuse its layout).
-- **P4e — stretch (needs partitura).** In-place interactive editing directly on
-  `MultiPartView` (cross-part ghost/drag). File a partitura contract if wanted;
+  crisp_notation CLI already renders multi-part PNG/SVG — reuse its layout).
+- **P4e — stretch (needs crisp_notation).** In-place interactive editing directly on
+  `MultiPartView` (cross-part ghost/drag). File a crisp_notation contract if wanted;
   don't block P4a–d on it.
 
 ---
@@ -188,12 +188,12 @@ one `StaffBracket(kind: brace)`.
   **before** touching workshop files and after each ship; `git pull --rebase
   origin main` often. The **workshop→games** agent is the other owner here —
   coordinate.
-- **CI = public partitura.** mus CI/deploy resolve `../partitura-public`
-  (`CrispStrobe/partitura@main`). Every partitura symbol you use **must be on
+- **CI = public crisp_notation.** mus CI/deploy resolve `../crisp_notation-public`
+  (`CrispStrobe/crisp_notation@main`). Every crisp_notation symbol you use **must be on
   public `@main`** — `MultiPartScore`/`MultiPartView`/`StaffBracket`/`BarlineGroup`/
   `PageMetrics`/`layoutMultiPartPages` all are (verified). If you reach for
-  something new, grep the public barrel first. (memory: `partitura-public-vs-private-ci`.)
-- **Use `kidsScoreTheme`,** not `PartituraTheme.standard`/`.kids`, for every
+  something new, grep the public barrel first. (memory: `crisp_notation-public-vs-private-ci`.)
+- **Use `kidsScoreTheme`,** not `CrispNotationTheme.standard`/`.kids`, for every
   StaffView/MultiPartView so the Settings "Handwritten notes" (Petaluma) toggle
   reaches the editor. It's in `shared/score_theme.dart`.
 - **Surface-flake on CI:** staff-based widget tests must call
@@ -218,11 +218,11 @@ one `StaffBracket(kind: brace)`.
 2. `lib/features/workshop/screens/composition_workshop_screen.dart` (how the
    canvas + toolbar are wired; find the `MultiSystemView` / `InteractiveGrandStaffView`
    render sites).
-3. `../partitura-public/packages/partitura_core/lib/src/layout/multi_part.dart`
-   and `.../partitura/lib/src/rendering/multi_part_view.dart` (the target API).
+3. `../crisp_notation-public/packages/crisp_notation_core/lib/src/layout/multi_part.dart`
+   and `.../crisp_notation/lib/src/rendering/multi_part_view.dart` (the target API).
 4. `docs/WORKSHOP_PLAN.md` (G6 section + status) and
-   `docs/WORKSHOP_PARTITURA_CONTRACTS.md` (what's landed).
+   `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md` (what's landed).
 5. `test/score_document_test.dart` (the test style to mirror).
 
-Not legal/architectural gospel — verify every partitura signature against `@main`
+Not legal/architectural gospel — verify every crisp_notation signature against `@main`
 before you lean on it, since that repo moves fast.

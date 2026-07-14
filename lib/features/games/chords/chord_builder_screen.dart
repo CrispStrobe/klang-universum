@@ -1,7 +1,7 @@
 // lib/features/games/chords/chord_builder_screen.dart
 //
 // "Chord Builder" — build the named chord by tapping three notes onto the staff.
-// partitura's `identifyChord` grades what you built, so **any voicing counts**:
+// crisp_notation's `identifyChord` grades what you built, so **any voicing counts**:
 // root position or an inversion, in any octave, is accepted as long as the
 // pitch classes spell the target chord. The interactive counterpart to Name
 // That Chord, and the reason the chord engine can grade more than root position.
@@ -11,7 +11,8 @@
 
 import 'dart:math';
 
-// Material also exports `Step`; partitura's wins here.
+import 'package:crisp_notation/crisp_notation.dart';
+// Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -20,7 +21,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 const _wholeRest = RestElement(NoteDuration(DurationBase.whole));

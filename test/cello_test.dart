@@ -1,3 +1,4 @@
+import 'package:crisp_notation/crisp_notation.dart' hide Step;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,7 +14,6 @@ import 'package:klang_universum/features/games/cello/cello_string_quiz_screen.da
 import 'package:klang_universum/features/games/note_reading/note_reading_quiz_screen.dart';
 import 'package:klang_universum/features/games/screens/module_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
-import 'package:partitura/partitura.dart' hide Step;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

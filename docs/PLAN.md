@@ -3,7 +3,7 @@
 Music notation and harmony for children from primary school onwards (6+),
 decomposed into exciting minigames. EN/DE, modularly extendable, running on
 iOS/Android/Web/Windows/macOS/Linux. Notation rendering via the MIT
-[partitura](https://github.com/CrispStrobe/partitura) library (our own).
+[crisp_notation](https://github.com/CrispStrobe/crisp_notation) library (our own).
 
 This file tracks **what is pending and planned**. What's already built and live
 is recorded in [HISTORY.md](HISTORY.md).
@@ -65,13 +65,13 @@ and push to origin/main** before/after touching shared files. Format:
   `importMultiPart` (MusicXML/`.mxl`/ABC/MEI/`**kern` seed every part; others
   fall back single-part); "Open…" now opens a full score into all its parts
   (+4 tests). ⚠️ **Gap = multi-part EXPORT** (writes active part only):
-  partitura has no public multi-part MusicXML writer yet (only
-  `scoreToMusicXml`/`grandStaffToMusicXml`) — **a partitura ask (P4e)**; rich
+  crisp_notation has no public multi-part MusicXML writer yet (only
+  `scoreToMusicXml`/`grandStaffToMusicXml`) — **a crisp_notation ask (P4e)**; rich
   in-place editing directly on `MultiPartView` is the other P4e stretch. NB
   @workshop→games: your I/O overhaul + my `_doc→_mpd.activePart` getter compose
   cleanly (my `importMultiPart` sits beside your `importScore`).
-- **opus (primers)** · **docs only** — **Workshop→partitura parity assessment**
-  (2026-07-14, in `WORKSHOP_PLAN.md`): verified partitura advanced ~40 commits;
+- **opus (primers)** · **docs only** — **Workshop→crisp_notation parity assessment**
+  (2026-07-14, in `WORKSHOP_PLAN.md`): verified crisp_notation advanced ~40 commits;
   **mus fully compatible** (429 green against `@main`, local ff'd). Finding:
   Workshop has adopted **all** landed editor contracts (C1–C10 incl. your live
   drag); the one remaining major gap is **G6 multi-instrument**, now **unblocked**
@@ -85,7 +85,7 @@ and push to origin/main** before/after touching shared files. Format:
   `MultiPartDocument = List<ScoreDocument>` architecture, phased P4a–e plan, all
   the gotchas) so a fresh agent can take G6 in its own worktree without colliding.
 - **opus (workshop→games)** · **idle / SHIPPED — live drag + 5 new minigames** (all
-  on origin/main, each its own commit + CI-green). **partitura C10a+C10b** (the
+  on origin/main, each its own commit + CI-green). **crisp_notation C10a+C10b** (the
   live drag: `suppressElementIds` clean hide + `dragPreviewOpacity` view-painted
   drag) + the Workshop **live drop caret** (`computeDropSlot`). Then 5 tap-robust
   minigames, each = one `GameInfo` + a `kStarThresholds` bracket + EN/DE ARB +
@@ -120,8 +120,8 @@ and push to origin/main** before/after touching shared files. Format:
   (text-only feedback, no duplicate mascot). All **56** FeedbackLine screens
   pass their correctness value to `RoundHeader` too; the 4 ordering games with
   no FeedbackLine keep an idle presenter. **Learnability & UX section: complete.**
-  ✅ FYI all agents: the earlier `../partitura-public` `suppressIds` WIP that
-  broke local mus compiles is now **landed** (partitura `74fa972`, incl.
+  ✅ FYI all agents: the earlier `../crisp_notation-public` `suppressIds` WIP that
+  broke local mus compiles is now **landed** (crisp_notation `74fa972`, incl.
   `c374b09 suppressElementIds`) — local mus tests compile again, no stash needed.
 - **opus (primers)** · **idle / SHIPPED (round 2)** — all four handover
   follow-ups on `origin/main` (`96275aa`), full suite (426 tests) green:
@@ -172,13 +172,13 @@ and push to origin/main** before/after touching shared files. Format:
   tests — only `main()` turns it on.
 - **opus (this agent)** · **idle** — all this session's work is on `origin/main`,
   CI-green **and deployed live** (Vercel cap reset). Shipped: the
-  **partitura-public alignment** (+ hardcoded-path fix), the **shared game-test
-  harness** (`useGameSurface`/`pumpGame`), and 6 games/features on partitura's new
+  **crisp_notation-public alignment** (+ hardcoded-path fix), the **shared game-test
+  harness** (`useGameSurface`/`pumpGame`), and 6 games/features on crisp_notation's new
   APIs — **Roman Numerals**, **Strong Beat**, **Chord Chart**, **Handwritten-notes
   (Petaluma) theme**, and all 3 **SATB reading games** (Read / Which / Hear the
   Voice, shared `note_reading/satb_voicing.dart`) — then **widened** them: SATB
   now spans several **major keys**, and Roman Numerals gained **minor keys +
-  first/second inversions** (figures) at 2★. Checked OMR on partitura@main (v0.9):
+  first/second inversions** (figures) at 2★. Checked OMR on crisp_notation@main (v0.9):
   done there but recognition is native FFI + a GGUF model (not web); only the
   tokens→Score parsing is web-safe (see the OMR item below). **Batch of quick
   web-safe games — DONE, all on origin/main and CI-green** · touched
@@ -193,18 +193,18 @@ and push to origin/main** before/after touching shared files. Format:
   **Next agent:** the full idea backlog is in the "Ideas backlog" section below —
   pick from there.
   ⚠️ **For all agents — notation theme migration (just landed):** every
-  `PartituraTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
+  `CrispNotationTheme.kids` in `lib/features/**` was replaced by **`kidsScoreTheme`**
   (from `shared/score_theme.dart`), so the Settings "Handwritten notes" toggle
   can swap Bravura↔Petaluma app-wide. **New StaffView/MultiSystemView code should
-  use `kidsScoreTheme`, not `PartituraTheme.kids`.** (Workshop files were left
+  use `kidsScoreTheme`, not `CrispNotationTheme.kids`.** (Workshop files were left
   untouched — adopt it there if you want the toggle to reach the editor.) If you
   hit a merge conflict on a `theme:` line, keep `kidsScoreTheme`.
-  ✅ **For all agents — staff-based game tests:** mus CI tracks `partitura@main`,
+  ✅ **For all agents — staff-based game tests:** mus CI tracks `crisp_notation@main`,
   so its live rendering (caret/drag/beaming/voices…) can push tap/drag targets
   off CI's small surface and throw `getCenter`/`_getElementPoint` — green locally,
   red on CI. **Fix:** `import 'support/game_test_support.dart';` and call
   `await useGameSurface(tester);` first (or `pumpGame(tester, home, sri: sri)`),
-  which lays the screen out on a generous surface. Don't pin the partitura ref —
+  which lays the screen out on a generous surface. Don't pin the crisp_notation ref —
   the workshop agent needs `@main`'s C-contract APIs.
 - **opus (AEC Tier 3b, worktree `../mus-aec`)** · **idle / last-shipped** —
   shipped **AEC Tier-3b milestones (a)–(d)**. `native/aec/` is now a real
@@ -242,15 +242,15 @@ and push to origin/main** before/after touching shared files. Format:
   Workshop = a full touch+desktop score editor on `ScoreDocument`. Shipped:
   editor shell · multiline canvas · dynamics/articulations/ties palette (anchored
   dropdown) · range select + move/copy/cut/paste · open MusicXML/MIDI · wired
-  partitura **C1–C5** (staff-tap · hover ghost · drag-to-move · grand staff) ·
+  crisp_notation **C1–C5** (staff-tap · hover ghost · drag-to-move · grand staff) ·
   **perf memoization · sweepable piano · one-row app bar · physical-keyboard
   entry · chord mode · slurs · multi-verse lyrics · hairpins · pickup/anacrusis ·
   caret · fixed staff-tap entry (place-not-move) · live-drag ghost · (i)
   shortcuts sheet · exit guard · viewport-bound width** · big unit+widget suite.
-  ✅ **partitura C7 + C8 landed** (`2342565`) and are **used**: **marquee-select**
+  ✅ **crisp_notation C7 + C8 landed** (`2342565`) and are **used**: **marquee-select**
   (⛶ → `ElementRegionController.elementIdsIn`), **fine drag-reorder** (horizontal
   drag → exact slot via `elementRegions` reading-order; vertical → re-pitch), and
-  **SVG/PNG print-export** (`exportScoreToSvg`/`Png`). Synced local partitura-
+  **SVG/PNG print-export** (`exportScoreToSvg`/`Png`). Synced local crisp_notation-
   public to public `main`. Workshop feature-complete for the planned scope.
   ✅ **Play Along — ScoreEditorController adopted.** (1) **Follow-cursor:** the
   notation view owns a `ScrollController` + `ScoreEditorController`
@@ -266,14 +266,14 @@ and push to origin/main** before/after touching shared files. Format:
   toggle reaches the editor.
   ✅ **Live drag — C10a + C10b landed & wired (the real note follows the
   pointer).** Shipped two additive inputs on `MultiSystemView`/
-  `InteractiveGrandStaffView` to public `partitura@main`: **`suppressElementIds`**
+  `InteractiveGrandStaffView` to public `crisp_notation@main`: **`suppressElementIds`**
   (C10a — `LayoutPainter` skips a note's whole glyph; clean theme-independent
   hide) and **`dragPreviewOpacity`** (C10b — the view suppresses the dragged
   element and re-paints the *real* glyph translated to follow the pointer,
   snapped to pitch). The Workshop now passes `dragPreviewOpacity: 0.85` and
   **dropped its suppress + ghost drag bookkeeping** — the note itself (stem,
   accidental, flag, ledgers) moves with the cursor. Painter refactor left all
-  122 goldens unchanged; pixel + gesture tested. · touched partitura
+  122 goldens unchanged; pixel + gesture tested. · touched crisp_notation
   `layout_painter.dart` / `multi_system_view.dart` /
   `interactive_grand_staff_view.dart` (+ CONTRACT/CHANGELOG) and mus
   `composition_workshop_screen.dart`. Whole-project analyze clean, workshop
@@ -294,7 +294,7 @@ and push to origin/main** before/after touching shared files. Format:
 2. **SRI everywhere.** Every first-try answer feeds the SM-2 engine under
    `<module>.<skill>.<detail>`. The home-screen review button drills due
    items; the Karteikasten visualizes progress.
-3. **Kid-first interaction.** partitura's kid theme (bold lines, ≥44 px hit
+3. **Kid-first interaction.** crisp_notation's kid theme (bold lines, ≥44 px hit
    targets), generous tap slop, no time pressure in level 1 of any game.
 4. **Modular i18n.** All strings in ARB (EN/DE); a new module = registry
    entry + ARB keys + game screens. German conventions respected (B = H).
@@ -324,20 +324,20 @@ listed for scope; `*later:*` italics mark planned extensions within a module.
 **Instrument corners** are the modular-extension pattern proven by the cello
 module: a data table (string/finger map), instrument-specific games reusing the
 shared machinery, and the right clefs (the library supports all four). The
-**guitar corner** is the same recipe on **tablature** (partitura `TabStaffView` +
+**guitar corner** is the same recipe on **tablature** (crisp_notation `TabStaffView` +
 `Tuning`). A violin/viola corner is the same recipe again (violin: G/D/A/E
 strings, treble clef; viola: alto clef); a bass corner reuses the guitar recipe
 with `Tuning.standardBass`.
 
-## Partitura capabilities → new ideas
+## CrispNotation capabilities → new ideas
 
-The partitura library has grown well past what the app currently uses. **As of
-2026-07-13 both the mus path-dep and CI resolve `partitura-public`
-(`CrispStrobe/partitura@main`)** — pubspec points at `../partitura-public/...`
-and the CI/deploy workflows check the public repo out to `partitura-public/`, so
+The crisp_notation library has grown well past what the app currently uses. **As of
+2026-07-13 both the mus path-dep and CI resolve `crisp_notation-public`
+(`CrispStrobe/crisp_notation@main`)** — pubspec points at `../crisp_notation-public/...`
+and the CI/deploy workflows check the public repo out to `crisp_notation-public/`, so
 local and CI are aligned and the new APIs are usable everywhere. (The older
-`../partitura` = **partitura-private** clone is no longer the build target; see
-the memory `partitura-public-vs-private-ci`.) Verified new capabilities and what
+`../crisp_notation` = **crisp_notation-private** clone is no longer the build target; see
+the memory `crisp_notation-public-vs-private-ci`.) Verified new capabilities and what
 they unlock:
 
 - **Teaching overlays on `StaffView`** (`showNoteNames`, `showBeatNumbers`,
@@ -350,7 +350,7 @@ they unlock:
   "type-a-tune" mode.
 - **Chord identification** (`identifyChord`, `chordSymbolFor`). **Name That
   Chord** and **Chord Builder** are shipped
-  ([HISTORY.md](HISTORY.md#partitura-powered--shipped)) — the builder grades
+  ([HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)) — the builder grades
   **any voicing** (root position or inversion, any octave) via `identifyChord`.
   Still open: chord symbols over the Song Book (low value — the built-in songs
   are monophonic).
@@ -359,12 +359,12 @@ they unlock:
   2★). Still open: SATB chorale reading, a richer Grand Staff.
 - **Transposing instruments + concert-pitch toggle.** **Shipped** — a new
   **Transposing corner** with **Concert Pitch**
-  ([HISTORY.md](HISTORY.md#partitura-powered--shipped)): read a written note for
-  a B♭/E♭/F instrument, name the concert pitch that sounds (partitura's
+  ([HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)): read a written note for
+  a B♭/E♭/F instrument, name the concert pitch that sounds (crisp_notation's
   `transposeBy` does the maths). Still open: a written↔concert *toggle* on
   rendered scores.
 - **Up-bow / down-bow articulations.** **Bowing** is shipped (cello corner):
-  read the ⊓ down-bow / ∨ up-bow marks partitura draws.
+  read the ⊓ down-bow / ∨ up-bow marks crisp_notation draws.
 - **Common/cut time (C, ¢) + pickup/anacrusis + measure numbering.** **Time
   Signatures** is shipped — read the signature (incl. C and ¢) for the beats per
   bar. Still open: spot the **upbeat (Auftakt)** with anacrusis measures.
@@ -373,36 +373,36 @@ they unlock:
   time (count-in, then Perfect/Good/Miss vs the notated onsets).
 - **Figured bass** (SMuFL figbass) → Baroque continuo reading — advanced, later.
 
-### New in partitura-public (aligned 2026-07-13) — next builds
+### New in crisp_notation-public (aligned 2026-07-13) — next builds
 
 Fresh capabilities now resolvable in mus, ranked by fit:
 
 - [x] **Roman-numeral harmonic analysis** (`RomanNumeral` — `.symbol` → "V7",
   "ii°"). **Shipped: Roman Numerals** (Harmonik,
-  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — read/hear a diatonic
+  [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)) — read/hear a diatonic
   triad in a key, pick its numeral; the chord is built with `Triad` and named by
   `romanNumeralOf(pitches, key)`. SRI `harmony.roman.<symbol>`. Widens I/IV/V in
   C → all diatonic triads → **all major + minor keys** (harmonic-minor V/vii°)
   **and first/second inversions** (figures `V6`, `ii6/4`) at 2★. Still open:
-  **7th chords** (`V7`, `viiø7`) — needs a partitura seventh-chord builder (the
+  **7th chords** (`V7`, `viiø7`) — needs a crisp_notation seventh-chord builder (the
   library has only `Triad`), a clean handoff.
 - [x] **Metrical-accent hierarchy** (`beatStrength(Fraction) → double`).
   **Shipped: Strong Beat?** (Takte,
-  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — a measure with beat
+  [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)) — a measure with beat
   numbers, one beat highlighted; strong-or-weak, graded by `beatStrength` (not
   hard-coded, so correct for 4/4, 3/4, 6/8…). Metric click accents the strong
   beats. SRI `measures.accent.<ts>_<beat>`; widens 4/4 → +3/4,2/4 → +6/8. Still
   open: a "conduct the metre" / tap-all-strong-beats variant.
 - [~] **Structured chord symbols** (`chordSymbolFor`, `ChordSymbol` model).
   **Shipped: Chord Chart** (Chords,
-  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — the symbol→notation
+  [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)) — the symbol→notation
   matching game: read a chord symbol (G, Dm, D7…), tap its notation among four
   little staves. Lead-sheet literacy; the inverse of Name That Chord. SRI
   `chords.symbol.<symbol>`. Still open: chord symbols rendered over the Song Book
   chord sheets (in the play-along agent's songbook area).
 - [~] **Voices per staff** (`Measure.voice2`, 2 voices rendered; 3–4 model-only).
   **Shipped all 3 scoped SATB minigames** (Noten lesen, gated behind Duet 2★,
-  shared `satb_voicing.dart`, [HISTORY.md](HISTORY.md#partitura-powered--shipped)):
+  shared `satb_voicing.dart`, [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)):
   **Read the Voice** (name the note a voice sings), **Which Voice?** (highlight →
   pick S/A/T/B), **Hear the Voice** (aural: chord then one voice → which?). All 2
   voices (S+A) → full SATB, and now **several major keys at 2★** (correctly
@@ -411,16 +411,16 @@ Fresh capabilities now resolvable in mus, ranked by fit:
   grace notes are
   separate rendering-quality wins, still open.)
 - [ ] **Import breadth**: MEI, Humdrum **kern/ekern**, LilyPond, GP3/4/5,
-  compressed `.mxl`. All parseable in `partitura_core` today → wire into the
+  compressed `.mxl`. All parseable in `crisp_notation_core` today → wire into the
   Song Book import screen (web-safe, additive). Extends MusicXML/ABC/ChordPro/MIDI.
-- [ ] **OMR ("photograph your sheet music")** — checked partitura@main
+- [ ] **OMR ("photograph your sheet music")** — checked crisp_notation@main
   (v0.9, 2026-07-13): OMR is **substantially built there**, but split by
   platform, which gates how mus can use it:
   - **Recognition (image → tokens)** = CrispEmbed **Sheet Music Transformer** in
-    `partitura_cli/crispembed_omr.dart`: `dart:ffi` + `dart:io` + native
+    `crisp_notation_cli/crispembed_omr.dart`: `dart:ffi` + `dart:io` + native
     `libcrispembed` + a **GGUF model**. **NOT web-compatible, not a mus dep,
     needs a ~100 MB+ model artifact.**
-  - **Parsing (tokens → Score)** = `partitura_core/src/omr/` (bekern · semantic ·
+  - **Parsing (tokens → Score)** = `crisp_notation_core/src/omr/` (bekern · semantic ·
     lilynotes → Score/GrandStaff/StaffSystem). **Pure Dart, web-safe, already a
     mus dependency** (0 ffi/io refs).
   - So a client-side photo→score in the **deployed web app is not a quick win**.
@@ -431,17 +431,17 @@ Fresh capabilities now resolvable in mus, ranked by fit:
     GGUF model — a big swing; **(c)** server-side recognition (no infra yet).
 - [x] **Alternate SMuFL fonts** (Petaluma / Leland / Leipzig descriptors).
   **Shipped: "Handwritten notes" theme** (Settings toggle,
-  [HISTORY.md](HISTORY.md#partitura-powered--shipped)) — renders all notation in
+  [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped)) — renders all notation in
   **Petaluma** (jazz/handwritten, SIL OFL 1.1, vendored in `assets/smufl/`,
   license on the About page). All ~50 StaffView sites now go through
   `shared/score_theme.dart`'s `kidsScoreTheme`, switched by the setting. Still
   open: Leland/Leipzig as further options; a live preview in Settings.
 
-### partitura moved a LOT further (checked 2026-07-14)
+### crisp_notation moved a LOT further (checked 2026-07-14)
 
-Since the 07-13 alignment, `CrispStrobe/partitura@main` advanced ~40+ commits
+Since the 07-13 alignment, `CrispStrobe/crisp_notation@main` advanced ~40+ commits
 (still v0.4.0). **mus is fully compatible** — after fast-forwarding the local
-`../partitura-public` to match CI, `flutter analyze` is clean and the **full
+`../crisp_notation-public` to match CI, `flutter analyze` is clean and the **full
 suite (429) is green** against it, so none of the churn broke anything mus uses.
 (Local checkout was behind CI's `@main`; now realigned. mus rides all of this
 for free.) The genuinely new capabilities, ranked by mus fit:
@@ -473,15 +473,15 @@ for free.) The genuinely new capabilities, ranked by mus fit:
 - [ ] **Braille music export** (`.brl`, incl. key/time sigs + chords; tab
   notation complete) — an accessibility angle, not obviously kid-facing. Later.
 
-### Workshop → partitura feature-parity (2026-07-14)
+### Workshop → crisp_notation feature-parity (2026-07-14)
 
 The Composition Workshop is a full touch/desktop score editor
 (`feature/score-workshop`, worktree `../mus-workshop`), but it predates several
-partitura editor/engraving features now on `@main`. Bringing it to parity =
-adopting the APIs above where they improve the editor, without new partitura
+crisp_notation editor/engraving features now on `@main`. Bringing it to parity =
+adopting the APIs above where they improve the editor, without new crisp_notation
 asks. Candidate work (assess in the worktree, verify against `@main`):
 - **`dragPreviewOpacity` live-drag preview** — replace/augment the current
-  drag handling with partitura's view-owned preview (C10b) for a cleaner drag
+  drag handling with crisp_notation's view-owned preview (C10b) for a cleaner drag
   (`suppressElementIds` is already wired).
 - **Metric-aware beaming + `Measure.actualDuration`** — let the editor honor the
   meter hierarchy for beam grouping and support explicit irregular/pickup bars.
@@ -490,7 +490,7 @@ asks. Candidate work (assess in the worktree, verify against `@main`):
 - **Multi-part authoring (stretch)** — if the editor should ever edit >1 staff,
   `MultiPartScore`/`MultiPartView` is the path (big; scope carefully).
 Details + the running contract log: `docs/WORKSHOP_PLAN.md` +
-`docs/WORKSHOP_PARTITURA_CONTRACTS.md`.
+`docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
 
 ## Difficulty progression (within each game)
 
@@ -508,17 +508,17 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 
 ## Delivery
 
-- GitHub: `CrispStrobe/klang-universum` (app), `CrispStrobe/partitura` (lib).
+- GitHub: `CrispStrobe/klang-universum` (app), `CrispStrobe/crisp_notation` (lib).
 - **CI** (`.github/workflows/ci.yml`): every push/PR runs format + analyze +
-  test and uploads coverage (~85% of `lib/`). It checks out `partitura` as a
-  sibling so the `../partitura` path dependency resolves on the runner.
+  test and uploads coverage (~85% of `lib/`). It checks out `crisp_notation` as a
+  sibling so the `../crisp_notation` path dependency resolves on the runner.
   Analyzer is strict (`strict-casts`/`strict-raw-types`); the `build` symlink
   is untracked (it points at a dev-only SSD path and would dangle on CI).
 - Web: Vercel (`mus` project), prebuilt `build/web`, same pattern as voc.
   A root `.vercelignore` drops the Flutter build's `*.symbols` debug maps
   (~8 MB, never fetched at runtime) from the upload; the served bundle is
   brotli (main.dart.js ~924 KB, canvaskit.wasm ~2.85 MB, fonts tree-shaken).
-- pub.dev publication of partitura: deliberately **not yet** (maintainer
+- pub.dev publication of crisp_notation: deliberately **not yet** (maintainer
   decision); everything is consumed via path/git.
 
 ## Learnability & UX — zero-knowledge onboarding (P0/P1 shipped; content ongoing)
@@ -749,7 +749,7 @@ training. Shipped: Sound Echo, Follow the Conductor
 
 ### New minigame concepts (original — not from the surveys)
 
-Fresh ideas that fit the machinery we already have (partitura notation, pure-Dart
+Fresh ideas that fit the machinery we already have (crisp_notation notation, pure-Dart
 audio, the SM-2 engine, the falling/connect/reaction engines) and target skills
 the curriculum doesn't yet drill.
 
@@ -786,13 +786,13 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [x] **Whole-step or Half-step?** — **shipped** (Noten lesen): read a 2nd on the
   staff and tap tone vs semitone (half steps hide at E–F/B–C), and hear the
   interval; treble at 1★, +bass at 2★. SRI `reading.tone.<whole|half>`. See
-  [HISTORY.md](HISTORY.md#partitura-powered--shipped).
+  [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped).
 - [x] **Same or Different?** (binary ear) — **shipped** (Tonleitern): two notes
   play → same pitch or different; clear leap → subtler gaps at 2★. SRI
-  `pitch.hear.<same|diff>`. See [HISTORY.md](HISTORY.md#partitura-powered--shipped).
+  `pitch.hear.<same|diff>`. See [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped).
 - [x] **Which Clef?** (binary) — **shipped** (Noten lesen): a bare clef on an
   empty staff; tap Treble or Bass, widening to Alto/Tenor at 2★. SRI
-  `reading.clef.<name>`. See [HISTORY.md](HISTORY.md#partitura-powered--shipped).
+  `reading.clef.<name>`. See [HISTORY.md](HISTORY.md#crisp_notation-powered--shipped).
 - [x] **Dotted or Not?** (two-basket sort) — **shipped** (Notenwerte): drag note
   glyphs into Dotted/Plain baskets by reading the augmentation dot (value varies
   so shape alone doesn't give it away). SRI `note_values.dot.<dotted|plain>`. See
@@ -812,7 +812,7 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [ ] **Step, Skip, or Leap?** — make Step or Skip? a 3-way (2nd / 3rd–4th / 5th+)
   at 2★ for a harder tier.
 - [ ] **3-basket sorts** — the two-basket format extends to 3 (e.g. sharp / natural
-  / flat once partitura can render an explicit natural glyph — verify the API).
+  / flat once crisp_notation can render an explicit natural glyph — verify the API).
 - [ ] **More Connect modes** — note↔piano-key, rest↔note-value, Italian-term↔
   meaning, dynamic-mark↔meaning, instrument↔clef. Each is one `ConnectMode` case.
 
@@ -823,7 +823,7 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [ ] **Faster or Slower?** — read two tempo terms (Adagio / Allegro …). Same
   shape; Italian-vocabulary reading.
 - [ ] **Tie or Slur?** — same-pitch tie vs different-pitch slur curve (needs
-  partitura to render both; the Workshop already draws slurs/ties). Binary read.
+  crisp_notation to render both; the Workshop already draws slurs/ties). Binary read.
 - [ ] **Beam or Flag?** — beamed vs flagged eighths; a beaming-literacy binary.
 
 ### D. Ear-training expansion (mic infra is shipped — exploit it)
@@ -844,7 +844,7 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 
 ### F. Infrastructure / platform (not kid-facing games)
 - [ ] **Web-safe OMR-tokens import bridge** — `bekernToScore` / `bekernToGrandStaff`
-  in `partitura_core/src/omr/omr.dart` are pure-Dart and exported. A "paste/typed
+  in `crisp_notation_core/src/omr/omr.dart` are pure-Dart and exported. A "paste/typed
   bekern → playable Score" path turns text into a reading/play-along exercise and
   could power user-generated content. *The image→tokens recognition is native
   (dart:ffi + libcrispembed + a GGUF model) and NOT a web/mus dependency — do not
@@ -852,10 +852,10 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [ ] **`showNoteNames` scaffold** — an accessibility/beginner toggle overlaying
   letter names (or a colour key) on noteheads app-wide. Partly stubbed; finish it.
 - [ ] **7th chords in Roman Numerals** — `roman_numeral_screen.dart` is ready for
-  it but needs a partitura **seventh-chord builder** (V7/ii7…). *Partitura handoff
-  — can't ship against an unreleased API since CI tracks public `partitura@main`.*
+  it but needs a crisp_notation **seventh-chord builder** (V7/ii7…). *CrispNotation handoff
+  — can't ship against an unreleased API since CI tracks public `crisp_notation@main`.*
 - [ ] **Leland / Leipzig font options** — extend the Bravura↔Petaluma switch
-  (`shared/score_theme.dart`) with more SMuFL faces. *Partitura-side bundling.*
+  (`shared/score_theme.dart`) with more SMuFL faces. *CrispNotation-side bundling.*
 - [ ] **MIDI input** — the one real-instrument input still open (mic side shipped).
   *L, big swing.*
 - [ ] **Parent view + multi-child profiles** and **Teacher / LMS layer** — see the

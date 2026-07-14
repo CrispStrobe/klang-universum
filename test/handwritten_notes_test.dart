@@ -1,16 +1,16 @@
 // "Handwritten notes" theme — proves the self-bundled Petaluma face is wired
-// without any partitura change: (1) the settings toggle swaps the app score font
+// without any crisp_notation change: (1) the settings toggle swaps the app score font
 // and the shared theme, and (2) the vendored petaluma_metadata.json is valid
-// SMuFL that partitura can parse. (The rest of the suite renders with the
+// SMuFL that crisp_notation can parse. (The rest of the suite renders with the
 // default Bravura, so this is where the Petaluma path is exercised.)
 
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -37,10 +37,10 @@ void main() {
     expect(kidsScoreTheme.musicFont, MusicFont.bravura);
   });
 
-  test('the descriptor points at the app bundle, not the partitura package',
+  test('the descriptor points at the app bundle, not the crisp_notation package',
       () {
     // package == null is what makes it resolve mus's own asset + font family,
-    // so no partitura change is needed.
+    // so no crisp_notation change is needed.
     expect(kPetalumaFont.package, isNull);
     expect(kPetalumaFont.family, 'Petaluma');
     expect(kPetalumaFont.metadataAsset, startsWith('assets/smufl/'));
@@ -49,7 +49,7 @@ void main() {
   test('the vendored petaluma_metadata.json is valid SMuFL', () {
     final file = File('assets/smufl/petaluma_metadata.json');
     expect(file.existsSync(), isTrue, reason: 'font metadata must be vendored');
-    // Parses through partitura's own reader → the render path can consume it.
+    // Parses through crisp_notation's own reader → the render path can consume it.
     final metadata = SmuflMetadata.fromJson(
       jsonDecode(file.readAsStringSync()) as Map<String, Object?>,
     );

@@ -8,8 +8,8 @@
 
 import 'dart:typed_data';
 
-// Material's Stepper also exports a `Step`; partitura's wins here.
-import 'package:partitura/partitura.dart'
+// Material's Stepper also exports a `Step`; crisp_notation's wins here.
+import 'package:crisp_notation/crisp_notation.dart'
     show
         Clef,
         DurationBase,

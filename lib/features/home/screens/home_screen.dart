@@ -6,6 +6,7 @@
 
 import 'dart:async';
 
+import 'package:crisp_notation/crisp_notation.dart' show Clef;
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/models/learning_module.dart';
 import 'package:klang_universum/core/services/debug_service.dart';
@@ -26,7 +27,6 @@ import 'package:klang_universum/features/settings/screens/settings_screen.dart';
 import 'package:klang_universum/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/sound_toggle.dart';
-import 'package:partitura/partitura.dart' show Clef;
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {

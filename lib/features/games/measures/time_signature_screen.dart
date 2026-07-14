@@ -1,7 +1,7 @@
 // lib/features/games/measures/time_signature_screen.dart
 //
 // "Time Signatures" — read a time signature and say how many beats are in a bar
-// (docs/PLAN.md, built on partitura's common/cut-time glyphs). Includes the C
+// (docs/PLAN.md, built on crisp_notation's common/cut-time glyphs). Includes the C
 // (common) and ¢ (cut) symbols nothing else in the app taught.
 //
 // Star-gated: 3/4, 4/4 and C for beginners; ¢, 6/8 and 2/4 added at 2★.
@@ -9,6 +9,7 @@
 
 import 'dart:math';
 
+import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/progress_service.dart';
@@ -17,7 +18,6 @@ import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
-import 'package:partitura/partitura.dart';
 import 'package:provider/provider.dart';
 
 class _Sig {
