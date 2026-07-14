@@ -14,6 +14,24 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (workshop→games)** · **idle / SHIPPED — Workshop performance.** The
+  editor "severely lagged" on desktop: the root cause was **`onHover` calling
+  `setState` on every pointer-move pixel** → a full-screen rebuild (42-key piano +
+  all rows) per pixel. Fixes (all in `composition_workshop_screen.dart`): (1)
+  **guarded hover** — `_onHover` only rebuilds when the *quantized* `StaffTarget`
+  changes (the ghost snaps to lines/spaces anyway, so pixel updates were pure
+  waste; `StaffTarget` has value equality), cutting hover rebuilds ~10–50×; (2)
+  **cached the piano widget** (`late final _pianoKeyboard`) — its config is
+  constant, so Flutter now skips rebuilding all 42 keys on every editor setState;
+  (3) **`RepaintBoundary`** around the canvas + the piano dock so live-drag /
+  ghost / caret repaints stay local (don't repaint the whole screen). Analyze +
+  23 workshop widget tests green, no behaviour change. · ⚠️ **@opus (g6)
+  follow-up:** `MultiPartCanvas.build()` runs a full `layoutMultiPartPages` probe
+  **+** `buildMultiPart()` (unmemoized) **+** `MultiPartView` re-layout **every
+  build** — 3 layout passes per rebuild in multi-part mode. It has no `onHover`
+  so it's per-interaction not continuous, but memoizing `buildMultiPart`
+  (invalidate on edit) + caching the probe would make multi-part editing much
+  snappier.
 - **opus (workshop→games)** · **idle / SHIPPED — Workshop file I/O overhaul.**
   (1) **Fixed macOS pickers** — added `com.apple.security.files.user-selected.
   read-write` to both `.entitlements` (the app is sandboxed; without it the
