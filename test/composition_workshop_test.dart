@@ -14,7 +14,7 @@ import 'package:klang_universum/features/workshop/screens/composition_workshop_s
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/widgets/piano_keyboard.dart';
 import 'package:partitura/partitura.dart'
-    show InteractiveGrandStaffView, MultiSystemView;
+    show InteractiveGrandStaffView, MultiPartView, MultiSystemView;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -309,5 +309,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(InteractiveGrandStaffView), findsOneWidget);
     expect(find.byType(MultiSystemView), findsNothing);
+  });
+
+  // ---- G6: multi-instrument ------------------------------------------------
+
+  testWidgets('starts as a single-part editor (one part, single-staff canvas)',
+      (tester) async {
+    await pump(tester);
+    expect(_editor(tester).partCount, 1);
+    expect(_editor(tester).activePartIndex, 0);
+    expect(find.byType(MultiSystemView), findsOneWidget);
+    expect(find.byType(MultiPartView), findsNothing);
+  });
+
+  testWidgets('adding an instrument swaps to the full-score multi-part canvas',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    expect(_editor(tester).partCount, 2);
+    expect(_editor(tester).activePartIndex, 1, reason: 'new part is active');
+    expect(find.byType(MultiPartView), findsOneWidget);
+    expect(find.byType(MultiSystemView), findsNothing);
+  });
+
+  testWidgets('tapping a part chip switches the active part', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    expect(_editor(tester).activePartIndex, 1);
+    await tester.tap(find.byKey(const ValueKey('workshop-part-0')));
+    await tester.pump();
+    expect(_editor(tester).activePartIndex, 0);
+  });
+
+  testWidgets('removing an instrument returns to the single-part editor',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    expect(_editor(tester).partCount, 2);
+    // Open part 0's ⋮ (tune) menu and remove it.
+    await tester.tap(find.byIcon(Icons.tune).first);
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopRemoveInstrument));
+    await tester.pump();
+    expect(_editor(tester).partCount, 1);
+    expect(find.byType(MultiSystemView), findsOneWidget);
+    expect(find.byType(MultiPartView), findsNothing);
   });
 }

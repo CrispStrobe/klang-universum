@@ -265,6 +265,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopFermata => 'Fermata';
 
   @override
+  String get workshopAddInstrument => 'Add instrument';
+
+  @override
+  String get workshopRemoveInstrument => 'Remove this part';
+
+  @override
+  String get workshopPartClef => 'Clef';
+
+  @override
+  String get workshopPartTransposition => 'Transposition';
+
+  @override
+  String get workshopConcertPitch => 'Concert pitch (C)';
+
+  @override
+  String get workshopBraceBelow => 'Brace with part below';
+
+  @override
   String get workshopTie => 'Tie';
 
   @override

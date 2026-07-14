@@ -20,7 +20,9 @@ import 'package:flutter/services.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
+import 'package:klang_universum/features/workshop/model/multi_part_document.dart';
 import 'package:klang_universum/features/workshop/model/score_document.dart';
+import 'package:klang_universum/features/workshop/widgets/multi_part_canvas.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
 import 'package:klang_universum/shared/score_theme.dart';
@@ -252,11 +254,22 @@ abstract interface class CompositionWorkshopTester {
   int get selectedCount;
   int get slurCount;
   int get hairpinCount;
+
+  /// G6: number of instrument parts, and which one the toolbar edits.
+  int get partCount;
+  int get activePartIndex;
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     implements CompositionWorkshopTester {
-  final ScoreDocument _doc = ScoreDocument();
+  // G6: the whole piece is a MultiPartDocument (≥1 instrument part). The toolbar
+  // and every editing command target the *active* part through the [_doc]
+  // getter, so the single-part editing pipeline is reused unchanged; only the
+  // canvas/parts-strip below know there can be more than one part.
+  final MultiPartDocument _mpd = MultiPartDocument();
+
+  /// The part the toolbar edits — every existing command reads/writes this.
+  ScoreDocument get _doc => _mpd.activePart;
 
   DurationBase _pendingBase = DurationBase.quarter;
   bool _dotted = false;
@@ -287,6 +300,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   @override
   void dispose() {
     _pianoScroll.dispose();
+    _mpd.dispose();
     super.dispose();
   }
 
@@ -320,6 +334,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   @override
   int get hairpinCount => _doc.hairpins.length;
+
+  @override
+  int get partCount => _mpd.partCount;
+
+  @override
+  int get activePartIndex => _mpd.active;
 
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
@@ -381,6 +401,198 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         _doc.toggleSelected(id);
         _syncControlsToSelection();
       });
+
+  /// Full-score canvas tap (multi-part mode): select the element across parts
+  /// and switch the toolbar to its owning part.
+  void _onGlobalElementTap(String globalId) => setState(() {
+        _mpd.selectByGlobalId(globalId);
+        _syncControlsToSelection();
+      });
+
+  // ---- G6: instrument parts ----------------------------------------------
+
+  void _addInstrument() => setState(_mpd.addPart);
+
+  void _selectPart(int i) => setState(() {
+        _mpd.setActive(i);
+        _syncControlsToSelection();
+      });
+
+  void _removeInstrument(int i) => setState(() => _mpd.removePart(i));
+
+  void _setPartClef(int i, Clef clef) =>
+      setState(() => _mpd.setClefOfPart(i, clef));
+
+  void _setPartTransposition(int i, Transposition? t) =>
+      setState(() => _mpd.setTransposition(i, t));
+
+  /// Toggle a piano-style brace over this part and the one below it (used to
+  /// group e.g. a piano's two staves). No-op on the last part.
+  void _toggleBraceBelow(int i) => setState(() {
+        if (i + 1 >= _mpd.partCount) return;
+        final has = _mpd.brackets.any(
+          (b) => b.first == i && b.last == i + 1,
+        );
+        if (has) {
+          _mpd.removeBracket(i, i + 1);
+        } else {
+          _mpd.addBracket(i, i + 1, kind: StaffBracketKind.brace);
+        }
+      });
+
+  static String _clefGlyph(Clef clef) => switch (clef) {
+        Clef.bass => '𝄢',
+        Clef.alto || Clef.tenor => '𝄡',
+        _ => '𝄞',
+      };
+
+  // The transposing-instrument presets offered per part (label + tag).
+  static const _transpositionOptions = <(String, Transposition?)>[
+    ('C', null),
+    ('B♭', Transposition.bFlat),
+    ('E♭', Transposition.eFlat),
+    ('F', Transposition.f),
+    ('A', Transposition.a),
+  ];
+
+  /// The instrument-parts strip: a chip per part (tap selects; ⋮ opens clef /
+  /// transposition / brace / remove) plus an "add instrument" button.
+  Widget _partsStrip(AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHigh,
+      child: SizedBox(
+        height: 52,
+        child: Row(
+          children: [
+            IconButton(
+              key: const ValueKey('workshop-add-instrument'),
+              icon: const Icon(Icons.add),
+              tooltip: l10n.workshopAddInstrument,
+              onPressed: _addInstrument,
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                itemCount: _mpd.partCount,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) => _partChip(l10n, i),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _partChip(AppLocalizations l10n, int i) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = i == _mpd.active;
+    return Container(
+      decoration: BoxDecoration(
+        color:
+            active ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        border: active
+            ? Border.all(color: scheme.primary, width: 1.5)
+            : Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            key: ValueKey('workshop-part-$i'),
+            onTap: () => _selectPart(i),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Glyph + name in one Text so it never collides with the
+                  // staff-mode clef dropdown's lone-glyph finders.
+                  Text('${_clefGlyph(_mpd.clefOf(i))}  ${_mpd.nameOf(i)}'),
+                  if (_mpd.transpositionOf(i) != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        _transpositionLabel(_mpd.transpositionOf(i)),
+                        style: TextStyle(color: scheme.primary, fontSize: 12),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          _partMenu(l10n, i),
+        ],
+      ),
+    );
+  }
+
+  String _transpositionLabel(Transposition? t) {
+    for (final (label, value) in _transpositionOptions) {
+      if (value == t) return label;
+    }
+    return '';
+  }
+
+  Widget _partMenu(AppLocalizations l10n, int i) =>
+      PopupMenuButton<void Function()>(
+        icon: const Icon(Icons.tune, size: 18),
+        tooltip: _mpd.nameOf(i),
+        onSelected: (action) => action(),
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            enabled: false,
+            child: Text(
+              l10n.workshopPartClef,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+          for (final clef in const [Clef.treble, Clef.bass])
+            CheckedPopupMenuItem<void Function()>(
+              value: () => _setPartClef(i, clef),
+              checked: _mpd.clefOf(i) == clef,
+              child: Text('${_clefGlyph(clef)}  ${clef.name}'),
+            ),
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            enabled: false,
+            child: Text(
+              l10n.workshopPartTransposition,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+          for (final (label, value) in _transpositionOptions)
+            CheckedPopupMenuItem<void Function()>(
+              value: () => _setPartTransposition(i, value),
+              checked: _mpd.transpositionOf(i) == value,
+              child: Text(value == null ? l10n.workshopConcertPitch : label),
+            ),
+          const PopupMenuDivider(),
+          if (i + 1 < _mpd.partCount)
+            CheckedPopupMenuItem<void Function()>(
+              value: () => _toggleBraceBelow(i),
+              checked:
+                  _mpd.brackets.any((b) => b.first == i && b.last == i + 1),
+              child: Text(l10n.workshopBraceBelow),
+            ),
+          if (_mpd.partCount > 1)
+            PopupMenuItem<void Function()>(
+              value: () => _removeInstrument(i),
+              child: Row(
+                children: [
+                  const Icon(Icons.delete_outline, size: 18),
+                  const SizedBox(width: 8),
+                  Text(l10n.workshopRemoveInstrument),
+                ],
+              ),
+            ),
+        ],
+      );
 
   /// Marquee result: select every note the rubber-band rect enclosed (C7).
   void _applyMarquee(Rect rect) => setState(() {
@@ -1142,73 +1354,97 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
           ),
           body: Column(
             children: [
+              // G6: instrument parts strip (add · select · clef/transposition/
+              // brace/remove). One part = the classic single-instrument editor.
+              _partsStrip(l10n),
               // Row A — compact settings + status.
               // Score canvas — multi-line, vertical scroll.
               Expanded(
                 child: ColoredBox(
                   color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                  // Bind the engraving width to the visible viewport so systems
-                  // break within the screen (never run off the right edge).
-                  child: LayoutBuilder(
-                    builder: (context, constraints) => SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: SizedBox(
-                        width: (constraints.maxWidth - 32).clamp(0.0, 4000.0),
-                        // Passively track the canvas-local pointer so a drag's
-                        // drop position can reorder a note (fine, C7 regions).
-                        child: Listener(
-                          onPointerDown: (e) => _pointerLocal = e.localPosition,
-                          onPointerMove: (e) => _pointerLocal = e.localPosition,
-                          child: Stack(
-                            children: [
-                              _grand
-                                  ? InteractiveGrandStaffView(
-                                      grandStaff: _doc.buildGrandStaff(),
-                                      theme: theme,
-                                      staffSpace: _zoom,
-                                      controller: _regions,
-                                      elementColors: elementColors,
-                                      dragPreviewOpacity: _kDragPreviewOpacity,
-                                      onElementTap: _onElementTap,
-                                      onStaffTap: _onStaffTap,
-                                      onHover: (t) =>
-                                          setState(() => _hover = t),
-                                      ghostTarget: _hover,
-                                      ghostDuration: _ghostDuration,
-                                      caret: caret,
-                                      onElementDragStart: _onElementDragStart,
-                                      onElementDragUpdate: _onElementDragUpdate,
-                                      onElementDragEnd: _onElementDragEnd,
-                                    )
-                                  : MultiSystemView(
-                                      score: _doc.buildScore(),
-                                      theme: theme,
-                                      staffSpace: _zoom,
-                                      controller: _regions,
-                                      elementColors: elementColors,
-                                      dragPreviewOpacity: _kDragPreviewOpacity,
-                                      onElementTap: _onElementTap,
-                                      onStaffTap: _onStaffTap,
-                                      onHover: (t) =>
-                                          setState(() => _hover = t),
-                                      ghostTarget: _hover,
-                                      ghostDuration: _ghostDuration,
-                                      caret: caret,
-                                      onElementDragStart: _onElementDragStart,
-                                      onElementDragUpdate: _onElementDragUpdate,
-                                      onElementDragEnd: _onElementDragEnd,
-                                    ),
-                              if (_marquee)
-                                Positioned.fill(
-                                  child:
-                                      _MarqueeOverlay(onSelect: _applyMarquee),
+                  // G6: with more than one instrument part, show the full-score
+                  // canvas (tap selects across parts; the bottom dock edits the
+                  // active part). One part keeps the single-part interactive
+                  // pipeline (ghost/drag/staff-tap placement).
+                  child: _mpd.partCount > 1
+                      ? MultiPartCanvas(
+                          document: _mpd,
+                          staffSpace: _zoom,
+                          onElementTap: _onGlobalElementTap,
+                        )
+                      // Bind the engraving width to the visible viewport so
+                      // systems break within the screen (never off the edge).
+                      : LayoutBuilder(
+                          builder: (context, constraints) =>
+                              SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: SizedBox(
+                              width: (constraints.maxWidth - 32)
+                                  .clamp(0.0, 4000.0),
+                              // Passively track the canvas-local pointer so a drag's
+                              // drop position can reorder a note (fine, C7 regions).
+                              child: Listener(
+                                onPointerDown: (e) =>
+                                    _pointerLocal = e.localPosition,
+                                onPointerMove: (e) =>
+                                    _pointerLocal = e.localPosition,
+                                child: Stack(
+                                  children: [
+                                    _grand
+                                        ? InteractiveGrandStaffView(
+                                            grandStaff: _doc.buildGrandStaff(),
+                                            theme: theme,
+                                            staffSpace: _zoom,
+                                            controller: _regions,
+                                            elementColors: elementColors,
+                                            dragPreviewOpacity:
+                                                _kDragPreviewOpacity,
+                                            onElementTap: _onElementTap,
+                                            onStaffTap: _onStaffTap,
+                                            onHover: (t) =>
+                                                setState(() => _hover = t),
+                                            ghostTarget: _hover,
+                                            ghostDuration: _ghostDuration,
+                                            caret: caret,
+                                            onElementDragStart:
+                                                _onElementDragStart,
+                                            onElementDragUpdate:
+                                                _onElementDragUpdate,
+                                            onElementDragEnd: _onElementDragEnd,
+                                          )
+                                        : MultiSystemView(
+                                            score: _doc.buildScore(),
+                                            theme: theme,
+                                            staffSpace: _zoom,
+                                            controller: _regions,
+                                            elementColors: elementColors,
+                                            dragPreviewOpacity:
+                                                _kDragPreviewOpacity,
+                                            onElementTap: _onElementTap,
+                                            onStaffTap: _onStaffTap,
+                                            onHover: (t) =>
+                                                setState(() => _hover = t),
+                                            ghostTarget: _hover,
+                                            ghostDuration: _ghostDuration,
+                                            caret: caret,
+                                            onElementDragStart:
+                                                _onElementDragStart,
+                                            onElementDragUpdate:
+                                                _onElementDragUpdate,
+                                            onElementDragEnd: _onElementDragEnd,
+                                          ),
+                                    if (_marquee)
+                                      Positioned.fill(
+                                        child: _MarqueeOverlay(
+                                          onSelect: _applyMarquee,
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                            ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
               // Row B — value/accidental strip + contextual selection actions.

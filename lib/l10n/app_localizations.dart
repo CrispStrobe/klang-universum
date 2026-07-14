@@ -548,6 +548,42 @@ abstract class AppLocalizations {
   /// **'Fermata'**
   String get workshopFermata;
 
+  /// No description provided for @workshopAddInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Add instrument'**
+  String get workshopAddInstrument;
+
+  /// No description provided for @workshopRemoveInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this part'**
+  String get workshopRemoveInstrument;
+
+  /// No description provided for @workshopPartClef.
+  ///
+  /// In en, this message translates to:
+  /// **'Clef'**
+  String get workshopPartClef;
+
+  /// No description provided for @workshopPartTransposition.
+  ///
+  /// In en, this message translates to:
+  /// **'Transposition'**
+  String get workshopPartTransposition;
+
+  /// No description provided for @workshopConcertPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Concert pitch (C)'**
+  String get workshopConcertPitch;
+
+  /// No description provided for @workshopBraceBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'Brace with part below'**
+  String get workshopBraceBelow;
+
   /// No description provided for @workshopTie.
   ///
   /// In en, this message translates to:

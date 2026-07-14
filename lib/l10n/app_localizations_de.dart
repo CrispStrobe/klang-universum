@@ -265,6 +265,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopFermata => 'Fermate';
 
   @override
+  String get workshopAddInstrument => 'Instrument hinzufügen';
+
+  @override
+  String get workshopRemoveInstrument => 'Diese Stimme entfernen';
+
+  @override
+  String get workshopPartClef => 'Schlüssel';
+
+  @override
+  String get workshopPartTransposition => 'Transposition';
+
+  @override
+  String get workshopConcertPitch => 'Klingend (C)';
+
+  @override
+  String get workshopBraceBelow => 'Klammer mit Stimme darunter';
+
+  @override
   String get workshopTie => 'Bindebogen';
 
   @override
