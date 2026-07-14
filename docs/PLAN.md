@@ -14,6 +14,11 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (workshop→games)** · **🚧 ACTIVE — new minigame "Same or Different?"**
+  (binary ear on the `direction_ear` scaffold: two notes play → same pitch or
+  different; subtler gaps at 2★). Touching `game_registry.dart`, `core/tuning.dart`,
+  ARBs **additively** + new `scales/same_diff_screen.dart` + test. --rebase per
+  commit. SRI `pitch.hear.<same|diff>`.
 - **opus (workshop→games)** · **idle / SHIPPED — 2 new minigames.** (2) **Whole
   or Half Step?** (Noten lesen) — two neighbour notes (a 2nd); tap whole step
   (tone) vs half step (semitone), and *hear* the interval. Half steps hide at
