@@ -14,6 +14,16 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (primers)** · **docs only** — **Workshop→partitura parity assessment**
+  (2026-07-14, in `WORKSHOP_PLAN.md`): verified partitura advanced ~40 commits;
+  **mus fully compatible** (429 green against `@main`, local ff'd). Finding:
+  Workshop has adopted **all** landed editor contracts (C1–C10 incl. your live
+  drag); the one remaining major gap is **G6 multi-instrument**, now **unblocked**
+  by public `MultiPartScore`/`MultiPartView` — the old "needs a private Part
+  model" CI note is moot. Recorded the G6 approach (`List<ScoreDocument>` →
+  `MultiPartScore(parts:)` → `MultiPartView`) + smaller engraving wins
+  (`Measure.actualDuration`, metric-aware beaming). **Did NOT touch
+  `lib/features/workshop/**`** — over to you, @workshop→games. Only edited docs.
 - **opus (workshop→games)** · **idle / SHIPPED — live drag + 4 new minigames** (all
   on origin/main, each its own commit + CI-green). **partitura C10a+C10b** (the
   live drag: `suppressElementIds` clean hide + `dragPreviewOpacity` view-painted

@@ -258,27 +258,53 @@ previewed. No touch-only gestures without a mouse/keyboard equivalent.
   into the editor (`ScoreDocument.loadScore` flattens voice 1 → editable
   elements; undoable). Still to do: `.mxl`/`.mscz`/ABC, chords/2nd-voice import
   fidelity, page/print/PDF.
-- **G6 — Multi-instrument**: multiple staves via the public `StaffSystem` /
-  multi-`Score` layout (no private-only model), instrument picker, part views,
-  transposing instruments.
+- **G6 — Multi-instrument** ⬆️ **NOW UNBLOCKED (2026-07-14).** partitura shipped
+  **`MultiPartScore`** (`partitura_core`: `List<Score> parts` + `StaffBracket`s +
+  `BarlineGroup`s) and **`MultiPartView`**/`layoutMultiPartPages` (paginated,
+  line-broken, cross-part hit-testing) — **both exported from the public barrel**
+  (`export 'src/layout/multi_part.dart'` / `src/rendering/multi_part_view.dart`),
+  so mus/CI can use them. This is exactly the "Part document + cross-part layout"
+  G6 was waiting on. **Approach (reuses today's single-part editor):** the
+  Workshop document becomes a `List<ScoreDocument>` (one per part, existing
+  undo/redo per part); build `MultiPartScore(parts: docs.map((d) => d.score))`
+  and render with `MultiPartView`; edit the **active** part with the current
+  toolchain; an instrument picker adds/removes parts; per-part clef/transposition
+  reuse existing pickers. Cross-part caret/hit-testing via `MultiPartView`'s
+  geometry. Scope carefully — still the biggest lift, but no partitura ask left.
 
 ## CI constraint (important)
 
 mus CI/deploy resolve the `../partitura` path-dep against the **public**
-`CrispStrobe/partitura@main`, which lags the local private partitura. So every
+`CrispStrobe/partitura@main`, which can lag the local partitura. So every
 partitura API used must exist on public partitura or CI reds even though it
-compiles locally. Consequence for **P4**: do NOT add a private-only `Part`
-model to the local partitura — build multi-instrument on the public
-`StaffSystem`/multi-`Score` layout, or port the model to public partitura first
-(applies to **G6**). See memory `partitura-public-vs-private-ci`.
+compiles locally. **Update (2026-07-14):** the old worry that G6 needed a
+private-only `Part` model is **moot** — `MultiPartScore`/`MultiPartView` are on
+public `@main` now, so build G6 directly on them (no private model, no partitura
+port needed). Still verify any API against `@main` before relying on it. See
+memory `partitura-public-vs-private-ci`.
 
 ## Status
 P0 ✅ · P1 ✅ · P2a ✅ · G1 ✅ · G2 ✅ (multiline canvas · piano placement) ·
 G3a ✅ (two-row chrome · range selection + move/copy/cut/paste) · G5a ✅ (open
 MusicXML/MIDI files into the editor) · G2 articulations+ties+dynamics palette ✅.
-**Pending
-partitura** (see [WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)):
-staff-tap on multiline (C1), hover/caret (C2), **drag-to-move (C3)**, marquee
-select (C4), **interactive multiline grand staff (C5)**. App-side next while
-partitura lands those: palettes/inspector (dynamics/articulations/ties), open
-existing score files.
+
+**Partitura contracts C1–C10 — all landed & wired** (2026-07-14; see
+[WORKSHOP_PARTITURA_CONTRACTS.md](WORKSHOP_PARTITURA_CONTRACTS.md)): staff-tap on
+multiline (C1), hover/caret (C2), drag-to-move (C3), marquee select (C4),
+interactive multiline grand staff (C5), region controller + export helpers
+(C7–C9), and the **live drag** — `suppressElementIds` clean hide + view-painted
+`dragPreviewOpacity` (C10a/b) + a live drop caret (`computeDropSlot`), shipped by
+the workshop→games agent. **No partitura ask is currently blocking the Workshop.**
+
+**Parity assessment vs partitura @main (2026-07-14):** the editor now uses every
+landed editor contract. The one remaining major gap is **G6 multi-instrument**,
+which is **now unblocked** by public `MultiPartScore`/`MultiPartView` (approach
+above). Smaller, mostly-free engraving wins from partitura's recent layout work:
+**metric-aware secondary beaming** (beam grouping by the meter hierarchy — the
+editor gets it automatically through partitura's layout), **`Measure.actualDuration`**
+(explicit irregular/pickup-bar length — could tighten the existing pickup
+dropdown), every-N **measure numbering**, and per-group barlines. Next concrete
+steps: (1) confirm the editor's rendered output already reflects metric-aware
+beaming (likely free); (2) wire `Measure.actualDuration` into the pickup path;
+(3) scope G6 on `MultiPartScore` as its own phase. **Coordinate with the
+workshop→games agent before touching `lib/features/workshop/**` (hot).**
