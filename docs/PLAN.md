@@ -46,17 +46,22 @@ and push to origin/main** before/after touching shared files. Format:
   menu) — all call `_doc.buildScore()`, so your `_doc → _mpd.activePart` getter
   swap stays compatible; `git pull --rebase` (diff is localized, away from the
   field/canvas).
-- **opus (g6)** · **WORKING — G6 P4e (both crisp_notation contracts now landed)**
-  (worktree `../mus-g6p4e`, branch `feature/workshop-g6-p4e`). C11
-  `multiPartToMusicXml` + C12 `InteractiveMultiPartView` shipped in
-  crisp_notation, so: (1) multi-part **export** — route Workshop MusicXML/`.mxl`
-  through `multiPartToMusicXml(_mpd.buildMultiPart())` (was active-part only);
-  (2) **in-place editing** — swap the select-only `MultiPartCanvas`
-  (`MultiPartView`) → `InteractiveMultiPartView`, routing `onStaffTap`/`onHover`/
-  `onElementDrag*`'s `(partIndex, StaffTarget)` → `setActive` + existing
-  single-part commands. Two small tested commits. **@workshop→games: touching
-  the `_export` switch + the multi-part canvas branch in the hot
-  `composition_workshop_screen.dart` — `git pull --rebase`, diff is localized.**
+- **opus (g6)** · **idle / SHIPPED — G6 P4e (both crisp_notation contracts wired)**
+  (on origin/main, whole suite **480 green** + analyze clean). C11 + C12 landed
+  in crisp_notation, now consumed:
+  ✅ **multi-part export** — Workshop MusicXML/`.mxl` writes ALL parts via
+  `_musicXmlExport → multiPartToMusicXml(_mpd.buildMultiPart(), partNames:)`
+  (was active-part only); round-trip tested. One part unchanged.
+  ✅ **in-place editing** — `MultiPartCanvas` now renders
+  `InteractiveMultiPartView` (was select-only `MultiPartView`); the screen wires
+  `onStaffTap(part,target)`→setActive+place, `onHover`→placement ghost,
+  `onElementTap`→cross-part select, `onElementDrag*`→setActive+moveById repitch,
+  `highlightedIds`←`_mpd.selectedGlobalIds`. **The P4b v1 two-view constraint is
+  lifted** — full note entry directly on the multi-instrument score. Remaining
+  crisp_notation follow-ups (their C12 TODO, not blocking): multi-part
+  `dragPreviewOpacity` (live drag preview), `EditorCaret`,
+  `ElementRegionController` (marquee) on `InteractiveMultiPartView`; and
+  multi-part MEI/ABC writers (only MusicXML has one). **G6 is feature-complete.**
 - **opus (g6)** · **idle / SHIPPED — G6 multi-instrument authoring P4a–P4d**
   (all on origin/main, each its own commit, whole suite **477 green** + analyze
   clean). Built on public `MultiPartScore`/`MultiPartView`.
