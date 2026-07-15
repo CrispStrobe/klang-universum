@@ -491,20 +491,34 @@ for free.) The genuinely new capabilities, ranked by mus fit:
 
 ### Workshop → crisp_notation feature-parity (2026-07-14)
 
-The Composition Workshop is a full touch/desktop score editor
-(`feature/score-workshop`, worktree `../mus-workshop`), but it predates several
-crisp_notation editor/engraving features now on `@main`. Bringing it to parity =
-adopting the APIs above where they improve the editor, without new crisp_notation
-asks. Candidate work (assess in the worktree, verify against `@main`):
-- **`dragPreviewOpacity` live-drag preview** — replace/augment the current
-  drag handling with crisp_notation's view-owned preview (C10b) for a cleaner drag
-  (`suppressElementIds` is already wired).
-- **Metric-aware beaming + `Measure.actualDuration`** — let the editor honor the
-  meter hierarchy for beam grouping and support explicit irregular/pickup bars.
-- **Measure numbering / per-group barlines** — surface every-N numbering in the
-  editor chrome.
-- **Multi-part authoring (stretch)** — if the editor should ever edit >1 staff,
-  `MultiPartScore`/`MultiPartView` is the path (big; scope carefully).
+The Composition Workshop is a full touch/desktop score editor, and **G6
+multi-instrument authoring is now feature-complete** (2026-07-15, on
+origin/main): `MultiPartDocument` (`List<ScoreDocument>` + active part, padded
+bar grid, per-part id namespacing) → the full-score `InteractiveMultiPartView`
+canvas with a parts strip (add/select/clef/transposition/brace/remove),
+multi-part **import** (`multiPartScoreFromMusicXml/Abc/Mei/Kern`), multi-part
+**export** (crisp_notation **C11** `multiPartToMusicXml`), and **in-place
+editing** on the full score (crisp_notation **C12** `InteractiveMultiPartView`:
+staff-tap-to-place, hover ghost, cross-part select, drag repitch). See
+`docs/WORKSHOP_G6_HANDOVER.md` + `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
+
+**Remaining crisp_notation follow-ups for G6 (the "left opens" — in the
+notation library, then wired here). Being done now:**
+- **C12a — `dragPreviewOpacity` on `InteractiveMultiPartView`** (live drag
+  preview: hide the dragged element + repaint it translated under the pointer,
+  like the single-part C10b). Wire mus `onElementDragUpdate` +
+  `suppressElementIds` + `dragPreviewOpacity`.
+- **C12b — `EditorCaret` on `InteractiveMultiPartView`** (a visible insertion
+  caret in the active part). Wire the mus caret.
+- **C12c — `ElementRegionController` on `InteractiveMultiPartView`** (bind the
+  per-page element regions so a marquee rubber-band selects across parts). Wire
+  the mus marquee (⛶) into multi-part mode.
+- **C11b — multi-part MEI + ABC writers** (`multiPartToMei` / `multiPartToAbc`,
+  siblings of `multiPartToMusicXml`) so multi-part export isn't MusicXML-only.
+  Wire the mus MEI/ABC export cases.
+
+Other (non-G6) parity candidates still open: metric-aware beaming +
+`Measure.actualDuration`; measure numbering / per-group barlines in the chrome.
 Details + the running contract log: `docs/WORKSHOP_PLAN.md` +
 `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
 
