@@ -883,14 +883,21 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   play it. Feeds the songbook.
 
 ### F. Infrastructure / platform (not kid-facing games)
-- [ ] **Web-safe OMR-tokens import bridge** — `bekernToScore` / `bekernToGrandStaff`
-  in `crisp_notation_core/src/omr/omr.dart` are pure-Dart and exported. A "paste/typed
-  bekern → playable Score" path turns text into a reading/play-along exercise and
-  could power user-generated content. *The image→tokens recognition is native
-  (dart:ffi + libcrispembed + a GGUF model) and NOT a web/mus dependency — do not
-  pull that in.* M · genuinely new capability, but plumbing not a game.
+- [x] **Web-safe OMR-tokens import bridge** — **shipped** (2026-07-15): the
+  Workshop ⋮ menu → **"Paste notation tokens…"** parses pasted **bekern** via
+  `importBekern` = `MultiPartScore.fromStaffSystem(bekernToStaffSystem(text))`, so
+  a multi-spine paste seeds one instrument part per spine (reuses the G6
+  multi-part doc); a single spine loads into the active part. Pure helper
+  unit-tested (1-/2-spine) + a widget test pastes tokens → notes. Localized
+  de/en. (The image→tokens OMR recognition stays native/out-of-scope.)
 - [ ] **`showNoteNames` scaffold** — an accessibility/beginner toggle overlaying
-  letter names (or a colour key) on noteheads app-wide. Partly stubbed; finish it.
+  letter names on noteheads. **Partly blocked:** crisp_notation exposes
+  `showNoteNames` only on `StaffView` (not `MultiSystemView` — which most mus
+  games + the Workshop use), so an *app-wide* toggle needs crisp_notation to
+  surface the flag on the other views first (a crisp_notation ask). A
+  StaffView-only version is possible now but covers few screens. Also decide how
+  it interacts with the app's `noteNaming` setting (German H/B vs English vs
+  Solfège — the crisp_notation flag likely draws fixed English letters; verify).
 - [ ] **7th chords in Roman Numerals** — `roman_numeral_screen.dart` is ready for
   it but needs a crisp_notation **seventh-chord builder** (V7/ii7…). *CrispNotation handoff
   — can't ship against an unreleased API since CI tracks public `crisp_notation@main`.*
