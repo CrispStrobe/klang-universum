@@ -238,6 +238,24 @@ void main() {
     expect(mps.parts.first.measures.first.elements.first, isA<NoteElement>());
   });
 
+  test('a built multi-part score round-trips through multiPartToMusicXml', () {
+    final doc = MultiPartDocument();
+    doc.parts[0].insertNote(_p(Step.c), _quarter);
+    doc.addPart(clef: Clef.bass);
+    doc.parts[1].insertNote(_p(Step.e, octave: 3), _quarter);
+    doc.addBracket(0, 1, kind: StaffBracketKind.brace);
+
+    final xml = multiPartToMusicXml(doc.buildMultiPart(), partNames: doc.names);
+    final reread = multiPartScoreFromMusicXml(xml);
+    expect(
+      reread.parts.length,
+      2,
+      reason: 'both parts survive export + import',
+    );
+    // Every part shares the padded bar grid, so re-import stays aligned.
+    expect(reread.parts[0].measures.length, reread.parts[1].measures.length);
+  });
+
   test('loadMultiPart replaces the whole document in place and notifies', () {
     final doc = MultiPartDocument()
       ..addPart()

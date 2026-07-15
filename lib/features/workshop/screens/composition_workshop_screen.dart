@@ -965,13 +965,19 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// Renders [fmt] from the current score — bytes for binary formats, UTF-8 text
   /// otherwise. SVG/PNG are grand-staff aware; the rest export the single-staff
   /// score (as MusicXML / save-to-Song-Book always have).
+  /// The score as MusicXML: **all** instrument parts when there is more than one
+  /// (crisp_notation C11 `multiPartToMusicXml`), else the single active part.
+  String _musicXmlExport() => _mpd.partCount > 1
+      ? multiPartToMusicXml(_mpd.buildMultiPart(), partNames: _mpd.names)
+      : scoreToMusicXml(_doc.buildScore());
+
   Future<(Uint8List?, String?)> _generateExport(ExportFormat fmt) async {
     final score = _doc.buildScore();
     switch (fmt.ext) {
       case 'musicxml':
-        return (null, scoreToMusicXml(score));
+        return (null, _musicXmlExport());
       case 'mxl':
-        return (writeMusicXmlToMxl(scoreToMusicXml(score)), null);
+        return (writeMusicXmlToMxl(_musicXmlExport()), null);
       case 'mid':
         return (scoreToMidi(score), null);
       case 'abc':
