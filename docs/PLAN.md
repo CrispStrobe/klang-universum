@@ -865,10 +865,11 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   [HISTORY.md](HISTORY.md).
 
 ### B. Cheap depth — widen games that already exist (S effort each)
-- [ ] **Bass-clef variants** of the new sorts/readers — `High or Low?`,
-  `Sharp or Flat?`, `Step or Skip?`, `Connect the Steps` all hard-code
-  `Clef.treble`; a `clef` constructor param + a second `GameInfo` doubles the
-  content (mirror how `note_reading` / `place_note` ship treble + bass).
+- [~] **Bass-clef variants** of the new sorts/readers — a `clef` constructor
+  param + a second `GameInfo` doubles the content (mirror how `note_reading` /
+  `place_note` ship treble + bass). **Started:** ✅ *Step or Skip? (bass)* shipped
+  (`step_skip_bass`, own `progressId` so treble progress is untouched). Remaining
+  cheap wins to mirror: `High or Low?`, `Sharp or Flat?`, `Connect the Steps`.
 - [ ] **Step, Skip, or Leap?** — make Step or Skip? a 3-way (2nd / 3rd–4th / 5th+)
   at 2★ for a harder tier.
 - [ ] **3-basket sorts** — the two-basket format extends to 3 (e.g. sharp / natural
