@@ -387,4 +387,27 @@ void main() {
     expect(_editor(tester).noteCount, 1, reason: 'note lands in active part 1');
     expect(_editor(tester).activePartIndex, 1);
   });
+
+  testWidgets('the full-score canvas wires regions + live-drag + caret',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    final view = tester.widget<InteractiveMultiPartView>(
+      find.byType(InteractiveMultiPartView),
+    );
+    expect(view.controller, isNotNull); // C12c marquee / region queries
+    expect(view.onElementDragUpdate, isNotNull); // live drag preview feed
+    expect(view.suppressElementIds, isA<Set<String>>()); // drag-source hide
+  });
+
+  testWidgets('marquee mode is available in multi-part mode', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.highlight_alt)); // toggle marquee
+    await tester.pump();
+    expect(find.byType(InteractiveMultiPartView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

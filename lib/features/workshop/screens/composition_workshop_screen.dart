@@ -476,9 +476,17 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   void _onMpDragStart(String globalId) => setState(() => _dragId = globalId);
 
+  /// While dragging, the source note is suppressed (see [_mpSuppressed]) and the
+  /// placement ghost follows the pointer — a live drag preview built from the
+  /// existing suppress + ghost APIs (no dedicated `dragPreviewOpacity` needed).
+  void _onMpDragUpdate(String globalId, int partIndex, StaffTarget target) =>
+      setState(() {
+        _hoverPart = partIndex;
+        _hover = target;
+      });
+
   /// Drop a dragged element: switch to its part and re-pitch it to the drop
-  /// staff position (vertical move). No live preview yet (crisp_notation C12
-  /// has no multi-part `dragPreviewOpacity`).
+  /// staff position (vertical move).
   void _onMpDragEnd(String globalId, int partIndex, StaffTarget target) {
     setState(() {
       _mpd.setActive(partIndex);
@@ -493,6 +501,43 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       _syncControlsToSelection();
     });
   }
+
+  /// The dragged note, hidden from the full-score layout so the ghost can stand
+  /// in for it (live drag preview). Empty when no drag is in flight.
+  Set<String> get _mpSuppressed => _dragId == null ? const {} : {_dragId!};
+
+  /// The insertion caret for the full-score canvas: the active part's caret
+  /// element, namespaced to match the ids [MultiPartDocument.buildMultiPart]
+  /// emits.
+  EditorCaret? get _mpCaret {
+    if (_dragId != null) return null; // the moving ghost already shows intent
+    final id = _doc.caretBeforeId;
+    return id == null
+        ? null
+        : EditorCaret(
+            beforeElementId: '${MultiPartDocument.prefixFor(_mpd.active)}$id',
+          );
+  }
+
+  /// Marquee over the full score: select within the part that has the most
+  /// enclosed notes (making it active), since selection is per part.
+  void _applyMpMarquee(Rect rect) => setState(() {
+        final ids = _regions.elementIdsIn(rect);
+        final byPart = <int, List<String>>{};
+        for (final id in ids) {
+          final p = MultiPartDocument.partIndexOf(id);
+          if (p >= 0) (byPart[p] ??= []).add(MultiPartDocument.rawIdOf(id));
+        }
+        if (byPart.isEmpty) {
+          _doc.clearSelection();
+          return;
+        }
+        final best = byPart.entries
+            .reduce((a, b) => b.value.length > a.value.length ? b : a);
+        _mpd.setActive(best.key);
+        _doc.selectByIds(best.value); // _doc == the now-active part
+        _syncControlsToSelection();
+      });
 
   // ---- G6: instrument parts ----------------------------------------------
 
@@ -1477,18 +1522,32 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     // active part). One part keeps the single-part interactive
                     // pipeline (ghost/drag/staff-tap placement).
                     child: _mpd.partCount > 1
-                        ? MultiPartCanvas(
-                            document: _mpd,
-                            staffSpace: _zoom,
-                            onElementTap: _onGlobalElementTap,
-                            onStaffTap: _onMpStaffTap,
-                            onHover: _onMpHover,
-                            ghostPart: _hoverPart,
-                            ghostTarget: _hover,
-                            ghostDuration: _ghostDuration,
-                            highlightedIds: _mpd.selectedGlobalIds,
-                            onElementDragStart: _onMpDragStart,
-                            onElementDragEnd: _onMpDragEnd,
+                        ? Stack(
+                            children: [
+                              MultiPartCanvas(
+                                document: _mpd,
+                                staffSpace: _zoom,
+                                onElementTap: _onGlobalElementTap,
+                                onStaffTap: _onMpStaffTap,
+                                onHover: _onMpHover,
+                                ghostPart: _hoverPart,
+                                ghostTarget: _hover,
+                                ghostDuration: _ghostDuration,
+                                highlightedIds: _mpd.selectedGlobalIds,
+                                suppressElementIds: _mpSuppressed,
+                                onElementDragStart: _onMpDragStart,
+                                onElementDragUpdate: _onMpDragUpdate,
+                                onElementDragEnd: _onMpDragEnd,
+                                controller: _regions,
+                                caret: _mpCaret,
+                              ),
+                              if (_marquee)
+                                Positioned.fill(
+                                  child: _MarqueeOverlay(
+                                    onSelect: _applyMpMarquee,
+                                  ),
+                                ),
+                            ],
                           )
                         // Bind the engraving width to the visible viewport so
                         // systems break within the screen (never off the edge).

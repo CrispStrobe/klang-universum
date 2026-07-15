@@ -27,9 +27,12 @@ class MultiPartCanvas extends StatelessWidget {
     this.ghostTarget,
     this.ghostDuration = const NoteDuration(DurationBase.quarter),
     this.highlightedIds = const {},
+    this.suppressElementIds = const {},
     this.onElementDragStart,
     this.onElementDragUpdate,
     this.onElementDragEnd,
+    this.controller,
+    this.caret,
     this.staffSpace = 11,
   });
 
@@ -56,6 +59,10 @@ class MultiPartCanvas extends StatelessWidget {
   /// Global ids to paint in the highlight colour (the active part's selection).
   final Set<String> highlightedIds;
 
+  /// Global ids hidden from the layout — a clean drag-source hide so the app can
+  /// show the ghost following the pointer instead (live drag preview).
+  final Set<String> suppressElementIds;
+
   /// Drag-to-move an element: start (by global id), then update/end report the
   /// drop `(partIndex, StaffTarget)`.
   final void Function(String globalId)? onElementDragStart;
@@ -63,6 +70,12 @@ class MultiPartCanvas extends StatelessWidget {
       onElementDragUpdate;
   final void Function(String globalId, int partIndex, StaffTarget target)?
       onElementDragEnd;
+
+  /// Binds this page's element hit-regions for marquee / cross-part selection.
+  final ElementRegionController? controller;
+
+  /// An insertion caret drawn before its (global) `beforeElementId`.
+  final EditorCaret? caret;
 
   /// Pixels per staff space (zoom).
   final double staffSpace;
@@ -116,6 +129,7 @@ class MultiPartCanvas extends StatelessWidget {
                   // staffGap (4) / systemGap (10) match the view's own defaults;
                   // the probe below mirrors them so heights agree.
                   highlightedIds: highlightedIds,
+                  suppressElementIds: suppressElementIds,
                   ghostPart: ghostPart,
                   ghostTarget: ghostTarget,
                   ghostDuration: ghostDuration,
@@ -125,6 +139,8 @@ class MultiPartCanvas extends StatelessWidget {
                   onElementDragStart: onElementDragStart,
                   onElementDragUpdate: onElementDragUpdate,
                   onElementDragEnd: onElementDragEnd,
+                  controller: controller,
+                  caret: caret,
                 ),
               ),
             );
