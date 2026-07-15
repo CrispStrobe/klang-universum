@@ -4,7 +4,7 @@
 // ScoreDocument model tests.
 
 import 'package:crisp_notation/crisp_notation.dart'
-    show InteractiveGrandStaffView, MultiPartView, MultiSystemView;
+    show InteractiveGrandStaffView, InteractiveMultiPartView, MultiSystemView;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -319,7 +319,7 @@ void main() {
     expect(_editor(tester).partCount, 1);
     expect(_editor(tester).activePartIndex, 0);
     expect(find.byType(MultiSystemView), findsOneWidget);
-    expect(find.byType(MultiPartView), findsNothing);
+    expect(find.byType(InteractiveMultiPartView), findsNothing);
   });
 
   testWidgets('adding an instrument swaps to the full-score multi-part canvas',
@@ -329,7 +329,7 @@ void main() {
     await tester.pump();
     expect(_editor(tester).partCount, 2);
     expect(_editor(tester).activePartIndex, 1, reason: 'new part is active');
-    expect(find.byType(MultiPartView), findsOneWidget);
+    expect(find.byType(InteractiveMultiPartView), findsOneWidget);
     expect(find.byType(MultiSystemView), findsNothing);
   });
 
@@ -357,6 +357,34 @@ void main() {
     await tester.pump();
     expect(_editor(tester).partCount, 1);
     expect(find.byType(MultiSystemView), findsOneWidget);
-    expect(find.byType(MultiPartView), findsNothing);
+    expect(find.byType(InteractiveMultiPartView), findsNothing);
+  });
+
+  testWidgets('the full-score canvas is interactive (staff-tap + drag wired)',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    final view = tester.widget<InteractiveMultiPartView>(
+      find.byType(InteractiveMultiPartView),
+    );
+    // C12 in-place editing entry points are all wired from the screen.
+    expect(view.onStaffTap, isNotNull);
+    expect(view.onHover, isNotNull);
+    expect(view.onElementTap, isNotNull);
+    expect(view.onElementDragStart, isNotNull);
+    expect(view.onElementDragEnd, isNotNull);
+  });
+
+  testWidgets('in multi-part mode the piano places into the active part',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump(); // part 1 (empty) is now active
+    expect(_editor(tester).noteCount, 0);
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    expect(_editor(tester).noteCount, 1, reason: 'note lands in active part 1');
+    expect(_editor(tester).activePartIndex, 1);
   });
 }

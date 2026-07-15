@@ -21,6 +21,15 @@ class MultiPartCanvas extends StatelessWidget {
     super.key,
     required this.document,
     this.onElementTap,
+    this.onStaffTap,
+    this.onHover,
+    this.ghostPart,
+    this.ghostTarget,
+    this.ghostDuration = const NoteDuration(DurationBase.quarter),
+    this.highlightedIds = const {},
+    this.onElementDragStart,
+    this.onElementDragUpdate,
+    this.onElementDragEnd,
     this.staffSpace = 11,
   });
 
@@ -30,6 +39,30 @@ class MultiPartCanvas extends StatelessWidget {
   /// Called with the tapped element's **global** id (`p<part>:<rawId>`); feed it
   /// to [MultiPartDocument.selectByGlobalId].
   final void Function(String globalId)? onElementTap;
+
+  /// Called when the user taps empty staff — with the part hit and a quantized
+  /// [StaffTarget] (crisp_notation C12). Drive note placement into that part.
+  final void Function(int partIndex, StaffTarget target)? onStaffTap;
+
+  /// Called as the pointer hovers the staff (partIndex `-1`/null off-staff);
+  /// drive the placement ghost.
+  final void Function(int partIndex, StaffTarget? target)? onHover;
+
+  /// The placement ghost: part, target, and notehead duration.
+  final int? ghostPart;
+  final StaffTarget? ghostTarget;
+  final NoteDuration ghostDuration;
+
+  /// Global ids to paint in the highlight colour (the active part's selection).
+  final Set<String> highlightedIds;
+
+  /// Drag-to-move an element: start (by global id), then update/end report the
+  /// drop `(partIndex, StaffTarget)`.
+  final void Function(String globalId)? onElementDragStart;
+  final void Function(String globalId, int partIndex, StaffTarget target)?
+      onElementDragUpdate;
+  final void Function(String globalId, int partIndex, StaffTarget target)?
+      onElementDragEnd;
 
   /// Pixels per staff space (zoom).
   final double staffSpace;
@@ -75,14 +108,23 @@ class MultiPartCanvas extends StatelessWidget {
               child: SizedBox(
                 width: widthSpaces * staffSpace,
                 height: heightSpaces * staffSpace,
-                child: MultiPartView(
+                child: InteractiveMultiPartView(
                   document: doc,
                   metrics: metrics,
                   theme: theme,
                   staffSpace: staffSpace,
-                  // staffGap (4) / systemGap (10) match MultiPartView's own
-                  // defaults; the probe below mirrors them so heights agree.
+                  // staffGap (4) / systemGap (10) match the view's own defaults;
+                  // the probe below mirrors them so heights agree.
+                  highlightedIds: highlightedIds,
+                  ghostPart: ghostPart,
+                  ghostTarget: ghostTarget,
+                  ghostDuration: ghostDuration,
                   onElementTap: onElementTap,
+                  onStaffTap: onStaffTap,
+                  onHover: onHover,
+                  onElementDragStart: onElementDragStart,
+                  onElementDragUpdate: onElementDragUpdate,
+                  onElementDragEnd: onElementDragEnd,
                 ),
               ),
             );

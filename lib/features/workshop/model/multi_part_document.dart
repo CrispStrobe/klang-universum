@@ -139,6 +139,12 @@ class MultiPartDocument extends ChangeNotifier {
   /// The per-part display names (read-only view).
   List<String> get names => List.unmodifiable(_names);
 
+  /// The active part's selected element ids, namespaced to match the ids in
+  /// [buildMultiPart] — so they can drive `highlightedIds` on the full-score
+  /// canvas ([MultiPartView]/`InteractiveMultiPartView`).
+  Set<String> get selectedGlobalIds =>
+      {for (final id in activePart.selectedIds) '${prefixFor(active)}$id'};
+
   // ---- assembly ----------------------------------------------------------
 
   /// The per-part id prefix used to keep element ids unique across parts.

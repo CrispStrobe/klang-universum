@@ -444,6 +444,56 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         _syncControlsToSelection();
       });
 
+  // ---- G6: in-place editing on the full-score canvas (C12) ----------------
+
+  /// The part the hover ghost is over (null = off-staff), paired with [_hover].
+  int? _hoverPart;
+
+  /// Tap on empty staff in part [partIndex]: make it active and place a note at
+  /// the tapped staff position (in chord mode, stack onto the selection).
+  void _onMpStaffTap(int partIndex, StaffTarget target) {
+    setState(() {
+      _mpd.setActive(partIndex);
+      _syncControlsToSelection();
+    });
+    final pitch = target.pitchFor(
+      _mpd.clefOf(partIndex),
+      preferredAlter: _alterOf(_accidental),
+    );
+    _placePitch(pitch); // targets _doc == the now-active part
+  }
+
+  /// Hover over part [partIndex] (−1/null off-staff): drive the placement ghost.
+  /// Guarded on the quantized target so a mouse sweep doesn't rebuild per pixel.
+  void _onMpHover(int partIndex, StaffTarget? target) {
+    final part = partIndex < 0 ? null : partIndex;
+    if (part == _hoverPart && target == _hover) return;
+    setState(() {
+      _hoverPart = part;
+      _hover = target;
+    });
+  }
+
+  void _onMpDragStart(String globalId) => setState(() => _dragId = globalId);
+
+  /// Drop a dragged element: switch to its part and re-pitch it to the drop
+  /// staff position (vertical move). No live preview yet (crisp_notation C12
+  /// has no multi-part `dragPreviewOpacity`).
+  void _onMpDragEnd(String globalId, int partIndex, StaffTarget target) {
+    setState(() {
+      _mpd.setActive(partIndex);
+      _mpd.parts[partIndex].moveById(
+        MultiPartDocument.rawIdOf(globalId),
+        target,
+        clef: _mpd.clefOf(partIndex),
+      );
+      _dragId = null;
+      _hover = null;
+      _hoverPart = null;
+      _syncControlsToSelection();
+    });
+  }
+
   // ---- G6: instrument parts ----------------------------------------------
 
   void _addInstrument() => setState(_mpd.addPart);
@@ -1431,6 +1481,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                             document: _mpd,
                             staffSpace: _zoom,
                             onElementTap: _onGlobalElementTap,
+                            onStaffTap: _onMpStaffTap,
+                            onHover: _onMpHover,
+                            ghostPart: _hoverPart,
+                            ghostTarget: _hover,
+                            ghostDuration: _ghostDuration,
+                            highlightedIds: _mpd.selectedGlobalIds,
+                            onElementDragStart: _onMpDragStart,
+                            onElementDragEnd: _onMpDragEnd,
                           )
                         // Bind the engraving width to the visible viewport so
                         // systems break within the screen (never off the edge).

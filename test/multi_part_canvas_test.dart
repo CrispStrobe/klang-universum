@@ -36,7 +36,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(MultiPartView), findsOneWidget);
+    expect(find.byType(InteractiveMultiPartView), findsOneWidget);
   });
 
   testWidgets('a single-part document still renders one full-score view',
@@ -50,7 +50,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(MultiPartView), findsOneWidget);
+    expect(find.byType(InteractiveMultiPartView), findsOneWidget);
   });
 
   testWidgets('the MultiPartView carries the document built from all parts',
@@ -63,7 +63,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final view = tester.widget<MultiPartView>(find.byType(MultiPartView));
+    final view = tester.widget<InteractiveMultiPartView>(
+      find.byType(InteractiveMultiPartView),
+    );
     expect(view.document.parts, hasLength(2));
     // The onElementTap wiring is present (screen feeds it to selectByGlobalId).
     expect(view.onElementTap, isNull); // not wired in this bare harness
