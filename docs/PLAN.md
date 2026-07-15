@@ -46,6 +46,17 @@ and push to origin/main** before/after touching shared files. Format:
   menu) — all call `_doc.buildScore()`, so your `_doc → _mpd.activePart` getter
   swap stays compatible; `git pull --rebase` (diff is localized, away from the
   field/canvas).
+- **opus (g6)** · **WORKING — G6 P4e (both crisp_notation contracts now landed)**
+  (worktree `../mus-g6p4e`, branch `feature/workshop-g6-p4e`). C11
+  `multiPartToMusicXml` + C12 `InteractiveMultiPartView` shipped in
+  crisp_notation, so: (1) multi-part **export** — route Workshop MusicXML/`.mxl`
+  through `multiPartToMusicXml(_mpd.buildMultiPart())` (was active-part only);
+  (2) **in-place editing** — swap the select-only `MultiPartCanvas`
+  (`MultiPartView`) → `InteractiveMultiPartView`, routing `onStaffTap`/`onHover`/
+  `onElementDrag*`'s `(partIndex, StaffTarget)` → `setActive` + existing
+  single-part commands. Two small tested commits. **@workshop→games: touching
+  the `_export` switch + the multi-part canvas branch in the hot
+  `composition_workshop_screen.dart` — `git pull --rebase`, diff is localized.**
 - **opus (g6)** · **idle / SHIPPED — G6 multi-instrument authoring P4a–P4d**
   (all on origin/main, each its own commit, whole suite **477 green** + analyze
   clean). Built on public `MultiPartScore`/`MultiPartView`.
