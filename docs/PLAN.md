@@ -58,10 +58,13 @@ and push to origin/main** before/after touching shared files. Format:
   `onElementTap`→cross-part select, `onElementDrag*`→setActive+moveById repitch,
   `highlightedIds`←`_mpd.selectedGlobalIds`. **The P4b v1 two-view constraint is
   lifted** — full note entry directly on the multi-instrument score. Remaining
-  crisp_notation follow-ups (their C12 TODO, not blocking): multi-part
-  `dragPreviewOpacity` (live drag preview), `EditorCaret`,
-  `ElementRegionController` (marquee) on `InteractiveMultiPartView`; and
-  multi-part MEI/ABC writers (only MusicXML has one). **G6 is feature-complete.**
+  crisp_notation follow-ups — **now DONE too** (2026-07-15): C12b `EditorCaret`
+  + C12c `ElementRegionController` shipped in crisp_notation (`afc283a`, pushed
+  to its `main`) and wired here (caret + marquee in multi-part mode); C12a live
+  drag preview done app-side via suppress+ghost. Multi-part MEI/ABC writers
+  deliberately deferred (MusicXML covers interchange; hardened-writer refactor
+  risk > value). **G6 is feature-complete, both repos on main, whole suite 482
+  green.** See the parity section below for the full breakdown.
 - **opus (g6)** · **idle / SHIPPED — G6 multi-instrument authoring P4a–P4d**
   (all on origin/main, each its own commit, whole suite **477 green** + analyze
   clean). Built on public `MultiPartScore`/`MultiPartView`.
@@ -502,20 +505,27 @@ editing** on the full score (crisp_notation **C12** `InteractiveMultiPartView`:
 staff-tap-to-place, hover ghost, cross-part select, drag repitch). See
 `docs/WORKSHOP_G6_HANDOVER.md` + `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
 
-**Remaining crisp_notation follow-ups for G6 (the "left opens" — in the
-notation library, then wired here). Being done now:**
-- **C12a — `dragPreviewOpacity` on `InteractiveMultiPartView`** (live drag
-  preview: hide the dragged element + repaint it translated under the pointer,
-  like the single-part C10b). Wire mus `onElementDragUpdate` +
-  `suppressElementIds` + `dragPreviewOpacity`.
-- **C12b — `EditorCaret` on `InteractiveMultiPartView`** (a visible insertion
-  caret in the active part). Wire the mus caret.
-- **C12c — `ElementRegionController` on `InteractiveMultiPartView`** (bind the
-  per-page element regions so a marquee rubber-band selects across parts). Wire
-  the mus marquee (⛶) into multi-part mode.
-- **C11b — multi-part MEI + ABC writers** (`multiPartToMei` / `multiPartToAbc`,
-  siblings of `multiPartToMusicXml`) so multi-part export isn't MusicXML-only.
-  Wire the mus MEI/ABC export cases.
+**crisp_notation G6 follow-ups (the "left opens") — DONE 2026-07-15:**
+- ✅ **C12b — `EditorCaret` on `InteractiveMultiPartView`** (crisp_notation
+  `afc283a`): the render paints a caret before its `beforeElementId` — the id
+  locates the part, so it lands in the right staff. mus `_mpCaret` feeds the
+  active part's caret (namespaced).
+- ✅ **C12c — `ElementRegionController` on `InteractiveMultiPartView`**
+  (`afc283a`): `RenderMultiPartView implements ElementRegionProvider`; a
+  controller binds for marquee / cross-part region queries. mus binds `_regions`
+  + shows the rubber-band overlay in multi-part mode (`_applyMpMarquee` selects
+  within the most-covered part).
+- ✅ **C12a — live drag preview** (no lib change needed): built app-side from the
+  existing `suppressElementIds` (hide the dragged note) + placement ghost
+  (`onElementDragUpdate` moves it under the pointer) — same visual as single-part
+  `dragPreviewOpacity`. A dedicated multi-part `dragPreviewOpacity` (real-glyph
+  translation) is an optional future nicety, not required.
+- ⏸️ **C11b — multi-part MEI/ABC writers** — **deliberately deferred.** MusicXML
+  (`multiPartToMusicXml`, done) is the universal multi-part interchange format;
+  adding `multiPartToMei`/`multiPartToAbc` means refactoring the oracle-hardened
+  single-part writers for low marginal value + real regression risk. Multi-part
+  export stays MusicXML/`.mxl`; other formats export the active part. Revisit
+  only if a concrete MEI/ABC multi-part need appears.
 
 Other (non-G6) parity candidates still open: metric-aware beaming +
 `Measure.actualDuration`; measure numbering / per-group barlines in the chrome.
