@@ -192,6 +192,7 @@
   "directionUpLabel": "Higher",
   "directionDownLabel": "Lower",
   "gameStepSkip": "Step or Skip?",
+  "gameStepSkipBass": "Step or Skip? (bass)",
   "gameStepSkipSubtitle": "Do the two notes step to a neighbour or skip a gap?",
   "stepSkipPrompt": "Does the second note step next door, or skip over a gap?",
   "stepLabel": "Step",

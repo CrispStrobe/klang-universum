@@ -281,6 +281,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const StepSkipScreen(),
       tutorial: stepSkipPrimer,
     ),
+    // Same drill in the bass clef — bass-clef reading practice.
+    GameInfo(
+      id: 'step_skip_bass',
+      icon: Icons.moving,
+      title: (l) => l.gameStepSkipBass,
+      subtitle: (l) => l.gameStepSkipSubtitle,
+      builder: (_) => const StepSkipScreen(clef: Clef.bass),
+      tutorial: stepSkipPrimer,
+    ),
     // Read the clef sign itself — Treble vs Bass (Alto/Tenor at 2★).
     GameInfo(
       id: 'which_clef',

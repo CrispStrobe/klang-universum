@@ -161,6 +161,7 @@
   "directionUpLabel": "Höher",
   "directionDownLabel": "Tiefer",
   "gameStepSkip": "Schritt oder Sprung?",
+  "gameStepSkipBass": "Schritt oder Sprung? (Bass)",
   "gameStepSkipSubtitle": "Gehen die zwei Noten zum Nachbarn oder springen sie?",
   "stepSkipPrompt": "Geht die zweite Note zum Nachbarn, oder springt sie über eine Lücke?",
   "stepLabel": "Schritt",

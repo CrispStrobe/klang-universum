@@ -986,6 +986,12 @@ abstract class AppLocalizations {
   /// **'Step or Skip?'**
   String get gameStepSkip;
 
+  /// No description provided for @gameStepSkipBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Step or Skip? (bass)'**
+  String get gameStepSkipBass;
+
   /// No description provided for @gameStepSkipSubtitle.
   ///
   /// In en, this message translates to:

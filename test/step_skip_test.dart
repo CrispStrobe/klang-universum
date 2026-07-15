@@ -2,6 +2,7 @@
 // the shared game surface is used; we tap the correct Step/Skip button per the
 // game's own report of the answer.
 
+import 'package:crisp_notation/crisp_notation.dart' show Clef, StaffView;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
@@ -45,5 +46,23 @@ void main() {
     }
     expect(_game(tester).isFinished, isTrue);
     expect(find.byIcon(Icons.star).evaluate().length, greaterThanOrEqualTo(1));
+  });
+
+  testWidgets('the bass variant reads in the bass clef and still works',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await pumpGame(tester, const StepSkipScreen(clef: Clef.bass), sri: sri);
+
+    // Same Step / Skip drill; the card renders a bass clef (F clef glyph).
+    expect(find.text('Step'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
+    expect(find.byType(StaffView), findsOneWidget);
+    expect(
+      tester.widget<StaffView>(find.byType(StaffView)).score.clef,
+      Clef.bass,
+    );
+
+    await _answerCorrectly(tester);
+    expect(sri.getDetailedBreakdown()['reading']!.keys, ['motion']);
   });
 }

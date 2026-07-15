@@ -499,6 +499,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameStepSkip => 'Step or Skip?';
 
   @override
+  String get gameStepSkipBass => 'Step or Skip? (bass)';
+
+  @override
   String get gameStepSkipSubtitle =>
       'Do the two notes step to a neighbour or skip a gap?';
 

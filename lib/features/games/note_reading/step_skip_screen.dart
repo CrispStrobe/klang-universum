@@ -26,7 +26,12 @@ import 'package:provider/provider.dart';
 const _half = NoteDuration(DurationBase.half);
 
 class StepSkipScreen extends StatefulWidget {
-  const StepSkipScreen({super.key});
+  const StepSkipScreen({super.key, this.clef = Clef.treble});
+
+  /// Which clef the notes are read in (treble by default; a bass variant reuses
+  /// the same screen — the step/skip judgement is clef-independent, but bass
+  /// gives bass-clef reading practice and its own pitches/progress).
+  final Clef clef;
 
   @override
   State<StepSkipScreen> createState() => _StepSkipScreenState();
@@ -62,6 +67,11 @@ class _StepSkipScreenState extends State<StepSkipScreen>
   @override
   String get gameType => 'step_skip';
 
+  // Treble keeps the original id (no progress migration); bass gets its own.
+  @override
+  String get progressId =>
+      widget.clef == Clef.bass ? 'step_skip_bass' : 'step_skip';
+
   // A correct answer sounds the two notes; a miss buzzes. No generic blips.
   @override
   bool get playFeedbackSounds => false;
@@ -82,8 +92,8 @@ class _StepSkipScreenState extends State<StepSkipScreen>
     final up = _random.nextBool();
     final aPos = up ? low : low + delta;
     final bPos = up ? low + delta : low;
-    _a = Clef.treble.pitchAt(aPos);
-    _b = Clef.treble.pitchAt(bPos);
+    _a = widget.clef.pitchAt(aPos);
+    _b = widget.clef.pitchAt(bPos);
     _tapped = null;
     _lastAnswer = null;
   }
@@ -113,7 +123,7 @@ class _StepSkipScreenState extends State<StepSkipScreen>
   }
 
   Score get _cardScore => Score(
-        clef: Clef.treble,
+        clef: widget.clef,
         measures: [
           Measure([
             NoteElement.note(_a, _half, id: 'a'),
@@ -127,7 +137,11 @@ class _StepSkipScreenState extends State<StepSkipScreen>
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: GameAppBar(title: l10n.gameStepSkip),
+      appBar: GameAppBar(
+        title: widget.clef == Clef.bass
+            ? l10n.gameStepSkipBass
+            : l10n.gameStepSkip,
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(
