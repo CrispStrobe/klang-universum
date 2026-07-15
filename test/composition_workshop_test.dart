@@ -452,4 +452,23 @@ void main() {
 
     expect(view().showMeasureNumbers, isTrue);
   });
+
+  testWidgets('Bar numbers also apply to the multi-part canvas',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    InteractiveMultiPartView view() => tester.widget<InteractiveMultiPartView>(
+          find.byType(InteractiveMultiPartView),
+        );
+    expect(view().showMeasureNumbers, isFalse);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopBarNumbers));
+    await tester.pumpAndSettle();
+
+    expect(view().showMeasureNumbers, isTrue);
+  });
 }

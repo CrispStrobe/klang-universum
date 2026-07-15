@@ -1616,6 +1616,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                 onElementDragEnd: _onMpDragEnd,
                                 controller: _regions,
                                 caret: _mpCaret,
+                                showMeasureNumbers: _barNumbers,
                               ),
                               if (_marquee)
                                 Positioned.fill(

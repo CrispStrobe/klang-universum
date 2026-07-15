@@ -33,6 +33,7 @@ class MultiPartCanvas extends StatelessWidget {
     this.onElementDragEnd,
     this.controller,
     this.caret,
+    this.showMeasureNumbers = false,
     this.staffSpace = 11,
   });
 
@@ -76,6 +77,9 @@ class MultiPartCanvas extends StatelessWidget {
 
   /// An insertion caret drawn before its (global) `beforeElementId`.
   final EditorCaret? caret;
+
+  /// Whether to label each wrapped system's first bar with its measure number.
+  final bool showMeasureNumbers;
 
   /// Pixels per staff space (zoom).
   final double staffSpace;
@@ -141,6 +145,7 @@ class MultiPartCanvas extends StatelessWidget {
                   onElementDragEnd: onElementDragEnd,
                   controller: controller,
                   caret: caret,
+                  showMeasureNumbers: showMeasureNumbers,
                 ),
               ),
             );
