@@ -1650,6 +1650,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                                   _doc.buildGrandStaff(),
                                               theme: theme,
                                               staffSpace: _zoom,
+                                              showMeasureNumbers: _barNumbers,
                                               controller: _regions,
                                               elementColors: elementColors,
                                               dragPreviewOpacity:

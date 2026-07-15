@@ -471,4 +471,27 @@ void main() {
 
     expect(view().showMeasureNumbers, isTrue);
   });
+
+  testWidgets('Bar numbers also apply in grand-staff mode', (tester) async {
+    await pump(tester);
+    // Switch the staff-mode dropdown to grand (𝄞𝄢).
+    await tester.tap(find.text('𝄞').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('𝄞𝄢').last);
+    await tester.pumpAndSettle();
+
+    InteractiveGrandStaffView view() =>
+        tester.widget<InteractiveGrandStaffView>(
+          find.byType(InteractiveGrandStaffView),
+        );
+    expect(view().showMeasureNumbers, isFalse);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopBarNumbers));
+    await tester.pumpAndSettle();
+
+    expect(view().showMeasureNumbers, isTrue);
+  });
 }
