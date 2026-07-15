@@ -527,8 +527,26 @@ staff-tap-to-place, hover ghost, cross-part select, drag repitch). See
   export stays MusicXML/`.mxl`; other formats export the active part. Revisit
   only if a concrete MEI/ABC multi-part need appears.
 
-Other (non-G6) parity candidates still open: metric-aware beaming +
-`Measure.actualDuration`; measure numbering / per-group barlines in the chrome.
+**Non-G6 parity polish — assessed & (partly) shipped 2026-07-15:**
+- ✅ **Measure numbers in the editor** — crisp_notation `MultiSystemView` gained
+  opt-in `showMeasureNumbers` (system-start numbering off `SystemLayout.
+  firstMeasure`, paint-only, defaults off — ported from `png_export`'s
+  convention; it previously existed only on `StaffView`). Wired a **"Bar
+  numbers"** toggle in the Workshop ⋮ menu → the single-staff canvas. *Caveat:*
+  grand-staff (`InteractiveGrandStaffView`) and multi-part
+  (`InteractiveMultiPartView`) canvases don't expose the flag yet, so numbers
+  show only in treble/bass mode; extending them is the same paint port on those
+  views (a follow-up).
+- ✅ **Metric-aware beaming** — already automatic: the layout engine
+  (`_computeBeamGroups`) derives beam windows from the meter during layout, so
+  the editor needs no opt-in. Nothing to wire.
+- ⏸️ **`Measure.actualDuration`** — the model already supports explicit
+  irregular-bar lengths (`Measure.actualDuration` + `effectiveDuration`), and the
+  editor already handles the pickup case; exposing arbitrary irregular bars is a
+  niche editor feature, deferred until asked.
+- ⏸️ **`showNoteNames` overlay** / per-group barlines in the chrome — still need
+  crisp_notation to surface the option on `MultiSystemView` / the interactive
+  views (like `showMeasureNumbers` now is) before wiring.
 Details + the running contract log: `docs/WORKSHOP_PLAN.md` +
 `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
 
