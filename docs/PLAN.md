@@ -878,8 +878,9 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   param + a second `GameInfo` doubles the content (mirror how `note_reading` /
   `place_note` ship treble + bass). **Shipped:** ✅ *Step or Skip? (bass)*
   (`step_skip_bass`) · ✅ *High or Low? (bass)* (`pitch_sort_bass`) — each with
-  its own `progressId` so treble progress is untouched. Remaining cheap wins to
-  mirror: `Sharp or Flat?` (`accidental_sort`), `Connect the Steps`.
+  its own `progressId` so treble progress is untouched. · ✅ *Sharp or Flat?
+  (bass)* (`accidental_sort_bass`). Remaining cheap win to mirror: `Connect the
+  Steps` (the connect-line reader).
 - [ ] **Step, Skip, or Leap?** — make Step or Skip? a 3-way (2nd / 3rd–4th / 5th+)
   at 2★ for a harder tier.
 - [ ] **3-basket sorts** — the two-basket format extends to 3 (e.g. sharp / natural
