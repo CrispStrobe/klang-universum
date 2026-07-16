@@ -1564,6 +1564,38 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     );
   }
 
+  /// Triplet toggle — shown when ≥2 notes are selected (a tuplet needs a
+  /// consecutive run). Highlighted when the selection is already a tuplet;
+  /// tapping then removes it, otherwise it groups the selection into a triplet.
+  Widget? _tupletButton(AppLocalizations l10n) {
+    if (!_doc.canSlur) return null; // canSlur == ≥2 notes selected
+    final ids = _doc.selectedIds;
+    final isTuplet =
+        ids.isNotEmpty && ids.every((id) => _doc.tupletOf(id) != null);
+    final scheme = Theme.of(context).colorScheme;
+    return IconButton(
+      iconSize: 22,
+      visualDensity: VisualDensity.compact,
+      isSelected: isTuplet,
+      tooltip: l10n.workshopTuplet,
+      onPressed: () => _run(() {
+        if (isTuplet) {
+          _doc.removeTupletAt(ids.first);
+        } else {
+          _doc.addTuplet(ids);
+        }
+      }),
+      icon: Text(
+        '³',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: isTuplet ? scheme.primary : null,
+        ),
+      ),
+    );
+  }
+
   /// Crescendo / diminuendo toggles — shown when ≥2 notes are selected. Each is
   /// highlighted when that wedge already spans the range.
   Widget? _hairpinButtons(AppLocalizations l10n) {
@@ -2065,6 +2097,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 onPaste: () => _run(_doc.paste),
                 slur: _slurButton(l10n),
                 hairpin: _hairpinButtons(l10n),
+                tuplet: _tupletButton(l10n),
                 lyric: _lyricField(l10n),
                 palette: _paletteButton(l10n),
                 onDelete: () => _run(_doc.deleteSelected),
@@ -2330,6 +2363,7 @@ class _InputBar extends StatelessWidget {
     required this.onPaste,
     required this.slur,
     required this.hairpin,
+    required this.tuplet,
     required this.lyric,
     required this.palette,
     required this.onDelete,
@@ -2349,6 +2383,7 @@ class _InputBar extends StatelessWidget {
   final VoidCallback onCopy, onCut, onPaste, onDelete;
   final Widget? slur;
   final Widget? hairpin;
+  final Widget? tuplet;
   final Widget? lyric;
   final Widget? palette;
 
@@ -2443,6 +2478,7 @@ class _InputBar extends StatelessWidget {
                 ),
                 if (slur != null) slur!,
                 if (hairpin != null) hairpin!,
+                if (tuplet != null) tuplet!,
                 if (palette != null) palette!,
                 _act(Icons.delete_outline, l10n.workshopDelete, onDelete),
                 if (lyric != null) ...[const _Sep(), lyric!],

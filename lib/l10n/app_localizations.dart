@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Break barline below'**
   String get workshopBreakBarlineBelow;
 
+  /// No description provided for @workshopTuplet.
+  ///
+  /// In en, this message translates to:
+  /// **'Triplet (3 in the time of 2)'**
+  String get workshopTuplet;
+
   /// No description provided for @workshopTie.
   ///
   /// In en, this message translates to:

@@ -333,6 +333,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopBreakBarlineBelow => 'Break barline below';
 
   @override
+  String get workshopTuplet => 'Triplet (3 in the time of 2)';
+
+  @override
   String get workshopTie => 'Tie';
 
   @override

@@ -314,6 +314,33 @@ void main() {
     expect(editor.slurCount, 1);
   });
 
+  testWidgets('the triplet button groups a two-note range into a tuplet',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKeyAt(16));
+    await tester.pump();
+    await tester.tap(_pianoKeyAt(18)); // two notes, second selected
+    await tester.pump();
+    final extend = find.byIcon(Icons.keyboard_double_arrow_left);
+    await tester.ensureVisible(extend);
+    await tester.tap(extend);
+    await tester.pump();
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final triplet = find.byTooltip(l10n.workshopTuplet);
+    await tester.ensureVisible(triplet);
+    await tester.tap(triplet);
+    await tester.pump();
+
+    // The button now reflects that the selection is a tuplet (highlighted).
+    // (The '³' glyph identifies the IconButton; find.byTooltip points at the
+    // Tooltip, not the button.)
+    final btn = tester.widget<IconButton>(
+      find.widgetWithText(IconButton, '³'),
+    );
+    expect(btn.isSelected, isTrue);
+  });
+
   testWidgets('the lyric field carries a verse selector', (tester) async {
     await pump(tester);
     await tester.tap(_pianoKey()); // one note selected

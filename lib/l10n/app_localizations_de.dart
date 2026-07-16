@@ -333,6 +333,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopBreakBarlineBelow => 'Taktstrich darunter trennen';
 
   @override
+  String get workshopTuplet => 'Triole (3 statt 2)';
+
+  @override
   String get workshopTie => 'Bindebogen';
 
   @override

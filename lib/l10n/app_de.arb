@@ -122,6 +122,7 @@
   "workshopConcertPitch": "Klingend (C)",
   "workshopBraceBelow": "Klammer mit Stimme darunter",
   "workshopBreakBarlineBelow": "Taktstrich darunter trennen",
+  "workshopTuplet": "Triole (3 statt 2)",
   "workshopTie": "Bindebogen",
   "workshopDynamics": "Dynamik",
   "workshopDynamicNone": "Keine",
