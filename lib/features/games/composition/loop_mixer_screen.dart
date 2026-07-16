@@ -19,13 +19,18 @@
 // (created in initState — never a lazy `late final`, see CLAUDE.md) drives
 // the step playhead and the wrap detection.
 
+import 'dart:async';
+
 import 'package:crisp_notation/crisp_notation.dart' show Clef, StaffView;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:klang_universum/core/audio/groove_capture.dart';
 import 'package:klang_universum/core/audio/loop_engine.dart';
+import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
+import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
 import 'package:klang_universum/features/games/composition/groove_notation.dart';
@@ -71,6 +76,10 @@ abstract interface class LoopMixerTester {
   bool loadGrooveToken(String token);
   bool get isInfinite;
   void toggleInfinite();
+  bool get hasVoiceTrack;
+
+  /// Installs a sung layer without the mic (headless tests can't record).
+  void debugCaptureCells(List<PatternCell> cells);
 
   /// Forces the seam handler (normally driven by the real-time clock, which
   /// widget tests can't advance) — asserts fill scheduling without waiting.
@@ -119,6 +128,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _ticker.dispose();
     _step.dispose();
     _loop.dispose();
+    _countInTimer?.cancel();
+    _captureStopTimer?.cancel();
+    _micSub?.cancel();
+    _mic?.dispose();
     super.dispose();
   }
 
@@ -174,6 +187,119 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool get isInfinite => _infinite;
   @override
   void toggleInfinite() => setState(() => _infinite = !_infinite);
+
+  // --- Sing a track: count-in → record 2 bars → quantize → a voice card ---
+
+  MicrophonePitchService? _mic;
+  StreamSubscription<PitchReading>? _micSub;
+  final _captureClock = Stopwatch();
+  final List<PitchSample> _samples = [];
+  Timer? _countInTimer;
+  Timer? _captureStopTimer;
+  _CapturePhase _capturePhase = _CapturePhase.idle;
+  int _countdown = 0;
+
+  @override
+  bool get hasVoiceTrack =>
+      _engine.tracks.any((t) => t.id == LoopEngine.userTrackId);
+
+  @override
+  void debugCaptureCells(List<PatternCell> cells) {
+    setState(() {
+      _engine.setUserTrack(cells);
+      _engine.enabled.add(LoopEngine.userTrackId);
+    });
+    _restartGroove();
+  }
+
+  /// The capture always spans 2 straight bars at the current tempo (what a
+  /// non-follower track tiles from), regardless of progression or swing.
+  int get _captureMs => LoopTiming(tempoBpm: _engine.tempoBpm).totalMs;
+
+  Future<void> _startSingFlow() async {
+    if (_capturePhase != _CapturePhase.idle) return;
+    // Silence the band while the mic listens — the detector is monophonic
+    // and would transcribe the loop playback instead of the singer.
+    unawaited(_loop.stop());
+    _clock.stop();
+    final audio = context.read<AudioService>();
+    setState(() {
+      _capturePhase = _CapturePhase.countIn;
+      _countdown = 4;
+    });
+    unawaited(audio.playTick(accent: true));
+    _countInTimer = Timer.periodic(
+      Duration(milliseconds: _engine.timing.beatMs),
+      (timer) {
+        if (!mounted) return timer.cancel();
+        if (_countdown <= 1) {
+          timer.cancel();
+          unawaited(_beginRecording());
+        } else {
+          setState(() => _countdown--);
+          unawaited(audio.playTick());
+        }
+      },
+    );
+  }
+
+  Future<void> _beginRecording() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    _samples.clear();
+    final mic = _mic ??= MicrophonePitchService();
+    try {
+      _micSub = mic.readings.listen((reading) {
+        final sample = (
+          _captureClock.elapsedMilliseconds.toDouble(),
+          reading.hasPitch ? reading.nearestMidi : null,
+        );
+        _samples.add(sample);
+      });
+      await mic.start();
+    } on PitchCaptureException {
+      await _micSub?.cancel();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.loopMixerSingNothing)),
+      );
+      setState(() => _capturePhase = _CapturePhase.idle);
+      _restartGroove();
+      return;
+    }
+    if (!mounted) return;
+    _captureClock
+      ..reset()
+      ..start();
+    setState(() => _capturePhase = _CapturePhase.recording);
+    _captureStopTimer =
+        Timer(Duration(milliseconds: _captureMs), _finishRecording);
+  }
+
+  Future<void> _finishRecording() async {
+    _captureClock.stop();
+    await _mic?.stop();
+    await _micSub?.cancel();
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final cells = quantizeToGroove(_samples, totalMs: _captureMs);
+    setState(() {
+      _capturePhase = _CapturePhase.idle;
+      if (cells != null) {
+        _engine.setUserTrack(
+          cells,
+          instrument: context.read<AudioService>().instrument,
+        );
+        _engine.enabled.add(LoopEngine.userTrackId);
+      }
+    });
+    if (cells == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.loopMixerSingNothing)),
+      );
+    }
+    _restartGroove();
+  }
 
   @override
   String get grooveToken => encodeGrooveToken(_engine.spec);
@@ -292,7 +418,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
 
   /// The most melodic enabled track — what the score panel engraves.
   String? get _engravedTrackId {
-    for (final id in const ['melody', 'chords', 'sparkle', 'bass']) {
+    for (final id in const ['voice', 'melody', 'chords', 'sparkle', 'bass']) {
       if (_engine.enabled.contains(id) && _engine.cellsFor(id) != null) {
         return id;
       }
@@ -409,6 +535,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     'chords': Icons.piano,
     'melody': Icons.music_note,
     'sparkle': Icons.auto_awesome,
+    'voice': Icons.mic,
   };
 
   // One stable colour per card (the drums are unpitched, so a warm brown
@@ -419,6 +546,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     'chords': Color(0xFF00ACC1), // G cyan
     'melody': Color(0xFFF9A825), // E amber
     'sparkle': Color(0xFF3949AB), // A indigo
+    'voice': Color(0xFF8E24AA), // B purple — the singer's own layer
   };
 
   String _trackLabel(AppLocalizations l10n, String id) => switch (id) {
@@ -426,6 +554,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         'bass' => l10n.loopMixerTrackBass,
         'chords' => l10n.loopMixerTrackChords,
         'melody' => l10n.loopMixerTrackMelody,
+        'voice' => l10n.loopMixerTrackVoice,
         _ => l10n.loopMixerTrackSparkle,
       };
 
@@ -549,7 +678,38 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
+              // Sing a track: count-in, record 2 bars, join the band.
+              SizedBox(
+                height: 34,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(34),
+                    foregroundColor: _capturePhase == _CapturePhase.recording
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                  ),
+                  onPressed: _capturePhase == _CapturePhase.idle
+                      ? _startSingFlow
+                      : null,
+                  icon: Icon(
+                    _capturePhase == _CapturePhase.recording
+                        ? Icons.fiber_manual_record
+                        : Icons.mic,
+                    size: 18,
+                  ),
+                  label: Text(
+                    switch (_capturePhase) {
+                      _CapturePhase.idle => hasVoiceTrack
+                          ? l10n.loopMixerSingAgain
+                          : l10n.loopMixerSing,
+                      _CapturePhase.countIn => '$_countdown…',
+                      _CapturePhase.recording => l10n.loopMixerSingNow,
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
               // The harmony lane: free vamp, or a 4-chord song progression.
               Row(
                 children: [
@@ -625,6 +785,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     );
   }
 }
+
+enum _CapturePhase { idle, countIn, recording }
 
 /// A row of beat dots (grouped per bar) with the sounding beat lit. Only
 /// this leaf listens to the ticker's beat notifier, so the per-frame update

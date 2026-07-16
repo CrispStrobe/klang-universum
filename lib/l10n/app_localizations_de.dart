@@ -875,6 +875,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Endlos-Modus — jeder Loop ein bisschen anders';
 
   @override
+  String get loopMixerSing => 'Sing eine Spur!';
+
+  @override
+  String get loopMixerSingAgain => 'Sing deine Spur neu';
+
+  @override
+  String get loopMixerSingNow => 'Jetzt singen!';
+
+  @override
+  String get loopMixerSingNothing =>
+      'Wir haben keine Melodie gehört — probier\'s nochmal!';
+
+  @override
+  String get loopMixerTrackVoice => 'Meine Stimme';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override

@@ -134,6 +134,30 @@ void main() {
     expect(find.byType(StaffView), findsNothing);
   });
 
+  testWidgets('a captured voice layer joins the band as a real card',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.hasVoiceTrack, isFalse);
+    expect(find.text('Sing a track!'), findsOneWidget);
+
+    game.debugCaptureCells(const [
+      (midis: [64], steps: 8),
+      (midis: [67], steps: 8),
+    ]);
+    await tester.pump();
+
+    expect(game.hasVoiceTrack, isTrue);
+    expect(game.enabledTracks, contains('voice'));
+    expect(find.text('My voice'), findsOneWidget);
+    expect(game.isPlaying, isTrue);
+
+    // The voice card toggles like any other.
+    await tester.tap(find.text('My voice'));
+    await tester.pump();
+    expect(game.enabledTracks, isNot(contains('voice')));
+  });
+
   testWidgets('a groove code captures and restores the whole state',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());

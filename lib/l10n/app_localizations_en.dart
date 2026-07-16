@@ -871,6 +871,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Infinite mode — every loop a little different';
 
   @override
+  String get loopMixerSing => 'Sing a track!';
+
+  @override
+  String get loopMixerSingAgain => 'Sing your track again';
+
+  @override
+  String get loopMixerSingNow => 'Sing now!';
+
+  @override
+  String get loopMixerSingNothing => 'We couldn\'t hear a tune — try again!';
+
+  @override
+  String get loopMixerTrackVoice => 'My voice';
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override

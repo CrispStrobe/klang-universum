@@ -279,6 +279,8 @@ class GrooveSpec {
     this.tempoBpm = 100,
     this.swing = 0,
     this.progressionId,
+    this.userCells,
+    this.userInstrument,
   });
 
   final Set<String> enabled;
@@ -289,6 +291,13 @@ class GrooveSpec {
 
   /// A [kProgressions] id, or null for the free 2-bar vamp.
   final String? progressionId;
+
+  /// The sung user track's cells (see groove_capture.dart), if one exists —
+  /// so a share token carries the singer's melody too.
+  final List<PatternCell>? userCells;
+
+  /// [Instrument] name the user track renders with.
+  final String? userInstrument;
 
   factory GrooveSpec.fromJson(Map<String, dynamic> json) => GrooveSpec(
         enabled: {...(json['e'] as List? ?? const []).cast<String>()},
@@ -305,6 +314,10 @@ class GrooveSpec {
         tempoBpm: (json['t'] as num? ?? 100).toInt(),
         swing: (json['s'] as num? ?? 0).toDouble(),
         progressionId: json['p'] as String?,
+        userCells:
+            json['u'] is Map ? _cellsFromJson((json['u'] as Map)['c']) : null,
+        userInstrument:
+            json['u'] is Map ? (json['u'] as Map)['i'] as String? : null,
       );
 
   /// Compact json (defaults omitted) — the share token payload.
@@ -324,10 +337,44 @@ class GrooveSpec {
         't': tempoBpm,
         if (swing != 0) 's': double.parse(swing.toStringAsFixed(2)),
         if (progressionId != null) 'p': progressionId,
+        if (userCells != null)
+          'u': {
+            'c': _cellsToJson(userCells!),
+            if (userInstrument != null) 'i': userInstrument,
+          },
       };
 
   /// Canonical identity — the render-cache key.
   String get cacheKey => jsonEncode(toJson());
+}
+
+List<dynamic> _cellsToJson(List<PatternCell> cells) => [
+      for (final c in cells) [c.midis, c.steps],
+    ];
+
+/// Parses cells from token json; null on any structural violation (foreign
+/// tokens must never crash or smuggle absurd data in).
+List<PatternCell>? _cellsFromJson(dynamic json) {
+  if (json is! List) return null;
+  final cells = <PatternCell>[];
+  var total = 0;
+  for (final entry in json) {
+    if (entry is! List || entry.length != 2) return null;
+    final [midisRaw, steps] = entry;
+    if (steps is! int || steps < 1) return null;
+    List<int>? midis;
+    if (midisRaw != null) {
+      if (midisRaw is! List) return null;
+      midis = [];
+      for (final m in midisRaw) {
+        if (m is! int || m < 0 || m > 127) return null;
+        midis.add(m);
+      }
+    }
+    cells.add((midis: midis, steps: steps));
+    total += steps;
+  }
+  return total == kPatternSteps ? cells : null;
 }
 
 /// Groove share token: `KU1.` + url-safe base64 of the spec's compact json.
@@ -634,10 +681,40 @@ final DrumRowsPattern kDrumFillPattern = DrumRowsPattern({
 /// Holds the groove state and renders the current spec to a loopable WAV.
 class LoopEngine {
   LoopEngine({List<LoopTrack>? tracks, int tempoBpm = 100})
-      : tracks = tracks ?? kLoopMixerTracks,
+      : _baseTracks = tracks ?? kLoopMixerTracks,
         _tempoBpm = tempoBpm;
 
-  final List<LoopTrack> tracks;
+  /// The sung layer's track id.
+  static const userTrackId = 'voice';
+
+  final List<LoopTrack> _baseTracks;
+  LoopTrack? _userTrack;
+
+  /// The built-in band plus the sung user track once one is captured.
+  List<LoopTrack> get tracks =>
+      [..._baseTracks, if (_userTrack != null) _userTrack!];
+
+  /// Installs (or replaces) the sung layer from captured cells
+  /// (groove_capture.dart) — a normal track from here on: toggleable,
+  /// level-able, engraved, tokenized.
+  void setUserTrack(
+    List<PatternCell> cells, {
+    Instrument instrument = Instrument.flute,
+  }) {
+    _userTrack = LoopTrack(
+      id: userTrackId,
+      gain: 0.5,
+      variants: [MelodicPattern(instrument, cells)],
+    );
+    _clearRenderCaches();
+  }
+
+  void clearUserTrack() {
+    _userTrack = null;
+    enabled.remove(userTrackId);
+    _clearRenderCaches();
+  }
+
   final Set<String> enabled = {};
 
   /// Active variant index per track (missing = 0 = variant A).
@@ -695,10 +772,25 @@ class LoopEngine {
         tempoBpm: _tempoBpm,
         swing: _swing,
         progressionId: _progression?.id,
+        userCells: (_userTrack?.variants.first as MelodicPattern?)?.cells,
+        userInstrument: _userTrack == null
+            ? null
+            : (_userTrack!.variants.first as MelodicPattern).instrument.name,
       );
 
   /// Restores a snapshot (unknown track ids are dropped defensively).
   void applySpec(GrooveSpec next) {
+    // Install the sung layer first so 'voice' counts as a known id below.
+    final userCells = next.userCells;
+    if (userCells != null) {
+      setUserTrack(
+        userCells,
+        instrument: Instrument.values.asNameMap()[next.userInstrument] ??
+            Instrument.flute,
+      );
+    } else {
+      _userTrack = null;
+    }
     final known = tracks.map((t) => t.id).toSet();
     enabled
       ..clear()

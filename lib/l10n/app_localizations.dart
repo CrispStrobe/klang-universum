@@ -1682,6 +1682,36 @@ abstract class AppLocalizations {
   /// **'Infinite mode — every loop a little different'**
   String get loopMixerInfinite;
 
+  /// No description provided for @loopMixerSing.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing a track!'**
+  String get loopMixerSing;
+
+  /// No description provided for @loopMixerSingAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing your track again'**
+  String get loopMixerSingAgain;
+
+  /// No description provided for @loopMixerSingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing now!'**
+  String get loopMixerSingNow;
+
+  /// No description provided for @loopMixerSingNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t hear a tune — try again!'**
+  String get loopMixerSingNothing;
+
+  /// No description provided for @loopMixerTrackVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'My voice'**
+  String get loopMixerTrackVoice;
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:
