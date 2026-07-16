@@ -22,6 +22,7 @@ import 'package:klang_universum/features/games/chords/chord_quiz_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ear_screen.dart';
 import 'package:klang_universum/features/games/chords/interval_ladder_screen.dart';
 import 'package:klang_universum/features/games/chords/name_that_chord_screen.dart';
+import 'package:klang_universum/features/games/chords/sing_interval_screen.dart';
 import 'package:klang_universum/features/games/chords/triad_builder_screen.dart';
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/free_sing_screen.dart';
@@ -786,6 +787,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameIntervalEar,
       subtitle: (l) => l.gameIntervalEarSubtitle,
       builder: (_) => const IntervalEarScreen(),
+      tutorial: intervalsPrimer,
+    ),
+    // Sing the Interval — hear an interval, sing the top note back (mic-graded,
+    // octave-agnostic). The sung twin of Interval Ear.
+    GameInfo(
+      id: 'sing_interval',
+      icon: Icons.mic,
+      title: (l) => l.gameSingInterval,
+      subtitle: (l) => l.gameSingIntervalSubtitle,
+      builder: (_) => const SingIntervalScreen(),
       tutorial: intervalsPrimer,
     ),
     GameInfo(

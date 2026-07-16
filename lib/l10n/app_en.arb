@@ -555,8 +555,18 @@
   "listenIntervalPrompt": "Listen! What interval is this?",
   "intervalSecond": "Second",
   "intervalThird": "Third",
+  "intervalFourth": "Fourth",
   "intervalFifth": "Fifth",
+  "intervalSixth": "Sixth",
   "intervalOctave": "Octave",
+  "gameSingInterval": "Sing the Interval",
+  "gameSingIntervalSubtitle": "Hear an interval, sing the top note back",
+  "singIntervalPrompt": "Sing the top note — a {interval} up!",
+  "@singIntervalPrompt": {
+    "placeholders": {
+      "interval": { "type": "String" }
+    }
+  },
   "gameTriadBuilder": "Triad Builder",
   "gameTriadBuilderSubtitle": "Stack the chord on the staff",
   "triadBuilderPrompt": "Build the {name} major triad!",

@@ -2312,17 +2312,47 @@ abstract class AppLocalizations {
   /// **'Third'**
   String get intervalThird;
 
+  /// No description provided for @intervalFourth.
+  ///
+  /// In en, this message translates to:
+  /// **'Fourth'**
+  String get intervalFourth;
+
   /// No description provided for @intervalFifth.
   ///
   /// In en, this message translates to:
   /// **'Fifth'**
   String get intervalFifth;
 
+  /// No description provided for @intervalSixth.
+  ///
+  /// In en, this message translates to:
+  /// **'Sixth'**
+  String get intervalSixth;
+
   /// No description provided for @intervalOctave.
   ///
   /// In en, this message translates to:
   /// **'Octave'**
   String get intervalOctave;
+
+  /// No description provided for @gameSingInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing the Interval'**
+  String get gameSingInterval;
+
+  /// No description provided for @gameSingIntervalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear an interval, sing the top note back'**
+  String get gameSingIntervalSubtitle;
+
+  /// No description provided for @singIntervalPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing the top note — a {interval} up!'**
+  String singIntervalPrompt(String interval);
 
   /// No description provided for @gameTriadBuilder.
   ///

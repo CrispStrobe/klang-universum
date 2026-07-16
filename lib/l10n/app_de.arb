@@ -405,8 +405,18 @@
   "listenIntervalPrompt": "Hör zu! Welches Intervall ist das?",
   "intervalSecond": "Sekunde",
   "intervalThird": "Terz",
+  "intervalFourth": "Quarte",
   "intervalFifth": "Quinte",
+  "intervalSixth": "Sexte",
   "intervalOctave": "Oktave",
+  "gameSingInterval": "Intervall singen",
+  "gameSingIntervalSubtitle": "Höre ein Intervall und singe den oberen Ton nach",
+  "singIntervalPrompt": "Singe den oberen Ton — eine {interval} höher!",
+  "@singIntervalPrompt": {
+    "placeholders": {
+      "interval": { "type": "String" }
+    }
+  },
   "gameTriadBuilder": "Dreiklang-Baumeister",
   "gameTriadBuilderSubtitle": "Baue den Akkord auf den Linien",
   "triadBuilderPrompt": "Baue den {name}-Dur-Dreiklang!",

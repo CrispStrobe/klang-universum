@@ -1245,10 +1245,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String get intervalThird => 'Terz';
 
   @override
+  String get intervalFourth => 'Quarte';
+
+  @override
   String get intervalFifth => 'Quinte';
 
   @override
+  String get intervalSixth => 'Sexte';
+
+  @override
   String get intervalOctave => 'Oktave';
+
+  @override
+  String get gameSingInterval => 'Intervall singen';
+
+  @override
+  String get gameSingIntervalSubtitle =>
+      'Höre ein Intervall und singe den oberen Ton nach';
+
+  @override
+  String singIntervalPrompt(String interval) {
+    return 'Singe den oberen Ton — eine $interval höher!';
+  }
 
   @override
   String get gameTriadBuilder => 'Dreiklang-Baumeister';
