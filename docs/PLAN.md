@@ -920,8 +920,10 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [x] **Faster or Slower?** — **shipped** (`tempo_duel`, note_values): two Italian
   tempo terms (Largo…Presto) as cards, tap the faster; a compare-two duel like
   Duration Duel but text-based. SRI `reading.tempo.<term>`.
-- [ ] **Tie or Slur?** — same-pitch tie vs different-pitch slur curve (needs
-  crisp_notation to render both; the Workshop already draws slurs/ties). Binary read.
+- [x] **Tie or Slur?** — **shipped** (`tie_slur`, note_reading): read the curve —
+  same pitch (tie, `NoteElement.tieToNext`) vs different pitch (slur,
+  `Score.slurs`); a binary staff-read like Step or Skip?. SRI
+  `reading.curve.<tie|slur>`.
 - [ ] **Beam or Flag?** — beamed vs flagged eighths; a beaming-literacy binary.
 
 ### D. Ear-training expansion (mic infra is shipped — exploit it)
