@@ -179,10 +179,10 @@ the notation-depth gaps one at a time:
 - [x] **Tuplets** — `e63730e` (model) + `daaa443` (UI). `List<Tuplet>`; reflow
       packs members at their scaled duration; `_withTuplets` emits the
       `TupletSpan` per bar; "³" range toggle. Round-trips.
-- [ ] **Slice 3 — discontiguous id-set selection** ← *in progress* (`_anchor`/
-      `_focus` → `Set<String>` + focus id). Sandbox-visible: `selectByIds` stops
-      widening a marquee to a contiguous span.
-- [ ] **Slice 7 — `RhythmPolicy.split`** (Studio): an overflowing note splits
+- [x] **Slice 3 — discontiguous id-set selection** — `ca52d58`. `_anchor`/
+      `_focus` → `Set<String>` + focus id; `selectByIds` is now exact (marquee no
+      longer widens); edits iterate the set, block-move refuses discontiguous.
+- [ ] **Slice 7 — `RhythmPolicy.split`** ← *in progress* (Studio): an overflowing note splits
       into tied notes across the barline instead of short-filling. Needs
       `notate(Fraction)` (no public one in crisp_notation) + explicit tie groups.
       The largest; where a first-class `Bar` finally earns its keep.

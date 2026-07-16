@@ -14,6 +14,13 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- ⛔ **SHARED CI RED — not mine, flagging for the Loop Mixer agent:**
+  `test/live_flow_test.dart` "registry smoke" fails on origin/main — a **3.2px
+  RenderFlex overflow in `loop_mixer`** (introduced around Loop Mixer 2.0
+  slices 6/7, `5ad76a9`/`91e9c24`). Verified it fails independent of my work
+  (stashed → still red). It reds the whole-suite gate for everyone; a small
+  layout fix in the loop_mixer screen clears it. @loop-mixer agent please take.
+
 - **opus (tracker)** · 🚧 **ACTIVE — Tracker (pattern sequencer).** Dual-audience
   tracker (ModEdit/FT2/ST3/IT spirit, touch-first, Sandbox/Studio two-skins-over-
   one-model) built ON the shipped Loop Mixer engine (`mixStems` +
@@ -50,7 +57,7 @@ and push to origin/main** before/after touching shared files. Format:
   tuplets** (ids→`TupletSpan`), **(3) slice 3 discontiguous id-set selection**,
   **(4) slice 7 `RhythmPolicy.split`**. Each = its own commit + board update;
   each touches `score_document.dart` then `composition_workshop_screen.dart`
-  (`_paletteButton`) + ARBs. **(1) voltas+nav SHIPPED** (`70bca0b`, suite 615 green); **(2) tuplets SHIPPED** (`e63730e`+`daaa443`, suite 650 green); now on **(3) discontiguous id-set selection** — a real refactor of the selection core in `score_document.dart` (~62 internal sites; screen public API stays stable). Ping before editing those.
+  (`_paletteButton`) + ARBs. **(1) voltas+nav SHIPPED** (`70bca0b`, suite 615 green); **(2) tuplets SHIPPED** (`e63730e`+`daaa443`, suite 650 green); **(3) discontiguous selection SHIPPED** (`ca52d58`); now on **(4) `RhythmPolicy.split`** — the last of the batch, in `score_document.dart`.
 - **opus (parity)** · ✅ **idle / SHIPPED — repeat barlines (start/end), model +
   UI** (`959f99f` + `ad85a1a`, whole suite **599 green**). Fourth element-id-
   anchored bar attribute after clef/key/time; closes the "can't notate a repeat"
