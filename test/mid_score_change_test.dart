@@ -400,7 +400,9 @@ void main() {
       fill(d, 8);
       final bars = d.buildScore().measures;
       expect(
-          bars.every((m) => m.volta == null && m.navigation == null), isTrue);
+        bars.every((m) => m.volta == null && m.navigation == null),
+        isTrue,
+      );
     });
 
     test('save → reopen preserves volta + navigation', () {
