@@ -596,6 +596,32 @@ void main() {
     expect(editor.noteCount, greaterThan(0), reason: 'tokens became notes');
   });
 
+  testWidgets('the ⋮ menu toggles split-notes mode (checked round-trip)',
+      (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    Future<CheckedPopupMenuItem<String>> openAndFindSplit() async {
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      return tester.widget<CheckedPopupMenuItem<String>>(
+        find.ancestor(
+          of: find.text(l10n.workshopSplitNotes),
+          matching: find.byType(CheckedPopupMenuItem<String>),
+        ),
+      );
+    }
+
+    expect((await openAndFindSplit()).checked, isFalse);
+    await tester.tap(find.text(l10n.workshopSplitNotes));
+    await tester.pumpAndSettle();
+    expect(
+      (await openAndFindSplit()).checked,
+      isTrue,
+      reason: 'split mode is now on',
+    );
+  });
+
   testWidgets('the Bar numbers toggle flips showMeasureNumbers on the canvas',
       (tester) async {
     await pump(tester);

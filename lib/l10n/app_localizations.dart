@@ -614,6 +614,12 @@ abstract class AppLocalizations {
   /// **'Note names'**
   String get workshopNoteNames;
 
+  /// No description provided for @workshopSplitNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Split notes across barlines'**
+  String get workshopSplitNotes;
+
   /// No description provided for @workshopPasteTokens.
   ///
   /// In en, this message translates to:

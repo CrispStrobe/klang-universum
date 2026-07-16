@@ -1883,6 +1883,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       setState(() => _barNumbers = !_barNumbers);
                     case 'notenames':
                       setState(() => _noteNames = !_noteNames);
+                    case 'split':
+                      setState(() {
+                        _doc.rhythmPolicy =
+                            _doc.rhythmPolicy == RhythmPolicy.split
+                                ? RhythmPolicy.spill
+                                : RhythmPolicy.split;
+                      });
                     case 'save':
                       _save();
                     case 'export':
@@ -1913,6 +1920,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     value: 'notenames',
                     checked: _noteNames,
                     child: Text(l10n.workshopNoteNames),
+                  ),
+                  CheckedPopupMenuItem<String>(
+                    value: 'split',
+                    checked: _doc.rhythmPolicy == RhythmPolicy.split,
+                    child: Text(l10n.workshopSplitNotes),
                   ),
                   const PopupMenuDivider(),
                   _menuItem(

@@ -302,6 +302,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopNoteNames => 'Notennamen';
 
   @override
+  String get workshopSplitNotes => 'Noten über Taktstriche binden';
+
+  @override
   String get workshopPasteTokens => 'Noten-Tokens einfügen…';
 
   @override
