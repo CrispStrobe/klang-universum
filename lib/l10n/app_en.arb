@@ -127,6 +127,7 @@
   "workshopPartTransposition": "Transposition",
   "workshopConcertPitch": "Concert pitch (C)",
   "workshopBraceBelow": "Brace with part below",
+  "workshopBreakBarlineBelow": "Break barline below",
   "workshopTie": "Tie",
   "workshopDynamics": "Dynamics",
   "workshopDynamicNone": "None",

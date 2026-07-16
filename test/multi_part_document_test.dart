@@ -256,6 +256,48 @@ void main() {
     expect(reread.parts[0].measures.length, reread.parts[1].measures.length);
   });
 
+  test('toggleBarlineBreakAfter splits/rejoins the barline groups', () {
+    final doc = MultiPartDocument()
+      ..addPart()
+      ..addPart(); // 3 parts, barlines all connected
+    expect(doc.barlineGroups, isEmpty);
+    expect(doc.hasBarlineBreakAfter(0), isFalse);
+
+    // Break the barline after part 0 → groups [0..0] and [1..2].
+    doc.toggleBarlineBreakAfter(0);
+    expect(doc.hasBarlineBreakAfter(0), isTrue);
+    expect(doc.barlineGroups, [
+      const BarlineGroup(0, 0),
+      const BarlineGroup(1, 2),
+    ]);
+
+    // Break after part 1 too → three singleton-ish groups [0..0][1..1][2..2].
+    doc.toggleBarlineBreakAfter(1);
+    expect(doc.barlineGroups, [
+      const BarlineGroup(0, 0),
+      const BarlineGroup(1, 1),
+      const BarlineGroup(2, 2),
+    ]);
+
+    // Rejoin after part 0 → [0..1] and [2..2].
+    doc.toggleBarlineBreakAfter(0);
+    expect(doc.hasBarlineBreakAfter(0), isFalse);
+    expect(doc.barlineGroups, [
+      const BarlineGroup(0, 1),
+      const BarlineGroup(2, 2),
+    ]);
+
+    // Rejoin the last break → back to fully connected (empty).
+    doc.toggleBarlineBreakAfter(1);
+    expect(doc.barlineGroups, isEmpty);
+  });
+
+  test('toggleBarlineBreakAfter is a no-op on the last part', () {
+    final doc = MultiPartDocument()..addPart(); // 2 parts
+    doc.toggleBarlineBreakAfter(1); // no part below → ignored
+    expect(doc.barlineGroups, isEmpty);
+  });
+
   test('loadMultiPart replaces the whole document in place and notifies', () {
     final doc = MultiPartDocument()
       ..addPart()

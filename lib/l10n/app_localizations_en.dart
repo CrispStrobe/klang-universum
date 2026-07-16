@@ -299,6 +299,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopBraceBelow => 'Brace with part below';
 
   @override
+  String get workshopBreakBarlineBelow => 'Break barline below';
+
+  @override
   String get workshopTie => 'Tie';
 
   @override

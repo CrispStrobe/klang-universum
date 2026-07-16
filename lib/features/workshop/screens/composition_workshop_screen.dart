@@ -739,6 +739,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                   _mpd.brackets.any((b) => b.first == i && b.last == i + 1),
               child: Text(l10n.workshopBraceBelow),
             ),
+          if (i + 1 < _mpd.partCount)
+            CheckedPopupMenuItem<void Function()>(
+              value: () => setState(() => _mpd.toggleBarlineBreakAfter(i)),
+              checked: _mpd.hasBarlineBreakAfter(i),
+              child: Text(l10n.workshopBreakBarlineBelow),
+            ),
           if (_mpd.partCount > 1)
             PopupMenuItem<void Function()>(
               value: () => _removeInstrument(i),

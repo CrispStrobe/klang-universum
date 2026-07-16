@@ -494,6 +494,26 @@ void main() {
     expect(view().noteNameStyle, NoteNameStyle.letter);
   });
 
+  testWidgets('Break barline below splits the multi-part barline groups',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    InteractiveMultiPartView view() => tester.widget<InteractiveMultiPartView>(
+          find.byType(InteractiveMultiPartView),
+        );
+    expect(view().document.barlineGroups, isEmpty); // all connected
+
+    // Open part 0's ⋮ (tune) menu and break the barline below it.
+    await tester.tap(find.byIcon(Icons.tune).first);
+    await tester.pumpAndSettle();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopBreakBarlineBelow));
+    await tester.pump();
+
+    expect(view().document.barlineGroups, isNotEmpty);
+  });
+
   testWidgets('Note names also apply to the multi-part canvas', (tester) async {
     await pump(tester);
     await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));

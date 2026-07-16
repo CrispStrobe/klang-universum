@@ -299,6 +299,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopBraceBelow => 'Klammer mit Stimme darunter';
 
   @override
+  String get workshopBreakBarlineBelow => 'Taktstrich darunter trennen';
+
+  @override
   String get workshopTie => 'Bindebogen';
 
   @override

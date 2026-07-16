@@ -614,6 +614,12 @@ abstract class AppLocalizations {
   /// **'Brace with part below'**
   String get workshopBraceBelow;
 
+  /// No description provided for @workshopBreakBarlineBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'Break barline below'**
+  String get workshopBreakBarlineBelow;
+
   /// No description provided for @workshopTie.
   ///
   /// In en, this message translates to:

@@ -96,6 +96,7 @@
   "workshopPartTransposition": "Transposition",
   "workshopConcertPitch": "Klingend (C)",
   "workshopBraceBelow": "Klammer mit Stimme darunter",
+  "workshopBreakBarlineBelow": "Taktstrich darunter trennen",
   "workshopTie": "Bindebogen",
   "workshopDynamics": "Dynamik",
   "workshopDynamicNone": "Keine",

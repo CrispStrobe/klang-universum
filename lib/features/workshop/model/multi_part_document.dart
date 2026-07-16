@@ -371,6 +371,43 @@ class MultiPartDocument extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The part indices *after* which the systemic barline breaks (a gap between
+  /// part i and i+1). Derived from [barlineGroups]; empty when barlines connect
+  /// through every part.
+  Set<int> get barlineBreaks {
+    if (barlineGroups.isEmpty) return {};
+    return {
+      for (final g in barlineGroups)
+        if (g.last < partCount - 1) g.last,
+    };
+  }
+
+  /// Whether the barline breaks between part [i] and the part below it.
+  bool hasBarlineBreakAfter(int i) => barlineBreaks.contains(i);
+
+  /// Toggle the barline break between part [i] and part i+1 (used to separate
+  /// instrument groups). No-op on the last part; recomputes [barlineGroups] as
+  /// the contiguous runs between the break points.
+  void toggleBarlineBreakAfter(int i) {
+    if (i < 0 || i + 1 >= partCount) return;
+    final breaks = barlineBreaks;
+    breaks.contains(i) ? breaks.remove(i) : breaks.add(i);
+    if (breaks.isEmpty) {
+      barlineGroups = const [];
+    } else {
+      final sorted = breaks.toList()..sort();
+      final groups = <BarlineGroup>[];
+      var start = 0;
+      for (final b in sorted) {
+        groups.add(BarlineGroup(start, b));
+        start = b + 1;
+      }
+      groups.add(BarlineGroup(start, partCount - 1));
+      barlineGroups = groups;
+    }
+    notifyListeners();
+  }
+
   // ---- selection across parts --------------------------------------------
 
   /// Handle a tap on a full-score element id: switch to the owning part and
