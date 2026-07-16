@@ -1099,8 +1099,11 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 ### E. Creative / toy modes (higher ceiling, higher effort)
 - [ ] **Loop mixer** — tap cards that trigger synced loops (bass/chords/melody/
   drums). *L — needs multi-track synced playback.* (Also in the toy list above.)
-- [ ] **Grid composer for pre-readers** — a colour/emoji grid that renders to a
-  real Score behind the scenes (bridge to notation for non-readers). *M.*
+- [x] **Grid composer for pre-readers** — **shipped**: *Colour Melody*
+  (`grid_composer`, composition) — a 5-colour (C-pentatonic) × 8-beat grid; taps
+  place notes that render live to a real `Score` (StaffView underneath), and play
+  back with rests intact (`playChordSequence`, empty beats = silence). A sandbox
+  like My Melody (no stars). The bridge to notation for non-readers.
 - [ ] **Melody doodle → hear it back** — freehand a contour, quantise to pitches,
   play it. Feeds the songbook.
 
