@@ -280,6 +280,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const AccidentalSortScreen(),
       tutorial: accidentalsPrimer,
     ),
+    // Same sharp/flat sort in the bass clef — bass-clef reading practice.
+    GameInfo(
+      id: 'accidental_sort_bass',
+      icon: Icons.sort_by_alpha,
+      title: (l) => l.gameAccidentalSortBass,
+      subtitle: (l) => l.gameAccidentalSortSubtitle,
+      builder: (_) => const AccidentalSortScreen(clef: Clef.bass),
+      tutorial: accidentalsPrimer,
+    ),
     // Step-vs-skip melodic-motion reading (before naming exact intervals).
     GameInfo(
       id: 'step_skip',

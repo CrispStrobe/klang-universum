@@ -185,6 +185,7 @@
   "pitchHighLabel": "High",
   "pitchLowLabel": "Low",
   "gameAccidentalSort": "Sharp or Flat?",
+  "gameAccidentalSortBass": "Sharp or Flat? (bass)",
   "gameAccidentalSortSubtitle": "Drag each note into the sharp or flat basket",
   "accidentalSortPrompt": "Does the note have a sharp or a flat? Drop it in the right basket!",
   "accidentalSharpLabel": "Sharp",

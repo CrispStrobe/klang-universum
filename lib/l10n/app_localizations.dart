@@ -944,6 +944,12 @@ abstract class AppLocalizations {
   /// **'Sharp or Flat?'**
   String get gameAccidentalSort;
 
+  /// No description provided for @gameAccidentalSortBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp or Flat? (bass)'**
+  String get gameAccidentalSortBass;
+
   /// No description provided for @gameAccidentalSortSubtitle.
   ///
   /// In en, this message translates to:

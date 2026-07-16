@@ -476,6 +476,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameAccidentalSort => 'Kreuz oder B?';
 
   @override
+  String get gameAccidentalSortBass => 'Kreuz oder B? (Bass)';
+
+  @override
   String get gameAccidentalSortSubtitle =>
       'Zieh jede Note in den Kreuz- oder B-Korb';
 

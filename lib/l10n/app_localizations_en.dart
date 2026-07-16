@@ -474,6 +474,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameAccidentalSort => 'Sharp or Flat?';
 
   @override
+  String get gameAccidentalSortBass => 'Sharp or Flat? (bass)';
+
+  @override
   String get gameAccidentalSortSubtitle =>
       'Drag each note into the sharp or flat basket';
 

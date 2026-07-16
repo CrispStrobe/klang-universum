@@ -154,6 +154,7 @@
   "pitchHighLabel": "Hoch",
   "pitchLowLabel": "Tief",
   "gameAccidentalSort": "Kreuz oder B?",
+  "gameAccidentalSortBass": "Kreuz oder B? (Bass)",
   "gameAccidentalSortSubtitle": "Zieh jede Note in den Kreuz- oder B-Korb",
   "accidentalSortPrompt": "Hat die Note ein Kreuz oder ein B? Zieh sie in den richtigen Korb!",
   "accidentalSharpLabel": "Kreuz",

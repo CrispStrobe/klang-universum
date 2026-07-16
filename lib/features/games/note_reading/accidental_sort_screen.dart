@@ -25,7 +25,12 @@ import 'package:provider/provider.dart';
 const _whole = NoteDuration(DurationBase.whole);
 
 class AccidentalSortScreen extends StatefulWidget {
-  const AccidentalSortScreen({super.key});
+  const AccidentalSortScreen({super.key, this.clef = Clef.treble});
+
+  /// Which clef the notes are read in (treble by default; a bass variant reuses
+  /// the same screen — sharp-vs-flat is clef-independent, but bass gives
+  /// bass-clef reading practice and its own pitches/progress).
+  final Clef clef;
 
   static const cardCount = 4;
   static const _buckets = [true, false]; // true = sharp, false = flat
@@ -51,6 +56,11 @@ class _AccidentalSortScreenState extends State<AccidentalSortScreen>
   @override
   String get gameType => 'accidental_sort';
 
+  // Treble keeps the original id (no progress migration); bass gets its own.
+  @override
+  String get progressId =>
+      widget.clef == Clef.bass ? 'accidental_sort_bass' : 'accidental_sort';
+
   // Drops give their own feedback (the note sounds on a correct drop, a buzz on
   // a miss); no generic blips.
   @override
@@ -75,7 +85,7 @@ class _AccidentalSortScreenState extends State<AccidentalSortScreen>
     _cards = [
       for (final sharp in signs)
         () {
-          final base = Clef.treble.pitchAt(1 + _random.nextInt(7)); // F4..E5
+          final base = widget.clef.pitchAt(1 + _random.nextInt(7));
           return Pitch(base.step, alter: sharp ? 1 : -1, octave: base.octave);
         }(),
     ];
@@ -122,7 +132,7 @@ class _AccidentalSortScreenState extends State<AccidentalSortScreen>
   }
 
   Score _score(Pitch p) => Score(
-        clef: Clef.treble,
+        clef: widget.clef,
         measures: [
           Measure([NoteElement.note(p, _whole, id: 'n')]),
         ],
@@ -133,7 +143,11 @@ class _AccidentalSortScreenState extends State<AccidentalSortScreen>
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: GameAppBar(title: l10n.gameAccidentalSort),
+      appBar: GameAppBar(
+        title: widget.clef == Clef.bass
+            ? l10n.gameAccidentalSortBass
+            : l10n.gameAccidentalSort,
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(
