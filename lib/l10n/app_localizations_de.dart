@@ -257,6 +257,12 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get workshopRepeatStart => 'Wiederholung beginnt hier';
+
+  @override
+  String get workshopRepeatEnd => 'Wiederholung endet hier';
+
+  @override
   String get workshopChangeHere => 'Ab hier ändern…';
 
   @override

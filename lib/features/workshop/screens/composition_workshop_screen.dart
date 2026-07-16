@@ -1189,6 +1189,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
           return;
         }
         setState(() {
+          final id = _doc.selectedId;
           switch (a.$1) {
             case 'art':
               _doc.toggleArticulationOfSelected(a.$2! as Articulation);
@@ -1196,6 +1197,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               _doc.toggleTieOfSelected();
             case 'dyn':
               _doc.setDynamicOfSelected(a.$2 as DynamicLevel?);
+            case 'repStart':
+              if (id != null) _doc.toggleRepeatStartAt(id);
+            case 'repEnd':
+              if (id != null) _doc.toggleRepeatEndAt(id);
           }
         });
       },
@@ -1227,6 +1232,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               child: Text('${l10n.workshopDynamics}: ${d.name}'),
             ),
           const PopupMenuDivider(),
+          CheckedPopupMenuItem<(String, Object?)>(
+            value: const ('repStart', null),
+            checked: _selectedIdRepeatStarts,
+            child: Text(l10n.workshopRepeatStart),
+          ),
+          CheckedPopupMenuItem<(String, Object?)>(
+            value: const ('repEnd', null),
+            checked: _selectedIdRepeatEnds,
+            child: Text(l10n.workshopRepeatEnd),
+          ),
           PopupMenuItem<(String, Object?)>(
             value: const ('change', null),
             child: Text(l10n.workshopChangeHere),
@@ -1234,6 +1249,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         ];
       },
     );
+  }
+
+  bool get _selectedIdRepeatStarts {
+    final id = _doc.selectedId;
+    return id != null && _doc.repeatStartsAt(id);
+  }
+
+  bool get _selectedIdRepeatEnds {
+    final id = _doc.selectedId;
+    return id != null && _doc.repeatEndsAt(id);
   }
 
   /// A compact picker to set/clear a mid-score **clef, key or time change** at

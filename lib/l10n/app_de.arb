@@ -97,6 +97,8 @@
   "workshopExtendLeft": "Auswahl nach links",
   "workshopExtendRight": "Auswahl nach rechts",
   "workshopSelectedCount": "{count, plural, =1{1 ausgewählt} other{{count} ausgewählt}}",
+  "workshopRepeatStart": "Wiederholung beginnt hier",
+  "workshopRepeatEnd": "Wiederholung endet hier",
   "workshopChangeHere": "Ab hier ändern…",
   "workshopChangeHereTitle": "Schlüssel, Tonart oder Takt ab dieser Note ändern",
   "workshopNoChange": "Keine Änderung",

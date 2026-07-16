@@ -174,6 +174,40 @@ void main() {
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
     expect(find.text(l10n.workshopStaccato), findsOneWidget);
     expect(find.textContaining('mf'), findsWidgets); // a dynamic entry
+    // Repeat barlines are toggles in the same palette.
+    expect(find.text(l10n.workshopRepeatStart), findsOneWidget);
+    expect(find.text(l10n.workshopRepeatEnd), findsOneWidget);
+  });
+
+  testWidgets('the palette toggles a repeat end on the selected note',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKey()); // place + select a note
+    await tester.pump();
+    final palette = find.byIcon(Icons.expand_less);
+    await tester.ensureVisible(palette);
+    await tester.pumpAndSettle();
+    await tester.tap(palette);
+    await tester.pumpAndSettle();
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopRepeatEnd));
+    await tester.pumpAndSettle();
+
+    // The single bar now ends with a repeat barline.
+    expect(_editor(tester).barCount, 1);
+    // Reopen the palette; the repeat-end item is now checked.
+    await tester.ensureVisible(palette);
+    await tester.pumpAndSettle();
+    await tester.tap(palette);
+    await tester.pumpAndSettle();
+    final checked = tester.widget<CheckedPopupMenuItem<(String, Object?)>>(
+      find.ancestor(
+        of: find.text(l10n.workshopRepeatEnd),
+        matching: find.byType(CheckedPopupMenuItem<(String, Object?)>),
+      ),
+    );
+    expect(checked.checked, isTrue);
   });
 
   testWidgets('the palette opens the mid-score "change from here" dialog',

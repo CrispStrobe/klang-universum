@@ -524,6 +524,18 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
   String workshopSelectedCount(int count);
 
+  /// No description provided for @workshopRepeatStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat starts here'**
+  String get workshopRepeatStart;
+
+  /// No description provided for @workshopRepeatEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat ends here'**
+  String get workshopRepeatEnd;
+
   /// No description provided for @workshopChangeHere.
   ///
   /// In en, this message translates to:

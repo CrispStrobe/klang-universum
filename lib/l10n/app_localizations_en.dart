@@ -257,6 +257,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get workshopRepeatStart => 'Repeat starts here';
+
+  @override
+  String get workshopRepeatEnd => 'Repeat ends here';
+
+  @override
   String get workshopChangeHere => 'Change from here…';
 
   @override
