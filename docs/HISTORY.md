@@ -431,6 +431,28 @@ Games built on crisp_notation capabilities the app didn't use before.
 
 ## Original concepts — shipped
 
+- **Tracker** (composition) — a touch-first **pattern sequencer** in the spirit
+  of ModEdit / FastTracker 2 / Scream Tracker 3 / Impulse Tracker, but
+  **dual-audience** (a 10-year-old builds a groove; an adult finds it cool) via
+  two skins over one document — the same Sandbox/Studio idea as the Workshop.
+  Pick an instrument tab, tap a **scale-locked pentatonic piano-roll** (pitch
+  rows × step columns), and every channel layers into one looping groove. It's
+  the Loop Mixer with an **editable grid**: `tracker_engine.dart` renders each
+  channel to a stem and sums them through `synth.dart mixStems` → one looping
+  WAV on `LoopPlayerService`, with the same Stopwatch-phase swap (edits re-enter
+  the loop in phase) and Ticker playhead. Instruments hang off a
+  `TrackerInstrument` seam: **additive** timbres, **sfxr chiptune** (a focused
+  pure-Dart port of the maintainer's
+  [crispaudio](https://github.com/CrispStrobe/crispaudio) SynthEngine into
+  `core/audio/crisp_dsp/sfxr.dart` — blips/zaps/booms synthesized per-note at
+  pitch), and **recorded voice**: the flagship *record-your-voice → play a tune
+  with it* bridge — `voice_clip_recorder.dart` captures a mic clip, a voice
+  effect (chipmunk/monster/deep via a ported **formant shifter**, robot via
+  ring-mod + bit-crush — all pitch-stable so the sample stays in tune) is
+  applied, and it becomes a resampled tracker instrument on a runtime-swappable
+  `voice` channel. All DSP ported (MIT) from the maintainer's crispaudio /
+  CrispFXR / voicelab. Sandbox, no stars. (Mic capture is device-only; the
+  DSP + assign→play path are unit-tested headlessly.)
 - **Loop Mixer** (composition) — a kid **loop-layering toy**: five cards
   (drums · bass · chords · melody · sparkle) each toggle a pre-authored 2-bar
   loop; everything is C-pentatonic so any combination grooves (the Colour
