@@ -50,6 +50,15 @@ and push to origin/main** before/after touching shared files. Format:
   touched only in `_paletteButton` + a new dialog. **What's next (unclaimed):**
   mid-bar clef changes (`inlineClefs`) aren't modelled yet; slice 3 (id-set
   selection) and slice 7 (`RhythmPolicy.split`) remain per WORKSHOP_PARITY.md.
+- **fable (loop-mixer)** · 🚧 **ACTIVE — Loop Mixer** (last E-tier creative-
+  backlog item; see `docs/LOOP_MIXER_HANDOVER.md` in the g6p4e worktree, upgraded
+  design). Worktree `../mus-loopmixer`, branch `feature/loop-mixer`. New files
+  under `lib/core/audio/loop_engine.dart` + `features/games/composition/
+  loop_mixer_screen.dart`; **shared files I'll touch:** `core/audio/synth.dart`
+  (additive-only: `mixTracks` + percussion generator, `renderSegments` behaviour
+  unchanged, synth_test stays green), `game_registry.dart` (one GameInfo in
+  `composition`, sandbox → no tuning bracket), both ARBs. Will pull-rebase
+  before each of those edits.
 - **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity.** ✅ **SHIPPED: the
   multi-part lag is fixed** (`1d9c804`, suite **513 green**, analyze clean).
   `22f9e5f` fixed single-part; multi-part still ran **~4 full engraving passes
