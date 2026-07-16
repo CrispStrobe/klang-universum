@@ -1,4 +1,4 @@
-// Mid-score clef changes — the first feature built on the element-id-anchor
+// Mid-score clef + key changes — the first feature built on the element-id-anchor
 // mechanism (docs/WORKSHOP_PARITY.md, Cause 1). A clef change is stored against
 // an element id, not a bar number, so it rides along as the music is re-barred
 // by reflow; buildScore stamps it onto whichever bar that element lands in.
@@ -125,5 +125,78 @@ void main() {
       Clef.bass,
       reason: 'the clef change survives the round-trip',
     );
+  });
+
+  // Key changes use the exact same element-id-anchor mechanism as clef, so this
+  // group mirrors the clef cases. Key changes do NOT affect bar capacity, so
+  // they're a pure post-reflow stamp too.
+  group('mid-score key change', () {
+    const gMajor = KeySignature(1);
+
+    List<KeySignature?> keyChangesPerBar(ScoreDocument d) =>
+        [for (final m in d.buildScore().measures) m.keyChange];
+
+    test('a key change lands on the bar of its anchor element', () {
+      final d = ScoreDocument(); // C major (0 fifths), 4 quarters/bar
+      final ids = fill(d, 8);
+      d.setKeyChangeAt(ids[4], gMajor); // start of bar 1
+
+      expect(keyChangesPerBar(d), [null, gMajor]);
+    });
+
+    test('the anchor rides re-barring', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 8);
+      d.setKeyChangeAt(ids[4], gMajor);
+      d.selectIndex(0);
+      d.insertNote(_p(Step.d), _quarter); // shift everything right
+
+      final bars = d.buildScore().measures;
+      final anchorBar =
+          bars.indexWhere((m) => m.elements.any((e) => e.id == ids[4]));
+      expect(bars[anchorBar].keyChange, gMajor);
+      expect(bars.where((m) => m.keyChange == gMajor), hasLength(1));
+    });
+
+    test('a redundant change (same as running key) is not drawn', () {
+      final d = ScoreDocument(); // C major
+      final ids = fill(d, 8);
+      d.setKeyChangeAt(ids[4], const KeySignature(0)); // still C
+      expect(keyChangesPerBar(d), [null, null]);
+    });
+
+    test('setting, clearing, and undo', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 8);
+      d.setKeyChangeAt(ids[4], gMajor);
+      expect(d.keyChanges, {ids[4]: gMajor});
+
+      d.setKeyChangeAt(ids[4], null);
+      expect(d.keyChanges, isEmpty);
+
+      d.undo();
+      expect(d.buildScore().measures[1].keyChange, gMajor);
+    });
+
+    test('clef and key can coexist on the same bar', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 8);
+      d.setClefChangeAt(ids[4], Clef.bass);
+      d.setKeyChangeAt(ids[4], gMajor);
+
+      final bar1 = d.buildScore().measures[1];
+      expect(bar1.clefChange, Clef.bass);
+      expect(bar1.keyChange, gMajor, reason: 'both stamps survive on one bar');
+    });
+
+    test('save → reopen preserves a mid-score key change', () {
+      final src = ScoreDocument();
+      final ids = fill(src, 8);
+      src.setKeyChangeAt(ids[4], gMajor);
+
+      final parsed = scoreFromMusicXml(scoreToMusicXml(src.buildScore()));
+      final reopened = ScoreDocument()..loadScore(parsed);
+      expect(reopened.buildScore().measures[1].keyChange, gMajor);
+    });
   });
 }

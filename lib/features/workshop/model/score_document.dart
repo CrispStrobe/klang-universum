@@ -147,14 +147,16 @@ class _Snapshot {
     this.lyrics,
     this.pickup,
     this.clefChanges,
+    this.keyChanges,
   );
   final List<EditorElement> elements;
   final TimeSignature timeSignature;
   final KeySignature keySignature;
   final Clef clef;
 
-  /// Mid-score clef changes (element id → clef), captured for undo.
+  /// Mid-score clef / key changes (element id → value), captured for undo.
   final Map<String, Clef> clefChanges;
+  final Map<String, KeySignature> keyChanges;
 
   /// Phrase slurs / hairpins (start→end note ids) and per-note lyric syllables
   /// (id → verse → syllable) — spans/attachments that live alongside the
@@ -200,13 +202,16 @@ class ScoreDocument {
   // Per-note lyric syllables: element id → verse number (1-based) → syllable.
   final Map<String, Map<int, String>> _lyrics = {};
 
-  // Mid-score clef changes, anchored to an element id: the clef takes effect at
-  // the start of the bar that element lands in. Anchoring to the id (not a bar
-  // index) is the whole point — bars are reflowed on every edit, so a bar index
-  // would drift, but the id moves with its note. This is the element-id-anchor
-  // mechanism the measure-spine work needs; it does NOT require bars to be a
-  // first-class store (see docs/WORKSHOP_PARITY.md, Cause 1).
+  // Mid-score clef / key changes, anchored to an element id: the change takes
+  // effect at the start of the bar that element lands in. Anchoring to the id
+  // (not a bar index) is the whole point — bars are reflowed on every edit, so a
+  // bar index would drift, but the id moves with its note. This is the
+  // element-id-anchor mechanism the measure-spine work needs; it does NOT
+  // require bars to be a first-class store (see docs/WORKSHOP_PARITY.md,
+  // Cause 1). Neither affects bar capacity, so they're a pure post-reflow stamp;
+  // time changes (which do affect capacity) will need a reflow tweak too.
   final Map<String, Clef> _clefChanges = {};
+  final Map<String, KeySignature> _keyChanges = {};
 
   /// The anacrusis: when set, the first bar holds only this much music before
   /// the downbeat (the piece "starts before beat 1"). Null = no pickup.
@@ -310,6 +315,7 @@ class ScoreDocument {
         {for (final e in _lyrics.entries) e.key: Map.of(e.value)},
         pickup,
         Map.of(_clefChanges),
+        Map.of(_keyChanges),
       );
 
   void _snapshot() {
@@ -339,6 +345,9 @@ class ScoreDocument {
     _clefChanges
       ..clear()
       ..addAll(s.clefChanges);
+    _keyChanges
+      ..clear()
+      ..addAll(s.keyChanges);
     _invalidate();
     // Keep the selection valid against the restored length.
     if (_elements.isEmpty) {
@@ -756,6 +765,7 @@ class ScoreDocument {
     _hairpins.clear();
     _lyrics.clear();
     _clefChanges.clear();
+    _keyChanges.clear();
     clearSelection();
   }
 
@@ -779,6 +789,7 @@ class ScoreDocument {
     _hairpins.clear();
     _lyrics.clear();
     _clefChanges.clear();
+    _keyChanges.clear();
     clef = score.clef;
     keySignature = score.keySignature;
     timeSignature = score.timeSignature ?? TimeSignature.fourFour;
@@ -809,11 +820,16 @@ class ScoreDocument {
           _elements.add(EditorElement.rest(el.duration, id: id));
         }
       }
-      // Recover a bar-start clef change by anchoring it to the bar's first
-      // element, so save → reopen keeps it (the inverse of [_withClefChanges]).
-      // Mid-bar clef changes (inlineClefs) are not modelled by the editor yet.
-      final cc = measure.clefChange;
-      if (cc != null && firstIdInBar != null) _clefChanges[firstIdInBar] = cc;
+      // Recover bar-start clef / key changes by anchoring them to the bar's
+      // first element, so save → reopen keeps them (the inverse of
+      // [_withMidScoreChanges]). Mid-bar clef changes (inlineClefs) aren't
+      // modelled by the editor yet.
+      if (firstIdInBar != null) {
+        final cc = measure.clefChange;
+        if (cc != null) _clefChanges[firstIdInBar] = cc;
+        final kc = measure.keyChange;
+        if (kc != null) _keyChanges[firstIdInBar] = kc;
+      }
     }
     for (final s in score.slurs) {
       final start = remap[s.startId], end = remap[s.endId];
@@ -874,8 +890,9 @@ class ScoreDocument {
     clef = value;
   }
 
-  /// The mid-score clef changes as (element id → clef), read-only.
+  /// The mid-score clef / key changes as (element id → value), read-only.
   Map<String, Clef> get clefChanges => Map.unmodifiable(_clefChanges);
+  Map<String, KeySignature> get keyChanges => Map.unmodifiable(_keyChanges);
 
   /// Set (or clear, with null) a **mid-score clef change** that takes effect at
   /// the start of the bar containing element [id]. Undoable; a no-op for an
@@ -895,6 +912,20 @@ class ScoreDocument {
     }
   }
 
+  /// Set (or clear, with null) a **mid-score key change** at the start of the bar
+  /// containing element [id]. Undoable; element-anchored exactly like
+  /// [setClefChangeAt], so it rides re-barring. (Does not affect bar capacity.)
+  void setKeyChangeAt(String id, KeySignature? key) {
+    if (_indexOf(id) < 0) return;
+    if (_keyChanges[id] == key) return;
+    _snapshot();
+    if (key == null) {
+      _keyChanges.remove(id);
+    } else {
+      _keyChanges[id] = key;
+    }
+  }
+
   // ---- rendering ---------------------------------------------------------
 
   /// Pack the flat element stream into bar-lined [Measure]s. A note that would
@@ -905,7 +936,7 @@ class ScoreDocument {
       clef: clef,
       keySignature: keySignature,
       timeSignature: timeSignature,
-      measures: _withClefChanges(
+      measures: _withMidScoreChanges(
         reflow(
           [for (final e in _elements) e.toElement()],
           timeSignature: timeSignature,
@@ -964,38 +995,47 @@ class ScoreDocument {
     );
   }
 
-  /// Stamps mid-score clef changes ([_clefChanges]) onto the reflowed [bars].
+  /// Stamps mid-score clef / key changes onto the reflowed [bars].
   ///
   /// A change anchored to an element takes effect at the start of the bar that
-  /// element landed in; [crisp_notation]'s engine then carries that clef forward
-  /// until the next change, so only the changing bars are marked. Redundant
-  /// anchors (same clef as the running one) are skipped so nothing draws twice,
-  /// and a bar with several anchors takes the last one in reading order.
+  /// element landed in; [crisp_notation]'s engine then carries that clef/key
+  /// forward until the next change, so only the changing bars are marked.
+  /// Redundant anchors (same value as the running one) are skipped so nothing
+  /// draws twice, and a bar with several anchors of a kind takes the last one in
+  /// reading order.
   ///
-  /// The empty-map fast path returns [bars] untouched, so a document with no
-  /// clef changes renders byte-for-byte as before — every existing golden holds.
-  List<Measure> _withClefChanges(List<Measure> bars) {
-    if (_clefChanges.isEmpty) return bars;
-    var running = clef;
+  /// The empty-maps fast path returns [bars] untouched, so a document with no
+  /// mid-score changes renders byte-for-byte as before — every existing golden
+  /// holds.
+  List<Measure> _withMidScoreChanges(List<Measure> bars) {
+    if (_clefChanges.isEmpty && _keyChanges.isEmpty) return bars;
+    var runningClef = clef;
+    var runningKey = keySignature;
     final out = <Measure>[];
     for (final m in bars) {
-      final change = _clefAnchoredIn(m);
-      if (change != null && change != running) {
-        out.add(m.copyWith(clefChange: change));
-        running = change;
-      } else {
-        out.add(m);
+      var next = m;
+      final clefHere = _anchoredIn(m, _clefChanges);
+      if (clefHere != null && clefHere != runningClef) {
+        next = next.copyWith(clefChange: clefHere);
+        runningClef = clefHere;
       }
+      final keyHere = _anchoredIn(m, _keyChanges);
+      if (keyHere != null && keyHere != runningKey) {
+        next = next.copyWith(keyChange: keyHere);
+        runningKey = keyHere;
+      }
+      out.add(next);
     }
     return out;
   }
 
-  /// The clef anchored within [m] (last anchor in reading order wins), or null.
-  Clef? _clefAnchoredIn(Measure m) {
-    Clef? found;
+  /// The value anchored to an element within [m] (last anchor in reading order
+  /// wins), or null if none of [m]'s elements carry an anchor in [changes].
+  V? _anchoredIn<V>(Measure m, Map<String, V> changes) {
+    V? found;
     for (final el in m.elements) {
       final id = el.id;
-      if (id != null && _clefChanges.containsKey(id)) found = _clefChanges[id];
+      if (id != null && changes.containsKey(id)) found = changes[id];
     }
     return found;
   }
