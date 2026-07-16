@@ -313,6 +313,7 @@
   "loopMixerSwing": "Swing",
   "loopMixerHarmony": "Harmony",
   "loopMixerHarmonyOff": "Free",
+  "loopMixerScore": "Show as sheet music",
   "loopMixerTempoChill": "Chill",
   "loopMixerTempoGroove": "Groove",
   "loopMixerTempoFast": "Fast",

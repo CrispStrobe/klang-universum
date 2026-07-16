@@ -840,6 +840,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerHarmonyOff => 'Frei';
 
   @override
+  String get loopMixerScore => 'Als Noten zeigen';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override

@@ -1616,6 +1616,12 @@ abstract class AppLocalizations {
   /// **'Free'**
   String get loopMixerHarmonyOff;
 
+  /// No description provided for @loopMixerScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show as sheet music'**
+  String get loopMixerScore;
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:

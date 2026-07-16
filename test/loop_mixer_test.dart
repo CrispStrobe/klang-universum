@@ -2,6 +2,7 @@
 // LoopMixerTester seam (audio is a no-op in the headless test binding — the
 // assertions are on the enabled set, the play state and the render).
 
+import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
@@ -112,6 +113,25 @@ void main() {
     await tester.tap(find.text('Free'));
     await tester.pump();
     expect(game.progressionId, isNull);
+  });
+
+  testWidgets('the score panel engraves the leading enabled track',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.scoreVisible, isFalse);
+
+    game.toggleTrack('melody');
+    await tester.pump();
+    game.toggleScorePanel();
+    await tester.pump();
+    expect(game.scoreVisible, isTrue);
+    expect(find.byType(StaffView), findsOneWidget);
+
+    // No pitched track enabled → the panel collapses gracefully.
+    game.toggleTrack('melody');
+    await tester.pump();
+    expect(find.byType(StaffView), findsNothing);
   });
 
   testWidgets('every 4th loop schedules the drum fill at the seam',

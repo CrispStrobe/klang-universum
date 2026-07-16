@@ -735,6 +735,33 @@ class LoopEngine {
   int _variantOf(LoopTrack track) =>
       (variants[track.id] ?? 0).clamp(0, track.variants.length - 1);
 
+  /// The pitched cells the groove currently plays for [id] (progression-
+  /// resolved and tiled in progression mode), or null for unpitched patterns.
+  /// Powers the live engraving.
+  List<PatternCell>? cellsFor(String id) {
+    final track = _track(id);
+    final variant = _variantOf(track);
+    final prog = _progression;
+    if (prog != null && track.chordFollower != null) {
+      final follower = track.chordFollower!;
+      final bar = follower.bars[variant.clamp(0, follower.bars.length - 1)];
+      return [
+        for (final degree in prog.degrees)
+          ...bar.resolve(
+            degree,
+            baseMidi: follower.baseMidi,
+            foldAbove: follower.foldAbove,
+          ),
+      ];
+    }
+    final pattern = track.variants[variant];
+    if (pattern is! MelodicPattern) return null;
+    if (prog == null) return pattern.cells;
+    return [
+      for (var r = 0; r < prog.degrees.length ~/ 2; r++) ...pattern.cells,
+    ];
+  }
+
   Float64List _stemFor(LoopTrack track) {
     final variant = _variantOf(track);
     final key = '${track.id}#$variant#${_progression?.id ?? 'vamp'}';

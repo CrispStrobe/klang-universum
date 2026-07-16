@@ -19,14 +19,17 @@
 // (created in initState — never a lazy `late final`, see CLAUDE.md) drives
 // the step playhead and the wrap detection.
 
+import 'package:crisp_notation/crisp_notation.dart' show Clef, StaffView;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:klang_universum/core/audio/loop_engine.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
+import 'package:klang_universum/features/games/composition/groove_notation.dart';
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
+import 'package:klang_universum/shared/score_theme.dart';
 import 'package:provider/provider.dart';
 
 class LoopMixerScreen extends StatefulWidget {
@@ -60,6 +63,8 @@ abstract interface class LoopMixerTester {
   void setTempo(int bpm);
   void setProgression(String? id);
   void stopAll();
+  bool get scoreVisible;
+  void toggleScorePanel();
 
   /// Forces the seam handler (normally driven by the real-time clock, which
   /// widget tests can't advance) — asserts fill scheduling without waiting.
@@ -151,6 +156,22 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void stopAll() => _stopAll();
   @override
   void debugLoopWrap() => _onLoopWrap();
+  @override
+  bool get scoreVisible => _showScore;
+  @override
+  void toggleScorePanel() => setState(() => _showScore = !_showScore);
+
+  bool _showScore = false;
+
+  /// The most melodic enabled track — what the score panel engraves.
+  String? get _engravedTrackId {
+    for (final id in const ['melody', 'chords', 'sparkle', 'bass']) {
+      if (_engine.enabled.contains(id) && _engine.cellsFor(id) != null) {
+        return id;
+      }
+    }
+    return null;
+  }
 
   bool get _fillDue =>
       _engine.enabled.contains('drums') &&
@@ -300,10 +321,55 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              _Playhead(
-                beat: _step,
-                beats: _engine.timing.bars * LoopTiming.beatsPerBar,
+              Row(
+                children: [
+                  const Spacer(),
+                  Expanded(
+                    flex: 8,
+                    child: Center(
+                      child: _Playhead(
+                        beat: _step,
+                        beats: _engine.timing.bars * LoopTiming.beatsPerBar,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: IconButton(
+                      icon: Icon(
+                        _showScore
+                            ? Icons.library_music
+                            : Icons.library_music_outlined,
+                      ),
+                      tooltip: l10n.loopMixerScore,
+                      onPressed: toggleScorePanel,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
               ),
+              // Live engraving: the leading enabled track as a real score.
+              if (_showScore && _engravedTrackId != null)
+                SizedBox(
+                  height: 96,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: StaffView(
+                          score: grooveScore(
+                            _engine.cellsFor(_engravedTrackId!)!,
+                            clef: _engravedTrackId == 'bass'
+                                ? Clef.bass
+                                : Clef.treble,
+                          ),
+                          staffSpace: 8,
+                          theme: kidsScoreTheme,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 8),
               Expanded(
                 child: Column(

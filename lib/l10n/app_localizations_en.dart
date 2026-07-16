@@ -837,6 +837,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerHarmonyOff => 'Free';
 
   @override
+  String get loopMixerScore => 'Show as sheet music';
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override
