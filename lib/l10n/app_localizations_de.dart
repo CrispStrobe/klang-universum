@@ -257,6 +257,16 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get workshopChangeHere => 'Ab hier ändern…';
+
+  @override
+  String get workshopChangeHereTitle =>
+      'Schlüssel, Tonart oder Takt ab dieser Note ändern';
+
+  @override
+  String get workshopNoChange => 'Keine Änderung';
+
+  @override
   String get workshopArticulations => 'Artikulation & Bindebögen';
 
   @override

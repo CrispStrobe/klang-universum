@@ -524,6 +524,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
   String workshopSelectedCount(int count);
 
+  /// No description provided for @workshopChangeHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Change from here…'**
+  String get workshopChangeHere;
+
+  /// No description provided for @workshopChangeHereTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change clef, key or time from this note'**
+  String get workshopChangeHereTitle;
+
+  /// No description provided for @workshopNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'No change'**
+  String get workshopNoChange;
+
   /// No description provided for @workshopArticulations.
   ///
   /// In en, this message translates to:

@@ -257,6 +257,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get workshopChangeHere => 'Change from here…';
+
+  @override
+  String get workshopChangeHereTitle =>
+      'Change clef, key or time from this note';
+
+  @override
+  String get workshopNoChange => 'No change';
+
+  @override
   String get workshopArticulations => 'Articulations & ties';
 
   @override

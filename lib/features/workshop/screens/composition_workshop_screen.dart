@@ -1182,16 +1182,23 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     return PopupMenuButton<(String, Object?)>(
       icon: const Icon(Icons.expand_less),
       tooltip: l10n.workshopArticulations,
-      onSelected: (a) => setState(() {
-        switch (a.$1) {
-          case 'art':
-            _doc.toggleArticulationOfSelected(a.$2! as Articulation);
-          case 'tie':
-            _doc.toggleTieOfSelected();
-          case 'dyn':
-            _doc.setDynamicOfSelected(a.$2 as DynamicLevel?);
+      onSelected: (a) {
+        if (a.$1 == 'change') {
+          final id = _doc.selectedId;
+          if (id != null) _showChangeHereDialog(id);
+          return;
         }
-      }),
+        setState(() {
+          switch (a.$1) {
+            case 'art':
+              _doc.toggleArticulationOfSelected(a.$2! as Articulation);
+            case 'tie':
+              _doc.toggleTieOfSelected();
+            case 'dyn':
+              _doc.setDynamicOfSelected(a.$2 as DynamicLevel?);
+          }
+        });
+      },
       itemBuilder: (ctx) {
         final n = _doc.selected;
         return [
@@ -1219,10 +1226,115 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               checked: n?.dynamic == d,
               child: Text('${l10n.workshopDynamics}: ${d.name}'),
             ),
+          const PopupMenuDivider(),
+          PopupMenuItem<(String, Object?)>(
+            value: const ('change', null),
+            child: Text(l10n.workshopChangeHere),
+          ),
         ];
       },
     );
   }
+
+  /// A compact picker to set/clear a mid-score **clef, key or time change** at
+  /// the bar containing element [id]. Three dropdowns, each defaulting to "No
+  /// change" (the current setting is pre-selected); applied together on Apply.
+  /// The flat property menu can't hold the 15 key / 10 time options, so this is
+  /// a dialog opened from the note's palette button — depth revealed on demand.
+  Future<void> _showChangeHereDialog(String id) async {
+    final l10n = AppLocalizations.of(context)!;
+    var clef = _doc.clefChanges[id];
+    var key = _doc.keyChanges[id];
+    var time = _doc.timeChanges[id];
+    const clefOptions = [Clef.treble, Clef.bass, Clef.alto, Clef.tenor];
+
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.workshopChangeHereTitle),
+        content: StatefulBuilder(
+          builder: (ctx, setLocal) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _changeRow<Clef>(
+                label: l10n.workshopClef,
+                value: clef,
+                items: {
+                  for (final c in clefOptions) c: '${_clefGlyph(c)}  ${c.name}',
+                },
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => clef = v),
+              ),
+              _changeRow<KeySignature>(
+                label: l10n.workshopKey,
+                value: key,
+                items: {
+                  for (final f in _keyChoices) KeySignature(f): _keyLabel(f),
+                },
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => key = v),
+              ),
+              _changeRow<TimeSignature>(
+                label: l10n.workshopTimeSignature,
+                value: time,
+                items: _timeChoices,
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => time = v),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(MaterialLocalizations.of(ctx).okButtonLabel),
+          ),
+        ],
+      ),
+    );
+
+    if (apply != true) return;
+    setState(() {
+      _doc.setClefChangeAt(id, clef);
+      _doc.setKeyChangeAt(id, key);
+      _doc.setTimeChangeAt(id, time);
+    });
+  }
+
+  /// One labelled row of the change dialog: a dropdown whose first entry is
+  /// "no change" (null) followed by [items].
+  Widget _changeRow<T>({
+    required String label,
+    required T? value,
+    required Map<T, String> items,
+    required String noChange,
+    required ValueChanged<T?> onChanged,
+  }) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            SizedBox(width: 64, child: Text(label)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButton<T?>(
+                isExpanded: true,
+                value: value,
+                onChanged: onChanged,
+                items: [
+                  DropdownMenuItem<T?>(child: Text(noChange)),
+                  for (final e in items.entries)
+                    DropdownMenuItem<T?>(value: e.key, child: Text(e.value)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
 
   /// The unified export flow: pick a format, generate it, and save it via the
   /// system dialog. Where the platform has no save picker (web / mobile), text

@@ -176,6 +176,30 @@ void main() {
     expect(find.textContaining('mf'), findsWidgets); // a dynamic entry
   });
 
+  testWidgets('the palette opens the mid-score "change from here" dialog',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKey()); // place + select a note
+    await tester.pump();
+    final palette = find.byIcon(Icons.expand_less);
+    await tester.ensureVisible(palette);
+    await tester.pumpAndSettle();
+    await tester.tap(palette);
+    await tester.pumpAndSettle();
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopChangeHere));
+    await tester.pumpAndSettle();
+
+    // The dialog offers all three mid-score changes, each with a "no change"
+    // default, anchored to the selected note.
+    expect(find.text(l10n.workshopChangeHereTitle), findsOneWidget);
+    expect(find.text(l10n.workshopClef), findsOneWidget);
+    expect(find.text(l10n.workshopKey), findsOneWidget);
+    expect(find.text(l10n.workshopTimeSignature), findsOneWidget);
+    expect(find.text(l10n.workshopNoChange), findsNWidgets(3));
+  });
+
   testWidgets('computer keyboard: letters place notes, Del deletes',
       (tester) async {
     await pump(tester);
