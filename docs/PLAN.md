@@ -88,8 +88,19 @@ and push to origin/main** before/after touching shared files. Format:
   (`test/score_document_packing_golden_test.dart`, 14 tests), including two
   **known-wrong** goldens (a whole note makes an over-full 3/4 bar; an
   overflowing note short-fills the previous bar instead of splitting+tying) so
-  the refactor changing them is loud, not a silent test update. Next slices touch
-  **only `score_document.dart`**.
+  the refactor changing them is loud, not a silent test update.
+  · ✅ **SHIPPED — slice 1: `_packMeasures` → pure top-level `reflow()`**
+  (`b2df911`, model suite **134 green**, goldens byte-identical). The packer was
+  an instance method reading `this.timeSignature`/`this.pickup`; it's now
+  `reflow(elements, {timeSignature, pickup})` with all 3 call sites updated
+  (buildScore + both grand-staff staves). This is the seam slice 2 builds on — a
+  `RhythmPolicy.spill` document will reflow its stream through exactly this. New
+  `reflow_test.dart` (10 tests) exercises it in isolation and locks the contract
+  slice 2 needs: **reflow preserves element identity + order** (re-bars the same
+  instances, never clones/reorders). Touched **only `score_document.dart`** + a
+  new test. **Next: slice 2 — `Bar` + `List<Bar>` as source of truth**, still
+  `score_document.dart`-only, goldens still guard byte-identity; it's "the big
+  one" that can't be rushed.
   · ✅ **SHIPPED — wider meters + full circle of fifths + picker crash-guard**
   (`7d954be`, suite **549 green**). The time picker was capped at 2/4·3/4·4/4 and
   the key picker at ±4 fifths — but the packer sizes bars by
