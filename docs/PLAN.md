@@ -14,6 +14,17 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (tracker)** · 🚧 **ACTIVE — Tracker (pattern sequencer), Slice 0.**
+  Dual-audience tracker (ModEdit/FT2/ST3/IT spirit, touch-first, Sandbox/Studio
+  two-skins-over-one-model) built ON the shipped Loop Mixer engine (`mixStems` +
+  `loop_engine.dart`). Full plan: [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
+  Worktree `../mus-tracker`, branch `feature/tracker`. **Slice 0 = pure-Dart
+  `TrackerEngine`** (new files `lib/core/audio/tracker_engine.dart` +
+  `test/tracker_engine_test.dart`, additive instruments only) — **no hot shared
+  files touched yet.** Hot files come in Slice 1 (screen): `game_registry.dart`,
+  the ARBs — will pull-rebase + ping before those. Order: 0 additive engine →
+  1 Sandbox screen → 2 sfxr instruments (port `crispaudio` SynthEngine into
+  `crisp_dsp/`) → 3 Studio skin → 4 record/effects bridge + arrangement.
 - **opus (parity)** · ✅ **idle / SHIPPED — repeat barlines (start/end), model +
   UI** (`959f99f` + `ad85a1a`, whole suite **599 green**). Fourth element-id-
   anchored bar attribute after clef/key/time; closes the "can't notate a repeat"
