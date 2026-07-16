@@ -889,9 +889,10 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   meaning, dynamic-mark↔meaning, instrument↔clef. Each is one `ConnectMode` case.
 
 ### C. Reading vocabulary the curriculum wants but we don't drill
-- [ ] **Louder or Softer?** — read two dynamic marks (p / mf / f …), pick the
-  louder. Binary or an ordering (Longest-First-style) drill. `charades` covers the
-  *aural* side; this is the *reading* side.
+- [x] **Louder or Softer?** — **shipped** (`dynamics_duel`, note_values): two
+  SMuFL dynamic glyphs (pp…ff) as cards, tap the louder; a compare-two duel like
+  Faster or Slower?. SRI `reading.dynamics.<mark>`. (`charades` covers the aural
+  side; this is the reading side.)
 - [x] **Faster or Slower?** — **shipped** (`tempo_duel`, note_values): two Italian
   tempo terms (Largo…Presto) as cards, tap the faster; a compare-two duel like
   Duration Duel but text-based. SRI `reading.tempo.<term>`.
