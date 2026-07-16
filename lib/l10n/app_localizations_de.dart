@@ -850,6 +850,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerTrackSparkle => 'Glitzer';
 
   @override
+  String get gameTracker => 'Tracker';
+
+  @override
+  String get gameTrackerSubtitle => 'Bau dir einen Loop — Spur für Spur';
+
+  @override
+  String get trackerPrompt => 'Wähle ein Instrument und tippe deinen Loop!';
+
+  @override
+  String get trackerClear => 'Leeren';
+
+  @override
+  String get trackerChannelMelody => 'Melodie';
+
+  @override
+  String get trackerChannelSparkle => 'Glitzer';
+
+  @override
+  String get trackerChannelPad => 'Fläche';
+
+  @override
+  String get trackerChannelBass => 'Bass';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

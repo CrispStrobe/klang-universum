@@ -847,6 +847,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerTrackSparkle => 'Sparkle';
 
   @override
+  String get gameTracker => 'Tracker';
+
+  @override
+  String get gameTrackerSubtitle => 'Build a looping beat, track by track';
+
+  @override
+  String get trackerPrompt =>
+      'Pick an instrument, then tap to build your loop!';
+
+  @override
+  String get trackerClear => 'Clear';
+
+  @override
+  String get trackerChannelMelody => 'Melody';
+
+  @override
+  String get trackerChannelSparkle => 'Sparkle';
+
+  @override
+  String get trackerChannelPad => 'Pad';
+
+  @override
+  String get trackerChannelBass => 'Bass';
+
+  @override
   String get myMelodyPrompt =>
       'Write your melody — tap the staff or an instrument!';
 

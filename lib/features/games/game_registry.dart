@@ -31,6 +31,7 @@ import 'package:klang_universum/features/games/composition/grid_composer_screen.
 import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
+import 'package:klang_universum/features/games/composition/tracker_screen.dart';
 import 'package:klang_universum/features/games/drums/drum_read_screen.dart';
 import 'package:klang_universum/features/games/expression/charades_screen.dart';
 import 'package:klang_universum/features/games/guitar/guitar_string_quiz_screen.dart';
@@ -932,6 +933,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameLoopMixer,
       subtitle: (l) => l.gameLoopMixerSubtitle,
       builder: (_) => const LoopMixerScreen(),
+    ),
+    // Touch-first pattern sequencer (a kid-friendly tracker): pick an
+    // instrument, tap a pentatonic grid, layers loop together. A sandbox,
+    // no stars.
+    GameInfo(
+      id: 'tracker',
+      icon: Icons.grid_view,
+      title: (l) => l.gameTracker,
+      subtitle: (l) => l.gameTrackerSubtitle,
+      builder: (_) => const TrackerScreen(),
     ),
   ],
   'cello': [

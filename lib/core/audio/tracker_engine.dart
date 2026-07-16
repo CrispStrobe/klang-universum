@@ -140,8 +140,11 @@ class TrackerChannel {
     List<TrackerCell>? cells,
   }) : cells = cells != null
             ? List<TrackerCell>.of(cells)
-            : List<TrackerCell>.filled(rows, TrackerCell.empty,
-                growable: true) {
+            : List<TrackerCell>.filled(
+                rows,
+                TrackerCell.empty,
+                growable: true,
+              ) {
     assert(this.cells.length == rows, 'cells must be exactly $rows long');
   }
 

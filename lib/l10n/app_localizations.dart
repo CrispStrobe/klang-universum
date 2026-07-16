@@ -1634,6 +1634,54 @@ abstract class AppLocalizations {
   /// **'Sparkle'**
   String get loopMixerTrackSparkle;
 
+  /// No description provided for @gameTracker.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracker'**
+  String get gameTracker;
+
+  /// No description provided for @gameTrackerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a looping beat, track by track'**
+  String get gameTrackerSubtitle;
+
+  /// No description provided for @trackerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an instrument, then tap to build your loop!'**
+  String get trackerPrompt;
+
+  /// No description provided for @trackerClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get trackerClear;
+
+  /// No description provided for @trackerChannelMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody'**
+  String get trackerChannelMelody;
+
+  /// No description provided for @trackerChannelSparkle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparkle'**
+  String get trackerChannelSparkle;
+
+  /// No description provided for @trackerChannelPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Pad'**
+  String get trackerChannelPad;
+
+  /// No description provided for @trackerChannelBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get trackerChannelBass;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:
