@@ -25,6 +25,14 @@ and push to origin/main** before/after touching shared files. Format:
   the ARBs — will pull-rebase + ping before those. Order: 0 additive engine →
   1 Sandbox screen → 2 sfxr instruments (port `crispaudio` SynthEngine into
   `crisp_dsp/`) → 3 Studio skin → 4 record/effects bridge + arrangement.
+- **opus (parity)** · 🚧 **ACTIVE — notation-depth batch (one at a time).**
+  Working through the tracked roadmap in
+  [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) §"Notation-depth roadmap": **(1)
+  voltas + navigation** (D.C./D.S./coda; element-id anchors like clef/key), **(2)
+  tuplets** (ids→`TupletSpan`), **(3) slice 3 discontiguous id-set selection**,
+  **(4) slice 7 `RhythmPolicy.split`**. Each = its own commit + board update;
+  each touches `score_document.dart` then `composition_workshop_screen.dart`
+  (`_paletteButton`) + ARBs. Currently on (1). Ping before editing those.
 - **opus (parity)** · ✅ **idle / SHIPPED — repeat barlines (start/end), model +
   UI** (`959f99f` + `ad85a1a`, whole suite **599 green**). Fourth element-id-
   anchored bar attribute after clef/key/time; closes the "can't notate a repeat"

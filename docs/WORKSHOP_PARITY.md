@@ -162,6 +162,32 @@ becomes worth its cost when we build `RhythmPolicy.split` (slice 7, Studio),
 where bars genuinely keep identity; until then the flat model + id-anchors
 carries every Sandbox feature at a fraction of the risk.
 
+##### Notation-depth roadmap (tracked)
+
+The element-id-anchor mechanism (model + UI, byte-identity-guarded) is closing
+the notation-depth gaps one at a time:
+
+- [x] **Mid-score clef** — `685ced2` (model), UI in `81a38c7`.
+- [x] **Mid-score key** — `0e0f736`.
+- [x] **Mid-score time** — `3b78b1d` (the one wrinkle: `reflow` switches
+  capacity at the anchor).
+- [x] **Repeat barlines** (start/end) — `959f99f` (model) + `ad85a1a` (UI);
+      also affects playback (crisp_notation expands repeats).
+- [ ] **Voltas + navigation** (1st/2nd endings; D.C./D.S./coda/segno/fine) —
+      `Map<String,int> _voltas` + `Map<String,NavigationMark> _nav`, post-reflow
+      stamps like clef/key. Same shape.
+- [ ] **Tuplets** — the higher-value one and NOT a pure anchor: store a set of
+      element ids + ratio per group; `buildScore` maps ids → `TupletSpan`
+      (voice-index-addressed within a bar) after reflow. Needs care that a group
+      stays within one bar.
+- [ ] **Slice 3 — discontiguous id-set selection** (`_anchor`/`_focus` →
+      `Set<String>` + focus id). Sandbox-visible: `selectByIds` stops widening a
+      marquee to a contiguous span. Touches the screen's selection call sites.
+- [ ] **Slice 7 — `RhythmPolicy.split`** (Studio): an overflowing note splits
+      into tied notes across the barline instead of short-filling. Needs
+      `notate(Fraction)` (no public one in crisp_notation) + explicit tie groups.
+      The largest; where a first-class `Bar` finally earns its keep.
+
 The index API survives as a **derived facade** (`elements` = bars flattened),
 which works because flat order *is* spine order concatenated. Convert
 `moveByIdToIndex` to `moveBefore(id, beforeId)` using the `beforeId`
