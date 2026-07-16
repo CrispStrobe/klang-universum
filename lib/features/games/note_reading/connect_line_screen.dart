@@ -19,6 +19,8 @@
 //                 "quarter note") → SRI 'note_values.rest.*'
 //   • tempo     — Italian tempo word ↔ its meaning (Largo ↔ "very slow")
 //                 → SRI 'reading.tempo.*' (shared with tempo_duel)
+//   • beats     — note-value glyph ↔ how many beats it lasts in 4/4 (half ↔
+//                 "2 beats") → SRI 'note_values.beats.*'
 
 import 'dart:math';
 
@@ -44,7 +46,7 @@ import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:provider/provider.dart';
 
 /// What the two columns hold.
-enum ConnectMode { notes, symbols, intervals, dynamics, rests, tempo }
+enum ConnectMode { notes, symbols, intervals, dynamics, rests, tempo, beats }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
 /// colour of its wire, the pitch to sound on a correct link (if any), and the
@@ -140,6 +142,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.dynamics => 'connect_dynamics',
         ConnectMode.rests => 'connect_rests',
         ConnectMode.tempo => 'connect_tempo',
+        ConnectMode.beats => 'connect_beats',
         ConnectMode.notes =>
           widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
       };
@@ -162,6 +165,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.dynamics => _dynamicsItems(),
       ConnectMode.rests => _restItems(),
       ConnectMode.tempo => _tempoItems(),
+      ConnectMode.beats => _beatItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -388,6 +392,39 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         _ => l10n.tempoVeryFast, // 'Presto'
       };
 
+  List<_ConnectItem> _beatItems() {
+    // Each note-value glyph paired with how many beats it lasts in 4/4:
+    // whole = 4, half = 2, quarter = 1, eighth = ½. Whole/half/quarter/eighth
+    // for beginners; the sixteenth (¼ beat) joins at 2★.
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final notes = [
+      for (final s in kNoteSymbols)
+        if (s.id.endsWith('_note') && (wide || s.id != 'sixteenth_note')) s,
+    ]..shuffle(_random);
+    final picked = notes.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: MusicGlyph(picked[i].glyph, size: 40),
+          matchKey: picked[i].id.replaceAll('_note', ''),
+          sriId: 'note_values.beats.${picked[i].id.replaceAll('_note', '')}',
+          playMidi: null,
+          label: (ctx) => _beatLabel(AppLocalizations.of(ctx)!, picked[i].id),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static String _beatLabel(AppLocalizations l10n, String noteId) =>
+      switch (noteId) {
+        'whole_note' => l10n.beatCount4,
+        'half_note' => l10n.beatCount2,
+        'quarter_note' => l10n.beatCount1,
+        'eighth_note' => l10n.beatCountHalf,
+        _ => l10n.beatCountQuarter, // 'sixteenth_note'
+      };
+
   static const _symbolPalette = [
     Color(0xFF3949AB), // indigo
     Color(0xFF00897B), // teal
@@ -469,6 +506,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.dynamics => l10n.gameConnectDynamics,
       ConnectMode.rests => l10n.gameConnectRests,
       ConnectMode.tempo => l10n.gameConnectTempo,
+      ConnectMode.beats => l10n.gameConnectBeats,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
@@ -477,6 +515,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.dynamics => l10n.connectDynamicsPrompt,
       ConnectMode.rests => l10n.connectRestsPrompt,
       ConnectMode.tempo => l10n.connectTempoPrompt,
+      ConnectMode.beats => l10n.connectBeatsPrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

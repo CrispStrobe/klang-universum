@@ -1952,6 +1952,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tempoVeryFast => 'very fast';
 
   @override
+  String get gameConnectBeats => 'Connect the Beats';
+
+  @override
+  String get gameConnectBeatsSubtitle =>
+      'Match each note to how many beats it lasts in 4/4 time';
+
+  @override
+  String get connectBeatsPrompt =>
+      'How many beats? Connect each note to its count (in 4/4)!';
+
+  @override
+  String get beatCount4 => '4 beats';
+
+  @override
+  String get beatCount2 => '2 beats';
+
+  @override
+  String get beatCount1 => '1 beat';
+
+  @override
+  String get beatCountHalf => '½ beat';
+
+  @override
+  String get beatCountQuarter => '¼ beat';
+
+  @override
   String get gameCommandCaller => 'Follow the Conductor';
 
   @override

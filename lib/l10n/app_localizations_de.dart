@@ -1960,6 +1960,32 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tempoVeryFast => 'sehr schnell';
 
   @override
+  String get gameConnectBeats => 'Schläge verbinden';
+
+  @override
+  String get gameConnectBeatsSubtitle =>
+      'Verbinde jede Note damit, wie viele Schläge sie im 4/4-Takt dauert';
+
+  @override
+  String get connectBeatsPrompt =>
+      'Wie viele Schläge? Verbinde jede Note mit ihrer Zahl (im 4/4-Takt)!';
+
+  @override
+  String get beatCount4 => '4 Schläge';
+
+  @override
+  String get beatCount2 => '2 Schläge';
+
+  @override
+  String get beatCount1 => '1 Schlag';
+
+  @override
+  String get beatCountHalf => '½ Schlag';
+
+  @override
+  String get beatCountQuarter => '¼ Schlag';
+
+  @override
   String get gameCommandCaller => 'Der Dirigent';
 
   @override

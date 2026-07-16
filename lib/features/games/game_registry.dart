@@ -248,6 +248,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameConnectTempoSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.tempo),
     ),
+    // Match each note value to how many beats it lasts in 4/4 (half ↔ 2 beats)
+    // — the Connect board with a beats mode; core rhythm-reading.
+    GameInfo(
+      id: 'connect_beats',
+      icon: Icons.timer_outlined,
+      title: (l) => l.gameConnectBeats,
+      subtitle: (l) => l.gameConnectBeatsSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.beats),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

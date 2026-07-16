@@ -3602,6 +3602,54 @@ abstract class AppLocalizations {
   /// **'very fast'**
   String get tempoVeryFast;
 
+  /// No description provided for @gameConnectBeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Beats'**
+  String get gameConnectBeats;
+
+  /// No description provided for @gameConnectBeatsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each note to how many beats it lasts in 4/4 time'**
+  String get gameConnectBeatsSubtitle;
+
+  /// No description provided for @connectBeatsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How many beats? Connect each note to its count (in 4/4)!'**
+  String get connectBeatsPrompt;
+
+  /// No description provided for @beatCount4.
+  ///
+  /// In en, this message translates to:
+  /// **'4 beats'**
+  String get beatCount4;
+
+  /// No description provided for @beatCount2.
+  ///
+  /// In en, this message translates to:
+  /// **'2 beats'**
+  String get beatCount2;
+
+  /// No description provided for @beatCount1.
+  ///
+  /// In en, this message translates to:
+  /// **'1 beat'**
+  String get beatCount1;
+
+  /// No description provided for @beatCountHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'½ beat'**
+  String get beatCountHalf;
+
+  /// No description provided for @beatCountQuarter.
+  ///
+  /// In en, this message translates to:
+  /// **'¼ beat'**
+  String get beatCountQuarter;
+
   /// No description provided for @gameCommandCaller.
   ///
   /// In en, this message translates to:
