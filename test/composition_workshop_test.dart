@@ -90,6 +90,22 @@ void main() {
     expect(editor.barCount, 2, reason: '4 quarters fill a 4/4 bar');
   });
 
+  testWidgets('the time-signature picker offers compound + wider meters',
+      (tester) async {
+    await pump(tester);
+    // Open the meter dropdown (its closed value is the default 4/4).
+    await tester.tap(find.text('4/4').first);
+    await tester.pumpAndSettle();
+    // The old picker stopped at 2/4·3/4·4/4; these were a UI cap only.
+    for (final meter in ['6/8', '9/8', '5/4', '2/2']) {
+      expect(
+        find.text(meter),
+        findsWidgets,
+        reason: '$meter should be offerable now',
+      );
+    }
+  });
+
   testWidgets('undo then redo round-trips an added element', (tester) async {
     await pump(tester);
     final editor = _editor(tester);

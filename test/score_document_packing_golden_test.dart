@@ -101,6 +101,29 @@ bar1: e4/quarter''');
   });
 
   group('bar packing golden — other meters', () {
+    test('6/8 packs six eighths per bar (compound meter)', () {
+      // 6/8 was not offerable before (picker capped at 2/4·3/4·4/4), but the
+      // packer sizes bars by timeSignature.toFraction() — 6/8 = six eighths —
+      // so it always worked; only the UI was capped. (Beaming as 3+3 is the
+      // engine's job via beamGroups(), not the packer's.)
+      final d = _doc(time: const TimeSignature(6, 8));
+      for (var i = 0; i < 7; i++) {
+        d.insertNote(_p(Step.values[i % 7]), _eighth);
+      }
+      expect(_describe(d.buildScore()), '''
+bar0: c4/eighth d4/eighth e4/eighth f4/eighth g4/eighth a4/eighth
+bar1: b4/eighth''');
+    });
+
+    test('5/4 packs five quarters per bar', () {
+      final d = _doc(time: const TimeSignature(5, 4));
+      for (var i = 0; i < 6; i++) {
+        d.insertNote(_p(Step.values[i % 7]), _quarter);
+      }
+      final bars = d.buildScore().measures;
+      expect(bars.map((m) => m.elements.length), [5, 1]);
+    });
+
     test('3/4 packs three quarters per bar', () {
       final d = _doc(time: const TimeSignature(3, 4));
       for (final s in [Step.c, Step.d, Step.e, Step.f]) {

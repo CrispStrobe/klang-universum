@@ -65,7 +65,28 @@ const _accidentalGlyph = {
   _Accidental.flat: '♭',
 };
 
-const _keyChoices = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
+// The full circle of fifths. crisp_notation's KeySignature accepts -7..7, so the
+// old -4..4 window (which couldn't notate B/G♭ major and beyond) was a UI limit
+// only. Keyed by fifths; labelled with the sharp/flat count in [_keyLabel].
+const _keyChoices = [-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7];
+
+// Meters offered in the picker. The packer sizes bars by
+// `timeSignature.toFraction()` and the engine beams compound meters by
+// `beamGroups()` (6/8 → 3+3), so the old 2/4·3/4·4/4 list was a UI limit only.
+// A loaded score with any other meter still shows via [_dropdown]'s fallback.
+// Not const: TimeSignature has a custom `==`, which a const map key forbids.
+final _timeChoices = <TimeSignature, String>{
+  TimeSignature.twoFour: '2/4',
+  TimeSignature.threeFour: '3/4',
+  TimeSignature.fourFour: '4/4',
+  const TimeSignature(2, 2): '2/2',
+  const TimeSignature(3, 8): '3/8',
+  TimeSignature.sixEight: '6/8',
+  const TimeSignature(9, 8): '9/8',
+  const TimeSignature(12, 8): '12/8',
+  const TimeSignature(5, 4): '5/4',
+  const TimeSignature(6, 4): '6/4',
+};
 
 // Anacrusis lengths offered in the top bar (null = the piece starts on beat 1).
 const _pickupChoices = <NoteDuration?>[
@@ -1987,13 +2008,12 @@ class _TopBar extends StatelessWidget {
             ),
             _dropdown<TimeSignature>(
               value: timeSignature,
-              items: {
-                TimeSignature.twoFour: '2/4',
-                TimeSignature.threeFour: '3/4',
-                TimeSignature.fourFour: '4/4',
-              },
+              items: _timeChoices,
               onChanged: onTime,
               tooltip: l10n.workshopTimeSignature,
+              // A loaded score may carry a meter outside the curated list;
+              // TimeSignature.toString renders it ("7/8", "C") for the fallback.
+              labelFor: (t) => t.toString(),
             ),
             _dropdown<int>(
               value: fifths,
@@ -2014,6 +2034,14 @@ class _TopBar extends StatelessWidget {
                       DropdownMenuItem(
                         value: p,
                         child: _pickupLabel(p, l10n),
+                      ),
+                    // A loaded score can carry a pickup outside the offered set
+                    // (e.g. a sixteenth), which loadScore now recovers exactly —
+                    // surface it so the raw DropdownButton doesn't assert on it.
+                    if (pickup != null && !_pickupChoices.contains(pickup))
+                      DropdownMenuItem(
+                        value: pickup,
+                        child: _pickupLabel(pickup, l10n),
                       ),
                   ],
                   onChanged: onPickup,
@@ -2053,6 +2081,7 @@ class _TopBar extends StatelessWidget {
     required Map<T, String> items,
     required ValueChanged<T> onChanged,
     required String tooltip,
+    String Function(T)? labelFor,
   }) =>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -2065,6 +2094,15 @@ class _TopBar extends StatelessWidget {
             items: [
               for (final e in items.entries)
                 DropdownMenuItem(value: e.key, child: Text(e.value)),
+              // DropdownButton asserts its value is among the items, so a score
+              // whose (e.g.) time signature isn't in the curated list — opened
+              // from a file, or set before the list was widened — would crash.
+              // Surface the current value as an extra entry instead.
+              if (!items.containsKey(value))
+                DropdownMenuItem(
+                  value: value,
+                  child: Text(labelFor?.call(value) ?? '$value'),
+                ),
             ],
             onChanged: (v) {
               if (v != null) onChanged(v);
