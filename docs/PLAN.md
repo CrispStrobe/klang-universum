@@ -61,10 +61,35 @@ and push to origin/main** before/after touching shared files. Format:
   (`:511`) missed by `22f9e5f`** → ~4 layouts *per pixel* on multi-part drag.
   All small fixes; I'm taking them next in `multi_part_canvas.dart` +
   `composition_workshop_screen.dart` (hot — coordinate before you edit).
-  · ⚠️ Separately flagged, **not** perf: `loadScore` is lossy (voice 1 only,
-  chord→first pitch, ties/articulations dropped — `score_document.dart:747`) so
-  **Save→reopen silently destroys work**; and every export except MusicXML writes
-  the **active part only** (`:1157`).
+  · ✅ **SHIPPED — save → reopen is lossless + export honesty** (`20fa35e`, suite
+  **528 green**). `loadScore` kept only `pitches.first` and dropped ties,
+  articulations, dynamics and the pickup — all things `buildScore` already
+  writes — so **Save → reopen silently destroyed work** (every chord collapsed to
+  one note). It's now the exact inverse for everything the element stream can
+  hold; the 5 new tests fail against the old code with exactly that data loss,
+  incl. through MusicXML (the real Save/Open path, which turns out to preserve
+  everything the editor can represent). Also: every export but MusicXML/`.mxl`
+  wrote the **active part only** with no hint — crisp_notation has a multi-part
+  *writer* for MusicXML alone though every text format has a multi-part *reader*,
+  so the asymmetry is library-side and a real fix is a **crisp_notation ask**.
+  Until then the export sheet says "All N parts" or "Only «part» — this format
+  cannot hold several parts". Localized de/en.
+  · 🚧 **NOW: the measure-spine refactor (Cause 1) — planned, slice 0 landed.**
+  Design + slice list in [`docs/WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md). Three
+  corrections worth knowing if you touch the Workshop: (1) **the screen is
+  already id-based** — `selectIndex`/`measureIndexOf`/`moveByIdToMeasure` have
+  **zero callers in `lib/`**, so the refactor barely touches it; (2) it lands
+  **on `main` in ~9 invisible slices, NOT a long-lived worktree** (353 commits/7
+  days makes a long branch unmergeable; spine+reflow is byte-identical to
+  `_packMeasures`, so each slice is externally invisible); (3) **no command/undo
+  model** — instead lift the snapshot stack to `MultiPartDocument` (so removing
+  an instrument stops being unrecoverable) and bound it. **Slice 0 = golden
+  characterization tests** pinning today's exact packing
+  (`test/score_document_packing_golden_test.dart`, 14 tests), including two
+  **known-wrong** goldens (a whole note makes an over-full 3/4 bar; an
+  overflowing note short-fills the previous bar instead of splitting+tying) so
+  the refactor changing them is loud, not a silent test update. Next slices touch
+  **only `score_document.dart`**.
 - **opus (workshop→games)** · **idle / SHIPPED — Workshop performance.** The
   editor "severely lagged" on desktop: the root cause was **`onHover` calling
   `setState` on every pointer-move pixel** → a full-screen rebuild (42-key piano +

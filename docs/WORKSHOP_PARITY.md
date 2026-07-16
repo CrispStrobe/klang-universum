@@ -61,10 +61,102 @@ address, not "after element *i*". This is the single highest-leverage change in
 the whole document — it doesn't add features so much as *stop preventing* them,
 and it maps 1:1 onto the `Measure` the renderer already wants.
 
-Sequencing note: this is a real refactor (23 widget tests + a snapshot-based undo
-stack ride on the flat list), so it wants its own phase and its own worktree —
-but it should come **before** the feature work it unblocks, not after, or we pay
-for each feature twice.
+It should come **before** the feature work it unblocks, not after, or we pay for
+each feature twice.
+
+#### The plan for Cause 1 (designed 2026-07-16; corrects three guesses above)
+
+A design pass against the real code overturned three things this doc originally
+assumed. All three are verified, not argued:
+
+1. **The screen is already id-based** — so "a 2400-line consumer must be
+   rewritten" is false. `selectIndex`, `measureIndexOf` and `moveByIdToMeasure`
+   have **zero callers in `lib/`** (test-only); the *only* index-typed call site
+   in the app is `moveByIdToIndex` (`composition_workshop_screen.dart:894`), and
+   `computeDropSlot` **already returns `beforeId`** beside `index` (`:346`). The
+   screen touches `.elements` exactly twice (`:489`, `:1038`), both pure
+   in-order iteration with no index arithmetic. Selection needs no renderer work
+   either: `highlightedIds` is already a `Set<String>`.
+2. **~~Its own worktree~~ → land it on `main` in slices.** This doc's original
+   advice was the risky part. Against **353 commits in 7 days** (12 workshop
+   commits in 48h), a long-lived branch rewriting the hottest file accumulates
+   exactly the conflicts nobody can mechanically resolve. What makes small
+   merges possible: **spine + reflow reproduces `_packMeasures`' output
+   byte-for-byte**, so the representation change is externally invisible and
+   each slice merges same-day.
+3. **~~Snapshot → command model~~ → don't.** A command/inverse model buys memory
+   efficiency (irrelevant at the 256-note cap), coalescing, and collaborative
+   editing (not a goal). It costs a correct inverse for *every* mutation, and
+   undo bugs are **silent data loss**. It's the highest-risk, lowest-reward item
+   here and the classic place this refactor dies. The actual user-facing bug —
+   deleting an instrument is unrecoverable — is fixed by **lifting the snapshot
+   stack from `ScoreDocument` up to `MultiPartDocument`** (snapshot all parts +
+   names + transpositions + brackets), bounding it (~100; unbounded today), and
+   restoring **in place** so the identity-derived caches stay sound. Add a
+   `_transact(() {…})` helper so a compound edit is one undo step — ~10 lines,
+   and the one genuine win the command model offered. Screen migration: two
+   lines (`_doc.canUndo`/`undo` → `_mpd.*`).
+
+**Rhythm is the subtle part.** Greedy spill and stable bar identity are
+different editing paradigms and we need both — you cannot simultaneously have
+"this key change is anchored to bar 5" and "a note in bar 1 reflows every
+barline". So make it explicit policy on the document: `RhythmPolicy.spill`
+(default, Sandbox — today's greedy reflow, byte-identical output) and
+`RhythmPolicy.split` (Studio — an overflowing note splits into tied notes across
+the barline; bars keep identity).
+
+Split **explicitly in the model, not at build time**: store two tied elements
+rather than one logical note that `buildScore` splits into two noteheads. Build-
+time splitting would force one id → two noteheads, which breaks `highlightedIds`,
+hit-testing, lyric anchoring and `DynamicMarking` — all of which assume id ↔
+notehead 1:1. Splitting needs `List<NoteDuration> notate(Fraction)`; **the
+library has no public one** (only private single-value lookups in the readers),
+and since `NoteDuration` is base + ≤2 dots, 5/8 *must* become tied half+eighth.
+Write it locally, propose upstreaming later.
+
+**Under-full bars stay legal and unpadded** — "always full, pad the remainder"
+would violate the Sandbox constraint (type 3 quarters in 4/4, get an unrequested
+rest). Under-full becomes an addressable intentional state; Studio can badge it.
+**Over-full bars** stay tolerated in the model (import must never fail) and are
+prevented at the command level.
+
+**The slice sequence** (0–3 and 6–8 never touch the screen, so they land while
+other agents edit it; keep each under ~300 lines, rebase daily):
+
+| # | Slice | Screen? |
+|---|---|---|
+| 0 | **Golden characterization tests** for `buildScore()` output ✅ **DONE** | no |
+| 1 | Extract `_packMeasures` into a pure `reflow()` | no |
+| 2 | **`Bar` + `List<Bar>` as source of truth**; `elements` becomes a derived view; reflow after every mutation | no |
+| 3 | Id-set selection internally; `selectByIds` becomes exact | no |
+| 4 | `ScoreAddress` + bar-addressing API; caret as address | 2 lines |
+| 5 | Global bounded undo + `_transact` | 2 lines |
+| 6 | Bar attributes → `buildScore` mapping (no UI yet) | no |
+| 7 | `RhythmPolicy.split` + `notate(Fraction)` + tie groups (default off) | no |
+| 8 | Voice 2 → `Measure.voice2` | no |
+
+The index API survives as a **derived facade** (`elements` = bars flattened),
+which works because flat order *is* spine order concatenated. Convert
+`moveByIdToIndex` to `moveBefore(id, beforeId)` using the `beforeId`
+`computeDropSlot` already returns, then delete the index API once tests migrate.
+
+**Ranked risks.** (1) *The reflow-identity claim is load-bearing, and pickup is
+the trap* — `_packMeasures`' capacity depends on `isFirst`, which flips inside
+`flush()`; any divergence is a subtle wrong-bar bug. Slice 0's goldens are the
+whole mitigation, which is why they went first. (2) Split ↔ id identity (above).
+(3) **`buildGrandStaff` is a second, independent packing path** — it must ride
+the same spine or the two views silently diverge; the goldens pin it too.
+(4) Churn. (5) `maxNotes = 256` is a flat-count cap that wants to become a bar
+cap.
+
+**Defer:** tuplets (→ D), **voices 3–4 entirely** (crisp_notation's engine never
+engraves them — `layout_engine.dart` has zero `voice3`/`voice4` references, so
+plan for 2 engraved voices), multi-rest/measure-repeat/navigation, cross-part
+selection (needs `MultiPartDocument` to own selection), and the shelf itself
+(slice C is shelf-agnostic — that's E).
+
+Realistic size: slices 0–3 are the de-risking core and ~40% of the work; slice 2
+is the one that can't be rushed.
 
 ### Cause 2 — the editor has no modes
 
@@ -192,13 +284,19 @@ Ordered by *unblocking*, not by size.
   rebuild path). The discarded probe measured **~155–247ms per rebuild**; that
   was the lag. The engine ceiling (no incremental layout) is untouched and is
   now the *only* remaining perf story — see G.
-- **B · Make it trustworthy** — native format + lossless load; multi-part export
-  honesty. Stops the bleeding before we add more to bleed.
-- **C · Make the document real** — Cause 1: measure spine, `(bar, voice, tick)`
-  addressing, id-set selection. The unlock. Big, its own worktree, needs the undo
-  stack rethought (snapshot → command model) and probably lifts undo from
-  per-part to global while we're in there (today, deleting an instrument is
-  simply unrecoverable — `multi_part_document.dart:268`).
+- **B · Make it trustworthy** ✅ **SHIPPED** (`20fa35e`) — `loadScore` is now the
+  exact inverse of `buildScore` for everything the element stream can hold, so
+  **save → reopen is lossless** (chords, ties, articulations, dynamics and the
+  pickup all used to be destroyed); and the export sheet now names what each
+  format drops instead of silently writing one part of four. Voices, tuplets and
+  mid-score changes are still dropped on load — those the flat model genuinely
+  can't express, and they're C's job, not a bug here.
+- **C · Make the document real** ◐ **planned + slice 0 landed** — Cause 1:
+  measure spine, `(bar, voice, tick)` addressing, id-set selection. The unlock.
+  See the plan under Cause 1: land it on `main` in 9 invisible slices (**not** a
+  long-lived worktree), keep the snapshot stack (**not** a command model) but
+  lift it to `MultiPartDocument` so deleting an instrument stops being
+  unrecoverable, and bound it. Slices 0–3 are the de-risking core.
 - **D · Cash in the unlock** — tuplets, voice 2, mid-score key/time/clef/tempo,
   repeats/voltas, measure ops, cross-bar splitting, full meters and keys. Each is
   now small, and each is mostly *wiring to a renderer that already draws it*.
