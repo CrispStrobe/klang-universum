@@ -871,6 +871,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerLoad => 'Laden';
 
   @override
+  String get loopMixerInfinite =>
+      'Endlos-Modus — jeder Loop ein bisschen anders';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override

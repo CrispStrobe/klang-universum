@@ -18,6 +18,7 @@
 // re-toggles are instant.
 
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:klang_universum/core/audio/synth.dart';
@@ -845,6 +846,105 @@ class LoopEngine {
         totalSamples: timing.totalSamples,
       ),
     );
+  }
+
+  // --- Infinite mode: seeded per-iteration variation ---
+
+  /// Renders the groove with a deterministic per-[iteration] mutation:
+  /// hats drop in and out, snare ghosts appear, and 2-step melody notes
+  /// occasionally split into an ornament with a pentatonic neighbour. Same
+  /// (spec, iteration) → identical bytes (the seam scheduler relies on it);
+  /// bass/chords/sparkle reuse their cached stems, so the per-seam cost is
+  /// one drum placement + at most one melody render.
+  Uint8List renderVariedLoop(int iteration, {bool fill = false}) {
+    if (enabled.isEmpty) return renderLoop();
+    final rng = Random(spec.cacheKey.hashCode ^ (iteration * 2654435761));
+    final filling = fill && enabled.contains('drums');
+    return wavBytes(
+      mixStems(
+        [
+          for (final track in tracks)
+            if (enabled.contains(track.id))
+              (
+                samples: switch (track.id) {
+                  'drums' =>
+                    filling ? _fillStemFor(track) : _variedDrumStem(track, rng),
+                  'melody' => _variedMelodyStem(track, rng),
+                  _ => _stemFor(track),
+                },
+                gain: track.gain * (levels[track.id] ?? 1.0).clamp(0.0, 1.0),
+              ),
+        ],
+        totalSamples: timing.totalSamples,
+      ),
+    );
+  }
+
+  Float64List _variedDrumStem(LoopTrack track, Random rng) {
+    final pattern = track.variants[_variantOf(track)];
+    if (pattern is! DrumRowsPattern) return _stemFor(track);
+    final varied = <Drum, List<bool>>{
+      for (final MapEntry(key: drum, value: row) in pattern.rows.entries)
+        drum: [
+          for (var step = 0; step < row.length; step++)
+            switch (drum) {
+              // The kick anchors the groove — never mutated.
+              Drum.kick => row[step],
+              // Hats breathe: drop some, sprinkle new ones on off-eighths.
+              Drum.hat => row[step]
+                  ? rng.nextDouble() > 0.18
+                  : step.isOdd && rng.nextDouble() < 0.12,
+              // Occasional snare ghosts on the bar's back half.
+              Drum.snare => row[step] ||
+                  (step % LoopTiming.stepsPerBar >= 5 &&
+                      !row[step] &&
+                      rng.nextDouble() < 0.06),
+            },
+        ],
+    };
+    final stem = DrumRowsPattern(varied).render(_vampTiming);
+    final prog = _progression;
+    if (prog == null) return stem;
+    final reps = prog.degrees.length ~/ 2;
+    final out = Float64List(stem.length * reps);
+    for (var r = 0; r < reps; r++) {
+      out.setAll(r * stem.length, stem);
+    }
+    return out;
+  }
+
+  // C-pentatonic pitch classes, for ornament neighbours.
+  static const _pentatonic = [0, 2, 4, 7, 9];
+
+  int _pentatonicNeighbour(int midi, Random rng) {
+    final up = rng.nextBool();
+    for (var candidate = midi + (up ? 1 : -1);
+        (candidate - midi).abs() <= 4;
+        candidate += up ? 1 : -1) {
+      if (_pentatonic.contains(candidate % 12)) return candidate;
+    }
+    return midi;
+  }
+
+  Float64List _variedMelodyStem(LoopTrack track, Random rng) {
+    final cells = cellsFor(track.id);
+    final pattern = track.variants[_variantOf(track)];
+    if (cells == null || pattern is! MelodicPattern) return _stemFor(track);
+    final varied = <PatternCell>[
+      for (final cell in cells)
+        if (cell.midis?.length == 1 &&
+            cell.steps == 2 &&
+            rng.nextDouble() < 0.35) ...[
+          // Split a 2-step note into note + pentatonic neighbour ornament.
+          (midis: cell.midis, steps: 1),
+          (
+            midis: [_pentatonicNeighbour(cell.midis!.single, rng)],
+            steps: 1,
+          ),
+        ] else
+          cell,
+    ];
+    return renderCells(varied, pattern.instrument, timing);
   }
 
   /// The drum stem for a fill iteration. Vamp mode: the 2-bar fill pattern.

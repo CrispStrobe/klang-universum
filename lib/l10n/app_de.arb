@@ -292,6 +292,7 @@
   "loopMixerSaveAudio": "Als Audio speichern (WAV)",
   "loopMixerSaveFailed": "Audio speichern geht hier nicht",
   "loopMixerLoad": "Laden",
+  "loopMixerInfinite": "Endlos-Modus — jeder Loop ein bisschen anders",
   "loopMixerTempoChill": "Gemütlich",
   "loopMixerTempoGroove": "Groove",
   "loopMixerTempoFast": "Schnell",

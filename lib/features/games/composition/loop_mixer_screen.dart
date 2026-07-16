@@ -69,6 +69,8 @@ abstract interface class LoopMixerTester {
   void toggleScorePanel();
   String get grooveToken;
   bool loadGrooveToken(String token);
+  bool get isInfinite;
+  void toggleInfinite();
 
   /// Forces the seam handler (normally driven by the real-time clock, which
   /// widget tests can't advance) — asserts fill scheduling without waiting.
@@ -166,6 +168,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void toggleScorePanel() => setState(() => _showScore = !_showScore);
 
   bool _showScore = false;
+  bool _infinite = false;
+
+  @override
+  bool get isInfinite => _infinite;
+  @override
+  void toggleInfinite() => setState(() => _infinite = !_infinite);
 
   @override
   String get grooveToken => encodeGrooveToken(_engine.spec);
@@ -302,7 +310,11 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void _onLoopWrap() {
     _iteration++;
     if (_engine.enabled.isEmpty || !_clock.isRunning) return;
-    final wanted = _engine.renderLoop(fill: _fillDue);
+    // Infinite mode re-renders a seeded variation every loop; otherwise the
+    // cached render only changes when the fill schedules in or out.
+    final wanted = _infinite
+        ? _engine.renderVariedLoop(_iteration, fill: _fillDue)
+        : _engine.renderLoop(fill: _fillDue);
     if (identical(wanted, _currentWav)) return;
     _currentWav = wanted;
     _loop.playLoop(
@@ -464,6 +476,18 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                           ),
                           tooltip: l10n.loopMixerScore,
                           onPressed: toggleScorePanel,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.all_inclusive,
+                            color: _infinite
+                                ? Theme.of(context).colorScheme.primary
+                                : null,
+                          ),
+                          isSelected: _infinite,
+                          tooltip: l10n.loopMixerInfinite,
+                          onPressed: toggleInfinite,
                           visualDensity: VisualDensity.compact,
                         ),
                         IconButton(

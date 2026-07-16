@@ -295,6 +295,31 @@ void main() {
     expect(decodeGrooveToken('KU1.aGVsbG8'), isNull, reason: 'not json');
   });
 
+  test('infinite mode: deterministic per iteration, varied across them', () {
+    final engine = LoopEngine();
+    engine.enabled.addAll({'drums', 'melody', 'bass'});
+    final base = engine.renderLoop();
+
+    final it3a = engine.renderVariedLoop(3);
+    final it3b = engine.renderVariedLoop(3);
+    expect(it3a, equals(it3b), reason: 'same (spec, iteration) → same bytes');
+    expect(it3a.length, base.length, reason: 'loop length untouched');
+
+    final it4 = engine.renderVariedLoop(4);
+    expect(it4, isNot(equals(it3a)), reason: 'iterations differ');
+
+    // Fill iterations keep the (unvaried) fill drums but still ornament.
+    final fillLoop = engine.renderVariedLoop(3, fill: true);
+    expect(fillLoop, isNot(equals(it3a)));
+
+    engine.enabled.clear();
+    expect(
+      engine.renderVariedLoop(7),
+      equals(engine.renderLoop()),
+      reason: 'empty groove: silence either way',
+    );
+  });
+
   test('renders are cached per spec and invalidated by tempo', () {
     final engine = LoopEngine();
     engine.enabled.add('melody');

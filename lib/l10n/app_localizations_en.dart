@@ -867,6 +867,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerLoad => 'Load';
 
   @override
+  String get loopMixerInfinite =>
+      'Infinite mode — every loop a little different';
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override

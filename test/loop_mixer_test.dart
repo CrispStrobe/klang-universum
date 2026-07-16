@@ -180,5 +180,14 @@ void main() {
       await tester.pump();
       expect(game.loopIteration, wrap);
     }
+
+    // Infinite mode re-renders a variation at every seam without throwing.
+    expect(game.isInfinite, isFalse);
+    game.toggleInfinite();
+    await tester.pump();
+    expect(game.isInfinite, isTrue);
+    game.debugLoopWrap();
+    await tester.pump();
+    expect(game.loopIteration, 6);
   });
 }
