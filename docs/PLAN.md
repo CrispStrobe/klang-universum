@@ -937,8 +937,14 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   answer button + `reading.motion.leap`; below 2★ it stays the binary drill.
 - [ ] **3-basket sorts** — the two-basket format extends to 3 (e.g. sharp / natural
   / flat once crisp_notation can render an explicit natural glyph — verify the API).
-- [ ] **More Connect modes** — note↔piano-key, rest↔note-value, Italian-term↔
+- [~] **More Connect modes** — note↔piano-key, rest↔note-value, Italian-term↔
   meaning, dynamic-mark↔meaning, instrument↔clef. Each is one `ConnectMode` case.
+  **Shipped:** ✅ *Connect the Dynamics* (`connect_dynamics`, note_values) — match
+  each dynamic mark glyph (pp…ff) to its meaning word (very soft…very loud); 4
+  clear steps for beginners, mp/mf join at 2★. SRI `reading.dynamics.*` (shared
+  with `dynamics_duel`, so the reading and compare-loudness drills reinforce one
+  skill). Remaining modes (rest↔value, term↔meaning, instrument↔clef) are each
+  one more `ConnectMode` case.
 
 ### C. Reading vocabulary the curriculum wants but we don't drill
 - [x] **Louder or Softer?** — **shipped** (`dynamics_duel`, note_values): two
@@ -961,8 +967,12 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 ### D. Ear-training expansion (mic infra is shipped — exploit it)
 - [ ] **Sing/play the interval** — mic-graded: show/play an interval, the child
   matches it (extends the existing `perform_it` / `sing_back` mic grading).
-- [ ] **Rhythm echo by tap** — hear a rhythm, tap it back in time (reuse the
-  `beat_runner` timing engine). Grades against the pattern.
+- [x] **Rhythm echo by tap** — **already shipped** as `rhythm_tap` (Notenwerte):
+  a one-measure rhythm plays and is shown as notation, the child taps it back on
+  a pad, and timing is graded onset-by-onset relative to the first tap (so the
+  absolute start doesn't matter). SRI `note_values.rhythm.p<index>`. (Kept the
+  onset-diff grader rather than the `beat_runner` falling-lane clock — for a
+  call-and-response echo, comparing relative onsets is the right model.)
 - [~] **Chord-quality-by-ear widening** — **started**: `major_minor_ear` widens
   from major/minor to a 4-way (adds **diminished + augmented** as a 2×2 grid) at
   2★; below 2★ it stays the binary drill. Remaining: a dominant-7 tier (needs a
