@@ -1048,8 +1048,12 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   1 beam; eighth-rest between → 0 beams). SRI `reading.beam.<beamed|flagged>`.
 
 ### D. Ear-training expansion (mic infra is shipped — exploit it)
-- [ ] **Sing/play the interval** — mic-graded: show/play an interval, the child
-  matches it (extends the existing `perform_it` / `sing_back` mic grading).
+- [x] **Sing/play the interval** — **shipped** (`sing_interval`, chords): two
+  notes play (root→top), the interval's name is shown, and the child sings the
+  TOP note back; the mic grades it octave-agnostic (pitch class), held briefly —
+  reusing the `sing_back` capture harness. Third/fourth/fifth for beginners,
+  second+sixth at 2★. SRI `intervals.sing.<name>` — the sung twin of Interval
+  Ear. (Built on crisp_notation's `Interval` + `Pitch.transposeBy`.)
 - [x] **Rhythm echo by tap** — **already shipped** as `rhythm_tap` (Notenwerte):
   a one-measure rhythm plays and is shown as notation, the child taps it back on
   a pad, and timing is graded onset-by-onset relative to the first tap (so the
