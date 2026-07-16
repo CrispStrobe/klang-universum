@@ -173,9 +173,9 @@ the notation-depth gaps one at a time:
   capacity at the anchor).
 - [x] **Repeat barlines** (start/end) — `959f99f` (model) + `ad85a1a` (UI);
       also affects playback (crisp_notation expands repeats).
-- [ ] **Voltas + navigation** (1st/2nd endings; D.C./D.S./coda/segno/fine) —
-      `Map<String,int> _voltas` + `Map<String,NavigationMark> _nav`, post-reflow
-      stamps like clef/key. Same shape.
+- [x] **Voltas + navigation** (1st/2nd endings; D.C./D.S./coda/segno/fine) —
+      `70bca0b`. `_voltas`/`_navigation` post-reflow stamps; UI in the "Change
+      from here…" dialog (now 5 rows).
 - [ ] **Tuplets** — the higher-value one and NOT a pure anchor: store a set of
       element ids + ratio per group; `buildScore` maps ids → `TupletSpan`
       (voice-index-addressed within a bar) after reflow. Needs care that a group

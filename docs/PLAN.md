@@ -36,7 +36,7 @@ and push to origin/main** before/after touching shared files. Format:
   tuplets** (ids→`TupletSpan`), **(3) slice 3 discontiguous id-set selection**,
   **(4) slice 7 `RhythmPolicy.split`**. Each = its own commit + board update;
   each touches `score_document.dart` then `composition_workshop_screen.dart`
-  (`_paletteButton`) + ARBs. Currently on (1). Ping before editing those.
+  (`_paletteButton`) + ARBs. **(1) voltas+nav SHIPPED** (`70bca0b`, suite 615 green); now on **(2) tuplets**. Ping before editing those.
 - **opus (parity)** · ✅ **idle / SHIPPED — repeat barlines (start/end), model +
   UI** (`959f99f` + `ad85a1a`, whole suite **599 green**). Fourth element-id-
   anchored bar attribute after clef/key/time; closes the "can't notate a repeat"
