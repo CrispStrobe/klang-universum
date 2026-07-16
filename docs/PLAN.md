@@ -879,8 +879,8 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   `place_note` ship treble + bass). **Shipped:** ✅ *Step or Skip? (bass)*
   (`step_skip_bass`) · ✅ *High or Low? (bass)* (`pitch_sort_bass`) — each with
   its own `progressId` so treble progress is untouched. · ✅ *Sharp or Flat?
-  (bass)* (`accidental_sort_bass`). Remaining cheap win to mirror: `Connect the
-  Steps` (the connect-line reader).
+  (bass)* (`accidental_sort_bass`). (`Connect the Notes` already ships a bass
+  variant, `connect_line_bass` — the bass-clef sweep is done.)
 - [ ] **Step, Skip, or Leap?** — make Step or Skip? a 3-way (2nd / 3rd–4th / 5th+)
   at 2★ for a harder tier.
 - [ ] **3-basket sorts** — the two-basket format extends to 3 (e.g. sharp / natural
@@ -892,8 +892,9 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 - [ ] **Louder or Softer?** — read two dynamic marks (p / mf / f …), pick the
   louder. Binary or an ordering (Longest-First-style) drill. `charades` covers the
   *aural* side; this is the *reading* side.
-- [ ] **Faster or Slower?** — read two tempo terms (Adagio / Allegro …). Same
-  shape; Italian-vocabulary reading.
+- [x] **Faster or Slower?** — **shipped** (`tempo_duel`, note_values): two Italian
+  tempo terms (Largo…Presto) as cards, tap the faster; a compare-two duel like
+  Duration Duel but text-based. SRI `reading.tempo.<term>`.
 - [ ] **Tie or Slur?** — same-pitch tie vs different-pitch slur curve (needs
   crisp_notation to render both; the Workshop already draws slurs/ties). Binary read.
 - [ ] **Beam or Flag?** — beamed vs flagged eighths; a beaming-literacy binary.
