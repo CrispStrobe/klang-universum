@@ -453,6 +453,30 @@ Games built on crisp_notation capabilities the app didn't use before.
   `voice` channel. All DSP ported (MIT) from the maintainer's crispaudio /
   CrispFXR / voicelab. Sandbox, no stars. (Mic capture is device-only; the
   DSP + assign→play path are unit-tested headlessly.)
+- **Loop Mixer 2.0 — the groovebox ladder** (composition) — the v1 toy grew
+  into an instrument in seven shipped slices (engine v2 → sing-a-track), all
+  behind the same five-cards kid surface. **Feel:** a swing slider (off-eighth
+  delay on an exact boundary grid), per-card A/B/C pattern variants (incl. a
+  euclidean/Bjorklund drum groove), per-card levels, and an automatic drum
+  fill every 4th loop, swapped in at the loop seam where the downbeat kick
+  masks it. **Harmony:** a progression lane (I–V–vi–IV · I–IV–V–I · vi–IV–I–V)
+  turns the 2-bar vamp into a 4-bar song — bass and chords re-voice per chord
+  from chord-tone shapes (`ChordFollower`), melody/sparkle stay pentatonic
+  (axis progressions absorb it) — verified end-to-end by rendering the bass
+  and reading it back with `bin/listen.dart` (every bar's root/root/fifth/root
+  detected exactly). **Notation:** a score panel engraves the leading track
+  live via crisp_notation (`groove_notation.dart` — cells → 4/4 bars, greedy
+  durations). **Keep it:** the whole groove is one small `GrooveSpec` value —
+  a serverless `KU1.…` share token (copy/paste anywhere, defensively parsed)
+  plus desktop WAV export. **Generativity:** infinite mode re-renders a
+  seeded variation at every seam (hats breathe, snare ghosts, pentatonic
+  melody ornaments; the kick never moves). **The mic:** *sing a track into
+  existence* — count-in, 2-bar capture, the MPM pitch trace quantized to the
+  step grid, octave-normalized and pentatonic-snapped (`groove_capture.dart`),
+  and the child's own melody becomes a sixth card: toggleable, mixable,
+  engraved as sheet music, carried inside the share token. Deep pattern
+  *editing* is deliberately left to the Tracker (one grid editor in the app);
+  beatbox→drums + AEC jam mode remain on the roadmap as slice 10.
 - **Loop Mixer** (composition) — a kid **loop-layering toy**: five cards
   (drums · bass · chords · melody · sparkle) each toggle a pre-authored 2-bar
   loop; everything is C-pentatonic so any combination grooves (the Colour

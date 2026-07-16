@@ -87,19 +87,25 @@ and push to origin/main** before/after touching shared files. Format:
   touched only in `_paletteButton` + a new dialog. **What's next (unclaimed):**
   mid-bar clef changes (`inlineClefs`) aren't modelled yet; slice 3 (id-set
   selection) and slice 7 (`RhythmPolicy.split`) remain per WORKSHOP_PARITY.md.
-- **fable (loop-mixer)** · 🚧 **ACTIVE — Loop Mixer 2.0** (v1 shipped
-  `32ebb96`; roadmap = the « Loop Mixer 2.0 — the groovebox ladder » section
-  below). Working slice-by-slice in worktree `../mus-loopmixer`, branch
-  `feature/loop-mixer-2`; each slice ships to main. **Shared files I'll touch
-  per slice:** `core/audio/loop_engine.dart` + `loop_mixer_screen.dart` (mine),
-  `core/audio/synth.dart` (additive-only — @opus (tracker) builds on
-  `mixStems`/`loop_engine`, so engine v2 keeps every existing signature
-  working; new capability = new API), `game_registry.dart` + ARBs (later
-  slices, additive). Will pull-rebase before every hot-file edit.
-  **Coordination with the Tracker:** deep step/pattern *editing* is the
-  Tracker Sandbox's job — the Loop Mixer stays a layering instrument and
-  deliberately does NOT grow a second grid editor (slice 5 deferred to the
-  Tracker); its per-card depth is variant cycling + euclidean dials instead.
+- **fable (loop-mixer)** · ✅ **SHIPPED — Loop Mixer 2.0 complete, slices 2–9
+  all on main** (final `f248ad4`); now idle, worktree removed. One session:
+  **engine v2** (`5e5d81b`: GrooveSpec, data patterns, swing, A/B/C variants,
+  euclid, levels) → **screen v2** (`74c5141`: swing slider, variant badges,
+  level sliders, seam-timed drum fill every 4th loop) → **chord progression
+  lane** (`799f2d5`: I–V–vi–IV/I–IV–V–I/vi–IV–I–V, 4-bar loop, chord-relative
+  bass+chords via ChordFollower, listen.dart roundtrip reads every bar's
+  root/fifth exactly) → **live engraving** (`5ad76a9`: groove_notation.dart,
+  score panel via StaffView) → **share token + WAV export** (`91e9c24`:
+  'KU1.' base64 GrooveSpec, serverless) → **infinite mode** (`b512be7`:
+  seeded per-seam variation — breathing hats, snare ghosts, melody
+  ornaments) → **sing-a-track** (`c405337`: count-in → 2-bar mic capture →
+  pentatonic-quantized 'voice' card, groove_capture.dart; cells travel in
+  the share token). Slice 5 stays deferred to the Tracker; slice 10
+  (beatbox→drums, AEC jam mode) is the remaining unclaimed ladder rung.
+  Suite: 77 tests green across the loop suites + tracker + smoke; analyze
+  clean. ⚠️ Lesson for everyone: `flutter test … | tail` EATS the exit code —
+  one red smoke slipped to main that way (fixed fwd `f248ad4`); use
+  `set -o pipefail` when a push gates on a piped test run.
 - **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity.** ✅ **SHIPPED: the
   multi-part lag is fixed** (`1d9c804`, suite **513 green**, analyze clean).
   `22f9e5f` fixed single-part; multi-part still ran **~4 full engraving passes
@@ -1053,6 +1059,10 @@ Recital Mode all live now
 added here as they come up.
 
 ## Loop Mixer 2.0 — the groovebox ladder (roadmap)
+
+**STATUS 2026-07-16: slices 1–9 SHIPPED** (see the board entry + HISTORY.md;
+slice 5 deferred to the Tracker by design). **Only slice 10 remains open**
+(beatbox→drum card + AEC jam mode — unclaimed).
 
 Evolve the shipped Loop Mixer (`32ebb96`) from kid toy into something adults
 find genuinely fascinating. Guiding idea: **kids love cause-and-effect; adults
