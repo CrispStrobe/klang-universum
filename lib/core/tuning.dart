@@ -52,6 +52,7 @@ const Map<String, List<int>> kStarThresholds = {
   'note_value_quiz': [100, 600, 900],
   'duration_duel': [100, 600, 900],
   'tempo_duel': [100, 600, 900],
+  'dynamics_duel': [100, 600, 900],
   'note_reading_quiz': [100, 600, 900],
   'place_note': [100, 600, 900],
   'measure_fill': [100, 600, 900],

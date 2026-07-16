@@ -890,6 +890,24 @@ abstract class AppLocalizations {
   /// **'Which tempo is faster?'**
   String get whichIsFaster;
 
+  /// No description provided for @gameDynamicsDuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Louder or Softer?'**
+  String get gameDynamicsDuel;
+
+  /// No description provided for @gameDynamicsDuelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read two dynamic marks and tap the louder one'**
+  String get gameDynamicsDuelSubtitle;
+
+  /// No description provided for @whichIsLouder.
+  ///
+  /// In en, this message translates to:
+  /// **'Which mark is louder?'**
+  String get whichIsLouder;
+
   /// No description provided for @gameNoteReadingTreble.
   ///
   /// In en, this message translates to:

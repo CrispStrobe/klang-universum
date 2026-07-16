@@ -446,6 +446,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whichIsFaster => 'Which tempo is faster?';
 
   @override
+  String get gameDynamicsDuel => 'Louder or Softer?';
+
+  @override
+  String get gameDynamicsDuelSubtitle =>
+      'Read two dynamic marks and tap the louder one';
+
+  @override
+  String get whichIsLouder => 'Which mark is louder?';
+
+  @override
   String get gameNoteReadingTreble => 'Treble Clef';
 
   @override

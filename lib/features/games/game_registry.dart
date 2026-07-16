@@ -77,6 +77,7 @@ import 'package:klang_universum/features/games/note_values/beat_count_screen.dar
 import 'package:klang_universum/features/games/note_values/beat_sort_screen.dart';
 import 'package:klang_universum/features/games/note_values/dotted_sort_screen.dart';
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
+import 'package:klang_universum/features/games/note_values/dynamics_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
 import 'package:klang_universum/features/games/note_values/tempo_duel_screen.dart';
@@ -209,6 +210,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTempoDuel,
       subtitle: (l) => l.gameTempoDuelSubtitle,
       builder: (_) => const TempoDuelScreen(),
+    ),
+    // Louder or Softer? — read two dynamic marks, tap the louder.
+    GameInfo(
+      id: 'dynamics_duel',
+      icon: Icons.volume_up,
+      title: (l) => l.gameDynamicsDuel,
+      subtitle: (l) => l.gameDynamicsDuelSubtitle,
+      builder: (_) => const DynamicsDuelScreen(),
     ),
     GameInfo(
       id: 'rhythm_tap',
