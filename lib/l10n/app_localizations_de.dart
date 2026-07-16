@@ -1878,6 +1878,35 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wie weit? Verbinde jedes Intervall mit seiner Zahl!';
 
   @override
+  String get gameConnectDynamics => 'Dynamik verbinden';
+
+  @override
+  String get gameConnectDynamicsSubtitle =>
+      'Verbinde jedes Dynamikzeichen mit seiner Lautstärke (pp = sehr leise)';
+
+  @override
+  String get connectDynamicsPrompt =>
+      'Wie laut? Verbinde jedes Zeichen mit seiner Bedeutung!';
+
+  @override
+  String get dynVerySoft => 'sehr leise';
+
+  @override
+  String get dynSoft => 'leise';
+
+  @override
+  String get dynMediumSoft => 'etwas leise';
+
+  @override
+  String get dynMediumLoud => 'etwas laut';
+
+  @override
+  String get dynLoud => 'laut';
+
+  @override
+  String get dynVeryLoud => 'sehr laut';
+
+  @override
   String get gameCommandCaller => 'Der Dirigent';
 
   @override

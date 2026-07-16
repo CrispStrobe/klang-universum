@@ -13,6 +13,8 @@
 //   • symbols   — note-value glyph ↔ its name  → SRI 'note_values.symbol.*'
 //   • intervals — interval on a staff ↔ its number (count the note-names,
 //                 e.g. C→G spans 5) → SRI 'intervals.size.*'
+//   • dynamics  — dynamic mark glyph ↔ its meaning (pp ↔ very soft)
+//                 → SRI 'reading.dynamics.*' (shared with dynamics_duel)
 
 import 'dart:math';
 
@@ -25,6 +27,8 @@ import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
+import 'package:klang_universum/features/games/note_values/dynamics_duel_screen.dart'
+    show kDynamicMarks;
 import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -34,7 +38,7 @@ import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:provider/provider.dart';
 
 /// What the two columns hold.
-enum ConnectMode { notes, symbols, intervals }
+enum ConnectMode { notes, symbols, intervals, dynamics }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
 /// colour of its wire, the pitch to sound on a correct link (if any), and the
@@ -127,6 +131,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
   String get progressId => switch (widget.mode) {
         ConnectMode.symbols => 'connect_symbols',
         ConnectMode.intervals => 'connect_intervals',
+        ConnectMode.dynamics => 'connect_dynamics',
         ConnectMode.notes =>
           widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
       };
@@ -146,6 +151,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     final items = switch (widget.mode) {
       ConnectMode.symbols => _symbolItems(),
       ConnectMode.intervals => _intervalItems(),
+      ConnectMode.dynamics => _dynamicsItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -262,6 +268,41 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     );
   }
 
+  List<_ConnectItem> _dynamicsItems() {
+    // Dynamic marks paired with their meaning word. Four clear steps for
+    // beginners (pp / p / f / ff → very soft … very loud); the two "medium"
+    // marks (mp / mf) join at 2★, where the softer/louder shades get subtler.
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final pool = [
+      for (final m in kDynamicMarks)
+        if (wide || (m.name != 'mp' && m.name != 'mf')) m,
+    ]..shuffle(_random);
+    final picked = pool.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: MusicGlyph(String.fromCharCode(picked[i].code), size: 40),
+          matchKey: picked[i].name,
+          sriId: 'reading.dynamics.${picked[i].name}',
+          playMidi: null,
+          label: (ctx) =>
+              _dynMeaning(AppLocalizations.of(ctx)!, picked[i].name),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static String _dynMeaning(AppLocalizations l10n, String name) =>
+      switch (name) {
+        'pp' => l10n.dynVerySoft,
+        'p' => l10n.dynSoft,
+        'mp' => l10n.dynMediumSoft,
+        'mf' => l10n.dynMediumLoud,
+        'f' => l10n.dynLoud,
+        _ => l10n.dynVeryLoud, // 'ff'
+      };
+
   static const _symbolPalette = [
     Color(0xFF3949AB), // indigo
     Color(0xFF00897B), // teal
@@ -340,11 +381,13 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     final title = switch (widget.mode) {
       ConnectMode.symbols => l10n.gameConnectSymbols,
       ConnectMode.intervals => l10n.gameConnectIntervals,
+      ConnectMode.dynamics => l10n.gameConnectDynamics,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
       ConnectMode.symbols => l10n.connectSymbolsPrompt,
       ConnectMode.intervals => l10n.connectIntervalsPrompt,
+      ConnectMode.dynamics => l10n.connectDynamicsPrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

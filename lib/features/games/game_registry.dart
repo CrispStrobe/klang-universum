@@ -221,6 +221,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameDynamicsDuelSubtitle,
       builder: (_) => const DynamicsDuelScreen(),
     ),
+    // Match each dynamic mark to its meaning (pp ↔ very soft) — the Connect
+    // board with a dynamics mode; the reading side of Louder or Softer?.
+    GameInfo(
+      id: 'connect_dynamics',
+      icon: Icons.graphic_eq,
+      title: (l) => l.gameConnectDynamics,
+      subtitle: (l) => l.gameConnectDynamicsSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.dynamics),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

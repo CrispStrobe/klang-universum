@@ -1870,6 +1870,35 @@ class AppLocalizationsEn extends AppLocalizations {
       'How far apart? Connect each interval to its number!';
 
   @override
+  String get gameConnectDynamics => 'Connect the Dynamics';
+
+  @override
+  String get gameConnectDynamicsSubtitle =>
+      'Match each dynamic mark to how loud it means (pp = very soft)';
+
+  @override
+  String get connectDynamicsPrompt =>
+      'How loud? Connect each mark to its meaning!';
+
+  @override
+  String get dynVerySoft => 'very soft';
+
+  @override
+  String get dynSoft => 'soft';
+
+  @override
+  String get dynMediumSoft => 'medium soft';
+
+  @override
+  String get dynMediumLoud => 'medium loud';
+
+  @override
+  String get dynLoud => 'loud';
+
+  @override
+  String get dynVeryLoud => 'very loud';
+
+  @override
   String get gameCommandCaller => 'Follow the Conductor';
 
   @override

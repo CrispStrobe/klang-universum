@@ -112,4 +112,26 @@ void main() {
     expect(game.round, 1);
     expect(game.score, greaterThan(0));
   });
+
+  testWidgets(
+      'dynamics mode: matching each mark to its meaning clears the round'
+      ' and records under reading.dynamics', (tester) async {
+    await tester.pumpWidget(_app(mode: ConnectMode.dynamics));
+    final game = _game(tester);
+    // The SriService lives in the provider tree; read it off the element.
+    final sri = Provider.of<SriService>(
+      tester.element(find.byType(ConnectLineScreen)),
+      listen: false,
+    );
+
+    for (var i = 0; i < ConnectLineScreen.pairs; i++) {
+      await _drag(tester, i, game.matchingRight(i));
+    }
+    expect(game.matchedCount, ConnectLineScreen.pairs);
+    expect(sri.getDetailedBreakdown()['reading']!.keys, ['dynamics']);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(game.round, 1);
+    expect(game.score, greaterThan(0));
+  });
 }

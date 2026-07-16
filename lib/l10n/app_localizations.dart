@@ -3458,6 +3458,60 @@ abstract class AppLocalizations {
   /// **'How far apart? Connect each interval to its number!'**
   String get connectIntervalsPrompt;
 
+  /// No description provided for @gameConnectDynamics.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Dynamics'**
+  String get gameConnectDynamics;
+
+  /// No description provided for @gameConnectDynamicsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each dynamic mark to how loud it means (pp = very soft)'**
+  String get gameConnectDynamicsSubtitle;
+
+  /// No description provided for @connectDynamicsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How loud? Connect each mark to its meaning!'**
+  String get connectDynamicsPrompt;
+
+  /// No description provided for @dynVerySoft.
+  ///
+  /// In en, this message translates to:
+  /// **'very soft'**
+  String get dynVerySoft;
+
+  /// No description provided for @dynSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'soft'**
+  String get dynSoft;
+
+  /// No description provided for @dynMediumSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'medium soft'**
+  String get dynMediumSoft;
+
+  /// No description provided for @dynMediumLoud.
+  ///
+  /// In en, this message translates to:
+  /// **'medium loud'**
+  String get dynMediumLoud;
+
+  /// No description provided for @dynLoud.
+  ///
+  /// In en, this message translates to:
+  /// **'loud'**
+  String get dynLoud;
+
+  /// No description provided for @dynVeryLoud.
+  ///
+  /// In en, this message translates to:
+  /// **'very loud'**
+  String get dynVeryLoud;
+
   /// No description provided for @gameCommandCaller.
   ///
   /// In en, this message translates to:
