@@ -16,7 +16,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:klang_universum/core/audio/crisp_dsp/resample.dart';
 import 'package:klang_universum/core/audio/crisp_dsp/sfxr.dart';
+import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:klang_universum/core/audio/synth.dart';
 
 /// The musical clock a pattern renders against. [rows] steps at [stepsPerBeat]
@@ -163,6 +165,56 @@ class SfxrInstrument implements TrackerInstrument {
           rng: rng,
         );
         final n = min(buf.length, out.length - startSample);
+        for (var i = 0; i < n; i++) {
+          out[startSample + i] = buf[i];
+        }
+      }
+      startStep += steps;
+    }
+    return out;
+  }
+}
+
+/// A sampled instrument: a recorded (optionally voice-effected) buffer played at
+/// each note's pitch by classic tracker resampling — `ratio = noteFreq /
+/// baseFreq`, so a higher note plays the sample faster (higher, shorter). The
+/// note is capped at its run length (a one-shot note-off). [baseMidi] is the
+/// pitch the recorded sample represents (default C4). This is the payload behind
+/// "record your voice → play a tune with it".
+class SampleInstrument implements TrackerInstrument {
+  const SampleInstrument(this.id, this.sample, {this.baseMidi = 60});
+
+  /// Records-once: applies [fx] to [raw] and keeps the result as the sample.
+  factory SampleInstrument.recorded(
+    String id,
+    Float64List raw,
+    VoiceEffect fx, {
+    int baseMidi = 60,
+    int sampleRate = kSampleRate,
+  }) =>
+      SampleInstrument(
+        id,
+        applyVoiceEffect(raw, fx, sampleRate: sampleRate),
+        baseMidi: baseMidi,
+      );
+
+  @override
+  final String id;
+  final Float64List sample;
+  final int baseMidi;
+
+  @override
+  Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) {
+    final out = Float64List(timing.totalSamples);
+    if (sample.isEmpty) return out;
+    final baseFreq = midiToFrequency(baseMidi);
+    var startStep = 0;
+    for (final (midi, steps) in cellRuns(cells)) {
+      if (midi != null) {
+        final startSample = (startStep * timing.stepMs * kSampleRate) ~/ 1000;
+        final runSamples = (steps * timing.stepMs * kSampleRate) ~/ 1000;
+        final buf = resampleLinear(sample, midiToFrequency(midi) / baseFreq);
+        final n = min(min(buf.length, runSamples), out.length - startSample);
         for (var i = 0; i < n; i++) {
           out[startSample + i] = buf[i];
         }

@@ -27,10 +27,15 @@ and push to origin/main** before/after touching shared files. Format:
   into **`lib/core/audio/crisp_dsp/sfxr.dart`** (+ `test/sfxr_test.dart`), a
   `SfxrInstrument` on the `TrackerInstrument` seam synthesized per-note at pitch,
   and a live `zap` chiptune channel in the default band. **Settled hot files:**
-  `game_registry.dart`, both ARBs. 🚧 **Next:** Slice 3 (Studio skin: per-channel
-  instrument picker over the sfxr palette + more channels) → Slice 4 (record-your-
-  voice → effect chain: port `crispaudio` dsp/PitchShifter/FormantShifter into
-  `crisp_dsp/`, per-note pitched resampler) → arrangement.
+  `game_registry.dart`, both ARBs. 🚧 **Slice 4a NOW (voice bridge, pure-Dart
+  half):** porting `crispaudio` dsp/PitchShifter (granular) + FormantShifter into
+  `crisp_dsp/` + a linear resampler + a `SampleInstrument` (record-once, resample-
+  per-note) + voice-effect presets (chipmunk/monster/robot via pitch-stable
+  formant + bitcrush). **New files only** (`crisp_dsp/{resample,pitch_shift,
+  formant_shift,voice_fx}.dart`, `SampleInstrument` in `tracker_engine.dart`,
+  tests) — no hot shared files. Then **Slice 4b:** mic capture (`record` plugin) +
+  a record/effect UI in the tracker (touches the screen + ARBs). Then Slice 3
+  (Studio instrument picker) + arrangement.
 - **opus (parity)** · 🚧 **ACTIVE — notation-depth batch (one at a time).**
   Working through the tracked roadmap in
   [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) §"Notation-depth roadmap": **(1)

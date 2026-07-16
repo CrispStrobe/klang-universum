@@ -3,10 +3,12 @@
 // invariants (silence, no clipping) and the edit/cache behaviour. Mirrors
 // loop_engine_test.dart / synth_test.dart: pure Dart, no device audio.
 
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/crisp_dsp/sfxr.dart';
+import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:klang_universum/core/audio/synth.dart';
 import 'package:klang_universum/core/audio/tracker_engine.dart';
 
@@ -183,6 +185,64 @@ void main() {
       }
       expect(peak, greaterThan(0));
       expect(peak, lessThanOrEqualTo(32767));
+    });
+  });
+
+  group('SampleInstrument channel', () {
+    Float64List sine(double seconds, double hz) {
+      final n = (seconds * kSampleRate).floor();
+      final out = Float64List(n);
+      for (var i = 0; i < n; i++) {
+        out[i] = sin(2 * pi * hz * i / kSampleRate);
+      }
+      return out;
+    }
+
+    TrackerChannel sampleChannel(int rows, {int baseMidi = 60}) =>
+        TrackerChannel(
+          id: 'voice',
+          instrument:
+              SampleInstrument('voice', sine(0.4, 261.63), baseMidi: baseMidi),
+          rows: rows,
+        );
+
+    test('a note plays the sample; empty is silence; deterministic', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final ch = sampleChannel(timing.rows);
+      final silent = ch.instrument.renderChannel(ch.cells, timing);
+      expect(silent.length, timing.totalSamples);
+      expect(silent.every((v) => v == 0), isTrue);
+
+      ch.cells[0] = const TrackerCell(midi: 60); // base pitch
+      final a = ch.instrument.renderChannel(ch.cells, timing);
+      final b = ch.instrument.renderChannel(ch.cells, timing);
+      expect(a.length, timing.totalSamples);
+      expect(a.any((v) => v != 0), isTrue);
+      expect(a, equals(b)); // stable stem for the cache
+    });
+
+    test('a note starts at its step offset, not before', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final ch = sampleChannel(timing.rows)
+        ..cells[4] = const TrackerCell(midi: 60);
+      final buf = ch.instrument.renderChannel(ch.cells, timing);
+      final startSample = (4 * timing.stepMs * kSampleRate) ~/ 1000;
+      expect(buf.sublist(0, startSample).every((v) => v == 0), isTrue);
+      expect(buf.sublist(startSample).any((v) => v != 0), isTrue);
+    });
+
+    test('the recorded factory applies a voice effect', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final inst = SampleInstrument.recorded(
+        'voice',
+        sine(0.4, 261.63),
+        VoiceEffect.robot,
+      );
+      final ch =
+          TrackerChannel(id: 'voice', instrument: inst, rows: timing.rows)
+            ..cells[0] = const TrackerCell(midi: 62);
+      final buf = inst.renderChannel(ch.cells, timing);
+      expect(buf.any((v) => v != 0), isTrue);
     });
   });
 }
