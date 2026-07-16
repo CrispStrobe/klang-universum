@@ -859,7 +859,11 @@ class ScoreDocument {
       clef: clef,
       keySignature: keySignature,
       timeSignature: timeSignature,
-      measures: _packMeasures([for (final e in _elements) e.toElement()]),
+      measures: reflow(
+        [for (final e in _elements) e.toElement()],
+        timeSignature: timeSignature,
+        pickup: pickup,
+      ),
       dynamics: [
         for (final e in _elements)
           if (!e.isRest && e.dynamic != null) DynamicMarking(e.id, e.dynamic!),
@@ -901,51 +905,64 @@ class ScoreDocument {
         clef: Clef.treble,
         keySignature: keySignature,
         timeSignature: timeSignature,
-        measures: _packMeasures(upper),
+        measures: reflow(upper, timeSignature: timeSignature, pickup: pickup),
       ),
       lower: Score(
         clef: Clef.bass,
         keySignature: keySignature,
         timeSignature: timeSignature,
-        measures: _packMeasures(lower),
+        measures: reflow(lower, timeSignature: timeSignature, pickup: pickup),
       ),
     );
   }
 
-  /// Pack a flat element list into bar-lined measures (empty → one whole-rest
-  /// bar so the staff stays wide and tappable).
-  List<Measure> _packMeasures(List<MusicElement> els) {
-    if (els.isEmpty) {
-      return const [
-        Measure([RestElement(NoteDuration(DurationBase.whole))]),
-      ];
-    }
-    final zero = Fraction(0, 1);
-    final full = timeSignature.toFraction();
-    final pickupCap = pickup?.toFraction();
-    final bars = <Measure>[];
-    var current = <MusicElement>[];
-    var filled = zero;
-    var isFirst = true;
-    // The opening bar holds only the anacrusis (when set); every later bar is
-    // a full measure. The short opening bar is flagged as a pickup.
-    Fraction capacity() => (isFirst && pickupCap != null) ? pickupCap : full;
-    void flush() {
-      bars.add(Measure(current, pickup: isFirst && pickupCap != null));
-      current = [];
-      filled = zero;
-      isFirst = false;
-    }
+  int get barCount => buildScore().measures.length;
+}
 
-    for (final el in els) {
-      final d = el.duration.toFraction();
-      if (filled > zero && (filled + d) > capacity()) flush();
-      current.add(el);
-      filled = filled + d;
-    }
-    if (current.isNotEmpty) flush();
-    return bars;
+/// Packs a flat element stream into bar-lined [Measure]s for the prevailing
+/// [timeSignature] and optional [pickup] (anacrusis). A note that would overflow
+/// the current bar starts a new one (no splitting/tying yet); an empty list
+/// yields a single whole-rest bar so the staff stays wide and tappable.
+///
+/// Pure and document-free by design: this is the seam the measure-spine work
+/// builds on (docs/WORKSHOP_PARITY.md, Cause 1 — bars become first-class and a
+/// `RhythmPolicy.spill` document reflows through exactly this). Its output is
+/// pinned byte-for-byte by `test/score_document_packing_golden_test.dart`, so
+/// the representation change stays externally invisible. Today its only callers
+/// are [ScoreDocument.buildScore] and [ScoreDocument.buildGrandStaff].
+List<Measure> reflow(
+  List<MusicElement> elements, {
+  required TimeSignature timeSignature,
+  NoteDuration? pickup,
+}) {
+  if (elements.isEmpty) {
+    return const [
+      Measure([RestElement(NoteDuration(DurationBase.whole))]),
+    ];
+  }
+  final zero = Fraction(0, 1);
+  final full = timeSignature.toFraction();
+  final pickupCap = pickup?.toFraction();
+  final bars = <Measure>[];
+  var current = <MusicElement>[];
+  var filled = zero;
+  var isFirst = true;
+  // The opening bar holds only the anacrusis (when set); every later bar is
+  // a full measure. The short opening bar is flagged as a pickup.
+  Fraction capacity() => (isFirst && pickupCap != null) ? pickupCap : full;
+  void flush() {
+    bars.add(Measure(current, pickup: isFirst && pickupCap != null));
+    current = [];
+    filled = zero;
+    isFirst = false;
   }
 
-  int get barCount => buildScore().measures.length;
+  for (final el in elements) {
+    final d = el.duration.toFraction();
+    if (filled > zero && (filled + d) > capacity()) flush();
+    current.add(el);
+    filled = filled + d;
+  }
+  if (current.isNotEmpty) flush();
+  return bars;
 }
