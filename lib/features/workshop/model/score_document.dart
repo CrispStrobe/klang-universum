@@ -6,11 +6,11 @@
 // demand (packing the flat list into bar-lined measures). All mutations go
 // through commands that snapshot first, giving multi-level undo/redo.
 //
-// Selection is a contiguous index range (a single element is a range of one),
-// which the editing commands (transpose / duration / accidental / delete /
-// move / copy / cut / paste) all operate over.
-
-import 'dart:math' as math;
+// Selection is a SET of element ids (so a marquee over two clusters selects
+// exactly those, discontiguously) plus a focus id; the editing commands
+// (transpose / duration / accidental / delete / copy / cut / paste) operate
+// over the whole set, while contiguous-only commands (block move, extend)
+// derive an index range from it.
 
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:klang_universum/shared/midi_pitch.dart';
@@ -203,9 +203,14 @@ class ScoreDocument {
   /// The staff clef — chosen by the user; no automatic mid-score flipping.
   Clef clef;
 
-  // Selection range: [anchor..focus] inclusive; null = nothing selected.
-  int? _anchor;
-  int? _focus;
+  // Selection: a SET of element ids (so it can be discontiguous — a marquee
+  // over two clusters selects exactly those, not the span between), plus the
+  // focus id (the "active" element for single-note controls and the insertion
+  // caret). Contiguous-only operations (block move, extend) derive indices from
+  // the set on demand; stale ids (from a deleted element) are filtered out by
+  // the index helpers, so the set never needs eager pruning.
+  final Set<String> _selectedIds = {};
+  String? _focusId;
   var _nextId = 0;
 
   final List<EditorElement> _clipboard = [];
@@ -274,23 +279,54 @@ class ScoreDocument {
   int get length => _elements.length;
   bool get isEmpty => _elements.isEmpty;
 
-  bool get hasSelection => _anchor != null && _focus != null;
-  bool get hasRange => hasSelection && _lo != _hi;
-  int get _lo => math.min(_anchor!, _focus!);
-  int get _hi => math.max(_anchor!, _focus!);
+  /// The document indices of the currently-selected elements, ascending, with
+  /// any stale ids (from deleted elements) dropped. The single source of truth
+  /// the range/note helpers below are derived from.
+  List<int> get _selectedIndices {
+    if (_selectedIds.isEmpty) return const [];
+    final r = <int>[];
+    for (var i = 0; i < _elements.length; i++) {
+      if (_selectedIds.contains(_elements[i].id)) r.add(i);
+    }
+    return r;
+  }
 
-  /// The focus element's id (used for single-note controls + status).
-  String? get selectedId => hasSelection ? _elements[_focus!].id : null;
+  bool get hasSelection => _selectedIndices.isNotEmpty;
+  bool get hasRange => _selectedIndices.length > 1;
 
-  /// Every id in the selection range (for highlighting).
+  /// Lowest / highest selected index (the range the selection spans). For
+  /// contiguous-only operations; guard with [hasSelection] first.
+  int get _lo => _selectedIndices.first;
+  int get _hi => _selectedIndices.last;
+
+  /// Whether the selection is a single unbroken run (no gaps).
+  bool get _isContiguous {
+    final idx = _selectedIndices;
+    return idx.isNotEmpty && idx.last - idx.first == idx.length - 1;
+  }
+
+  /// The focus element's id (used for single-note controls + status), or the
+  /// last selected id if the focus was deleted.
+  String? get selectedId {
+    if (_focusId != null && _indexOf(_focusId!) >= 0) return _focusId;
+    final idx = _selectedIndices;
+    return idx.isEmpty ? null : _elements[idx.last].id;
+  }
+
+  /// Every selected id (for highlighting) — exactly the set, no widening.
   Set<String> get selectedIds =>
-      hasSelection ? {for (var i = _lo; i <= _hi; i++) _elements[i].id} : {};
+      {for (final i in _selectedIndices) _elements[i].id};
 
   /// The focus element (or null).
-  EditorElement? get selected => hasSelection ? _elements[_focus!] : null;
+  EditorElement? get selected {
+    final id = selectedId;
+    if (id == null) return null;
+    final i = _indexOf(id);
+    return i < 0 ? null : _elements[i];
+  }
 
   List<EditorElement> get selectedElements =>
-      hasSelection ? _elements.sublist(_lo, _hi + 1) : const [];
+      [for (final i in _selectedIndices) _elements[i]];
 
   bool get canUndo => _undo.isNotEmpty;
   bool get canRedo => _redo.isNotEmpty;
@@ -414,13 +450,9 @@ class ScoreDocument {
       ..clear()
       ..addAll(s.tuplets);
     _invalidate();
-    // Keep the selection valid against the restored length.
-    if (_elements.isEmpty) {
-      _anchor = _focus = null;
-    } else {
-      _anchor = _anchor?.clamp(0, _elements.length - 1);
-      _focus = _focus?.clamp(0, _elements.length - 1);
-    }
+    // Drop selected ids that the restored document no longer contains.
+    _selectedIds.removeWhere((id) => _indexOf(id) < 0);
+    if (_focusId != null && _indexOf(_focusId!) < 0) _focusId = null;
   }
 
   void undo() {
@@ -439,60 +471,96 @@ class ScoreDocument {
 
   void selectIndex(int i) {
     if (_elements.isEmpty) return;
-    _anchor = _focus = i.clamp(0, _elements.length - 1);
+    _selectSingle(i.clamp(0, _elements.length - 1));
   }
 
   int _indexOf(String id) => _elements.indexWhere((e) => e.id == id);
 
-  /// Toggle single-selection of [id] (tapping the sole selected element clears
-  /// it; tapping any element while a range is active collapses to it).
+  /// Replace the selection with a single element at index [i] (its focus).
+  void _selectSingle(int i) {
+    final id = _elements[i].id;
+    _selectedIds
+      ..clear()
+      ..add(id);
+    _focusId = id;
+  }
+
+  /// Tapping an element: collapse to a single selection of [id]; tapping the
+  /// sole selected element clears it. (Discontiguous multi-select comes from the
+  /// marquee — [selectByIds] — not from plain taps.)
   void toggleSelected(String id) {
     final i = _indexOf(id);
     if (i < 0) return;
-    if (!hasRange && _focus == i) {
+    if (!hasRange && _focusId == id) {
       clearSelection();
     } else {
-      selectIndex(i);
+      _selectSingle(i);
     }
   }
 
-  void clearSelection() => _anchor = _focus = null;
+  /// Add [id] to the selection (or remove it if already selected) — the
+  /// discontiguous multi-select primitive (e.g. a modifier-tap). No-op for an
+  /// unknown id.
+  void toggleInSelection(String id) {
+    if (_indexOf(id) < 0) return;
+    if (!_selectedIds.add(id)) {
+      _selectedIds.remove(id);
+      if (_focusId == id) _focusId = selectedId;
+    } else {
+      _focusId = id;
+    }
+  }
 
-  /// Select the contiguous range spanning every id in [ids] (a marquee result).
-  /// Clears the selection if none are found. Selection only — not undoable.
+  void clearSelection() {
+    _selectedIds.clear();
+    _focusId = null;
+  }
+
+  /// Select **exactly** the ids in [ids] that exist (a marquee result) — a
+  /// discontiguous set, no longer widened to the span between them. Clears the
+  /// selection if none are found. Selection only — not undoable.
   void selectByIds(Iterable<String> ids) {
-    final indices = [
+    final present = [
       for (final id in ids)
-        if (_indexOf(id) >= 0) _indexOf(id),
-    ]..sort();
-    if (indices.isEmpty) {
+        if (_indexOf(id) >= 0) id,
+    ];
+    if (present.isEmpty) {
       clearSelection();
       return;
     }
-    _anchor = indices.first;
-    _focus = indices.last;
+    _selectedIds
+      ..clear()
+      ..addAll(present);
+    _focusId = present.last;
   }
 
   /// Collapse to a single selection and step it forward/back.
   void selectNext() {
     if (_elements.isEmpty) return;
-    selectIndex(hasSelection ? _focus! + 1 : 0);
+    final focus = _focusId == null ? -1 : _indexOf(_focusId!);
+    selectIndex(hasSelection ? focus + 1 : 0);
   }
 
   void selectPrev() {
     if (_elements.isEmpty) return;
-    selectIndex(hasSelection ? _focus! - 1 : _elements.length - 1);
+    final focus = _focusId == null ? _elements.length : _indexOf(_focusId!);
+    selectIndex(hasSelection ? focus - 1 : _elements.length - 1);
   }
 
-  /// Grow/shrink the range by moving the focus end.
+  /// Grow the selected run outward by one element (the contiguous-extend the
+  /// toolbar arrows drive). No shrink — the set model has no single focus end.
   void extendRight() {
-    if (!hasSelection) return;
-    _focus = (_focus! + 1).clamp(0, _elements.length - 1);
+    if (!hasSelection || _hi + 1 >= _elements.length) return;
+    final id = _elements[_hi + 1].id;
+    _selectedIds.add(id);
+    _focusId = id;
   }
 
   void extendLeft() {
-    if (!hasSelection) return;
-    _focus = (_focus! - 1).clamp(0, _elements.length - 1);
+    if (!hasSelection || _lo == 0) return;
+    final id = _elements[_lo - 1].id;
+    _selectedIds.add(id);
+    _focusId = id;
   }
 
   // ---- insertion ---------------------------------------------------------
@@ -535,7 +603,7 @@ class ScoreDocument {
   void transposeSelected(int semitones) {
     if (!hasSelection) return;
     _snapshot();
-    for (var i = _lo; i <= _hi; i++) {
+    for (final i in _selectedIndices) {
       final e = _elements[i];
       if (e.isRest) continue;
       _elements[i] = e.withPitches([
@@ -547,18 +615,27 @@ class ScoreDocument {
     }
   }
 
+  /// The document index of the focus element, or null (deleted / no selection).
+  int? get _focusIndex {
+    final id = selectedId;
+    if (id == null) return null;
+    final i = _indexOf(id);
+    return i < 0 ? null : i;
+  }
+
   /// Add [pitch] to the focus element, turning a note into a chord. Undoable.
   void addPitchToSelected(Pitch pitch) {
-    if (!hasSelection || _elements[_focus!].isRest) return;
+    final f = _focusIndex;
+    if (f == null || _elements[f].isRest) return;
     _snapshot();
-    _elements[_focus!] = _elements[_focus!].addPitch(pitch);
+    _elements[f] = _elements[f].addPitch(pitch);
   }
 
   /// Set the accidental of every selected note (rests skipped). Undoable.
   void setAccidentalOfSelected(int alter) {
     if (!hasSelection) return;
     _snapshot();
-    for (var i = _lo; i <= _hi; i++) {
+    for (final i in _selectedIndices) {
       final e = _elements[i];
       if (e.isRest) continue;
       _elements[i] = e.withPitches([
@@ -572,17 +649,15 @@ class ScoreDocument {
   void setDurationOfSelected(NoteDuration duration) {
     if (!hasSelection) return;
     _snapshot();
-    for (var i = _lo; i <= _hi; i++) {
+    for (final i in _selectedIndices) {
       _elements[i] = _elements[i].withDuration(duration);
     }
   }
 
-  List<int> get _selectedNoteIndices => hasSelection
-      ? [
-          for (var i = _lo; i <= _hi; i++)
-            if (!_elements[i].isRest) i,
-        ]
-      : const [];
+  List<int> get _selectedNoteIndices => [
+        for (final i in _selectedIndices)
+          if (!_elements[i].isRest) i,
+      ];
 
   /// Toggle an articulation across the selected notes: if every selected note
   /// already has it, remove it from all; otherwise add it to all. Undoable.
@@ -684,9 +759,10 @@ class ScoreDocument {
   /// Move the focus element so its lowest note lands on [pitch] (a chord moves
   /// as a block). No-op on a rest. Undoable.
   void repitchSelected(Pitch pitch) {
-    if (!hasSelection || _elements[_focus!].isRest) return;
+    final f = _focusIndex;
+    if (f == null || _elements[f].isRest) return;
     _snapshot();
-    _elements[_focus!] = _elements[_focus!].moveTo(pitch);
+    _elements[f] = _elements[f].moveTo(pitch);
   }
 
   /// Re-pitch the note [id] to the staff position of a dragged [target]
@@ -759,32 +835,30 @@ class ScoreDocument {
     if (!hasSelection) return;
     _snapshot();
     final lo = _lo;
-    _elements.removeRange(lo, _hi + 1);
+    // Delete every selected element (the set may be discontiguous), not a range.
+    final doomed = Set.of(selectedIds);
+    _elements.removeWhere((e) => doomed.contains(e.id));
     _pruneOrnaments();
-    if (_elements.isEmpty) {
-      clearSelection();
-    } else {
+    clearSelection();
+    if (_elements.isNotEmpty) {
       selectIndex(lo.clamp(0, _elements.length - 1));
     }
   }
 
-  /// Move the selected block one slot left / right in the score.
+  /// Move the selected block one slot left / right in the score. Only a
+  /// contiguous selection can move as a block; a discontiguous one is a no-op.
   void moveSelectionLeft() {
-    if (!hasSelection || _lo == 0) return;
+    if (!hasSelection || !_isContiguous || _lo == 0) return;
     _snapshot();
     final e = _elements.removeAt(_lo - 1);
     _elements.insert(_hi, e);
-    _anchor = _anchor! - 1;
-    _focus = _focus! - 1;
   }
 
   void moveSelectionRight() {
-    if (!hasSelection || _hi == _elements.length - 1) return;
+    if (!hasSelection || !_isContiguous || _hi == _elements.length - 1) return;
     _snapshot();
     final e = _elements.removeAt(_hi + 1);
     _elements.insert(_lo, e);
-    _anchor = _anchor! + 1;
-    _focus = _focus! + 1;
   }
 
   // ---- clipboard ---------------------------------------------------------
@@ -816,8 +890,11 @@ class ScoreDocument {
       if (syllables != null) _lyrics[e.id] = Map.of(syllables);
     }
     _elements.insertAll(at, fresh);
-    _anchor = at;
-    _focus = at + fresh.length - 1;
+    // Select the pasted run (its ids), focus the last.
+    _selectedIds
+      ..clear()
+      ..addAll(fresh.map((e) => e.id));
+    _focusId = fresh.last.id;
   }
 
   // ---- document settings -------------------------------------------------

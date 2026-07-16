@@ -418,18 +418,20 @@ void main() {
   });
 
   group('marquee selection', () {
-    test('selectByIds spans a contiguous range from the enclosed ids', () {
+    test('selectByIds selects exactly the enclosed ids (discontiguous)', () {
       final d = ScoreDocument();
       for (final s in [Step.c, Step.d, Step.e, Step.f]) {
         d.insertNote(_p(s), _q);
       }
       d.clearSelection();
-      // The marquee returns d (1) and f (3) → the selection spans d..f.
+      // The marquee returns d (1) and f (3) → the selection is exactly {d, f}
+      // (no longer widened to d..f — that widening was the old behaviour).
       d.selectByIds([d.elements[3].id, d.elements[1].id]);
-      expect(d.selectedIds.length, 3);
+      expect(d.selectedIds.length, 2);
       expect(
         d.selectedElements.map((e) => e.pitch!.step).toList(),
-        [Step.d, Step.e, Step.f],
+        [Step.d, Step.f],
+        reason: 'e (index 2), between them, is NOT selected',
       );
     });
 
@@ -438,6 +440,71 @@ void main() {
       d.insertNote(_p(Step.c), _q);
       d.selectByIds(const ['nope']);
       expect(d.hasSelection, isFalse);
+    });
+  });
+
+  group('discontiguous selection', () {
+    ScoreDocument four() {
+      final d = ScoreDocument();
+      for (final s in [Step.c, Step.d, Step.e, Step.f]) {
+        d.insertNote(_p(s), _q);
+      }
+      return d;
+    }
+
+    test('an edit applies to every selected note, not the span between', () {
+      final d = four();
+      final ids = d.elements.map((e) => e.id).toList();
+      d.selectByIds([ids[0], ids[2]]); // C and E, not D
+      d.transposeSelected(12); // up an octave
+
+      final oct = d.elements.map((e) => e.pitch!.octave).toList();
+      expect(oct[0], 5, reason: 'C transposed');
+      expect(oct[1], 4, reason: 'D (between, unselected) untouched');
+      expect(oct[2], 5, reason: 'E transposed');
+      expect(oct[3], 4);
+    });
+
+    test('delete removes exactly the selected notes (gaps and all)', () {
+      final d = four();
+      final ids = d.elements.map((e) => e.id).toList();
+      d.selectByIds([ids[0], ids[2]]); // C and E
+      d.deleteSelected();
+      expect(
+        d.elements.map((e) => e.pitch!.step).toList(),
+        [Step.d, Step.f],
+      );
+    });
+
+    test('toggleInSelection adds and removes members', () {
+      final d = four();
+      final ids = d.elements.map((e) => e.id).toList();
+      d.clearSelection();
+      d.toggleInSelection(ids[0]);
+      d.toggleInSelection(ids[2]);
+      expect(d.selectedIds, {ids[0], ids[2]});
+      d.toggleInSelection(ids[0]); // off
+      expect(d.selectedIds, {ids[2]});
+    });
+
+    test('block move is a no-op on a discontiguous selection', () {
+      final d = four();
+      final ids = d.elements.map((e) => e.id).toList();
+      final before = d.elements.map((e) => e.pitch!.step).toList();
+      d.selectByIds([ids[0], ids[2]]);
+      d.moveSelectionRight(); // gapped → refused
+      expect(d.elements.map((e) => e.pitch!.step).toList(), before);
+    });
+
+    test('a contiguous selection still moves as a block', () {
+      final d = four();
+      final ids = d.elements.map((e) => e.id).toList();
+      d.selectByIds([ids[0], ids[1]]); // C,D contiguous
+      d.moveSelectionRight(); // E hops before them
+      expect(
+        d.elements.map((e) => e.pitch!.step).toList(),
+        [Step.e, Step.c, Step.d, Step.f],
+      );
     });
   });
 
