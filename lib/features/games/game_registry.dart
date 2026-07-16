@@ -70,6 +70,7 @@ import 'package:klang_universum/features/games/note_reading/place_note_screen.da
 import 'package:klang_universum/features/games/note_reading/read_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/staff_runner_screen.dart';
 import 'package:klang_universum/features/games/note_reading/step_skip_screen.dart';
+import 'package:klang_universum/features/games/note_reading/tie_slur_screen.dart';
 import 'package:klang_universum/features/games/note_reading/which_clef_screen.dart';
 import 'package:klang_universum/features/games/note_reading/which_voice_screen.dart';
 import 'package:klang_universum/features/games/note_reading/whole_half_screen.dart';
@@ -324,6 +325,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameStepSkipSubtitle,
       builder: (_) => const StepSkipScreen(clef: Clef.bass),
       tutorial: stepSkipPrimer,
+    ),
+    // Tie or Slur? — read the curve: same pitch (tie) vs different (slur).
+    GameInfo(
+      id: 'tie_slur',
+      icon: Icons.link,
+      title: (l) => l.gameTieSlur,
+      subtitle: (l) => l.gameTieSlurSubtitle,
+      builder: (_) => const TieSlurScreen(),
     ),
     // Read the clef sign itself — Treble vs Bass (Alto/Tenor at 2★).
     GameInfo(

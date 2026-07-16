@@ -553,6 +553,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get leapLabel => 'Großer Sprung';
 
   @override
+  String get gameTieSlur => 'Haltebogen oder Bindebogen?';
+
+  @override
+  String get gameTieSlurSubtitle =>
+      'Gleiche Tonhöhe = Haltebogen; verschiedene = Bindebogen';
+
+  @override
+  String get tieSlurPrompt => 'Ist der Bogen ein Halte- oder ein Bindebogen?';
+
+  @override
+  String get tieLabel => 'Haltebogen';
+
+  @override
+  String get slurLabel => 'Bindebogen';
+
+  @override
   String get gameWhichClef => 'Welcher Schlüssel?';
 
   @override

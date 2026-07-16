@@ -1082,6 +1082,36 @@ abstract class AppLocalizations {
   /// **'Leap'**
   String get leapLabel;
 
+  /// No description provided for @gameTieSlur.
+  ///
+  /// In en, this message translates to:
+  /// **'Tie or Slur?'**
+  String get gameTieSlur;
+
+  /// No description provided for @gameTieSlurSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Same pitch = a tie; different pitches = a slur'**
+  String get gameTieSlurSubtitle;
+
+  /// No description provided for @tieSlurPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Is the curve a tie or a slur?'**
+  String get tieSlurPrompt;
+
+  /// No description provided for @tieLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tie'**
+  String get tieLabel;
+
+  /// No description provided for @slurLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Slur'**
+  String get slurLabel;
+
   /// No description provided for @gameWhichClef.
   ///
   /// In en, this message translates to:

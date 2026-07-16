@@ -551,6 +551,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get leapLabel => 'Leap';
 
   @override
+  String get gameTieSlur => 'Tie or Slur?';
+
+  @override
+  String get gameTieSlurSubtitle =>
+      'Same pitch = a tie; different pitches = a slur';
+
+  @override
+  String get tieSlurPrompt => 'Is the curve a tie or a slur?';
+
+  @override
+  String get tieLabel => 'Tie';
+
+  @override
+  String get slurLabel => 'Slur';
+
+  @override
   String get gameWhichClef => 'Which Clef?';
 
   @override
