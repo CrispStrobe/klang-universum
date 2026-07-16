@@ -968,8 +968,11 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   each dynamic mark glyph (pp…ff) to its meaning word (very soft…very loud); 4
   clear steps for beginners, mp/mf join at 2★. SRI `reading.dynamics.*` (shared
   with `dynamics_duel`, so the reading and compare-loudness drills reinforce one
-  skill). Remaining modes (rest↔value, term↔meaning, instrument↔clef) are each
-  one more `ConnectMode` case.
+  skill). ✅ *Connect the Rests* (`connect_rests`, note_values) — match each rest
+  glyph to the note it equals in length (quarter rest ↔ "quarter note"); whole/
+  half/quarter/eighth for beginners, sixteenth at 2★. SRI `note_values.rest.*`.
+  Remaining modes (term↔meaning, instrument↔clef, note↔piano-key) are each one
+  more `ConnectMode` case.
 
 ### C. Reading vocabulary the curriculum wants but we don't drill
 - [x] **Louder or Softer?** — **shipped** (`dynamics_duel`, note_values): two
