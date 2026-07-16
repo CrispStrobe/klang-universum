@@ -14,6 +14,29 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity + the remaining lag.**
+  Worktree `../mus-parity`, branch `feature/workshop-parity`. **Docs only so far**
+  — added [`docs/WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) (conceptual layer above
+  WORKSHOP_PLAN.md's phase log). Finding: the ~28 gaps vs. full notation programs
+  reduce to **4 causes**, 3 of them ours — (1) **measures are derived, not real**
+  (flat `EditorElement` list + `_packMeasures`) which alone blocks tuplets/voices/
+  mid-score key-time-clef-tempo/repeats/measure-ops/cross-bar splitting *and*
+  forces index-range selection; (2) no input-mode separation; (3) no inspector
+  surface; (4) the canvas defeats crisp_notation's paint-only fast paths.
+  **crisp_notation already models nearly all of it** — the block is app-side.
+  · ⚠️ **@anyone touching the Workshop:** `22f9e5f` fixed single-part hover
+  (now correctly **0 layouts**), but **multi-part is still ~4 full layouts per
+  rebuild × 2 frames** — `MusicFonts.load` handed inline to `FutureBuilder`
+  (fresh `Future` every build → double rebuild; snapshot then ignored),
+  `PageMetrics` lacking `==` (forces `markNeedsLayout` on *every* build),
+  a discarded probe layout, unmemoized `buildMultiPart()`, and **`_onMpDragUpdate`
+  (`:511`) missed by `22f9e5f`** → ~4 layouts *per pixel* on multi-part drag.
+  All small fixes; I'm taking them next in `multi_part_canvas.dart` +
+  `composition_workshop_screen.dart` (hot — coordinate before you edit).
+  · ⚠️ Separately flagged, **not** perf: `loadScore` is lossy (voice 1 only,
+  chord→first pitch, ties/articulations dropped — `score_document.dart:747`) so
+  **Save→reopen silently destroys work**; and every export except MusicXML writes
+  the **active part only** (`:1157`).
 - **opus (workshop→games)** · **idle / SHIPPED — Workshop performance.** The
   editor "severely lagged" on desktop: the root cause was **`onHover` calling
   `setState` on every pointer-move pixel** → a full-screen rebuild (42-key piano +
