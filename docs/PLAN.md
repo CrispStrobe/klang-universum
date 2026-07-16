@@ -971,8 +971,11 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   skill). ✅ *Connect the Rests* (`connect_rests`, note_values) — match each rest
   glyph to the note it equals in length (quarter rest ↔ "quarter note"); whole/
   half/quarter/eighth for beginners, sixteenth at 2★. SRI `note_values.rest.*`.
-  Remaining modes (term↔meaning, instrument↔clef, note↔piano-key) are each one
-  more `ConnectMode` case.
+  ✅ *Connect the Tempo Words* (`connect_tempo`, note_values) — match each Italian
+  tempo word to its meaning (Largo ↔ "very slow"); Largo/Adagio/Allegro/Presto
+  for beginners, the middle terms (Andante/Moderato/Vivace) at 2★. SRI
+  `reading.tempo.*` (shared with `tempo_duel`). Remaining modes (instrument↔clef,
+  note↔piano-key) are each one more `ConnectMode` case.
 
 ### C. Reading vocabulary the curriculum wants but we don't drill
 - [x] **Louder or Softer?** — **shipped** (`dynamics_duel`, note_values): two
