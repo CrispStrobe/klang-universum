@@ -203,6 +203,19 @@ class ScoreDocument {
   /// The staff clef — chosen by the user; no automatic mid-score flipping.
   Clef clef;
 
+  /// How an over-long note is handled when it doesn't fit the current bar.
+  /// [RhythmPolicy.spill] (the default, kid-sandbox behaviour) short-fills the
+  /// bar and starts the note fresh in the next; [RhythmPolicy.split] (Studio)
+  /// notates it correctly as tied notes across the barline. A view/authoring
+  /// mode, not content — set it directly; it just invalidates the render cache.
+  RhythmPolicy _rhythmPolicy = RhythmPolicy.spill;
+  RhythmPolicy get rhythmPolicy => _rhythmPolicy;
+  set rhythmPolicy(RhythmPolicy value) {
+    if (value == _rhythmPolicy) return;
+    _rhythmPolicy = value;
+    _invalidate();
+  }
+
   // Selection: a SET of element ids (so it can be discontiguous — a marquee
   // over two clusters selects exactly those, not the span between), plus the
   // focus id (the "active" element for single-note controls and the insertion
@@ -1223,6 +1236,7 @@ class ScoreDocument {
             pickup: pickup,
             timeChanges: _timeChanges,
             durationScale: _tupletScale(),
+            split: _rhythmPolicy == RhythmPolicy.split,
           ),
         ),
       ),
@@ -1409,6 +1423,56 @@ class ScoreDocument {
 /// pinned byte-for-byte by `test/score_document_packing_golden_test.dart`, so
 /// the representation change stays externally invisible. Today its only callers
 /// are [ScoreDocument.buildScore] and [ScoreDocument.buildGrandStaff].
+/// How [reflow] handles a note that overruns its bar.
+enum RhythmPolicy {
+  /// Short-fill the bar and start the note fresh in the next (kid sandbox).
+  spill,
+
+  /// Split the note into tied notes across the barline (Studio).
+  split,
+}
+
+/// The note values [reflow]'s split mode can write, largest first (dotted before
+/// plain of the same base, since dotted is larger). Whole … sixteenth, 0–1 dots
+/// — the range the editor supports.
+final List<(NoteDuration, Fraction)> _notatableValues = () {
+  final v = <(NoteDuration, Fraction)>[
+    for (final base in DurationBase.values)
+      if (base.index <= DurationBase.sixteenth.index)
+        for (final dots in [1, 0])
+          (
+            NoteDuration(base, dots: dots),
+            NoteDuration(base, dots: dots).toFraction()
+          ),
+  ]..sort((a, b) => b.$2.compareTo(a.$2));
+  return v;
+}();
+
+/// Decomposes [total] (a fraction of a whole note) into the fewest supported
+/// note values, largest first — e.g. 5/8 → [half, eighth], 5/16 → [quarter,
+/// sixteenth]. These are the tied pieces a split note becomes. Returns `[]` for
+/// a non-positive [total]; any residue it can't express (below a sixteenth) is
+/// dropped, which the bar-aligned caller never hits.
+List<NoteDuration> notate(Fraction total) {
+  final zero = Fraction(0, 1);
+  final out = <NoteDuration>[];
+  var rem = total;
+  var guard = 0;
+  while (rem.compareTo(zero) > 0 && guard++ < 64) {
+    var placed = false;
+    for (final (nd, frac) in _notatableValues) {
+      if (frac.compareTo(rem) <= 0) {
+        out.add(nd);
+        rem = rem - frac;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) break; // residue smaller than a sixteenth
+  }
+  return out;
+}
+
 /// A tuplet group: the [memberIds] (consecutive notes/rests) are played [actual]
 /// in the time of [normal] of their written value — a triplet is 3:2, a
 /// quintuplet 5:4. Immutable; the document owns the list.
@@ -1433,6 +1497,7 @@ List<Measure> reflow(
   NoteDuration? pickup,
   Map<String, TimeSignature> timeChanges = const {},
   Map<String, Fraction> durationScale = const {},
+  bool split = false,
 }) {
   if (elements.isEmpty) {
     return const [
@@ -1487,10 +1552,71 @@ List<Measure> reflow(
     final d = scale == null
         ? el.duration.toFraction()
         : el.duration.toFraction() * scale;
-    if (filled > zero && (filled + d) > capacity()) flush();
-    current.add(el);
-    filled = filled + d;
+
+    // SPILL (default): a note that would overflow starts a new bar, short-
+    // filling this one. Byte-identical to the single-meter packer.
+    if (!split) {
+      if (filled > zero && (filled + d) > capacity()) flush();
+      current.add(el);
+      filled = filled + d;
+      continue;
+    }
+
+    // SPLIT: if it fits whole in the current bar, place it as-is (keeping its
+    // id / articulations / tie). Otherwise notate it as tied pieces that fill
+    // each bar exactly and carry across the barline.
+    if ((filled + d).compareTo(capacity()) <= 0) {
+      current.add(el);
+      filled = filled + d;
+      continue;
+    }
+    final origTie = el is NoteElement && el.tieToNext;
+    var remaining = d;
+    var pieceIndex = 0;
+    while (remaining.compareTo(zero) > 0) {
+      var room = capacity() - filled;
+      if (room.compareTo(zero) <= 0) {
+        flush();
+        room = capacity();
+      }
+      final take = remaining.compareTo(room) <= 0 ? remaining : room;
+      for (final nd in notate(take)) {
+        remaining = remaining - nd.toFraction();
+        final isVeryLast = remaining.compareTo(zero) <= 0;
+        current.add(
+          _splitPiece(el, nd, pieceIndex, tie: !isVeryLast || origTie),
+        );
+        pieceIndex++;
+        filled = filled + nd.toFraction();
+      }
+      if (remaining.compareTo(zero) > 0) flush();
+    }
   }
   if (current.isNotEmpty) flush();
   return bars;
+}
+
+/// One tied piece of a split note/rest: piece 0 keeps [src]'s id + articulations
+/// (a slur/staccato belongs on the first of a tie); continuations get a derived
+/// id (`<id>s2`, `<id>s3`) and no articulations. [tie] carries the sustain to
+/// the next piece.
+MusicElement _splitPiece(
+  MusicElement src,
+  NoteDuration nd,
+  int index, {
+  required bool tie,
+}) {
+  final baseId = src.id;
+  final id =
+      index == 0 ? baseId : (baseId == null ? null : '${baseId}s${index + 1}');
+  if (src is NoteElement) {
+    return NoteElement(
+      pitches: src.pitches,
+      duration: nd,
+      id: id,
+      articulations: index == 0 ? src.articulations : const {},
+      tieToNext: tie,
+    );
+  }
+  return RestElement(nd, id: id);
 }
