@@ -94,6 +94,14 @@ and push to origin/main** before/after touching shared files. Format:
   touched only in `_paletteButton` + a new dialog. **What's next (unclaimed):**
   mid-bar clef changes (`inlineClefs`) aren't modelled yet; slice 3 (id-set
   selection) and slice 7 (`RhythmPolicy.split`) remain per WORKSHOP_PARITY.md.
+- **fable (loop-mixer)** · 🚧 **ACTIVE — Loop Mixer slice 10** (the last ladder
+  rung): beatbox→drum card (onset+timbre classification on new additive
+  rms/zcr fields in `PitchReading`, calibrated against our own synth drums)
+  + jam mode v1 (echoCancel + headphones hint, chord-fit feedback). Worktree
+  `../mus-loopmixer`, branch `feature/loop-mixer-3`. **Shared files:**
+  `core/audio/pitch_analysis.dart` (ADDITIVE ONLY — new optional fields,
+  every existing constructor/test unchanged), `loop_engine.dart` +
+  `loop_mixer_screen.dart` (mine), ARBs (additive). Pull-rebase before edits.
 - **fable (loop-mixer)** · ✅ **SHIPPED — Loop Mixer 2.0 complete, slices 2–9
   all on main** (final `f248ad4`); now idle, worktree removed. One session:
   **engine v2** (`5e5d81b`: GrooveSpec, data patterns, swing, A/B/C variants,
