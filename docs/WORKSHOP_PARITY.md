@@ -176,13 +176,12 @@ the notation-depth gaps one at a time:
 - [x] **Voltas + navigation** (1st/2nd endings; D.C./D.S./coda/segno/fine) —
       `70bca0b`. `_voltas`/`_navigation` post-reflow stamps; UI in the "Change
       from here…" dialog (now 5 rows).
-- [ ] **Tuplets** — the higher-value one and NOT a pure anchor: store a set of
-      element ids + ratio per group; `buildScore` maps ids → `TupletSpan`
-      (voice-index-addressed within a bar) after reflow. Needs care that a group
-      stays within one bar.
-- [ ] **Slice 3 — discontiguous id-set selection** (`_anchor`/`_focus` →
-      `Set<String>` + focus id). Sandbox-visible: `selectByIds` stops widening a
-      marquee to a contiguous span. Touches the screen's selection call sites.
+- [x] **Tuplets** — `e63730e` (model) + `daaa443` (UI). `List<Tuplet>`; reflow
+      packs members at their scaled duration; `_withTuplets` emits the
+      `TupletSpan` per bar; "³" range toggle. Round-trips.
+- [ ] **Slice 3 — discontiguous id-set selection** ← *in progress* (`_anchor`/
+      `_focus` → `Set<String>` + focus id). Sandbox-visible: `selectByIds` stops
+      widening a marquee to a contiguous span.
 - [ ] **Slice 7 — `RhythmPolicy.split`** (Studio): an overflowing note splits
       into tied notes across the barline instead of short-filling. Needs
       `notate(Fraction)` (no public one in crisp_notation) + explicit tie groups.
