@@ -1820,6 +1820,12 @@ abstract class AppLocalizations {
   /// **'Show notation'**
   String get trackerToggleNotation;
 
+  /// No description provided for @trackerImportTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Load a tune'**
+  String get trackerImportTune;
+
   /// No description provided for @trackerRecord.
   ///
   /// In en, this message translates to:

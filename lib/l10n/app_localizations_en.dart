@@ -941,6 +941,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerToggleNotation => 'Show notation';
 
   @override
+  String get trackerImportTune => 'Load a tune';
+
+  @override
   String get trackerRecord => 'Record';
 
   @override

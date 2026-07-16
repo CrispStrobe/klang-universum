@@ -347,6 +347,7 @@
   "trackerChannelBass": "Bass",
   "trackerChannelVoice": "Voice",
   "trackerToggleNotation": "Show notation",
+  "trackerImportTune": "Load a tune",
   "trackerRecord": "Record",
   "trackerRecording": "Recording…",
   "trackerRecordFailed": "Couldn't use the microphone.",

@@ -339,6 +339,18 @@ class TrackerEngine {
     _wav = null;
   }
 
+  /// Replaces every cell of [channel] with [cells] (same length as the row
+  /// count) — used to import a whole pattern (e.g. a Score). Invalidates caches.
+  void setChannelCells(int channel, List<TrackerCell> cells) {
+    final target = channels[channel].cells;
+    assert(cells.length == target.length, 'cells length must match rows');
+    for (var i = 0; i < target.length; i++) {
+      target[i] = cells[i];
+    }
+    _stemCache.remove(channel);
+    _wav = null;
+  }
+
   /// Sets [row] of [channel] to [cell] and invalidates the affected caches.
   void setCell(int channel, int row, TrackerCell cell) {
     final cells = channels[channel].cells;

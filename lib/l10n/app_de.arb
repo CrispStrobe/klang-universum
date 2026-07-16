@@ -316,6 +316,7 @@
   "trackerChannelBass": "Bass",
   "trackerChannelVoice": "Stimme",
   "trackerToggleNotation": "Noten zeigen",
+  "trackerImportTune": "Melodie laden",
   "trackerRecord": "Aufnehmen",
   "trackerRecording": "Nimmt auf…",
   "trackerRecordFailed": "Mikrofon nicht verfügbar.",

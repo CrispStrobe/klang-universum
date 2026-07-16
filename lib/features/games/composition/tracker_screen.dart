@@ -90,6 +90,9 @@ abstract interface class TrackerTester {
 
   bool get notationVisible;
   void toggleNotation();
+
+  /// Imports the built-in demo tune into the melody channel (Score → Tracker).
+  void importDemo();
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -184,6 +187,19 @@ class _TrackerScreenState extends State<TrackerScreen>
   bool get notationVisible => _showNotation;
   @override
   void toggleNotation() => setState(() => _showNotation = !_showNotation);
+  @override
+  void importDemo() => _importDemo();
+
+  /// Fills the melody channel (index 0 — treble, so the demo's octave-4 notes
+  /// land exactly on its grid) from the built-in tune, and switches to it.
+  void _importDemo() {
+    _engine.setChannelCells(
+      0,
+      scoreToTrackerCells(kTrackerDemoTune, _engine.timing),
+    );
+    setState(() => _selected = 0);
+    _syncPlayback();
+  }
 
   /// Voices the recorded [raw] (+ [fx]) onto the voice channel and switches to
   /// it. Shared by the real mic path and the test seam.
@@ -360,6 +376,11 @@ class _TrackerScreenState extends State<TrackerScreen>
       appBar: GameAppBar(
         title: l10n.gameTracker,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.library_music),
+            tooltip: l10n.trackerImportTune,
+            onPressed: _importDemo,
+          ),
           IconButton(
             icon: Icon(_showNotation ? Icons.grid_view : Icons.music_note),
             tooltip: l10n.trackerToggleNotation,

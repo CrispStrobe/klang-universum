@@ -945,6 +945,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerToggleNotation => 'Noten zeigen';
 
   @override
+  String get trackerImportTune => 'Melodie laden';
+
+  @override
   String get trackerRecord => 'Aufnehmen';
 
   @override

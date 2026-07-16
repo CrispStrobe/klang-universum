@@ -83,4 +83,46 @@ void main() {
       expect(second.tieToNext, isFalse);
     });
   });
+
+  group('scoreToTrackerCells (Score → Tracker)', () {
+    const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+
+    test('durationToSteps quantizes note values to the grid', () {
+      expect(durationToSteps(NoteDuration.quarter, 2), 2);
+      expect(durationToSteps(NoteDuration.eighth, 2), 1);
+      expect(durationToSteps(const NoteDuration(DurationBase.half), 2), 4);
+      expect(
+        durationToSteps(const NoteDuration(DurationBase.quarter, dots: 1), 2),
+        3,
+      );
+    });
+
+    test('snapToPentatonic maps chromatic notes onto C D E G A', () {
+      expect(snapToPentatonic(60), 60); // C stays
+      expect(snapToPentatonic(61), 60); // C# → C
+      expect(snapToPentatonic(66), 67); // F# → G
+      expect(_pentaContains(snapToPentatonic(70)), isTrue);
+    });
+
+    test('the demo tune imports onto the grid', () {
+      final cells = scoreToTrackerCells(kTrackerDemoTune, timing);
+      expect(cells.length, 8);
+      expect(cells[0].midi, 60); // C4
+      expect(cells[2].midi, 62); // D4
+      expect(cells[4].midi, 64); // E4
+      expect(cells[6].midi, 67); // G4
+      expect(cells[1].isEmpty, isTrue); // held / ring
+    });
+
+    test('round-trips a grid-aligned pattern (Tracker → Score → Tracker)', () {
+      final ch = _channel(8, const [(0, 60), (2, 62), (4, 64), (6, 67)]);
+      final score = trackerChannelToScore(ch, timing);
+      final back = scoreToTrackerCells(score, timing);
+      for (var i = 0; i < 8; i++) {
+        expect(back[i].midi, ch.cells[i].midi, reason: 'cell $i');
+      }
+    });
+  });
 }
+
+bool _pentaContains(int midi) => const [0, 2, 4, 7, 9].contains(midi % 12);

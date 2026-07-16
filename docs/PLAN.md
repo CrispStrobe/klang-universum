@@ -46,10 +46,15 @@ and push to origin/main** before/after touching shared files. Format:
   Tracker→Score):** `tracker_notation.dart` `trackerChannelToScore` (held runs →
   tied notes decomposed to standard values, split at 4/4 bar lines) + a StaffView
   "score view" panel toggled from the app bar (the selected channel as notation).
-  🚧 **Next (unclaimed / open order):** Slice 5b (partial Score→Tracker import:
-  quantize + monophonic-per-channel + scale-snap) · Slice 3 (Studio instrument
-  picker over the sfxr palette) · arrangement/order-list · percussion instrument.
-  Handover: [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
+  ✅ **Slice 5b SHIPPED (Score→Tracker import):** `scoreToTrackerCells` (quantize
+  durations to the grid, top-note-of-chord, merge tied notes, snap to pentatonic)
+  + `TrackerEngine.setChannelCells` + a "Load a tune" app-bar action importing a
+  built-in demo melody into the melody channel. Round-trip (Tracker→Score→Tracker)
+  is unit-tested — the bidirectional bridge is complete.
+  🚧 **Next (unclaimed / open order):** Slice 3 (Studio instrument picker over the
+  sfxr palette) · Workshop↔Tracker file handoff (open a real Workshop score into
+  the tracker) · arrangement/order-list · percussion instrument. Handover:
+  [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
 - **opus (parity)** · 🚧 **ACTIVE — notation-depth batch (one at a time).**
   Working through the tracked roadmap in
   [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) §"Notation-depth roadmap": **(1)

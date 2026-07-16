@@ -123,4 +123,18 @@ void main() {
     expect(game.notationVisible, isTrue);
     expect(tester.takeException(), isNull); // StaffView built cleanly
   });
+
+  testWidgets('loading the demo tune fills the melody channel', (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    expect(game.noteCount, 0);
+
+    game.importDemo();
+    await tester.pump();
+
+    expect(game.noteCount, 4); // C D E G
+    expect(game.selectedChannel, 0); // melody
+    expect(game.isPlaying, isTrue);
+    expect(tester.takeException(), isNull);
+  });
 }

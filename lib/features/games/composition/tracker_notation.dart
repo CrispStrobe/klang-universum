@@ -116,3 +116,111 @@ Score trackerChannelToScore(
 
   return Score(clef: clef, measures: measures);
 }
+
+// ---------------------------------------------------------------------------
+// Score → Tracker (the partial reverse direction)
+// ---------------------------------------------------------------------------
+
+/// A [NoteDuration] as a whole number of grid steps (rounded — off-grid values
+/// quantize, which is the "partial" in the reverse bridge).
+int durationToSteps(NoteDuration d, int stepsPerBeat) {
+  final (num, den) = d.fraction;
+  return (num * (stepsPerBeat * 4) / den).round();
+}
+
+const _pentaPcs = [0, 2, 4, 7, 9]; // C D E G A
+
+/// Snaps [midi] to the nearest C-pentatonic note (ties go to the lower note) —
+/// so an imported chromatic melody lands on the Sandbox grid.
+int snapToPentatonic(int midi) {
+  var best = midi;
+  var bestDist = 1 << 30;
+  final octaveBase = (midi ~/ 12) * 12;
+  for (final pc in _pentaPcs) {
+    for (final cand in [
+      octaveBase + pc - 12,
+      octaveBase + pc,
+      octaveBase + pc + 12,
+    ]) {
+      final dist = (cand - midi).abs();
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = cand;
+      }
+    }
+  }
+  return best;
+}
+
+/// Imports [score] into a channel's cells (length [TrackerTiming.rows]). This is
+/// **partial by nature**: durations quantize to the step grid, a chord keeps only
+/// its top note (channels are monophonic), tied notes merge into one held note,
+/// content past the grid is truncated, and — when [snapToScale] — pitches snap to
+/// C-pentatonic so they land on the Sandbox grid. Note onsets go in the cell;
+/// held steps stay empty (the tracker's "let it ring").
+List<TrackerCell> scoreToTrackerCells(
+  Score score,
+  TrackerTiming timing, {
+  bool snapToScale = true,
+}) {
+  final cells = List<TrackerCell>.filled(
+    timing.rows,
+    TrackerCell.empty,
+    growable: true,
+  );
+  final elements = [for (final m in score.measures) ...m.elements];
+
+  var i = 0;
+  var step = 0;
+  while (i < elements.length && step < timing.rows) {
+    final el = elements[i];
+    if (el is RestElement) {
+      step += durationToSteps(el.duration, timing.stepsPerBeat);
+      i++;
+      continue;
+    }
+    if (el is NoteElement) {
+      var steps = durationToSteps(el.duration, timing.stepsPerBeat);
+      // Top note of a chord (monophonic channel).
+      int? top;
+      for (final p in el.pitches) {
+        if (top == null || p.midiNumber > top) top = p.midiNumber;
+      }
+      // Merge tied continuations into one held note.
+      var cur = el;
+      while (cur.tieToNext &&
+          i + 1 < elements.length &&
+          elements[i + 1] is NoteElement) {
+        final next = elements[i + 1] as NoteElement;
+        steps += durationToSteps(next.duration, timing.stepsPerBeat);
+        cur = next;
+        i++;
+      }
+      if (top != null && step < timing.rows) {
+        cells[step] =
+            TrackerCell(midi: snapToScale ? snapToPentatonic(top) : top);
+      }
+      step += steps;
+      i++;
+      continue;
+    }
+    i++; // barlines / other elements — skip
+  }
+  return cells;
+}
+
+/// A short original C-pentatonic tune (one 4/4 bar of quarters, C D E G) offered
+/// as a starting melody to remix — proves the Score→Tracker direction end-to-end
+/// and gives a kid something to build on. Lands exactly on the melody channel's
+/// treble grid.
+final Score kTrackerDemoTune = Score(
+  clef: Clef.treble,
+  measures: [
+    Measure([
+      NoteElement.note(const Pitch(Step.c), NoteDuration.quarter),
+      NoteElement.note(const Pitch(Step.d), NoteDuration.quarter),
+      NoteElement.note(const Pitch(Step.e), NoteDuration.quarter),
+      NoteElement.note(const Pitch(Step.g), NoteDuration.quarter),
+    ]),
+  ],
+);
