@@ -3524,6 +3524,24 @@ abstract class AppLocalizations {
   /// **'very loud'**
   String get dynVeryLoud;
 
+  /// No description provided for @gameConnectRests.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Rests'**
+  String get gameConnectRests;
+
+  /// No description provided for @gameConnectRestsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each rest to the note it lasts as long as'**
+  String get gameConnectRestsSubtitle;
+
+  /// No description provided for @connectRestsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How long is the silence? Connect each rest to its note!'**
+  String get connectRestsPrompt;
+
   /// No description provided for @gameCommandCaller.
   ///
   /// In en, this message translates to:

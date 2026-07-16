@@ -230,6 +230,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameConnectDynamicsSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.dynamics),
     ),
+    // Match each rest to the note it equals in length (quarter rest ↔ quarter
+    // note) — the Connect board with a rests mode; reads the silent side.
+    GameInfo(
+      id: 'connect_rests',
+      icon: Icons.hourglass_empty,
+      title: (l) => l.gameConnectRests,
+      subtitle: (l) => l.gameConnectRestsSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.rests),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

@@ -1909,6 +1909,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dynVeryLoud => 'very loud';
 
   @override
+  String get gameConnectRests => 'Connect the Rests';
+
+  @override
+  String get gameConnectRestsSubtitle =>
+      'Match each rest to the note it lasts as long as';
+
+  @override
+  String get connectRestsPrompt =>
+      'How long is the silence? Connect each rest to its note!';
+
+  @override
   String get gameCommandCaller => 'Follow the Conductor';
 
   @override

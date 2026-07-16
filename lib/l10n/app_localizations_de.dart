@@ -1917,6 +1917,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dynVeryLoud => 'sehr laut';
 
   @override
+  String get gameConnectRests => 'Pausen verbinden';
+
+  @override
+  String get gameConnectRestsSubtitle =>
+      'Verbinde jede Pause mit der Note, so lang wie sie dauert';
+
+  @override
+  String get connectRestsPrompt =>
+      'Wie lang ist die Stille? Verbinde jede Pause mit ihrer Note!';
+
+  @override
   String get gameCommandCaller => 'Der Dirigent';
 
   @override

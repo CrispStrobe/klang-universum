@@ -15,6 +15,8 @@
 //                 e.g. C→G spans 5) → SRI 'intervals.size.*'
 //   • dynamics  — dynamic mark glyph ↔ its meaning (pp ↔ very soft)
 //                 → SRI 'reading.dynamics.*' (shared with dynamics_duel)
+//   • rests     — rest glyph ↔ the note it equals in length (quarter rest ↔
+//                 "quarter note") → SRI 'note_values.rest.*'
 
 import 'dart:math';
 
@@ -38,7 +40,7 @@ import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:provider/provider.dart';
 
 /// What the two columns hold.
-enum ConnectMode { notes, symbols, intervals, dynamics }
+enum ConnectMode { notes, symbols, intervals, dynamics, rests }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
 /// colour of its wire, the pitch to sound on a correct link (if any), and the
@@ -132,6 +134,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.symbols => 'connect_symbols',
         ConnectMode.intervals => 'connect_intervals',
         ConnectMode.dynamics => 'connect_dynamics',
+        ConnectMode.rests => 'connect_rests',
         ConnectMode.notes =>
           widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
       };
@@ -152,6 +155,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.symbols => _symbolItems(),
       ConnectMode.intervals => _intervalItems(),
       ConnectMode.dynamics => _dynamicsItems(),
+      ConnectMode.rests => _restItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -303,6 +307,36 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         _ => l10n.dynVeryLoud, // 'ff'
       };
 
+  List<_ConnectItem> _restItems() {
+    // Each rest paired with the note it equals in length. Whole/half/quarter/
+    // eighth rests for beginners; the sixteenth rest joins at 2★.
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final rests = [
+      for (final s in kNoteSymbols)
+        if (s.id.endsWith('_rest') && (wide || s.id != 'sixteenth_rest')) s,
+    ]..shuffle(_random);
+    final picked = rests.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _restItem(picked[i], _symbolPalette[i % _symbolPalette.length]),
+    ];
+  }
+
+  _ConnectItem _restItem(NoteSymbol rest, Color color) {
+    // 'quarter_rest' → base 'quarter' → the 'quarter_note' whose name we show.
+    final base = rest.id.replaceAll('_rest', '');
+    final note = kNoteSymbols.firstWhere((s) => s.id == '${base}_note');
+    return _ConnectItem(
+      card: MusicGlyph(rest.glyph, size: 40),
+      matchKey: base,
+      sriId: 'note_values.rest.$base',
+      playMidi: null,
+      label: (ctx) => note.label(AppLocalizations.of(ctx)!),
+      color: (_, __) => color,
+    );
+  }
+
   static const _symbolPalette = [
     Color(0xFF3949AB), // indigo
     Color(0xFF00897B), // teal
@@ -382,12 +416,14 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.symbols => l10n.gameConnectSymbols,
       ConnectMode.intervals => l10n.gameConnectIntervals,
       ConnectMode.dynamics => l10n.gameConnectDynamics,
+      ConnectMode.rests => l10n.gameConnectRests,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
       ConnectMode.symbols => l10n.connectSymbolsPrompt,
       ConnectMode.intervals => l10n.connectIntervalsPrompt,
       ConnectMode.dynamics => l10n.connectDynamicsPrompt,
+      ConnectMode.rests => l10n.connectRestsPrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

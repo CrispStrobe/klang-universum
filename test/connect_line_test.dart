@@ -134,4 +134,25 @@ void main() {
     expect(game.round, 1);
     expect(game.score, greaterThan(0));
   });
+
+  testWidgets(
+      'rests mode: matching each rest to its note clears the round'
+      ' and records under note_values.rest', (tester) async {
+    await tester.pumpWidget(_app(mode: ConnectMode.rests));
+    final game = _game(tester);
+    final sri = Provider.of<SriService>(
+      tester.element(find.byType(ConnectLineScreen)),
+      listen: false,
+    );
+
+    for (var i = 0; i < ConnectLineScreen.pairs; i++) {
+      await _drag(tester, i, game.matchingRight(i));
+    }
+    expect(game.matchedCount, ConnectLineScreen.pairs);
+    expect(sri.getDetailedBreakdown()['note_values']!.keys, ['rest']);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(game.round, 1);
+    expect(game.score, greaterThan(0));
+  });
 }
