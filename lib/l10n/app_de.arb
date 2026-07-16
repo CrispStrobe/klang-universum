@@ -176,6 +176,7 @@
   "stepSkipPrompt": "Geht die zweite Note zum Nachbarn, oder springt sie über eine Lücke?",
   "stepLabel": "Schritt",
   "skipLabel": "Sprung",
+  "leapLabel": "Großer Sprung",
   "gameWhichClef": "Welcher Schlüssel?",
   "gameWhichClefSubtitle": "Violin- oder Bassschlüssel? (Alt & Tenor ab 2★.)",
   "whichClefPrompt": "Welcher Notenschlüssel ist das?",

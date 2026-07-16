@@ -548,6 +548,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get skipLabel => 'Skip';
 
   @override
+  String get leapLabel => 'Leap';
+
+  @override
   String get gameWhichClef => 'Which Clef?';
 
   @override

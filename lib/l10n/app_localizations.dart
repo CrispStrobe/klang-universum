@@ -1076,6 +1076,12 @@ abstract class AppLocalizations {
   /// **'Skip'**
   String get skipLabel;
 
+  /// No description provided for @leapLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Leap'**
+  String get leapLabel;
+
   /// No description provided for @gameWhichClef.
   ///
   /// In en, this message translates to:

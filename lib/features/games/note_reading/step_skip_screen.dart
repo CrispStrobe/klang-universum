@@ -16,6 +16,7 @@ import 'package:crisp_notation/crisp_notation.dart';
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
@@ -24,6 +25,10 @@ import 'package:klang_universum/shared/score_theme.dart';
 import 'package:provider/provider.dart';
 
 const _half = NoteDuration(DurationBase.half);
+
+/// The melodic motion between the two notes. From 2★ the game splits skips into
+/// a skip (3rd/4th) and a leap (5th+) for a harder three-way tier.
+enum _Motion { step, skip, leap }
 
 class StepSkipScreen extends StatefulWidget {
   const StepSkipScreen({super.key, this.clef = Clef.treble});
@@ -42,6 +47,9 @@ class StepSkipScreen extends StatefulWidget {
 abstract interface class StepSkipTester {
   /// Whether the two notes are a step apart (the correct answer).
   bool get answerStep;
+
+  /// The correct motion name ('step' / 'skip' / 'leap').
+  String get answerMotion;
   bool get isFinished;
 }
 
@@ -49,7 +57,9 @@ class _StepSkipScreenState extends State<StepSkipScreen>
     with QuizRoundMixin
     implements StepSkipTester {
   @override
-  bool get answerStep => _step;
+  bool get answerStep => _motion == _Motion.step;
+  @override
+  String get answerMotion => _motion.name;
   @override
   bool get isFinished => finished;
 
@@ -57,8 +67,9 @@ class _StepSkipScreenState extends State<StepSkipScreen>
 
   late Pitch _a; // first note
   late Pitch _b; // second note
-  late bool _step; // are they a 2nd apart?
-  bool? _tapped; // last choice (true = step)
+  late _Motion _motion; // the correct motion this round
+  bool _threeWay = false; // 2★+: offer Step / Skip / Leap
+  _Motion? _tapped; // last choice
   bool? _lastAnswer;
 
   @override
@@ -84,10 +95,21 @@ class _StepSkipScreenState extends State<StepSkipScreen>
 
   @override
   void prepareRound() {
-    // A step is a 2nd (one staff position); a skip is a 3rd/4th/5th (2..4).
-    _step = _random.nextBool();
-    final delta = _step ? 1 : 2 + _random.nextInt(3); // 1, or 2..4
-    // Keep both notes comfortably on/around the treble staff [-1 .. 9].
+    // From 2★ the game becomes a three-way (Step / Skip / Leap).
+    _threeWay = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final choices =
+        _threeWay ? _Motion.values : const [_Motion.step, _Motion.skip];
+    _motion = choices[_random.nextInt(choices.length)];
+
+    // step = a 2nd; skip = 3rd/4th; leap = 5th+. In the binary tier a skip
+    // stretches to a 5th (2..4) so the harder intervals still appear.
+    final delta = switch (_motion) {
+      _Motion.step => 1,
+      _Motion.skip =>
+        _threeWay ? 2 + _random.nextInt(2) : 2 + _random.nextInt(3),
+      _Motion.leap => 4 + _random.nextInt(3), // 4..6
+    };
+    // Keep both notes comfortably on/around the staff [-1 .. 9].
     final low = -1 + _random.nextInt(9 - delta + 1); // low..low+delta ≤ 9
     final up = _random.nextBool();
     final aPos = up ? low : low + delta;
@@ -98,14 +120,14 @@ class _StepSkipScreenState extends State<StepSkipScreen>
     _lastAnswer = null;
   }
 
-  void _onAnswer(bool step) {
+  void _onAnswer(_Motion choice) {
     if (_lastAnswer == true) return; // round already resolved
-    final correct = step == _step;
+    final correct = choice == _motion;
     final audio = context.read<AudioService>();
 
     if (_tapped == null || !answeredWrong) {
       context.read<SriService>().recordResponse(
-            'reading.motion.${_step ? 'step' : 'skip'}',
+            'reading.motion.${_motion.name}',
             correct,
           );
     }
@@ -116,11 +138,23 @@ class _StepSkipScreenState extends State<StepSkipScreen>
     }
 
     setState(() {
-      _tapped = step;
+      _tapped = choice;
       _lastAnswer = correct;
     });
     resolveAnswer(correct: correct);
   }
+
+  static IconData _iconFor(_Motion m) => switch (m) {
+        _Motion.step => Icons.stairs,
+        _Motion.skip => Icons.trending_up,
+        _Motion.leap => Icons.rocket_launch,
+      };
+
+  String _labelFor(AppLocalizations l, _Motion m) => switch (m) {
+        _Motion.step => l.stepLabel,
+        _Motion.skip => l.skipLabel,
+        _Motion.leap => l.leapLabel,
+      };
 
   Score get _cardScore => Score(
         clef: widget.clef,
@@ -183,11 +217,13 @@ class _StepSkipScreenState extends State<StepSkipScreen>
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        for (final step in const [true, false])
+                        for (final motion in _threeWay
+                            ? _Motion.values
+                            : const [_Motion.step, _Motion.skip])
                           Expanded(
                             child: Padding(
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                                  const EdgeInsets.symmetric(horizontal: 6),
                               child: FilledButton.icon(
                                 style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
@@ -195,23 +231,19 @@ class _StepSkipScreenState extends State<StepSkipScreen>
                                   ),
                                   backgroundColor: _tapped == null
                                       ? null
-                                      : step == _step && _tapped == _step
+                                      : motion == _motion && _tapped == _motion
                                           ? Colors.green
-                                          : step == _tapped
+                                          : motion == _tapped
                                               ? Colors.redAccent
                                               : null,
                                   textStyle: Theme.of(context)
                                       .textTheme
-                                      .titleLarge
+                                      .titleMedium
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
-                                icon: Icon(
-                                  step ? Icons.stairs : Icons.trending_up,
-                                ),
-                                onPressed: () => _onAnswer(step),
-                                label: Text(
-                                  step ? l10n.stepLabel : l10n.skipLabel,
-                                ),
+                                icon: Icon(_iconFor(motion)),
+                                onPressed: () => _onAnswer(motion),
+                                label: Text(_labelFor(l10n, motion)),
                               ),
                             ),
                           ),

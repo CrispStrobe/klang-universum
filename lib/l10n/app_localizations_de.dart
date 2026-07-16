@@ -550,6 +550,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get skipLabel => 'Sprung';
 
   @override
+  String get leapLabel => 'Großer Sprung';
+
+  @override
   String get gameWhichClef => 'Welcher Schlüssel?';
 
   @override

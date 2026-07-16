@@ -5,8 +5,10 @@
 import 'package:crisp_notation/crisp_notation.dart' show Clef, StaffView;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/services/progress_service.dart';
 import 'package:klang_universum/core/services/sri_service.dart';
 import 'package:klang_universum/features/games/note_reading/step_skip_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/game_test_support.dart';
@@ -64,5 +66,37 @@ void main() {
 
     await _answerCorrectly(tester);
     expect(sri.getDetailedBreakdown()['reading']!.keys, ['motion']);
+  });
+
+  testWidgets('at 2 stars it becomes a three-way with a Leap option',
+      (tester) async {
+    final progress = ProgressService();
+    await progress.load();
+    progress.recordResult('step_skip', score: 700, stars: 2);
+
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await pumpGame(
+      tester,
+      const StepSkipScreen(),
+      sri: sri,
+      extraProviders: [
+        ChangeNotifierProvider<ProgressService>.value(value: progress),
+      ],
+    );
+
+    // The harder tier offers all three motions.
+    expect(find.text('Step'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
+    expect(find.text('Leap'), findsOneWidget);
+    expect(
+      const ['step', 'skip', 'leap'],
+      contains(_game(tester).answerMotion),
+    );
+  });
+
+  testWidgets('below 2 stars it stays a binary Step / Skip', (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    await pumpGame(tester, const StepSkipScreen(), sri: sri);
+    expect(find.text('Leap'), findsNothing);
   });
 }
