@@ -187,9 +187,11 @@ that can't hide itself behind a shelf toggle should be viewed with suspicion.
 
 Ordered by *unblocking*, not by size.
 
-- **A · Make it fast** — Cause 4, fixes 1–5. Days. Do first: it's cheap, it's the
-  user's actual complaint, and every later phase is nicer to build and demo on a
-  canvas that doesn't stutter. No model risk.
+- **A · Make it fast** ✅ **SHIPPED** (`1d9c804`) — Cause 4, fixes 1–5. Multi-part
+  hover/drag now costs **zero layouts** (verified by counters through the real
+  rebuild path). The discarded probe measured **~155–247ms per rebuild**; that
+  was the lag. The engine ceiling (no incremental layout) is untouched and is
+  now the *only* remaining perf story — see G.
 - **B · Make it trustworthy** — native format + lossless load; multi-part export
   honesty. Stops the bleeding before we add more to bleed.
 - **C · Make the document real** — Cause 1: measure spine, `(bar, voice, tick)`
@@ -217,11 +219,10 @@ the road** — every feature in D built *before* C gets built twice.
 
 ## Open questions for the maintainer
 
-1. **Is Studio actually wanted?** The whole argument above assumes we want
-   capability parity at all. A defensible alternative: cap the Workshop at
-   "excellent kid sandbox", and treat interchange export as the escape hatch to a
-   real desktop program. That would make C–E unnecessary and A–B + F sufficient.
-   This is the highest-value decision here and it's not ours.
+1. ~~**Is Studio actually wanted?**~~ **Decided 2026-07-16: yes — two shelves.**
+   Sandbox (today's kid surface, ~unchanged) + Studio (full capability), on one
+   document and one renderer. So C–E are green-lit, and the shelf toggle is a
+   design constraint on every later feature, not an afterthought.
 2. **Where does the notation depth get taught?** If Studio exists, it's a second
    product surface with its own learnability burden — does it get primers /
    tutorials like the games do?

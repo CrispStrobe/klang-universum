@@ -14,9 +14,37 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity + the remaining lag.**
-  Worktree `../mus-parity`, branch `feature/workshop-parity`. **Docs only so far**
-  — added [`docs/WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) (conceptual layer above
+- **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity.** ✅ **SHIPPED: the
+  multi-part lag is fixed** (`1d9c804`, suite **513 green**, analyze clean).
+  `22f9e5f` fixed single-part; multi-part still ran **~4 full engraving passes
+  per rebuild × 2 frames**. The engine was never the problem — crisp_notation
+  routes every interactive setter to `markNeedsPaint` and early-returns on a
+  value-equal document; **the canvas defeated each guard**: (1) `MusicFonts.load`
+  handed inline to `FutureBuilder` returns `Future.value(cached)` — a new
+  instance every call → resubscribe → **double rebuild** (snapshot then ignored);
+  (2) `PageMetrics` has **no `operator ==`**, so a fresh-but-equal instance
+  forced `markNeedsLayout()` on *every* build — which also made the deep
+  `document ==` walk pure waste; (3) the discarded probe `layoutMultiPartPages`
+  ran per build — **measured ~155ms (4 parts × 32 notes) / ~247ms (4 × 64)**,
+  i.e. *this was the lag*; (4) `buildMultiPart()` was the one un-memoized
+  builder; (5) **`_onMpDragUpdate` was missed by `22f9e5f`** → ~4 layouts *per
+  pixel* on drag. Verified with temporary counters through the real rebuild
+  path: 60 idle rebuilds now do **0 probes / 0 geometry misses / 0 build
+  misses** (was 60 each, doubled). `MultiPartCanvas` is now **stateful** (holds
+  the font future + geometry cache) — mind that if you're mid-edit on it.
+  · ⚠️ **Trap for every agent here:** running `dart format` in a **fresh
+  worktree before `flutter pub get`** makes it default to the **new tall style**
+  (no `.dart_tool/package_config.json` → can't read `sdk: ^3.5.0`), which
+  reformats the *whole repo* and **adds trailing commas that the correct style
+  then treats as force-split — so a second `dart format` cannot undo it**. It
+  turned an 8-line edit into a 409-line diff on the hot screen file. **Always
+  `pub get` first.**
+  · **Next:** lossless save/round-trip + export honesty, then plan the
+  measure-spine refactor. **Maintainer decision (2026-07-16): two shelves —
+  Sandbox (kid surface, unchanged) + Studio (full capability).** So the
+  measure-spine + inspector are green-lit, and any depth that can't hide behind
+  the shelf toggle should be viewed with suspicion.
+  · Concepts + order of attack: [`docs/WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) (conceptual layer above
   WORKSHOP_PLAN.md's phase log). Finding: the ~28 gaps vs. full notation programs
   reduce to **4 causes**, 3 of them ours — (1) **measures are derived, not real**
   (flat `EditorElement` list + `_packMeasures`) which alone blocks tuplets/voices/
