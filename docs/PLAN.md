@@ -61,24 +61,19 @@ and push to origin/main** before/after touching shared files. Format:
   touched only in `_paletteButton` + a new dialog. **What's next (unclaimed):**
   mid-bar clef changes (`inlineClefs`) aren't modelled yet; slice 3 (id-set
   selection) and slice 7 (`RhythmPolicy.split`) remain per WORKSHOP_PARITY.md.
-- **fable (loop-mixer)** · ✅ **SHIPPED — Loop Mixer** (`32ebb96`) — the last
-  E-tier creative-backlog item is done; now idle. Built on an upgraded take of
-  the handover: **combo-independent mixdown** (unit-peak per stem + authored
-  gains + tanh soft-knee in `synth.dart mixStems` — per-combo peak
-  normalization would have made levels pump on every toggle), **seeded noise
-  percussion** (kick/snare/hat — no tonal-click drums), and **phase-preserving
-  swaps** (the screen owns a Stopwatch musical clock; toggles re-enter the new
-  mix via `play(position:)`, the bar never restarts — no arm-and-wait
-  quantization needed). `loop_engine.dart` is pure Dart (2-bar C-pentatonic
-  patterns, integral eighth grid @ 75/100/120 BPM, per-combo WAV cache);
-  playback on a dedicated `LoopPlayerService` so SFX and groove can't kill
-  each other. Verified: 21 tests green across loop_engine/synth/loop_mixer/
-  consistency + live_flow registry smoke, analyze clean, and an end-to-end
-  roundtrip through `bin/listen.dart` (rendered stems → detector reads the
-  authored bassline exactly, pad = C 98% / Am 98%). Shared files touched:
-  `synth.dart` (additive only), `game_registry.dart`, both ARBs.
-  Follow-up ideas (unclaimed): gapless dual-player swap at the loop seam,
-  per-card pattern variants, record/export the groove.
+- **fable (loop-mixer)** · 🚧 **ACTIVE — Loop Mixer 2.0** (v1 shipped
+  `32ebb96`; roadmap = the « Loop Mixer 2.0 — the groovebox ladder » section
+  below). Working slice-by-slice in worktree `../mus-loopmixer`, branch
+  `feature/loop-mixer-2`; each slice ships to main. **Shared files I'll touch
+  per slice:** `core/audio/loop_engine.dart` + `loop_mixer_screen.dart` (mine),
+  `core/audio/synth.dart` (additive-only — @opus (tracker) builds on
+  `mixStems`/`loop_engine`, so engine v2 keeps every existing signature
+  working; new capability = new API), `game_registry.dart` + ARBs (later
+  slices, additive). Will pull-rebase before every hot-file edit.
+  **Coordination with the Tracker:** deep step/pattern *editing* is the
+  Tracker Sandbox's job — the Loop Mixer stays a layering instrument and
+  deliberately does NOT grow a second grid editor (slice 5 deferred to the
+  Tracker); its per-card depth is variant cycling + euclidean dials instead.
 - **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity.** ✅ **SHIPPED: the
   multi-part lag is fixed** (`1d9c804`, suite **513 green**, analyze clean).
   `22f9e5f` fixed single-part; multi-part still ran **~4 full engraving passes
@@ -1030,6 +1025,66 @@ Ladder, Staff Runner, Chord Grip Hero, Dynamics & Tempo Charades, Note Snake, an
 Recital Mode all live now
 ([HISTORY.md](HISTORY.md#original-concepts--shipped)). New original ideas get
 added here as they come up.
+
+## Loop Mixer 2.0 — the groovebox ladder (roadmap)
+
+Evolve the shipped Loop Mixer (`32ebb96`) from kid toy into something adults
+find genuinely fascinating. Guiding idea: **kids love cause-and-effect; adults
+love depth that reveals itself** — a toy that turns out to be an instrument,
+a system that responds to *you* (the mic!), and output worth keeping. The
+ladder is also a stealth curriculum: layers → arrangement → harmony → rhythm
+design → ear-to-instrument. Depth stays behind the shelf (Sandbox/Studio
+philosophy): the five-cards surface never gets harder. Division of labour vs.
+the **Tracker** (opus, `TRACKER_HANDOVER.md`): the Tracker is the *editing*
+surface (pattern grids, sample instruments); the Loop Mixer is the *playing*
+surface (layering, feel, harmony, generativity, the mic). Both sit on the same
+`loop_engine.dart`/`mixStems` foundation — engine work here is additive and
+keeps existing signatures stable.
+
+**Architecture spine** (decides everything else):
+- **`GrooveSpec`** — one small serializable value object = the entire groove
+  state (enabled set, tempo, swing, per-track variant + level, progression,
+  seed). Engine renders `spec → WAV` (pure, cached). Makes the share token,
+  save slots and tests trivial.
+- **Patterns become DATA, not closures** (drums = per-voice hit rows; melodic
+  = (midis, lengthSteps) cells) so variants, engraving, sing-a-track and
+  generative variation all operate on one model — and the Tracker can reuse it.
+- **Seam scheduler** — the single looping player stays for the steady state
+  (native loop = perfectly gapless); a second player only swaps a *changed*
+  render at the next loop boundary (fills, variation, infinite mode). Instant
+  toggles keep the shipped phase-preserving `play(position:)` path.
+- Stay offline-render + audioplayers until an actual wall (live filter sweeps
+  / continuous tempo bend would need a streaming path — flag, don't build).
+
+**Slices** (each independently shippable, in order):
+1. ✅ v1 shipped (`32ebb96`).
+2. **Engine v2** — GrooveSpec + data patterns + **swing** (off-eighth delay
+   0–60%, the biggest feel-per-LOC win) + **per-track variants** (A/B/C) +
+   **euclidean drum generator** (Bjorklund; hits/rotation per voice) +
+   per-card **level**. Pure Dart + tests; screen keeps the v1 surface.
+3. **Screen v2 + seam scheduler** — swing slider, variant cycling on cards,
+   level control, bar-quantized "armed" apply for seam-timed changes, auto
+   drum-fill every 4th loop.
+4. **Chord progression lane** — pick I–V–vi–IV / I–IV–V–I / vi–IV–I–V; loop
+   becomes 4 bars (1 per chord); bass + chords render chord-relative, melody
+   stays C-pentatonic (works over the axis progressions). Suddenly it's a song.
+5. ~~Step editor~~ — **deferred to the Tracker** (its Sandbox view IS the
+   step editor, over the same engine). No duplicate grid UI here.
+6. **Live engraving** — the groove as a real multi-part crisp_notation score
+   in a collapsible panel (the app's signature "you're writing notation" trick).
+7. **Keep it** — WAV export/share (bytes already exist), groove **share
+   token** (GrooveSpec → short base64 string, serverless, matches the
+   no-tracking stance), save slots (mirror `user_songs_service`).
+8. **Infinite mode** — seeded per-iteration variation via the seam scheduler
+   (ghost notes, melody ornaments, arrangement drift). Never the same twice.
+9. **Sing a track into existence** — hum a riff → MPM pitch track → quantize
+   to key + step grid → a sixth card plays it on the synth (reuse Free Sing /
+   melody recorder pipeline). The headline feature. (Distinct from the
+   Tracker's record-your-voice-as-*instrument* — this is melody *capture*.)
+10. **Beatbox → drum card** (onset + crude kick/snare/hat classification) and
+    **Jam mode** (groove plays, child plays cello over it through the AEC
+    path, app shows what they play vs. the harmony — the loop mixer becomes a
+    play-along backing band). Big; needs the AEC on-device path.
 
 ## Ideas backlog for the next agent (Jul 2026 handoff)
 
