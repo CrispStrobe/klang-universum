@@ -1,0 +1,140 @@
+// TrackerEngine — the Tracker's Flutter-free core. Covers the timing grid, the
+// cells->segments note model (sustain-until-next + leading rest), the mixdown
+// invariants (silence, no clipping) and the edit/cache behaviour. Mirrors
+// loop_engine_test.dart / synth_test.dart: pure Dart, no device audio.
+
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/audio/synth.dart';
+import 'package:klang_universum/core/audio/tracker_engine.dart';
+
+int _peak(Uint8List wav) {
+  final data = ByteData.sublistView(wav);
+  var peak = 0;
+  for (var i = 44; i + 1 < wav.length; i += 2) {
+    final s = data.getInt16(i, Endian.little).abs();
+    if (s > peak) peak = s;
+  }
+  return peak;
+}
+
+void main() {
+  group('TrackerTiming', () {
+    test('a 120 BPM / 16-row / 4-per-beat grid is integral', () {
+      const t = TrackerTiming();
+      expect(t.stepMs, 125);
+      expect(t.totalMs, 2000);
+      expect(t.totalSamples, (2000 * kSampleRate) ~/ 1000);
+    });
+  });
+
+  group('cellsToSegments', () {
+    const t = TrackerTiming(rows: 4);
+    List<TrackerCell> cells(List<int?> midis) =>
+        [for (final m in midis) TrackerCell(midi: m)];
+
+    test('empty cells extend the previous note (let it ring)', () {
+      final segs = cellsToSegments(cells([60, null, null, 62]), t);
+      // note 60 held for 3 steps, note 62 for 1.
+      expect(segs.length, 2);
+      expect(segs[0].ms, 3 * t.stepMs);
+      expect(segs[0].freqs.single, midiToFrequency(60));
+      expect(segs[1].ms, 1 * t.stepMs);
+    });
+
+    test('a leading empty is a rest (no freqs)', () {
+      final segs = cellsToSegments(cells([null, 60, null, null]), t);
+      expect(segs.first.freqs, isEmpty); // rest
+      expect(segs.first.ms, t.stepMs);
+      expect(segs.last.freqs.single, midiToFrequency(60));
+    });
+
+    test('runs always fill the whole pattern', () {
+      final segs = cellsToSegments(cells([60, 62, null, 64]), t);
+      final total = segs.fold<int>(0, (s, seg) => s + seg.ms);
+      expect(total, t.rows * t.stepMs);
+    });
+  });
+
+  group('TrackerEngine render', () {
+    test('an empty pattern is silence of the full loop length', () {
+      final e = TrackerEngine();
+      final wav = e.renderLoop();
+      expect(wav.length, 44 + e.timing.totalSamples * 2);
+      expect(_peak(wav), 0);
+      expect(e.isEmpty, isTrue);
+    });
+
+    test('placing a note breaks the silence', () {
+      final e = TrackerEngine();
+      e.toggleNote(0, 0, 60);
+      expect(e.isEmpty, isFalse);
+      expect(_peak(e.renderLoop()), greaterThan(0));
+    });
+
+    test('the mixed loop never clips, even fully packed', () {
+      final e = TrackerEngine();
+      for (var ch = 0; ch < e.channels.length; ch++) {
+        for (var row = 0; row < e.rows; row++) {
+          e.setCell(ch, row, const TrackerCell(midi: 60));
+        }
+      }
+      expect(_peak(e.renderLoop()), lessThanOrEqualTo(32767));
+    });
+
+    test('length is fixed regardless of content', () {
+      final e = TrackerEngine();
+      final silent = e.renderLoop().length;
+      e.toggleNote(1, 5, 67);
+      expect(e.renderLoop().length, silent);
+    });
+  });
+
+  group('TrackerEngine editing + cache', () {
+    test('editing a cell changes the bytes; reverting restores them', () {
+      final e = TrackerEngine();
+      final before = e.renderLoop();
+      e.toggleNote(0, 2, 64);
+      final edited = e.renderLoop();
+      expect(edited, isNot(equals(before)));
+
+      e.toggleNote(0, 2, 64); // same note toggles off
+      expect(e.renderLoop(), equals(before));
+    });
+
+    test('rendering twice is byte-identical (deterministic + cached)', () {
+      final e = TrackerEngine()..toggleNote(2, 0, 60);
+      expect(e.renderLoop(), equals(e.renderLoop()));
+    });
+
+    test('toggleNote: place, replace, clear', () {
+      final e = TrackerEngine();
+      expect(e.toggleNote(0, 0, 60), 60); // placed
+      expect(e.cellAt(0, 0).midi, 60);
+      expect(e.toggleNote(0, 0, 62), 62); // different note replaces
+      expect(e.cellAt(0, 0).midi, 62);
+      expect(e.toggleNote(0, 0, 62), isNull); // same note clears
+      expect(e.cellAt(0, 0).isEmpty, isTrue);
+    });
+
+    test('clearAll returns to silence', () {
+      final e = TrackerEngine()
+        ..toggleNote(0, 0, 60)
+        ..toggleNote(3, 8, 48);
+      expect(_peak(e.renderLoop()), greaterThan(0));
+      e.clearAll();
+      expect(e.isEmpty, isTrue);
+      expect(_peak(e.renderLoop()), 0);
+    });
+
+    test('changing tempo re-renders (different bytes, same length rule)', () {
+      final e = TrackerEngine()..toggleNote(0, 0, 60);
+      final slow = e.renderLoop();
+      e.timing = e.timing.copyWith(tempoBpm: 90);
+      final fast = e.renderLoop();
+      expect(fast, isNot(equals(slow)));
+      expect(fast.length, 44 + e.timing.totalSamples * 2);
+    });
+  });
+}
