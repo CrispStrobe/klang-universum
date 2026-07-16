@@ -1778,6 +1778,66 @@ abstract class AppLocalizations {
   /// **'Bass'**
   String get trackerChannelBass;
 
+  /// No description provided for @trackerChannelVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get trackerChannelVoice;
+
+  /// No description provided for @trackerRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get trackerRecord;
+
+  /// No description provided for @trackerRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording…'**
+  String get trackerRecording;
+
+  /// No description provided for @trackerRecordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t use the microphone.'**
+  String get trackerRecordFailed;
+
+  /// No description provided for @trackerRecordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a voice, then record 2 seconds!'**
+  String get trackerRecordPrompt;
+
+  /// No description provided for @trackerVoiceNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get trackerVoiceNormal;
+
+  /// No description provided for @trackerVoiceChipmunk.
+  ///
+  /// In en, this message translates to:
+  /// **'Chipmunk'**
+  String get trackerVoiceChipmunk;
+
+  /// No description provided for @trackerVoiceMonster.
+  ///
+  /// In en, this message translates to:
+  /// **'Monster'**
+  String get trackerVoiceMonster;
+
+  /// No description provided for @trackerVoiceDeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep'**
+  String get trackerVoiceDeep;
+
+  /// No description provided for @trackerVoiceRobot.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot'**
+  String get trackerVoiceRobot;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:

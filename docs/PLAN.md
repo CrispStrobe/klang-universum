@@ -27,15 +27,19 @@ and push to origin/main** before/after touching shared files. Format:
   into **`lib/core/audio/crisp_dsp/sfxr.dart`** (+ `test/sfxr_test.dart`), a
   `SfxrInstrument` on the `TrackerInstrument` seam synthesized per-note at pitch,
   and a live `zap` chiptune channel in the default band. **Settled hot files:**
-  `game_registry.dart`, both ARBs. 🚧 **Slice 4a NOW (voice bridge, pure-Dart
-  half):** porting `crispaudio` dsp/PitchShifter (granular) + FormantShifter into
-  `crisp_dsp/` + a linear resampler + a `SampleInstrument` (record-once, resample-
-  per-note) + voice-effect presets (chipmunk/monster/robot via pitch-stable
-  formant + bitcrush). **New files only** (`crisp_dsp/{resample,pitch_shift,
-  formant_shift,voice_fx}.dart`, `SampleInstrument` in `tracker_engine.dart`,
-  tests) — no hot shared files. Then **Slice 4b:** mic capture (`record` plugin) +
-  a record/effect UI in the tracker (touches the screen + ARBs). Then Slice 3
-  (Studio instrument picker) + arrangement.
+  `game_registry.dart`, both ARBs. ✅ **Slice 4a SHIPPED** (`449bd6f`): sample DSP
+  in `crisp_dsp/` (resampler + granular pitch-shift + formant-shift ports from
+  `crispaudio`) + `SampleInstrument` + `VoiceEffect` palette (chipmunk/monster/
+  deep via formant, robot via ring-mod+bitcrush — pitch-stable so samples stay in
+  tune). ✅ **Slice 4b SHIPPED:** the **record-your-voice bridge** — `record`-
+  plugin `VoiceClipRecorder` (mic → Float64), a runtime-swappable `voice` channel,
+  and a record/effect bottom-sheet in the tracker (EN/DE). ⚠️ **Mic path is
+  device-only** — verified via the tester seam (inject a synthetic clip); real
+  mic needs an on-device run. 🚧 **Next (unclaimed / open order):** Slice 3 (Studio
+  instrument picker over the sfxr palette) · **Slice 5 (notation bridge:
+  Tracker→Score reusing grid_composer's Score-build, then partial Score→Tracker
+  import)** · arrangement/order-list · percussion instrument. Handover:
+  [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
 - **opus (parity)** · 🚧 **ACTIVE — notation-depth batch (one at a time).**
   Working through the tracked roadmap in
   [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) §"Notation-depth roadmap": **(1)

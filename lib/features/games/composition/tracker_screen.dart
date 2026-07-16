@@ -22,7 +22,9 @@ import 'package:flutter/foundation.dart';
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart';
+import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:klang_universum/core/audio/tracker_engine.dart';
+import 'package:klang_universum/core/audio/voice_clip_recorder.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
@@ -53,6 +55,7 @@ class TrackerScreen extends StatefulWidget {
     'sparkle': 1,
     'zap': 0,
     'bass': -2,
+    'voice': 0,
   };
 
   @override
@@ -75,6 +78,13 @@ abstract interface class TrackerTester {
   /// Tap the grid cell at ([row], [step]) of the selected channel.
   void tapCell(int row, int step);
   void clearAll();
+
+  /// Whether the voice channel holds a recorded sample yet.
+  bool get hasVoiceRecording;
+
+  /// Test seam for the mic-less binding: assign [raw] (+ [fx]) to the voice
+  /// channel as if it had just been recorded.
+  void injectRecording(Float64List raw, VoiceEffect fx);
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -87,6 +97,7 @@ class _TrackerScreenState extends State<TrackerScreen>
     ),
   );
   final _loop = LoopPlayerService();
+  final _recorder = VoiceClipRecorder();
 
   /// The groove's musical clock: playback phase derives from it, never from the
   /// player, so an edit re-enters the loop in phase.
@@ -96,6 +107,9 @@ class _TrackerScreenState extends State<TrackerScreen>
   final _step = ValueNotifier<int>(-1);
 
   int _selected = 0;
+  bool _isRecording = false;
+
+  int get _voiceIndex => _engine.channels.indexWhere((c) => c.id == 'voice');
 
   @override
   void initState() {
@@ -114,6 +128,7 @@ class _TrackerScreenState extends State<TrackerScreen>
     _ticker.dispose();
     _step.dispose();
     _loop.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -139,6 +154,46 @@ class _TrackerScreenState extends State<TrackerScreen>
   void tapCell(int row, int step) => _onTap(row, step);
   @override
   void clearAll() => _clearAll();
+  @override
+  bool get hasVoiceRecording {
+    final v = _voiceIndex;
+    final inst = v < 0 ? null : _engine.channels[v].instrument;
+    return inst is SampleInstrument && inst.sample.isNotEmpty;
+  }
+
+  @override
+  void injectRecording(Float64List raw, VoiceEffect fx) =>
+      _assignVoice(raw, fx);
+
+  /// Voices the recorded [raw] (+ [fx]) onto the voice channel and switches to
+  /// it. Shared by the real mic path and the test seam.
+  void _assignVoice(Float64List raw, VoiceEffect fx) {
+    final v = _voiceIndex;
+    if (v < 0) return;
+    _engine.setChannelInstrument(
+      v,
+      SampleInstrument.recorded('voice', raw, fx),
+    );
+    setState(() => _selected = v);
+    _syncPlayback();
+  }
+
+  Future<void> _recordVoice(VoiceEffect fx) async {
+    if (_voiceIndex < 0) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = AppLocalizations.of(context)!.trackerRecordFailed;
+    setState(() => _isRecording = true);
+    try {
+      final raw = await _recorder.record();
+      if (!mounted) return;
+      setState(() => _isRecording = false);
+      _assignVoice(raw, fx);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isRecording = false);
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
+  }
 
   /// The MIDI note a grid row maps to for the given channel.
   int _midiFor(int channel, int row) =>
@@ -198,14 +253,75 @@ class _TrackerScreenState extends State<TrackerScreen>
     'sparkle': Icons.auto_awesome,
     'zap': Icons.bolt,
     'bass': Icons.speaker,
+    'voice': Icons.mic,
   };
 
   String _channelLabel(AppLocalizations l10n, String id) => switch (id) {
         'melody' => l10n.trackerChannelMelody,
         'sparkle' => l10n.trackerChannelSparkle,
         'zap' => l10n.trackerChannelZap,
+        'voice' => l10n.trackerChannelVoice,
         _ => l10n.trackerChannelBass,
       };
+
+  static const _voiceEffectIcons = <VoiceEffect, IconData>{
+    VoiceEffect.normal: Icons.person,
+    VoiceEffect.chipmunk: Icons.pets,
+    VoiceEffect.monster: Icons.sentiment_very_dissatisfied,
+    VoiceEffect.deep: Icons.waves,
+    VoiceEffect.robot: Icons.smart_toy,
+  };
+
+  String _voiceEffectLabel(AppLocalizations l10n, VoiceEffect fx) =>
+      switch (fx) {
+        VoiceEffect.normal => l10n.trackerVoiceNormal,
+        VoiceEffect.chipmunk => l10n.trackerVoiceChipmunk,
+        VoiceEffect.monster => l10n.trackerVoiceMonster,
+        VoiceEffect.deep => l10n.trackerVoiceDeep,
+        VoiceEffect.robot => l10n.trackerVoiceRobot,
+      };
+
+  /// The "pick a voice, then record" sheet.
+  void _showRecordSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext)!;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.trackerRecordPrompt,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (final fx in VoiceEffect.values)
+                      ActionChip(
+                        avatar: Icon(_voiceEffectIcons[fx], size: 18),
+                        label: Text(_voiceEffectLabel(l10n, fx)),
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _recordVoice(fx);
+                        },
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   String _tempoLabel(AppLocalizations l10n, int bpm) => switch (bpm) {
         75 => l10n.loopMixerTempoChill,
@@ -300,6 +416,14 @@ class _TrackerScreenState extends State<TrackerScreen>
                             onSelected: (_) => _setTempo(bpm),
                           ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isRecording ? null : _showRecordSheet,
+                    icon: Icon(_isRecording ? Icons.mic : Icons.mic_none),
+                    label: Text(
+                      _isRecording ? l10n.trackerRecording : l10n.trackerRecord,
                     ),
                   ),
                   const SizedBox(width: 8),

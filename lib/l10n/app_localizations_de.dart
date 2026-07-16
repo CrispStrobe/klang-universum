@@ -923,6 +923,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerChannelBass => 'Bass';
 
   @override
+  String get trackerChannelVoice => 'Stimme';
+
+  @override
+  String get trackerRecord => 'Aufnehmen';
+
+  @override
+  String get trackerRecording => 'Nimmt auf…';
+
+  @override
+  String get trackerRecordFailed => 'Mikrofon nicht verfügbar.';
+
+  @override
+  String get trackerRecordPrompt =>
+      'Wähle eine Stimme und nimm 2 Sekunden auf!';
+
+  @override
+  String get trackerVoiceNormal => 'Normal';
+
+  @override
+  String get trackerVoiceChipmunk => 'Eichhörnchen';
+
+  @override
+  String get trackerVoiceMonster => 'Monster';
+
+  @override
+  String get trackerVoiceDeep => 'Tief';
+
+  @override
+  String get trackerVoiceRobot => 'Roboter';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

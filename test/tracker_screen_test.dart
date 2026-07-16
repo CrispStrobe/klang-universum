@@ -2,8 +2,12 @@
 // a no-op in the headless binding — the assertions are on the placed notes, the
 // play state and the selected channel).
 
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:klang_universum/features/games/composition/tracker_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,5 +83,29 @@ void main() {
     await tester.pump();
     expect(game.noteCount, 0);
     expect(game.isPlaying, isFalse);
+  });
+
+  testWidgets('a recorded voice makes the voice channel playable',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    expect(game.channelIds, contains('voice'));
+    expect(game.hasVoiceRecording, isFalse);
+
+    // Inject a synthetic clip in place of a real mic recording.
+    final raw = Float64List(4410);
+    for (var i = 0; i < raw.length; i++) {
+      raw[i] = sin(2 * pi * 220 * i / 44100);
+    }
+    game.injectRecording(raw, VoiceEffect.chipmunk);
+    await tester.pump();
+
+    expect(game.hasVoiceRecording, isTrue);
+    expect(game.selectedChannel, game.channelIds.indexOf('voice'));
+
+    game.tapCell(0, 0);
+    await tester.pump();
+    expect(game.noteCount, 1);
+    expect(game.isPlaying, isTrue);
   });
 }

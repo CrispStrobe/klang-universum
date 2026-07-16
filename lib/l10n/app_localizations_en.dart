@@ -920,6 +920,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerChannelBass => 'Bass';
 
   @override
+  String get trackerChannelVoice => 'Voice';
+
+  @override
+  String get trackerRecord => 'Record';
+
+  @override
+  String get trackerRecording => 'Recording…';
+
+  @override
+  String get trackerRecordFailed => 'Couldn\'t use the microphone.';
+
+  @override
+  String get trackerRecordPrompt => 'Pick a voice, then record 2 seconds!';
+
+  @override
+  String get trackerVoiceNormal => 'Normal';
+
+  @override
+  String get trackerVoiceChipmunk => 'Chipmunk';
+
+  @override
+  String get trackerVoiceMonster => 'Monster';
+
+  @override
+  String get trackerVoiceDeep => 'Deep';
+
+  @override
+  String get trackerVoiceRobot => 'Robot';
+
+  @override
   String get myMelodyPrompt =>
       'Write your melody — tap the staff or an instrument!';
 

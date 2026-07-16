@@ -247,7 +247,11 @@ class TrackerChannel {
   }
 
   final String id;
-  final TrackerInstrument instrument;
+
+  /// Mutable so a channel can be re-voiced at runtime (e.g. assigning a freshly
+  /// recorded [SampleInstrument] to the voice channel). Go through
+  /// [TrackerEngine.setChannelInstrument] so caches are invalidated.
+  TrackerInstrument instrument;
   final double gain;
   final List<TrackerCell> cells;
 
@@ -280,6 +284,12 @@ List<TrackerChannel> defaultTrackerChannels({int rows = 16}) => [
         id: 'bass',
         instrument: const AdditiveInstrument('cello', Instrument.cello),
         gain: 0.55,
+        rows: rows,
+      ),
+      // Empty until the child records into it (renders silence meanwhile).
+      TrackerChannel(
+        id: 'voice',
+        instrument: SampleInstrument('voice', Float64List(0)),
         rows: rows,
       ),
     ];
@@ -320,6 +330,14 @@ class TrackerEngine {
   int get rows => _timing.rows;
 
   TrackerCell cellAt(int channel, int row) => channels[channel].cells[row];
+
+  /// Re-voices [channel] (e.g. assigning a freshly recorded [SampleInstrument])
+  /// and invalidates that channel's cached stem + the mixed WAV.
+  void setChannelInstrument(int channel, TrackerInstrument instrument) {
+    channels[channel].instrument = instrument;
+    _stemCache.remove(channel);
+    _wav = null;
+  }
 
   /// Sets [row] of [channel] to [cell] and invalidates the affected caches.
   void setCell(int channel, int row, TrackerCell cell) {
