@@ -1,6 +1,8 @@
-// LoopEngine — the Loop Mixer's Flutter-free core. Covers the timing grid,
-// the mixdown invariants (silence, no clipping, combo-independent levels) and
-// the render cache. Mirrors synth_test.dart: pure Dart, no device audio.
+// LoopEngine — the Loop Mixer's Flutter-free core. Covers the timing grid
+// (incl. swing), the data-pattern model (variants, euclidean rows), the
+// mixdown invariants (silence, no clipping, combo-independent levels), the
+// GrooveSpec snapshot/serialization and the render cache. Mirrors
+// synth_test.dart: pure Dart, no device audio.
 
 import 'dart:typed_data';
 
@@ -11,11 +13,9 @@ import 'package:klang_universum/core/audio/synth.dart';
 Int16List _pcm(Uint8List wav) => Int16List.sublistView(wav, 44);
 
 int _peak(Uint8List wav) {
-  final data = ByteData.sublistView(wav);
   var peak = 0;
-  for (var i = 44; i + 1 < wav.length; i += 2) {
-    final s = data.getInt16(i, Endian.little).abs();
-    if (s > peak) peak = s;
+  for (final s in _pcm(wav)) {
+    if (s.abs() > peak) peak = s.abs();
   }
   return peak;
 }
@@ -35,23 +35,66 @@ void main() {
     }
   });
 
-  test('built-in tracks: unique ids, and every stem fills the loop', () {
+  test('swing delays off-eighths, keeps the loop length, and is bounded', () {
+    const straight = LoopTiming(tempoBpm: 100);
+    const swung = LoopTiming(tempoBpm: 100, swing: 0.5);
+    expect(swung.totalMs, straight.totalMs);
+    expect(swung.totalSamples, straight.totalSamples);
+    // Even boundaries unmoved, odd boundaries late by swing × step.
+    expect(swung.boundaryMs(0), 0);
+    expect(swung.boundaryMs(2), straight.boundaryMs(2));
+    expect(swung.boundaryMs(1), straight.boundaryMs(1) + 150);
+    expect(swung.boundaryMs(LoopTiming.totalSteps), swung.totalMs);
+    // A swung melodic stem still fills the loop exactly.
+    final track = kLoopMixerTracks.firstWhere((t) => t.id == 'melody');
+    expect(track.variants.first.render(swung).length, swung.totalSamples);
+  });
+
+  test('euclid distributes the right number of hits evenly', () {
+    for (final (hits, steps) in [(3, 8), (5, 8), (7, 16), (4, 16)]) {
+      final row = euclid(hits, steps);
+      expect(row.length, steps);
+      expect(row.where((h) => h).length, hits, reason: 'E($hits,$steps)');
+      // Even distribution: gaps between hits differ by at most 1.
+      final positions = [
+        for (var i = 0; i < steps; i++)
+          if (row[i]) i,
+      ];
+      final gaps = [
+        for (var i = 0; i < positions.length; i++)
+          (positions[(i + 1) % positions.length] - positions[i] + steps) %
+              steps,
+      ];
+      final sorted = [...gaps]..sort();
+      expect(sorted.last - sorted.first, lessThanOrEqualTo(1));
+    }
+    // Rotation pins the first hit to step 0.
+    expect(euclid(3, 8, rotation: 2).first, isTrue);
+    expect(stepRow('x..x.x..'), [
+      true, false, false, true, false, true, false, false, //
+    ]);
+  });
+
+  test('built-in tracks: unique ids, and every variant fills the loop', () {
     final ids = kLoopMixerTracks.map((t) => t.id).toList();
     expect(ids.toSet().length, ids.length);
 
     const timing = LoopTiming(tempoBpm: 100);
     for (final track in kLoopMixerTracks) {
-      final stem = track.render(timing);
-      expect(
-        stem.length,
-        timing.totalSamples,
-        reason: '${track.id} stem length',
-      );
-      expect(
-        stem.any((v) => v.abs() > 1e-6),
-        isTrue,
-        reason: '${track.id} renders audio',
-      );
+      expect(track.variants, isNotEmpty, reason: track.id);
+      for (var v = 0; v < track.variants.length; v++) {
+        final stem = track.variants[v].render(timing);
+        expect(
+          stem.length,
+          timing.totalSamples,
+          reason: '${track.id}[$v] stem length',
+        );
+        expect(
+          stem.any((s) => s.abs() > 1e-6),
+          isTrue,
+          reason: '${track.id}[$v] renders audio',
+        );
+      }
     }
   });
 
@@ -99,7 +142,76 @@ void main() {
     }
   });
 
-  test('renders are cached per combo and invalidated by tempo', () {
+  test('variants cycle A→B→C→A and change the render', () {
+    final engine = LoopEngine();
+    engine.enabled.add('drums');
+    final a = engine.renderLoop();
+    expect(engine.cycleVariant('drums'), 1);
+    final b = engine.renderLoop();
+    expect(b, isNot(equals(a)));
+    expect(engine.cycleVariant('drums'), 2);
+    expect(engine.cycleVariant('drums'), 0);
+    expect(identical(engine.renderLoop(), a), isTrue, reason: 'cache hit');
+  });
+
+  test('levels scale a track and swing changes the groove render', () {
+    final engine = LoopEngine();
+    engine.enabled.add('chords');
+    final loud = _peak(engine.renderLoop());
+
+    engine.levels['chords'] = 0.5;
+    final soft = _peak(engine.renderLoop());
+    // Half level ≈ half peak (tanh is near-linear at pad level).
+    expect(soft, closeTo(loud / 2, loud * 0.08));
+
+    // Swing needs off-eighth onsets to bite — the held chord pad has none,
+    // so probe with the melody riff.
+    engine.levels.remove('chords');
+    engine.enabled
+      ..clear()
+      ..add('melody');
+    engine.swing = 0.4;
+    final swung = engine.renderLoop();
+    engine.swing = 0;
+    expect(swung, isNot(equals(engine.renderLoop())));
+  });
+
+  test('GrooveSpec: snapshot, json roundtrip, applySpec, cache identity', () {
+    final engine = LoopEngine();
+    engine
+      ..toggle('drums')
+      ..toggle('melody')
+      ..cycleVariant('drums')
+      ..levels['melody'] = 0.7
+      ..tempoBpm = 120
+      ..swing = 0.25;
+
+    final spec = engine.spec;
+    final restored = GrooveSpec.fromJson(spec.toJson());
+    expect(restored.cacheKey, spec.cacheKey);
+
+    final other = LoopEngine()..applySpec(restored);
+    expect(other.enabled, {'drums', 'melody'});
+    expect(other.variants['drums'], 1);
+    expect(other.levels['melody'], 0.7);
+    expect(other.tempoBpm, 120);
+    expect(other.swing, 0.25);
+    expect(
+      other.renderLoop(),
+      equals(engine.renderLoop()),
+      reason: 'same spec → identical WAV',
+    );
+
+    // Unknown ids from a foreign token are dropped defensively.
+    final foreign = GrooveSpec.fromJson({
+      'e': ['drums', 'theremin'],
+      't': 100,
+    });
+    final safe = LoopEngine()..applySpec(foreign);
+    expect(safe.enabled, {'drums'});
+  });
+
+  test('renders are cached per spec and invalidated by tempo', () {
     final engine = LoopEngine();
     engine.enabled.add('melody');
     final first = engine.renderLoop();
