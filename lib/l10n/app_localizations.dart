@@ -2342,6 +2342,36 @@ abstract class AppLocalizations {
   /// **'Octave'**
   String get intervalOctave;
 
+  /// No description provided for @gameTriadSeventh.
+  ///
+  /// In en, this message translates to:
+  /// **'Triad or Seventh?'**
+  String get gameTriadSeventh;
+
+  /// No description provided for @gameTriadSeventhSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear a chord — three notes, or four with a seventh?'**
+  String get gameTriadSeventhSubtitle;
+
+  /// No description provided for @triadSeventhPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Triad or seventh chord?'**
+  String get triadSeventhPrompt;
+
+  /// No description provided for @triadLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Triad'**
+  String get triadLabel;
+
+  /// No description provided for @seventhLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Seventh'**
+  String get seventhLabel;
+
   /// No description provided for @gameSingInterval.
   ///
   /// In en, this message translates to:

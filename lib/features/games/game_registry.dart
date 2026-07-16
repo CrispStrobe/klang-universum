@@ -24,6 +24,7 @@ import 'package:klang_universum/features/games/chords/interval_ladder_screen.dar
 import 'package:klang_universum/features/games/chords/name_that_chord_screen.dart';
 import 'package:klang_universum/features/games/chords/sing_interval_screen.dart';
 import 'package:klang_universum/features/games/chords/triad_builder_screen.dart';
+import 'package:klang_universum/features/games/chords/triad_seventh_screen.dart';
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/free_sing_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
@@ -798,6 +799,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameSingIntervalSubtitle,
       builder: (_) => const SingIntervalScreen(),
       tutorial: intervalsPrimer,
+    ),
+    // Triad or Seventh? — hear a major triad vs a dominant-7 (triad + a minor
+    // 7th), tap which; trains the ear to notice the added seventh.
+    GameInfo(
+      id: 'triad_seventh',
+      icon: Icons.hearing,
+      title: (l) => l.gameTriadSeventh,
+      subtitle: (l) => l.gameTriadSeventhSubtitle,
+      builder: (_) => const TriadSeventhScreen(),
     ),
     GameInfo(
       id: 'interval_ladder',

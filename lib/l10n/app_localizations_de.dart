@@ -1260,6 +1260,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get intervalOctave => 'Oktave';
 
   @override
+  String get gameTriadSeventh => 'Dreiklang oder Septakkord?';
+
+  @override
+  String get gameTriadSeventhSubtitle =>
+      'Höre einen Akkord — drei Töne oder vier mit Septime?';
+
+  @override
+  String get triadSeventhPrompt => 'Dreiklang oder Septakkord?';
+
+  @override
+  String get triadLabel => 'Dreiklang';
+
+  @override
+  String get seventhLabel => 'Septakkord';
+
+  @override
   String get gameSingInterval => 'Intervall singen';
 
   @override

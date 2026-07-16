@@ -1253,6 +1253,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get intervalOctave => 'Octave';
 
   @override
+  String get gameTriadSeventh => 'Triad or Seventh?';
+
+  @override
+  String get gameTriadSeventhSubtitle =>
+      'Hear a chord — three notes, or four with a seventh?';
+
+  @override
+  String get triadSeventhPrompt => 'Triad or seventh chord?';
+
+  @override
+  String get triadLabel => 'Triad';
+
+  @override
+  String get seventhLabel => 'Seventh';
+
+  @override
   String get gameSingInterval => 'Sing the Interval';
 
   @override
