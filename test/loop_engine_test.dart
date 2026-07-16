@@ -273,6 +273,28 @@ void main() {
     expect(identical(engine.renderLoop(fill: true), fill), isTrue);
   });
 
+  test('groove share tokens roundtrip and reject foreign input', () {
+    final engine = LoopEngine()
+      ..toggle('drums')
+      ..toggle('bass')
+      ..cycleVariant('bass')
+      ..swing = 0.3
+      ..progression = kProgressions.last;
+
+    final token = encodeGrooveToken(engine.spec);
+    expect(token, startsWith('KU1.'));
+    final decoded = decodeGrooveToken(token);
+    expect(decoded, isNotNull);
+    expect(decoded!.cacheKey, engine.spec.cacheKey);
+
+    final restored = LoopEngine()..applySpec(decoded);
+    expect(restored.renderLoop(), equals(engine.renderLoop()));
+
+    expect(decodeGrooveToken('hello'), isNull);
+    expect(decodeGrooveToken('KU1.%%%not-base64%%%'), isNull);
+    expect(decodeGrooveToken('KU1.aGVsbG8'), isNull, reason: 'not json');
+  });
+
   test('renders are cached per spec and invalidated by tempo', () {
     final engine = LoopEngine();
     engine.enabled.add('melody');

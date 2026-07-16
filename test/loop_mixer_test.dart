@@ -134,6 +134,35 @@ void main() {
     expect(find.byType(StaffView), findsNothing);
   });
 
+  testWidgets('a groove code captures and restores the whole state',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    game.toggleTrack('drums');
+    game.toggleTrack('melody');
+    game.setSwing(0.2);
+    game.setProgression('ballad');
+    await tester.pump();
+    final token = game.grooveToken;
+
+    // Wipe everything, then load the code back.
+    game.stopAll();
+    game.setSwing(0);
+    game.setProgression(null);
+    await tester.pump();
+    expect(game.enabledTracks, isEmpty);
+
+    expect(game.loadGrooveToken(token), isTrue);
+    await tester.pump();
+    expect(game.enabledTracks, {'drums', 'melody'});
+    expect(game.swing, closeTo(0.2, 1e-9));
+    expect(game.progressionId, 'ballad');
+    expect(game.isPlaying, isTrue, reason: 'a loaded groove starts playing');
+
+    expect(game.loadGrooveToken('garbage'), isFalse);
+  });
+
   testWidgets('every 4th loop schedules the drum fill at the seam',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());

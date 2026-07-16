@@ -329,6 +329,28 @@ class GrooveSpec {
   String get cacheKey => jsonEncode(toJson());
 }
 
+/// Groove share token: `KU1.` + url-safe base64 of the spec's compact json.
+/// Small enough to paste into any chat, fully serverless (matches the app's
+/// everything-on-device stance).
+String encodeGrooveToken(GrooveSpec spec) =>
+    'KU1.${base64UrlEncode(utf8.encode(jsonEncode(spec.toJson())))}';
+
+/// Parses a share token back to a [GrooveSpec]; null for anything invalid
+/// (wrong prefix, broken base64/json) — never throws on foreign input.
+GrooveSpec? decodeGrooveToken(String token) {
+  final trimmed = token.trim();
+  if (!trimmed.startsWith('KU1.')) return null;
+  try {
+    final json = jsonDecode(
+      utf8.decode(base64Url.decode(base64Url.normalize(trimmed.substring(4)))),
+    );
+    if (json is! Map<String, dynamic>) return null;
+    return GrooveSpec.fromJson(json);
+  } catch (_) {
+    return null;
+  }
+}
+
 // --- The authored content: everything in C pentatonic (C D E G A) ---
 
 const _c2 = 36, _e2 = 40, _g2 = 43, _a2 = 45, _c3 = 48, _g3 = 55, _a3 = 57;

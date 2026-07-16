@@ -1622,6 +1622,54 @@ abstract class AppLocalizations {
   /// **'Show as sheet music'**
   String get loopMixerScore;
 
+  /// No description provided for @loopMixerShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your groove'**
+  String get loopMixerShare;
+
+  /// No description provided for @loopMixerCopyCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy groove code'**
+  String get loopMixerCopyCode;
+
+  /// No description provided for @loopMixerPasteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a groove code'**
+  String get loopMixerPasteCode;
+
+  /// No description provided for @loopMixerCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Groove code copied — paste it anywhere!'**
+  String get loopMixerCodeCopied;
+
+  /// No description provided for @loopMixerCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That groove code didn\'t work'**
+  String get loopMixerCodeInvalid;
+
+  /// No description provided for @loopMixerSaveAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as audio (WAV)'**
+  String get loopMixerSaveAudio;
+
+  /// No description provided for @loopMixerSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving audio isn\'t available here'**
+  String get loopMixerSaveFailed;
+
+  /// No description provided for @loopMixerLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get loopMixerLoad;
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:

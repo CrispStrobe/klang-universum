@@ -20,9 +20,11 @@
 // the step playhead and the wrap detection.
 
 import 'package:crisp_notation/crisp_notation.dart' show Clef, StaffView;
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:klang_universum/core/audio/loop_engine.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
@@ -65,6 +67,8 @@ abstract interface class LoopMixerTester {
   void stopAll();
   bool get scoreVisible;
   void toggleScorePanel();
+  String get grooveToken;
+  bool loadGrooveToken(String token);
 
   /// Forces the seam handler (normally driven by the real-time clock, which
   /// widget tests can't advance) — asserts fill scheduling without waiting.
@@ -162,6 +166,121 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void toggleScorePanel() => setState(() => _showScore = !_showScore);
 
   bool _showScore = false;
+
+  @override
+  String get grooveToken => encodeGrooveToken(_engine.spec);
+
+  @override
+  bool loadGrooveToken(String token) {
+    final spec = decodeGrooveToken(token);
+    if (spec == null) return false;
+    setState(() => _engine.applySpec(spec));
+    _restartGroove();
+    return true;
+  }
+
+  Future<void> _openShareSheet() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: Text(l10n.loopMixerCopyCode),
+              onTap: () => Navigator.pop(sheet, 'copy'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.content_paste_go),
+              title: Text(l10n.loopMixerPasteCode),
+              onTap: () => Navigator.pop(sheet, 'paste'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: Text(l10n.loopMixerSaveAudio),
+              enabled: _engine.enabled.isNotEmpty,
+              onTap: () => Navigator.pop(sheet, 'wav'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (action) {
+      case 'copy':
+        await Clipboard.setData(ClipboardData(text: grooveToken));
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.loopMixerCodeCopied)),
+        );
+      case 'paste':
+        await _promptForToken();
+      case 'wav':
+        await _saveWav();
+      default:
+        break;
+    }
+  }
+
+  Future<void> _promptForToken() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController();
+    final token = await showDialog<String>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(l10n.loopMixerPasteCode),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'KU1.…'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog, controller.text),
+            child: Text(l10n.loopMixerLoad),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || token == null || token.isEmpty) return;
+    if (!loadGrooveToken(token)) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.loopMixerCodeInvalid)),
+      );
+    }
+  }
+
+  /// Desktop: a save dialog for the current loop's WAV. Platforms without
+  /// one (web/mobile) just report that audio saving isn't available there —
+  /// audio is juice, the groove code still travels everywhere.
+  Future<void> _saveWav() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final wav = _engine.renderLoop();
+      final location = await getSaveLocation(
+        suggestedName: 'groove.wav',
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'WAV', extensions: ['wav']),
+        ],
+      );
+      if (location == null || !mounted) return; // cancelled
+      await XFile.fromData(wav, mimeType: 'audio/wav', name: 'groove.wav')
+          .saveTo(location.path);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[LOOP] wav save unavailable: $e');
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.loopMixerSaveFailed)),
+      );
+    }
+  }
 
   /// The most melodic enabled track — what the score panel engraves.
   String? get _engravedTrackId {
@@ -334,15 +453,26 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                     ),
                   ),
                   Expanded(
-                    child: IconButton(
-                      icon: Icon(
-                        _showScore
-                            ? Icons.library_music
-                            : Icons.library_music_outlined,
-                      ),
-                      tooltip: l10n.loopMixerScore,
-                      onPressed: toggleScorePanel,
-                      visualDensity: VisualDensity.compact,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            _showScore
+                                ? Icons.library_music
+                                : Icons.library_music_outlined,
+                          ),
+                          tooltip: l10n.loopMixerScore,
+                          onPressed: toggleScorePanel,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.ios_share),
+                          tooltip: l10n.loopMixerShare,
+                          onPressed: _openShareSheet,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                     ),
                   ),
                 ],

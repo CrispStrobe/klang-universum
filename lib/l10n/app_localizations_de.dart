@@ -843,6 +843,31 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerScore => 'Als Noten zeigen';
 
   @override
+  String get loopMixerShare => 'Teile deinen Groove';
+
+  @override
+  String get loopMixerCopyCode => 'Groove-Code kopieren';
+
+  @override
+  String get loopMixerPasteCode => 'Groove-Code einfügen';
+
+  @override
+  String get loopMixerCodeCopied =>
+      'Groove-Code kopiert — füge ihn irgendwo ein!';
+
+  @override
+  String get loopMixerCodeInvalid => 'Dieser Groove-Code hat nicht geklappt';
+
+  @override
+  String get loopMixerSaveAudio => 'Als Audio speichern (WAV)';
+
+  @override
+  String get loopMixerSaveFailed => 'Audio speichern geht hier nicht';
+
+  @override
+  String get loopMixerLoad => 'Laden';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override

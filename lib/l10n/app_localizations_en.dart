@@ -840,6 +840,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerScore => 'Show as sheet music';
 
   @override
+  String get loopMixerShare => 'Share your groove';
+
+  @override
+  String get loopMixerCopyCode => 'Copy groove code';
+
+  @override
+  String get loopMixerPasteCode => 'Paste a groove code';
+
+  @override
+  String get loopMixerCodeCopied => 'Groove code copied — paste it anywhere!';
+
+  @override
+  String get loopMixerCodeInvalid => 'That groove code didn\'t work';
+
+  @override
+  String get loopMixerSaveAudio => 'Save as audio (WAV)';
+
+  @override
+  String get loopMixerSaveFailed => 'Saving audio isn\'t available here';
+
+  @override
+  String get loopMixerLoad => 'Load';
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override
