@@ -974,8 +974,13 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   ✅ *Connect the Tempo Words* (`connect_tempo`, note_values) — match each Italian
   tempo word to its meaning (Largo ↔ "very slow"); Largo/Adagio/Allegro/Presto
   for beginners, the middle terms (Andante/Moderato/Vivace) at 2★. SRI
-  `reading.tempo.*` (shared with `tempo_duel`). Remaining modes (instrument↔clef,
-  note↔piano-key) are each one more `ConnectMode` case.
+  `reading.tempo.*` (shared with `tempo_duel`). ✅ *Connect the Beats*
+  (`connect_beats`, note_values) — match each note-value glyph to how many beats
+  it lasts in 4/4 (whole 4 / half 2 / quarter 1 / eighth ½; sixteenth ¼ at 2★).
+  SRI `note_values.beats.*` — the duration-in-beats twin of the symbols mode
+  (which teaches the *name*). Remaining modes (instrument↔clef — awkward
+  cardinality, few clefs/many instruments; note↔piano-key — needs a key widget)
+  are each one more `ConnectMode` case.
 
 ### C. Reading vocabulary the curriculum wants but we don't drill
 - [x] **Louder or Softer?** — **shipped** (`dynamics_duel`, note_values): two
