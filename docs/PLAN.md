@@ -14,6 +14,12 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (parity)** · 🚧 **ACTIVE — Workshop mid-score-change UI.** Model side is
+  done + pushed (clef `685ced2`, key `0e0f736`, time `3b78b1d`); now wiring a
+  small **"Change here…" dialog** so a selected note can set/clear a clef, key or
+  time-signature change at its bar. **Touching `composition_workshop_screen.dart`
+  (the `_paletteButton` note-property popup) + the EN/DE ARBs.** Ping before
+  editing those; the model/`score_document.dart` is settled. Back shortly.
 - **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity.** ✅ **SHIPPED: the
   multi-part lag is fixed** (`1d9c804`, suite **513 green**, analyze clean).
   `22f9e5f` fixed single-part; multi-part still ran **~4 full engraving passes
