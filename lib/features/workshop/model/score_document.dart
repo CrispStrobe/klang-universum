@@ -151,6 +151,8 @@ class _Snapshot {
     this.timeChanges,
     this.repeatStarts,
     this.repeatEnds,
+    this.voltas,
+    this.navigation,
   );
   final List<EditorElement> elements;
   final TimeSignature timeSignature;
@@ -165,6 +167,10 @@ class _Snapshot {
   /// Repeat-barline anchors (element ids), captured for undo.
   final Set<String> repeatStarts;
   final Set<String> repeatEnds;
+
+  /// Volta numbers and navigation marks (element id → value), captured for undo.
+  final Map<String, int> voltas;
+  final Map<String, NavigationMark> navigation;
 
   /// Phrase slurs / hairpins (start→end note ids) and per-note lyric syllables
   /// (id → verse → syllable) — spans/attachments that live alongside the
@@ -231,6 +237,11 @@ class ScoreDocument {
   // of anchored ids rather than a value map.
   final Set<String> _repeatStarts = {};
   final Set<String> _repeatEnds = {};
+
+  // Volta (ending) numbers and navigation marks (D.C./D.S./coda/segno/fine),
+  // both bar-anchored to an element id and both pure post-reflow stamps.
+  final Map<String, int> _voltas = {};
+  final Map<String, NavigationMark> _navigation = {};
 
   /// The anacrusis: when set, the first bar holds only this much music before
   /// the downbeat (the piece "starts before beat 1"). Null = no pickup.
@@ -338,6 +349,8 @@ class ScoreDocument {
         Map.of(_timeChanges),
         Set.of(_repeatStarts),
         Set.of(_repeatEnds),
+        Map.of(_voltas),
+        Map.of(_navigation),
       );
 
   void _snapshot() {
@@ -379,6 +392,12 @@ class ScoreDocument {
     _repeatEnds
       ..clear()
       ..addAll(s.repeatEnds);
+    _voltas
+      ..clear()
+      ..addAll(s.voltas);
+    _navigation
+      ..clear()
+      ..addAll(s.navigation);
     _invalidate();
     // Keep the selection valid against the restored length.
     if (_elements.isEmpty) {
@@ -800,6 +819,8 @@ class ScoreDocument {
     _timeChanges.clear();
     _repeatStarts.clear();
     _repeatEnds.clear();
+    _voltas.clear();
+    _navigation.clear();
     clearSelection();
   }
 
@@ -829,6 +850,8 @@ class ScoreDocument {
     _timeChanges.clear();
     _repeatStarts.clear();
     _repeatEnds.clear();
+    _voltas.clear();
+    _navigation.clear();
     clef = score.clef;
     keySignature = score.keySignature;
     timeSignature = score.timeSignature ?? TimeSignature.fourFour;
@@ -872,6 +895,10 @@ class ScoreDocument {
         if (tc != null) _timeChanges[firstIdInBar] = tc;
         if (measure.startRepeat) _repeatStarts.add(firstIdInBar);
         if (measure.endRepeat) _repeatEnds.add(firstIdInBar);
+        final vol = measure.volta;
+        if (vol != null) _voltas[firstIdInBar] = vol;
+        final nav = measure.navigation;
+        if (nav != null) _navigation[firstIdInBar] = nav;
       }
     }
     for (final s in score.slurs) {
@@ -1003,6 +1030,39 @@ class ScoreDocument {
     if (!set.add(id)) set.remove(id);
   }
 
+  /// The volta (ending) number / navigation mark at the bar of element [id].
+  int? voltaAt(String id) => _voltas[id];
+  NavigationMark? navigationAt(String id) => _navigation[id];
+
+  /// Set (or clear, with null) the **volta ending number** (1, 2, …) on the bar
+  /// containing element [id]. Undoable; element-anchored, drawn as an ending
+  /// bracket over the bar. Numbers < 1 clear it.
+  void setVoltaAt(String id, int? volta) {
+    if (_indexOf(id) < 0) return;
+    final v = (volta != null && volta >= 1) ? volta : null;
+    if (_voltas[id] == v) return;
+    _snapshot();
+    if (v == null) {
+      _voltas.remove(id);
+    } else {
+      _voltas[id] = v;
+    }
+  }
+
+  /// Set (or clear, with null) a **navigation mark** (D.C./D.S./coda/segno/fine)
+  /// on the bar containing element [id]. Undoable; element-anchored, drawn above
+  /// the staff, and expanded by `playbackTimeline`.
+  void setNavigationAt(String id, NavigationMark? mark) {
+    if (_indexOf(id) < 0) return;
+    if (_navigation[id] == mark) return;
+    _snapshot();
+    if (mark == null) {
+      _navigation.remove(id);
+    } else {
+      _navigation[id] = mark;
+    }
+  }
+
   // ---- rendering ---------------------------------------------------------
 
   /// Pack the flat element stream into bar-lined [Measure]s. A note that would
@@ -1092,7 +1152,9 @@ class ScoreDocument {
     if (_clefChanges.isEmpty &&
         _keyChanges.isEmpty &&
         _repeatStarts.isEmpty &&
-        _repeatEnds.isEmpty) {
+        _repeatEnds.isEmpty &&
+        _voltas.isEmpty &&
+        _navigation.isEmpty) {
       return bars;
     }
     var runningClef = clef;
@@ -1116,6 +1178,10 @@ class ScoreDocument {
       if (_anchoredInSet(m, _repeatEnds)) {
         next = next.copyWith(endRepeat: true);
       }
+      final voltaHere = _anchoredIn(m, _voltas);
+      if (voltaHere != null) next = next.copyWith(volta: voltaHere);
+      final navHere = _anchoredIn(m, _navigation);
+      if (navHere != null) next = next.copyWith(navigation: navHere);
       out.add(next);
     }
     return out;

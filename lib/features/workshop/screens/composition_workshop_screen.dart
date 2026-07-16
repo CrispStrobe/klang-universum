@@ -74,6 +74,20 @@ const _keyChoices = [-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7];
 // `timeSignature.toFraction()` and the engine beams compound meters by
 // `beamGroups()` (6/8 → 3+3), so the old 2/4·3/4·4/4 list was a UI limit only.
 // A loaded score with any other meter still shows via [_dropdown]'s fallback.
+// Navigation marks by their conventional label (musical terms, not translated).
+const _navigationLabels = <NavigationMark, String>{
+  NavigationMark.segno: 'Segno',
+  NavigationMark.coda: 'Coda',
+  NavigationMark.toCoda: 'To Coda',
+  NavigationMark.fine: 'Fine',
+  NavigationMark.daCapo: 'D.C.',
+  NavigationMark.daCapoAlFine: 'D.C. al Fine',
+  NavigationMark.daCapoAlCoda: 'D.C. al Coda',
+  NavigationMark.dalSegno: 'D.S.',
+  NavigationMark.dalSegnoAlFine: 'D.S. al Fine',
+  NavigationMark.dalSegnoAlCoda: 'D.S. al Coda',
+};
+
 // Not const: TimeSignature has a custom `==`, which a const map key forbids.
 final _timeChoices = <TimeSignature, String>{
   TimeSignature.twoFour: '2/4',
@@ -1271,6 +1285,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     var clef = _doc.clefChanges[id];
     var key = _doc.keyChanges[id];
     var time = _doc.timeChanges[id];
+    var volta = _doc.voltaAt(id);
+    var nav = _doc.navigationAt(id);
     const clefOptions = [Clef.treble, Clef.bass, Clef.alto, Clef.tenor];
 
     final apply = await showDialog<bool>(
@@ -1306,6 +1322,20 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 noChange: l10n.workshopNoChange,
                 onChanged: (v) => setLocal(() => time = v),
               ),
+              _changeRow<int>(
+                label: l10n.workshopVolta,
+                value: volta,
+                items: const {1: '1.', 2: '2.', 3: '3.'},
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => volta = v),
+              ),
+              _changeRow<NavigationMark>(
+                label: l10n.workshopNavigation,
+                value: nav,
+                items: _navigationLabels,
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => nav = v),
+              ),
             ],
           ),
         ),
@@ -1327,6 +1357,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       _doc.setClefChangeAt(id, clef);
       _doc.setKeyChangeAt(id, key);
       _doc.setTimeChangeAt(id, time);
+      _doc.setVoltaAt(id, volta);
+      _doc.setNavigationAt(id, nav);
     });
   }
 

@@ -346,4 +346,74 @@ void main() {
       expect(bars[2].endRepeat, isTrue);
     });
   });
+
+  // Voltas (ending brackets) and navigation marks (D.C./D.S./coda/segno/fine)
+  // are the same post-reflow element-id-anchor stamps as clef/key.
+  group('voltas + navigation', () {
+    test('a volta number marks the bar of its anchor', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 12); // three bars
+      d.setVoltaAt(ids[4], 1); // first ending on bar 1
+      d.setVoltaAt(ids[8], 2); // second ending on bar 2
+
+      final bars = d.buildScore().measures;
+      expect([for (final m in bars) m.volta], [null, 1, 2]);
+    });
+
+    test('volta numbers below 1 clear it; set/clear/undo', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 8);
+      d.setVoltaAt(ids[4], 1);
+      expect(d.voltaAt(ids[4]), 1);
+
+      d.setVoltaAt(ids[4], 0); // clears
+      expect(d.voltaAt(ids[4]), isNull);
+      expect(d.buildScore().measures[1].volta, isNull);
+
+      d.undo();
+      expect(d.buildScore().measures[1].volta, 1);
+    });
+
+    test('a navigation mark lands on the bar of its anchor', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 12);
+      d.setNavigationAt(ids[8], NavigationMark.daCapo);
+      expect(d.buildScore().measures[2].navigation, NavigationMark.daCapo);
+      expect(d.navigationAt(ids[8]), NavigationMark.daCapo);
+    });
+
+    test('volta + navigation ride re-barring', () {
+      final d = ScoreDocument();
+      final ids = fill(d, 8);
+      d.setVoltaAt(ids[4], 2);
+      d.selectIndex(0);
+      d.insertNote(_p(Step.d), _quarter); // shift right
+
+      final bars = d.buildScore().measures;
+      final voltaBar = bars.indexWhere((m) => m.volta == 2);
+      expect(bars[voltaBar].elements.any((e) => e.id == ids[4]), isTrue);
+    });
+
+    test('no voltas/navigation → buildScore untouched (goldens stay valid)',
+        () {
+      final d = ScoreDocument();
+      fill(d, 8);
+      final bars = d.buildScore().measures;
+      expect(
+          bars.every((m) => m.volta == null && m.navigation == null), isTrue);
+    });
+
+    test('save → reopen preserves volta + navigation', () {
+      final src = ScoreDocument();
+      final ids = fill(src, 12);
+      src.setVoltaAt(ids[4], 1);
+      src.setNavigationAt(ids[8], NavigationMark.dalSegno);
+
+      final parsed = scoreFromMusicXml(scoreToMusicXml(src.buildScore()));
+      final reopened = ScoreDocument()..loadScore(parsed);
+      final bars = reopened.buildScore().measures;
+      expect(bars[1].volta, 1);
+      expect(bars[2].navigation, NavigationMark.dalSegno);
+    });
+  });
 }

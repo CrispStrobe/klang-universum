@@ -545,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @workshopChangeHereTitle.
   ///
   /// In en, this message translates to:
-  /// **'Change clef, key or time from this note'**
+  /// **'Change from this note'**
   String get workshopChangeHereTitle;
 
   /// No description provided for @workshopNoChange.
@@ -553,6 +553,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No change'**
   String get workshopNoChange;
+
+  /// No description provided for @workshopVolta.
+  ///
+  /// In en, this message translates to:
+  /// **'Ending'**
+  String get workshopVolta;
+
+  /// No description provided for @workshopNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get workshopNavigation;
 
   /// No description provided for @workshopArticulations.
   ///

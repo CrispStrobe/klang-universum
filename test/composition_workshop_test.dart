@@ -225,13 +225,15 @@ void main() {
     await tester.tap(find.text(l10n.workshopChangeHere));
     await tester.pumpAndSettle();
 
-    // The dialog offers all three mid-score changes, each with a "no change"
+    // The dialog offers all five bar-anchored changes, each with a "no change"
     // default, anchored to the selected note.
     expect(find.text(l10n.workshopChangeHereTitle), findsOneWidget);
     expect(find.text(l10n.workshopClef), findsOneWidget);
     expect(find.text(l10n.workshopKey), findsOneWidget);
     expect(find.text(l10n.workshopTimeSignature), findsOneWidget);
-    expect(find.text(l10n.workshopNoChange), findsNWidgets(3));
+    expect(find.text(l10n.workshopVolta), findsOneWidget);
+    expect(find.text(l10n.workshopNavigation), findsOneWidget);
+    expect(find.text(l10n.workshopNoChange), findsNWidgets(5));
   });
 
   testWidgets('computer keyboard: letters place notes, Del deletes',
