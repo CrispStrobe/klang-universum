@@ -438,6 +438,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get whichLastsLonger => 'Was dauert länger?';
 
   @override
+  String get gameTempoDuel => 'Schneller oder langsamer?';
+
+  @override
+  String get gameTempoDuelSubtitle =>
+      'Lies zwei Tempo-Wörter und tippe das schnellere';
+
+  @override
+  String get whichIsFaster => 'Welches Tempo ist schneller?';
+
+  @override
   String get gameNoteReadingTreble => 'Violinschlüssel';
 
   @override

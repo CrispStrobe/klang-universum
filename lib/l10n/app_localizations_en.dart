@@ -436,6 +436,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whichLastsLonger => 'Which one lasts longer?';
 
   @override
+  String get gameTempoDuel => 'Faster or Slower?';
+
+  @override
+  String get gameTempoDuelSubtitle =>
+      'Read two tempo words and tap the faster one';
+
+  @override
+  String get whichIsFaster => 'Which tempo is faster?';
+
+  @override
   String get gameNoteReadingTreble => 'Treble Clef';
 
   @override

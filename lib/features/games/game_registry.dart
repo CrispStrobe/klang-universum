@@ -79,6 +79,7 @@ import 'package:klang_universum/features/games/note_values/dotted_sort_screen.da
 import 'package:klang_universum/features/games/note_values/duration_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:klang_universum/features/games/note_values/rhythm_tap_screen.dart';
+import 'package:klang_universum/features/games/note_values/tempo_duel_screen.dart';
 import 'package:klang_universum/features/games/note_values/value_order_screen.dart';
 import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
 import 'package:klang_universum/features/games/scales/command_caller_screen.dart';
@@ -200,6 +201,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDurationDuel,
       subtitle: (l) => l.gameDurationDuelSubtitle,
       builder: (_) => const DurationDuelScreen(),
+    ),
+    // Faster or Slower? — read two Italian tempo terms, tap the faster.
+    GameInfo(
+      id: 'tempo_duel',
+      icon: Icons.speed,
+      title: (l) => l.gameTempoDuel,
+      subtitle: (l) => l.gameTempoDuelSubtitle,
+      builder: (_) => const TempoDuelScreen(),
     ),
     GameInfo(
       id: 'rhythm_tap',

@@ -872,6 +872,24 @@ abstract class AppLocalizations {
   /// **'Which one lasts longer?'**
   String get whichLastsLonger;
 
+  /// No description provided for @gameTempoDuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Faster or Slower?'**
+  String get gameTempoDuel;
+
+  /// No description provided for @gameTempoDuelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read two tempo words and tap the faster one'**
+  String get gameTempoDuelSubtitle;
+
+  /// No description provided for @whichIsFaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Which tempo is faster?'**
+  String get whichIsFaster;
+
   /// No description provided for @gameNoteReadingTreble.
   ///
   /// In en, this message translates to:
