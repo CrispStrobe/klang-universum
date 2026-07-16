@@ -451,8 +451,12 @@ Games built on crisp_notation capabilities the app didn't use before.
   ring-mod + bit-crush — all pitch-stable so the sample stays in tune) is
   applied, and it becomes a resampled tracker instrument on a runtime-swappable
   `voice` channel. All DSP ported (MIT) from the maintainer's crispaudio /
-  CrispFXR / voicelab. Sandbox, no stars. (Mic capture is device-only; the
-  DSP + assign→play path are unit-tested headlessly.)
+  CrispFXR / voicelab. A **bidirectional notation bridge** links it to reading:
+  Tracker → Score renders the selected channel as a live `StaffView` "score view"
+  (held runs → tied notes, bar-split); Score → Tracker imports a melody back onto
+  the grid (partial — quantize + top-note + pentatonic snap), round-trip tested.
+  Sandbox, no stars. (Mic capture is device-only; the DSP + assign→play path are
+  unit-tested headlessly.)
 - **Loop Mixer 2.0 — the groovebox ladder** (composition) — the v1 toy grew
   into an instrument in seven shipped slices (engine v2 → sing-a-track), all
   behind the same five-cards kid surface. **Feel:** a swing slider (off-eighth

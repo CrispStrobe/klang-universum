@@ -158,20 +158,27 @@ palette (the 9 sfxr presets already exist but only `zap` is wired), more channel
 keyboard entry, chromatic, retro skin. One document underneath (§1) — don't fork
 the model.
 
-**🚧 Slice 5 — notation bridge (Tracker ↔ Score)** (not started; the maintainer
-asked for this). **Tracker → Score** first (cheap, near-lossless): each channel's
-`cellRuns` = `(midi, steps)` maps to notes/durations → a `crisp_notation` Score
-(reuse `grid_composer_screen.dart`'s Score-building, generalized to multi-part).
-Show it as a `StaffView` panel in the tracker → the "score view" of the pattern.
-**Score → Tracker** is inherently **partial/lossy**: quantize durations to the
-step grid, map voices → channels, snap to scale in Sandbox; surface what was
-dropped. Educational payoff: pattern-literacy ↔ staff-literacy, the bridge between
-the Tracker and the Workshop.
+**✅ Slice 5 — notation bridge (Tracker ↔ Score)** (`d962093` + `fad9a23`,
+`tracker_notation.dart`). **Tracker → Score:** `trackerChannelToScore` maps
+`cellRuns` → tied notes decomposed into standard values, split at 4/4 bar lines;
+shown as a `StaffView` "score view" panel toggled from the app bar. **Score →
+Tracker** (partial, as expected): `scoreToTrackerCells` quantizes durations to the
+grid, keeps a chord's top note (monophonic), merges tied notes, and snaps to
+pentatonic; a "Load a tune" action imports `kTrackerDemoTune`. A Tracker → Score →
+Tracker round-trip is unit-tested. Pattern-literacy ↔ staff-literacy, the bridge
+to the Workshop.
+
+**🚧 Slice 3 — Studio instrument picker** (next). The 9 sfxr presets exist but
+only `zap` is wired; a per-channel picker (additive voices + sfxr palette) unlocks
+them — the smallest high-yield remaining step.
 
 **🚧 Slice 6 — arrangement + polish** (not started). Pattern order-list / song
-mode, per-cell effect commands, gapless swap, tempo/speed, percussion instrument
-(reuse `renderDrumPattern`/`Drum`). Stretch: load a real `.mod`/`.xm` (substantial
-parsers — later).
+mode, per-cell effect commands, gapless swap, tempo/speed. **Percussion
+instrument:** the pitch grid needs a per-channel row model (drum rows instead of
+pentatonic) before `renderDrumPattern`/`Drum` slots in — a small model extension,
+not free. **Workshop ↔ Tracker file handoff:** the converter (Slice 5) is ready;
+this is the plumbing to open a real Workshop score into the tracker. Stretch: load
+a real `.mod`/`.xm` (substantial parsers — later).
 
 ---
 
