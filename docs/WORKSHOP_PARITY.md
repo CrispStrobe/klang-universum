@@ -126,14 +126,41 @@ other agents edit it; keep each under ~300 lines, rebase daily):
 | # | Slice | Screen? |
 |---|---|---|
 | 0 | **Golden characterization tests** for `buildScore()` output ✅ **DONE** | no |
-| 1 | Extract `_packMeasures` into a pure `reflow()` | no |
-| 2 | **`Bar` + `List<Bar>` as source of truth**; `elements` becomes a derived view; reflow after every mutation | no |
+| 1 | Extract `_packMeasures` into a pure `reflow()` ✅ **DONE** | no |
+| 2 | ~~`Bar` + `List<Bar>` as source of truth~~ **— see the refinement below** | — |
 | 3 | Id-set selection internally; `selectByIds` becomes exact | no |
 | 4 | `ScoreAddress` + bar-addressing API; caret as address | 2 lines |
 | 5 | Global bounded undo + `_transact` | 2 lines |
-| 6 | Bar attributes → `buildScore` mapping (no UI yet) | no |
+| 6 | Mid-score changes → `buildScore` mapping (clef ✅ **DONE**; key/time next) | no |
 | 7 | `RhythmPolicy.split` + `notate(Fraction)` + tie groups (default off) | no |
 | 8 | Voice 2 → `Measure.voice2` | no |
+
+#### Refinement (2026-07-16): element-id anchors, not a bar-spine flip
+
+Doing slice 1 exposed the real cost of slice 2 as originally drawn: **~60
+index-based mutation sites across 25 methods** all treat `_elements` as a flat
+mutable list (`insert`/`removeAt`/`[i]=`/`removeRange`). Flipping the source of
+truth to `List<Bar>` means rewriting all of them at once — the highest-risk edit
+in the codebase — and, worse, it may be the **wrong** architecture: under the
+default `RhythmPolicy.spill`, bars are reflowed on every edit, so a bar has *no
+stable identity to anchor to*. A "key change on bar 5" is ill-defined the moment
+bar 5's contents shift.
+
+The cheaper, correct mechanism for a spill-mode editor is to **anchor
+bar-attributes to an element id** (a side-map on the existing flat document) and
+let `buildScore` stamp them onto whichever bar that element reflows into. The id
+moves with its note, so the attribute rides re-barring for free — exactly the
+property a bar index can't give. **This needs no mutator rewrite and no
+source-of-truth flip.** Slice 6 (mid-score clef, shipped) proves it: a
+`Map<String,Clef> _clefChanges` + a post-reflow pass in `buildScore`, with an
+empty-map fast path so every golden stays byte-identical. Key/time changes
+follow the same shape (time additionally teaches `reflow` to switch capacity at
+the anchor — the one extra wrinkle).
+
+So **slice 2 is retired** in favour of this. A first-class `Bar` object only
+becomes worth its cost when we build `RhythmPolicy.split` (slice 7, Studio),
+where bars genuinely keep identity; until then the flat model + id-anchors
+carries every Sandbox feature at a fraction of the risk.
 
 The index API survives as a **derived facade** (`elements` = bars flattened),
 which works because flat order *is* spine order concatenated. Convert
