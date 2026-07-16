@@ -550,8 +550,12 @@ staff-tap-to-place, hover ghost, cross-part select, drag repitch). See
   name **on all three editor canvases** (single-staff, grand-staff, multi-part —
   the flags now forward through the grand-staff/multi-part layout paths too),
   **spelled per the app's note-naming setting** (germanH → H for B, solfège →
-  do/re/mi, auto → locale). **Feature complete.** (Per-group barlines in the
-  chrome still open.)
+  do/re/mi, auto → locale). **Feature complete.**
+- ✅ **Per-group barlines in the chrome** — shipped. `MultiPartDocument`
+  `toggleBarlineBreakAfter`/`hasBarlineBreakAfter` recompute `barlineGroups`; a
+  **"Break barline below"** item in each part's ⋮ menu breaks the systemic
+  barline between instrument groups (crisp_notation already paints them). **All
+  Workshop→crisp_notation parity items are now shipped.**
 Details + the running contract log: `docs/WORKSHOP_PLAN.md` +
 `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
 
