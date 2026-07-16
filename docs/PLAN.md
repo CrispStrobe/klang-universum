@@ -952,7 +952,11 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   same pitch (tie, `NoteElement.tieToNext`) vs different pitch (slur,
   `Score.slurs`); a binary staff-read like Step or Skip?. SRI
   `reading.curve.<tie|slur>`.
-- [ ] **Beam or Flag?** — beamed vs flagged eighths; a beaming-literacy binary.
+- [x] **Beam or Flag?** — **shipped** (`beam_flag`, note_reading): read the two
+  looks of eighths — joined by a beam (two eighths on one beat) vs each keeping
+  its flag (eighths split by an eighth rest). A binary staff-read; the beam/flag
+  contrast was verified at the crisp_notation layout level (same-beat eighths →
+  1 beam; eighth-rest between → 0 beams). SRI `reading.beam.<beamed|flagged>`.
 
 ### D. Ear-training expansion (mic infra is shipped — exploit it)
 - [ ] **Sing/play the interval** — mic-graded: show/play an interval, the child
