@@ -239,6 +239,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameConnectRestsSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.rests),
     ),
+    // Match each Italian tempo word to its meaning (Largo ↔ very slow) — the
+    // Connect board with a tempo mode; the reading vocabulary drill.
+    GameInfo(
+      id: 'connect_tempo',
+      icon: Icons.speed,
+      title: (l) => l.gameConnectTempo,
+      subtitle: (l) => l.gameConnectTempoSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.tempo),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

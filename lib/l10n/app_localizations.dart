@@ -3542,6 +3542,66 @@ abstract class AppLocalizations {
   /// **'How long is the silence? Connect each rest to its note!'**
   String get connectRestsPrompt;
 
+  /// No description provided for @gameConnectTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Tempo Words'**
+  String get gameConnectTempo;
+
+  /// No description provided for @gameConnectTempoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each Italian tempo word to its meaning (Largo = very slow)'**
+  String get gameConnectTempoSubtitle;
+
+  /// No description provided for @connectTempoPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How fast? Connect each tempo word to its meaning!'**
+  String get connectTempoPrompt;
+
+  /// No description provided for @tempoVerySlow.
+  ///
+  /// In en, this message translates to:
+  /// **'very slow'**
+  String get tempoVerySlow;
+
+  /// No description provided for @tempoSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'slow'**
+  String get tempoSlow;
+
+  /// No description provided for @tempoWalking.
+  ///
+  /// In en, this message translates to:
+  /// **'walking pace'**
+  String get tempoWalking;
+
+  /// No description provided for @tempoModerate.
+  ///
+  /// In en, this message translates to:
+  /// **'moderate'**
+  String get tempoModerate;
+
+  /// No description provided for @tempoFast.
+  ///
+  /// In en, this message translates to:
+  /// **'fast'**
+  String get tempoFast;
+
+  /// No description provided for @tempoLively.
+  ///
+  /// In en, this message translates to:
+  /// **'lively'**
+  String get tempoLively;
+
+  /// No description provided for @tempoVeryFast.
+  ///
+  /// In en, this message translates to:
+  /// **'very fast'**
+  String get tempoVeryFast;
+
   /// No description provided for @gameCommandCaller.
   ///
   /// In en, this message translates to:

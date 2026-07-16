@@ -17,6 +17,8 @@
 //                 → SRI 'reading.dynamics.*' (shared with dynamics_duel)
 //   • rests     — rest glyph ↔ the note it equals in length (quarter rest ↔
 //                 "quarter note") → SRI 'note_values.rest.*'
+//   • tempo     — Italian tempo word ↔ its meaning (Largo ↔ "very slow")
+//                 → SRI 'reading.tempo.*' (shared with tempo_duel)
 
 import 'dart:math';
 
@@ -32,6 +34,8 @@ import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/note_values/dynamics_duel_screen.dart'
     show kDynamicMarks;
 import 'package:klang_universum/features/games/note_values/symbol_catalog.dart';
+import 'package:klang_universum/features/games/note_values/tempo_duel_screen.dart'
+    show kTempoTerms;
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/features/games/widgets/game_widgets.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -40,7 +44,7 @@ import 'package:klang_universum/shared/widgets/music_glyph.dart';
 import 'package:provider/provider.dart';
 
 /// What the two columns hold.
-enum ConnectMode { notes, symbols, intervals, dynamics, rests }
+enum ConnectMode { notes, symbols, intervals, dynamics, rests, tempo }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
 /// colour of its wire, the pitch to sound on a correct link (if any), and the
@@ -135,6 +139,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.intervals => 'connect_intervals',
         ConnectMode.dynamics => 'connect_dynamics',
         ConnectMode.rests => 'connect_rests',
+        ConnectMode.tempo => 'connect_tempo',
         ConnectMode.notes =>
           widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
       };
@@ -156,6 +161,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.intervals => _intervalItems(),
       ConnectMode.dynamics => _dynamicsItems(),
       ConnectMode.rests => _restItems(),
+      ConnectMode.tempo => _tempoItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -337,6 +343,51 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
     );
   }
 
+  List<_ConnectItem> _tempoItems() {
+    // Italian tempo word paired with its meaning. Four clear terms for
+    // beginners (Largo / Adagio / Allegro / Presto → very slow … very fast);
+    // the middle terms (Andante / Moderato / Vivace) join at 2★.
+    const easy = {'Largo', 'Adagio', 'Allegro', 'Presto'};
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final pool = [
+      for (final t in kTempoTerms)
+        if (wide || easy.contains(t.name)) t,
+    ]..shuffle(_random);
+    final picked = pool.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: Text(
+            picked[i].name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          matchKey: picked[i].name,
+          sriId: 'reading.tempo.${picked[i].name}',
+          playMidi: null,
+          label: (ctx) =>
+              _tempoMeaning(AppLocalizations.of(ctx)!, picked[i].name),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static String _tempoMeaning(AppLocalizations l10n, String name) =>
+      switch (name) {
+        'Largo' => l10n.tempoVerySlow,
+        'Adagio' => l10n.tempoSlow,
+        'Andante' => l10n.tempoWalking,
+        'Moderato' => l10n.tempoModerate,
+        'Allegro' => l10n.tempoFast,
+        'Vivace' => l10n.tempoLively,
+        _ => l10n.tempoVeryFast, // 'Presto'
+      };
+
   static const _symbolPalette = [
     Color(0xFF3949AB), // indigo
     Color(0xFF00897B), // teal
@@ -417,6 +468,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.intervals => l10n.gameConnectIntervals,
       ConnectMode.dynamics => l10n.gameConnectDynamics,
       ConnectMode.rests => l10n.gameConnectRests,
+      ConnectMode.tempo => l10n.gameConnectTempo,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
@@ -424,6 +476,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.intervals => l10n.connectIntervalsPrompt,
       ConnectMode.dynamics => l10n.connectDynamicsPrompt,
       ConnectMode.rests => l10n.connectRestsPrompt,
+      ConnectMode.tempo => l10n.connectTempoPrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

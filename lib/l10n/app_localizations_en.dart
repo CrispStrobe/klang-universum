@@ -1920,6 +1920,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'How long is the silence? Connect each rest to its note!';
 
   @override
+  String get gameConnectTempo => 'Connect the Tempo Words';
+
+  @override
+  String get gameConnectTempoSubtitle =>
+      'Match each Italian tempo word to its meaning (Largo = very slow)';
+
+  @override
+  String get connectTempoPrompt =>
+      'How fast? Connect each tempo word to its meaning!';
+
+  @override
+  String get tempoVerySlow => 'very slow';
+
+  @override
+  String get tempoSlow => 'slow';
+
+  @override
+  String get tempoWalking => 'walking pace';
+
+  @override
+  String get tempoModerate => 'moderate';
+
+  @override
+  String get tempoFast => 'fast';
+
+  @override
+  String get tempoLively => 'lively';
+
+  @override
+  String get tempoVeryFast => 'very fast';
+
+  @override
   String get gameCommandCaller => 'Follow the Conductor';
 
   @override

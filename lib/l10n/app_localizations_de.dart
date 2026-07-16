@@ -1928,6 +1928,38 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wie lang ist die Stille? Verbinde jede Pause mit ihrer Note!';
 
   @override
+  String get gameConnectTempo => 'Tempo-Wörter verbinden';
+
+  @override
+  String get gameConnectTempoSubtitle =>
+      'Verbinde jedes italienische Tempo-Wort mit seiner Bedeutung (Largo = sehr langsam)';
+
+  @override
+  String get connectTempoPrompt =>
+      'Wie schnell? Verbinde jedes Tempo-Wort mit seiner Bedeutung!';
+
+  @override
+  String get tempoVerySlow => 'sehr langsam';
+
+  @override
+  String get tempoSlow => 'langsam';
+
+  @override
+  String get tempoWalking => 'Schritttempo';
+
+  @override
+  String get tempoModerate => 'mäßig';
+
+  @override
+  String get tempoFast => 'schnell';
+
+  @override
+  String get tempoLively => 'lebhaft';
+
+  @override
+  String get tempoVeryFast => 'sehr schnell';
+
+  @override
   String get gameCommandCaller => 'Der Dirigent';
 
   @override
