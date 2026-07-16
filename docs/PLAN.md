@@ -112,10 +112,18 @@ and push to origin/main** before/after touching shared files. Format:
   on the flat doc) and let `buildScore` stamp them after reflow; the id rides
   re-barring for free. Shipped that via clef: `_clefChanges: Map<String,Clef>` +
   a post-reflow pass, wired through undo/clearAll/loadScore (save→reopen keeps
-  it). **Key/time changes are the same shape next** (time also teaches `reflow`
-  to switch capacity at the anchor). A first-class `Bar` is deferred to slice 7
-  (`RhythmPolicy.split`, Studio), where bars actually keep identity. See the
-  refinement box in [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md).
+  it).
+  · ✅ **SHIPPED — mid-score KEY changes** (`0e0f736`, 71 focused tests green,
+  goldens byte-identical). Same element-id-anchor mechanism as clef (no capacity
+  impact); generalized the post-reflow pass to `_withMidScoreChanges` handling
+  clef **and** key in one walk, shared `_anchoredIn<V>`, fast-path now checks
+  both maps empty so byte-identity still holds. `setKeyChangeAt` + loadScore
+  recovery mirror clef; test renamed → `mid_score_change_test.dart` (+6 key
+  cases incl. clef+key coexisting on one bar). **Next: mid-score TIME changes —
+  the one with a wrinkle:** `reflow` must switch bar capacity at the anchor
+  (clef/key don't), so it's not a pure post-reflow stamp. A first-class `Bar` is
+  deferred to slice 7 (`RhythmPolicy.split`, Studio), where bars keep identity.
+  See the refinement box in [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md).
   · ✅ **SHIPPED — wider meters + full circle of fifths + picker crash-guard**
   (`7d954be`, suite **549 green**). The time picker was capped at 2/4·3/4·4/4 and
   the key picker at ±4 fifths — but the packer sizes bars by
