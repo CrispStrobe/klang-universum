@@ -781,6 +781,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Komponiere und spiele deine eigene Melodie';
 
   @override
+  String get gameGridComposer => 'Farb-Melodie';
+
+  @override
+  String get gameGridComposerSubtitle =>
+      'Tippe Farben und bau eine Melodie — ohne Lesen';
+
+  @override
+  String get gridComposerPrompt => 'Tippe die Farben und mach eine Melodie!';
+
+  @override
+  String get gridComposerPlay => 'Abspielen';
+
+  @override
+  String get gridComposerClear => 'Löschen';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

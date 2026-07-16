@@ -27,6 +27,7 @@ import 'package:klang_universum/features/games/chords/triad_builder_screen.dart'
 import 'package:klang_universum/features/games/chords/triad_seventh_screen.dart';
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/free_sing_screen.dart';
+import 'package:klang_universum/features/games/composition/grid_composer_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
 import 'package:klang_universum/features/games/drums/drum_read_screen.dart';
@@ -911,6 +912,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMyMelody,
       subtitle: (l) => l.gameMyMelodySubtitle,
       builder: (_) => const MyMelodyScreen(),
+    ),
+    // Colour-grid composing for pre-readers — tap coloured cells (a consonant
+    // pentatonic) that render to a real Score. A sandbox, no stars.
+    GameInfo(
+      id: 'grid_composer',
+      icon: Icons.grid_on,
+      title: (l) => l.gameGridComposer,
+      subtitle: (l) => l.gameGridComposerSubtitle,
+      builder: (_) => const GridComposerScreen(),
     ),
   ],
   'cello': [

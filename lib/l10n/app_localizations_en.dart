@@ -778,6 +778,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameMyMelodySubtitle => 'Compose and play your own tune';
 
   @override
+  String get gameGridComposer => 'Colour Melody';
+
+  @override
+  String get gameGridComposerSubtitle =>
+      'Tap colours to build a tune — no reading needed';
+
+  @override
+  String get gridComposerPrompt => 'Tap the colours to make a tune!';
+
+  @override
+  String get gridComposerPlay => 'Play';
+
+  @override
+  String get gridComposerClear => 'Clear';
+
+  @override
   String get myMelodyPrompt =>
       'Write your melody — tap the staff or an instrument!';
 

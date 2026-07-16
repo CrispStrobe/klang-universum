@@ -1502,6 +1502,36 @@ abstract class AppLocalizations {
   /// **'Compose and play your own tune'**
   String get gameMyMelodySubtitle;
 
+  /// No description provided for @gameGridComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour Melody'**
+  String get gameGridComposer;
+
+  /// No description provided for @gameGridComposerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap colours to build a tune — no reading needed'**
+  String get gameGridComposerSubtitle;
+
+  /// No description provided for @gridComposerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the colours to make a tune!'**
+  String get gridComposerPrompt;
+
+  /// No description provided for @gridComposerPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get gridComposerPlay;
+
+  /// No description provided for @gridComposerClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get gridComposerClear;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:
