@@ -813,6 +813,43 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gridComposerClear => 'Löschen';
 
   @override
+  String get gameLoopMixer => 'Loop-Mixer';
+
+  @override
+  String get gameLoopMixerSubtitle =>
+      'Staple Grooves übereinander — du bist die Band';
+
+  @override
+  String get loopMixerPrompt => 'Tippe die Karten und starte deine Band!';
+
+  @override
+  String get loopMixerStop => 'Stopp';
+
+  @override
+  String get loopMixerTempoChill => 'Gemütlich';
+
+  @override
+  String get loopMixerTempoGroove => 'Groove';
+
+  @override
+  String get loopMixerTempoFast => 'Schnell';
+
+  @override
+  String get loopMixerTrackDrums => 'Schlagzeug';
+
+  @override
+  String get loopMixerTrackBass => 'Bass';
+
+  @override
+  String get loopMixerTrackChords => 'Akkorde';
+
+  @override
+  String get loopMixerTrackMelody => 'Melodie';
+
+  @override
+  String get loopMixerTrackSparkle => 'Glitzer';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

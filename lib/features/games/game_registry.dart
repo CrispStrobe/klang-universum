@@ -28,6 +28,7 @@ import 'package:klang_universum/features/games/chords/triad_seventh_screen.dart'
 import 'package:klang_universum/features/games/composition/ending_detective_screen.dart';
 import 'package:klang_universum/features/games/composition/free_sing_screen.dart';
 import 'package:klang_universum/features/games/composition/grid_composer_screen.dart';
+import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
 import 'package:klang_universum/features/games/drums/drum_read_screen.dart';
@@ -921,6 +922,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameGridComposer,
       subtitle: (l) => l.gameGridComposerSubtitle,
       builder: (_) => const GridComposerScreen(),
+    ),
+    // Loop-mixer toy — cards layer synced 2-bar loops (drums/bass/chords/
+    // melody/sparkle, all C-pentatonic so any combo grooves). A sandbox,
+    // no stars.
+    GameInfo(
+      id: 'loop_mixer',
+      icon: Icons.queue_music,
+      title: (l) => l.gameLoopMixer,
+      subtitle: (l) => l.gameLoopMixerSubtitle,
+      builder: (_) => const LoopMixerScreen(),
     ),
   ],
   'cello': [

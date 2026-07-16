@@ -63,15 +63,13 @@ const _timbres = <Instrument, Timbre>{
 /// The timbre for [instrument].
 Timbre timbreFor(Instrument instrument) => _timbres[instrument]!;
 
-/// Renders [segments] back-to-back into normalized PCM16 samples.
-///
-/// [gain] (0..1) scales the final level below the normalized peak — used to
-/// voice dynamics (pp..ff) since the output is otherwise peak-normalized.
-Int16List renderSegments(
+/// Renders [segments] back-to-back into a raw, UN-normalized Float64 buffer.
+/// The mixer stage ([mixStems]) needs pre-normalization samples so it can set
+/// per-track levels itself; [renderSegments] normalizes for direct playback.
+Float64List renderSegmentsRaw(
   List<Segment> segments, {
   int sampleRate = kSampleRate,
   Timbre? timbre,
-  double gain = 1.0,
 }) {
   final voice = timbre ?? _timbres[Instrument.piano]!;
   final harmonics = voice.harmonics;
@@ -102,6 +100,24 @@ Int16List renderSegments(
     }
     offset += n;
   }
+  return buffer;
+}
+
+/// Renders [segments] back-to-back into normalized PCM16 samples.
+///
+/// [gain] (0..1) scales the final level below the normalized peak — used to
+/// voice dynamics (pp..ff) since the output is otherwise peak-normalized.
+Int16List renderSegments(
+  List<Segment> segments, {
+  int sampleRate = kSampleRate,
+  Timbre? timbre,
+  double gain = 1.0,
+}) {
+  final buffer = renderSegmentsRaw(
+    segments,
+    sampleRate: sampleRate,
+    timbre: timbre,
+  );
 
   // Normalize to 80% full scale.
   var peak = 0.0;
@@ -109,11 +125,140 @@ Int16List renderSegments(
     if (v.abs() > peak) peak = v.abs();
   }
   final scale = (peak > 0 ? 0.8 * 32767 / peak : 0.0) * gain.clamp(0.0, 1.0);
-  final samples = Int16List(totalSamples);
-  for (var i = 0; i < totalSamples; i++) {
+  final samples = Int16List(buffer.length);
+  for (var i = 0; i < buffer.length; i++) {
     samples[i] = (buffer[i] * scale).round();
   }
   return samples;
+}
+
+// --- Multi-track mixing (the Loop Mixer's mixdown stage) ---
+
+/// One pre-rendered mixer stem: raw float samples plus its authored level.
+typedef MixStem = ({Float64List samples, double gain});
+
+double _tanh(double x) {
+  final e = exp(2 * x);
+  return (e - 1) / (e + 1);
+}
+
+/// Mixes [stems] into one PCM16 buffer of exactly [totalSamples] at
+/// combo-independent levels.
+///
+/// Each stem is normalized to unit peak on its own, scaled by its authored
+/// gain, summed, and run through a tanh soft-knee limiter. A track therefore
+/// contributes the *same* loudness no matter which other tracks are enabled —
+/// normalizing the mix peak per combo (or per track post-quantization) would
+/// make overall levels pump every time a track toggles. Stems shorter or
+/// longer than [totalSamples] are zero-padded / truncated, which absorbs any
+/// per-segment sample-rounding drift between tracks. An empty [stems] list is
+/// [totalSamples] of silence.
+Int16List mixStems(List<MixStem> stems, {required int totalSamples}) {
+  final mix = Float64List(totalSamples);
+  for (final stem in stems) {
+    var peak = 0.0;
+    for (final v in stem.samples) {
+      if (v.abs() > peak) peak = v.abs();
+    }
+    if (peak == 0) continue;
+    final scale = stem.gain / peak;
+    final n = min(stem.samples.length, totalSamples);
+    for (var i = 0; i < n; i++) {
+      mix[i] += stem.samples[i] * scale;
+    }
+  }
+  final samples = Int16List(totalSamples);
+  for (var i = 0; i < totalSamples; i++) {
+    samples[i] = (_tanh(mix[i]) * 0.95 * 32767).round();
+  }
+  return samples;
+}
+
+// --- Percussion (noise-based one-shots for the Loop Mixer's drum track) ---
+//
+// The additive synth above is tonal; drums need noise. These render short
+// unit-peak one-shots with seeded Randoms, so output is deterministic (the
+// loop cache and the tests rely on byte-identical renders).
+
+/// The percussion voices the drum pattern can place.
+enum Drum { kick, snare, hat }
+
+Float64List _normalizedToUnitPeak(Float64List buffer) {
+  var peak = 0.0;
+  for (final v in buffer) {
+    if (v.abs() > peak) peak = v.abs();
+  }
+  if (peak > 0) {
+    for (var i = 0; i < buffer.length; i++) {
+      buffer[i] /= peak;
+    }
+  }
+  return buffer;
+}
+
+/// Renders one unit-peak percussion hit.
+Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
+  switch (drum) {
+    case Drum.kick:
+      // A sine sweeping 120→40 Hz with a fast decay: the classic synth kick.
+      final n = (130 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      var phase = 0.0;
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final freq = 120 - (120 - 40) * (t / 0.130);
+        phase += freq / sampleRate;
+        out[i] = sin(2 * pi * phase) * exp(-18 * t);
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.snare:
+      // A 190 Hz body under a noise burst.
+      final n = (150 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      final noise = Random(2);
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final body = 0.5 * sin(2 * pi * 190 * t) * exp(-25 * t);
+        final rattle = (noise.nextDouble() * 2 - 1) * exp(-22 * t);
+        out[i] = body + rattle;
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.hat:
+      // Differentiated (high-passed) noise, very short.
+      final n = (50 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      final noise = Random(3);
+      var prev = 0.0;
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final white = noise.nextDouble() * 2 - 1;
+        out[i] = (white - prev) * exp(-60 * t);
+        prev = white;
+      }
+      return _normalizedToUnitPeak(out);
+  }
+}
+
+/// Places drum one-shots on a silent [totalMs] timeline: each hit is
+/// `(atMs, drum)`. Hits whose tail crosses the end are truncated (the loop
+/// wraps, so authored patterns keep tails inside the loop instead).
+Float64List renderDrumPattern(
+  List<(int, Drum)> hits, {
+  required int totalMs,
+  int sampleRate = kSampleRate,
+}) {
+  final totalSamples = (totalMs * sampleRate) ~/ 1000;
+  final out = Float64List(totalSamples);
+  final oneShots = <Drum, Float64List>{};
+  for (final (atMs, drum) in hits) {
+    final shot = oneShots[drum] ??= renderDrum(drum, sampleRate: sampleRate);
+    final start = (atMs * sampleRate) ~/ 1000;
+    final n = min(shot.length, totalSamples - start);
+    for (var i = 0; i < n; i++) {
+      out[start + i] += shot[i];
+    }
+  }
+  return out;
 }
 
 /// Wraps PCM16 mono samples into a WAV container.

@@ -1562,6 +1562,78 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get gridComposerClear;
 
+  /// No description provided for @gameLoopMixer.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop Mixer'**
+  String get gameLoopMixer;
+
+  /// No description provided for @gameLoopMixerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Layer looping grooves — you are the band'**
+  String get gameLoopMixerSubtitle;
+
+  /// No description provided for @loopMixerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the cards to start your band!'**
+  String get loopMixerPrompt;
+
+  /// No description provided for @loopMixerStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get loopMixerStop;
+
+  /// No description provided for @loopMixerTempoChill.
+  ///
+  /// In en, this message translates to:
+  /// **'Chill'**
+  String get loopMixerTempoChill;
+
+  /// No description provided for @loopMixerTempoGroove.
+  ///
+  /// In en, this message translates to:
+  /// **'Groove'**
+  String get loopMixerTempoGroove;
+
+  /// No description provided for @loopMixerTempoFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get loopMixerTempoFast;
+
+  /// No description provided for @loopMixerTrackDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums'**
+  String get loopMixerTrackDrums;
+
+  /// No description provided for @loopMixerTrackBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get loopMixerTrackBass;
+
+  /// No description provided for @loopMixerTrackChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get loopMixerTrackChords;
+
+  /// No description provided for @loopMixerTrackMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody'**
+  String get loopMixerTrackMelody;
+
+  /// No description provided for @loopMixerTrackSparkle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparkle'**
+  String get loopMixerTrackSparkle;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:
