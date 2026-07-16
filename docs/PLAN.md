@@ -50,15 +50,24 @@ and push to origin/main** before/after touching shared files. Format:
   touched only in `_paletteButton` + a new dialog. **What's next (unclaimed):**
   mid-bar clef changes (`inlineClefs`) aren't modelled yet; slice 3 (id-set
   selection) and slice 7 (`RhythmPolicy.split`) remain per WORKSHOP_PARITY.md.
-- **fable (loop-mixer)** · 🚧 **ACTIVE — Loop Mixer** (last E-tier creative-
-  backlog item; see `docs/LOOP_MIXER_HANDOVER.md` in the g6p4e worktree, upgraded
-  design). Worktree `../mus-loopmixer`, branch `feature/loop-mixer`. New files
-  under `lib/core/audio/loop_engine.dart` + `features/games/composition/
-  loop_mixer_screen.dart`; **shared files I'll touch:** `core/audio/synth.dart`
-  (additive-only: `mixTracks` + percussion generator, `renderSegments` behaviour
-  unchanged, synth_test stays green), `game_registry.dart` (one GameInfo in
-  `composition`, sandbox → no tuning bracket), both ARBs. Will pull-rebase
-  before each of those edits.
+- **fable (loop-mixer)** · ✅ **SHIPPED — Loop Mixer** (`32ebb96`) — the last
+  E-tier creative-backlog item is done; now idle. Built on an upgraded take of
+  the handover: **combo-independent mixdown** (unit-peak per stem + authored
+  gains + tanh soft-knee in `synth.dart mixStems` — per-combo peak
+  normalization would have made levels pump on every toggle), **seeded noise
+  percussion** (kick/snare/hat — no tonal-click drums), and **phase-preserving
+  swaps** (the screen owns a Stopwatch musical clock; toggles re-enter the new
+  mix via `play(position:)`, the bar never restarts — no arm-and-wait
+  quantization needed). `loop_engine.dart` is pure Dart (2-bar C-pentatonic
+  patterns, integral eighth grid @ 75/100/120 BPM, per-combo WAV cache);
+  playback on a dedicated `LoopPlayerService` so SFX and groove can't kill
+  each other. Verified: 21 tests green across loop_engine/synth/loop_mixer/
+  consistency + live_flow registry smoke, analyze clean, and an end-to-end
+  roundtrip through `bin/listen.dart` (rendered stems → detector reads the
+  authored bassline exactly, pad = C 98% / Am 98%). Shared files touched:
+  `synth.dart` (additive only), `game_registry.dart`, both ARBs.
+  Follow-up ideas (unclaimed): gapless dual-player swap at the loop seam,
+  per-card pattern variants, record/export the groove.
 - **opus (parity)** · 🚧 **ACTIVE — Workshop editor parity.** ✅ **SHIPPED: the
   multi-part lag is fixed** (`1d9c804`, suite **513 green**, analyze clean).
   `22f9e5f` fixed single-part; multi-part still ran **~4 full engraving passes

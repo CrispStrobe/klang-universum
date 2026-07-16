@@ -431,6 +431,24 @@ Games built on crisp_notation capabilities the app didn't use before.
 
 ## Original concepts — shipped
 
+- **Loop Mixer** (composition) — a kid **loop-layering toy**: five cards
+  (drums · bass · chords · melody · sparkle) each toggle a pre-authored 2-bar
+  loop; everything is C-pentatonic so any combination grooves (the Colour
+  Melody rule). A sandbox — no stars, no wrong answers. Under the hood the
+  first **multi-track** audio in the app, still pure Dart + one player:
+  `loop_engine.dart` mixes the enabled tracks offline into a single looping
+  WAV (sample-accurate sync for free), with **combo-independent levels**
+  (unit-peak per stem + authored gains + a tanh soft-knee in
+  `synth.dart mixStems` — toggling a card never changes the others' loudness)
+  and **seeded noise percussion** (kick sweep / snare / hat one-shots — the
+  additive synth is tonal, so drums got their own generator). The screen owns
+  a Stopwatch musical clock and swaps mixes with `play(position: phase)`, so
+  layers drop in/out **without the bar restarting**; a dedicated
+  `LoopPlayerService` (ReleaseMode.loop) keeps SFX and groove from stopping
+  each other. Step-dot playhead (Ticker), 75/100/120 BPM presets, per-combo
+  render cache. Acceptance-tested end-to-end by rendering stems and reading
+  them back with `bin/listen.dart` (bassline detected exactly as authored;
+  pad reads C 98% → Am 98%).
 - **Colour Melody** (composition) — a composing grid for **pre-readers**: five
   coloured rows (a C-major pentatonic, so every combination is consonant) × eight
   beats. Tapping a cell places a note (and sounds it), and the grid renders live
