@@ -90,6 +90,20 @@ and push to origin/main** before/after touching shared files. Format:
   overflowing note short-fills the previous bar instead of splitting+tying) so
   the refactor changing them is loud, not a silent test update. Next slices touch
   **only `score_document.dart`**.
+  · ✅ **SHIPPED in crisp_notation — the large-score layout ceiling (G).** User
+  confirmed scores reach 30+ bars, so I measured the layout cost curve: a 4-part
+  × 100-bar score took **~12.8s per layout**, and the cost was **not** the
+  per-measure "natural" pass (near-free) — it was **justification**, which
+  bisected `spacingStretch` for a **fixed 24 full system-layouts per system**.
+  Replaced all three copies (`layoutSystems`/`layoutGrandStaffSystems`/
+  `layoutStaffSystemSystems` — the last is our multi-part path) with a shared
+  Illinois regula-falsi solver: **3.19 layouts/system avg (worst 14) vs 12.24**,
+  same accepted result. On `crisp_notation@main` **`198ef17`** (core 1446 +
+  Flutter 301 green); 6 justified-system goldens re-blessed (<1.5%, visually
+  identical, barlines stay aligned). **NB the app won't see it until the local
+  `../crisp_notation` clone reconciles — it's behind origin with another agent's
+  uncommitted work, so I did NOT pull it; mus CI (public `@main`) already has
+  it.** This was the one remaining perf ceiling I couldn't fix app-side.
 - **opus (workshop→games)** · **idle / SHIPPED — Workshop performance.** The
   editor "severely lagged" on desktop: the root cause was **`onHover` calling
   `setState` on every pointer-move pixel** → a full-screen rebuild (42-key piano +
