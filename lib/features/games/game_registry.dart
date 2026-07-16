@@ -263,6 +263,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gamePitchSortSubtitle,
       builder: (_) => const PitchSortScreen(),
     ),
+    // Same sort in the bass clef — bass-clef reading practice.
+    GameInfo(
+      id: 'pitch_sort_bass',
+      icon: Icons.height,
+      title: (l) => l.gamePitchSortBass,
+      subtitle: (l) => l.gamePitchSortSubtitle,
+      builder: (_) => const PitchSortScreen(clef: Clef.bass),
+    ),
     // Sharp/flat accidental-reading sort (same baskets format).
     GameInfo(
       id: 'accidental_sort',

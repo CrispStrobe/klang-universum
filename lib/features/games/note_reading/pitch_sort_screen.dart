@@ -30,7 +30,12 @@ const _whole = NoteDuration(DurationBase.whole);
 const _middlePos = 4;
 
 class PitchSortScreen extends StatefulWidget {
-  const PitchSortScreen({super.key});
+  const PitchSortScreen({super.key, this.clef = Clef.treble});
+
+  /// Which clef the notes are read in (treble by default; a bass variant reuses
+  /// the same screen — high/low is clef-independent, but bass gives bass-clef
+  /// reading practice and its own pitches/progress).
+  final Clef clef;
 
   static const cardCount = 4;
   static const _buckets = [true, false]; // true = high, false = low
@@ -55,6 +60,11 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
   @override
   String get gameType => 'pitch_sort';
 
+  // Treble keeps the original id (no progress migration); bass gets its own.
+  @override
+  String get progressId =>
+      widget.clef == Clef.bass ? 'pitch_sort_bass' : 'pitch_sort';
+
   // Drops give their own feedback (the note sounds on a correct drop, a buzz on
   // a miss); no generic blips.
   @override
@@ -70,7 +80,7 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
   void prepareRound() {
     // Clearly-high (upper half) and clearly-low (lower half) staff positions,
     // never the middle line. Ledger notes join at two stars for more spread.
-    final wide = context.read<ProgressService>().starsFor(gameType) >= 2;
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
     final lows = [for (var p = wide ? -3 : 0; p < _middlePos; p++) p];
     final highs = [
       for (var p = _middlePos + 1; p <= (wide ? 11 : 8); p++) p,
@@ -87,7 +97,7 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
     }
     positions.shuffle(_random);
 
-    _cards = [for (final p in positions) Clef.treble.pitchAt(p)];
+    _cards = [for (final p in positions) widget.clef.pitchAt(p)];
     _high = [for (final p in positions) p > _middlePos];
     _placed = List.filled(PitchSortScreen.cardCount, false);
     _binned
@@ -131,7 +141,7 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
   }
 
   Score _score(Pitch p) => Score(
-        clef: Clef.treble,
+        clef: widget.clef,
         measures: [
           Measure([NoteElement.note(p, _whole, id: 'n')]),
         ],
@@ -142,7 +152,11 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: GameAppBar(title: l10n.gamePitchSort),
+      appBar: GameAppBar(
+        title: widget.clef == Clef.bass
+            ? l10n.gamePitchSortBass
+            : l10n.gamePitchSort,
+      ),
       body: SafeArea(
         child: finished
             ? GameResultView(

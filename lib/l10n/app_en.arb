@@ -179,6 +179,7 @@
   "gameNoteReadingAlto": "Alto Clef",
   "gameNoteReadingSubtitle": "Name the note on the staff",
   "gamePitchSort": "High or Low?",
+  "gamePitchSortBass": "High or Low? (bass)",
   "gamePitchSortSubtitle": "Drag each note into the high or low basket",
   "pitchSortPrompt": "Is each note high or low? Drop it in the right basket!",
   "pitchHighLabel": "High",

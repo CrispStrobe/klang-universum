@@ -456,6 +456,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gamePitchSort => 'Hoch oder tief?';
 
   @override
+  String get gamePitchSortBass => 'Hoch oder tief? (Bass)';
+
+  @override
   String get gamePitchSortSubtitle =>
       'Zieh jede Note in den hohen oder tiefen Korb';
 

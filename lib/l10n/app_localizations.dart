@@ -908,6 +908,12 @@ abstract class AppLocalizations {
   /// **'High or Low?'**
   String get gamePitchSort;
 
+  /// No description provided for @gamePitchSortBass.
+  ///
+  /// In en, this message translates to:
+  /// **'High or Low? (bass)'**
+  String get gamePitchSortBass;
+
   /// No description provided for @gamePitchSortSubtitle.
   ///
   /// In en, this message translates to:

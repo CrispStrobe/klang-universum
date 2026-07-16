@@ -148,6 +148,7 @@
   "gameNoteReadingAlto": "Altschlüssel",
   "gameNoteReadingSubtitle": "Wie heißt die Note auf den Linien?",
   "gamePitchSort": "Hoch oder tief?",
+  "gamePitchSortBass": "Hoch oder tief? (Bass)",
   "gamePitchSortSubtitle": "Zieh jede Note in den hohen oder tiefen Korb",
   "pitchSortPrompt": "Ist jede Note hoch oder tief? Zieh sie in den richtigen Korb!",
   "pitchHighLabel": "Hoch",
