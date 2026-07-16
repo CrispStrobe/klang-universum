@@ -547,10 +547,11 @@ staff-tap-to-place, hover ghost, cross-part select, drag repitch). See
   **`NoteNameStyle`** (letter / German-H / solfège) threaded through the layout
   engine's note-name overlay (was fixed English) + `showNoteNames` on
   `MultiSystemView`; the Workshop **"Note names"** ⋮ toggle overlays each note's
-  name on the single-staff canvas, **spelled per the app's note-naming setting**
-  (germanH → H for B, auto → locale). *Remaining:* grand-staff/multi-part
-  canvases (need the same engine-forward on those layout paths); per-group
-  barlines in the chrome still open.
+  name **on all three editor canvases** (single-staff, grand-staff, multi-part —
+  the flags now forward through the grand-staff/multi-part layout paths too),
+  **spelled per the app's note-naming setting** (germanH → H for B, solfège →
+  do/re/mi, auto → locale). **Feature complete.** (Per-group barlines in the
+  chrome still open.)
 Details + the running contract log: `docs/WORKSHOP_PLAN.md` +
 `docs/WORKSHOP_CRISP_NOTATION_CONTRACTS.md`.
 
