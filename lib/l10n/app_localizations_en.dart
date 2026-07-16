@@ -828,6 +828,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerStop => 'Stop';
 
   @override
+  String get loopMixerSwing => 'Swing';
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override

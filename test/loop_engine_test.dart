@@ -211,6 +211,24 @@ void main() {
     expect(safe.enabled, {'drums'});
   });
 
+  test('fill swaps only the drum stem, only when drums are enabled', () {
+    final engine = LoopEngine();
+    engine.enabled.addAll({'bass', 'melody'});
+    // No drums → the fill flag is a no-op (same cached object).
+    expect(
+      identical(engine.renderLoop(fill: true), engine.renderLoop()),
+      isTrue,
+    );
+
+    engine.enabled.add('drums');
+    final normal = engine.renderLoop();
+    final fill = engine.renderLoop(fill: true);
+    expect(fill, isNot(equals(normal)));
+    expect(fill.length, normal.length);
+    // Repeated fill renders hit the cache.
+    expect(identical(engine.renderLoop(fill: true), fill), isTrue);
+  });
+
   test('renders are cached per spec and invalidated by tempo', () {
     final engine = LoopEngine();
     engine.enabled.add('melody');

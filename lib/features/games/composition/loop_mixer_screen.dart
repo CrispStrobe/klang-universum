@@ -1,16 +1,23 @@
 // lib/features/games/composition/loop_mixer_screen.dart
 //
-// "Loop-Mixer" — a kid loop-mixer toy. Five cards (drums · bass · chords ·
-// melody · sparkle) each toggle a pre-authored 2-bar loop on/off; everything
-// is in C pentatonic so any combination grooves (the Colour Melody rule). A
-// creative sandbox: no stars, no wrong answers.
+// "Loop-Mixer" — a kid loop-mixer toy that grows into a groovebox. Five cards
+// (drums · bass · chords · melody · sparkle) each toggle a pre-authored 2-bar
+// loop on/off; everything is in C pentatonic so any combination grooves (the
+// Colour Melody rule). A creative sandbox: no stars, no wrong answers.
+//
+// v2 depth (PLAN.md « groovebox ladder », slice 3): a swing slider, per-card
+// A/B/C pattern variants, per-card level sliders, and an automatic drum fill
+// every 4th loop, applied at the loop seam.
 //
 // Audio: LoopEngine mixes the enabled tracks offline into ONE looping WAV
 // (sample-accurate sync for free) played on a dedicated LoopPlayerService.
-// The screen owns the musical clock (a Stopwatch); on every toggle the fresh
-// mix starts at the clock's phase (`play(position: …)`), so layers drop in
-// and out without the bar ever restarting. A Ticker (created in initState —
-// never a lazy `late final`, see CLAUDE.md) drives the step playhead.
+// The screen owns the musical clock (a Stopwatch); user changes swap the
+// fresh mix at the clock's phase (`play(position: …)`), so layers and feel
+// change without the bar ever restarting. Seam-timed changes (the fill) are
+// applied when the ticker sees the phase wrap: the new WAV starts near
+// position 0 on the downbeat, where the kick masks the swap. A Ticker
+// (created in initState — never a lazy `late final`, see CLAUDE.md) drives
+// the step playhead and the wrap detection.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +35,9 @@ class LoopMixerScreen extends StatefulWidget {
   /// The tempo presets (all keep the step grid integral — see LoopTiming).
   static const tempos = [75, 100, 120];
 
+  /// Every 4th loop plays the drum fill.
+  static const fillEvery = 4;
+
   @override
   State<LoopMixerScreen> createState() => _LoopMixerScreenState();
 }
@@ -38,9 +48,20 @@ abstract interface class LoopMixerTester {
   Set<String> get enabledTracks;
   bool get isPlaying;
   int get tempoBpm;
+  double get swing;
+  int get loopIteration;
+  int variantOf(String id);
+  double levelOf(String id);
   void toggleTrack(String id);
+  void cycleTrackVariant(String id);
+  void setTrackLevel(String id, double level);
+  void setSwing(double value);
   void setTempo(int bpm);
   void stopAll();
+
+  /// Forces the seam handler (normally driven by the real-time clock, which
+  /// widget tests can't advance) — asserts fill scheduling without waiting.
+  void debugLoopWrap();
 }
 
 class _LoopMixerScreenState extends State<LoopMixerScreen>
@@ -50,20 +71,32 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   final _loop = LoopPlayerService();
 
   /// The groove's musical clock: playback phase is derived from it, never
-  /// from the player, so toggles can re-enter the loop in phase.
+  /// from the player, so swaps can re-enter the loop in phase.
   final _clock = Stopwatch();
 
   late final Ticker _ticker;
   final _step = ValueNotifier<int>(-1);
 
+  int _iteration = 0;
+  int _lastPhaseMs = 0;
+
+  /// What the loop player is currently looping (identity-compared against
+  /// the engine's cached renders to decide whether a seam swap is needed).
+  Uint8List? _currentWav;
+
   @override
   void initState() {
     super.initState();
     _ticker = createTicker((_) {
+      if (!_clock.isRunning) {
+        _step.value = -1;
+        return;
+      }
       final t = _engine.timing;
-      _step.value = _clock.isRunning
-          ? (_clock.elapsedMilliseconds % t.totalMs) ~/ t.stepMs
-          : -1;
+      final phase = _clock.elapsedMilliseconds % t.totalMs;
+      if (phase < _lastPhaseMs) _onLoopWrap();
+      _lastPhaseMs = phase;
+      _step.value = phase ~/ t.stepMs;
     })
       ..start();
   }
@@ -84,14 +117,66 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   @override
   int get tempoBpm => _engine.tempoBpm;
   @override
+  double get swing => _engine.swing;
+  @override
+  int get loopIteration => _iteration;
+  @override
+  int variantOf(String id) => _engine.variants[id] ?? 0;
+  @override
+  double levelOf(String id) => _engine.levels[id] ?? 1.0;
+  @override
   void toggleTrack(String id) => _toggle(id);
+  @override
+  void cycleTrackVariant(String id) => _cycleVariant(id);
+  @override
+  void setTrackLevel(String id, double level) => _setLevel(id, level);
+  @override
+  void setSwing(double value) => _setSwing(value);
   @override
   void setTempo(int bpm) => _setTempo(bpm);
   @override
   void stopAll() => _stopAll();
+  @override
+  void debugLoopWrap() => _onLoopWrap();
+
+  bool get _fillDue =>
+      _engine.enabled.contains('drums') &&
+      _iteration % LoopMixerScreen.fillEvery == LoopMixerScreen.fillEvery - 1;
+
+  /// Loop seam: advance the iteration counter and, if the groove for the new
+  /// iteration differs (fill in / fill out), swap it in near position 0 —
+  /// the downbeat kick masks the restart.
+  void _onLoopWrap() {
+    _iteration++;
+    if (_engine.enabled.isEmpty || !_clock.isRunning) return;
+    final wanted = _engine.renderLoop(fill: _fillDue);
+    if (identical(wanted, _currentWav)) return;
+    _currentWav = wanted;
+    _loop.playLoop(
+      wanted,
+      position: Duration(
+        milliseconds: _clock.elapsedMilliseconds % _engine.timing.totalMs,
+      ),
+    );
+  }
 
   void _toggle(String id) {
     setState(() => _engine.toggle(id));
+    _syncPlayback();
+  }
+
+  void _cycleVariant(String id) {
+    setState(() => _engine.cycleVariant(id));
+    if (_engine.enabled.contains(id)) _syncPlayback();
+  }
+
+  void _setLevel(String id, double level) {
+    setState(() => _engine.levels[id] = level.clamp(0.0, 1.0));
+    if (_engine.enabled.contains(id)) _syncPlayback();
+  }
+
+  void _setSwing(double value) {
+    setState(() => _engine.swing = value);
     _syncPlayback();
   }
 
@@ -102,6 +187,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _clock
       ..stop()
       ..reset();
+    _lastPhaseMs = 0;
+    _iteration = 0;
     _syncPlayback();
   }
 
@@ -110,28 +197,35 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _syncPlayback();
   }
 
-  /// Restarts/stops/swaps the looping mix to match the enabled set, keeping
+  /// Restarts/stops/swaps the looping mix to match the groove state, keeping
   /// the musical phase: the new mix starts exactly where the clock says the
-  /// groove is, so the beat never resets when a card toggles.
+  /// groove is, so the beat never resets when something changes.
   void _syncPlayback() {
     if (_engine.enabled.isEmpty) {
       _clock
         ..stop()
         ..reset();
+      _lastPhaseMs = 0;
+      _iteration = 0;
+      _currentWav = null;
       _loop.stop();
       return;
     }
     if (!context.read<AudioService>().soundOn) return; // master mute
-    final wav = _engine.renderLoop();
+    final wav = _engine.renderLoop(fill: _fillDue);
     if (!_clock.isRunning) {
       _clock
         ..reset()
         ..start();
+      _lastPhaseMs = 0;
     }
-    final position = Duration(
-      milliseconds: _clock.elapsedMilliseconds % _engine.timing.totalMs,
+    _currentWav = wav;
+    _loop.playLoop(
+      wav,
+      position: Duration(
+        milliseconds: _clock.elapsedMilliseconds % _engine.timing.totalMs,
+      ),
     );
-    _loop.playLoop(wav, position: position);
   }
 
   static const _trackIcons = <String, IconData>{
@@ -182,29 +276,49 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               _Playhead(step: _step),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Expanded(
                 child: Column(
                   children: [
                     for (final track in _engine.tracks)
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.symmetric(vertical: 3),
                           child: _TrackCard(
                             color: _trackColors[track.id]!,
                             icon: _trackIcons[track.id]!,
                             label: _trackLabel(l10n, track.id),
                             active: _engine.enabled.contains(track.id),
+                            variant: _engine.variants[track.id] ?? 0,
+                            variantCount: track.variants.length,
+                            level: _engine.levels[track.id] ?? 1.0,
                             onTap: () => _toggle(track.id),
+                            onCycleVariant: () => _cycleVariant(track.id),
+                            onLevel: (v) => _setLevel(track.id, v),
                           ),
                         ),
                       ),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    l10n.loopMixerSwing,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _engine.swing,
+                      max: 0.6,
+                      onChanged: _setSwing,
+                    ),
+                  ),
+                ],
+              ),
               Row(
                 children: [
                   Expanded(
@@ -278,14 +392,24 @@ class _TrackCard extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.active,
+    required this.variant,
+    required this.variantCount,
+    required this.level,
     required this.onTap,
+    required this.onCycleVariant,
+    required this.onLevel,
   });
 
   final Color color;
   final IconData icon;
   final String label;
   final bool active;
+  final int variant;
+  final int variantCount;
+  final double level;
   final VoidCallback onTap;
+  final VoidCallback onCycleVariant;
+  final ValueChanged<double> onLevel;
 
   @override
   Widget build(BuildContext context) {
@@ -302,24 +426,60 @@ class _TrackCard extends StatelessWidget {
             width: active ? 3 : 1.5,
           ),
         ),
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: foreground, size: 30),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: foreground,
-                    fontWeight: FontWeight.w600,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: foreground, size: 26),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(width: 12),
+                // The pattern-variant badge: tap to cycle A → B → C.
+                if (variantCount > 1)
+                  GestureDetector(
+                    onTap: onCycleVariant,
+                    child: CircleAvatar(
+                      radius: 13,
+                      backgroundColor: foreground.withValues(alpha: 0.22),
+                      child: Text(
+                        String.fromCharCode(65 + variant),
+                        style: TextStyle(
+                          color: foreground,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                   ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Icon(
-              active ? Icons.volume_up : Icons.volume_off,
-              color: foreground.withValues(alpha: 0.7),
-              size: 22,
-            ),
+            // Per-card level, only offered while the layer sounds.
+            if (active)
+              SizedBox(
+                height: 22,
+                width: 220,
+                child: SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 3,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 7,
+                    ),
+                    activeTrackColor: Colors.white,
+                    inactiveTrackColor: Colors.white38,
+                    thumbColor: Colors.white,
+                    overlayShape: SliderComponentShape.noOverlay,
+                  ),
+                  child: Slider(value: level, onChanged: onLevel),
+                ),
+              ),
           ],
         ),
       ),

@@ -1598,6 +1598,12 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get loopMixerStop;
 
+  /// No description provided for @loopMixerSwing.
+  ///
+  /// In en, this message translates to:
+  /// **'Swing'**
+  String get loopMixerSwing;
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:

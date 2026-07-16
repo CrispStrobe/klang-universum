@@ -415,6 +415,14 @@ final List<LoopTrack> kLoopMixerTracks = [
   ),
 ];
 
+/// The drum fill that replaces the drum track every 4th loop (any variant):
+/// bar 1 stays a groove, bar 2 opens up and lands a snare run into the wrap.
+final DrumRowsPattern kDrumFillPattern = DrumRowsPattern({
+  Drum.kick: stepRow('x...x...x.......'),
+  Drum.snare: stepRow('..x...x...x.xxxx'),
+  Drum.hat: stepRow('.x.x.x.x.x.x....'),
+});
+
 /// Holds the groove state and renders the current spec to a loopable WAV.
 class LoopEngine {
   LoopEngine({List<LoopTrack>? tracks, int tempoBpm = 100})
@@ -519,15 +527,21 @@ class LoopEngine {
   }
 
   /// The current groove as one loop-ready WAV (an empty enabled set renders
-  /// silence of the full loop length).
-  Uint8List renderLoop() {
-    return _wavCache[spec.cacheKey] ??= wavBytes(
+  /// silence of the full loop length). With [fill], the drum track (if
+  /// enabled) plays [kDrumFillPattern] instead of its variant — the seam
+  /// scheduler uses this every 4th loop.
+  Uint8List renderLoop({bool fill = false}) {
+    final filling = fill && enabled.contains('drums');
+    final key = '${spec.cacheKey}${filling ? '#fill' : ''}';
+    return _wavCache[key] ??= wavBytes(
       mixStems(
         [
           for (final track in tracks)
             if (enabled.contains(track.id))
               (
-                samples: _stemFor(track),
+                samples: filling && track.id == 'drums'
+                    ? _fillStem
+                    : _stemFor(track),
                 gain: track.gain * (levels[track.id] ?? 1.0).clamp(0.0, 1.0),
               ),
         ],
@@ -535,4 +549,7 @@ class LoopEngine {
       ),
     );
   }
+
+  Float64List get _fillStem =>
+      _stemCache['drums#fill'] ??= kDrumFillPattern.render(timing);
 }

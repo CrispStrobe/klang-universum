@@ -71,4 +71,46 @@ void main() {
     expect(game.tempoBpm, 120);
     expect(game.isPlaying, isTrue, reason: 'groove restarts at the new tempo');
   });
+
+  testWidgets('variant badge, level slider and swing drive the engine',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    game.toggleTrack('drums');
+    await tester.pump();
+    expect(game.variantOf('drums'), 0);
+
+    // The A badge on the drums card cycles the pattern variant.
+    await tester.tap(find.text('A').first);
+    await tester.pump();
+    expect(game.variantOf('drums'), 1);
+    expect(find.text('B'), findsOneWidget);
+
+    game.setTrackLevel('drums', 0.4);
+    game.setSwing(0.3);
+    await tester.pump();
+    expect(game.levelOf('drums'), closeTo(0.4, 1e-9));
+    expect(game.swing, closeTo(0.3, 1e-9));
+    expect(game.isPlaying, isTrue);
+  });
+
+  testWidgets('every 4th loop schedules the drum fill at the seam',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    game.toggleTrack('drums');
+    await tester.pump();
+    expect(game.loopIteration, 0);
+
+    // Wraps 1–2 keep the groove; the wrap into iteration 3 (the 4th loop)
+    // swaps in the fill, the next wrap swaps back — none may throw with the
+    // headless audio stub.
+    for (var wrap = 1; wrap <= 5; wrap++) {
+      game.debugLoopWrap();
+      await tester.pump();
+      expect(game.loopIteration, wrap);
+    }
+  });
 }

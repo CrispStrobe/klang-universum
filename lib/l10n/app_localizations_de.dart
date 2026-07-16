@@ -831,6 +831,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerStop => 'Stopp';
 
   @override
+  String get loopMixerSwing => 'Swing';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override
