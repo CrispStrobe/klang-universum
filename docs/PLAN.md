@@ -351,13 +351,13 @@ with `Tuning.standardBass`.
 ## CrispNotation capabilities → new ideas
 
 The crisp_notation library has grown well past what the app currently uses. **As of
-2026-07-13 both the mus path-dep and CI resolve `crisp_notation-public`
-(`CrispStrobe/crisp_notation@main`)** — pubspec points at `../crisp_notation-public/...`
-and the CI/deploy workflows check the public repo out to `crisp_notation-public/`, so
-local and CI are aligned and the new APIs are usable everywhere. (The older
-`../crisp_notation` = **crisp_notation-private** clone is no longer the build target; see
-the memory `crisp_notation-public-vs-private-ci`.) Verified new capabilities and what
-they unlock:
+2026-07-16 both the mus path-dep and CI resolve `crisp_notation`
+(`CrispStrobe/crisp_notation@main`)** — pubspec points at `../crisp_notation/...`
+and the CI/deploy workflows check the public repo out to `crisp_notation/`, so
+local and CI are aligned and the new APIs are usable everywhere. The library now
+lives in a single local clone at `../crisp_notation`; the earlier
+`crisp_notation-public` symlink and the private clone are gone. Verified new
+capabilities and what they unlock:
 
 - **Teaching overlays on `StaffView`** (`showNoteNames`, `showBeatNumbers`,
   `showMeasureNumbers`). **Which Beat?** is shipped — it uses `showBeatNumbers`

@@ -34,10 +34,10 @@ dependencies:
   package_info_plus: ^8.0.0
   url_launcher: ^6.3.0
 
-  # Notation rendering — path dep on the local library workspace
-  # (see ../crisp_notation-public/HANDOVER.md).
+  # Notation rendering — path dep on the local library workspace, which tracks
+  # main ahead of the pub.dev releases (see ../crisp_notation/docs/CONTRACT.md).
   crisp_notation:
-    path: ../crisp_notation-public/packages/crisp_notation
+    path: ../crisp_notation/packages/crisp_notation
   record: ^7.1.1
   # AEC Tier 3b native full-duplex echo canceller (in-repo Flutter FFI plugin).
   # Used only on native platforms + only when speaker-backing AEC is wanted;
@@ -46,11 +46,12 @@ dependencies:
   aec_fullduplex:
     path: native/aec
 
-# crisp_notation_core is not on pub.dev yet; resolve it from the workspace too.
-# Remove this override once the crisp_notation packages are published.
+# crisp_notation_core is published (0.4.3), but the path dep above tracks main,
+# which runs ahead of it — pin core to the same workspace so the two never
+# resolve to different versions. Drop this once mus depends on pub.dev releases.
 dependency_overrides:
   crisp_notation_core:
-    path: ../crisp_notation-public/packages/crisp_notation_core
+    path: ../crisp_notation/packages/crisp_notation_core
 
 dev_dependencies:
   flutter_test:
