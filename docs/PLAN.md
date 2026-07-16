@@ -90,6 +90,22 @@ and push to origin/main** before/after touching shared files. Format:
   overflowing note short-fills the previous bar instead of splitting+tying) so
   the refactor changing them is loud, not a silent test update. Next slices touch
   **only `score_document.dart`**.
+  · ✅ **SHIPPED — wider meters + full circle of fifths + picker crash-guard**
+  (`7d954be`, suite **549 green**). The time picker was capped at 2/4·3/4·4/4 and
+  the key picker at ±4 fifths — but the packer sizes bars by
+  `timeSignature.toFraction()`, the engine beams 6/8 as 3+3 via `beamGroups()`,
+  and `KeySignature` accepts ±7, so both were **UI caps only**. Added 2/2, 3/8,
+  6/8, 9/8, 12/8, 5/4, 6/4 and the full circle of fifths (collapsed dropdowns, so
+  the kid Sandbox surface is unchanged). Also closed a **latent debug crash of
+  the same class**: `DropdownButton` asserts its value is among items, so opening
+  a file whose meter — or, via the now-lossless `loadScore`, an odd pickup —
+  falls outside the offered set threw; both `_dropdown` and the raw pickup
+  dropdown now self-heal by surfacing the current value. **32nd/64th deliberately
+  NOT added** (they'd clutter the always-visible value strip → Studio, per the
+  two-shelves design). · ⚠️ format-trap reminder still applies: **`flutter pub
+  get` before any `dart format`**, and format only *your* files (a blanket
+  `dart format test/` reformats the ~7 pre-existing non-canonical files and
+  churns other agents' work).
   · ✅ **SHIPPED in crisp_notation — the large-score layout ceiling (G).** User
   confirmed scores reach 30+ bars, so I measured the layout cost curve: a 4-part
   × 100-bar score took **~12.8s per layout**, and the cost was **not** the
