@@ -1,0 +1,230 @@
+// tracker_replayer — the tick-based replayer for phase-2 PITCH commands.
+//
+// The state machine is the whole game (see the handover §6), so most of this is
+// pure TRAJECTORY testing: author cells, assert the per-tick (pitch, volume)
+// sequence via [traceChannel]. A handful of audio-domain smoke tests prove the
+// renderer wires the same machine into non-silent PCM of the right length.
+
+import 'dart:math';
+
+import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_replay.dart'
+    show kFxSetVolume, kFxVolumeSlide;
+import 'package:comet_beat/core/audio/tracker_replayer.dart';
+import 'package:comet_beat/core/audio/tracker_song.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// A cell with a command (and optional note) — terse authoring for the tables.
+TrackerCell fx(int cmd, int param, {int? midi}) =>
+    TrackerCell(midi: midi, fxCmd: cmd, fxParam: param);
+
+void main() {
+  group('arpeggio (0xy)', () {
+    test('cycles base / base+x / base+y each tick without moving the base', () {
+      final cells = [
+        fx(kFxArpeggio, 0x47, midi: 60), // 0-4-7 arpeggio on C-4
+        const TrackerCell(), // empty → back to the plain base note
+      ];
+      final t = traceChannel(cells);
+      const want = [0, 4, 7, 0, 4, 7];
+      for (var k = 0; k < 6; k++) {
+        expect(t.pitchAt(0, k), 60 + want[k], reason: 'arp tick $k');
+      }
+      // The base note is untouched: the empty next row rings at plain 60.
+      for (var k = 0; k < 6; k++) {
+        expect(t.pitchAt(1, k), 60);
+      }
+    });
+  });
+
+  group('porta up / down (1xx / 2xx)', () {
+    test('porta up raises pitch monotonically and persists', () {
+      final cells = [
+        fx(kFxPortaUp, 0x10, midi: 60), // 1 semitone/tick (16 units)
+        const TrackerCell(), // rings — the raised pitch persists
+      ];
+      final t = traceChannel(cells);
+      expect(t.pitchAt(0, 0), 60); // tick 0 holds
+      for (var k = 1; k < 6; k++) {
+        expect(t.pitchAt(0, k), greaterThan(t.pitchAt(0, k - 1)));
+      }
+      expect(t.pitchAt(0, 5), closeTo(65, 1e-9)); // +5 over 5 slide-ticks
+      expect(t.pitchAt(1, 0), closeTo(65, 1e-9)); // persisted
+    });
+
+    test('porta down lowers pitch', () {
+      final cells = [fx(kFxPortaDown, 0x10, midi: 60)];
+      final t = traceChannel(cells);
+      expect(t.pitchAt(0, 5), closeTo(55, 1e-9));
+    });
+  });
+
+  group('tone porta (3xx)', () {
+    test('slides toward the row note and never overshoots', () {
+      final cells = [
+        const TrackerCell(midi: 60), // C-4
+        fx(kFxTonePorta, 0x08, midi: 64), // → E-4 target: 0.5 st/tick, no retrig
+        fx(kFxTonePorta, 0x00), // continue (memory reuses 0x08)
+        fx(kFxTonePorta, 0x00),
+      ];
+      final t = traceChannel(cells);
+      // Row 0 sits at C-4.
+      expect(t.pitchAt(0, 5), 60);
+      // Monotonic non-decreasing toward 64, clamped (never above 64).
+      var prev = 60.0;
+      for (var r = 1; r < 4; r++) {
+        for (var k = 0; k < 6; k++) {
+          final p = t.pitchAt(r, k);
+          expect(p, greaterThanOrEqualTo(prev - 1e-9));
+          expect(p, lessThanOrEqualTo(64 + 1e-9));
+          prev = p;
+        }
+      }
+      expect(t.pitchAt(3, 5), closeTo(64, 1e-9)); // reached the target
+    });
+
+    test('tone porta with no prior note just starts on the note', () {
+      final cells = [fx(kFxTonePorta, 0x08, midi: 64)];
+      final t = traceChannel(cells);
+      expect(t.pitchAt(0, 0), 64);
+      expect(t.pitchAt(0, 5), 64);
+    });
+  });
+
+  group('vibrato (4xy)', () {
+    test('is a zero-mean sine on pitch, bounded by the depth', () {
+      // speed 1, depth 8 ⇒ ±1 semitone; a full cycle is 32 ticks.
+      final cells = [
+        fx(kFxVibrato, 0x18, midi: 60),
+        fx(kFxVibrato, 0x00),
+        fx(kFxVibrato, 0x00),
+        fx(kFxVibrato, 0x00),
+      ];
+      final t = traceChannel(cells, ticksPerRow: 8); // 4×8 = 32 ticks = 1 cycle
+      final all = <double>[];
+      for (var r = 0; r < 4; r++) {
+        for (var k = 0; k < 8; k++) {
+          all.add(t.pitchAt(r, k));
+        }
+      }
+      expect(all.first, closeTo(60, 1e-9)); // starts at the base (sin 0)
+      expect(all.reduce(max), greaterThan(60.5)); // swings up
+      expect(all.reduce(min), lessThan(59.5)); // and down
+      expect(all.reduce(max), lessThan(61.001)); // within ±1 semitone
+      expect(all.reduce(min), greaterThan(58.999));
+      final mean = all.reduce((a, b) => a + b) / all.length;
+      expect(mean, closeTo(60, 1e-6)); // zero-mean over one full cycle
+    });
+  });
+
+  group('tremolo (7xy)', () {
+    test('is a zero-mean sine on volume', () {
+      final cells = [
+        fx(kFxSetVolume, 0x20, midi: 60), // C-4 at volume 32
+        fx(kFxTremolo, 0x18), // speed 1, depth 8
+        fx(kFxTremolo, 0x00),
+        fx(kFxTremolo, 0x00),
+        fx(kFxTremolo, 0x00),
+      ];
+      final t = traceChannel(cells, ticksPerRow: 8); // rows 1..4 = 32 ticks
+      final all = <double>[];
+      for (var r = 1; r < 5; r++) {
+        for (var k = 0; k < 8; k++) {
+          all.add(t.volumeAt(r, k));
+        }
+      }
+      expect(all.reduce(max), greaterThan(32)); // above the base
+      expect(all.reduce(min), lessThan(32)); // and below
+      final mean = all.reduce((a, b) => a + b) / all.length;
+      expect(mean, closeTo(32, 1e-6));
+    });
+  });
+
+  group('volume slide (Axy) + set volume (Cxx)', () {
+    test('Cxx sets the persisting channel volume', () {
+      final cells = [
+        fx(kFxSetVolume, 0x20, midi: 60),
+        const TrackerCell(),
+      ];
+      final t = traceChannel(cells);
+      expect(t.volumeAt(0, 0), 32);
+      expect(t.volumeAt(1, 5), 32); // persists across the empty row
+    });
+
+    test('Axy slides the volume over the row and persists', () {
+      final cells = [
+        fx(kFxSetVolume, 0x40, midi: 60), // full
+        fx(kFxVolumeSlide, 0x04), // slide down 4/tick
+        const TrackerCell(),
+      ];
+      final t = traceChannel(cells);
+      expect(t.volumeAt(1, 0), 64); // tick 0 holds
+      expect(t.volumeAt(1, 5), closeTo(44, 1e-9)); // 64 − 4×5
+      expect(t.volumeAt(2, 0), closeTo(44, 1e-9)); // persisted
+    });
+  });
+
+  group('effect memory', () {
+    test('a 0 param reuses the last non-zero param (porta)', () {
+      final cells = [
+        const TrackerCell(midi: 60),
+        fx(kFxPortaUp, 0x04), // arm rate 4
+        fx(kFxPortaUp, 0x00), // reuse rate 4 → keeps rising
+      ];
+      final t = traceChannel(cells);
+      expect(t.pitchAt(2, 5), greaterThan(t.pitchAt(1, 5)));
+    });
+  });
+
+  group('audio rendering', () {
+    TrackerSong songWith(TrackerCell cell) {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      // Channel 0 is an additive 'piano' voice in the default band.
+      song.engine.setCell(0, 0, cell);
+      return song;
+    }
+
+    test('replaySong renders non-silent PCM of the expected length', () {
+      final song = songWith(fx(kFxPortaUp, 0x20, midi: 60));
+      final res = replaySong(song);
+      expect(res.pcm.length, song.timing.totalSamples * song.order.length);
+      final peak = res.pcm.fold<int>(0, (m, s) => max(m, s.abs()));
+      expect(peak, greaterThan(1000)); // clearly audible
+    });
+
+    test('a porta-up note rises in pitch (later half brighter)', () {
+      // Zero-crossing rate is a cheap pitch proxy; a rising note crosses more
+      // often in its second half than its first.
+      final song = songWith(fx(kFxPortaUp, 0x40, midi: 48)); // low note, steep
+      final pcm = replaySong(song).pcm;
+      final n = song.timing.totalSamples; // one note's run (row 0 rings 8 rows)
+      int crossings(int lo, int hi) {
+        var c = 0;
+        for (var i = lo + 1; i < hi; i++) {
+          if ((pcm[i - 1] < 0) != (pcm[i] < 0)) c++;
+        }
+        return c;
+      }
+
+      final firstHalf = crossings(0, n ~/ 2);
+      final secondHalf = crossings(n ~/ 2, n);
+      expect(secondHalf, greaterThan(firstHalf));
+    });
+
+    test('the row-timing map covers every played row in order', () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      song.engine.setCell(0, 0, fx(kFxArpeggio, 0x37, midi: 60));
+      song.addToOrder(0); // order = [0, 0] → two passes
+      final res = replaySong(song);
+      expect(res.timing.length, 8 * 2);
+      for (var i = 1; i < res.timing.length; i++) {
+        expect(
+          res.timing[i].startMs,
+          greaterThanOrEqualTo(res.timing[i - 1].startMs),
+        );
+      }
+      expect(res.timing.first.orderIndex, 0);
+      expect(res.timing.last.orderIndex, 1);
+    });
+  });
+}

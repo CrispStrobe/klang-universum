@@ -26,8 +26,9 @@
 
 import 'dart:typed_data';
 
-import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_replayer.dart';
 
 /// One pattern: a named, channel-major grid of cells (`cells[channel][row]`).
 /// A snapshot compatible with [TrackerEngine.exportCells] /
@@ -149,6 +150,15 @@ class TrackerSong {
   }
 
   bool get isEmpty => patterns.every((p) => !p.hasAnyNote);
+
+  /// Whether any pattern carries an effect-column command (any cell
+  /// [TrackerCell.hasCommand]). When true, rendering routes through the
+  /// tick-based [replaySong]/[replayPattern] (which honour the pitch/volume
+  /// commands) instead of the offline mixer. False → the fast offline path is
+  /// unchanged, so command-free songs pay nothing. Reads the pattern snapshots;
+  /// the render methods [syncCurrent] first so live edits are seen.
+  bool get usesCommands =>
+      patterns.any((p) => p.cells.any((col) => col.any((c) => c.hasCommand)));
 
   // --- Pattern editing (delegates to the engine on the current pattern) ---
 
@@ -401,13 +411,23 @@ class TrackerSong {
 
   // --- Audio -------------------------------------------------------------
 
-  /// The current pattern mixed to one loop-ready WAV.
-  Uint8List renderCurrentPatternWav() => _engine.renderLoop();
+  /// The current pattern mixed to one loop-ready WAV. When the pattern carries
+  /// effect commands it renders through the tick [replayPattern]; otherwise the
+  /// cached offline mix.
+  Uint8List renderCurrentPatternWav() {
+    syncCurrent();
+    if (current.cells.any((col) => col.any((c) => c.hasCommand))) {
+      return wavBytes(replayPattern(channels, current.cells, timing).pcm);
+    }
+    return _engine.renderLoop();
+  }
 
   /// The whole song (the [order] list) rendered to one WAV, patterns back to
-  /// back. Side-effect-free (the engine's live pattern is restored).
+  /// back. Side-effect-free (the engine's live pattern is restored). Routes
+  /// through the tick [replaySong] when any pattern [usesCommands].
   Uint8List renderSongWav() {
     syncCurrent();
+    if (usesCommands) return wavBytes(replaySong(this).pcm);
     return renderSong(_engine, [for (final i in order) patterns[i].cells]);
   }
 
