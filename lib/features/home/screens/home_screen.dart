@@ -232,7 +232,7 @@ class HomeScreen extends StatelessWidget {
                   maxCrossAxisExtent: 280,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 1.15,
+                  childAspectRatio: 1.05,
                 ),
                 itemCount: kLearningModules.length,
                 itemBuilder: (context, index) {
@@ -417,6 +417,8 @@ class _ModuleCard extends StatelessWidget {
               const Spacer(),
               Text(
                 module.title(l10n),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: unlocked ? null : Colors.grey,
