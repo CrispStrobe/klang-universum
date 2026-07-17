@@ -985,6 +985,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerPattern => 'Muster';
 
   @override
+  String get trackerSong => 'Song';
+
+  @override
   String get trackerPlaySong => 'Song spielen';
 
   @override

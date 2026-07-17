@@ -981,6 +981,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerPattern => 'Pattern';
 
   @override
+  String get trackerSong => 'Song';
+
+  @override
   String get trackerPlaySong => 'Play song';
 
   @override

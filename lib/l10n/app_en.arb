@@ -360,6 +360,7 @@
   "trackerDemoTune": "Simple tune (C D E G)",
   "trackerChangeInstrument": "Change instrument",
   "trackerPattern": "Pattern",
+  "trackerSong": "Song",
   "trackerPlaySong": "Play song",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",

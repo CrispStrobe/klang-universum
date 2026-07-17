@@ -113,6 +113,11 @@ abstract interface class TrackerTester {
   /// Whether any slot (or the live pattern) has notes to play as a song.
   bool get songHasContent;
   void playSong();
+
+  /// The editable order-list (slot indices in play order).
+  List<int> get songOrder;
+  void addToOrder(int slot);
+  void clearOrder();
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -145,6 +150,14 @@ class _TrackerScreenState extends State<TrackerScreen>
   late final List<List<List<TrackerCell>>> _slots;
   int _currentSlot = 0;
 
+  /// The song order-list: slot indices in play order (e.g. [0,0,1,0] = A A B A).
+  /// Empty means "auto" — every non-empty slot A→D.
+  final List<int> _order = [];
+  bool _songMode = false;
+
+  /// Which order entry is currently sounding (song mode), else -1.
+  final _playingOrder = ValueNotifier<int>(-1);
+
   int get _voiceIndex => _engine.channels.indexWhere((c) => c.id == 'voice');
 
   /// The selected channel's pattern as staff notation (the "score view").
@@ -171,9 +184,17 @@ class _TrackerScreenState extends State<TrackerScreen>
     _slots = List.generate(_slotCount, (_) => _engine.exportCells());
     _ticker = createTicker((_) {
       final t = _engine.timing;
-      _step.value = _clock.isRunning
-          ? (_clock.elapsedMilliseconds % t.totalMs) ~/ t.stepMs
-          : -1;
+      if (_songMode && _order.isNotEmpty && _clock.isRunning) {
+        final songMs = _order.length * t.totalMs;
+        final pos = _clock.elapsedMilliseconds % songMs;
+        _playingOrder.value = pos ~/ t.totalMs;
+        _step.value = (pos % t.totalMs) ~/ t.stepMs;
+      } else {
+        _playingOrder.value = -1;
+        _step.value = _clock.isRunning
+            ? (_clock.elapsedMilliseconds % t.totalMs) ~/ t.stepMs
+            : -1;
+      }
     })
       ..start();
   }
@@ -182,6 +203,7 @@ class _TrackerScreenState extends State<TrackerScreen>
   void dispose() {
     _ticker.dispose();
     _step.dispose();
+    _playingOrder.dispose();
     _loop.dispose();
     _recorder.dispose();
     super.dispose();
@@ -254,6 +276,12 @@ class _TrackerScreenState extends State<TrackerScreen>
       ].any((s) => !_slotEmpty(s));
   @override
   void playSong() => _playSong();
+  @override
+  List<int> get songOrder => List.unmodifiable(_order);
+  @override
+  void addToOrder(int slot) => _addToOrder(slot);
+  @override
+  void clearOrder() => setState(_order.clear);
 
   bool _slotEmpty(List<List<TrackerCell>> snap) =>
       snap.every((ch) => ch.every((c) => c.isEmpty));
@@ -267,21 +295,37 @@ class _TrackerScreenState extends State<TrackerScreen>
     _syncPlayback();
   }
 
-  /// Renders the non-empty slots in order (A→D) into one song and loops it.
+  /// Adds slot [index] to the end of the song order-list.
+  void _addToOrder(int index) => setState(() => _order.add(index));
+
+  /// Removes the order-list entry at [position].
+  void _removeFromOrder(int position) =>
+      setState(() => _order.removeAt(position));
+
+  /// Renders the song (the [_order] list, or all non-empty slots A→D if the
+  /// order is empty) into one long loop and plays it.
   void _playSong() {
     _slots[_currentSlot] = _engine.exportCells();
-    final order = [
-      for (final s in _slots)
-        if (!_slotEmpty(s)) s,
-    ];
+    final order = _order.isNotEmpty
+        ? List<int>.of(_order)
+        : [
+            for (var i = 0; i < _slotCount; i++)
+              if (!_slotEmpty(_slots[i])) i,
+          ];
     if (order.isEmpty) return;
     if (!context.read<AudioService>().soundOn) return;
-    final wav = renderSong(_engine, order);
+    final wav = renderSong(_engine, [for (final i in order) _slots[i]]);
+    // Materialize the effective order so the strip + playhead reflect it.
+    setState(() {
+      _order
+        ..clear()
+        ..addAll(order);
+      _songMode = true;
+    });
     _clock
       ..reset()
       ..start();
     _loop.playLoop(wav);
-    setState(() {});
   }
 
   /// Imports [score] onto the melody channel (index 0 — treble, so octave-4
@@ -434,8 +478,10 @@ class _TrackerScreenState extends State<TrackerScreen>
   }
 
   /// Swaps/stops the looping mix to match the pattern, keeping the musical
-  /// phase so the beat never resets on an edit.
+  /// phase so the beat never resets on an edit. Any single-pattern playback
+  /// exits song mode (editing returns to the one-bar loop).
   void _syncPlayback() {
+    _songMode = false;
     if (_engine.isEmpty) {
       _clock
         ..stop()
@@ -675,6 +721,38 @@ class _TrackerScreenState extends State<TrackerScreen>
                             : null,
                       ),
                     ),
+                ],
+              ),
+              // Song order-list: the play sequence; the sounding entry lights up.
+              Row(
+                children: [
+                  Text(
+                    l10n.trackerSong,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ValueListenableBuilder<int>(
+                      valueListenable: _playingOrder,
+                      builder: (context, playing, _) => Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [
+                          for (var i = 0; i < _order.length; i++)
+                            InputChip(
+                              label: Text(String.fromCharCode(65 + _order[i])),
+                              selected: i == playing,
+                              onDeleted: () => _removeFromOrder(i),
+                            ),
+                          ActionChip(
+                            avatar: const Icon(Icons.add, size: 16),
+                            label: Text(String.fromCharCode(65 + _currentSlot)),
+                            onPressed: () => _addToOrder(_currentSlot),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),

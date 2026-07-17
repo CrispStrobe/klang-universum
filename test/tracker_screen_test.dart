@@ -212,4 +212,32 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the order-list defines a custom song sequence', (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    expect(game.songOrder, isEmpty);
+
+    game.tapCell(0, 0); // slot A has a note
+    game.selectSlot(1);
+    game.tapCell(1, 2); // slot B has a note
+    await tester.pump();
+
+    // Build the order A B A explicitly.
+    game.selectSlot(0);
+    game.addToOrder(0);
+    game.addToOrder(1);
+    game.addToOrder(0);
+    await tester.pump();
+    expect(game.songOrder, [0, 1, 0]);
+
+    game.playSong();
+    await tester.pump();
+    expect(game.songOrder, [0, 1, 0]); // order preserved
+    expect(tester.takeException(), isNull);
+
+    game.clearOrder();
+    await tester.pump();
+    expect(game.songOrder, isEmpty);
+  });
 }

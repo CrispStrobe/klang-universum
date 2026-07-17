@@ -1898,6 +1898,12 @@ abstract class AppLocalizations {
   /// **'Pattern'**
   String get trackerPattern;
 
+  /// No description provided for @trackerSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Song'**
+  String get trackerSong;
+
   /// No description provided for @trackerPlaySong.
   ///
   /// In en, this message translates to:

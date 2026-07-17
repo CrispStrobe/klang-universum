@@ -329,6 +329,7 @@
   "trackerDemoTune": "Kurze Melodie (C D E G)",
   "trackerChangeInstrument": "Instrument wechseln",
   "trackerPattern": "Muster",
+  "trackerSong": "Song",
   "trackerPlaySong": "Song spielen",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",
