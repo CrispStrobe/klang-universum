@@ -221,6 +221,24 @@ and push to origin/main** before/after touching shared files. Format:
   maths). Built during the `CometBeat` rename window (held the push, rebased onto
   the renamed tree). Analyze clean; consistency + star suites green.
 
+- **opus (rename)** · ✅ **idle / SHIPPED — responsive layout audit + 10 overflow
+  fixes.** Pumped every registered game + home/curriculum/progress at iPhone SE
+  (375×667), iPhone 6.9" (440×956) and iPad 13" (1024×1366), collecting RenderFlex
+  overflows. **18 → 8 findings.** Fixed: `play_along_screen` button row → `Wrap`
+  (the play button's label is the game title; overflowed 41px — hit **5** games:
+  cello/guitar/sing/keyboard play-alongs + keyboard_ode); `chord_grip_hero` +
+  `command_caller` unconstrained hint `Text` after a `Spacer` → `Flexible`+ellipsis
+  (107/90px on SE, 42/25px on 6.9"); `_ModuleCard` title 2-line cap + card ratio
+  1.15→1.05. iPad is clean at every screen. Analyze + affected suites green.
+  ⚠️ **Remaining 8 findings (mostly iPhone SE), unclaimed** — note the audit
+  OVER-reports transient/loading states (appstore.md Step 11), so confirm each
+  against a real navigated render before fixing:
+  `chord_play_along` 125px SE / **60px 6.9"**, `_curriculum` 130px SE / 65px 6.9"
+  (⚠ likely FALSE POSITIVE — the real 6.9" screenshot renders clean),
+  `accidental_sort`(+`_bass`) 41px bottom SE, `cello_play_it` 49px SE,
+  `tracker` 9px SE. Re-create the audit by pumping `kGamesByModule` builders at
+  those sizes and filtering `takeException()` for "overflowed by".
+
 - **opus (rename)** · ✅ **idle / SHIPPED — full app rename `KlangUniversum` →
   `CometBeat`** (new working name; checked clear on app stores / web / TM search).
   Package id `klang_universum`→`comet_beat` (**342 Dart files, ~1,768 imports**),

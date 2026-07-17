@@ -392,31 +392,39 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _stat(
-                          context,
-                          l.playAlongScore,
-                          '${_engine.hits}/${_engine.notes.length}',
+                        // Each stat takes an equal share; their labels/values
+                        // ellipsize rather than overflow on narrow phones.
+                        Expanded(
+                          child: _stat(
+                            context,
+                            l.playAlongScore,
+                            '${_engine.hits}/${_engine.notes.length}',
+                          ),
                         ),
-                        _stat(
-                          context,
-                          l.playAlongNow,
-                          _running
-                              ? (_engine.inCountIn
-                                  ? l.playAlongCountIn
-                                  : (active != null
-                                      ? spelledMidiName(
-                                          context,
-                                          active.note.midi,
-                                        )
-                                      : '—'))
-                              : '—',
+                        Expanded(
+                          child: _stat(
+                            context,
+                            l.playAlongNow,
+                            _running
+                                ? (_engine.inCountIn
+                                    ? l.playAlongCountIn
+                                    : (active != null
+                                        ? spelledMidiName(
+                                            context,
+                                            active.note.midi,
+                                          )
+                                        : '—'))
+                                : '—',
+                          ),
                         ),
-                        _stat(
-                          context,
-                          l.playAlongYou,
-                          _latest.hasPitch
-                              ? spelledMidiName(context, _latest.nearestMidi)
-                              : '—',
+                        Expanded(
+                          child: _stat(
+                            context,
+                            l.playAlongYou,
+                            _latest.hasPitch
+                                ? spelledMidiName(context, _latest.nearestMidi)
+                                : '—',
+                          ),
                         ),
                       ],
                     ),
@@ -437,15 +445,19 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                     ),
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    // Wrap, not Row: the play button's label is the game title,
+                    // which together with Preview overflows a narrow phone —
+                    // they stack instead of clipping.
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
                         OutlinedButton.icon(
                           onPressed: _running ? null : _preview,
                           icon: const Icon(Icons.volume_up),
                           label: Text(l.playAlongPreview),
                         ),
-                        const SizedBox(width: 12),
                         FilledButton.icon(
                           onPressed: _running ? _stop : _start,
                           icon: Icon(_running ? Icons.stop : Icons.play_arrow),
@@ -466,12 +478,21 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
       children: [
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: Theme.of(context)
               .textTheme
               .labelSmall
               ?.copyWith(color: scheme.onSurfaceVariant),
         ),
-        Text(value, style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
       ],
     );
   }

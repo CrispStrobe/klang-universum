@@ -291,9 +291,16 @@ class _CommandCallerScreenState extends State<CommandCallerScreen>
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const Spacer(),
-                          Text(
-                            l10n.conductorPrompt,
-                            style: Theme.of(context).textTheme.bodySmall,
+                          // Flexible: the prompt ellipsizes on narrow phones
+                          // instead of overflowing the status row.
+                          Flexible(
+                            child: Text(
+                              l10n.conductorPrompt,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ),
                         ],
                       ),

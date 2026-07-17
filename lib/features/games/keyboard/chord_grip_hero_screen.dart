@@ -258,9 +258,16 @@ class _ChordGripHeroScreenState extends State<ChordGripHeroScreen>
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const Spacer(),
-                        Text(
-                          l10n.chordGripHint,
-                          style: Theme.of(context).textTheme.bodySmall,
+                        // Flexible: the hint ellipsizes on narrow phones
+                        // instead of overflowing the status row.
+                        Flexible(
+                          child: Text(
+                            l10n.chordGripHint,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ),
                         const Spacer(),
                         for (var i = 0; i < ChordGripHeroScreen._kMaxLives; i++)
