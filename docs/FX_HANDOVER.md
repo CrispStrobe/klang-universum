@@ -48,9 +48,12 @@ effects.dart` (arp/vibrato/slide). See auto-memory `tracker-effort`.
    **cubic Hermite** (port from OpenMPT's resampler). Directly improves the
    **recorded-voice instrument** (the flagship) — smoother pitch-shifting. Small,
    high-value, drop-in (same signature).
-3. **Richer voice FX** (from voicelab) — more `VoiceEffect` presets (alien / cyborg
-   / radio / demon) + port `TimeStretcher` (PSOLA) so a recorded clip can be
-   slowed/sped without pitch change. Extend `voice_fx.dart` + its test.
+3. **Richer voice FX** (from voicelab). ✅ **PSOLA/WSOLA time-stretch DONE** —
+   `crisp_dsp/time_stretch.dart` `timeStretch(input, factor)` (change duration, keep
+   pitch; MPM-verified). Remaining: more `VoiceEffect` presets (alien / cyborg /
+   radio / demon) in `voice_fx.dart` (compose formant + the new ring_mod/distortion;
+   needs the record-sheet UI's `_voiceEffectIcons`/`_voiceEffectLabel` + ARBs), and a
+   slow/fast control wiring `timeStretch` into the record flow.
 4. **Instrument envelopes** (from OpenMPT/IT) — optional volume/pitch envelopes on
    sampled/sfxr instruments for expressiveness. New model + render hook.
 5. **Groove / swing** — a tempo-swing option in the Tracker/Loop Mixer timing (from
