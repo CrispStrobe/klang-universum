@@ -19,7 +19,7 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (textbook-prose)** · 🚧 **ACTIVE — richer per-concept textbook prose + AnaVis-style form-analysis view.** Two connected deliverables landing in the **Textbook reader** (the read-through manual): (A) an authored, localized teaching paragraph **per concept** (`conceptProse(l10n,id)` in `textbook_i18n.dart`, `conceptProse*` ARB keys, rendered atop each expanded `_ConceptTile`; fallback-safe → incremental first tranche of the most abstract concepts), and (B) a reusable non-quiz **`FormAnalysisView`** (built on the existing `FormTimeline`) that plays a piece's sections section-by-section (public-domain motif renditions), wired into the **form concept tiles** as a "See the form" action — fills the AnaVis form-view idea (PLAN §AnaVis) as lesson content. Touching shared **`app_en.arb`/`app_de.arb`** + `textbook_i18n.dart`/`textbook_screen.dart` (coordinate w/ any `textbook-*` agent — additive keys/lookups only). Worktree `../mus-textbook`, branch `feature/textbook-prose-anavis`.
+- **opus (textbook-prose)** · ✅ **idle / SHIPPED — richer per-concept textbook prose + AnaVis-style form-analysis view** (`2f63709`). Two connected pieces in the **Textbook reader** (the read-through manual). (A) **Per-concept lesson prose** beyond the game primers: `conceptProse(l10n,id)` (`textbook_i18n.dart`) returns the textbook's own teaching paragraph (its voice, our words), rendered atop each expanded `_ConceptTile` above "Read the lesson"; **fallback-safe → null where unauthored**, so coverage grows concept by concept. First tranche = the **17 most abstract concepts** (intervals, triads, key sigs, enharmonics, circle of fifths, minor scales, 7th chords, cadences, harmonic function, roman numerals, modulation, modes, syncopation, triplets, song/musical form, transposing instruments), EN+DE. (B) **AnaVis-style form-analysis view** (fills PLAN §AnaVis as lesson content): reusable `FormAnalysisView` (built on the existing `FormTimeline`) plays a piece's sections section-by-section — tap a coloured block to hear that section (highlight ring), or play the whole; worked `kFormExamples` are **our own abstract A/B/C/D motif renditions → no melody licensing risk** (ternary + rondo for `musical_form`; verse-chorus + AABA for `song_form`), wired into the form concept tiles as a **"See the form"** action. `FormTimeline` gained an optional `onTapSection` (additive; the game stays inert). New `form_analysis_view.dart` + `form_analysis_view_test.dart` (example invariants, screen render+tap, prose authored/null + de/en). **Full suite 1242 green, analyze clean.** Touched shared `app_en.arb`/`app_de.arb` + `textbook_i18n.dart`/`textbook_screen.dart` (additive only). **Remaining (optional):** prose for the other ~53 concepts (same fallback-safe pattern); a standalone route/tile for the form-analysis view; a `crisp_notation` score above the timeline. Worktree `../mus-textbook`, branch `feature/textbook-prose-anavis`.
 
 - **opus (tracker-adv)** · 🚧 **ACTIVE — Tracker "Advanced mode" (real-tracker parity) + Workshop entry.** The current Tracker tile becomes **Beginner mode** (unchanged kid pentatonic grid); a new **Advanced mode** reaches ProTracker/ST3/IT/FT2 parity — endless tracks, endless pattern length, multi-pattern songs + order list, full transport (play/pause/stop/prev/next/loop), classic `rows×channels` grid with dual input (keyboard + touch). Built over the ALREADY-general `TrackerEngine` (the "2-3 bars / 6 fixed tracks" limits are UI-only). Slice 1 = new `lib/core/audio/tracker_song.dart` doc model + `advanced_tracker_screen.dart` skeleton + Workshop overflow-menu entry + Beginner⇄Advanced switch. **Will touch shared `composition_workshop_screen.dart`, `game_registry.dart`, ARBs** — rebasing before each push. Worktree `../mus-tracker-adv`, branch `feature/tracker-advanced`.
 
@@ -1143,9 +1143,12 @@ readable end-to-end.**
   **instrument families** (`instrument_family`).
 - **Coverage now: 137/137 games placed (100%), 0 untrained concepts, 0 orphans.**
 
-Remaining (optional): richer per-concept lesson prose beyond the primers; the
-bachelor-tier extension (draw facts from the OER registry below); the AnaVis-style
-form view; and **TTS narration** (below).
+Remaining (optional): ~~richer per-concept lesson prose beyond the primers~~ **first
+tranche SHIPPED** (`2f63709` — 17 concepts, EN/DE, fallback-safe; ~53 concepts
+still open, same pattern); the bachelor-tier extension (draw facts from the OER
+registry below); ~~the AnaVis-style form view~~ **SHIPPED** (`2f63709` —
+`FormAnalysisView` as the form concepts' lesson content); and **TTS narration**
+(below).
 
 ### TTS narration — read the lessons + instructions aloud (maintainer, 2026-07-17)
 Use TTS to read out the text explanations / instructions of the minigames and the
@@ -1252,6 +1255,12 @@ cadence points), and a matching **"label the form" minigame**. Feasible app-side
 (score + a custom span-timeline widget); no new library dep. Tracks as: fills the
 form gap **and** seeds an analysis feature. Later: harmonic-function spans
 (T/S/D colouring) over a progression.
+**SHIPPED (`2f63709`):** the "label the form" minigame (`form_read`) + a non-quiz
+**`FormAnalysisView`** (`features/games/composition/form_analysis_view.dart`,
+built on `FormTimeline`) that plays a piece's A/B/A′ sections section-by-section,
+wired into the Textbook's form concepts (`musical_form`/`song_form`) as a "See the
+form" lesson. Still open: a `crisp_notation` score above the timeline; cadence
+points; harmonic-function (T/S/D) span colouring over a real progression.
 
 ## Delivery
 
