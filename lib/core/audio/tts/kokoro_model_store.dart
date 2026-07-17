@@ -45,11 +45,46 @@ class KokoroModelStore {
   static String voiceFileFor(String lang) =>
       _voiceForLang[lang] ?? _voiceForLang['en']!;
 
-  /// Absolute path of the native lib (override wins; else the crispasr package's
-  /// per-platform default candidate, resolved by the loader).
-  String libPath() => (_libOverride != null && _libOverride.isNotEmpty)
-      ? _libOverride
-      : CrispASR.defaultLibName();
+  /// Absolute path of the native lib. Resolution cascade (first hit wins):
+  ///   1. explicit override (`COMET_CRISPASR_LIB` / constructor) — dev/tests;
+  ///   2. the app bundle's Frameworks dir (macOS release: dylib shipped in the
+  ///      signed `.app` — see tool/bundle_macos_tts.sh);
+  ///   3. `<cacheDir>/libcrispasr.dylib` — a dev/desktop drop next to the models;
+  ///   4. the crispasr package's per-platform default candidate (loader search).
+  String libPath() {
+    if (_libOverride != null && _libOverride.isNotEmpty) return _libOverride;
+    for (final p in [_bundledLibPath(), _cacheLibPath()]) {
+      if (p != null && File(p).existsSync()) return p;
+    }
+    return CrispASR.defaultLibName();
+  }
+
+  /// The dylib inside a built macOS app: `<App>.app/Contents/Frameworks/…`,
+  /// derived from the running executable (`…/Contents/MacOS/<exe>`).
+  String? _bundledLibPath() {
+    if (!Platform.isMacOS) return null;
+    try {
+      final macosDir =
+          File(Platform.resolvedExecutable).parent; // Contents/MacOS
+      return '${macosDir.parent.path}/Frameworks/libcrispasr.dylib';
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// A dylib dropped alongside the cached models (desktop/dev convenience).
+  String? _cacheLibPath() {
+    final dir = _cacheDirOnMain();
+    return dir == null ? null : '$dir/libcrispasr.dylib';
+  }
+
+  String? _cacheDirOnMain() {
+    if (cacheDirOverride != null && cacheDirOverride!.isNotEmpty) {
+      return cacheDirOverride;
+    }
+    final home = Platform.environment['HOME'];
+    return home == null ? null : '$home/.cache/crispasr';
+  }
 
   DynamicLibrary? _tryOpenLib() {
     try {

@@ -23,6 +23,8 @@ and push to origin/main** before/after touching shared files. Format:
 
 - **opus (tracker-adv)** · 🚧 **ACTIVE — Tracker "Advanced mode" (real-tracker parity) + Workshop entry.** The current Tracker tile becomes **Beginner mode** (unchanged kid pentatonic grid); a new **Advanced mode** reaches ProTracker/ST3/IT/FT2 parity — endless tracks, endless pattern length, multi-pattern songs + order list, full transport (play/pause/stop/prev/next/loop), classic `rows×channels` grid with dual input (keyboard + touch). Built over the ALREADY-general `TrackerEngine` (the "2-3 bars / 6 fixed tracks" limits are UI-only). ✅ **Slice 1 SHIPPED (`daa95f9`):** new Flutter-free `lib/core/audio/tracker_song.dart` (TrackerSong = ordered patterns + order list + shared band; **endless length** `setRows`, **endless tracks** add/removeChannel, **multi-pattern songs** `renderSongWav`; 12 tests) + `advanced_tracker_screen.dart` (classic `rows×channels` grid, hex row numbers, moving playhead + follow-scroll, chromatic tap note-picker, Length 16..128, Add track, Play/Stop on the phase-preserving gapless loop; tester seam + 4 widget tests) + Beginner⇄Advanced app-bar switch + Composition Workshop overflow "Advanced Tracker" entry + 13 EN/DE ARB keys. Acceptance: 2-pattern 64-row song → `bin/listen.dart` reads the exact authored scale ×2 at 0 cents; analyze clean, 91 tracker+workshop tests green. ✅ **Slices 2–4 SHIPPED:** S2 (`2919667`) full dual-input cell editing — an edit cursor + FastTracker-2 computer-keyboard piano map (octave + edit-step + arrows + Delete) AND an on-screen mini-piano at the cursor, per-track instrument picker, per-cell volume/effect (long-press) with note/vol/fx sub-columns. S3 (`7441e60`) multi-pattern songs — pattern strip (new/clone/delete), order-list editor, "Play song" over the order list with the sounding entry lit. S4 (`e1d44a0`) the full transport the user asked for — Play/Pause/Resume (FAB, freezes in place via new `GaplessLoopPlayer.pause()/resume()`) + a Back·Stop·Forward·Loop row + position readout; Back/Forward seek order positions while a song plays (stopwatch base-offset makes it seekable) else navigate patterns. Every stated complaint resolved: endless length + endless tracks + chromatic classic grid + Workshop entry + Beginner⇄Advanced + full transport. analyze clean; 54 advanced/model/beginner/workshop tests green. **Remaining (S5+, optional parity depth):** wire the existing MOD/XM/S3M/IT/MIDI/MusicXML↔Song-Book I/O into Advanced, mute/solo, per-channel FX-chain UI, the classic effect-command set, row insert/delete, optional Beginner length extension. Touches shared `composition_workshop_screen.dart` + ARBs — rebasing before each push. Worktree `../mus-tracker-adv`, branch `feature/tracker-advanced`.
 
+- **opus (tts-macos)** · ✅ **idle / SHIPPED — TTS slice 4: macOS `libcrispasr` bundling (dev-verified).** `tool/bundle_macos_tts.sh` collects `libcrispasr` + its **8 deps** (ggml ×5, Homebrew opus/ogg) into a **self-contained** set (copy-by-referenced-name → `@rpath`, strip foreign rpaths to `@loader_path`, sign, + a static self-containment check). `KokoroModelStore.libPath()` gains a cascade (override → `.app` Frameworks → `~/.cache/crispasr` → default). **Verified: synth runs through the bundled set with only `@loader_path`** (loads the bundle's ggml, not the machine's) → portable. Dev: run the script → `flutter run macos` → HD tile appears. `docs/TTS_MACOS.md` (dev + release Frameworks embed + App-Store caveats); cascade unit-tested; analyze clean. **Shared `macos/` Xcode project NOT touched** (multi-agent safety) — new files only (`tool/`, `docs/`, store cascade). Remaining: release `.app` embed + iOS/Android/web.
+
 - **opus (tts-settings)** · ✅ **idle / SHIPPED — TTS slice 3: the "Natural voice (HD)" settings tile.** A tile in Settings (below the sound switch) that opt-in **downloads the ~135 MB Kokoro model** (`backend.download()` → CrispASR's registry+`cacheEnsureFile`) with a spinner, then "On ✓"; once cached, narration auto-upgrades to the neural voice. `TtsService` gains `hasNeural`/`neuralSupported`/`neuralReady`/`downloadNeuralVoice`; `NeuralTts` holder carries `supported`+`download`. **Shown only where libcrispasr loads** (invisible until it's bundled per platform), and degrades gracefully with no TtsService (settings tests untouched). EN/DE ARB; 24 TTS/settings tests green; analyze clean. Touched shared `main.dart`+ARBs+settings — rebased. Remaining TTS work: per-platform lib bundling (macOS first).
 
 - **opus (tts-crispasr)** · ✅ **idle / SHIPPED — TTS slice 2: CrispASR/Kokoro NEURAL backend via CrispASR's OWN registry + downloader.** Behind the `TtsBackend` seam: `crispasr_tts_backend.dart` (crispasr pub FFI → libcrispasr → **Kokoro**, Apache-2.0; a background-isolate `runKokoroJob` resolves via `registryLookup` + downloads via `cacheEnsureFile` = the CLI's `-m auto` path; `synthesize` → PCM16 → `wavBytes` → `AudioService.playWavBytes`) + `kokoro_model_store.dart` (**no hand-rolled URLs** — the GGUFs are already published at `cstr/kokoro-82m-GGUF` + `cstr/kokoro-voices-GGUF`; cached into `~/.cache/crispasr`; `isReady` = lib+model cached) + `tts_neural.dart` conditional facade (**web null stub**). Download is **consent-gated** (playback never fetches; `backend.download(lang)` is the opt-in). `TtsService` prefers neural when ready, else flutter_tts. **Verified**: registry→published cstr URL resolves from the app dep, + REAL macOS synth (libcrispasr.dylib → valid German audio); download ABI symbols present. 16 TTS tests green, analyze clean. Dep `crispasr: ^0.8.11` (pub.dev) → CI needs no native lib. Remaining: a settings "Download voice" trigger; per-platform lib bundling (macOS first). Detail in TTS section. Touched shared `main.dart`+`pubspec` — rebased.
@@ -1208,11 +1210,27 @@ loads** (invisible until libcrispasr is bundled), offers a one-tap **Download
 voice. Degrades gracefully with no TtsService (settings tests untouched). EN/DE
 ARB; 24 TTS/settings tests green; analyze clean.
 
+**Slice 4 — SHIPPED (2026-07-17): macOS lib bundling (dev-verified).** `libcrispasr`
+is 9.6 MB but drags in **8 more dylibs** (ggml ×5 + Homebrew opus/ogg), several
+referencing the maintainer's Cellar/build tree by absolute path. `tool/
+bundle_macos_tts.sh` (a mini `dylibbundler` in `install_name_tool`+`codesign`)
+collects all 9 **self-contained** (copy-by-referenced-name, rewrite ids/deps to
+`@rpath`, strip foreign rpaths to `@loader_path`, ad-hoc sign) and **statically
+verifies** it. `KokoroModelStore.libPath()` gains a resolution cascade
+(override → `.app`/Contents/Frameworks → `~/.cache/crispasr` → default). **Verified:
+synth runs through the bundled set with only `@loader_path` on the rpath** (loads
+the bundle's ggml, not the machine's) → portable/`.app`-ready. Dev flow: run the
+script (→ `~/.cache/crispasr`), `flutter run macos`, the HD tile appears. Docs +
+App-Store caveats in `docs/TTS_MACOS.md`; cascade unit-tested. Shared `macos/`
+Xcode project intentionally NOT modified (multi-agent safety) — the release
+Frameworks embed is documented for a release worktree.
+
 **Remaining work:**
-1. **Bundle `libcrispasr` per platform** — macOS `.dylib` into the `.app` first;
-   then iOS xcframework, Android `.so` per-ABI, web WASM. Each platform falls back
-   to flutter_tts until its lib ships. (The HD-voice tile then appears + works.)
-3. **German quality** (optional): fetch the `kokoro-de-hui-base` backbone (a second
+1. **Release `.app` embed** — add the Copy-Files-to-Frameworks phase (per
+   `docs/TTS_MACOS.md`) in a release worktree + Developer-ID re-sign; then
+   **iOS** xcframework, **Android** `.so` per-ABI, **web** WASM. Each platform
+   falls back to flutter_tts until its lib ships. (The HD-voice tile then works.)
+2. **German quality** (optional): fetch the `kokoro-de-hui-base` backbone (a second
    ~135 MB model) + route `-l de` for a cleaner German phonemizer; expose
    `set_length_scale` as a kid-friendly slower rate.
 
