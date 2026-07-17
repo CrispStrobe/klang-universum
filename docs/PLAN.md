@@ -19,6 +19,18 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (majmin-sort)** · 🚧 **ACTIVE — "Major or Minor?" triad-sort minigame**
+  (backlog §B, an open `[ ]` — the *reading* counterpart to the aural
+  `major_minor_ear`). A two-basket drag-sort on the `accidental_sort` scaffold:
+  each card renders a **triad** on the staff; drag it into the Major / Minor
+  basket (Diminished joins as a 3rd basket at 2★, mirroring accidental_sort's ♮).
+  Built with crisp_notation `Triad(root, ChordQuality)`. New
+  `features/games/chords/major_minor_sort_screen.dart` + `GameInfo` +
+  `kStarThresholds` + EN/DE ARBs + a `pumpGame` test. SRI
+  `chords.quality.<major|minor|diminished>`. Worktree `../mus-majmin`, branch
+  `feature/majmin-sort`. Touching hot shared files (registry, tuning, ARBs) —
+  rebasing often.
+
 - **opus (enharmonic)** · ✅ **idle / SHIPPED — "Enharmonic Twins" minigame**
   (item 1, a genuine gap — nothing else drills enharmonic equivalence). A binary
   staff-read on the `tie_slur` scaffold: two whole notes are shown (each with its
