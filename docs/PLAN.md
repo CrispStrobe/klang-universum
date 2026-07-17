@@ -48,8 +48,12 @@ and push to origin/main** before/after touching shared files. Format:
   ✅ **Slice 3 SHIPPED (Studio instrument picker):** `kTrackerInstruments` palette
   (4 additive + 5 sfxr) + a `tune` app-bar action → bottom-sheet picker that
   re-voices the selected channel (`setChannelInstrument`), unlocking the chiptune
-  presets. 🚧 **Now working:** percussion instrument + arrangement + Workshop↔Tracker
-  handoff. Handover: [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
+  presets. ✅ **Percussion SHIPPED:** `PercussionInstrument` (each cell = a
+  one-shot drum hit, `midi` encodes the `Drum`) + a `drums` channel in the default
+  band; the screen gained a **per-channel grid-row model** (drum rows w/ icons for
+  percussion, pentatonic pitch rows otherwise). 🚧 **Now working:** arrangement/
+  order-list + Workshop↔Tracker handoff. Handover:
+  [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
 - **opus (parity)** · ✅ **idle / SHIPPED — notation-depth batch (voltas/nav, tuplets, discontiguous selection, RhythmPolicy.split).**
   Working through the tracked roadmap in
   [`WORKSHOP_PARITY.md`](WORKSHOP_PARITY.md) §"Notation-depth roadmap": **(1)

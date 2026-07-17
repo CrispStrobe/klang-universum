@@ -225,6 +225,33 @@ class SampleInstrument implements TrackerInstrument {
   }
 }
 
+/// A drum instrument: each non-empty cell is a one-shot hit (not held), the
+/// cell's [TrackerCell.midi] encoding the [Drum] index (0 kick, 1 snare, 2 hat).
+/// Renders via the Loop Mixer's noise percussion. Its rows are drums, not
+/// pitches — the screen renders it with a drum row model.
+class PercussionInstrument implements TrackerInstrument {
+  const PercussionInstrument(this.id);
+
+  @override
+  final String id;
+
+  /// The drums, ordered top row → bottom row on the grid.
+  static const rows = [Drum.hat, Drum.snare, Drum.kick];
+
+  @override
+  Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) {
+    final hits = <(int, Drum)>[];
+    for (var step = 0; step < cells.length; step++) {
+      final midi = cells[step].midi;
+      if (midi != null) {
+        final idx = midi.clamp(0, Drum.values.length - 1);
+        hits.add((step * timing.stepMs, Drum.values[idx]));
+      }
+    }
+    return renderDrumPattern(hits, totalMs: timing.totalMs);
+  }
+}
+
 /// One editable column: an [instrument], an authored mix [gain], and [rows]
 /// cells. Levels are combo-independent (each channel carries its gain into
 /// mixStems' unit-peak-per-stem + soft-limiter mixdown), so editing one channel
@@ -284,6 +311,12 @@ List<TrackerChannel> defaultTrackerChannels({int rows = 16}) => [
         id: 'bass',
         instrument: const AdditiveInstrument('cello', Instrument.cello),
         gain: 0.55,
+        rows: rows,
+      ),
+      TrackerChannel(
+        id: 'drums',
+        instrument: const PercussionInstrument('drums'),
+        gain: 0.50,
         rows: rows,
       ),
       // Empty until the child records into it (renders silence meanwhile).

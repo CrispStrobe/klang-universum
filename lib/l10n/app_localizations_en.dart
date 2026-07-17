@@ -938,6 +938,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerChannelBass => 'Bass';
 
   @override
+  String get trackerChannelDrums => 'Drums';
+
+  @override
   String get trackerChannelVoice => 'Voice';
 
   @override

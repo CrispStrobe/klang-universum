@@ -942,6 +942,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerChannelBass => 'Bass';
 
   @override
+  String get trackerChannelDrums => 'Schlagzeug';
+
+  @override
   String get trackerChannelVoice => 'Stimme';
 
   @override

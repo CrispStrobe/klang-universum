@@ -188,6 +188,34 @@ void main() {
     });
   });
 
+  group('PercussionInstrument channel', () {
+    test('each non-empty cell is a one-shot drum hit; empty is silence', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final ch = TrackerChannel(
+        id: 'drums',
+        instrument: const PercussionInstrument('drums'),
+        rows: timing.rows,
+      );
+      final silent = ch.instrument.renderChannel(ch.cells, timing);
+      expect(silent.length, timing.totalSamples);
+      expect(silent.every((v) => v == 0), isTrue);
+
+      // Kick (Drum.kick.index == 0) on step 0.
+      ch.cells[0] = const TrackerCell(midi: 0);
+      final hit = ch.instrument.renderChannel(ch.cells, timing);
+      expect(hit.any((v) => v != 0), isTrue);
+    });
+
+    test('the default band includes a drums channel', () {
+      final e = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      );
+      expect(e.channels.map((c) => c.id), contains('drums'));
+      final drums = e.channels.firstWhere((c) => c.id == 'drums');
+      expect(drums.instrument, isA<PercussionInstrument>());
+    });
+  });
+
   group('instrument palette', () {
     test('every option builds an instrument with a matching id', () {
       expect(kTrackerInstruments, isNotEmpty);

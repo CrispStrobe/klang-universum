@@ -346,6 +346,7 @@
   "trackerChannelSparkle": "Sparkle",
   "trackerChannelZap": "Zap",
   "trackerChannelBass": "Bass",
+  "trackerChannelDrums": "Drums",
   "trackerChannelVoice": "Voice",
   "trackerToggleNotation": "Show notation",
   "trackerImportTune": "Load a tune",

@@ -1814,6 +1814,12 @@ abstract class AppLocalizations {
   /// **'Bass'**
   String get trackerChannelBass;
 
+  /// No description provided for @trackerChannelDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drums'**
+  String get trackerChannelDrums;
+
   /// No description provided for @trackerChannelVoice.
   ///
   /// In en, this message translates to:

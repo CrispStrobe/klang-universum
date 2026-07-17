@@ -152,4 +152,21 @@ void main() {
     expect(game.selectedInstrumentId, 'laser');
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the drums channel uses a 3-row drum grid', (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    final drums = game.channelIds.indexOf('drums');
+    expect(drums, greaterThanOrEqualTo(0));
+
+    game.selectChannel(drums);
+    await tester.pump();
+    expect(game.pitchRows, 3); // hat / snare / kick
+
+    game.tapCell(2, 0); // bottom row (kick), step 0
+    await tester.pump();
+    expect(game.noteCount, 1);
+    expect(game.isPlaying, isTrue);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -23,6 +23,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart';
 import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:klang_universum/core/audio/synth.dart' show Drum;
 import 'package:klang_universum/core/audio/tracker_engine.dart';
 import 'package:klang_universum/core/audio/voice_clip_recorder.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
@@ -129,8 +130,16 @@ class _TrackerScreenState extends State<TrackerScreen>
   /// The selected channel's pattern as staff notation (the "score view").
   Score get _selectedScore {
     final ch = _engine.channels[_selected];
+    // Drums aren't pitched — show a rest bar rather than drum codes as pitches.
+    final source = ch.instrument is PercussionInstrument
+        ? TrackerChannel(
+            id: ch.id,
+            instrument: ch.instrument,
+            rows: _engine.rows,
+          )
+        : ch;
     return trackerChannelToScore(
-      ch,
+      source,
       _engine.timing,
       clef: ch.id == 'bass' ? Clef.bass : Clef.treble,
     );
@@ -163,7 +172,7 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   int get selectedChannel => _selected;
   @override
-  int get pitchRows => TrackerScreen.rowSteps.length;
+  int get pitchRows => _gridRows(_selected).length;
   @override
   int get steps => _engine.rows;
   @override
@@ -176,7 +185,8 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   void selectChannel(int index) => setState(() => _selected = index);
   @override
-  void tapCell(int row, int step) => _onTap(row, step);
+  void tapCell(int row, int step) =>
+      _onTapCode(_gridRows(_selected)[row].code, step);
   @override
   void clearAll() => _clearAll();
   @override
@@ -246,20 +256,53 @@ class _TrackerScreenState extends State<TrackerScreen>
     }
   }
 
-  /// The MIDI note a grid row maps to for the given channel.
+  bool _isPercussion(int channel) =>
+      _engine.channels[channel].instrument is PercussionInstrument;
+
+  /// The MIDI note a pitched grid row maps to for [channel].
   int _midiFor(int channel, int row) =>
       TrackerScreen._rowMidiOct4[row] +
       12 * (TrackerScreen._channelOctave[_engine.channels[channel].id] ?? 0);
 
-  void _onTap(int row, int step) {
-    final midi = _midiFor(_selected, row);
-    final placed = _engine.toggleNote(_selected, step, midi);
+  /// The grid rows for [channel]: drum rows for percussion, else the pentatonic
+  /// pitch rows. `code` is what a placed cell holds — a Drum index, or a MIDI
+  /// note (both round-trip through [TrackerCell.midi]).
+  List<_GridRow> _gridRows(int channel) {
+    if (_isPercussion(channel)) {
+      return [
+        for (final drum in PercussionInstrument.rows)
+          _GridRow(_drumColor(drum), drum.index, icon: _drumIcon(drum)),
+      ];
+    }
+    return [
+      for (var r = 0; r < TrackerScreen.rowSteps.length; r++)
+        _GridRow(
+          pitchClassColor(TrackerScreen.rowSteps[r]),
+          _midiFor(channel, r),
+        ),
+    ];
+  }
+
+  void _onTapCode(int code, int step) {
+    final placed = _engine.toggleNote(_selected, step, code);
     setState(() {});
-    if (placed != null) {
-      context.read<AudioService>().playMidiNote(midi, ms: 300);
+    if (placed != null && !_isPercussion(_selected)) {
+      context.read<AudioService>().playMidiNote(code, ms: 300);
     }
     _syncPlayback();
   }
+
+  static Color _drumColor(Drum d) => switch (d) {
+        Drum.kick => const Color(0xFF4E342E),
+        Drum.snare => const Color(0xFF6D4C41),
+        Drum.hat => const Color(0xFF8D6E63),
+      };
+
+  static IconData _drumIcon(Drum d) => switch (d) {
+        Drum.kick => Icons.circle,
+        Drum.snare => Icons.radio_button_checked,
+        Drum.hat => Icons.blur_on,
+      };
 
   void _clearAll() {
     setState(_engine.clearAll);
@@ -304,6 +347,7 @@ class _TrackerScreenState extends State<TrackerScreen>
     'sparkle': Icons.auto_awesome,
     'zap': Icons.bolt,
     'bass': Icons.speaker,
+    'drums': Icons.album,
     'voice': Icons.mic,
   };
 
@@ -311,6 +355,7 @@ class _TrackerScreenState extends State<TrackerScreen>
         'melody' => l10n.trackerChannelMelody,
         'sparkle' => l10n.trackerChannelSparkle,
         'zap' => l10n.trackerChannelZap,
+        'drums' => l10n.trackerChannelDrums,
         'voice' => l10n.trackerChannelVoice,
         _ => l10n.trackerChannelBass,
       };
@@ -438,9 +483,6 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final rowColors = [
-      for (final s in TrackerScreen.rowSteps) pitchClassColor(s),
-    ];
 
     return Scaffold(
       appBar: GameAppBar(
@@ -492,18 +534,25 @@ class _TrackerScreenState extends State<TrackerScreen>
               const SizedBox(height: 10),
               _Playhead(step: _step, steps: _engine.rows),
               const SizedBox(height: 8),
-              // The pentatonic piano-roll for the selected channel.
+              // The selected channel's grid: pentatonic pitch rows, or drum rows.
               Expanded(
                 child: Column(
                   children: [
-                    for (var row = 0;
-                        row < TrackerScreen.rowSteps.length;
-                        row++)
+                    for (final gridRow in _gridRows(_selected))
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 3),
                           child: Row(
                             children: [
+                              if (gridRow.icon != null)
+                                SizedBox(
+                                  width: 24,
+                                  child: Icon(
+                                    gridRow.icon,
+                                    size: 16,
+                                    color: gridRow.color,
+                                  ),
+                                ),
                               for (var step = 0; step < _engine.rows; step++)
                                 Expanded(
                                   child: Padding(
@@ -511,12 +560,13 @@ class _TrackerScreenState extends State<TrackerScreen>
                                       horizontal: 3,
                                     ),
                                     child: _Cell(
-                                      color: rowColors[row],
+                                      color: gridRow.color,
                                       active: _engine
                                               .cellAt(_selected, step)
                                               .midi ==
-                                          _midiFor(_selected, row),
-                                      onTap: () => _onTap(row, step),
+                                          gridRow.code,
+                                      onTap: () =>
+                                          _onTapCode(gridRow.code, step),
                                     ),
                                   ),
                                 ),
@@ -657,6 +707,16 @@ class _Playhead extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One grid row: its [color], the cell payload [code] (a MIDI note or a Drum
+/// index), and an optional leading [icon] (drum rows).
+class _GridRow {
+  const _GridRow(this.color, this.code, {this.icon});
+
+  final Color color;
+  final int code;
+  final IconData? icon;
 }
 
 class _Cell extends StatelessWidget {
