@@ -1856,6 +1856,18 @@ abstract class AppLocalizations {
   /// **'Headphones help the mic hear only you'**
   String get loopMixerJamHeadphones;
 
+  /// No description provided for @loopMixerFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the melody'**
+  String get loopMixerFollow;
+
+  /// No description provided for @loopMixerFollowScore.
+  ///
+  /// In en, this message translates to:
+  /// **'🎯 Melody match: {pct}%'**
+  String loopMixerFollowScore(int pct);
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:

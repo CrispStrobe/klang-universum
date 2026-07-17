@@ -961,6 +961,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerJamHeadphones => 'Headphones help the mic hear only you';
 
   @override
+  String get loopMixerFollow => 'Follow the melody';
+
+  @override
+  String loopMixerFollowScore(int pct) {
+    return '🎯 Melody match: $pct%';
+  }
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override

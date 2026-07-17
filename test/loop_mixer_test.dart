@@ -11,7 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/aec_engine.dart';
 import 'package:klang_universum/core/audio/loop_engine.dart';
+import 'package:klang_universum/core/audio/pitch_analysis.dart';
 import 'package:klang_universum/core/audio/synth.dart';
+import 'package:klang_universum/features/games/composition/groove_play_along.dart';
 import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:provider/provider.dart';
@@ -285,7 +287,8 @@ void main() {
     expect(game.isJamming, isFalse);
   });
 
-  testWidgets('AEC jam feeds the loop as reference and grades the cleaned '
+  testWidgets(
+      'AEC jam feeds the loop as reference and grades the cleaned '
       'near-end', (tester) async {
     final fake = FakeAecEngine();
     await pumpGame(tester, LoopMixerScreen(aecFactory: () => fake));
@@ -297,7 +300,8 @@ void main() {
 
     game.toggleJam();
     await tester.pump(); // _startAecJam completes (fake start is instant)
-    await tester.pump(const Duration(milliseconds: 120)); // reference pump ticks
+    await tester
+        .pump(const Duration(milliseconds: 120)); // reference pump ticks
 
     expect(game.isJamming, isTrue);
     expect(game.usesAecJam, isTrue, reason: 'picked the Tier-3b path');
@@ -332,6 +336,57 @@ void main() {
     // The async teardown (stop/dispose) needs the real event loop to settle.
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     expect(fake.stopped, isTrue);
+  });
+
+  testWidgets('follow-the-melody grades the player against the leading track',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    game.toggleTrack('melody');
+    await tester.pump();
+    expect(game.isFollowing, isFalse);
+
+    // Turn follow on: it builds a chart over the leading track (melody).
+    game.toggleFollow();
+    await tester.pump();
+    expect(game.isFollowing, isTrue);
+    expect(game.followAccuracy, 0);
+
+    // Play the target line perfectly: for each melody note, feed its own pitch
+    // during its window (elapsedMs injected — the live grade reads a real
+    // Stopwatch the test can't advance).
+    final chart = grooveChart(
+      LoopEngine().cellsFor('melody')!,
+      bpm: game.tempoBpm,
+      name: 'melody',
+    );
+    // Feed in order; each note is finalized (hit/miss) when the next arrives.
+    // We stay within one loop pass — going past the end would wrap and re-arm.
+    for (final n in chart.notes) {
+      final midMs = (n.startBeat + n.beats / 2) * chart.beatMs;
+      game.debugFeedFollow(
+        PitchReading(
+          frequency: 440.0 * pow(2.0, (n.midi - 69) / 12.0),
+          clarity: 1,
+          a4: kDefaultA4,
+        ),
+        midMs,
+      );
+    }
+    await tester.pump();
+
+    expect(
+      game.followAccuracy,
+      greaterThan(0),
+      reason: 'playing the melody scores hits',
+    );
+
+    // Toggling follow off clears the grade.
+    game.toggleFollow();
+    await tester.pump();
+    expect(game.isFollowing, isFalse);
+    expect(game.followAccuracy, 0);
   });
 
   testWidgets('a groove code captures and restores the whole state',

@@ -37,10 +37,12 @@ import 'package:klang_universum/core/audio/loop_engine.dart';
 import 'package:klang_universum/core/audio/loop_reference.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
+import 'package:klang_universum/core/audio/play_along.dart';
 import 'package:klang_universum/core/audio/wav_io.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
 import 'package:klang_universum/features/games/composition/groove_notation.dart';
+import 'package:klang_universum/features/games/composition/groove_play_along.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -102,6 +104,19 @@ abstract interface class LoopMixerTester {
 
   /// The latest live jam reading (null when not jamming / silent).
   PitchReading? get jamReading;
+
+  /// True while "follow the melody" grading is on (only meaningful in jam).
+  bool get isFollowing;
+
+  /// Live per-pass accuracy of the follow grade (0..1).
+  double get followAccuracy;
+
+  /// Toggle "follow the melody" grading during jam.
+  void toggleFollow();
+
+  /// Grade one reading against the follow target at an explicit [elapsedMs]
+  /// (the live grade reads a real Stopwatch, which widget tests can't advance).
+  void debugFeedFollow(PitchReading reading, double elapsedMs);
 
   /// True when a pitched track is enabled — the Song Book / MusicXML export
   /// is offered (and enabled) only then.
@@ -171,6 +186,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _micSub?.cancel();
     _mic?.dispose();
     _jamMic?.dispose();
+    _followAccuracy.dispose();
     super.dispose();
   }
 
@@ -407,6 +423,71 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       _kJamSampleRate * 50 ~/ 1000; // one interval's worth
   static const _refPrimeSamples = _refTickSamples * 2; // ~100 ms prebuffer
 
+  // "Follow the melody": grade the player against the leading track's line
+  // (the tune on the score panel) with the same PlayAlongEngine as Play Along,
+  // looping over the groove. Null unless follow mode is on while jamming.
+  PlayAlongEngine? _followEngine;
+  final _followAccuracy = ValueNotifier<double>(0);
+
+  /// One jam reading: colour it (jamFit) and, when following, grade it against
+  /// the target line at the groove's live clock.
+  void _onJamReading(PitchReading r) {
+    _jamReading.value = r;
+    final follow = _followEngine;
+    if (follow != null) {
+      follow.update(
+        elapsedMs: _clock.elapsedMilliseconds.toDouble(),
+        reading: r,
+      );
+      _followAccuracy.value = follow.accuracy;
+    }
+  }
+
+  /// Builds a looping [PlayAlongEngine] over the leading enabled track's line,
+  /// or null when there's nothing pitched to follow. The practice loop spans
+  /// the whole chart so it re-arms every groove pass; no count-in — the groove
+  /// is already playing.
+  PlayAlongEngine? _buildFollowEngine() {
+    final id = _engravedTrackId;
+    if (id == null) return null;
+    final cells = _engine.cellsFor(id);
+    if (cells == null) return null;
+    final chart = grooveChart(
+      cells,
+      bpm: _engine.tempoBpm,
+      name: id,
+      octaveAgnostic: id == 'voice',
+    );
+    if (chart.notes.isEmpty) return null;
+    return PlayAlongEngine(chart, leadInBeats: 0)..setLoop(0, chart.totalBeats);
+  }
+
+  @override
+  bool get isFollowing => _followEngine != null;
+
+  @override
+  double get followAccuracy => _followAccuracy.value;
+
+  @override
+  void toggleFollow() {
+    setState(() {
+      if (_followEngine != null) {
+        _followEngine = null;
+        _followAccuracy.value = 0;
+      } else {
+        _followEngine = _buildFollowEngine();
+      }
+    });
+  }
+
+  @override
+  void debugFeedFollow(PitchReading reading, double elapsedMs) {
+    final follow = _followEngine;
+    if (follow == null) return;
+    follow.update(elapsedMs: elapsedMs, reading: reading);
+    _followAccuracy.value = follow.accuracy;
+  }
+
   @override
   bool get isJamming => _jamming;
 
@@ -445,7 +526,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     unawaited(_loop.stop());
     final scheduler = LoopReferenceScheduler(_loopPcm());
     try {
-      _micSub = mic.readings.listen((r) => _jamReading.value = r);
+      _micSub = mic.readings.listen(_onJamReading);
       await mic.start();
     } catch (e) {
       await _micSub?.cancel();
@@ -480,7 +561,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     final mic = _mic ??= MicrophonePitchService();
     mic.echoCancel = true;
     try {
-      _micSub = mic.readings.listen((r) => _jamReading.value = r);
+      _micSub = mic.readings.listen(_onJamReading);
       await mic.start();
     } catch (e) {
       await _micSub?.cancel();
@@ -510,6 +591,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _jamAec = null;
     _refScheduler = null;
     _jamReading.value = null;
+    _followEngine = null;
+    _followAccuracy.value = 0;
     if (mounted) setState(() => _jamming = false);
     if (aecMic != null) {
       await aecMic.stop();
@@ -864,6 +947,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       ..reset();
     _lastPhaseMs = 0;
     _iteration = 0;
+    // The follow target (bpm + line) depends on the grid — rebuild it.
+    if (_followEngine != null) _followEngine = _buildFollowEngine();
     _syncPlayback();
   }
 
@@ -1010,6 +1095,21 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                     onPressed: toggleJam,
                     visualDensity: VisualDensity.compact,
                   ),
+                  // Follow the melody: grade the player against the leading
+                  // track. Only offered while jamming with a tune on screen.
+                  if (_jamming && _engravedTrackId != null)
+                    IconButton(
+                      icon: Icon(
+                        Icons.track_changes,
+                        color: isFollowing
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      isSelected: isFollowing,
+                      tooltip: l10n.loopMixerFollow,
+                      onPressed: toggleFollow,
+                      visualDensity: VisualDensity.compact,
+                    ),
                   IconButton(
                     icon: const Icon(Icons.ios_share),
                     tooltip: l10n.loopMixerShare,
@@ -1066,6 +1166,28 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
+                          // Follow-the-melody: a live per-pass accuracy meter.
+                          if (isFollowing)
+                            ValueListenableBuilder<double>(
+                              valueListenable: _followAccuracy,
+                              builder: (context, acc, _) => Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  l10n.loopMixerFollowScore(
+                                    (acc * 100).round(),
+                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     );

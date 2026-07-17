@@ -353,6 +353,13 @@
   "loopMixerJamHintAec": "Play or sing along — the band listens back! Green fits the chord.",
   "loopMixerJamGraded": "🎧 Band cancelled — this grades you",
   "loopMixerJamHeadphones": "Headphones help the mic hear only you",
+  "loopMixerFollow": "Follow the melody",
+  "loopMixerFollowScore": "🎯 Melody match: {pct}%",
+  "@loopMixerFollowScore": {
+    "placeholders": {
+      "pct": { "type": "int" }
+    }
+  },
   "loopMixerTempoChill": "Chill",
   "loopMixerTempoGroove": "Groove",
   "loopMixerTempoFast": "Fast",

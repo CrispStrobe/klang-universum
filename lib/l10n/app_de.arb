@@ -322,6 +322,13 @@
   "loopMixerJamHintAec": "Spiel oder sing mit — die Band hört zu! Grün passt zum Akkord.",
   "loopMixerJamGraded": "🎧 Band rausgerechnet — das bewertet dich",
   "loopMixerJamHeadphones": "Mit Kopfhörern hört das Mikro nur dich",
+  "loopMixerFollow": "Der Melodie folgen",
+  "loopMixerFollowScore": "🎯 Melodie-Treffer: {pct}%",
+  "@loopMixerFollowScore": {
+    "placeholders": {
+      "pct": { "type": "int" }
+    }
+  },
   "loopMixerTempoChill": "Gemütlich",
   "loopMixerTempoGroove": "Groove",
   "loopMixerTempoFast": "Schnell",
