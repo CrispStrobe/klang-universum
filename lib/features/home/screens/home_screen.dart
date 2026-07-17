@@ -296,6 +296,10 @@ class _DebugTapTitleState extends State<_DebugTapTitle> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _onTap,
+      // The 7-tap debug reveal is a hidden dev gesture, not a user control:
+      // keep it off the semantics tree so a screen reader announces the title
+      // as a heading, not an undersized "button" (a11y tap-target guideline).
+      excludeFromSemantics: true,
       child: Text(AppLocalizations.of(context)!.appTitle),
     );
   }
