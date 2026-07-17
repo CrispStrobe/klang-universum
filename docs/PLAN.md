@@ -26,17 +26,19 @@ and push to origin/main** before/after touching shared files. Format:
   lib/bin + test, `bin/listen.dart`, `docs/AEC_TIER3B.md`. NOT touching app
   screens / ARBs / Workshop / native plugin.
 
-- **opus (parity)** · 🚧 **ACTIVE — voice 2** (`Measure.voice2`; a second engraved
-  voice per part). Worktree `../mus-parity`, branch `feature/workshop-parity`.
-  **HOT set:** `model/score_document.dart` (a sibling `_voice2` element list + an
-  `activeVoice` edit target; `reflow` packs each voice independently onto the
-  **shared** bar grid; `buildScore` emits `Measure.voice2`; `_Snapshot`/`_capture`/
-  `_restore`/`clearAll`/`loadScore` recovery), `screens/
-  composition_workshop_screen.dart` (a voice toggle — note entry/selection route to
-  the active voice), **both ARBs**, NEW `test/voice2_test.dart`. crisp_notation
-  engraves voices **1+2 only** (stop at 2); the MusicXML writer already emits
-  voice 2 (backup), so it round-trips. Landing in small commits, rebasing often.
-  **Then: the Studio shell (Causes 2+3).**
+- **opus (parity)** · 🚧 **ACTIVE — Studio shell (Cause 3: the inspector).**
+  A selection-driven properties panel (`WORKSHOP_PARITY.md` Cause 3) — the scalable
+  home for note/bar attributes as the ⌃ palette strains. Starting with the
+  inspector (Cause 3); input modes (Cause 2) follow. Worktree `../mus-parity`,
+  branch `feature/workshop-parity`. **HOT:** `screens/
+  composition_workshop_screen.dart` (a side/bottom panel reflecting the selection;
+  reuses existing `_doc` mutators). Additive + behind the existing surface; small
+  commits, rebasing often. ✅ **voice 2 SHIPPED** just now (`bb6b7d0`):
+  `Measure.voice2`, a sibling `_v2` stream sharing the bar grid via the `_elements`
+  active-voice getter (mutation sites untouched); `_withVoice2` reflow+stamp
+  (byte-identity fast path); V1/V2 toolbar toggle; `test/voice2_test.dart` (9) +
+  widget test; MusicXML round-trips (writer backup). crisp_notation engraves
+  voices 1+2 only.
 - **opus (next)** · 🚧 **ACTIVE — playback practice-speed control** (0.5×/0.75×/1×;
   slow-practice is a core music-ed feature, and it leverages the playback engine
   just shipped). Worktree `../mus-next`, branch `feature/workshop-next`. **HOT

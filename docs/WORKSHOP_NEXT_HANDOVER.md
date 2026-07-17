@@ -133,11 +133,19 @@ Ordered roughly easiest → hardest. Full context in `WORKSHOP_PARITY.md`
   (it used to only write the bar-start clef; the reader already parsed them), so
   **save → reopen is lossless** — both the in-memory and the MusicXML *file*
   round-trip are asserted. This closed the `workshop-musicxml-writer-gaps` blocker.
-- **Voice 2** — `Measure.voice2` (crisp_notation engraves voices 1 **and** 2 only
-  — stop there). The flat `_elements` gains a sibling `_voice2` list; `reflow`
-  packs each independently onto the **shared** bar grid (they must agree on bar
-  count). Medium. **Trap:** `buildGrandStaff` is a second packing path — decide
-  whether it shows voice 2. Selection/UI needs an "active voice" concept.
+- **Voice 2** — ✅ **SHIPPED** (`bb6b7d0`). `Measure.voice2`; crisp_notation
+  engraves voices 1+2 only. The document keeps `_v1`/`_v2`; `_elements` became a
+  getter over the **active** voice (`_activeVoice`), so the ~25 mutation sites are
+  untouched — only render/persist paths (`buildScore`/`loadScore`/`_capture`/
+  `_restore`/`clearAll`/`buildGrandStaff`/dynamics/lyrics) are voice-explicit.
+  `_withVoice2` reflows `_v2` onto the shared grid + stamps `Measure.voice2`
+  (empty-voice byte-identity fast path). V1/V2 toolbar toggle; `setActiveVoice`
+  clears the per-voice selection; `isEmpty` = both empty. MusicXML round-trips
+  (writer backup). `test/voice2_test.dart`. **Known v1 limits (follow-ups):** voice
+  2 carries no dynamics/lyrics/slurs (voice-1 side lists); tuplets/mid-score
+  changes anchored while voice 2 is active don't stamp (they target voice-1 bars);
+  cross-voice tap-select isn't wired (entry works, tap-to-select stays in the
+  active voice). `buildGrandStaff` shows voice 1 only (unchanged display trick).
 
 ### Grace notes (the one remaining "hole" that isn't a one-liner)
 
