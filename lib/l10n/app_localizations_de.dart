@@ -3051,6 +3051,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get scoreFontLeipzig => 'Leipzig';
 
   @override
+  String get showNoteNamesLabel => 'Notennamen unter dem System';
+
+  @override
+  String get showNoteNamesSubtitle =>
+      'Den Buchstaben jeder Note als Lesehilfe anzeigen — versteckt in Spielen, in denen das Benennen die Aufgabe ist';
+
+  @override
   String get debugModeEnabled => 'Debug-Einstellungen freigeschaltet!';
 
   @override

@@ -216,6 +216,13 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                const Divider(height: 0),
+                SwitchListTile(
+                  title: Text(l10n.showNoteNamesLabel),
+                  subtitle: Text(l10n.showNoteNamesSubtitle),
+                  value: settings.showNoteNames,
+                  onChanged: settings.setShowNoteNames,
+                ),
               ],
             ),
           ),

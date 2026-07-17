@@ -18,6 +18,7 @@ class SettingsService with ChangeNotifier {
   static const _handwrittenKey = 'handwritten_notes'; // legacy (pre-multi-font)
   static const _scoreFontKey = 'score_font';
   static const _soundOnKey = 'sound_on';
+  static const _showNoteNamesKey = 'show_note_names';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
@@ -25,6 +26,7 @@ class SettingsService with ChangeNotifier {
   bool _colorScaffold = false;
   ScoreFont _scoreFont = ScoreFont.bravura;
   bool _soundOn = true;
+  bool _showNoteNames = false;
   Instrument _instrument = Instrument.piano;
 
   /// Master sound switch. When off, all synthesized playback (notes, chords,
@@ -55,6 +57,14 @@ class SettingsService with ChangeNotifier {
   /// after changing it (games are pushed fresh). Bravura by default.
   ScoreFont get scoreFont => _scoreFont;
 
+  /// Note-name reading scaffold: when on, the note's letter is drawn under each
+  /// notehead in games where naming isn't the task (rhythm/articulation/beaming)
+  /// and in the Workshop — a fade-away aid for a child still learning the staff,
+  /// spelled per the [noteNaming] setting. Off by default; sibling of
+  /// [colorScaffold]. Never shown on the note-naming quizzes (it would reveal the
+  /// answer).
+  bool get showNoteNames => _showNoteNames;
+
   /// Back-compat: the old boolean "handwritten notes" toggle mapped onto the
   /// Petaluma face. True iff Petaluma is selected.
   bool get handwrittenNotes => _scoreFont == ScoreFont.petaluma;
@@ -78,6 +88,7 @@ class SettingsService with ChangeNotifier {
             ? ScoreFont.petaluma
             : ScoreFont.bravura);
     _soundOn = prefs.getBool(_soundOnKey) ?? true;
+    _showNoteNames = prefs.getBool(_showNoteNamesKey) ?? false;
     _applyScoreFont();
     _instrument =
         Instrument.values.asNameMap()[prefs.getString(_instrumentKey)] ??
@@ -111,6 +122,13 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_colorScaffoldKey, value);
+  }
+
+  Future<void> setShowNoteNames(bool value) async {
+    _showNoteNames = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_showNoteNamesKey, value);
   }
 
   Future<void> setScoreFont(ScoreFont font) async {

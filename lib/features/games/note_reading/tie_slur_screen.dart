@@ -14,8 +14,8 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
@@ -156,10 +156,9 @@ class _TieSlurScreenState extends State<TieSlurScreen>
                               horizontal: 24,
                               vertical: 12,
                             ),
-                            child: StaffView(
+                            child: ReadingStaffView(
                               score: _cardScore,
                               staffSpace: 14,
-                              theme: kidsScoreTheme,
                             ),
                           ),
                         ),

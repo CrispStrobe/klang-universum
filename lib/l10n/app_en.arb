@@ -1255,6 +1255,8 @@
   "scoreFontPetaluma": "Petaluma (handwritten)",
   "scoreFontLeland": "Leland",
   "scoreFontLeipzig": "Leipzig",
+  "showNoteNamesLabel": "Note names under the staff",
+  "showNoteNamesSubtitle": "Print each note's letter as a reading aid — hidden in games where naming the note is the challenge",
   "debugModeEnabled": "Debug settings unlocked!",
   "debugSectionTitle": "Debug",
   "debugUnlockLabel": "Unlock all games",

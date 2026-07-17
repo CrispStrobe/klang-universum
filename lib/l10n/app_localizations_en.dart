@@ -3038,6 +3038,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scoreFontLeipzig => 'Leipzig';
 
   @override
+  String get showNoteNamesLabel => 'Note names under the staff';
+
+  @override
+  String get showNoteNamesSubtitle =>
+      'Print each note\'s letter as a reading aid — hidden in games where naming the note is the challenge';
+
+  @override
   String get debugModeEnabled => 'Debug settings unlocked!';
 
   @override

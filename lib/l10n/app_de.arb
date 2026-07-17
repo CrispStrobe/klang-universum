@@ -1004,6 +1004,8 @@
   "scoreFontPetaluma": "Petaluma (handgeschrieben)",
   "scoreFontLeland": "Leland",
   "scoreFontLeipzig": "Leipzig",
+  "showNoteNamesLabel": "Notennamen unter dem System",
+  "showNoteNamesSubtitle": "Den Buchstaben jeder Note als Lesehilfe anzeigen — versteckt in Spielen, in denen das Benennen die Aufgabe ist",
   "debugModeEnabled": "Debug-Einstellungen freigeschaltet!",
   "debugSectionTitle": "Debug",
   "debugUnlockLabel": "Alle Spiele freischalten",
