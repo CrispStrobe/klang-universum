@@ -1,8 +1,25 @@
 # Loop Mixer — follow-ups handover (post-ladder)
 
-**Status: not started, unclaimed.** The groovebox ladder (PLAN.md « Loop Mixer
-2.0 ») shipped completely — slices 1–10, final `866350c`. These are the two
-follow-ups that were explicitly scoped OUT of the ladder because each is a
+> **Status: ✅ BOTH SHIPPED** (this doc is kept as the build record). Verified
+> 2026-07-17 — 29 tests across `groove_notation_test` · `loop_reference_test` ·
+> `loop_mixer_test` green.
+> - **A. Groove → Song Book / MusicXML** — `grooveParts()` in
+>   `groove_notation.dart` (→ a multi-part `Score` + part names); the share sheet's
+>   **"Save to Song Book"** (`_saveToSongBook` / test seam `debugSaveToSongBook`)
+>   and **MusicXML export** via `multiPartToMusicXml`. Disabled when no pitched
+>   track is enabled (`hasPitchedTrack`).
+> - **B. Native-AEC full-duplex jam grading** — `LoopReferenceScheduler`
+>   (`core/audio/loop_reference.dart`) feeds the backing PCM window in phase;
+>   `aecFactory` builds the Tier-3b `AecEngine` only when the plugin is present
+>   (else the shipped `echoCancel` fallback — `usesAecJam` reports which); optional
+>   **"follow the melody"** grading via `PlayAlongEngine` (`toggleFollow` /
+>   `followAccuracy`). The plugin stays out of the app pubspec (CI-safe).
+>
+> The original plan follows, kept for reference.
+
+**Status (historical): not started, unclaimed.** The groovebox ladder (PLAN.md «
+Loop Mixer 2.0 ») shipped completely — slices 1–10, final `866350c`. These are the
+two follow-ups that were explicitly scoped OUT of the ladder because each is a
 session-sized effort of its own. Everything below is meant to be enough to
 build end-to-end without re-deriving the plumbing (same intent as the original
 `LOOP_MIXER_HANDOVER.md`, which worked).
