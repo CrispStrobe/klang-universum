@@ -218,7 +218,7 @@ Tutorial readingPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerReadingHigher,
           score: _notes([60, 64, 67, 72]), // C E G C'
-          play: (a) => a.playSequence(_run([60, 64, 67, 72])),
+          beats: _run([60, 64, 67, 72]),
         ),
         TutorialStep(
           text: l10n.primerReadingNames,
@@ -240,7 +240,7 @@ Tutorial noteValuesPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerValuesQuarter,
           score: _notes([60, 60, 60, 60]),
-          play: (a) => a.playSequence(_run([60, 60, 60, 60], ms: 480)),
+          beats: _run([60, 60, 60, 60], ms: 480),
         ),
         TutorialStep(
           text: l10n.primerValuesRest,
@@ -257,12 +257,12 @@ Tutorial measuresPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerMeasuresFill,
           score: _notes([60, 62, 64, 65]), // 4 quarters
-          play: (a) => a.playSequence(_run([60, 62, 64, 65], ms: 480)),
+          beats: _run([60, 62, 64, 65], ms: 480),
         ),
         TutorialStep(
           text: l10n.primerMeasuresHalf,
           score: _notes([60, 64], dur: DurationBase.half),
-          play: (a) => a.playSequence(_run([60, 64], ms: 960)),
+          beats: _run([60, 64], ms: 960),
         ),
       ],
     );
@@ -274,15 +274,15 @@ Tutorial scalesPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerScalesLadder,
           score: _notes(_cMajor),
-          play: (a) => a.playSequence(_run(_cMajor)),
+          beats: _run(_cMajor),
         ),
         TutorialStep(
           text: l10n.primerScalesMajor,
-          play: (a) => a.playSequence(_run(_cMajor)),
+          beats: _run(_cMajor),
         ),
         TutorialStep(
           text: l10n.primerScalesMinor,
-          play: (a) => a.playSequence(_run(_aMinor)),
+          beats: _run(_aMinor),
         ),
       ],
     );
@@ -348,17 +348,17 @@ Tutorial compositionPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerCompositionJourney,
           score: _notes([60, 62, 64, 65, 64, 62, 60]), // up then home
-          play: (a) => a.playSequence(_run([60, 62, 64, 65, 64, 62, 60])),
+          beats: _run([60, 62, 64, 65, 64, 62, 60]),
         ),
         TutorialStep(
           text: l10n.primerCompositionQuestion,
           score: _notes([60, 62, 64, 67]), // stops up on G — unfinished
-          play: (a) => a.playSequence(_run([60, 62, 64, 67])),
+          beats: _run([60, 62, 64, 67]),
         ),
         TutorialStep(
           text: l10n.primerCompositionAnswer,
           score: _notes([67, 65, 64, 62, 60]), // comes home to C
-          play: (a) => a.playSequence(_run([67, 65, 64, 62, 60])),
+          beats: _run([67, 65, 64, 62, 60]),
         ),
       ],
     );
@@ -371,7 +371,7 @@ Tutorial celloPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerCelloStrings,
           score: _notes([36, 43, 50, 57], clef: Clef.bass), // C G D A
-          play: (a) => a.playSequence(_run([36, 43, 50, 57], ms: 600)),
+          beats: _run([36, 43, 50, 57], ms: 600),
         ),
         TutorialStep(
           text: l10n.primerCelloBass,
@@ -381,7 +381,7 @@ Tutorial celloPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerCelloFinger,
           score: _notes([43, 45, 47], clef: Clef.bass), // G, then higher
-          play: (a) => a.playSequence(_run([43, 45, 47], ms: 500)),
+          beats: _run([43, 45, 47], ms: 500),
         ),
       ],
     );
@@ -394,7 +394,7 @@ Tutorial guitarPrimer(AppLocalizations l10n) => Tutorial(
           // Written an octave up, as guitar notation is — E3..E5.
           text: l10n.primerGuitarStrings,
           score: _notes([52, 57, 62, 67, 71, 76]), // E A D G B E
-          play: (a) => a.playSequence(_run([52, 57, 62, 67, 71, 76], ms: 450)),
+          beats: _run([52, 57, 62, 67, 71, 76], ms: 450),
         ),
         TutorialStep(
           text: l10n.primerGuitarTab,
@@ -403,7 +403,7 @@ Tutorial guitarPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerGuitarPlay,
           score: _notes([52, 76]), // low E up to high E
-          play: (a) => a.playSequence(_run([52, 76], ms: 700)),
+          beats: _run([52, 76], ms: 700),
         ),
       ],
     );
@@ -416,12 +416,12 @@ Tutorial songsPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerSongsPick,
           score: _notes([60, 60, 67, 67, 69, 69, 67]), // Twinkle, line 1
-          play: (a) => a.playSequence(_run([60, 60, 67, 67, 69, 69, 67])),
+          beats: _run([60, 60, 67, 67, 69, 69, 67]),
         ),
         TutorialStep(
           text: l10n.primerSongsMarker,
           score: _notes([65, 65, 64, 64, 62, 62, 60]), // Twinkle, line 2
-          play: (a) => a.playSequence(_run([65, 65, 64, 64, 62, 62, 60])),
+          beats: _run([65, 65, 64, 64, 62, 62, 60]),
         ),
       ],
     );
@@ -433,12 +433,12 @@ Tutorial keyboardPrimer(AppLocalizations l10n) => Tutorial(
       steps: [
         TutorialStep(
           text: l10n.primerKeyboardWhite,
-          play: (a) => a.playSequence(_run(_cMajor)),
+          beats: _run(_cMajor),
         ),
         TutorialStep(
           text: l10n.primerKeyboardFindC,
           score: _notes(_cMajor),
-          play: (a) => a.playSequence(_run(_cMajor)),
+          beats: _run(_cMajor),
         ),
         TutorialStep(
           text: l10n.primerKeyboardHands,
@@ -460,7 +460,7 @@ Tutorial transposePrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerTransposeShift,
           score: _notes([60]), // read C on a B-flat instrument...
-          play: (a) => a.playSequence(_run([60, 58], ms: 700)), // ...sounds B♭
+          beats: _run([60, 58], ms: 700), // ...sounds B♭
         ),
       ],
     );
@@ -477,7 +477,7 @@ Tutorial drumsPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerDrumsLines,
           score: _notes([36, 50, 36, 50], clef: Clef.bass), // kick / snare row
-          play: (a) => a.playSequence(_run([36, 50, 36, 50], ms: 360)),
+          beats: _run([36, 50, 36, 50], ms: 360),
         ),
       ],
     );
@@ -491,15 +491,13 @@ Tutorial modulationPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerModulationStay,
           // C-major fragment twice: the same home note (C) both times.
           score: _notes([60, 64, 67, 64, 60, 62, 64, 60]),
-          play: (a) =>
-              a.playSequence(_run([60, 64, 67, 64, 60, 62, 64, 60], ms: 360)),
+          beats: _run([60, 64, 67, 64, 60, 62, 64, 60], ms: 360),
         ),
         TutorialStep(
           text: l10n.primerModulationMove,
           // Same fragment, then lifted up a 5th (to G): a new home note.
           score: _notes([60, 64, 67, 64, 60, 67, 71, 67]),
-          play: (a) =>
-              a.playSequence(_run([60, 64, 67, 64, 60, 67, 71, 67], ms: 360)),
+          beats: _run([60, 64, 67, 64, 60, 67, 71, 67], ms: 360),
         ),
       ],
     );
@@ -539,7 +537,7 @@ Tutorial readingBassPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerBassClef,
           // The five bass-staff lines, bottom to top: G2 B2 D3 F3 A3.
           score: _notes([43, 47, 50, 53, 57], clef: Clef.bass),
-          play: (a) => a.playSequence(_run([43, 47, 50, 53, 57], ms: 460)),
+          beats: _run([43, 47, 50, 53, 57], ms: 460),
         ),
         TutorialStep(
           text: l10n.primerBassMiddleC,
@@ -562,7 +560,7 @@ Tutorial ledgerPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerLedgerHigh,
           score: _notes([79, 81, 84]), // G5 A5 C6 — ledger lines above
-          play: (a) => a.playSequence(_run([79, 81, 84])),
+          beats: _run([79, 81, 84]),
         ),
       ],
     );
@@ -574,12 +572,12 @@ Tutorial accidentalsPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerAccidentalsSharp,
           score: _notes([60, 61]), // C then C#
-          play: (a) => a.playSequence(_run([60, 61], ms: 600)),
+          beats: _run([60, 61], ms: 600),
         ),
         TutorialStep(
           text: l10n.primerAccidentalsFlat,
           score: _notes([62, 61]), // D then Db (= same key as C#)
-          play: (a) => a.playSequence(_run([62, 61], ms: 600)),
+          beats: _run([62, 61], ms: 600),
         ),
       ],
     );
@@ -591,12 +589,12 @@ Tutorial stepSkipPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerStepSkipStep,
           score: _notes([60, 62]), // C–D: line to the touching space
-          play: (a) => a.playSequence(_run([60, 62], ms: 600)),
+          beats: _run([60, 62], ms: 600),
         ),
         TutorialStep(
           text: l10n.primerStepSkipSkip,
           score: _notes([60, 64]), // C–E: line to the next line
-          play: (a) => a.playSequence(_run([60, 64], ms: 600)),
+          beats: _run([60, 64], ms: 600),
         ),
       ],
     );
@@ -627,12 +625,12 @@ Tutorial intervalsPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerIntervalsCount,
           score: _notes([60, 64]), // C to E, counting C-D-E = a 3rd
-          play: (a) => a.playSequence(_run([60, 64], ms: 600)),
+          beats: _run([60, 64], ms: 600),
         ),
         TutorialStep(
           text: l10n.primerIntervalsWide,
           score: _notes([60, 67]), // C to G = a 5th
-          play: (a) => a.playSequence(_run([60, 67], ms: 600)),
+          beats: _run([60, 67], ms: 600),
         ),
         TutorialStep(
           text: l10n.primerIntervalsEar,
@@ -647,7 +645,7 @@ Tutorial intervalsPrimer(AppLocalizations l10n) => Tutorial(
           // You already know intervals from songs: the cuckoo's falling call is
           // a descending minor 3rd (G → E).
           score: _notes([67, 64]),
-          play: (a) => a.playSequence(_run([67, 64], ms: 700)),
+          beats: _run([67, 64], ms: 700),
         ),
       ],
     );
@@ -663,12 +661,12 @@ Tutorial keySignaturePrimer(AppLocalizations l10n) => Tutorial(
             [67, 69, 71, 72, 74, 76, 78, 79],
             keySignature: const KeySignature(1),
           ),
-          play: (a) => a.playSequence(_run([67, 69, 71, 72, 74, 76, 78, 79])),
+          beats: _run([67, 69, 71, 72, 74, 76, 78, 79]),
         ),
         TutorialStep(
           text: l10n.primerKeySigCompare,
           // C major has none; listen for the one note that differs (F vs F#).
-          play: (a) => a.playSequence(_run(_cMajor)),
+          beats: _run(_cMajor),
         ),
       ],
     );
@@ -735,13 +733,13 @@ Tutorial upbeatPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerUpbeatDownbeat,
           score: _notes([60, 62, 64, 65]), // C D E F — starts on beat 1
-          play: (a) => a.playSequence(_run([60, 62, 64, 65], ms: 500)),
+          beats: _run([60, 62, 64, 65], ms: 500),
         ),
         TutorialStep(
           text: l10n.primerUpbeatUpbeat,
           // The pickup bar (G) drawn before the full downbeat bar (C D E F).
           score: _pickup(const [67], const [60, 62, 64, 65]),
-          play: (a) => a.playSequence(_run([67, 60, 62, 64], ms: 500)),
+          beats: _run([67, 60, 62, 64], ms: 500),
         ),
       ],
     );
@@ -755,13 +753,13 @@ Tutorial enharmonicPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerEnharmonicSame,
           // F♯ and G♭ drawn side by side: different spots, same sound.
           score: _spelled(const [(Step.f, 1), (Step.g, -1)]),
-          play: (a) => a.playSequence(_run([66, 66], ms: 700)),
+          beats: _run([66, 66], ms: 700),
         ),
         TutorialStep(
           text: l10n.primerEnharmonicTwins,
           // Another twin pair shown: C♯ and D♭.
           score: _spelled(const [(Step.c, 1), (Step.d, -1)]),
-          play: (a) => a.playSequence(_run([61, 61], ms: 700)),
+          beats: _run([61, 61], ms: 700),
         ),
       ],
     );
@@ -1154,7 +1152,7 @@ Tutorial formPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerFormSection,
           score: _notes([60, 64, 67, 72]), // section A — a rising tune
-          play: (a) => a.playSequence(_run([60, 64, 67, 72])),
+          beats: _run([60, 64, 67, 72]),
         ),
         TutorialStep(
           text: l10n.primerFormAba,
@@ -1378,21 +1376,19 @@ Tutorial modePrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(
           text: l10n.primerModeMajor,
           score: _notes(_cMajor), // C major = bright
-          play: (a) => a.playSequence(_run(_cMajor)),
+          beats: _run(_cMajor),
         ),
         TutorialStep(
           text: l10n.primerModeMinor,
           // C natural minor: lowered 3rd, 6th and 7th — darker.
           score: _notes(const [60, 62, 63, 65, 67, 68, 70, 72]),
-          play: (a) =>
-              a.playSequence(_run(const [60, 62, 63, 65, 67, 68, 70, 72])),
+          beats: _run(const [60, 62, 63, 65, 67, 68, 70, 72]),
         ),
         TutorialStep(
           text: l10n.primerModeDorian,
           // C Dorian = C minor but the 6th (A♭→A) is raised: minor, yet brighter.
           score: _notes(const [60, 62, 63, 65, 67, 69, 70, 72]),
-          play: (a) =>
-              a.playSequence(_run(const [60, 62, 63, 65, 67, 69, 70, 72])),
+          beats: _run(const [60, 62, 63, 65, 67, 69, 70, 72]),
         ),
       ],
     );

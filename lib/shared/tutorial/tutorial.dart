@@ -24,6 +24,7 @@ class TutorialStep {
     required this.text,
     this.score,
     this.play,
+    this.beats,
     this.playLabel,
   });
 
@@ -35,14 +36,21 @@ class TutorialStep {
 
   /// Optional "listen" example — given the app's [AudioService], play the sound
   /// this step is teaching (a note, a chord, a little melody). When null, no
-  /// listen button is shown.
+  /// listen button is shown. For a melodic line whose notes should **light up
+  /// as they play**, prefer [beats] instead.
   final void Function(AudioService audio)? play;
+
+  /// Optional timed monophonic line as `(midi, ms)` steps. When set, the sheet
+  /// both plays it (`playSequence`) AND lights the [score]'s notes in time — it
+  /// maps the i-th beat to the score element with id `n{i}` (the id scheme the
+  /// primer's note helper uses). Takes the place of [play] for a melody.
+  final List<(int, int)>? beats;
 
   /// Label for the listen button (already localized); defaults handled by the
   /// sheet when null.
   final String? playLabel;
 
-  bool get hasAudio => play != null;
+  bool get hasAudio => play != null || beats != null;
 }
 
 /// A game's tutorial: a titled deck of steps.

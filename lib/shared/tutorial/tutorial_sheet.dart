@@ -8,10 +8,10 @@
 
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/tts_service.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
-import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -168,14 +168,44 @@ class _TutorialSheetState extends State<_TutorialSheet> {
   }
 }
 
-class _StepView extends StatelessWidget {
+class _StepView extends StatefulWidget {
   const _StepView({required this.step});
   final TutorialStep step;
+
+  @override
+  State<_StepView> createState() => _StepViewState();
+}
+
+class _StepViewState extends State<_StepView> {
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
+
+  /// Fire the step's audio and, when it carries [TutorialStep.beats], light the
+  /// score's notes in time with it.
+  void _listen() {
+    final step = widget.step;
+    final audio = context.read<AudioService>();
+    final beats = step.beats;
+    if (beats != null) {
+      audio.playSequence(beats);
+      _pb.play(
+        stepsForSequence(beats, [for (var i = 0; i < beats.length; i++) 'n$i']),
+      );
+    } else {
+      step.play?.call(audio);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final step = widget.step;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -191,18 +221,19 @@ class _StepView extends StatelessWidget {
               color: theme.colorScheme.surfaceContainerHighest,
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: StaffView(
+                child: PlayingStaffView(
                   score: step.score!,
+                  controller: _pb,
                   staffSpace: 12,
                   theme: kidsScoreTheme,
                 ),
               ),
             ),
           ],
-          if (step.play != null) ...[
+          if (step.hasAudio) ...[
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () => step.play!(context.read<AudioService>()),
+              onPressed: _listen,
               icon: const Icon(Icons.volume_up_rounded),
               label: Text(step.playLabel ?? l10n.tutorialListen),
             ),

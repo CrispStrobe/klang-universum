@@ -59,6 +59,45 @@ void main() {
     expect(find.byType(StaffView), findsNothing); // sheet closed
   });
 
+  testWidgets('a Listen step lights the score notes as they play (beats)',
+      (tester) async {
+    await pumpGame(
+      tester,
+      Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => showTutorial(
+                context,
+                readingPrimer(AppLocalizations.of(context)!),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    // Step 2 (higher sounds) carries `beats` → Listen lights the notes.
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('Listen'), findsOneWidget);
+
+    bool anyLit() => tester
+        .widgetList<StaffView>(find.byType(StaffView))
+        .any((s) => s.highlightedIds.isNotEmpty);
+    expect(anyLit(), isFalse); // nothing lit before playing
+
+    await tester.tap(find.text('Listen'));
+    await tester.pump(); // controller change → ticker starts
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(anyLit(), isTrue); // a note is highlighted in time with the sound
+    await tester
+        .pump(const Duration(seconds: 2)); // let it finish (stop ticker)
+  });
+
   testWidgets('maybeShowTutorial auto-shows once, then not again',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
