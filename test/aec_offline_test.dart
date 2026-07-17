@@ -256,6 +256,29 @@ void main() {
       expect(lots, greaterThan(0));
     });
 
+    // Regression: a silent estimate reproduces NONE of the target, so its
+    // SI-SDR is −∞. The symmetric 1e-12 epsilons used to collapse 0/0 to
+    // 10·log10(1) = 0 dB — a fixed, falsely-mediocre value that out-ranked a
+    // genuinely noisy estimate scoring negative (a dead/muted capture read as
+    // "0 dB, plausible" instead of an obvious failure).
+    test('siSdrDb: a silent estimate floors, below any real estimate', () {
+      final target = _noise(n, seed: 5);
+      final zero = Float64List(n);
+
+      expect(siSdrDb(target, zero), kSiSdrFloorDb);
+      expect(siSdrDb(Float64List(n), Float64List(n)), kSiSdrFloorDb);
+
+      // A real-but-bad estimate (mostly independent noise) still beats emitting
+      // nothing — the ranking the 0 dB artifact used to invert.
+      final bad = Float64List.fromList([
+        for (var i = 0; i < n; i++)
+          0.05 * target[i] + _noise(n, seed: 11)[i] * 2.0,
+      ]);
+      final siBad = siSdrDb(target, bad);
+      expect(siBad, greaterThan(kSiSdrFloorDb),
+          reason: 'a noisy estimate must out-rank silence');
+    });
+
     test('segmentalErleDb skips silent segments and floors per-segment', () {
       final ref = _noise(n);
       final mic = _echo(ref);

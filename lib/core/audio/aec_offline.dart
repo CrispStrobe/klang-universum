@@ -106,12 +106,17 @@ int convergenceSample(
   return -1;
 }
 
+/// Finite sentinel for a degenerate SI-SDR (a silent estimate: −∞ in theory).
+/// Far below any real result, so it sorts correctly and prints cleanly.
+const double kSiSdrFloorDb = -120.0;
+
 /// Scale-invariant signal-to-distortion ratio (dB) of [estimate] against the
 /// target [reference] over `[from, from+length)`. The gain-invariant fidelity
 /// metric (Le Roux et al. 2019): it projects the estimate onto the reference,
 /// so an overall level difference doesn't count as distortion — only the shape
 /// does. Under double-talk, `reference` = the true near-end: higher = the
 /// cleaned output is closer to the wanted signal (residual echo far below it).
+/// A silent estimate returns [kSiSdrFloorDb] (it reproduced none of the target).
 double siSdrDb(
   Float64List reference,
   Float64List estimate, {
@@ -119,11 +124,18 @@ double siSdrDb(
   int? length,
 }) {
   final n = length ?? (min(reference.length, estimate.length) - from);
-  var dot = 0.0, refE = 0.0;
+  var dot = 0.0, refE = 0.0, estE = 0.0;
   for (var i = from; i < from + n; i++) {
     dot += estimate[i] * reference[i];
     refE += reference[i] * reference[i];
+    estE += estimate[i] * estimate[i];
   }
+  // A silent (dead capture / muted AEC path) estimate reproduced NONE of the
+  // target, so its SI-SDR is −∞ — floored to [kSiSdrFloorDb]. Without this the
+  // symmetric 1e-12 epsilons below turn 0/0 into 10·log10(1) = 0 dB, and a dead
+  // estimate would out-rank a genuinely noisy one that scores negative. Guard is
+  // relative to the target energy so it's scale-free (and covers ref==0 too).
+  if (estE <= 1e-12 * (refE + 1e-30)) return kSiSdrFloorDb;
   final scale = dot / (refE + 1e-12);
   var targetE = 0.0, noiseE = 0.0;
   for (var i = from; i < from + n; i++) {
