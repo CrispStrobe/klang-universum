@@ -77,6 +77,7 @@ import 'package:comet_beat/features/games/note_reading/perform_it_screen.dart';
 import 'package:comet_beat/features/games/note_reading/pitch_sort_screen.dart';
 import 'package:comet_beat/features/games/note_reading/place_note_screen.dart';
 import 'package:comet_beat/features/games/note_reading/read_voice_screen.dart';
+import 'package:comet_beat/features/games/note_reading/spacing_read_screen.dart';
 import 'package:comet_beat/features/games/note_reading/staff_runner_screen.dart';
 import 'package:comet_beat/features/games/note_reading/step_skip_screen.dart';
 import 'package:comet_beat/features/games/note_reading/tie_slur_screen.dart';
@@ -564,6 +565,17 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameHearVoice,
       subtitle: (l) => l.gameHearVoiceSubtitle,
       builder: (_) => const HearVoiceScreen(),
+      unlockedWhen: (p) => p.starsFor('duet') >= 2,
+      lockedHint: (l) => l.advancedGameHint,
+    ),
+    // Read SATB spacing: are the upper voices close or open position?
+    GameInfo(
+      id: 'spacing_read',
+      icon: Icons.unfold_more,
+      title: (l) => l.gameSpacingRead,
+      subtitle: (l) => l.gameSpacingReadSubtitle,
+      builder: (_) => const SpacingReadScreen(),
+      tutorial: spacingPrimer,
       unlockedWhen: (p) => p.starsFor('duet') >= 2,
       lockedHint: (l) => l.advancedGameHint,
     ),

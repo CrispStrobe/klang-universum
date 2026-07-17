@@ -2309,6 +2309,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Der Akkord klingt, dann eine Stimme. Welche war es?';
 
   @override
+  String get gameSpacingRead => 'Eng oder weit?';
+
+  @override
+  String get gameSpacingReadSubtitle =>
+      'Lies die SATB-Lage — gedrängt oder gespreizt?';
+
+  @override
+  String get spacingReadPrompt => 'Stehen die Oberstimmen eng oder weit?';
+
+  @override
+  String get spacingClose => 'Eng';
+
+  @override
+  String get spacingOpen => 'Weit';
+
+  @override
   String get hearVoiceReplay => 'Nochmal abspielen';
 
   @override
@@ -2964,6 +2980,17 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerAccidentalsFlat =>
       'Ein B ♭ senkt eine Note um einen Halbton. Des ist genau dieselbe Taste wie Cis — es lehnt sich nur von D herunter.';
+
+  @override
+  String get primerSpacingTitle => 'Eng und weit';
+
+  @override
+  String get primerSpacingClose =>
+      'In der ENGEN Lage stehen die oberen drei Stimmen dicht beieinander — die höchste Stimme und der Tenor liegen innerhalb einer Oktave.';
+
+  @override
+  String get primerSpacingOpen =>
+      'In der WEITEN Lage sind die Oberstimmen gespreizt — die höchste Note liegt mehr als eine Oktave über dem Tenor.';
 
   @override
   String get primerStepSkipTitle => 'Schritt und Sprung';

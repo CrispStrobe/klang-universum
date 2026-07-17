@@ -424,6 +424,24 @@ Tutorial stepSkipPrimer(AppLocalizations l10n) => Tutorial(
       ],
     );
 
+/// Close vs open SATB spacing: are the upper voices bunched or spread out?
+/// Game: spacing_read.
+Tutorial spacingPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerSpacingTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerSpacingClose,
+          score: _chord([60, 64, 67]), // C–E–G: the top voices bunched together
+          play: (a) => a.playMidiChord([48, 60, 64, 67]),
+        ),
+        TutorialStep(
+          text: l10n.primerSpacingOpen,
+          score: _chord([60, 67, 76]), // C–G–E: spread over an octave
+          play: (a) => a.playMidiChord([48, 60, 67, 76]),
+        ),
+      ],
+    );
+
 /// An interval is the distance between two notes; wide vs narrow.
 /// Game: interval_ear.
 Tutorial intervalsPrimer(AppLocalizations l10n) => Tutorial(

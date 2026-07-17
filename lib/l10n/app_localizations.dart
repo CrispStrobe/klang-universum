@@ -4304,6 +4304,36 @@ abstract class AppLocalizations {
   /// **'The chord plays, then one voice. Which voice was it?'**
   String get hearVoicePrompt;
 
+  /// No description provided for @gameSpacingRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Close or Open?'**
+  String get gameSpacingRead;
+
+  /// No description provided for @gameSpacingReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the SATB spacing — bunched or spread out?'**
+  String get gameSpacingReadSubtitle;
+
+  /// No description provided for @spacingReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Are the upper voices close or open?'**
+  String get spacingReadPrompt;
+
+  /// No description provided for @spacingClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get spacingClose;
+
+  /// No description provided for @spacingOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get spacingOpen;
+
   /// No description provided for @hearVoiceReplay.
   ///
   /// In en, this message translates to:
@@ -5413,6 +5443,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A flat ♭ lowers a note by a semitone. D♭ is the very same key as C♯ — it just leans down from D.'**
   String get primerAccidentalsFlat;
+
+  /// No description provided for @primerSpacingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close and open'**
+  String get primerSpacingTitle;
+
+  /// No description provided for @primerSpacingClose.
+  ///
+  /// In en, this message translates to:
+  /// **'In CLOSE position the top three voices are bunched together — the highest and the tenor sit within one octave.'**
+  String get primerSpacingClose;
+
+  /// No description provided for @primerSpacingOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'In OPEN position the top voices are spread out — the highest note is more than an octave above the tenor.'**
+  String get primerSpacingOpen;
 
   /// No description provided for @primerStepSkipTitle.
   ///

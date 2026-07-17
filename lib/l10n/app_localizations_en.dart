@@ -2298,6 +2298,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'The chord plays, then one voice. Which voice was it?';
 
   @override
+  String get gameSpacingRead => 'Close or Open?';
+
+  @override
+  String get gameSpacingReadSubtitle =>
+      'Read the SATB spacing — bunched or spread out?';
+
+  @override
+  String get spacingReadPrompt => 'Are the upper voices close or open?';
+
+  @override
+  String get spacingClose => 'Close';
+
+  @override
+  String get spacingOpen => 'Open';
+
+  @override
   String get hearVoiceReplay => 'Play again';
 
   @override
@@ -2951,6 +2967,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerAccidentalsFlat =>
       'A flat ♭ lowers a note by a semitone. D♭ is the very same key as C♯ — it just leans down from D.';
+
+  @override
+  String get primerSpacingTitle => 'Close and open';
+
+  @override
+  String get primerSpacingClose =>
+      'In CLOSE position the top three voices are bunched together — the highest and the tenor sit within one octave.';
+
+  @override
+  String get primerSpacingOpen =>
+      'In OPEN position the top voices are spread out — the highest note is more than an octave above the tenor.';
 
   @override
   String get primerStepSkipTitle => 'Steps and skips';
