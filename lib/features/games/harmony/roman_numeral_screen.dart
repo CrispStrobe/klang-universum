@@ -313,26 +313,38 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
                     const SizedBox(height: 12),
                     Expanded(
                       child: Card(
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 32),
-                                child: StaffView(
-                                  score: _chordScore,
-                                  staffSpace: 15,
-                                  theme: kidsScoreTheme,
-                                ),
+                        // Center the chord + replay button when the card is
+                        // tall enough; scroll instead of overflowing on a short
+                        // screen (iPhone SE) where the card is squeezed.
+                        child: LayoutBuilder(
+                          builder: (context, constraints) =>
+                              SingleChildScrollView(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minHeight: constraints.maxHeight,
                               ),
-                              const SizedBox(height: 8),
-                              IconButton.filledTonal(
-                                onPressed: _playChord,
-                                icon: const Icon(Icons.volume_up),
-                                tooltip: l10n.romanNumeralReplay,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                    ),
+                                    child: StaffView(
+                                      score: _chordScore,
+                                      staffSpace: 15,
+                                      theme: kidsScoreTheme,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  IconButton.filledTonal(
+                                    onPressed: _playChord,
+                                    icon: const Icon(Icons.volume_up),
+                                    tooltip: l10n.romanNumeralReplay,
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
