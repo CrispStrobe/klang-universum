@@ -156,13 +156,23 @@ Score runsToScore(
   var posInBar = 0;
   var idCounter = 0;
 
+  // Trailing rests carry no musical content and would print as empty bars (e.g.
+  // ABC "z8 |") — the note-off terminator the module side adds becomes one. Drop
+  // them so a module → notation → module → notation cycle is a clean fixed point
+  // from the first pass. (Leading/internal rests are kept — they position notes.)
+  var end = runs.length;
+  while (end > 0 && runs[end - 1].$1 == null) {
+    end--;
+  }
+  final trimmed = end == runs.length ? runs : runs.sublist(0, end);
+
   void closeBar() {
     measures.add(Measure(current));
     current = [];
     posInBar = 0;
   }
 
-  for (final (midi, steps) in runs) {
+  for (final (midi, steps) in trimmed) {
     var rem = steps;
     while (rem > 0) {
       final avail = barSteps - posInBar;
@@ -524,6 +534,38 @@ ModuleDoc musicXmlToModuleDoc(
 }) =>
     multiPartToModuleDoc(
       multiPartScoreFromMusicXml(xml),
+      stepsPerBeat: stepsPerBeat,
+      title: title,
+      format: format,
+    );
+
+// ─── Module ↔ MuseScore .mscz (zipped .mscx container) ───────────────────────
+
+/// A single [score] → `.mscz` bytes (a zip wrapping the `.mscx` XML).
+Uint8List scoreToMscz(Score score) => writeMsczFromMscx(scoreToMscx(score));
+
+/// `.mscz` bytes → Score (unzips the `.mscx`, then parses it).
+Score scoreFromMscz(Uint8List bytes) => scoreFromMscx(readMscxFromMscz(bytes));
+
+/// One channel of [doc] → `.mscz` bytes (busiest channel unless [channel]).
+Uint8List moduleToMscz(ModuleDoc doc, {int? channel, int stepsPerBeat = 4}) =>
+    scoreToMscz(
+      moduleChannelToScore(
+        doc,
+        channel ?? busiestChannel(doc),
+        stepsPerBeat: stepsPerBeat,
+      ),
+    );
+
+/// `.mscz` bytes → a playable single-channel [ModuleDoc].
+ModuleDoc msczToModuleDoc(
+  Uint8List bytes, {
+  int stepsPerBeat = 4,
+  String title = 'SCORE',
+  ModuleFormat format = ModuleFormat.it,
+}) =>
+    scoreToModuleDoc(
+      scoreFromMscz(bytes),
       stepsPerBeat: stepsPerBeat,
       title: title,
       format: format,

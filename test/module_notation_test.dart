@@ -285,6 +285,44 @@ void main() {
     });
   });
 
+  group('.mscz (zipped MuseScore) round-trip', () {
+    final doc = _pack([
+      [_n(60), _e, _e, _e, _n(64), _e, _e, _e, _n(67), _e, _e, _e],
+    ]);
+
+    test('module → .mscz bytes → module preserves the melody', () {
+      final bytes = moduleToMscz(doc);
+      expect(bytes.length, greaterThan(0));
+      // It really is a zip (PK\x03\x04 local-file header).
+      expect(bytes.sublist(0, 2), [0x50, 0x4b]);
+      final back = msczToModuleDoc(bytes);
+      expect(
+        _pitches(moduleChannelToScore(back, 0)),
+        _pitches(moduleChannelToScore(doc, 0)),
+      );
+    });
+  });
+
+  group('notation ↔ module cycle is a fixed point (no drift)', () {
+    // C E G quarters, then a rest — the note-off terminator used to leave a
+    // trailing empty bar that grew the ABC on the first pass. It shouldn't now.
+    const runs = [(60, 4), (64, 4), (67, 4), (null, 4)];
+    final score0 = runsToScore(runs, 4);
+
+    test('abc: score → abc → score → abc is byte-identical after round 1', () {
+      final abc1 = scoreToTextNotation(score0, TextNotation.abc);
+      final score1 = textNotationToScore(abc1, TextNotation.abc)!;
+      final abc2 = scoreToTextNotation(score1, TextNotation.abc);
+      expect(abc2, abc1, reason: 'ABC is a fixed point (no drift, no growth)');
+    });
+
+    test('no trailing empty bar (the note-off terminator is trimmed)', () {
+      // runsToScore drops the trailing rest, so the ABC has no dangling "z8".
+      final abc = scoreToTextNotation(score0, TextNotation.abc);
+      expect(abc.trimRight(), isNot(endsWith('z8 |')));
+    });
+  });
+
   group('end-to-end from a real golden module', () {
     test('golden.it → multi-part → multi-track MIDI → readable', () {
       final path = File('test/fixtures/golden.it');

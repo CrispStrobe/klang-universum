@@ -52,6 +52,7 @@ const _extToText = <String, TextNotation>{
 String _ext(String path) => path.split('.').last.toLowerCase();
 bool _isMidi(String e) => e == 'mid' || e == 'midi';
 bool _isXml(String e) => e == 'xml' || e == 'musicxml';
+bool _isMscz(String e) => e == 'mscz'; // MuseScore zipped container (binary)
 
 void main(List<String> args) {
   final positional = <String>[];
@@ -120,6 +121,13 @@ void main(List<String> args) {
         outExt: outExt,
         stepsPerBeat: stepsPerBeat,
       );
+    } else if (_isMscz(_ext(inPath))) {
+      _fromScore(
+        scoreFromMscz(bytes),
+        outPath,
+        outExt,
+        stepsPerBeat: stepsPerBeat,
+      );
     } else if (_extToText[_ext(inPath)] != null) {
       final inFmt = _extToText[_ext(inPath)]!;
       final score = textNotationToScore(String.fromCharCodes(bytes), inFmt);
@@ -185,9 +193,14 @@ void _fromModule(
         moduleToTextNotation(doc, fmt, channel: ch, stepsPerBeat: stepsPerBeat);
     File(outPath).writeAsStringSync(txt);
     _ok(doc, outPath, 'channel $ch, ${txt.length} bytes ${fmt.name}');
+  } else if (_isMscz(outExt)) {
+    final ch = channel ?? busiestChannel(doc);
+    final data = moduleToMscz(doc, channel: ch, stepsPerBeat: stepsPerBeat);
+    File(outPath).writeAsBytesSync(data);
+    _ok(doc, outPath, 'channel $ch, ${data.length} bytes mscz');
   } else {
-    stderr.writeln('notaconv: module → .$outExt not supported '
-        '(use .mid/.xml/.abc/.krn/.mei/.mscx/.ly; module→module = modconv)');
+    stderr.writeln('notaconv: module → .$outExt not supported (use .mid/.xml/'
+        '.abc/.krn/.mei/.mscx/.mscz/.ly; module→module = modconv)');
     exitCode = 2;
   }
 }
@@ -215,6 +228,9 @@ void _fromScore(
     File(outPath)
         .writeAsStringSync(scoreToTextNotation(score, _extToText[outExt]!));
     stdout.writeln('notaconv: notation → .$outExt ($outPath)');
+  } else if (_isMscz(outExt)) {
+    File(outPath).writeAsBytesSync(scoreToMscz(score));
+    stdout.writeln('notaconv: notation → .mscz ($outPath)');
   } else {
     stderr.writeln('notaconv: notation → .$outExt not supported');
     exitCode = 2;
