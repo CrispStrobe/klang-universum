@@ -78,6 +78,30 @@ and push to origin/main** before/after touching shared files. Format:
     drift-prone tempo×swing grid; a new seam test pins the send steady state.
   **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
 
+- **opus (aec-rate)** · 🚧 **ACTIVE — self-tuning AEC: Valin closed-loop learning
+  rate** (the "how do we tune automatically" answer). Instead of hand-picking
+  `mu`, the filter derives its own step per bin per block from its live leakage
+  estimate — Valin, "On Adjusting the Learning Rate in Frequency Domain Echo
+  Cancellation With Double-Talk" (IEEE TASLP 2007, arXiv:1602.08044), written
+  from the paper, not SpeexDSP (MIT-clean). New `AdaptiveLearningRate`
+  (echo_canceller.dart): `mu_opt(k)=min(eta·|Yhat(k)|²/|E(k)|², muMax)` with eta
+  (=1/ERLE) estimated by regressing DC-rejected error power on echo-estimate
+  power. Opt-in via `EchoCanceller(rate:)` / `AecTuning(adaptiveRate:true)` /
+  `--adaptive-rate`; the fixed-`mu` path (which the C port + `aec_erle_test`
+  pin) is byte-identical when off. **Result:** on synthetic double-talk the
+  *linear* canceller alone jumps 8.8→33.1 dB SI-SDR — beating fixed-`mu`+DTD
+  (15.9 dB) by 17 dB with NO DTD/freeze/threshold, and the rate collapses on
+  near-end (mean step 0.40→0.13) then recovers. Trade-off: slower convergence
+  (~0.9 s vs ~0.1 s), hence opt-in. 6 new tests pin the behaviour (rate
+  collapse, filter-survives-DT, subsumes-DTD, 1/ERLE identity, off-by-default).
+  Files: `lib/core/audio/echo_canceller.dart`, `aec_offline.dart`, `bin/aec.dart`,
+  `test/aec_offline_test.dart`. Worktree `../mus-aec-rate`, branch
+  `feature/aec-adaptive-rate`. **Next in this arc:** port the rate control to
+  `native/aec/src/aec_dsp.c` (keep `aec_erle_test` green); then a real corpus
+  (record-separately-and-sum through the physical speaker→mic path, + measured
+  RIRs / AEC-Challenge set) and a CMA-ES sweep over surviving constants scored on
+  note-survival + SI-SDR (AECMOS as cross-check via the existing `bin/aecmos`).
+
 - **opus (aec-tune)** · ✅ **idle / SHIPPED — AEC tuning knobs reachable from the
   CLI / pipe**. The pipe harness existed but only exposed `--delay/--rate/--dtd/
   --res`: `cancelEcho` and `StreamingEchoCanceller` built `EchoCanceller()`,

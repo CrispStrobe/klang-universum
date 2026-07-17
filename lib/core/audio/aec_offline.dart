@@ -489,6 +489,12 @@ class AecTuning {
   const AecTuning({
     this.blockSize = 1024,
     this.mu = 0.7,
+    this.adaptiveRate = false,
+    this.rateMuMax = 0.5,
+    this.rateInitialMu = 0.25,
+    this.rateInitBlocks = 2,
+    this.rateGamma = 0.1,
+    this.rateBeta0 = 0.05,
     this.powerSmoothing = 0.9,
     this.eps = 1e-6,
     this.farEndFloor = 1e-5,
@@ -510,7 +516,23 @@ class AecTuning {
   final int blockSize;
 
   // --- Linear canceller (see [EchoCanceller] for what each one does). ---
+
+  /// The fixed NLMS step — ignored when [adaptiveRate] is on.
   final double mu;
+
+  /// Let the filter choose its own step per bin per block
+  /// ([AdaptiveLearningRate], Valin 2007) instead of using [mu]. Off by default:
+  /// the fixed-[mu] path is what the C port mirrors and what `aec_erle_test`
+  /// pins, so this stays an opt-in A/B until it earns the default.
+  final bool adaptiveRate;
+
+  /// [AdaptiveLearningRate] knobs — inert unless [adaptiveRate] is on.
+  final double rateMuMax;
+  final double rateInitialMu;
+  final int rateInitBlocks;
+  final double rateGamma;
+  final double rateBeta0;
+
   final double powerSmoothing;
   final double eps;
   final double farEndFloor;
@@ -538,6 +560,15 @@ class AecTuning {
         farEndFloor: farEndFloor,
         regFactor: regFactor,
         leak: leak,
+        rate: adaptiveRate
+            ? AdaptiveLearningRate(
+                muMax: rateMuMax,
+                initialMu: rateInitialMu,
+                initBlocks: rateInitBlocks,
+                gamma: rateGamma,
+                beta0: rateBeta0,
+              )
+            : null,
       );
 
   DoubleTalkDetector createDetector() => DoubleTalkDetector(
@@ -562,7 +593,13 @@ class AecTuning {
     const d = AecTuning();
     final parts = <String>[
       if (blockSize != d.blockSize) 'block=$blockSize',
+      if (adaptiveRate) 'adaptiveRate',
       if (mu != d.mu) 'mu=$mu',
+      if (rateMuMax != d.rateMuMax) 'rateMuMax=$rateMuMax',
+      if (rateInitialMu != d.rateInitialMu) 'rateInitialMu=$rateInitialMu',
+      if (rateInitBlocks != d.rateInitBlocks) 'rateInitBlocks=$rateInitBlocks',
+      if (rateGamma != d.rateGamma) 'rateGamma=$rateGamma',
+      if (rateBeta0 != d.rateBeta0) 'rateBeta0=$rateBeta0',
       if (powerSmoothing != d.powerSmoothing) 'powerSmoothing=$powerSmoothing',
       if (eps != d.eps) 'eps=$eps',
       if (farEndFloor != d.farEndFloor) 'farEndFloor=$farEndFloor',

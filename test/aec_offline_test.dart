@@ -572,6 +572,182 @@ void main() {
     });
   });
 
+  // Valin's closed-loop rate (AdaptiveLearningRate): the filter picks its own
+  // step from its live leakage estimate instead of the hand-tuned mu. These pin
+  // the BEHAVIOUR the paper claims — the rate must collapse under double-talk
+  // and recover after — not just "it still cancels".
+  group('adaptive learning rate', () {
+    /// Drives [aec] block by block over [mic]/[ref], returning the per-block
+    /// mean rate the controller chose.
+    List<double> ratesOver(
+      EchoCanceller aec,
+      Float64List mic,
+      Float64List ref,
+      AdaptiveLearningRate rate,
+    ) {
+      final b = aec.blockSize;
+      final out = <double>[];
+      for (var i = 0; i + b <= mic.length; i += b) {
+        aec.process(
+          Float64List.sublistView(ref, i, i + b),
+          Float64List.sublistView(mic, i, i + b),
+        );
+        out.add(rate.lastMeanMu);
+      }
+      return out;
+    }
+
+    /// Mic = echo(ref), with a broadband near-end mixed into the middle third:
+    /// far-end single-talk → double-talk → single-talk again. Returns the mic,
+    /// the true near-end, and the block index where each region begins.
+    ({Float64List mic, Float64List near, int perBlock}) doubleTalkMiddle(
+      Float64List ref,
+    ) {
+      const b = 1024;
+      final echo = _echo(ref);
+      const third = (n ~/ 3) ~/ b * b;
+      final near = _noise(n, seed: 99); // broadband, unlike a single tone
+      final mic = Float64List(n);
+      for (var i = 0; i < n; i++) {
+        near[i] = (i >= third && i < 2 * third) ? near[i] : 0.0;
+        mic[i] = echo[i] + near[i];
+      }
+      return (mic: mic, near: near, perBlock: third ~/ b);
+    }
+
+    test('converges deep on echo-only with no mu tuning at all', () {
+      // A longer run than the shared n: the closed-loop rate starts cautious (it
+      // doesn't yet know the echo path) and DEEPENS as its leakage estimate
+      // drops — reaching 30 dB+, but over ~0.9 s here vs a hot fixed mu's ~0.1 s.
+      // That slow ramp is the price of self-tuning, and the reason adaptiveRate
+      // is opt-in, not the default.
+      const long = 1024 * 60;
+      final ref = _noise(long);
+      final mic = _echo(ref);
+      final out = cancelEcho(
+        mic,
+        ref,
+        delay: 0,
+        tuning: const AecTuning(adaptiveRate: true),
+      ).cleaned;
+      // The converged tail (last 15 blocks) is deeply cancelled.
+      const tail = 1024 * 45;
+      final tailErle = segmentalErleDb(
+        Float64List.sublistView(mic, tail, out.length),
+        Float64List.sublistView(out, tail),
+      );
+      expect(
+        tailErle,
+        greaterThan(25),
+        reason: 'converged tail ERLE = ${tailErle.toStringAsFixed(1)} dB',
+      );
+    });
+
+    test('the rate collapses under (broadband) double-talk', () {
+      final ref = _noise(n);
+      final s = doubleTalkMiddle(ref);
+      final rate = AdaptiveLearningRate();
+      final rates = ratesOver(EchoCanceller(rate: rate), s.mic, ref, rate);
+      double meanOf(int from, int to) {
+        var acc = 0.0;
+        for (var i = from; i < to; i++) {
+          acc += rates[i];
+        }
+        return acc / (to - from);
+      }
+
+      // +4 blocks after each transition lets the leakage regression react.
+      final single = meanOf(s.perBlock ~/ 2, s.perBlock);
+      final double_ = meanOf(s.perBlock + 4, 2 * s.perBlock);
+      expect(
+        double_,
+        lessThan(single / 2),
+        reason: 'near-end must slow the filter: $single -> $double_',
+      );
+    });
+
+    test('the filter survives double-talk (re-converges immediately after)',
+        () {
+      final ref = _noise(n);
+      final s = doubleTalkMiddle(ref);
+      const b = 1024;
+      final aec = EchoCanceller(rate: AdaptiveLearningRate());
+      final erle = <double>[];
+      for (var i = 0; i + b <= s.mic.length; i += b) {
+        final micB = Float64List.sublistView(s.mic, i, i + b);
+        final out = aec.process(Float64List.sublistView(ref, i, i + b), micB);
+        erle.add(erleDb(micB, out));
+      }
+      // Within a few blocks of the near-end leaving, the filter is deep again.
+      // A filter corrupted by adapting onto the near-end could NOT re-converge
+      // this fast — the rate control kept the coefficients clean through the
+      // double-talk, with no DTD and no freeze decision.
+      final recovery = erle
+          .sublist(2 * s.perBlock + 1, 2 * s.perBlock + 8)
+          .reduce((a, b) => a > b ? a : b);
+      expect(
+        recovery,
+        greaterThan(18),
+        reason: 'post-double-talk recovery ERLE $recovery dB',
+      );
+    });
+
+    test('leakage tracks 1/ERLE, the paper\'s identity', () {
+      final ref = _noise(n);
+      final mic = _echo(ref);
+      final rate = AdaptiveLearningRate();
+      ratesOver(EchoCanceller(rate: rate), mic, ref, rate);
+      // Converged on echo-only, so the filter cancels deeply and the leakage —
+      // the fraction of echo surviving, i.e. 1/ERLE — is small.
+      expect(rate.leakage, lessThan(0.1));
+      expect(rate.leakage, greaterThanOrEqualTo(0));
+    });
+
+    test('subsumes the DTD: it protects the near-end without one', () {
+      // The DTD's whole job is to stop the filter adapting onto the near-end.
+      // If the rate control works, it does that job by itself — so adaptive-rate
+      // WITHOUT a DTD should beat fixed-mu WITHOUT a DTD on double-talk fidelity.
+      final ref = _noise(n);
+      final echo = _echo(ref);
+      final near = Float64List(n);
+      final mic = Float64List(n);
+      const half = (n ~/ 2) ~/ 1024 * 1024;
+      for (var i = 0; i < n; i++) {
+        near[i] = i >= half ? 0.35 * sin(2 * pi * 440 * i / _sr) : 0.0;
+        mic[i] = echo[i] + near[i];
+      }
+      final fixed = cancelEcho(mic, ref, delay: 0).cleaned;
+      final adaptive = cancelEcho(
+        mic,
+        ref,
+        delay: 0,
+        tuning: const AecTuning(adaptiveRate: true),
+      ).cleaned;
+      final siFixed = siSdrDb(near, fixed, from: half);
+      final siAdaptive = siSdrDb(near, adaptive, from: half);
+      expect(
+        siAdaptive,
+        greaterThan(siFixed),
+        reason: 'adaptive $siAdaptive dB vs fixed-mu $siFixed dB',
+      );
+    });
+
+    test('is off by default — the fixed-mu path is untouched', () {
+      final ref = _noise(n);
+      final mic = _echo(ref);
+      final a = cancelEcho(mic, ref, delay: 0).cleaned;
+      final b = cancelEcho(
+        mic,
+        ref,
+        delay: 0,
+        tuning: const AecTuning(mu: 0.7),
+      ).cleaned;
+      for (var i = 0; i < a.length; i++) {
+        expect(a[i], b[i]);
+      }
+    });
+  });
+
   // A tuning knob that silently doesn't reach its stage is worse than no knob:
   // a sweep over it reports the SAME number every time and reads as "this
   // parameter doesn't matter". Each test below drives one knob to a value whose
