@@ -11,10 +11,12 @@ import 'package:crisp_notation/crisp_notation.dart'
     show MultiSystemView, NoteElement, Score;
 import 'package:flutter/material.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
+import 'package:klang_universum/features/games/playalong/play_along_screen.dart';
 import 'package:klang_universum/features/games/songs/chord_sheet_screen.dart';
 import 'package:klang_universum/features/games/songs/import/chordpro.dart';
 import 'package:klang_universum/features/games/songs/import_screen.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
+import 'package:klang_universum/features/games/songs/song_play_along.dart';
 import 'package:klang_universum/features/games/songs/songbook_screen.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
@@ -45,6 +47,9 @@ class _SongScreenState extends State<SongScreen> {
   int _playToken = 0; // invalidates a running play loop
 
   late final List<(String, int, int)> _playback = playbackOf(widget.score);
+
+  // A sing-along target derived from the song's notation (top pitch = melody).
+  late final _singChart = chartFromScore(widget.score, name: widget.title);
 
   late final Map<String, int> _midiById = {
     for (final measure in widget.score.measures)
@@ -136,12 +141,37 @@ class _SongScreenState extends State<SongScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: _playing ? _stop : _play,
-                icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
-                label: Text(
-                  _playing ? l10n.songStop : l10n.myMelodyPlay,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _playing ? _stop : _play,
+                    icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
+                    label: Text(
+                      _playing ? l10n.songStop : l10n.myMelodyPlay,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Sing the song against the moving-score highway (mic-graded).
+                  // Disabled while the karaoke preview plays, or when the song
+                  // has no singable melody (all rests / chords-only edge cases).
+                  OutlinedButton.icon(
+                    onPressed: (_playing || _singChart.notes.isEmpty)
+                        ? null
+                        : () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => PlayAlongScreen(
+                                  chart: _singChart,
+                                  title: widget.title,
+                                  gameId: 'sing_along',
+                                  sriPrefix: 'voice.sing_along',
+                                ),
+                              ),
+                            ),
+                    icon: const Icon(Icons.mic_external_on),
+                    label: Text(l10n.gameSingAlong),
+                  ),
+                ],
               ),
             ],
           ),

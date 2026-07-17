@@ -243,6 +243,20 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
+  testWidgets('song screen: a Sing-along button sits beside Play',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    const song =
+        Song(id: 't', title: 'Test', dsl: 'c4:q d4:q', lyrics: 'la la');
+    await tester.pumpWidget(_wrap(SongScreen(song: song), sri));
+    await tester.pump();
+
+    // Present and enabled — the song has a singable melody (non-null onPressed).
+    final singBtn = find.widgetWithText(OutlinedButton, 'Sing along');
+    expect(singBtn, findsOneWidget);
+    expect(tester.widget<OutlinedButton>(singBtn).onPressed, isNotNull);
+  });
+
   testWidgets(
       'song book lists imported songs + sheets, and delete removes them',
       (tester) async {
