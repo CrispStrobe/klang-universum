@@ -1182,24 +1182,28 @@ class ScoreDocument {
           _v1.add(EditorElement.rest(el.duration, id: id));
         }
       }
-      // Recover voice 2 (notes/rests + their per-note attributes; dynamics,
-      // slurs and lyrics are voice-1 side lists, so voice 2 carries none).
+      // Recover voice 2 (notes/rests + their per-note attributes). Dynamics
+      // ride the element (re-anchored via [dynamics] like voice 1), and the
+      // [remap] is recorded so id-keyed lyrics/slurs on voice-2 notes re-anchor.
       for (final el in measure.voice2) {
+        final id = _newId();
+        if (el.id != null) remap[el.id!] = id;
         if (el is NoteElement) {
           _v2.add(
             EditorElement.chord(
               List.of(el.pitches),
               el.duration,
-              id: _newId(),
+              id: id,
               articulations: Set.of(el.articulations),
               tieToNext: el.tieToNext,
+              dynamic: el.id == null ? null : dynamics[el.id!],
               ornament: el.ornament,
               graceNotes: List.of(el.graceNotes),
               graceStyle: el.graceStyle,
             ),
           );
         } else if (el is RestElement) {
-          _v2.add(EditorElement.rest(el.duration, id: _newId()));
+          _v2.add(EditorElement.rest(el.duration, id: id));
         }
       }
       // Recover mid-bar clef changes: each InlineClefChange sits at an onset
@@ -1523,14 +1527,17 @@ class ScoreDocument {
           ),
         ),
       ),
+      // Markings resolve by element id, and crisp_notation matches ids across
+      // voices, so harvest both voices — a dynamic/lyric on a voice-2 note
+      // renders on that note. Empty [_v2] leaves this identical to voice-1-only.
       dynamics: [
-        for (final e in _v1)
+        for (final e in [..._v1, ..._v2])
           if (!e.isRest && e.dynamic != null) DynamicMarking(e.id, e.dynamic!),
       ],
       slurs: List.of(_slurs),
       hairpins: List.of(_hairpins),
       lyrics: [
-        for (final e in _v1)
+        for (final e in [..._v1, ..._v2])
           if (_lyrics[e.id] != null)
             for (final v in _lyrics[e.id]!.entries)
               Lyric(e.id, v.value, verse: v.key),
