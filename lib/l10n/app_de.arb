@@ -703,6 +703,15 @@
   "concertInstrumentBb": "B-Trompete",
   "concertInstrumentEb": "Es-Altsax",
   "concertInstrumentF": "F-Horn",
+  "gameTransposeWrite": "Für das Instrument notieren",
+  "gameTransposeWriteSubtitle": "Nenne die Note, die das Instrument lesen muss",
+  "transposeWritePrompt": "Welche Note liest ein {instrument}, damit dies klingt?",
+  "@transposeWritePrompt": {
+    "placeholders": {
+      "instrument": { "type": "String" }
+    }
+  },
+  "transposeWriteHint": "Ein transponierendes Instrument liest eine andere Note als die, die klingt.",
   "gameBowing": "Bogenstrich",
   "gameBowingSubtitle": "Lies Auf- und Abstrich-Zeichen",
   "bowingPrompt": "Welcher Bogenstrich ist markiert?",

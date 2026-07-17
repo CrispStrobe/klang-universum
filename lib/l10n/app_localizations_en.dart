@@ -2087,6 +2087,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get concertInstrumentF => 'F Horn';
 
   @override
+  String get gameTransposeWrite => 'Write It for the Instrument';
+
+  @override
+  String get gameTransposeWriteSubtitle =>
+      'Name the note the instrument must read';
+
+  @override
+  String transposeWritePrompt(String instrument) {
+    return 'What note does a $instrument read to sound this?';
+  }
+
+  @override
+  String get transposeWriteHint =>
+      'A transposing instrument reads a different note than sounds.';
+
+  @override
   String get gameBowing => 'Bowing';
 
   @override

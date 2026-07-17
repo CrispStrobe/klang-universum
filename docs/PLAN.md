@@ -29,6 +29,18 @@ and push to origin/main** before/after touching shared files. Format:
   **both ARBs** (effect-name keys). Engine test (effected stem ≠ dry) + a tester test.
   Landing in one commit; rebasing before push.
 
+- **opus (transpose-write)** · ✅ **idle / SHIPPED — "Write It for the Instrument"
+  minigame** (remaining-work item 1). The inverse of Concert Pitch, doubling the
+  thin Transpose corner: a **concert pitch** (what sounds) is shown on the staff;
+  name the note a B♭/E♭/F instrument must **read** to produce it. B♭ only at 1★,
+  +E♭/F at 2★; correct → the concert pitch plays. SRI `transpose.<instr>.write_<step>`
+  (distinct leaf, never clobbers the forward game's SM-2 items). New
+  `features/games/transpose/transpose_write_screen.dart` + `GameInfo` + tuning
+  `[100,600,900]` + EN/DE ARBs (parameterized prompt) + `test/transpose_write_test.dart`
+  (3 tests incl. a round-trip pinning the transposition inverse vs the forward
+  maths). Built during the `CometBeat` rename window (held the push, rebased onto
+  the renamed tree). Analyze clean; consistency + star suites green.
+
 - **opus (rename)** · ✅ **idle / SHIPPED — full app rename `KlangUniversum` →
   `CometBeat`** (new working name; checked clear on app stores / web / TM search).
   Package id `klang_universum`→`comet_beat` (**342 Dart files, ~1,768 imports**),
@@ -134,11 +146,11 @@ still free on the board before starting** (search the agent name / feature).
 1. **Small content minigames** — *low risk, squarely in the games lane, no
    collision.* One `GameInfo` in `game_registry.dart` + a screen + a
    `kStarThresholds` bracket in `core/tuning.dart` (games with scores) + EN/DE ARBs
-   + a widget test via `pumpGame`. ✅ **Spot the Upbeat** (Auftakt / anacrusis
-   reading) SHIPPED (`spot_upbeat`). Still unclaimed: a **written↔concert toggle**
-   for transposing instruments, **SATB chorale reading** / a richer Grand Staff.
-   Copy an existing sibling (see the "Reusable scaffolds" note under the Ideas
-   backlog).
+   + a widget test via `pumpGame`. ✅ **Spot the Upbeat** (`spot_upbeat`, Auftakt /
+   anacrusis) and ✅ **Write It for the Instrument** (`transpose_write`, the
+   concert→written inverse of Concert Pitch) SHIPPED. Still unclaimed: **SATB
+   chorale reading** / a richer Grand Staff. Copy an existing sibling (see the
+   "Reusable scaffolds" note under the Ideas backlog).
 2. **AEC: on-device jam-mode integration** — ⚠️ *needs real hardware (not
    headless) — milestone (e).* The whole native algorithm stack is DONE and
    headlessly verified: DTD ported to the C DSP core (`f7487fd`) + wired into the

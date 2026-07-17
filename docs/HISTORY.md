@@ -416,6 +416,13 @@ Games built on crisp_notation capabilities the app didn't use before.
   actually sounds; crisp_notation's `transposeBy` computes the exact letter. The B♭
   instruments alone for beginners, E♭ and F added at 2★. A skill nothing else in
   the app covers. SRI `transpose.<instrument>.<written-step>`.
+- **Write It for the Instrument** (Transposing) — the **inverse** of Concert
+  Pitch: a **concert pitch** (what sounds) is shown on the staff; name the note a
+  B♭/E♭/F instrument must **read** to produce it (`transposeBy` in the opposite
+  direction). B♭ alone for beginners, +E♭/F at 2★; a correct answer plays the
+  concert pitch. Together the two games drill both directions of transposition.
+  SRI `transpose.<instrument>.write_<concert-step>` — a distinct leaf, so the two
+  games never overwrite each other's SM-2 items.
 - **Bowing** (cello corner) — read crisp_notation's string-bowing marks: a note on
   the bass staff carries a ⊓ down-bow or ∨ up-bow (`Articulation.downBow/upBow`);
   name it. SRI `cello.bowing.<down|up>`.

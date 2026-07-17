@@ -3914,6 +3914,30 @@ abstract class AppLocalizations {
   /// **'F Horn'**
   String get concertInstrumentF;
 
+  /// No description provided for @gameTransposeWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write It for the Instrument'**
+  String get gameTransposeWrite;
+
+  /// No description provided for @gameTransposeWriteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the note the instrument must read'**
+  String get gameTransposeWriteSubtitle;
+
+  /// No description provided for @transposeWritePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'What note does a {instrument} read to sound this?'**
+  String transposeWritePrompt(String instrument);
+
+  /// No description provided for @transposeWriteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A transposing instrument reads a different note than sounds.'**
+  String get transposeWriteHint;
+
   /// No description provided for @gameBowing.
   ///
   /// In en, this message translates to:

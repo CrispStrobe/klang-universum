@@ -884,6 +884,15 @@
   "concertInstrumentBb": "B♭ Trumpet",
   "concertInstrumentEb": "E♭ Alto Sax",
   "concertInstrumentF": "F Horn",
+  "gameTransposeWrite": "Write It for the Instrument",
+  "gameTransposeWriteSubtitle": "Name the note the instrument must read",
+  "transposeWritePrompt": "What note does a {instrument} read to sound this?",
+  "@transposeWritePrompt": {
+    "placeholders": {
+      "instrument": { "type": "String" }
+    }
+  },
+  "transposeWriteHint": "A transposing instrument reads a different note than sounds.",
   "gameBowing": "Bowing",
   "gameBowingSubtitle": "Read the up-bow and down-bow marks",
   "bowingPrompt": "Which bow stroke is marked?",

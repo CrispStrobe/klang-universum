@@ -115,6 +115,8 @@ const Map<String, List<int>> kStarThresholds = {
   'chord_builder': [100, 500, 800],
   // Concert Pitch (transposing instruments): 10 rounds x 100.
   'concert_pitch': [100, 600, 900],
+  // Write It for the Instrument (inverse: concert → written): 10 rounds x 100.
+  'transpose_write': [100, 600, 900],
   // Bowing (string up/down-bow): 10 rounds x 100.
   'bowing': [100, 600, 900],
   // Which Beat? (rhythmic placement): 10 rounds x 100.

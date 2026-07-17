@@ -106,6 +106,7 @@ import 'package:comet_beat/features/games/scales/sing_back_screen.dart';
 import 'package:comet_beat/features/games/songs/song_screen.dart';
 import 'package:comet_beat/features/games/songs/tune_quiz_screen.dart';
 import 'package:comet_beat/features/games/transpose/concert_pitch_screen.dart';
+import 'package:comet_beat/features/games/transpose/transpose_write_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/tutorial/primers.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
@@ -1222,6 +1223,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConcertPitch,
       subtitle: (l) => l.gameConcertPitchSubtitle,
       builder: (_) => const ConcertPitchScreen(),
+      tutorial: transposePrimer,
+    ),
+    // The inverse of Concert Pitch: name the note the instrument must read to
+    // sound a given concert pitch.
+    GameInfo(
+      id: 'transpose_write',
+      icon: Icons.edit_note,
+      title: (l) => l.gameTransposeWrite,
+      subtitle: (l) => l.gameTransposeWriteSubtitle,
+      builder: (_) => const TransposeWriteScreen(),
       tutorial: transposePrimer,
     ),
   ],
