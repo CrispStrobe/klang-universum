@@ -25,6 +25,11 @@ and push to origin/main** before/after touching shared files. Format:
   (a note carries a LIST of grace notes — a mini-editor), mid-*bar* clef changes
   (`inlineClefs`), and the Studio shell (input modes + inspector, Causes 2+3).
 
+- **opus (tracker)** · 🚧 **ACTIVE — `.mod` import/export codec** (delegated to
+  sub-agents; I define the contract in `lib/core/audio/mod/mod_module.dart` +
+  reader/writer stubs and build the real-file test suite). New files under
+  `lib/core/audio/mod/` + `test/mod_codec_test.dart` + `test/fixtures/*.mod` — no
+  hot shared files. Below: the rest of the Tracker (shipped).
 - **opus (tracker)** · ✅ **idle / SHIPPED — Tracker (pattern sequencer).** Dual-audience
   tracker (ModEdit/FT2/ST3/IT spirit, touch-first, Sandbox/Studio two-skins-over-
   one-model) built ON the shipped Loop Mixer engine (`mixStems` +
