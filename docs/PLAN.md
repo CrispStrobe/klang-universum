@@ -27,7 +27,11 @@ and push to origin/main** before/after touching shared files. Format:
   `composition_workshop_screen._generateExport` routes mid→multiPartToMidi,
   abc→multiPartToAbc when partCount>1; `kExportFormats` marks MIDI+ABC multiPart;
   new `debugGenerateExport` seam. MEI/kern/MuseScore/LilyPond stay single-Score
-  (library writers). 63 workshop + 30 notation tests green.
+  (library writers). 63 workshop + 30 notation tests green. **Follow-up
+  (`7455c14`): multi-track MIDI IMPORT** — `multiTrackMidiToMultiPart` (one part
+  per MTrk); wired into `notaconv` (a `.mid` with >1 track → all parts →
+  module/xml/abc) + the Workshop's `importMultiPart`. MIDI import/export now
+  symmetric. Live: 24-track MIDI → 24 channels/parts/voices.
 
 - **opus (modes)** · ✅ **idle / SHIPPED — "Which Mode?" ear game (`mode_ear`, scales module).** 3-way ear game: a scale plays ascending as Major (Ionian) / natural Minor (Aeolian) / **Dorian** (minor with a raised 6th, built from exact semitone steps); child taps which. `modePrimer` teaches the three colours (shown + heard). **Closes the `modes` gap** in concept_map. Scales module; EN/DE; [100,600,900]; analyze clean; mode_ear + tutorial + curriculum_coverage + consistency tests green (14). New: `mode_ear_screen.dart`, `test/mode_ear_test.dart`, `modePrimer`. (Also fixed a stray pre-existing import-order lint in game_registry.)
 
