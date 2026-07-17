@@ -363,14 +363,19 @@ void main() {
     await pumpGame(tester, const TrackerScreen());
     final game = _game(tester);
 
-    expect(game.channelEffect, TrackerChannelEffect.none);
-    game.setChannelEffect(TrackerChannelEffect.reverb);
+    expect(game.channelEffects, isEmpty);
+    game.setChannelEffects(
+      const [TrackerChannelEffect.reverb, TrackerChannelEffect.delay],
+    );
     await tester.pump();
-    expect(game.channelEffect, TrackerChannelEffect.reverb);
+    expect(
+      game.channelEffects,
+      [TrackerChannelEffect.reverb, TrackerChannelEffect.delay],
+    );
 
-    game.setChannelEffect(TrackerChannelEffect.none);
+    game.setChannelEffects(const []);
     await tester.pump();
-    expect(game.channelEffect, TrackerChannelEffect.none);
+    expect(game.channelEffects, isEmpty);
     expect(tester.takeException(), isNull);
   });
 

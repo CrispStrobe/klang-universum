@@ -403,6 +403,20 @@ Float64List applyChannelEffect(
       TrackerChannelEffect.crunch => distortionFx(stem, drive: 3, mix: 0.7),
     };
 
+/// Applies a CHAIN of insert effects to a [stem] in order (each same-length), for
+/// the per-channel effect list. An empty chain returns the stem unchanged.
+Float64List applyChannelEffects(
+  Float64List stem,
+  List<TrackerChannelEffect> effects, {
+  int sampleRate = kSampleRate,
+}) {
+  var out = stem;
+  for (final fx in effects) {
+    out = applyChannelEffect(out, fx, sampleRate: sampleRate);
+  }
+  return out;
+}
+
 /// One editable column: an [instrument], an authored mix [gain], and [rows]
 /// cells. Levels are combo-independent (each channel carries its gain into
 /// mixStems' unit-peak-per-stem + soft-limiter mixdown), so editing one channel
@@ -413,9 +427,12 @@ class TrackerChannel {
     required this.instrument,
     required int rows,
     this.gain = 0.6,
-    this.effect = TrackerChannelEffect.none,
+    List<TrackerChannelEffect>? effects,
     List<TrackerCell>? cells,
-  }) : cells = cells != null
+  })  : effects = effects != null
+            ? List<TrackerChannelEffect>.of(effects)
+            : <TrackerChannelEffect>[],
+        cells = cells != null
             ? List<TrackerCell>.of(cells)
             : List<TrackerCell>.filled(
                 rows,
@@ -433,9 +450,10 @@ class TrackerChannel {
   TrackerInstrument instrument;
   final double gain;
 
-  /// Mutable insert effect on this channel's stem. Go through
-  /// [TrackerEngine.setChannelEffect] so caches are invalidated.
-  TrackerChannelEffect effect;
+  /// The channel's insert-effect CHAIN, applied to its stem in order (before
+  /// mixStems). Empty = dry. Mutate via [TrackerEngine.setChannelEffects] so
+  /// caches are invalidated.
+  final List<TrackerChannelEffect> effects;
   final List<TrackerCell> cells;
 
   bool get hasAnyNote => cells.any((c) => !c.isEmpty);
@@ -580,10 +598,15 @@ class TrackerEngine {
     _wav = null;
   }
 
-  /// Sets a channel's insert [effect] (applied to its stem before mixStems) and
-  /// invalidates that channel's cached stem + the mixed WAV.
-  void setChannelEffect(int channel, TrackerChannelEffect effect) {
-    channels[channel].effect = effect;
+  /// Sets a channel's insert-effect CHAIN (applied to its stem in order before
+  /// mixStems; `none` entries are dropped) and invalidates that channel's cached
+  /// stem + the mixed WAV.
+  void setChannelEffects(int channel, List<TrackerChannelEffect> effects) {
+    final list = channels[channel].effects
+      ..clear()
+      ..addAll(effects);
+    // Drop `none` — an empty chain is dry.
+    list.removeWhere((e) => e == TrackerChannelEffect.none);
     _stemCache.remove(channel);
     _wav = null;
   }
@@ -682,7 +705,7 @@ class TrackerEngine {
       }
       startStep += steps;
     }
-    return applyChannelEffect(buf, ch.effect);
+    return applyChannelEffects(buf, ch.effects);
   }
 
   /// The current pattern mixed to PCM16 (one loop's worth). Used by [renderLoop]

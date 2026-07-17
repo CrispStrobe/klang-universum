@@ -124,8 +124,8 @@ abstract interface class TrackerTester {
   void setInstrument(String optionId);
 
   /// The selected channel's insert effect, and a setter for it.
-  TrackerChannelEffect get channelEffect;
-  void setChannelEffect(TrackerChannelEffect fx);
+  List<TrackerChannelEffect> get channelEffects;
+  void setChannelEffects(List<TrackerChannelEffect> fx);
 
   // --- Arrangement (pattern slots + song) ---
   int get slotCount;
@@ -330,10 +330,11 @@ class _TrackerScreenState extends State<TrackerScreen>
   }
 
   @override
-  TrackerChannelEffect get channelEffect => _engine.channels[_selected].effect;
+  List<TrackerChannelEffect> get channelEffects =>
+      _engine.channels[_selected].effects;
   @override
-  void setChannelEffect(TrackerChannelEffect fx) {
-    _engine.setChannelEffect(_selected, fx);
+  void setChannelEffects(List<TrackerChannelEffect> fx) {
+    _engine.setChannelEffects(_selected, fx);
     setState(() {});
     _syncPlayback();
   }
@@ -1041,43 +1042,64 @@ class _TrackerScreenState extends State<TrackerScreen>
         TrackerChannelEffect.crunch => l10n.trackerFxCrunch,
       };
 
-  /// The per-channel insert-effect picker (none / delay / chorus / flanger /
-  /// reverb applied to the channel's stem before the mix).
+  /// The per-channel insert-effect CHAIN picker — toggle any combination of
+  /// effects (applied to the channel's stem in order before the mix).
   void _showEffectSheet() {
     showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) {
         final l10n = AppLocalizations.of(sheetContext)!;
-        final current = _engine.channels[_selected].effect;
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.trackerChangeEffect,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.center,
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                final chain = _engine.channels[_selected].effects;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (final fx in TrackerChannelEffect.values)
-                      ChoiceChip(
-                        label: Text(_channelEffectLabel(l10n, fx)),
-                        selected: fx == current,
-                        onSelected: (_) {
-                          Navigator.pop(sheetContext);
-                          setChannelEffect(fx);
-                        },
-                      ),
+                    Text(
+                      l10n.trackerChangeEffect,
+                      style: Theme.of(sheetContext).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        for (final fx in TrackerChannelEffect.values
+                            .where((f) => f != TrackerChannelEffect.none))
+                          FilterChip(
+                            label: Text(_channelEffectLabel(l10n, fx)),
+                            selected: chain.contains(fx),
+                            onSelected: (on) {
+                              final next = List<TrackerChannelEffect>.of(chain);
+                              if (on) {
+                                if (!next.contains(fx)) next.add(fx);
+                              } else {
+                                next.remove(fx);
+                              }
+                              setChannelEffects(next);
+                              setSheetState(() {});
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: chain.isEmpty
+                          ? null
+                          : () {
+                              setChannelEffects(const []);
+                              setSheetState(() {});
+                            },
+                      child: Text(l10n.trackerFxNone),
+                    ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         );
