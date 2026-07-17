@@ -162,9 +162,16 @@ and push to origin/main** before/after touching shared files. Format:
   contract+tests). ✅ **`.xm` reader SHIPPED** (`xm_module.dart` model+byte-spec +
   `xm_reader.dart` `parseXm` + golden oracle `test/fixtures/golden.xm` + real "The
   final support" 24ch/20pat/77ins live test; agent-built against my contract+tests;
-  MSB-mask pattern unpack + delta-decoded 8/16-bit samples). 🚧 **`.it` reader next**
-  (same pattern; IT214/215 sample decompression as its own tested unit; port
-  **libxmp-lite MIT** loaders, libopenmpt-BSD oracle; §6). 📋 **Full idea backlog —
+  MSB-mask pattern unpack + delta-decoded 8/16-bit samples). ✅ **`.it` reader
+  SHIPPED** (`it_module.dart` model+byte-spec + `it_reader.dart` `parseIt` + golden
+  `test/fixtures/golden.it` + real "terrascape intro music" 8ch/17pat/12smp live
+  test; agent-built against my contract+tests). Handles the mask-cache pattern
+  unpack, uncompressed 8/16-bit (signed/unsigned/LE-BE/delta) AND **IT214/IT215
+  compressed** samples — the variable-bit-width decompressor's exact algorithm was
+  validated by a Python oracle round-tripped against **libxmp `itsex.c`** (44/44),
+  and golden.it embeds validated compressed blocks so the hard path has a byte-exact
+  target even though the real file is all-uncompressed. **Module reader set now
+  complete: `.mod` · `.s3m` · `.xm` · `.it`.** 📋 **Full idea backlog —
   codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio
   depth — in [`docs/TRACKER_IDEAS.md`](TRACKER_IDEAS.md); the FX effort in
   [`docs/FX_HANDOVER.md`](FX_HANDOVER.md).**
