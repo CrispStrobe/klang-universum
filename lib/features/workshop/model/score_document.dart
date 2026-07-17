@@ -1159,6 +1159,7 @@ class ScoreDocument {
     for (final measure in score.measures) {
       String? firstIdInBar;
       final barNewIds = <String>[]; // new id per element, in reading order
+      final barV2NewIds = <String>[]; // same, for the bar's voice-2 elements
       for (final el in measure.elements) {
         final id = _newId();
         firstIdInBar ??= id;
@@ -1187,6 +1188,7 @@ class ScoreDocument {
       // [remap] is recorded so id-keyed lyrics/slurs on voice-2 notes re-anchor.
       for (final el in measure.voice2) {
         final id = _newId();
+        barV2NewIds.add(id);
         if (el.id != null) remap[el.id!] = id;
         if (el is NoteElement) {
           _v2.add(
@@ -1242,14 +1244,19 @@ class ScoreDocument {
         final nav = measure.navigation;
         if (nav != null) _navigation[firstIdInBar] = nav;
       }
-      // Recover voice-1 tuplets: a span's [startIndex..endIndex] map onto the
-      // new ids we just assigned in reading order.
+      // Recover tuplets: a span's [startIndex..endIndex] index into its own
+      // voice's elements, so map onto the new ids we assigned in reading order
+      // for that voice (voice 0 = voice 1's stream, voice 1 = voice 2's).
       for (final span in measure.tuplets) {
-        if (span.voice != 0) continue; // editor is single-voice
-        if (span.endIndex >= barNewIds.length) continue;
+        final newIds = switch (span.voice) {
+          0 => barNewIds,
+          1 => barV2NewIds,
+          _ => null, // voices 3-4 aren't editable here
+        };
+        if (newIds == null || span.endIndex >= newIds.length) continue;
         _tuplets.add(
           Tuplet(
-            barNewIds.sublist(span.startIndex, span.endIndex + 1),
+            newIds.sublist(span.startIndex, span.endIndex + 1),
             actual: span.actual,
             normal: span.normal,
           ),
@@ -1558,8 +1565,14 @@ class ScoreDocument {
       timeSignature: timeSignature,
       pickup: pickup,
       timeChanges: _timeChanges,
+      // Scale voice-2 tuplet members so a triplet packs at its sounding
+      // duration, exactly as voice 1 does (ids not in _v2 are ignored).
+      durationScale: _tupletScale(),
       split: _rhythmPolicy == RhythmPolicy.split,
     );
+    // Voice-2 tuplets bracket on voice 2 (crisp_notation draws inner-voice
+    // tuplets from Measure.tuplets whose span.voice != 0).
+    final v2Tuplets = _tupletSpansByBar(v2, voice: 1);
     final n = bars.length > v2.length ? bars.length : v2.length;
     final out = <Measure>[];
     for (var i = 0; i < n; i++) {
@@ -1567,7 +1580,13 @@ class ScoreDocument {
           ? bars[i]
           : const Measure([RestElement(NoteDuration(DurationBase.whole))]);
       final voice2 = i < v2.length ? v2[i].elements : const <MusicElement>[];
-      out.add(base.copyWith(voice2: voice2));
+      final spans = v2Tuplets[i];
+      out.add(
+        base.copyWith(
+          voice2: voice2,
+          tuplets: spans == null ? base.tuplets : [...base.tuplets, ...spans],
+        ),
+      );
     }
     return out;
   }
@@ -1723,10 +1742,30 @@ class ScoreDocument {
   /// Empty-list fast path keeps repeat-free / tuplet-free scores byte-identical.
   List<Measure> _withTuplets(List<Measure> bars) {
     if (_tuplets.isEmpty) return bars;
+    final perBar = _tupletSpansByBar(bars, voice: 0);
+    if (perBar.isEmpty) return bars;
+    return [
+      for (var b = 0; b < bars.length; b++)
+        if (perBar[b] case final spans?)
+          bars[b].copyWith(tuplets: [...bars[b].tuplets, ...spans])
+        else
+          bars[b],
+    ];
+  }
+
+  /// Tuplet spans per bar index for ONE voice's reflowed [voiceBars], stamped
+  /// with [voice] (0 = the primary voice, 1 = voice 2) so the engraver brackets
+  /// the right voice. A group is emitted only when every member landed in this
+  /// voice's bars, in one bar, contiguously — so scanning voice 2 naturally skips
+  /// a voice-1 group (its ids aren't in [voiceBars]) and vice versa.
+  Map<int, List<TupletSpan>> _tupletSpansByBar(
+    List<Measure> voiceBars, {
+    required int voice,
+  }) {
     // element id → (bar index, index within that bar).
     final pos = <String, (int, int)>{};
-    for (var b = 0; b < bars.length; b++) {
-      final els = bars[b].elements;
+    for (var b = 0; b < voiceBars.length; b++) {
+      final els = voiceBars[b].elements;
       for (var i = 0; i < els.length; i++) {
         final id = els[i].id;
         if (id != null) pos[id] = (b, i);
@@ -1738,23 +1777,22 @@ class ScoreDocument {
         for (final id in t.memberIds)
           if (pos[id] case final p?) p,
       ];
-      if (locs.length != t.memberIds.length) continue; // a member vanished
+      if (locs.length != t.memberIds.length) continue; // not all in this voice
       final bar = locs.first.$1;
       if (locs.any((l) => l.$1 != bar)) continue; // crosses a barline
       final idxs = [for (final l in locs) l.$2]..sort();
       if (idxs.last - idxs.first != idxs.length - 1) continue; // not contiguous
       (perBar[bar] ??= []).add(
-        TupletSpan(idxs.first, idxs.last, actual: t.actual, normal: t.normal),
+        TupletSpan(
+          idxs.first,
+          idxs.last,
+          actual: t.actual,
+          normal: t.normal,
+          voice: voice,
+        ),
       );
     }
-    if (perBar.isEmpty) return bars;
-    return [
-      for (var b = 0; b < bars.length; b++)
-        if (perBar[b] case final spans?)
-          bars[b].copyWith(tuplets: [...bars[b].tuplets, ...spans])
-        else
-          bars[b],
-    ];
+    return perBar;
   }
 
   /// The value anchored to an element within [m] (last anchor in reading order
