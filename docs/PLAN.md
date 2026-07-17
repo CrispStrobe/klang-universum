@@ -110,6 +110,22 @@ and push to origin/main** before/after touching shared files. Format:
   a per-round structural invariant: upbeat ⇔ short pickup first bar). Analyze clean;
   registry/consistency + star-score suites green.
 
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — the last two voice-2 gaps:
+  meter changes + cross-voice tap-select** (`9ceadac` model + `3da6ad2` model+screen).
+  (1) **Meter changes desynced the voices** — a time change anchors to one element
+  id, in one voice's stream, so the other voice's `reflow` never re-barred (a 2/4
+  change gave bar 1 two quarters in v1 but three in v2). `_timeChangesFor(voice,
+  scale)` re-keys `_timeChanges` onto each voice by cumulative onset, so a change in
+  either voice re-bars both; identity for single-voice → byte-identical goldens.
+  `test/voice2_time_change_test.dart`. (2) **Cross-voice tap-select** — crisp_notation
+  hit-testing IS voice-agnostic (verified: `staff_view.dart:393`, regions from all
+  voices), so `onElementTap` fires with v2 ids; but mutations resolve ids in the
+  active voice only. Added `ScoreDocument.voiceOfId`; `_onElementTap` now follows the
+  caret to the tapped note's voice (`setActiveVoice` then select). Inert on the
+  single-voice Sandbox surface. `test/voice2_cross_voice_test.dart` + a widget test.
+  **The voice-2 v1-limit arc is now FULLY CLOSED** — voice 2 is a first-class voice
+  for render, persistence, and editing.
+
 - **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 mid-*bar* clef
   changes** (`5071194`). MODEL-only (`score_document.dart`). `_withInlineClefs`
   walked voice-1 elements only, so a mid-bar clef anchored on a voice-2 note was
