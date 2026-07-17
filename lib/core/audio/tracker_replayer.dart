@@ -14,9 +14,16 @@
 //   0xy arpeggio · 1xx porta up · 2xx porta down · 3xx tone porta ·
 //   4xy vibrato · 5xy tone-porta+vol-slide · 6xy vibrato+vol-slide ·
 //   7xy tremolo · Axy volume slide (per-tick) · Cxx set volume.
-// (9xx sample-offset and the flow commands Bxx/Dxx/Fxx/Exy are later phases; the
-// row-timing map below is already emitted so the flow phase can make it
-// non-uniform without changing this file's shape.)
+//
+// FLOW commands (phase 3) that change the ORDER/timeline are resolved at render
+// time by [walkFlow], which expands order→pattern→row under the flow rules into
+// the flat sequence of rows actually played, then renders that flattened song
+// through the same per-channel path (so pitch commands AND non-additive voices
+// keep working). Implemented: Bxx position jump · Dxx pattern break (with the
+// classic decimal row param). The row-timing map maps each flat row back to its
+// (orderIndex, patternIndex, row) so the playhead can follow the non-linear
+// sequence. Still TODO: Fxx set-speed/tempo (makes row DURATION non-uniform —
+// needs per-row timing, not just reordering), Exy extended, 9xx sample-offset.
 //
 // Mixing (see Trap A in docs/TRACKER_REPLAYER_HANDOVER.md): the replayer sums
 // voices at a FIXED-normalized amplitude (each additive voice divided by its
@@ -53,6 +60,8 @@ const int kFxVibrato = 0x4; // 4xy
 const int kFxTonePortaVolSlide = 0x5; // 5xy = 3xx (memory) + Axy
 const int kFxVibratoVolSlide = 0x6; // 6xy = 4xy (continue) + Axy
 const int kFxTremolo = 0x7; // 7xy
+const int kFxPositionJump = 0xB; // Bxx — continue at order xx, row 0
+const int kFxPatternBreak = 0xD; // Dxx — next order entry, row = decimal(xx)
 
 // --- Tuning constants (MUSICAL APPROXIMATIONS, not period-accurate MOD) -------
 //
@@ -459,14 +468,90 @@ ReplayResult replayPattern(
   return ReplayResult(_mixToPcm(mix), const [RowTiming(0, 0, 0, 0)]);
 }
 
+// --- Flow (phase 3): Bxx position jump + Dxx pattern break -------------------
+
+/// One row actually played, in playback order — the output of [walkFlow].
+class PlayedRow {
+  const PlayedRow(this.orderIndex, this.patternIndex, this.row);
+
+  final int orderIndex;
+  final int patternIndex;
+  final int row;
+
+  @override
+  String toString() => 'PlayedRow(order $orderIndex, pat $patternIndex, '
+      'row $row)';
+}
+
+/// Whether any cell in [song] carries a flow command (Bxx/Dxx) — the gate that
+/// routes [replaySong] through the [walkFlow] path.
+bool songUsesFlow(TrackerSong song) => song.patterns.any(
+      (p) => p.cells.any(
+        (col) => col.any(
+          (c) => c.fxCmd == kFxPositionJump || c.fxCmd == kFxPatternBreak,
+        ),
+      ),
+    );
+
+/// Expands [song]'s order/pattern/row walk under the flow rules (Bxx jump, Dxx
+/// break) into the flat sequence of rows actually played. Bxx wins the order,
+/// Dxx sets the landing row; both on one row ⇒ jump order + break row. Guarded by
+/// [maxRows] so a backward Bxx loop terminates (documented cap, not an error).
+List<PlayedRow> walkFlow(TrackerSong song, {int maxRows = 4096}) {
+  final order = song.order;
+  final rows = song.timing.rows;
+  final played = <PlayedRow>[];
+  var oi = 0;
+  var row = 0;
+  while (oi >= 0 && oi < order.length && played.length < maxRows) {
+    final patternIndex = order[oi];
+    final cells = song.patterns[patternIndex].cells;
+    if (row < 0 || row >= rows) row = 0;
+    played.add(PlayedRow(oi, patternIndex, row));
+
+    // Scan the row across channels for flow commands (first of each wins).
+    int? jumpToOrder;
+    int? breakToRow;
+    for (final col in cells) {
+      final c = col[row];
+      if (c.fxCmd == kFxPositionJump) {
+        jumpToOrder ??= c.fxParam;
+      } else if (c.fxCmd == kFxPatternBreak) {
+        breakToRow ??=
+            ((c.fxParam >> 4) * 10 + (c.fxParam & 0xF)).clamp(0, rows - 1);
+      }
+    }
+
+    if (jumpToOrder != null) {
+      oi = jumpToOrder;
+      row = breakToRow ?? 0;
+    } else if (breakToRow != null) {
+      oi += 1;
+      row = breakToRow;
+    } else {
+      row += 1;
+      if (row >= rows) {
+        oi += 1;
+        row = 0;
+      }
+    }
+  }
+  return played;
+}
+
 /// Replays the whole [song] (its order list) into one mixed PCM16 + a row-timing
-/// map. Timing is uniform for now (one [TrackerTiming.totalMs] per order entry);
-/// the flow phase makes it non-uniform. Side-effect-free.
+/// map. Command-free / flow-free songs render one [TrackerTiming.totalMs] per
+/// order entry (uniform); when the song [songUsesFlow] the order is expanded by
+/// [walkFlow] into the exact played sequence and rendered as one flattened
+/// pattern, so the map is non-linear but the timing per row stays uniform (Fxx
+/// tempo/speed is a later phase). Side-effect-free.
 ReplayResult replaySong(
   TrackerSong song, {
   int ticksPerRow = kDefaultTicksPerRow,
 }) {
   song.syncCurrent();
+  if (songUsesFlow(song)) return _replayFlow(song, ticksPerRow);
+
   final timing = song.timing;
   final channels = song.channels;
   final order = song.order;
@@ -495,5 +580,37 @@ ReplayResult replaySong(
       );
     }
   }
+  return ReplayResult(_mixToPcm(mix), timingMap);
+}
+
+/// The flow render: expand the order via [walkFlow], flatten the played rows into
+/// one long column per channel, and render that flattened song. Voice state
+/// (porta/vibrato/oscillator phase) stays continuous across the flat rows, and
+/// non-additive voices trigger at their flattened positions, so both stay
+/// aligned with the reordered timeline.
+ReplayResult _replayFlow(TrackerSong song, int ticksPerRow) {
+  final played = walkFlow(song);
+  final channels = song.channels;
+  final base = song.timing;
+  final flatRows = played.isEmpty ? 1 : played.length;
+  final flatTiming = base.copyWith(rows: flatRows);
+  final mix = Float64List(flatTiming.totalSamples);
+
+  for (var c = 0; c < channels.length; c++) {
+    final flatCells = [
+      for (final pr in played) song.patterns[pr.patternIndex].cells[c][pr.row],
+    ];
+    _renderChannelInto(mix, channels[c], flatCells, flatTiming, ticksPerRow, 0);
+  }
+
+  final timingMap = [
+    for (var i = 0; i < played.length; i++)
+      RowTiming(
+        flatTiming.stepOnsetMs(i).round(),
+        played[i].orderIndex,
+        played[i].patternIndex,
+        played[i].row,
+      ),
+  ];
   return ReplayResult(_mixToPcm(mix), timingMap);
 }

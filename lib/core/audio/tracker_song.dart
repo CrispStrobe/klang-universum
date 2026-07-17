@@ -135,9 +135,14 @@ class TrackerSong {
   TrackerTiming get timing => _engine.timing;
   List<TrackerChannel> get channels => _engine.channels;
 
-  /// Total song length in ms (uniform pattern length for now — one pattern's
-  /// [TrackerTiming.totalMs] per order entry).
-  int get songTotalMs => timing.totalMs * order.length;
+  /// Total song length in ms. Normally one pattern's [TrackerTiming.totalMs] per
+  /// order entry; when the song has flow commands (Bxx/Dxx) it is the resolved
+  /// length of the actually-played row sequence ([walkFlow]) — the rendered WAV
+  /// matches this, so the transport loops/stops at the right time. The no-flow
+  /// case short-circuits with no allocation (the common path).
+  int get songTotalMs => songUsesFlow(this)
+      ? timing.stepMs * walkFlow(this).length
+      : timing.totalMs * order.length;
 
   /// The ms offset where the order entry at [orderIndex] begins.
   int patternStartMs(int orderIndex) => timing.totalMs * orderIndex;

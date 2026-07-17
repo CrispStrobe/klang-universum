@@ -63,7 +63,7 @@ void main() {
     test('slides toward the row note and never overshoots', () {
       final cells = [
         const TrackerCell(midi: 60), // C-4
-        fx(kFxTonePorta, 0x08, midi: 64), // → E-4 target: 0.5 st/tick, no retrig
+        fx(kFxTonePorta, 0x08, midi: 64), // → E-4: 0.5 st/tick, no retrig
         fx(kFxTonePorta, 0x00), // continue (memory reuses 0x08)
         fx(kFxTonePorta, 0x00),
       ];
@@ -225,6 +225,141 @@ void main() {
       }
       expect(res.timing.first.orderIndex, 0);
       expect(res.timing.last.orderIndex, 1);
+    });
+  });
+
+  group('flow — Bxx position jump / Dxx pattern break', () {
+    // A song of [patternCount] patterns × [rows] rows, one channel, authored via
+    // [author], with the given [order]. Cells are synced so walkFlow sees them.
+    TrackerSong flowSong({
+      int patternCount = 3,
+      int rows = 8,
+      required List<int> order,
+      required void Function(TrackerSong) author,
+    }) {
+      final s = TrackerSong(
+        timing: TrackerTiming(rows: rows),
+        patternCount: patternCount,
+      );
+      s.order
+        ..clear()
+        ..addAll(order);
+      author(s);
+      s.syncCurrent();
+      return s;
+    }
+
+    List<String> seq(List<PlayedRow> p) =>
+        [for (final r in p) '${r.orderIndex}:${r.patternIndex}:${r.row}'];
+
+    test('no flow → the linear order×rows sequence', () {
+      final s = flowSong(
+        patternCount: 2,
+        order: [0, 1],
+        author: (s) => s.engine.setCell(0, 0, const TrackerCell(midi: 60)),
+      );
+      expect(songUsesFlow(s), isFalse);
+      expect(walkFlow(s).length, 8 * 2);
+    });
+
+    test('Dxx breaks to the next order entry (D00 → row 0)', () {
+      final s = flowSong(
+        order: [0, 1],
+        author: (s) {
+          s.selectPattern(0);
+          s.engine.setCell(0, 0, const TrackerCell(midi: 60));
+          s.engine.setCell(0, 2, fx(kFxPatternBreak, 0x00));
+        },
+      );
+      expect(songUsesFlow(s), isTrue);
+      final s2 = seq(walkFlow(s));
+      // rows 0,1,2 of order-0 pattern-0, then all of order-1 pattern-1.
+      expect(s2.take(4).toList(), ['0:0:0', '0:0:1', '0:0:2', '1:1:0']);
+      expect(s2.length, 3 + 8);
+    });
+
+    test('Dxx param is decimal and clamps to the pattern length', () {
+      final s = flowSong(
+        order: [0, 1],
+        author: (s) {
+          s.selectPattern(0);
+          s.engine.setCell(0, 0, fx(kFxPatternBreak, 0x03)); // → row 3
+        },
+      );
+      expect(walkFlow(s)[1].row, 3);
+
+      final s2 = flowSong(
+        order: [0, 1],
+        author: (s) {
+          s.selectPattern(0);
+          s.engine.setCell(0, 0, fx(kFxPatternBreak, 0x13)); // 13 → clamp to 7
+        },
+      );
+      expect(walkFlow(s2)[1].row, 7);
+    });
+
+    test('Bxx jumps to another order index (skipping entries)', () {
+      final s = flowSong(
+        order: [0, 1, 2],
+        author: (s) {
+          s.selectPattern(0);
+          s.engine.setCell(0, 1, fx(kFxPositionJump, 0x02)); // → order 2
+        },
+      );
+      final s2 = seq(walkFlow(s));
+      expect(s2.take(3).toList(), ['0:0:0', '0:0:1', '2:2:0']);
+      expect(s2.length, 2 + 8); // order 1 skipped
+    });
+
+    test('Bxx + Dxx on one row: jump wins the order, break sets the row', () {
+      final s = flowSong(
+        order: [0, 1, 2],
+        author: (s) {
+          s.selectPattern(0);
+          s.engine.setCell(0, 0, fx(kFxPositionJump, 0x01)); // channel 0
+          s.addChannel();
+          s.selectPattern(0);
+          s.engine.setCell(1, 0, fx(kFxPatternBreak, 0x03)); // channel 1
+        },
+      );
+      final p = walkFlow(s);
+      expect(p[1].orderIndex, 1); // Bxx → order 1
+      expect(p[1].row, 3); // Dxx → row 3
+    });
+
+    test('a backward Bxx loop terminates at the guard cap', () {
+      final s = flowSong(
+        patternCount: 1,
+        order: [0],
+        author: (s) {
+          s.engine.setCell(0, 0, const TrackerCell(midi: 60));
+          s.engine.setCell(0, 3, fx(kFxPositionJump, 0x00)); // → order 0 row 0
+        },
+      );
+      expect(walkFlow(s, maxRows: 20).length, 20);
+    });
+
+    test('flow render: PCM length + songTotalMs match the played sequence', () {
+      final s = flowSong(
+        order: [0, 1],
+        author: (s) {
+          s.selectPattern(0);
+          s.engine.setCell(0, 0, const TrackerCell(midi: 60));
+          s.engine.setCell(0, 2, fx(kFxPatternBreak, 0x00));
+          s.selectPattern(1);
+          s.engine.setCell(0, 0, const TrackerCell(midi: 64));
+        },
+      );
+      final played = walkFlow(s);
+      final res = replaySong(s);
+      expect(res.timing.length, played.length);
+      expect(
+        res.pcm.length,
+        s.timing.copyWith(rows: played.length).totalSamples,
+      );
+      expect(s.songTotalMs, s.timing.stepMs * played.length);
+      final peak = res.pcm.fold<int>(0, (m, v) => max(m, v.abs()));
+      expect(peak, greaterThan(1000));
     });
   });
 }
