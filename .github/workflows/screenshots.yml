@@ -1,0 +1,97 @@
+name: App Store Screenshots
+
+# Captures App Store screenshots on iOS Simulators (iPhone 6.9" + iPad 13") on a
+# macOS runner — the local machine's main volume is too small to run simulators,
+# and CoreSimulator can't run from the external SSD. Manual only; uploads the
+# PNGs as an artifact for review before they're pushed to App Store Connect.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    # Path-depends on the sibling crisp_notation library — same layout as ci.yml.
+    defaults:
+      run:
+        working-directory: cometbeat
+    steps:
+      - name: Checkout cometbeat
+        uses: actions/checkout@v4
+        with:
+          path: cometbeat
+
+      - name: Checkout crisp_notation (sibling path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/crisp_notation
+          ref: main
+          path: crisp_notation
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+          cache: true
+
+      - name: Disable Swift Package Manager (use pure CocoaPods)
+        run: flutter config --no-enable-swift-package-manager
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Boot simulators (iPhone 6.9" + iPad 13")
+        run: |
+          set -euo pipefail
+          pick() {  # first available device matching any of the given patterns
+            for pat in "$@"; do
+              udid=$(xcrun simctl list devices available \
+                | grep -m1 -E "$pat" \
+                | grep -oE "[0-9A-Fa-f-]{36}" || true)
+              [ -n "$udid" ] && { echo "$udid"; return 0; }
+            done
+            return 1
+          }
+          IPHONE=$(pick "iPhone 16 Pro Max" "iPhone 1[5-9].*Pro Max" "iPhone .*Pro Max")
+          IPAD=$(pick "iPad Pro 13-inch" "iPad Pro .*12.9-inch" "iPad Pro")
+          echo "iPhone: $IPHONE"; echo "iPad: $IPAD"
+          [ -n "$IPHONE" ] && [ -n "$IPAD" ] || { echo "missing a device"; xcrun simctl list devices available; exit 1; }
+          xcrun simctl boot "$IPHONE" || true
+          xcrun simctl boot "$IPAD" || true
+          echo "IPHONE_UDID=$IPHONE" >> "$GITHUB_ENV"
+          echo "IPAD_UDID=$IPAD" >> "$GITHUB_ENV"
+
+      - name: Capture — iPhone 6.9"
+        run: |
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshots_test.dart \
+            --dart-define=SHOT_PREFIX=iphone \
+            -d "$IPHONE_UDID"
+
+      - name: Capture — iPad 13"
+        if: always()
+        run: |
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshots_test.dart \
+            --dart-define=SHOT_PREFIX=ipad \
+            -d "$IPAD_UDID"
+
+      - name: Report captured sizes
+        if: always()
+        run: |
+          ls -la screenshots/ || true
+          for f in screenshots/*.png; do
+            [ -e "$f" ] || continue
+            echo "$f -> $(sips -g pixelWidth -g pixelHeight "$f" | awk '/pixel/{printf $2" "}')"
+          done
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: cometbeat/screenshots/*.png
+          if-no-files-found: warn
