@@ -17,10 +17,10 @@ jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout klang-universum
+      - name: Checkout cometbeat
         uses: actions/checkout@v5
         with:
-          path: klang-universum
+          path: cometbeat
 
       # crisp_notation + crisp_notation_core are resolved via ../crisp_notation/... path deps.
       - name: Checkout crisp_notation (sibling path dependency)
@@ -38,19 +38,19 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        working-directory: klang-universum
+        working-directory: cometbeat
         run: flutter pub get
 
       - name: Verify formatting
-        working-directory: klang-universum
+        working-directory: cometbeat
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze
-        working-directory: klang-universum
+        working-directory: cometbeat
         run: flutter analyze
 
       - name: Test
-        working-directory: klang-universum
+        working-directory: cometbeat
         run: flutter test --coverage
 
       - name: Upload coverage
@@ -58,5 +58,5 @@ jobs:
         if: always()
         with:
           name: lcov
-          path: klang-universum/coverage/lcov.info
+          path: cometbeat/coverage/lcov.info
           if-no-files-found: warn

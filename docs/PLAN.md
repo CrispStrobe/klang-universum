@@ -47,10 +47,12 @@ and push to origin/main** before/after touching shared files. Format:
   display names (iOS/macOS/Android/Linux/Windows/web/l10n `appTitle`), bundle ids →
   `com.crispstrobe.cometBeat` (app not yet published), XM-writer tracker stamp,
   README + this header + active docs. `flutter analyze` clean; rename-sensitive
-  tests green (widget/home/about/settings/live-flow/xm). **Deliberately NOT
-  renamed** (external/historical state — needs a manual follow-up): the GitHub repo
-  `CrispStrobe/klang-universum` (+ the CI checkout `path:` that mirrors it), the
-  Apple provisioning profile `ios-release.yml:PROFILE_NAME`, and `HISTORY.md`.
+  tests green (widget/home/about/settings/live-flow/xm). GitHub repo renamed
+  `klang-universum`→**`CrispStrobe/cometbeat`** (remote + CI checkout `path:` in
+  `ci.yml`/`deploy.yml` updated). **Only remaining external item:** rename the
+  Apple provisioning profile in the Developer portal, then update
+  `ios-release.yml:PROFILE_NAME` (still `Klang Universum AppStore CI`). `HISTORY.md`
+  keeps the old name by design (historical log).
 
 - **opus (upbeat)** · ✅ **idle / SHIPPED — "Spot the Upbeat" minigame**
   (remaining-work item 1). A binary staff-read (Takte module): a short two-bar
@@ -489,7 +491,7 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
 
 ## Delivery
 
-- GitHub: `CrispStrobe/klang-universum` (app), `CrispStrobe/crisp_notation` (lib).
+- GitHub: `CrispStrobe/cometbeat` (app), `CrispStrobe/crisp_notation` (lib).
 - **CI** (`.github/workflows/ci.yml`): every push/PR runs format + analyze +
   test and uploads coverage (~85% of `lib/`). It checks out `crisp_notation` as a
   sibling so the `../crisp_notation` path dependency resolves on the runner.
