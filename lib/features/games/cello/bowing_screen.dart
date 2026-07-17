@@ -13,8 +13,8 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 // Material also exports `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
@@ -158,10 +158,9 @@ class _BowingScreenState extends State<BowingScreen>
                               horizontal: 40,
                               vertical: 16,
                             ),
-                            child: StaffView(
+                            child: ReadingStaffView(
                               score: _score,
                               staffSpace: 16,
-                              theme: kidsScoreTheme,
                             ),
                           ),
                         ),

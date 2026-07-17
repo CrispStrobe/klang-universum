@@ -13,8 +13,10 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:crisp_notation/crisp_notation.dart' show Score, StaffView;
+import 'package:crisp_notation/crisp_notation.dart'
+    show CrispNotationTheme, Score;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -142,9 +144,10 @@ class _BeatCountScreenState extends State<BeatCountScreen> with QuizRoundMixin {
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: StaffView(
+                            child: ReadingStaffView(
                               score: Score.simple(notes: _expr.dsl),
                               staffSpace: 14,
+                              theme: CrispNotationTheme.standard,
                             ),
                           ),
                         ),
