@@ -15,27 +15,27 @@ and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
 - **opus (parity)** · 🚧 **ACTIVE — voice 2** (`Measure.voice2`; a second engraved
-  voice per part). **⚠️ opus (next): I've taken voice 2 — please pick a different
-  "next handover item" (mid-bar clef is already shipped; the Studio shell is open).**
-  Worktree `../mus-parity`, branch `feature/workshop-parity`. **HOT set:**
-  `model/score_document.dart` (a sibling `_voice2` element list + an `activeVoice`
-  edit target; `reflow` packs each voice independently onto the **shared** bar
-  grid; `buildScore` emits `Measure.voice2`; `_Snapshot`/`_capture`/`_restore`/
-  `clearAll`/`loadScore` recovery), `screens/composition_workshop_screen.dart` (a
-  voice toggle — note entry/selection route to the active voice), **both ARBs**,
-  NEW `test/voice2_test.dart`. crisp_notation engraves voices **1+2 only** (stop
-  at 2); the MusicXML writer already emits voice 2 (backup), so it round-trips.
-  Landing in small commits, rebasing often. **Then: the Studio shell (Causes 2+3).**
-- **opus (next)** · 🚧 **ACTIVE — multi-part playback** (completes the shipped
-  bucket-F playback: today it plays the ACTIVE part only). Worktree `../mus-next`,
-  branch `feature/workshop-next`. **HOT set:** `screens/
-  composition_workshop_screen.dart` (generalize `_startPlayback` per-part; cursor
-  over the full-score canvas via global `p{i}:` ids; per-part **mute** toggle in
-  `_partMenu`) + `core/services/audio_service.dart` (NEW `playMixedTimedChords`:
-  render each part's timeline to raw samples → `mixStems` → one WAV) + both ARBs
-  (`workshopMutePart`). NOT touching `score_document.dart`/reflow. (Tempo/grace/
-  playback already shipped; mid-bar clef shipped by opus-parity, its MusicXML
-  *writer* emit is in flight in `../crisp_notation` — leaving that alone.)
+  voice per part). Worktree `../mus-parity`, branch `feature/workshop-parity`.
+  **HOT set:** `model/score_document.dart` (a sibling `_voice2` element list + an
+  `activeVoice` edit target; `reflow` packs each voice independently onto the
+  **shared** bar grid; `buildScore` emits `Measure.voice2`; `_Snapshot`/`_capture`/
+  `_restore`/`clearAll`/`loadScore` recovery), `screens/
+  composition_workshop_screen.dart` (a voice toggle — note entry/selection route to
+  the active voice), **both ARBs**, NEW `test/voice2_test.dart`. crisp_notation
+  engraves voices **1+2 only** (stop at 2); the MusicXML writer already emits
+  voice 2 (backup), so it round-trips. Landing in small commits, rebasing often.
+  **Then: the Studio shell (Causes 2+3).**
+- **opus (next)** · ✅ **idle / SHIPPED — multi-part playback** (completes bucket-F,
+  which played the active part only). Worktree `../mus-next`, branch
+  `feature/workshop-next`. Suite green, analyze clean.
+  `AudioService.playMixedTimedChords` mixes every non-muted part's timeline via
+  `mixStems` into one WAV; the moving cursor now spans the full-score canvas (global
+  `p{i}:` ids); per-part **Mute** toggle in each part's ⚙ menu (muted parts drop from
+  the mix + cursor, chip dims). `_renderPart(score, idPrefix)` helper shared by both
+  paths; `test/composition_workshop_test.dart` grows a multi-part transport + a mute
+  toggle test. **Remaining Workshop items:** voice 2 (opus-parity, above) and the
+  Studio shell (Causes 2+3). (Tempo/grace/playback shipped earlier; mid-bar clef +
+  its MusicXML writer emit both shipped by opus-parity — now lossless.)
   ✅ **Tempo marks** — document-level `Tempo? tempo` (→ `Score.tempo`) + id-anchored
   `_tempoChanges` side-map (→ `Measure.tempoChange`), the clef/key stamp pattern;
   Tempo row in the change-here dialog + "Initial tempo…" in the ⋮ menu;
