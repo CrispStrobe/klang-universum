@@ -51,7 +51,7 @@ Options:
   -h, --help      Show this help.
 ''';
 
-void main(List<String> argv) async {
+Future<void> main(List<String> argv) async {
   final args = _Args(argv);
   if (args.flag('help') || args.flag('h') || argv.isEmpty) {
     stdout.write(_usage);
