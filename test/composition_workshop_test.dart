@@ -936,9 +936,9 @@ void main() {
     expect(find.textContaining('PNG'), findsOneWidget);
   });
 
-  // Only MusicXML/.mxl can carry every part (crisp_notation ships no other
-  // multiPartTo… writer), so exporting a multi-part score to MIDI/LilyPond/etc
-  // silently dropped every part but the active one. The sheet must say so.
+  // MusicXML/.mxl (library) + MIDI/ABC (our own multi-part writers) carry every
+  // part; the remaining single-Score text formats drop all but the active one,
+  // so the sheet must say which.
   testWidgets('the export sheet is silent about parts for a single-part score',
       (tester) async {
     await pump(tester);
@@ -971,21 +971,52 @@ void main() {
     await tester.tap(find.text(l10n.workshopExport));
     await tester.pumpAndSettle();
 
-    // MusicXML + .mxl say they carry everything; the other nine warn.
-    expect(find.text(l10n.workshopExportAllParts(2)), findsNWidgets(2));
+    // MusicXML/.mxl + MIDI/ABC carry everything; the rest warn.
+    final multiPartCount = kExportFormats.where((f) => f.multiPart).length;
+    expect(
+      find.text(l10n.workshopExportAllParts(2)),
+      findsNWidgets(multiPartCount),
+    );
     expect(
       find.text(l10n.workshopExportActivePartOnly('Part 2')),
-      findsNWidgets(kExportFormats.length - 2),
-      reason: 'every non-MusicXML format must admit it drops the other parts',
+      findsNWidgets(kExportFormats.length - multiPartCount),
+      reason: 'every single-Score format must admit it drops the other parts',
     );
   });
 
-  test('exactly the MusicXML formats claim multi-part support', () {
+  test('exactly the multi-part-capable formats claim multi-part support', () {
     // Guards the flag against a new format being added without deciding.
+    // MusicXML/mxl via the library; MIDI/ABC via our own multi-part writers.
     expect(
       kExportFormats.where((f) => f.multiPart).map((f) => f.ext),
-      ['musicxml', 'mxl'],
+      ['musicxml', 'mxl', 'mid', 'abc'],
     );
+  });
+
+  testWidgets('multi-part MIDI + ABC export carries every part',
+      (tester) async {
+    await pump(tester);
+    // Two parts, each with a note.
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    expect(_editor(tester).partCount, 2);
+
+    // MIDI → a format-1 SMF with 2 tracks.
+    final (midi, _) = await _editor(tester).debugGenerateExport('mid');
+    expect(midi, isNotNull);
+    expect(String.fromCharCodes(midi!.sublist(0, 4)), 'MThd');
+    expect((midi[8] << 8) | midi[9], 1); // format 1
+    expect((midi[10] << 8) | midi[11], 2); // 2 tracks
+
+    // ABC → two V: voices.
+    final (_, abc) = await _editor(tester).debugGenerateExport('abc');
+    expect(abc, isNotNull);
+    final voices = RegExp(r'^V:\d+ name=', multiLine: true).allMatches(abc!);
+    expect(voices.length, 2);
   });
 
   testWidgets('enabling marquee mode shows the selection overlay',

@@ -14,6 +14,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:comet_beat/core/notation/multi_part_export.dart'
+    show multiPartToAbc, multiPartToMidi;
 import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
@@ -272,12 +274,14 @@ MultiPartScore importBekern(String text) =>
 /// One export target: display [label], file [ext], and MIME type. [binary]
 /// formats are raw bytes; the rest are UTF-8 text (and so can fall back to the
 /// copyable dialog where the platform has no save picker).
-/// [multiPart] marks the formats that write **every** instrument part. The rest
-/// can only carry the active one — crisp_notation has a `multiPartTo…` writer
-/// for MusicXML only (every text format has a multi-part *reader*, so this is an
-/// asymmetry in the library, not here). Exporting a 4-part score to MIDI or
-/// LilyPond therefore silently dropped 3 parts; the export sheet now says so
-/// rather than letting the user find out later. See docs/WORKSHOP_PARITY.md.
+/// [multiPart] marks the formats that write **every** instrument part. MusicXML/
+/// mxl use the library's `multiPartToMusicXml`; MIDI and ABC use our own
+/// `multiPartToMidi` (format-1 SMF, one track per part) and `multiPartToAbc`
+/// (one `V:` voice per part) from `core/notation/multi_part_export.dart`. The
+/// remaining text formats (MEI/kern/MuseScore/LilyPond) have single-Score writers
+/// in the library, so they still carry only the active part; the export sheet
+/// flags that rather than letting the user find out later. See
+/// docs/WORKSHOP_PARITY.md.
 typedef ExportFormat = ({
   String label,
   String ext,
@@ -307,14 +311,14 @@ const kExportFormats = <ExportFormat>[
     ext: 'mid',
     mime: 'audio/midi',
     binary: true,
-    multiPart: false,
+    multiPart: true,
   ),
   (
     label: 'ABC',
     ext: 'abc',
     mime: 'text/plain',
     binary: false,
-    multiPart: false,
+    multiPart: true,
   ),
   (
     label: 'MEI',
@@ -430,6 +434,10 @@ abstract interface class CompositionWorkshopTester {
   /// G6: number of instrument parts, and which one the toolbar edits.
   int get partCount;
   int get activePartIndex;
+
+  /// Test seam: render the export for [ext] (bytes for binary formats, text
+  /// otherwise) — so a test can prove multi-part MIDI/ABC carry every part.
+  Future<(Uint8List?, String?)> debugGenerateExport(String ext);
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
@@ -625,6 +633,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   @override
   int get activePartIndex => _mpd.active;
+
+  @override
+  Future<(Uint8List?, String?)> debugGenerateExport(String ext) =>
+      _generateExport(kExportFormats.firstWhere((f) => f.ext == ext));
 
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
@@ -2305,9 +2317,22 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       case 'mxl':
         return (writeMusicXmlToMxl(_musicXmlExport()), null);
       case 'mid':
-        return (scoreToMidi(score), null);
+        // A format-1 SMF (one track per part) when there's more than one part,
+        // else the single active Score.
+        return (
+          _mpd.partCount > 1
+              ? multiPartToMidi(_mpd.buildMultiPart())
+              : scoreToMidi(score),
+          null,
+        );
       case 'abc':
-        return (null, scoreToAbc(score));
+        // Every part as an ABC `V:` voice when multi-part, else the active one.
+        return (
+          null,
+          _mpd.partCount > 1
+              ? multiPartToAbc(_mpd.buildMultiPart(), partNames: _mpd.names)
+              : scoreToAbc(score),
+        );
       case 'mei':
         return (null, scoreToMei(score));
       case 'krn':
