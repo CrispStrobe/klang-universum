@@ -22,8 +22,13 @@ and push to origin/main** before/after touching shared files. Format:
   surface is now broad:** mid-score clef/key/time, repeats, voltas+navigation,
   tuplets, discontiguous selection, RhythmPolicy.split, and ornaments — all on
   the flat model. **Remaining bigger gaps** (each its own effort): grace notes
-  (a note carries a LIST of grace notes — a mini-editor), mid-*bar* clef changes
-  (`inlineClefs`), and the Studio shell (input modes + inspector, Causes 2+3).
+  (a note carries a LIST of grace notes — a mini-editor), tempo marks (id-anchor
+  stamp, feeds playback), mid-*bar* clef changes (`inlineClefs`), voice 2, the
+  **Studio shell** (input modes + inspector, Causes 2+3), and **playback** (real
+  transport + moving cursor). **A fresh agent should start from
+  [`docs/WORKSHOP_NEXT_HANDOVER.md`](WORKSHOP_NEXT_HANDOVER.md)** — it scopes each
+  remaining item, the id-anchor-vs-field pattern that built the batch, the
+  byte-identity invariant, and the test conventions.
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — `.mod` import/export codec.** Pure-Dart
   ProTracker codec in `lib/core/audio/mod/` (model+contract `mod_module.dart`,

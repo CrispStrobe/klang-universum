@@ -182,26 +182,50 @@ the notation-depth gaps one at a time:
 - [x] **Slice 3 — discontiguous id-set selection** — `ca52d58`. `_anchor`/
       `_focus` → `Set<String>` + focus id; `selectByIds` is now exact (marquee no
       longer widens); edits iterate the set, block-move refuses discontiguous.
-- [x] **Slice 7 — `RhythmPolicy.split`** — `7ffe193` (model) + `5fda285` (UI).
-      An over-long note ties across the barline (`notate()` decomposition);
-      spill stays the default + byte-identical. ⋮-menu toggle. (Studio): an overflowing note splits
-      into tied notes across the barline instead of short-filling. Needs
-      `notate(Fraction)` (no public one in crisp_notation) + explicit tie groups.
-      The largest; where a first-class `Bar` finally earns its keep.
+- [x] **`RhythmPolicy.split`** — `7ffe193` (model) + `5fda285` (UI). An over-long
+      note ties across the barline (`notate()` decomposition, top-level +
+      tested); spill stays the default + byte-identical; ⋮-menu toggle.
+- [x] **Full meters + circle of fifths + picker crash-guard** — `7d954be` (these
+      were UI caps only; `_dropdown` self-heals an off-list value).
+- [x] **Ornaments** (trill / short trill / mordent / turn / inverted turn) —
+      `194fa66` (model) + `5459e60` (UI). A per-note `Ornament?` FIELD on
+      `EditorElement` (not a side-map — rides the element snapshot for free);
+      "Ornament: …" palette row. Round-trips.
 
-The index API survives as a **derived facade** (`elements` = bars flattened),
-which works because flat order *is* spine order concatenated. Convert
-`moveByIdToIndex` to `moveBefore(id, beforeId)` using the `beforeId`
-`computeDropSlot` already returns, then delete the index API once tests migrate.
+**Remaining notation-depth items (each its own commit; see the handover):**
 
-**Ranked risks.** (1) *The reflow-identity claim is load-bearing, and pickup is
-the trap* — `_packMeasures`' capacity depends on `isFirst`, which flips inside
-`flush()`; any divergence is a subtle wrong-bar bug. Slice 0's goldens are the
-whole mitigation, which is why they went first. (2) Split ↔ id identity (above).
-(3) **`buildGrandStaff` is a second, independent packing path** — it must ride
-the same spine or the two views silently diverge; the goldens pin it too.
-(4) Churn. (5) `maxNotes = 256` is a flat-count cap that wants to become a bar
-cap.
+- [ ] **Grace notes** — `NoteElement.graceNotes` is a *list* of notes (+ a
+      `graceStyle`), so it's a mini-editor per note, not a single attribute.
+      Model: `EditorElement.graceNotes: List<...>` + a small entry UI. The one
+      remaining "hole" that isn't a one-liner.
+- [ ] **Mid-*bar* clef changes** (`Measure.inlineClefs`, onset-addressed) —
+      today the editor only does bar-*start* clef changes (`clefChange`).
+- [ ] **Voice 2** — `Measure.voice2` (crisp_notation engraves voices 1+2 only, so
+      stop at 2). A second stream per part; the flat `_elements` becomes
+      `_elements` + `_voice2`, and reflow packs each independently onto the shared
+      bar grid. Medium.
+- [ ] **Tempo marks** — `Score.tempo` + `Measure.tempoChange` (another id-anchor
+      stamp like clef/key; feeds `TempoMap` → real playback, see bucket F).
+
+**The two design causes still open** — these are the big buckets, not notation
+attributes:
+
+- [ ] **Cause 2 — input modes** (§"Cause 2 — the editor has no modes"): an
+      explicit insert-vs-select state machine so keyboard-first entry works and
+      the value strip stops being dual-purpose.
+- [ ] **Cause 3 — the inspector** (§"Cause 3 — depth has nowhere to live"): a
+      selection-driven properties panel. The palette popup is straining under the
+      count of attributes now — this is the scalable home for them.
+
+**Ranked risks for the remaining work.** (1) *`reflow` byte-identity is
+load-bearing* — every additive feature keeps its empty-anchor fast path so the
+packing goldens (`test/score_document_packing_golden_test.dart`) stay green;
+pickup capacity depends on `isFirst`, a subtle trap. (2) **`buildGrandStaff` is a
+second, independent packing path** that does NOT get the id-anchor stamps
+(`_withMidScoreChanges`/`_withTuplets` run only on the single-staff `buildScore`)
+— voice 2 / grace notes must decide whether grand-staff mode shows them. (3)
+`maxNotes = 256` is a flat-count cap. (4) Split continuations get derived ids
+(`<id>s2`) so they aren't independently selectable — fine for a tied tail.
 
 **Defer:** tuplets (→ D), **voices 3–4 entirely** (crisp_notation's engine never
 engraves them — `layout_engine.dart` has zero `voice3`/`voice4` references, so
@@ -345,27 +369,46 @@ Ordered by *unblocking*, not by size.
   format drops instead of silently writing one part of four. Voices, tuplets and
   mid-score changes are still dropped on load — those the flat model genuinely
   can't express, and they're C's job, not a bug here.
-- **C · Make the document real** ◐ **planned + slice 0 landed** — Cause 1:
-  measure spine, `(bar, voice, tick)` addressing, id-set selection. The unlock.
-  See the plan under Cause 1: land it on `main` in 9 invisible slices (**not** a
-  long-lived worktree), keep the snapshot stack (**not** a command model) but
-  lift it to `MultiPartDocument` so deleting an instrument stops being
-  unrecoverable, and bound it. Slices 0–3 are the de-risking core.
-- **D · Cash in the unlock** — tuplets, voice 2, mid-score key/time/clef/tempo,
-  repeats/voltas, measure ops, cross-bar splitting, full meters and keys. Each is
-  now small, and each is mostly *wiring to a renderer that already draws it*.
-- **E · Make entry professional** — Causes 2+3: input modes, keyboard-first
-  entry, the inspector, palettes. Rides on C's caret.
-- **F · Make it sound** — playback is currently a fixed-tempo, rest-less,
-  chord-less, active-part-only beep sequence (`_play:955`), which is odd given
-  the library ships `playbackTimeline` / `soundingAt` / `TempoMap` and the app
-  already owns audio. Real transport + moving cursor + per-part mute is mostly
-  wiring, and it's disproportionately motivating for the target user.
-- **G · Scale** — the incremental-layout contract, the 256-note cap, page/print
-  view, PDF. Only meaningful once A–F land.
+- **C · Make the document real** ✅ **RESOLVED — a different way than planned.**
+  The measure-spine flip (Cause 1) was **retired** once slice 1 exposed its real
+  cost (~60 mutation sites rewritten at once) and that it's the wrong
+  architecture for a spill-mode editor (reflowed bars have no stable identity to
+  anchor to). It turned out we **don't need the flip** to cash in D: bar
+  attributes anchor to an **element id** (a side-map on the flat doc) and
+  `buildScore` stamps them onto whichever bar the note reflows into. Slice 0
+  (goldens) + slice 1 (pure `reflow()`) landed; everything else in the slice
+  table is superseded by the id-anchor refinement. A first-class `Bar` only
+  earns its keep for `RhythmPolicy.split` (done app-side without it). See the
+  "Refinement" box under Cause 1.
+- **D · Cash in the unlock** ✅ **SHIPPED (the notation-depth batch).** Mid-score
+  clef/key/time, repeats, voltas + navigation, tuplets, full meters + keys,
+  cross-bar splitting (`RhythmPolicy.split`), discontiguous id-set selection, and
+  ornaments — all via id-anchors / `reflow` on the flat model, each
+  byte-identity-guarded. See the tracked roadmap under Cause 1. **Left in D:**
+  grace notes (a note carries a *list* — a mini-editor, not a single attribute),
+  mid-*bar* clef changes (`inlineClefs`), voice 2 (`Measure.voice2`), tempo
+  marks. See the handover.
+- **E · Make entry professional** ⬜ **NOT STARTED (Causes 2+3, the next big
+  bucket).** Input-mode state machine, keyboard-first entry, a selection-driven
+  inspector, insertion palettes. This is where the "Studio shelf" actually gets
+  built. Discontiguous selection (shipped in D) is a prerequisite that's now in
+  place. See the handover for the recommended shape.
+- **F · Make it sound** ⬜ **NOT STARTED.** Playback is still a fixed-tempo,
+  rest-less, chord-less, active-part-only beep sequence (`_play` in the screen),
+  though the library ships `playbackTimeline` / `soundingAt` / `TempoMap` and the
+  app owns audio. Real transport + moving cursor + per-part mute is mostly
+  wiring, and disproportionately motivating for the target user. Now also has a
+  live hook: `RhythmPolicy.split`, repeats and navigation marks all expand in
+  `playbackTimeline`, so playback would reflect them.
+- **G · Scale** ◐ **the layout ceiling is SHIPPED; the rest is open.** The
+  large-score lag was fixed in crisp_notation (`198ef17`): justification is now
+  regula-falsi (~3.8× fewer system layouts) instead of a fixed 24-step bisection.
+  **Still open:** no incremental/dirty-range layout (each edit re-engraves the
+  whole score's cheap natural pass — not worth a contract yet), the 256-note cap,
+  page/print view, PDF.
 
-**A and B are independent of everything and should start now. C is the fork in
-the road** — every feature in D built *before* C gets built twice.
+**A, B, D and G's layout ceiling are done. E (Studio entry) and F (playback) are
+the two large unstarted buckets; the rest of D is small follow-ups.**
 
 ---
 
