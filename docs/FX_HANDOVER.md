@@ -55,10 +55,16 @@ effects.dart` (arp/vibrato/slide). See auto-memory `tracker-effort`.
    control DONE** — a Slow/Normal/Fast chip row in the record sheet applies
    `timeStretch` to the clip before it becomes the voice instrument (`_voiceStretch`
    + tester seam `voiceStretch`/`voiceSampleLength`). **§3 complete.**
-4. **Instrument envelopes** (from OpenMPT/IT) — optional volume/pitch envelopes on
-   sampled/sfxr instruments for expressiveness. New model + render hook.
-5. **Groove / swing** — a tempo-swing option in the Tracker/Loop Mixer timing (from
-   OpenMPT's tempo swing). Small timing change, kid-friendly feel.
+4. **Instrument envelopes** (from OpenMPT/IT). ✅ **DONE** — `crisp_dsp/envelope.dart`
+   (`Envelope` ADSR + `applyEnvelope`); `SampleInstrument` applies a per-note gain
+   (default `Envelope.declick`) so sampled/voice notes ramp in + fade out (no click).
+   A pitch envelope on sfxr/additive voices is a further extension.
+5. **Groove / swing** ✅ **DONE** — `TrackerTiming.swing` delays off-beat steps
+   (swing-aware onsets across every renderer), with an app-bar swing toggle.
+   **The FX_HANDOVER effort is now essentially complete (§1–§5);** what remains are
+   the *extensions* noted inline (sfxr FM/LFO into the instrument picker, a
+   multi-effect per-channel chain, pitch envelopes, a reverb/delay send on the Loop
+   Mixer).
 
 ## Where the FX plug in (integration, maintainer)
 - **Instruments:** an optional **per-channel effect chain** in the Tracker (a small

@@ -69,11 +69,15 @@ and push to origin/main** before/after touching shared files. Format:
   cache and its "model not found" message prints the `hf download` command. (Run
   id `1663829550` not mirrored — available upstream.)
 
-- **opus (tracker)** · 🚧 **ACTIVE — FX remainder (FX_HANDOVER §1/§4/§5)**: tempo
-  **swing** (SHIPPED), **sfxr FM/LFO** (extend `crisp_dsp/sfxr.dart`), and
-  **instrument volume envelopes** (§4). **HOT files:** `core/audio/tracker_engine.dart`,
-  `crisp_dsp/sfxr.dart`, `features/games/composition/tracker_screen.dart` + **both
-  ARBs**. Landing as 2-3 commits; rebasing before each push.
+- **opus (tracker)** · ✅ **idle / SHIPPED — FX remainder (FX_HANDOVER §1/§4/§5)**.
+  **Swing** (`TrackerTiming.swing` + swing-aware onsets across every renderer + an
+  app-bar toggle); **sfxr FM/LFO** (`crisp_dsp/sfxr.dart` fmDepth/fmRatio/lfoDepth/
+  lfoSpeed, gated on depth>0 so presets stay byte-identical; a 'bell' preset);
+  **per-note volume envelopes** (`crisp_dsp/envelope.dart` + `SampleInstrument`
+  declick). Each its own commit + test; all engine/screen suites green.
+  **FX_HANDOVER §1–§5 essentially complete** (only extensions remain). ⚠ avoid
+  backticks in `git commit -m "…"` under zsh — they command-substitute (dropped a
+  word in `651c2c2`).
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — record voice slow/fast (time-stretch)**.
   A Slow/Normal/Fast chip row in the record sheet applies the shipped `timeStretch`
