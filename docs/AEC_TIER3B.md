@@ -290,16 +290,27 @@ technique, don't vendor unless the licence + tree stay clean.
   NB the divergence the DTD fixes shows at the 1024-sample AEC block; a
   256-sample filter is already robust, so enable the DTD only with a matching
   block size.
+- ✅ **RES ported to C + wired into the engine.** `src/aec_dsp.{c,h}` gained an
+  `AecRes` (create_default / process / reset / destroy) — a port of the Dart
+  `ResidualEchoSuppressor`, reusing the DSP's own `aec_fft`/`ifft`. FFI-bound as
+  `AecRes` in `lib/aec_dsp.dart`; verified by an offline cross-check
+  (`test/aec_erle_test.dart`: RES deepens echo-only ERLE >3 dB past the linear
+  filter). Also wired **opt-in** into the engine block loop
+  (`aec_engine_set_res()` / `AecEngineFfi.setRes(bool)`), with its leakage
+  estimate gated on the DTD's single-talk decision; headless engine test
+  (`test/aec_engine_test.dart`: RES deepens echo-only ERLE through the pump). RES
+  needs a distinct output buffer — it reads the cleaned/echo frame after writing
+  its output, so it can't run in place. Whole native suite green (10/10).
 - **`build.sh` fixed:** it now runs the cross-check with `flutter test` +
-  `AEC_LIBRARY_PATH` (→ the full `libaec`, which carries the DSP + DTD + engine
-  symbols) OUTSIDE the GEM-env wrapper (the wrapper hangs the flutter test
+  `AEC_LIBRARY_PATH` (→ the full `libaec`, which carries the DSP + DTD + RES +
+  engine symbols) OUTSIDE the GEM-env wrapper (the wrapper hangs the flutter test
   runner; the old `dart test` couldn't resolve the flutter_test suite).
-- **Remaining:** (a) **app opt-in** — have `NativeAecEngine`/the jam screen call
-  `setDtd(true)` (and pick a 1024-block engine) once speaker-backing is on; part
-  of milestone (e) since it needs on-device tuning to be meaningful. (b) **port
-  RES to C** (needs the FFT the DSP already has). (c) **milestone (e)** on-device
-  tuning — the real duplex path on iOS/Android hardware. (a)+(c) are what make
-  jam AEC real.
+- **Remaining (all need on-device hardware — milestone (e)):** app opt-in —
+  have `NativeAecEngine`/the jam screen call `setDtd(true)` + `setRes(true)` (with
+  a 1024-block engine) once speaker-backing is on; then tune the real duplex path
+  on iOS/Android (latency, ring, session). The whole DTD+RES stack is now **in the
+  native engine and headlessly verified** — what's left is exercising it on real
+  hardware.
 
 ## Effort
 

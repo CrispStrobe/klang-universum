@@ -80,6 +80,29 @@ void aec_dtd_update(AecDtd* d, const double* reference, const double* mic,
 void aec_dtd_reset(AecDtd* d);
 void aec_dtd_destroy(AecDtd* d);
 
+// --- Residual echo suppressor (port of aec_offline.dart's ResidualEchoSuppressor)
+// A Wiener-style spectral post-filter on the linear canceller's residual, in the
+// canceller's own overlap-save framing (reuses aec_fft/ifft). Feed it the
+// cleaned block and the canceller's echo estimate (mic - cleaned) each block.
+typedef struct AecRes AecRes;
+
+// Create a suppressor. Defaults (via *_create_default) mirror the Dart:
+//   overSubtract=1.0, gainFloor=0.1, powerSmoothing=0.8, leakSmoothing=0.95,
+//   eps=1e-12. blockSize must be a power of two.
+AecRes* aec_res_create(int blockSize, double overSubtract, double gainFloor,
+                       double powerSmoothing, double leakSmoothing, double eps);
+AecRes* aec_res_create_default(int blockSize);
+
+// Suppress residual echo in one `cleaned` block, given the canceller's `echoEst`
+// (mic - cleaned) for the same block. Both `blockSize` long; writes the
+// suppressed block to `out` (`blockSize` long). Pass updateLeak=0 during
+// double-talk so the near-end doesn't inflate the leakage estimate.
+void aec_res_process(AecRes* r, const double* cleaned, const double* echoEst,
+                     int updateLeak, double* out);
+
+void aec_res_reset(AecRes* r);
+void aec_res_destroy(AecRes* r);
+
 // Exposed for the FFT self-check / reuse. In-place radix-2 Cooley-Tukey FFT;
 // `n` must be a power of two. Direct port of chroma_analysis.dart's fft().
 void aec_fft(double* re, double* im, int n);

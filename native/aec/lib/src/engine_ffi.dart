@@ -76,6 +76,8 @@ class AecEngineFfi {
       _lib.lookupFunction<_SetPeriodC, _SetPeriodD>('aec_engine_set_period');
   late final _SetPeriodD _setDtd =
       _lib.lookupFunction<_SetPeriodC, _SetPeriodD>('aec_engine_set_dtd');
+  late final _SetPeriodD _setRes =
+      _lib.lookupFunction<_SetPeriodC, _SetPeriodD>('aec_engine_set_res');
   late final _StopD _stop =
       _lib.lookupFunction<_StopC, _StopD>('aec_engine_stop');
   late final _DestroyD _destroy =
@@ -90,6 +92,11 @@ class AecEngineFfi {
   /// freezes filter adaptation on near-end-present blocks, so the user's own
   /// playing/singing survives with far less residual echo.
   void setDtd(bool enabled) => _setDtd(_handle, enabled ? 1 : 0);
+
+  /// Enable/disable residual echo suppression (default off) — a spectral
+  /// post-filter that deepens echo suppression beyond the linear filter. Best
+  /// combined with [setDtd] (which gates its leakage estimate).
+  void setRes(bool enabled) => _setRes(_handle, enabled ? 1 : 0);
 
   /// Start on the system default duplex device. Returns 0 on success.
   int start() => _start(_handle);

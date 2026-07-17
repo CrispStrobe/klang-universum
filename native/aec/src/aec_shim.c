@@ -59,6 +59,8 @@ struct AecEngine {
   AecDsp* aec;
   AecDtd* dtd;     // double-talk detector (owned; used only when dtdEnabled)
   int dtdEnabled;  // opt-in — off keeps the plain linear-canceller behaviour
+  AecRes* res;     // residual echo suppressor (owned; used only when resEnabled)
+  int resEnabled;  // opt-in — off leaves the linear cleaned output untouched
   ma_device device;
   ma_context context;
   int started;
@@ -73,6 +75,8 @@ struct AecEngine {
   double* micBlock;
   double* refBlock;
   double* outBlock;
+  double* echoBlock;  // echo estimate (mic - cleaned) for the RES
+  double* resBlock;   // RES output (distinct — the RES can't write in place)
   int fill;
 };
 
@@ -105,16 +109,33 @@ static void engine_run(AecEngine* e, const int16_t* mic, int16_t* spk,
     if (e->fill == e->frame) {
       // Double-talk detector (opt-in): freeze adaptation while the near-end is
       // present, then update its decision from this block's result. Off ⇒ the
-      // filter always adapts (unchanged linear behaviour).
+      // filter always adapts (unchanged linear behaviour). `singleTalk` also
+      // gates the RES leakage estimate below.
+      int singleTalk = 1;
       if (e->dtdEnabled) {
-        aec_dsp_set_adapt(e->aec, aec_dtd_freeze(e->dtd) ? 0 : 1);
+        singleTalk = aec_dtd_freeze(e->dtd) ? 0 : 1;
+        aec_dsp_set_adapt(e->aec, singleTalk);
       }
       aec_dsp_process(e->aec, e->refBlock, e->micBlock, e->outBlock);
       if (e->dtdEnabled) {
         aec_dtd_update(e->dtd, e->refBlock, e->micBlock, e->outBlock, e->frame);
       }
+
+      // Residual echo suppressor (opt-in): a spectral post-filter on the linear
+      // residual. Learn its leakage only on single-talk (else the near-end
+      // inflates it). Writes to a distinct buffer — the RES can't run in place.
+      const double* cleaned = e->outBlock;
+      if (e->resEnabled) {
+        for (int j = 0; j < e->frame; j++) {
+          e->echoBlock[j] = e->micBlock[j] - e->outBlock[j];
+        }
+        aec_res_process(e->res, e->outBlock, e->echoBlock, singleTalk,
+                        e->resBlock);
+        cleaned = e->resBlock;
+      }
+
       for (int j = 0; j < e->frame; j++) {
-        rb_push1(&e->cleanedRing, clamp_i16(e->outBlock[j] * 32768.0));
+        rb_push1(&e->cleanedRing, clamp_i16(cleaned[j] * 32768.0));
       }
       e->fill = 0;
     }
@@ -138,9 +159,13 @@ AecEngine* aec_engine_create(int sampleRate, int frame) {
   e->aec = aec_dsp_create_default(frame);
   e->dtd = aec_dtd_create_default();
   e->dtdEnabled = 0;
+  e->res = aec_res_create_default(frame);
+  e->resEnabled = 0;
   e->micBlock = (double*)calloc((size_t)frame, sizeof(double));
   e->refBlock = (double*)calloc((size_t)frame, sizeof(double));
   e->outBlock = (double*)calloc((size_t)frame, sizeof(double));
+  e->echoBlock = (double*)calloc((size_t)frame, sizeof(double));
+  e->resBlock = (double*)calloc((size_t)frame, sizeof(double));
 
   // ~1 s of buffering each way — slack for scheduling jitter, and enough that a
   // batch test can pump a second of audio before it must drain.
@@ -154,8 +179,8 @@ AecEngine* aec_engine_create(int sampleRate, int frame) {
           MA_SUCCESS;
   e->ringsReady = okRings;
 
-  if (!e->aec || !e->dtd || !e->micBlock || !e->refBlock || !e->outBlock ||
-      !okRings) {
+  if (!e->aec || !e->dtd || !e->res || !e->micBlock || !e->refBlock ||
+      !e->outBlock || !e->echoBlock || !e->resBlock || !okRings) {
     aec_engine_destroy(e);
     return NULL;
   }
@@ -286,6 +311,13 @@ void aec_engine_set_dtd(AecEngine* e, int enabled) {
   e->dtdEnabled = on;
 }
 
+void aec_engine_set_res(AecEngine* e, int enabled) {
+  if (!e) return;
+  int on = enabled ? 1 : 0;
+  if (on != e->resEnabled) aec_res_reset(e->res);  // start clean on a mode flip
+  e->resEnabled = on;
+}
+
 void aec_engine_reference(AecEngine* e, const int16_t* pcm, int frames) {
   if (!e || !pcm) return;
   // Drop-newest on overflow: keeps the ring strictly single-producer (the audio
@@ -329,6 +361,7 @@ void aec_engine_destroy(AecEngine* e) {
   aec_engine_stop(e);
   aec_dsp_destroy(e->aec);
   aec_dtd_destroy(e->dtd);
+  aec_res_destroy(e->res);
   if (e->ringsReady) {
     ma_pcm_rb_uninit(&e->refRing);
     ma_pcm_rb_uninit(&e->cleanedRing);
@@ -337,6 +370,8 @@ void aec_engine_destroy(AecEngine* e) {
   free(e->micBlock);
   free(e->refBlock);
   free(e->outBlock);
+  free(e->echoBlock);
+  free(e->resBlock);
   free(e);
 }
 

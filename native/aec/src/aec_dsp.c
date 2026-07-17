@@ -323,3 +323,145 @@ void aec_dtd_reset(AecDtd* d) {
 }
 
 void aec_dtd_destroy(AecDtd* d) { free(d); }
+
+// --- Residual echo suppressor (port of aec_offline.dart's ResidualEchoSuppressor)
+//
+// A Wiener-style spectral post-filter on what the linear canceller leaves
+// (filter misadjustment, the echo tail beyond the filter). Framing reuses the
+// canceller's own overlap-save structure — a 2*blockSize [prev ; cur] frame,
+// spectrally gained, keep the last block — so there's no window/COLA
+// bookkeeping. Per bin the residual echo is lambda(k)*|Y(k)|^2 with the echo
+// leakage lambda learned ONLY on far-end single-talk (pass updateLeak=0 during
+// double-talk, else the near-end drives lambda far too high).
+
+struct AecRes {
+  int blockSize;
+  int n;  // 2*blockSize
+  double overSubtract;
+  double gainFloor;
+  double powerSmoothing;
+  double leakSmoothing;
+  double eps;
+  double* prevCleaned;  // b
+  double* prevEcho;     // b
+  double* pe;           // n — smoothed residual power
+  double* py;           // n — smoothed echo-estimate power
+  double* leak;         // n — lambda per bin
+  // Scratch (reused per block).
+  double* eRe;  // n
+  double* eIm;  // n
+  double* yRe;  // n
+  double* yIm;  // n
+};
+
+AecRes* aec_res_create(int blockSize, double overSubtract, double gainFloor,
+                       double powerSmoothing, double leakSmoothing,
+                       double eps) {
+  if (!is_pow2(blockSize)) return NULL;
+  AecRes* r = (AecRes*)calloc(1, sizeof(AecRes));
+  if (!r) return NULL;
+  r->blockSize = blockSize;
+  r->n = 2 * blockSize;
+  r->overSubtract = overSubtract;
+  r->gainFloor = gainFloor;
+  r->powerSmoothing = powerSmoothing;
+  r->leakSmoothing = leakSmoothing;
+  r->eps = eps;
+  int b = blockSize, n = r->n;
+  r->prevCleaned = (double*)calloc((size_t)b, sizeof(double));
+  r->prevEcho = (double*)calloc((size_t)b, sizeof(double));
+  r->pe = (double*)calloc((size_t)n, sizeof(double));
+  r->py = (double*)calloc((size_t)n, sizeof(double));
+  r->leak = (double*)calloc((size_t)n, sizeof(double));
+  r->eRe = (double*)calloc((size_t)n, sizeof(double));
+  r->eIm = (double*)calloc((size_t)n, sizeof(double));
+  r->yRe = (double*)calloc((size_t)n, sizeof(double));
+  r->yIm = (double*)calloc((size_t)n, sizeof(double));
+  if (!r->prevCleaned || !r->prevEcho || !r->pe || !r->py || !r->leak ||
+      !r->eRe || !r->eIm || !r->yRe || !r->yIm) {
+    aec_res_destroy(r);
+    return NULL;
+  }
+  return r;
+}
+
+AecRes* aec_res_create_default(int blockSize) {
+  // Mirrors the Dart ResidualEchoSuppressor defaults.
+  return aec_res_create(blockSize, 1.0, 0.1, 0.8, 0.95, 1e-12);
+}
+
+void aec_res_process(AecRes* r, const double* cleaned, const double* echoEst,
+                     int updateLeak, double* out) {
+  const int b = r->blockSize, n = r->n;
+  double* eRe = r->eRe;
+  double* eIm = r->eIm;
+  double* yRe = r->yRe;
+  double* yIm = r->yIm;
+
+  // Overlap-save frames: [previous ; current].
+  memset(eIm, 0, n * sizeof(double));
+  memset(yIm, 0, n * sizeof(double));
+  for (int i = 0; i < b; i++) {
+    eRe[i] = r->prevCleaned[i];
+    eRe[b + i] = cleaned[i];
+    yRe[i] = r->prevEcho[i];
+    yRe[b + i] = echoEst[i];
+  }
+  aec_fft(eRe, eIm, n);
+  aec_fft(yRe, yIm, n);
+
+  for (int k = 0; k < n; k++) {
+    double pe = eRe[k] * eRe[k] + eIm[k] * eIm[k];
+    double py = yRe[k] * yRe[k] + yIm[k] * yIm[k];
+    r->pe[k] = r->powerSmoothing * r->pe[k] + (1 - r->powerSmoothing) * pe;
+    r->py[k] = r->powerSmoothing * r->py[k] + (1 - r->powerSmoothing) * py;
+
+    if (updateLeak && r->py[k] > r->eps) {
+      double ratio = r->pe[k] / (r->py[k] + r->eps);
+      if (ratio < 0.0) ratio = 0.0;
+      if (ratio > 1.0) ratio = 1.0;
+      r->leak[k] =
+          r->leakSmoothing * r->leak[k] + (1 - r->leakSmoothing) * ratio;
+    }
+
+    double residual = r->overSubtract * r->leak[k] * r->py[k];
+    double gain = 1.0 - residual / (r->pe[k] + r->eps);
+    if (gain < r->gainFloor) gain = r->gainFloor;
+    if (gain > 1.0) gain = 1.0;
+    eRe[k] *= gain;
+    eIm[k] *= gain;
+  }
+
+  ifft(eRe, eIm, n);
+
+  // Overlap-save: the last block is the valid output.
+  for (int i = 0; i < b; i++) out[i] = eRe[b + i];
+  for (int i = 0; i < b; i++) {
+    r->prevCleaned[i] = cleaned[i];
+    r->prevEcho[i] = echoEst[i];
+  }
+}
+
+void aec_res_reset(AecRes* r) {
+  if (!r) return;
+  int b = r->blockSize, n = r->n;
+  memset(r->prevCleaned, 0, b * sizeof(double));
+  memset(r->prevEcho, 0, b * sizeof(double));
+  memset(r->pe, 0, n * sizeof(double));
+  memset(r->py, 0, n * sizeof(double));
+  memset(r->leak, 0, n * sizeof(double));
+}
+
+void aec_res_destroy(AecRes* r) {
+  if (!r) return;
+  free(r->prevCleaned);
+  free(r->prevEcho);
+  free(r->pe);
+  free(r->py);
+  free(r->leak);
+  free(r->eRe);
+  free(r->eIm);
+  free(r->yRe);
+  free(r->yIm);
+  free(r);
+}

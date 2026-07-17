@@ -45,6 +45,12 @@ void aec_engine_set_period(AecEngine* e, int period);
 // the detector and un-freezes the filter on a mode change). See AEC_TIER3B.md.
 void aec_engine_set_dtd(AecEngine* e, int enabled);
 
+// Enable/disable residual echo suppression (default off) — a spectral post-
+// filter on the linear canceller's residual that deepens echo suppression. Its
+// leakage estimate is learned only on single-talk (gated by the DTD when that's
+// also on). Safe to toggle any time (re-arms the suppressor on a mode change).
+void aec_engine_set_res(AecEngine* e, int enabled);
+
 // Open + start the full-duplex device on the system DEFAULT playback+capture.
 // Returns 0 on success, non-zero (a miniaudio ma_result) on failure — e.g. no
 // mic permission / no device.

@@ -189,6 +189,55 @@ void main() {
       );
     });
 
+    test(
+        'the residual suppressor deepens echo-only ERLE past the linear filter',
+        () {
+      const b = 1024;
+      final aec = AecDsp.create(blockSize: b, libraryPath: libPath);
+      final res = AecRes.createFor(aec);
+      addTearDown(aec.dispose);
+      addTearDown(res.dispose);
+
+      final rng = Random(31);
+      const blocks = 80;
+      final ref =
+          List<double>.generate(blocks * b, (_) => rng.nextDouble() * 2 - 1);
+
+      // Over the converged tail: mic energy in vs the residual out, both for the
+      // linear cleaned and after the suppressor.
+      var micE = 0.0, linE = 0.0, resE = 0.0;
+      for (var bi = 0; bi < blocks; bi++) {
+        final rb = Float64List(b);
+        final mb = Float64List(b);
+        for (var i = 0; i < b; i++) {
+          final t = bi * b + i;
+          rb[i] = ref[t];
+          mb[i] = echoAt(ref, t); // echo only (far-end single-talk)
+        }
+        final cleaned = aec.process(rb, mb);
+        final echoEst = Float64List(b);
+        for (var i = 0; i < b; i++) {
+          echoEst[i] = mb[i] - cleaned[i];
+        }
+        final suppressed = res.process(cleaned, echoEst);
+        if (bi >= blocks - 20) {
+          for (var i = 0; i < b; i++) {
+            micE += mb[i] * mb[i];
+            linE += cleaned[i] * cleaned[i];
+            resE += suppressed[i] * suppressed[i];
+          }
+        }
+      }
+      final erleLinear = 10 * (log(micE / (linE + 1e-12)) / ln10);
+      final erleRes = 10 * (log(micE / (resE + 1e-12)) / ln10);
+      expect(
+        erleRes,
+        greaterThan(erleLinear + 3),
+        reason: 'ERLE: linear ${erleLinear.toStringAsFixed(1)} → '
+            '+RES ${erleRes.toStringAsFixed(1)} dB',
+      );
+    });
+
     test('reset clears the adaptive filter', () {
       final aec = AecDsp.create(blockSize: 256, libraryPath: libPath);
       addTearDown(aec.dispose);

@@ -29,6 +29,12 @@ typedef _DtdUpdateC = Void Function(
     Pointer<Void>, Pointer<Double>, Pointer<Double>, Pointer<Double>, Int32);
 typedef _DtdUpdateD = void Function(
     Pointer<Void>, Pointer<Double>, Pointer<Double>, Pointer<Double>, int);
+typedef _ResCreateDefaultC = Pointer<Void> Function(Int32);
+typedef _ResCreateDefaultD = Pointer<Void> Function(int);
+typedef _ResProcessC = Void Function(
+    Pointer<Void>, Pointer<Double>, Pointer<Double>, Int32, Pointer<Double>);
+typedef _ResProcessD = void Function(
+    Pointer<Void>, Pointer<Double>, Pointer<Double>, int, Pointer<Double>);
 
 /// A single adaptive-filter instance backed by the native `aec_dsp_*` core.
 class AecDsp {
@@ -160,5 +166,66 @@ class AecDtd {
     calloc.free(_ref);
     calloc.free(_mic);
     calloc.free(_cleaned);
+  }
+}
+
+/// The native residual echo suppressor (`aec_res_*`) — a Wiener-style spectral
+/// post-filter on the linear canceller's residual. Feed it the cleaned block
+/// and the canceller's echo estimate (`mic − cleaned`) each block; set
+/// [updateLeak] false during double-talk.
+class AecRes {
+  AecRes._(this._lib, this._handle, this._blockSize)
+      : _cleaned = calloc<Double>(_blockSize),
+        _echo = calloc<Double>(_blockSize),
+        _out = calloc<Double>(_blockSize);
+
+  /// Create a suppressor with the Dart `ResidualEchoSuppressor` defaults,
+  /// sharing [aec]'s loaded native library.
+  factory AecRes.createFor(AecDsp aec) {
+    final lib = aec.library;
+    final create = lib.lookupFunction<_ResCreateDefaultC, _ResCreateDefaultD>(
+        'aec_res_create_default');
+    final handle = create(aec.blockSize);
+    if (handle == nullptr) {
+      throw StateError(
+          'aec_res_create_default(${aec.blockSize}) returned null');
+    }
+    return AecRes._(lib, handle, aec.blockSize);
+  }
+
+  final DynamicLibrary _lib;
+  final Pointer<Void> _handle;
+  final int _blockSize;
+  final Pointer<Double> _cleaned;
+  final Pointer<Double> _echo;
+  final Pointer<Double> _out;
+  bool _disposed = false;
+
+  late final _ResProcessD _process =
+      _lib.lookupFunction<_ResProcessC, _ResProcessD>('aec_res_process');
+  late final _VoidPtrD _reset =
+      _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_res_reset');
+  late final _VoidPtrD _destroy =
+      _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_res_destroy');
+
+  /// Suppress residual echo in one [cleaned] block given the [echoEst]
+  /// (`mic − cleaned`). Returns the suppressed block (a fresh [Float64List]).
+  Float64List process(Float64List cleaned, Float64List echoEst,
+      {bool updateLeak = true}) {
+    _cleaned.asTypedList(_blockSize).setAll(0, cleaned);
+    _echo.asTypedList(_blockSize).setAll(0, echoEst);
+    _process(_handle, _cleaned, _echo, updateLeak ? 1 : 0, _out);
+    return Float64List.fromList(_out.asTypedList(_blockSize));
+  }
+
+  void reset() => _reset(_handle);
+
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _destroy(_handle);
+    calloc.free(_cleaned);
+    calloc.free(_echo);
+    calloc.free(_out);
   }
 }

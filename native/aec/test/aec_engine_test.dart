@@ -126,7 +126,8 @@ void main() {
       );
     });
 
-    test('the double-talk detector cuts near-end error vs the plain engine', () {
+    test('the double-talk detector cuts near-end error vs the plain engine',
+        () {
       // frame 1024 matches the AEC block size where the linear filter visibly
       // diverges under continuous double-talk (a 256-frame filter is already
       // robust, so the DTD has nothing to fix there).
@@ -176,6 +177,52 @@ void main() {
         reason: 'near-end error: plain '
             '${(plain * 100).toStringAsFixed(0)}% → '
             'DTD ${(withDtd * 100).toStringAsFixed(0)}%',
+      );
+    });
+
+    test('residual suppression deepens echo-only ERLE through the engine', () {
+      const frame = 1024;
+      const blocks = 80;
+      final rng = Random(41);
+      final ref = List<double>.generate(
+          blocks * frame, (_) => (rng.nextDouble() * 2 - 1) * 0.4);
+
+      // Tail ERLE (mic energy in vs cleaned out) through the engine, with RES on
+      // or off.
+      double tailErle({required bool res}) {
+        final e = AecEngineFfi.create(frame: frame, libraryPath: libPath);
+        e.setRes(res);
+        var micE = 0.0, outE = 0.0;
+        for (var bi = 0; bi < blocks; bi++) {
+          final r = <double>[];
+          final m = <double>[];
+          for (var i = 0; i < frame; i++) {
+            final t = bi * frame + i;
+            r.add(ref[t]);
+            m.add(echoAt(ref, t)); // echo only
+          }
+          e.reference(_toPcm16(r));
+          e.pump(_toPcm16(m));
+          final cleaned = e.read();
+          if (bi >= blocks - 20) {
+            for (var i = 0; i < frame; i++) {
+              final mic = m[i] * 32767;
+              micE += mic * mic;
+              outE += cleaned[i] * cleaned[i];
+            }
+          }
+        }
+        e.dispose();
+        return 10 * (log(micE / (outE + 1e-12)) / ln10);
+      }
+
+      final off = tailErle(res: false);
+      final on = tailErle(res: true);
+      expect(
+        on,
+        greaterThan(off + 3),
+        reason: 'ERLE: off ${off.toStringAsFixed(1)} → '
+            'RES ${on.toStringAsFixed(1)} dB',
       );
     });
   },
