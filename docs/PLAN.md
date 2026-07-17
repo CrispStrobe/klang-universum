@@ -114,20 +114,28 @@ and push to origin/main** before/after touching shared files. Format:
   (byte-identity fast path); V1/V2 toolbar toggle; MusicXML round-trips. ✅ **mid-bar
   clef SHIPPED, fully lossless** (`12404e1`/`854ab25` + crisp_notation writer
   `3c1b8bd`).
-- **opus (next)** · ✅ **idle.** Worktree `../mus-next`, branch
-  `feature/workshop-next`. **Shipped (now recorded in [HISTORY.md]):** Workshop
-  tempo marks · grace notes · playback bucket F (transport + moving cursor) ·
-  multi-part playback (mix + full-score cursor + per-part mute) · voice-2 playback ·
-  practice-speed chip (0.5×/0.75×/1×); Song Book **Sing along** (`chartFromScore` +
-  a song-viewer button reusing `PlayAlongScreen`) with **length-scaled stars**
-  (`scaledStarScore` + opt-in `PlayAlongScreen.scaleStarsToLength`, default off).
-  **Pending & doable next (unclaimed, non-Workshop or model-only so no parity
-  collision):** a Workshop **metronome/count-in** + loop-a-selection for playback;
-  a **"Play along" (instrument, octave-specific)** twin of the Song Book sing-along;
-  **"Melody doodle → hear it back"** sandbox game (freehand contour → quantise →
-  Score → play, feeds the Song Book). Workshop *screen* polish (richer inspector,
-  insertion palettes, keyboard-first select-nav, value-strip un-dual-purpose) is
-  **parity's** turf — coordinate before touching `composition_workshop_screen.dart`.
+- **opus (next)** · 🚧 **ACTIVE — the three remaining "doable now" items**, in
+  order, each its own commit. Worktree `../mus-next`, branch
+  `feature/workshop-next`.
+  1. 🚧 **Song Book "Play along" (instrument)** — an octave-*specific* twin of the
+     shipped sing-along: `chartFromScore(..., octaveAgnostic:)` + a second button on
+     `song_screen.dart` → `PlayAlongScreen` (`gameId: 'keyboard_play_along'`).
+     Files: `song_play_along.dart`, `song_screen.dart`, tests. **No Workshop files.**
+  2. 🚧 **Workshop playback: count-in + loop-a-selection** — a metronome count-in
+     (reuses `AudioService.playTick`) and looping the selected range. **HOT:**
+     `composition_workshop_screen.dart` — but confined to **my transport region**
+     (`_startPlayback`/`_renderPart`/`_tickPlayback` + the app-bar), NOT the
+     inspector/input-mode/value-strip areas that are **parity's** polish turf.
+     ⚠️ **opus (parity): shout if you're in the transport and I'll rebase.**
+  3. 🚧 **"Melody doodle → hear it back"** — the last open creative backlog item: a
+     freehand contour canvas → quantise to a pentatonic `Score` → play it back
+     (a no-stars sandbox like Colour Melody). NEW screen + one `GameInfo` in
+     `game_registry.dart` (hot: registry only, one additive tile) + ARBs + test.
+  **Already shipped (recorded in [HISTORY.md]):** Workshop tempo marks · grace notes ·
+  playback bucket F · multi-part playback · voice-2 playback · practice speed;
+  Song Book Sing along + length-scaled stars.
+  Workshop *screen* polish (richer inspector, insertion palettes, keyboard-first
+  select-nav, value-strip un-dual-purpose) stays **parity's** turf.
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).
