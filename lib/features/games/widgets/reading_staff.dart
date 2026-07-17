@@ -7,11 +7,11 @@
 // beaming, playing). The note-naming quizzes build StaffView directly, so the
 // scaffold never prints — and reveals — their answer.
 //
-// StaffView spells the names as international letters (C…B); per-locale spelling
-// (German H, solfège) would need a `noteNameStyle` param on StaffView in
-// crisp_notation (MultiSystemView already has one) — a small follow-up.
+// Names are spelled per the app's note-naming setting (English letters / German
+// with H / solfège) via `noteNameStyleFor`.
 
 import 'package:comet_beat/core/services/settings_service.dart';
+import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/widgets.dart';
@@ -33,11 +33,13 @@ class ReadingStaffView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final show = context.watch<SettingsService>().showNoteNames;
     return StaffView(
       score: score,
       staffSpace: staffSpace,
       theme: theme ?? kidsScoreTheme,
-      showNoteNames: context.watch<SettingsService>().showNoteNames,
+      showNoteNames: show,
+      noteNameStyle: show ? noteNameStyleFor(context) : NoteNameStyle.letter,
     );
   }
 }

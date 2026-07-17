@@ -1,6 +1,7 @@
 // The note-name reading scaffold: the persisted SettingsService.showNoteNames
 // flag and the ReadingStaffView wrapper that games use to honour it.
 
+import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -55,5 +56,13 @@ void main() {
     await settings.setShowNoteNames(true);
     await tester.pump();
     expect(_staffShowsNames(tester), isTrue, reason: 'reacts to the setting');
+
+    // The spelling follows the app's note-naming setting.
+    await settings.setNoteNaming(NoteNaming.germanH);
+    await tester.pump();
+    expect(
+      tester.widget<StaffView>(find.byType(StaffView)).noteNameStyle,
+      NoteNameStyle.german,
+    );
   });
 }

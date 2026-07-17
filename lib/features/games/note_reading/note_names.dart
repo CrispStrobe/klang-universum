@@ -70,6 +70,20 @@ String noteNameFor(BuildContext context, Step step) => noteName(
       naming: context.watch<SettingsService>().noteNaming,
     );
 
+/// The crisp_notation [NoteNameStyle] for the app's current naming setting, so
+/// `StaffView(showNoteNames: true, noteNameStyle: noteNameStyleFor(context))`
+/// spells the on-staff names the same way the rest of the app does. `auto`
+/// follows the locale (German → German spelling with H).
+NoteNameStyle noteNameStyleFor(BuildContext context) =>
+    switch (context.watch<SettingsService>().noteNaming) {
+      NoteNaming.english => NoteNameStyle.letter,
+      NoteNaming.germanH => NoteNameStyle.german,
+      NoteNaming.solfege => NoteNameStyle.solfege,
+      NoteNaming.auto => Localizations.localeOf(context).languageCode == 'de'
+          ? NoteNameStyle.german
+          : NoteNameStyle.letter,
+    };
+
 /// A full MIDI note spelled in [naming], e.g. "A3", "F♯4", or "H4" in German.
 /// Accidentals are shown as ♯/♭ appended to the localized letter (the app
 /// spells black keys as sharps). Pure — testable without a widget tree.
