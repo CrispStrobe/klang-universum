@@ -143,12 +143,19 @@ class ProgressService with ChangeNotifier {
   /// Consecutive practice days ending today (or yesterday, so the streak
   /// doesn't read as broken before today's first session).
   int get currentStreak {
-    var day =
-        practicedOn(today) ? today : today.subtract(const Duration(days: 1));
+    // Walk back by CALENDAR days, not `subtract(Duration(days: 1))`. A Duration
+    // is 24 h of absolute time, but the day after a spring-forward DST change
+    // only had 23 h — subtracting 24 h overshoots to 23:00 of the day-before,
+    // whose date-key skips the intervening day and the streak silently breaks
+    // (undercounts, and loses the "practiced yesterday" grace). The audience is
+    // German (CET/CEST), so this bites every spring. DateTime(y, m, d-1)
+    // normalizes (day 0 → previous month) and stays on the local calendar.
+    DateTime prevDay(DateTime d) => DateTime(d.year, d.month, d.day - 1);
+    var day = practicedOn(today) ? today : prevDay(today);
     var streak = 0;
     while (practicedOn(day)) {
       streak++;
-      day = day.subtract(const Duration(days: 1));
+      day = prevDay(day);
     }
     return streak;
   }

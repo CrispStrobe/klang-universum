@@ -38,6 +38,38 @@ void main() {
     expect(p.currentStreak, 1);
   });
 
+  // Regression: the streak walked back with `subtract(Duration(days: 1))`,
+  // which is 24 h of ABSOLUTE time. The day after a spring-forward DST change
+  // only has 23 h, so subtracting 24 h overshoots to 23:00 of the day-before —
+  // its date-key skips the intervening day and the streak breaks. The audience
+  // is German (CET/CEST). (Spring-forward 2026: Sun Mar 29 02:00→03:00.) On a
+  // non-DST runner both walks agree, so this passes everywhere but only catches
+  // a regression where DST is observed — which is where real users are.
+  test('a streak survives a spring-forward DST boundary', () async {
+    var now = DateTime(2026, 3, 28);
+    final p = ProgressService(now: () => now);
+    await p.load();
+    p.recordResult('g', score: 100, stars: 3); // Mar 28
+    now = DateTime(2026, 3, 29);
+    p.recordResult('g', score: 100, stars: 3); // Mar 29 (the short day)
+    now = DateTime(2026, 3, 30);
+    p.recordResult('g', score: 100, stars: 3); // Mar 30
+    expect(p.currentStreak, 3, reason: 'DST day must not be skipped');
+  });
+
+  test('the grace day survives a spring-forward DST boundary', () async {
+    var now = DateTime(2026, 3, 29); // practiced the short day
+    final p = ProgressService(now: () => now);
+    await p.load();
+    p.recordResult('g', score: 100, stars: 3);
+    now = DateTime(2026, 3, 30); // morning after, not practiced yet
+    expect(
+      p.currentStreak,
+      1,
+      reason: 'yesterday-grace must cross the DST day',
+    );
+  });
+
   test('yesterday-only still counts today (grace), two-day gap does not',
       () async {
     var now = DateTime(2026, 1, 10);
