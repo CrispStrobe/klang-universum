@@ -3717,4 +3717,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerOrnamentTurn =>
       'A turn (a sideways S) curls AROUND the note: the note above, the note, the note below, then back. A mordent is just one quick flick up and back.';
+
+  @override
+  String get gameFormRead => 'Label the Form';
+
+  @override
+  String get gameFormReadSubtitle => 'Hear the sections; name the shape (ABA…)';
+
+  @override
+  String get formReadPrompt => 'What is the form? (same colour = same tune)';
+
+  @override
+  String get formReadListen => 'Listen';
+
+  @override
+  String get primerFormTitle => 'The shape of a piece';
+
+  @override
+  String get primerFormSection =>
+      'Music is built from sections. Here is a little tune — call it section A. Whenever it comes back, it is A again.';
+
+  @override
+  String get primerFormAba =>
+      'A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!';
 }

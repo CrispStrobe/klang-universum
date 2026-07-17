@@ -238,7 +238,7 @@ const List<Concept> kConcepts = [
     GradeBand.g34,
     ConceptArea.form,
     'Verse and chorus; repeats',
-    [],
+    ['form_read'],
   ), // GAP: no form game
 
   // --- Grades 5–6: both clefs, accidentals, intervals, I/IV/V triads.
@@ -450,7 +450,7 @@ const List<Concept> kConcepts = [
     GradeBand.g78,
     ConceptArea.form,
     'Form: ABA, rondo, theme & variations',
-    [],
+    ['form_read'],
   ), // GAP
   Concept(
     'modulation',

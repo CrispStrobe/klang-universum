@@ -1238,5 +1238,12 @@
   "primerTripletThree": "Eine Triole quetscht DREI gleiche Noten in denselben Schlag: „tri-o-le“. Darüber steht eine kleine 3.",
   "primerOrnamentTitle": "Eine Note verzieren",
   "primerOrnamentTrill": "Verzierungen sind kleine Zeichen, die eine Note schmücken. Ein Triller (tr) wechselt schnell zwischen der Note und der direkt darüber.",
-  "primerOrnamentTurn": "Ein Doppelschlag (ein liegendes S) windet sich UM die Note: die Note darüber, die Note, die darunter, dann zurück. Ein Mordent ist nur ein kurzer Schlenker hinauf und zurück."
+  "primerOrnamentTurn": "Ein Doppelschlag (ein liegendes S) windet sich UM die Note: die Note darüber, die Note, die darunter, dann zurück. Ein Mordent ist nur ein kurzer Schlenker hinauf und zurück.",
+  "gameFormRead": "Die Form benennen",
+  "gameFormReadSubtitle": "Hör die Teile; benenne die Form (ABA …)",
+  "formReadPrompt": "Welche Form ist das? (gleiche Farbe = gleiche Melodie)",
+  "formReadListen": "Anhören",
+  "primerFormTitle": "Die Form eines Stücks",
+  "primerFormSection": "Musik besteht aus Teilen. Hier ist eine kleine Melodie — nenn sie Teil A. Immer wenn sie wiederkommt, ist es wieder A.",
+  "primerFormAba": "Eine andere Melodie ist ein neuer Buchstabe — Teil B. Melodie, andere Melodie, dann wieder die erste ergibt die Form A-B-A. Ganz viele Lieder sind so gebaut!"
 }

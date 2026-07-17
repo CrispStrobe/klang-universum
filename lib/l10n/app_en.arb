@@ -1496,5 +1496,12 @@
   "primerTripletThree": "A triplet squeezes THREE equal notes into that same beat: \"trip-o-let\". It gets a little 3 above it.",
   "primerOrnamentTitle": "Decorating a note",
   "primerOrnamentTrill": "Ornaments are little signs that dress up a note. A trill (tr) shakes quickly between the note and the one just above it.",
-  "primerOrnamentTurn": "A turn (a sideways S) curls AROUND the note: the note above, the note, the note below, then back. A mordent is just one quick flick up and back."
+  "primerOrnamentTurn": "A turn (a sideways S) curls AROUND the note: the note above, the note, the note below, then back. A mordent is just one quick flick up and back.",
+  "gameFormRead": "Label the Form",
+  "gameFormReadSubtitle": "Hear the sections; name the shape (ABA…)",
+  "formReadPrompt": "What is the form? (same colour = same tune)",
+  "formReadListen": "Listen",
+  "primerFormTitle": "The shape of a piece",
+  "primerFormSection": "Music is built from sections. Here is a little tune — call it section A. Whenever it comes back, it is A again.",
+  "primerFormAba": "A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!"
 }

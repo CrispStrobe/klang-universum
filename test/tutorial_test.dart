@@ -146,6 +146,7 @@ void main() {
       'On the beat, or off?': syncopationPrimer,
       'Two or three in a beat': tripletPrimer, // tuplet Score path
       'Decorating a note': ornamentPrimer, // ornament Score path
+      'The shape of a piece': formPrimer,
     };
     for (final entry in primers.entries) {
       await pumpGame(

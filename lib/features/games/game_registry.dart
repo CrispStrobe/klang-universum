@@ -30,6 +30,7 @@ import 'package:comet_beat/features/games/composition/grid_composer_screen.dart'
 import 'package:comet_beat/features/games/composition/loop_mixer_screen.dart';
 import 'package:comet_beat/features/games/composition/melody_doodle_screen.dart';
 import 'package:comet_beat/features/games/composition/my_melody_screen.dart';
+import 'package:comet_beat/features/games/composition/form_read_screen.dart';
 import 'package:comet_beat/features/games/composition/question_answer_screen.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/drums/drum_read_screen.dart';
@@ -1031,6 +1032,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameQuestionAnswerSubtitle,
       builder: (_) => const QuestionAnswerScreen(),
       tutorial: phrasePrimer,
+    ),
+    // Label the Form — hear/see a piece's sections (ABA, rondo…) as a coloured
+    // timeline; same colour = same tune.
+    GameInfo(
+      id: 'form_read',
+      icon: Icons.view_column,
+      title: (l) => l.gameFormRead,
+      subtitle: (l) => l.gameFormReadSubtitle,
+      builder: (_) => const FormReadScreen(),
+      tutorial: formPrimer,
     ),
     GameInfo(
       id: 'my_melody',

@@ -6757,6 +6757,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A turn (a sideways S) curls AROUND the note: the note above, the note, the note below, then back. A mordent is just one quick flick up and back.'**
   String get primerOrnamentTurn;
+
+  /// No description provided for @gameFormRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Label the Form'**
+  String get gameFormRead;
+
+  /// No description provided for @gameFormReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear the sections; name the shape (ABA…)'**
+  String get gameFormReadSubtitle;
+
+  /// No description provided for @formReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'What is the form? (same colour = same tune)'**
+  String get formReadPrompt;
+
+  /// No description provided for @formReadListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get formReadListen;
+
+  /// No description provided for @primerFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The shape of a piece'**
+  String get primerFormTitle;
+
+  /// No description provided for @primerFormSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Music is built from sections. Here is a little tune — call it section A. Whenever it comes back, it is A again.'**
+  String get primerFormSection;
+
+  /// No description provided for @primerFormAba.
+  ///
+  /// In en, this message translates to:
+  /// **'A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!'**
+  String get primerFormAba;
 }
 
 class _AppLocalizationsDelegate

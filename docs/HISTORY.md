@@ -323,6 +323,7 @@ Games built on crisp_notation capabilities the app didn't use before.
   vs a **triplet** (a real `TupletSpan(0,2,actual:3,normal:2)` → the engraver draws
   the bracket + 3), heard as 2-in-a-beat vs 3-in-a-beat. Fills the triplet/tuplet
   gap. SRI `note_values.tuplet.<even|triplet>`.
+- **Label the Form** (Komponieren) — hearing and *seeing* a piece's shape, an AnaVis-in-miniature. Each section is a short motif; a reusable `FormTimeline` widget draws the sections as colour-coded blocks (same colour = same tune), and the child picks the form — ABA / AAB / ABC for beginners, AABA / ABAB / rondo (ABACA) at 2★ (where the block labels hide, so the repeat pattern must be read from the colours). Fills the musical-form + verse/chorus gaps. SRI `composition.form.<FORM>`.
 - **Which Ornament?** (Noten lesen) — read the sign over a note: **trill** (tr),
   **mordent** (squiggle), or **turn** (sideways S), drawn via `NoteElement.ornament`
   and each played as a little flourish (trill = fast alternation, turn = the curl

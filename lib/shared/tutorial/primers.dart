@@ -1100,6 +1100,29 @@ Tutorial expressionPrimer(AppLocalizations l10n) => Tutorial(
       ],
     );
 
+/// Musical form: the shape a piece makes when its sections repeat.
+/// Game: form_read.
+Tutorial formPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerFormTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerFormSection,
+          score: _notes([60, 64, 67, 72]), // section A — a rising tune
+          play: (a) => a.playSequence(_run([60, 64, 67, 72])),
+        ),
+        TutorialStep(
+          text: l10n.primerFormAba,
+          score: _notes([71, 69, 67, 65]), // section B — a different tune
+          // Play the whole shape: A, then B, then A again = the form A-B-A.
+          play: (a) => a.playSequence([
+            for (final m in [60, 64, 67, 72]) (m, 300),
+            for (final m in [71, 69, 67, 65]) (m, 300),
+            for (final m in [60, 64, 67, 72]) (m, 300),
+          ]),
+        ),
+      ],
+    );
+
 /// Syncopation: pushing the accent off the beat, where the ear doesn't expect it.
 /// Game: sync_read.
 Tutorial syncopationPrimer(AppLocalizations l10n) => Tutorial(
@@ -1119,25 +1142,36 @@ Tutorial syncopationPrimer(AppLocalizations l10n) => Tutorial(
             measures: [
               Measure([
                 NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
-                    id: 's0',),
+                  pitchFromMidi(60),
+                  const NoteDuration(DurationBase.eighth),
+                  id: 's0',
+                ),
                 NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.quarter),
-                    id: 's1',),
+                  pitchFromMidi(60),
+                  const NoteDuration(DurationBase.quarter),
+                  id: 's1',
+                ),
                 NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.quarter),
-                    id: 's2',),
+                  pitchFromMidi(60),
+                  const NoteDuration(DurationBase.quarter),
+                  id: 's2',
+                ),
                 NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.quarter),
-                    id: 's3',),
+                  pitchFromMidi(60),
+                  const NoteDuration(DurationBase.quarter),
+                  id: 's3',
+                ),
                 NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
-                    id: 's4',),
+                  pitchFromMidi(60),
+                  const NoteDuration(DurationBase.eighth),
+                  id: 's4',
+                ),
               ]),
             ],
           ),
           play: (a) => a.playSequence(
-              [(60, 300), (60, 600), (60, 600), (60, 600), (60, 300)],),
+            [(60, 300), (60, 600), (60, 600), (60, 600), (60, 300)],
+          ),
         ),
       ],
     );
@@ -1158,19 +1192,28 @@ Tutorial tripletPrimer(AppLocalizations l10n) => Tutorial(
           score: Score(
             clef: Clef.treble,
             measures: [
-              Measure([
-                NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
-                    id: 't0',),
-                NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
-                    id: 't1',),
-                NoteElement.note(
-                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
-                    id: 't2',),
-              ], tuplets: const [
-                TupletSpan(0, 2, actual: 3, normal: 2),
-              ],),
+              Measure(
+                [
+                  NoteElement.note(
+                    pitchFromMidi(60),
+                    const NoteDuration(DurationBase.eighth),
+                    id: 't0',
+                  ),
+                  NoteElement.note(
+                    pitchFromMidi(60),
+                    const NoteDuration(DurationBase.eighth),
+                    id: 't1',
+                  ),
+                  NoteElement.note(
+                    pitchFromMidi(60),
+                    const NoteDuration(DurationBase.eighth),
+                    id: 't2',
+                  ),
+                ],
+                tuplets: const [
+                  TupletSpan(0, 2, actual: 3, normal: 2),
+                ],
+              ),
             ],
           ),
           play: (a) => a.playSequence([(60, 200), (60, 200), (60, 200)]),
@@ -1185,25 +1228,38 @@ Tutorial ornamentPrimer(AppLocalizations l10n) => Tutorial(
       steps: [
         TutorialStep(
           text: l10n.primerOrnamentTrill,
-          score: Score(clef: Clef.treble, measures: [
-            Measure([
-              NoteElement.note(
-                  pitchFromMidi(67), const NoteDuration(DurationBase.half),
-                  id: 'o', ornament: Ornament.trill,),
-            ]),
-          ],),
+          score: Score(
+            clef: Clef.treble,
+            measures: [
+              Measure([
+                NoteElement.note(
+                  pitchFromMidi(67),
+                  const NoteDuration(DurationBase.half),
+                  id: 'o',
+                  ornament: Ornament.trill,
+                ),
+              ]),
+            ],
+          ),
           play: (a) => a.playSequence(
-              [(67, 90), (69, 90), (67, 90), (69, 90), (67, 240)],),
+            [(67, 90), (69, 90), (67, 90), (69, 90), (67, 240)],
+          ),
         ),
         TutorialStep(
           text: l10n.primerOrnamentTurn,
-          score: Score(clef: Clef.treble, measures: [
-            Measure([
-              NoteElement.note(
-                  pitchFromMidi(67), const NoteDuration(DurationBase.half),
-                  id: 'o', ornament: Ornament.turn,),
-            ]),
-          ],),
+          score: Score(
+            clef: Clef.treble,
+            measures: [
+              Measure([
+                NoteElement.note(
+                  pitchFromMidi(67),
+                  const NoteDuration(DurationBase.half),
+                  id: 'o',
+                  ornament: Ornament.turn,
+                ),
+              ]),
+            ],
+          ),
           play: (a) =>
               a.playSequence([(69, 140), (67, 140), (66, 140), (67, 360)]),
         ),

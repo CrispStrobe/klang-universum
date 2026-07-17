@@ -3737,4 +3737,28 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerOrnamentTurn =>
       'Ein Doppelschlag (ein liegendes S) windet sich UM die Note: die Note darüber, die Note, die darunter, dann zurück. Ein Mordent ist nur ein kurzer Schlenker hinauf und zurück.';
+
+  @override
+  String get gameFormRead => 'Die Form benennen';
+
+  @override
+  String get gameFormReadSubtitle => 'Hör die Teile; benenne die Form (ABA …)';
+
+  @override
+  String get formReadPrompt =>
+      'Welche Form ist das? (gleiche Farbe = gleiche Melodie)';
+
+  @override
+  String get formReadListen => 'Anhören';
+
+  @override
+  String get primerFormTitle => 'Die Form eines Stücks';
+
+  @override
+  String get primerFormSection =>
+      'Musik besteht aus Teilen. Hier ist eine kleine Melodie — nenn sie Teil A. Immer wenn sie wiederkommt, ist es wieder A.';
+
+  @override
+  String get primerFormAba =>
+      'Eine andere Melodie ist ein neuer Buchstabe — Teil B. Melodie, andere Melodie, dann wieder die erste ergibt die Form A-B-A. Ganz viele Lieder sind so gebaut!';
 }

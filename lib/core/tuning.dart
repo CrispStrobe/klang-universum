@@ -159,6 +159,7 @@ const Map<String, List<int>> kStarThresholds = {
   'sync_read': [100, 600, 900],
   'triplet_read': [100, 600, 900],
   'ornament_read': [100, 600, 900],
+  'form_read': [100, 600, 900],
   // Enharmonic Twins (same-sound spelling vs different): 10 rounds x 100.
   'enharmonic': [100, 600, 900],
   // Read the Mark (articulation reading): 10 rounds x 100.
