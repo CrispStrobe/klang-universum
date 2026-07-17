@@ -56,17 +56,30 @@ and push to origin/main** before/after touching shared files. Format:
   w/ refDelay, flush padding, empty-input). Docs: patent-free rationale in
   `AEC_TIER3B.md`. No app/Workshop/native-plugin touched.
 
-- **AEC — what's left (unclaimed).** The patent-free *algorithm* roadmap is done
-  (DTD `a10d6bd` + RES `15a6d62`), but **both live only in the Dart/CLI path**
-  (`aec_offline.dart`); the app's jam mode runs the native C engine, which still
-  has neither. Two open items, in value order:
-  1. **Port DTD + RES to `native/aec`** (`src/aec_dsp.c` + the shim's block
-     loop) so the app's jam mode actually gets the +7 dB double-talk protection
-     and the deeper echo suppression. The Dart `adapt` gate is additive, so the
-     C port still matches the Dart core for its existing default-`adapt` ERLE
-     cross-check — port the gate + the two detectors, then re-run
-     `native/aec/test/aec_erle_test.dart` + `build.sh`. Keep the CI-safety
-     properties (analyzer exclusion, app green without the plugin).
+- **AEC — what's left (unclaimed; verification now UNBLOCKED).** The patent-free
+  *algorithm* roadmap is done (DTD `a10d6bd` + RES `15a6d62`), but **both live only
+  in the Dart/CLI path** (`aec_offline.dart`); the app's jam mode runs the native C
+  engine, which still has neither.
+  ✅ **opus (next): fixed the native verify harness** (`native/aec/build.sh`
+  `dart test` → `flutter test` — the tests import `package:flutter_test`, so
+  `dart test` errored "Could not find package test"; the C build was fine). **The
+  6-test ERLE cross-check now runs green on this Mac**, so the port below is finally
+  verifiable. Two open items, in value order:
+  1. **Port DTD (+ later RES) to `native/aec`** (`src/aec_dsp.c` + the shim's block
+     loop) so the app's jam mode gets the +7 dB double-talk protection. Suggested:
+     do **DTD first** (simpler, higher value), RES second. Add a `dtdEnabled` +
+     hangover/block-counter to `AecDsp`, compute `rho = dot(mic, echoEst)/√(mm·ee)`
+     (echoEst = the predicted echo `yRe[b+i]`), and gate the NLMS update
+     (`aec_dsp.c` ~L209–231) when frozen. ⚠️ **Fidelity trap:** match
+     `DoubleTalkDetector` (aec_offline.dart) EXACTLY — its `update()` runs the
+     block-counter + hangover **decrement every block**, incl. far-end-silent
+     ones, whereas `aec_dsp_process` **returns early** on the far-end VAD (L190–196);
+     do the DTD state bookkeeping BEFORE that early return or the freeze timing
+     drifts from the Dart reference. Keep DTD **off by default** so the existing
+     default-`adapt` cross-check still matches; add a NEW test asserting
+     native-with-DTD ≈ Dart-with-DTD on a double-talk scenario. Verify with
+     `bash native/aec/build.sh`. Keep CI-safety (analyzer exclusion, app green
+     without the plugin).
   2. **(e) on-device tuning** — the real duplex path on iOS/Android hardware
      (mic permission, AVAudioSession category, latency/ring). Needed before jam
      AEC is real at all; see `docs/AEC_TIER3B.md`.
