@@ -238,6 +238,103 @@ void main() {
       );
     });
 
+    test('the adaptive rate protects the near-end better than fixed linear',
+        () {
+      // The C twin of the Dart "subsumes the DTD" test: with the closed-loop
+      // rate attached (and NO double-talk detector), the filter should protect
+      // the near-end through double-talk better than the fixed-mu linear filter
+      // does — because the rate collapses on near-end instead of adapting to it.
+      final rng = Random(23);
+      const blocks = 120;
+      const half = blocks ~/ 2;
+      final ref =
+          List<double>.generate(blocks * b, (_) => rng.nextDouble() * 2 - 1);
+      double near(int t) => 0.3 * sin(2 * pi * 300 * t / 44100);
+
+      double runNearErr({required bool useRate}) {
+        final aec = AecDsp.create(blockSize: b, libraryPath: libPath);
+        final rate = useRate ? AecRate.createFor(aec) : null;
+        if (rate != null) aec.setRate(rate);
+        var err = 0.0;
+        for (var bi = 0; bi < blocks; bi++) {
+          final rb = Float64List(b);
+          final mb = Float64List(b);
+          for (var i = 0; i < b; i++) {
+            final t = bi * b + i;
+            rb[i] = ref[t];
+            mb[i] = echoAt(ref, t) + (bi >= half ? near(t) : 0);
+          }
+          final out = aec.process(rb, mb);
+          if (bi >= blocks - 10) {
+            for (var i = 0; i < b; i++) {
+              final t = bi * b + i;
+              err += (out[i] - near(t)) * (out[i] - near(t));
+            }
+          }
+        }
+        // The controller must have engaged (a real leakage estimate, not 0).
+        if (rate != null) {
+          expect(rate.leakage, greaterThan(0));
+          rate.dispose();
+        }
+        aec.dispose();
+        return err;
+      }
+
+      final linearErr = runNearErr(useRate: false);
+      final rateErr = runNearErr(useRate: true);
+      expect(
+        rateErr,
+        lessThan(linearErr * 0.7),
+        reason: 'near-end error: fixed linear '
+            '${linearErr.toStringAsFixed(3)} → adaptive rate '
+            '${rateErr.toStringAsFixed(3)}',
+      );
+    });
+
+    test('detaching the rate restores byte-identical fixed-mu output', () {
+      // The fixed-mu path is what the ERLE cross-check pins to the Dart. Attach
+      // then detach a rate: the output must match a filter that never had one,
+      // block for block — proof the opt-in is truly inert when off.
+      final rng = Random(7);
+      const blocks = 30;
+      final ref =
+          List<double>.generate(blocks * b, (_) => rng.nextDouble() * 2 - 1);
+
+      List<Float64List> run({required bool attachThenDetach}) {
+        final aec = AecDsp.create(blockSize: b, libraryPath: libPath);
+        if (attachThenDetach) {
+          final rate = AecRate.createFor(aec);
+          aec.setRate(rate);
+          aec.setRate(null); // detach before any processing
+          rate.dispose();
+        }
+        final outs = <Float64List>[];
+        for (var bi = 0; bi < blocks; bi++) {
+          final rb = Float64List(b);
+          final mb = Float64List(b);
+          for (var i = 0; i < b; i++) {
+            final t = bi * b + i;
+            rb[i] = ref[t];
+            mb[i] = echoAt(ref, t);
+          }
+          outs.add(aec.process(rb, mb));
+        }
+        aec.dispose();
+        return outs;
+      }
+
+      final plain = run(attachThenDetach: false);
+      final detached = run(attachThenDetach: true);
+      var maxDiff = 0.0;
+      for (var bi = 0; bi < blocks; bi++) {
+        for (var i = 0; i < b; i++) {
+          maxDiff = max(maxDiff, (plain[bi][i] - detached[bi][i]).abs());
+        }
+      }
+      expect(maxDiff, 0.0);
+    });
+
     test('reset clears the adaptive filter', () {
       final aec = AecDsp.create(blockSize: 256, libraryPath: libPath);
       addTearDown(aec.dispose);

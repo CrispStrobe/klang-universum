@@ -31,6 +31,12 @@ typedef _DtdUpdateD = void Function(
     Pointer<Void>, Pointer<Double>, Pointer<Double>, Pointer<Double>, int);
 typedef _ResCreateDefaultC = Pointer<Void> Function(Int32);
 typedef _ResCreateDefaultD = Pointer<Void> Function(int);
+typedef _RateCreateDefaultC = Pointer<Void> Function();
+typedef _RateCreateDefaultD = Pointer<Void> Function();
+typedef _SetRateC = Void Function(Pointer<Void>, Pointer<Void>);
+typedef _SetRateD = void Function(Pointer<Void>, Pointer<Void>);
+typedef _RateDoubleGetC = Double Function(Pointer<Void>);
+typedef _RateDoubleGetD = double Function(Pointer<Void>);
 typedef _ResProcessC = Void Function(
     Pointer<Void>, Pointer<Double>, Pointer<Double>, Int32, Pointer<Double>);
 typedef _ResProcessD = void Function(
@@ -73,11 +79,18 @@ class AecDsp {
       _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_dsp_destroy');
   late final _SetAdaptD _setAdapt =
       _lib.lookupFunction<_SetAdaptC, _SetAdaptD>('aec_dsp_set_adapt');
+  late final _SetRateD _setRate =
+      _lib.lookupFunction<_SetRateC, _SetRateD>('aec_dsp_set_rate');
 
   /// Gate the NLMS update: false freezes the filter for subsequent blocks
   /// (cancels with the current coefficients, doesn't learn) — driven by a
   /// [AecDtd] to protect the filter during double-talk.
   void setAdapt(bool adapt) => _setAdapt(_handle, adapt ? 1 : 0);
+
+  /// Attach a closed-loop [AecRate] so the filter chooses its own step (Valin
+  /// 2007) instead of its fixed `mu`; pass null to detach and restore the exact
+  /// fixed-`mu` behaviour. The [AecRate] is not owned — dispose it yourself.
+  void setRate(AecRate? rate) => _setRate(_handle, rate?._handle ?? nullptr);
 
   /// The library handle, so an [AecDtd] can share the same loaded native lib.
   DynamicLibrary get library => _lib;
@@ -166,6 +179,57 @@ class AecDtd {
     calloc.free(_ref);
     calloc.free(_mic);
     calloc.free(_cleaned);
+  }
+}
+
+/// The native adaptive learning rate (`aec_rate_*`) — the filter's closed-loop
+/// step controller (Valin 2007, `AdaptiveLearningRate`). Attach it to an
+/// [AecDsp] with [AecDsp.setRate]; the filter then derives its own per-bin step
+/// from its live leakage estimate instead of a fixed `mu`, slowing itself under
+/// double-talk with no separate detector.
+class AecRate {
+  AecRate._(this._lib, this._handle);
+
+  /// Create a controller with the Dart `AdaptiveLearningRate` defaults, sharing
+  /// [aec]'s loaded native library.
+  factory AecRate.createFor(AecDsp aec) {
+    final lib = aec.library;
+    final create = lib.lookupFunction<_RateCreateDefaultC, _RateCreateDefaultD>(
+        'aec_rate_create_default');
+    final handle = create();
+    if (handle == nullptr) {
+      throw StateError('aec_rate_create_default returned null');
+    }
+    return AecRate._(lib, handle);
+  }
+
+  final DynamicLibrary _lib;
+  final Pointer<Void> _handle;
+  bool _disposed = false;
+
+  late final _RateDoubleGetD _leakage =
+      _lib.lookupFunction<_RateDoubleGetC, _RateDoubleGetD>('aec_rate_leakage');
+  late final _RateDoubleGetD _lastMeanMu =
+      _lib.lookupFunction<_RateDoubleGetC, _RateDoubleGetD>(
+          'aec_rate_last_mean_mu');
+  late final _VoidPtrD _reset =
+      _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_rate_reset');
+  late final _VoidPtrD _destroy =
+      _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_rate_destroy');
+
+  /// The current leakage estimate (the paper's eta = 1/ERLE): near 0 = the
+  /// filter is cancelling deeply, near 1 = echo passing straight through.
+  double get leakage => _leakage(_handle);
+
+  /// The mean step the controller chose on the last processed block.
+  double get lastMeanMu => _lastMeanMu(_handle);
+
+  void reset() => _reset(_handle);
+
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _destroy(_handle);
   }
 }
 

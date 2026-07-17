@@ -38,6 +38,15 @@ struct AecDsp {
   double* eIm;  // n
   double* gRe;  // n
   double* gIm;  // n
+
+  // Adaptive learning rate (optional; NULL = fixed-mu path, byte-identical to
+  // the pre-existing behaviour the ERLE cross-check pins). Owned by the caller.
+  struct AecRate* rate;
+  double* yfRe;      // n — Yhat measured in the constrained [0;yValid] frame
+  double* yfIm;      // n
+  double* yPow;      // n — |Yhat(k)|^2
+  double* ePow;      // n — |E(k)|^2
+  double* muPerBin;  // n — the per-bin step the controller chose
 };
 
 // In-place iterative radix-2 Cooley-Tukey FFT — port of chroma_analysis.dart.
@@ -132,8 +141,16 @@ AecDsp* aec_dsp_create(int blockSize, double mu, double powerSmoothing,
   a->gRe = (double*)calloc(n, sizeof(double));
   a->gIm = (double*)calloc(n, sizeof(double));
 
+  a->rate = NULL;  // fixed-mu path until a controller is attached
+  a->yfRe = (double*)calloc(n, sizeof(double));
+  a->yfIm = (double*)calloc(n, sizeof(double));
+  a->yPow = (double*)calloc(n, sizeof(double));
+  a->ePow = (double*)calloc(n, sizeof(double));
+  a->muPerBin = (double*)calloc(n, sizeof(double));
+
   if (!a->wRe || !a->wIm || !a->xPrev || !a->power || !a->xRe || !a->xIm ||
-      !a->yRe || !a->yIm || !a->eRe || !a->eIm || !a->gRe || !a->gIm) {
+      !a->yRe || !a->yIm || !a->eRe || !a->eIm || !a->gRe || !a->gIm ||
+      !a->yfRe || !a->yfIm || !a->yPow || !a->ePow || !a->muPerBin) {
     aec_dsp_destroy(a);
     return NULL;
   }
@@ -154,6 +171,12 @@ void aec_dsp_reset(AecDsp* a) {
   memset(a->xPrev, 0, b * sizeof(double));
   memset(a->power, 0, n * sizeof(double));
 }
+
+// Fills muOut[0..n) with the per-bin learning rate for this block, given the
+// power spectra of the echo estimate (yPow) and the error (ePow). Defined with
+// the rest of the AecRate implementation below.
+static void aec_rate_step(AecRate* r, const double* yPow, const double* ePow,
+                          int n, double* muOut);
 
 void aec_dsp_process(AecDsp* a, const double* reference, const double* mic,
                      double* out) {
@@ -209,11 +232,29 @@ void aec_dsp_process(AecDsp* a, const double* reference, const double* mic,
   for (int k = 0; k < n; k++) meanBinPow += xRe[k] * xRe[k] + xIm[k] * xIm[k];
   double reg = a->regFactor * (meanBinPow / n) + a->eps;
 
+  // The step: either the fixed mu, or the closed-loop rate. Yhat must be
+  // measured in the SAME frame as E (the FFT of [0 ; e]) — so transform
+  // [0 ; yValid], not the raw W·X product (a different time window). See the
+  // Dart AdaptiveLearningRate.
+  const double* muPerBin = NULL;
+  if (a->rate) {
+    memset(a->yfRe, 0, n * sizeof(double));
+    memset(a->yfIm, 0, n * sizeof(double));
+    for (int i = 0; i < b; i++) a->yfRe[b + i] = yRe[b + i];
+    aec_fft(a->yfRe, a->yfIm, n);
+    for (int k = 0; k < n; k++) {
+      a->yPow[k] = a->yfRe[k] * a->yfRe[k] + a->yfIm[k] * a->yfIm[k];
+      a->ePow[k] = eRe[k] * eRe[k] + eIm[k] * eIm[k];
+    }
+    aec_rate_step(a->rate, a->yPow, a->ePow, n, a->muPerBin);
+    muPerBin = a->muPerBin;
+  }
+
   // NLMS gradient G = mu . conj(X) . E / (smoothedPower + reg), per bin.
   for (int k = 0; k < n; k++) {
     double p = xRe[k] * xRe[k] + xIm[k] * xIm[k];
     a->power[k] = a->powerSmoothing * a->power[k] + (1 - a->powerSmoothing) * p;
-    double norm = a->mu / (a->power[k] + reg);
+    double norm = (muPerBin ? muPerBin[k] : a->mu) / (a->power[k] + reg);
     gRe[k] = (xRe[k] * eRe[k] + xIm[k] * eIm[k]) * norm;   // conj(X)*E real
     gIm[k] = (xRe[k] * eIm[k] - xIm[k] * eRe[k]) * norm;   // conj(X)*E imag
   }
@@ -250,11 +291,163 @@ void aec_dsp_destroy(AecDsp* a) {
   free(a->eIm);
   free(a->gRe);
   free(a->gIm);
+  free(a->yfRe);
+  free(a->yfIm);
+  free(a->yPow);
+  free(a->ePow);
+  free(a->muPerBin);
   free(a);
 }
 
 void aec_dsp_set_adapt(AecDsp* a, int adapt) {
   if (a) a->adapt = adapt ? 1 : 0;
+}
+
+void aec_dsp_set_rate(AecDsp* a, AecRate* rate) {
+  if (a) a->rate = rate;
+}
+
+// --- Adaptive learning rate (port of echo_canceller.dart's AdaptiveLearningRate)
+//
+// Valin, IEEE TASLP 2007. The optimal NLMS step is the ratio of residual-echo to
+// error power; the residual factors as eta*|Yhat|^2 where eta is the echo
+// leakage (=1/ERLE), estimated by regressing the error's power spectrum on the
+// echo estimate's (both DC-rejected to zero mean). Per bin, per block:
+//   mu_opt(k) = min( eta * |Yhat(k)|^2 / |E(k)|^2 , muMax )
+// When the near-end speaks |E| jumps but |Yhat| doesn't, so mu falls and the
+// filter slows itself — subsuming double-talk detection with no freeze decision.
+
+struct AecRate {
+  double muMax;
+  double initialMu;
+  int initBlocks;
+  double gamma;
+  double beta0;
+  double eps;
+  int block;
+  double leakage;     // eta = 1/ERLE
+  double lastMeanMu;  // mean step chosen on the last block (diagnostic)
+  int n;              // 0 until the first step learns the FFT size
+  double* pY;         // n — zero-mean echo-estimate power spectrum
+  double* pE;         // n — zero-mean error power spectrum
+  double* prevY;      // n
+  double* prevE;      // n
+  double* rEY;        // n — cross-power regression accumulator
+  double* rYY;        // n — auto-power regression accumulator
+};
+
+AecRate* aec_rate_create(double muMax, double initialMu, int initBlocks,
+                         double gamma, double beta0, double eps) {
+  AecRate* r = (AecRate*)calloc(1, sizeof(AecRate));
+  if (!r) return NULL;
+  r->muMax = muMax;
+  r->initialMu = initialMu;
+  r->initBlocks = initBlocks;
+  r->gamma = gamma;
+  r->beta0 = beta0;
+  r->eps = eps;
+  r->n = 0;  // state arrays allocated lazily on the first step
+  return r;
+}
+
+AecRate* aec_rate_create_default(void) {
+  return aec_rate_create(0.5, 0.25, 2, 0.1, 0.05, 1e-12);
+}
+
+double aec_rate_leakage(const AecRate* r) { return r ? r->leakage : 0.0; }
+double aec_rate_last_mean_mu(const AecRate* r) {
+  return r ? r->lastMeanMu : 0.0;
+}
+
+static void aec_rate_free_state(AecRate* r) {
+  free(r->pY);
+  free(r->pE);
+  free(r->prevY);
+  free(r->prevE);
+  free(r->rEY);
+  free(r->rYY);
+  r->pY = r->pE = r->prevY = r->prevE = r->rEY = r->rYY = NULL;
+  r->n = 0;
+}
+
+void aec_rate_reset(AecRate* r) {
+  if (!r) return;
+  aec_rate_free_state(r);  // reallocated (zeroed) on the next step
+  r->block = 0;
+  r->leakage = 0.0;
+  r->lastMeanMu = 0.0;
+}
+
+void aec_rate_destroy(AecRate* r) {
+  if (!r) return;
+  aec_rate_free_state(r);
+  free(r);
+}
+
+static void aec_rate_step(AecRate* r, const double* yPow, const double* ePow,
+                          int n, double* muOut) {
+  if (r->n != n) {
+    // First step (or a size change): (re)allocate zeroed state for this n.
+    aec_rate_free_state(r);
+    r->pY = (double*)calloc((size_t)n, sizeof(double));
+    r->pE = (double*)calloc((size_t)n, sizeof(double));
+    r->prevY = (double*)calloc((size_t)n, sizeof(double));
+    r->prevE = (double*)calloc((size_t)n, sizeof(double));
+    r->rEY = (double*)calloc((size_t)n, sizeof(double));
+    r->rYY = (double*)calloc((size_t)n, sizeof(double));
+    r->n = n;
+  }
+
+  // Frame powers -> the averaging weight (eq. 22). Slowing the regression when
+  // the echo estimate is weak vs the error keeps silence and double-talk from
+  // poisoning the leakage estimate.
+  double sigY = 0.0, sigE = 0.0;
+  for (int k = 0; k < n; k++) {
+    sigY += yPow[k];
+    sigE += ePow[k];
+  }
+  double ratio = sigE <= r->eps ? 1.0 : sigY / sigE;
+  if (ratio < 0.0) ratio = 0.0;
+  if (ratio > 1.0) ratio = 1.0;
+  double beta = r->beta0 * ratio;
+
+  // Zero-mean power spectra via first-order DC rejection (eqs. 17-18), then the
+  // recursive regression accumulators (eqs. 20-21).
+  double sEY = 0.0, sYY = 0.0;
+  for (int k = 0; k < n; k++) {
+    r->pY[k] = (1 - r->gamma) * r->pY[k] + r->gamma * (yPow[k] - r->prevY[k]);
+    r->pE[k] = (1 - r->gamma) * r->pE[k] + r->gamma * (ePow[k] - r->prevE[k]);
+    r->rEY[k] = (1 - beta) * r->rEY[k] + beta * r->pY[k] * r->pE[k];
+    r->rYY[k] = (1 - beta) * r->rYY[k] + beta * r->pY[k] * r->pY[k];
+    sEY += r->rEY[k];
+    sYY += r->rYY[k];
+    r->prevY[k] = yPow[k];
+    r->prevE[k] = ePow[k];
+  }
+
+  // eq. 19, clamped to [0,1] (eta is a power ratio = 1/ERLE).
+  double eta = sYY <= r->eps ? 0.0 : sEY / sYY;
+  if (eta < 0.0) eta = 0.0;
+  if (eta > 1.0) eta = 1.0;
+  r->leakage = eta;
+
+  if (r->block < r->initBlocks) {
+    // The echo estimate is still garbage, so eta is too — run the fixed init
+    // rate rather than steering by a number we don't yet believe.
+    for (int k = 0; k < n; k++) muOut[k] = r->initialMu;
+    r->lastMeanMu = r->initialMu;
+  } else {
+    double sum = 0.0;
+    for (int k = 0; k < n; k++) {
+      double m = eta * yPow[k] / (ePow[k] + r->eps);  // eq. 16
+      if (m < 0.0) m = 0.0;
+      if (m > r->muMax) m = r->muMax;
+      muOut[k] = m;
+      sum += m;
+    }
+    r->lastMeanMu = sum / n;
+  }
+  r->block += 1;
 }
 
 // --- Double-talk detector (port of aec_offline.dart's DoubleTalkDetector) ----

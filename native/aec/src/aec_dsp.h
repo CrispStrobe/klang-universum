@@ -55,6 +55,36 @@ void aec_dsp_reset(AecDsp* a);
 
 void aec_dsp_destroy(AecDsp* a);
 
+// --- Adaptive learning rate (port of echo_canceller.dart's AdaptiveLearningRate)
+// Closed-loop control of the NLMS step (Valin, IEEE TASLP 2007): the filter
+// picks its own rate per bin per block from its live leakage estimate, instead
+// of the fixed `mu` passed to aec_dsp_create. Attach one with aec_dsp_set_rate;
+// with none attached (the default) the fixed-`mu` path is byte-identical, so the
+// Dart↔C ERLE cross-check on that path still holds.
+typedef struct AecRate AecRate;
+
+// Create a rate controller. Defaults (via *_create_default) mirror the Dart:
+//   muMax=0.5, initialMu=0.25, initBlocks=2, gamma=0.1, beta0=0.05, eps=1e-12.
+// State is sized lazily on the first processed block (it learns the FFT size
+// from the AecDsp it's attached to), so no block size is needed here.
+AecRate* aec_rate_create(double muMax, double initialMu, int initBlocks,
+                         double gamma, double beta0, double eps);
+AecRate* aec_rate_create_default(void);
+
+// The controller's current leakage estimate (the paper's eta = 1/ERLE) and the
+// mean step it chose on the last block — diagnostics, matching the Dart fields.
+double aec_rate_leakage(const AecRate* r);
+double aec_rate_last_mean_mu(const AecRate* r);
+
+void aec_rate_reset(AecRate* r);
+void aec_rate_destroy(AecRate* r);
+
+// Attach (rate!=NULL) or detach (NULL) a rate controller. While attached, the
+// filter ignores its fixed `mu` and steers by the controller. Detaching restores
+// the exact fixed-`mu` behaviour. The AecDsp does NOT take ownership — destroy
+// the rate yourself.
+void aec_dsp_set_rate(AecDsp* a, AecRate* rate);
+
 // --- Double-talk detector (port of aec_offline.dart's DoubleTalkDetector) ----
 // Decides, per block, whether to freeze the filter because near-end speech is
 // present. Uses a normalized-correlation statistic (no echo-path-gain threshold
