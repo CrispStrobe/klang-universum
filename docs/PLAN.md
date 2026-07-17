@@ -53,17 +53,21 @@ and push to origin/main** before/after touching shared files. Format:
   a per-round structural invariant: upbeat ⇔ short pickup first bar). Analyze clean;
   registry/consistency + star-score suites green.
 
-- **opus (workshop-inspector)** · 🚧 **ACTIVE — voice-2 tuplets** (next voice-2 v1
-  gap). MODEL-only, `lib/features/workshop/model/score_document.dart` (no screen
-  overlap). Today a tuplet made while voice 2 is active is doubly broken:
-  `_withVoice2`'s reflow omits `durationScale` (v2 triplet members mis-pack /
-  overflow the bar) and `_withTuplets` positions only voice-1 members (no bracket).
-  Fix: v2 reflow passes `durationScale: _tupletScale()`; factor the span-emitter to
-  `_tupletSpansByBar(voiceBars, voice:)` and emit `voice:1` spans from `_withVoice2`
-  (crisp_notation draws inner-voice tuplets — `layout_tuplets.dart:33`); `loadScore`
-  recovers `span.voice==1` via a per-bar v2-id list. Empty-v2 fast path unchanged →
-  goldens hold. Test: `test/voice2_tuplet_test.dart` (packs, emits a voice-1 span,
-  Score round-trips). Worktree `../mus-workshop-inspector`.
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 tuplets** (`fdf1d6a`).
+  MODEL-only (`score_document.dart`; no screen overlap). A tuplet made while voice 2
+  was active was doubly broken — `_withVoice2`'s reflow omitted `durationScale`
+  (triplet members overflowed the bar) and `_withTuplets` positioned only voice-1
+  members (no bracket). Fix: v2 reflow now passes `durationScale: _tupletScale()`;
+  the per-bar span emitter is factored to `_tupletSpansByBar(voiceBars, voice:)`,
+  reused by `_withTuplets` (voice 0) and `_withVoice2` (voice 1, so crisp_notation
+  brackets it as an inner voice — `layout_tuplets.dart:33`); `loadScore` recovers
+  `span.voice==1` via a per-bar voice-2 id list. Empty-v2 fast path untouched →
+  packing goldens byte-identical. `test/voice2_tuplet_test.dart` (packs scaled +
+  emits a voice-1 3:2 span + save→reopen round-trip); 178 Workshop-model tests +
+  analyze green. **Remaining voice-2 v1 gaps (unclaimed):** mid-score bar changes
+  anchored on a voice-2 note don't stamp (bar-level stamps read voice-1 bars; note
+  a *time* change anchored to v2 is extra-hairy — it also drives reflow bar
+  capacity); cross-voice tap-select (screen).
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — "borrow a sample from a module"**
   (core `7dd8ab2` + UI). A "Borrow instrument…" item in the Tracker app-bar menu:
