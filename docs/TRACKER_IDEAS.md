@@ -21,10 +21,10 @@ implements one file, maintainer integrates.** Sources: our MIT repos
   (each is a sample+pattern model). MIDI↔MOD already shipped (Score-bridge hub).
 
 ## B. Sampling (the "steal/record/shape a sound" toys)
-- **Cubic-Hermite interpolation** for `SampleInstrument` (replace linear
-  `resample.dart`; port from OpenMPT). Smoother pitch-shift → directly improves the
-  **recorded-voice instrument** (flagship). Small, high-value, drop-in. *(Also in
-  FX_HANDOVER #2.)*
+- ✅ **Cubic-Hermite (Catmull-Rom) interpolation** SHIPPED (`resampleCubic` in
+  `crisp_dsp/resample.dart`; `SampleInstrument` + the borrow bridge use it). Smoother
+  pitch-shift (RMS error <0.5× linear on a pitched sine) → directly improves the
+  **borrowed module sample** + **recorded-voice** instruments. *(Was also FX_HANDOVER #2.)*
 - **Borrow a sample from a module** — import a `.mod`/`.s3m`/`.it` sample's PCM as a
   tracker `SampleInstrument` ("steal an instrument sound from a classic module").
   The codecs already expose the PCM; wire a picker: module → sample → instrument.
