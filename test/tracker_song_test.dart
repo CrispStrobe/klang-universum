@@ -169,6 +169,58 @@ void main() {
     });
   });
 
+  group('mute / solo', () {
+    int peak(Uint8List wav) {
+      final data = ByteData.sublistView(wav);
+      var p = 0;
+      for (var i = 44; i + 1 < wav.length; i += 2) {
+        final s = data.getInt16(i, Endian.little).abs();
+        if (s > p) p = s;
+      }
+      return p;
+    }
+
+    test('muting the only sounding channel silences the mix', () {
+      final song = TrackerSong();
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      expect(peak(song.renderCurrentPatternWav()), greaterThan(0));
+
+      song.toggleMute(0);
+      expect(song.isMuted(0), isTrue);
+      expect(peak(song.renderCurrentPatternWav()), 0);
+
+      song.toggleMute(0);
+      expect(song.isMuted(0), isFalse);
+      expect(peak(song.renderCurrentPatternWav()), greaterThan(0));
+    });
+
+    test('solo suppresses every non-soloed channel', () {
+      final song = TrackerSong();
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      song.engine.setCell(1, 0, const TrackerCell(midi: 64));
+      final both = peak(song.renderCurrentPatternWav());
+
+      song.toggleSolo(0);
+      expect(song.isAudible(0), isTrue);
+      expect(song.isAudible(1), isFalse);
+      final solo0 = peak(song.renderCurrentPatternWav());
+      expect(solo0, greaterThan(0));
+      expect(solo0, lessThanOrEqualTo(both));
+
+      song.toggleSolo(0); // clear solo -> everyone audible again
+      expect(song.isAudible(1), isTrue);
+    });
+
+    test('mute/solo indices follow a channel removal', () {
+      final song = TrackerSong();
+      song.toggleMute(3);
+      expect(song.isMuted(3), isTrue);
+      song.removeChannel(1); // channels above 1 shift down by one
+      expect(song.isMuted(2), isTrue); // old ch3 -> ch2
+      expect(song.isMuted(3), isFalse);
+    });
+  });
+
   group('orderIndexAtMs', () {
     test('maps song time to the sounding order position', () {
       final song = TrackerSong(); // 32 rows

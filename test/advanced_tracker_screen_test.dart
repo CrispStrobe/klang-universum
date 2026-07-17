@@ -215,4 +215,21 @@ void main() {
     await tester.pump();
     expect(game.currentPattern, 2);
   });
+
+  testWidgets('mute and solo toggle', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    expect(game.isMuted(0), isFalse);
+    game.toggleMute(0);
+    await tester.pump();
+    expect(game.isMuted(0), isTrue);
+
+    game.toggleSolo(1);
+    await tester.pump();
+    expect(game.isSoloed(1), isTrue);
+    game.toggleSolo(1);
+    await tester.pump();
+    expect(game.isSoloed(1), isFalse);
+  });
 }

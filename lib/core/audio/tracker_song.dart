@@ -215,6 +215,7 @@ class TrackerSong {
       );
     }
     _rebuild(band, _engine.timing);
+    _applyMute(); // a new channel is suppressed if a solo is active
   }
 
   /// Removes channel [index] from the band and from every pattern (keeping at
@@ -227,12 +228,52 @@ class TrackerSong {
     for (final p in patterns) {
       p.cells.removeAt(index);
     }
+    // Remap the mute/solo index sets around the removed channel.
+    _userMuted = _remapAfterRemove(_userMuted, index);
+    _soloed = _remapAfterRemove(_soloed, index);
     _rebuild(band, _engine.timing);
+    _applyMute();
   }
 
   /// Re-voices channel [index] (delegates to the engine; caches invalidate).
   void setChannelInstrument(int index, TrackerInstrument instrument) =>
       _engine.setChannelInstrument(index, instrument);
+
+  // --- Mute / solo -------------------------------------------------------
+
+  Set<int> _userMuted = {};
+  Set<int> _soloed = {};
+
+  bool isMuted(int channel) => _userMuted.contains(channel);
+  bool isSoloed(int channel) => _soloed.contains(channel);
+
+  /// Whether [channel] is heard: not user-muted, and (if any channel is soloed)
+  /// itself soloed.
+  bool isAudible(int channel) =>
+      !_userMuted.contains(channel) &&
+      (_soloed.isEmpty || _soloed.contains(channel));
+
+  void toggleMute(int channel) {
+    if (!_userMuted.remove(channel)) _userMuted.add(channel);
+    _applyMute();
+  }
+
+  void toggleSolo(int channel) {
+    if (!_soloed.remove(channel)) _soloed.add(channel);
+    _applyMute();
+  }
+
+  /// Pushes the effective mute (user mute OR solo-suppressed) to every channel.
+  void _applyMute() {
+    for (var i = 0; i < channelCount; i++) {
+      _engine.setChannelMuted(i, !isAudible(i));
+    }
+  }
+
+  static Set<int> _remapAfterRemove(Set<int> s, int removed) => {
+        for (final x in s)
+          if (x != removed) (x > removed ? x - 1 : x),
+      };
 
   // --- Timing (endless length) -------------------------------------------
 

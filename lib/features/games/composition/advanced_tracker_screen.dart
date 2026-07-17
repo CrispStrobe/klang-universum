@@ -126,6 +126,12 @@ abstract interface class AdvancedTrackerTester {
   void stop();
   void back();
   void forward();
+
+  /// Mute / solo.
+  bool isMuted(int channel);
+  bool isSoloed(int channel);
+  void toggleMute(int channel);
+  void toggleSolo(int channel);
 }
 
 class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
@@ -977,44 +983,102 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
+  static const _headerHeight = 48.0;
+
   Widget _headerRow(ColorScheme scheme) {
     return Container(
-      height: _rowHeight,
+      height: _headerHeight,
       color: scheme.surfaceContainerHigh,
       child: Row(
         children: [
           const SizedBox(width: _rowNumWidth),
           for (var c = 0; c < _song.channelCount; c++)
-            SizedBox(
-              width: _cellWidth,
-              child: InkWell(
-                onTap: () => _pickInstrument(c),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        _song.channels[c].instrument.id,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (_song.channelCount > 1)
-                      InkWell(
-                        onTap: () => removeTrack(c),
-                        child: const Icon(Icons.close, size: 13),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            _channelHeader(c, scheme),
         ],
       ),
     );
+  }
+
+  Widget _channelHeader(int c, ColorScheme scheme) {
+    final muted = _song.isMuted(c);
+    final soloed = _song.isSoloed(c);
+    return SizedBox(
+      width: _cellWidth,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Instrument name — tap to change the track's instrument.
+          InkWell(
+            onTap: () => _pickInstrument(c),
+            child: Text(
+              _song.channels[c].instrument.id,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: muted ? scheme.onSurfaceVariant : scheme.onSurface,
+                decoration: muted ? TextDecoration.lineThrough : null,
+              ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _headerToggle('M', muted, scheme.error, () => toggleMute(c)),
+              _headerToggle('S', soloed, scheme.tertiary, () => toggleSolo(c)),
+              if (_song.channelCount > 1)
+                InkWell(
+                  onTap: () => removeTrack(c),
+                  child: Icon(
+                    Icons.close,
+                    size: 15,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerToggle(
+    String label,
+    bool on,
+    Color onColor,
+    VoidCallback onTap,
+  ) =>
+      InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: on ? onColor : Colors.grey.withValues(alpha: 0.55),
+            ),
+          ),
+        ),
+      );
+
+  @override
+  bool isMuted(int channel) => _song.isMuted(channel);
+  @override
+  bool isSoloed(int channel) => _song.isSoloed(channel);
+
+  @override
+  void toggleMute(int channel) {
+    setState(() => _song.toggleMute(channel));
+    _syncPlayback();
+  }
+
+  @override
+  void toggleSolo(int channel) {
+    setState(() => _song.toggleSolo(channel));
+    _syncPlayback();
   }
 
   Widget _rowWidget(

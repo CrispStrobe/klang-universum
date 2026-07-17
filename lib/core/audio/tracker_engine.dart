@@ -467,6 +467,10 @@ class TrackerChannel {
   final List<TrackerChannelEffect> effects;
   final List<TrackerCell> cells;
 
+  /// Muted channels are excluded from the mixdown (their stem is not summed).
+  /// Mutate via [TrackerEngine.setChannelMuted] so the mixed WAV invalidates.
+  bool muted = false;
+
   bool get hasAnyNote => cells.any((c) => !c.isEmpty);
 }
 
@@ -609,6 +613,15 @@ class TrackerEngine {
     _wav = null;
   }
 
+  /// Mutes/unmutes [channel] (excludes it from the mix) and invalidates the
+  /// mixed WAV. The channel's stem cache is untouched — muting only changes
+  /// which stems are summed, not the stems themselves.
+  void setChannelMuted(int channel, bool muted) {
+    if (channels[channel].muted == muted) return;
+    channels[channel].muted = muted;
+    _wav = null;
+  }
+
   /// Sets a channel's insert-effect CHAIN (applied to its stem in order before
   /// mixStems; `none` entries are dropped) and invalidates that channel's cached
   /// stem + the mixed WAV.
@@ -724,7 +737,7 @@ class TrackerEngine {
   Int16List renderLoopPcm() => mixStems(
         [
           for (var i = 0; i < channels.length; i++)
-            if (channels[i].hasAnyNote)
+            if (channels[i].hasAnyNote && !channels[i].muted)
               (samples: _stem(i), gain: channels[i].gain),
         ],
         totalSamples: _timing.totalSamples,
