@@ -323,6 +323,14 @@ Games built on crisp_notation capabilities the app didn't use before.
   mixed rhythms (half + two quarters: three noteheads but still a full 4/4), and
   the pickup runs 1–2 notes — so the answer needs real metric reading. Correct →
   the melody plays. SRI `measures.upbeat.<yes|no>`.
+- **Enharmonic Twins** (Noten lesen) — a binary staff-read on enharmonic
+  equivalence, a Sek-I staple nothing else drills: two whole notes (each with its
+  accidental) across two bars — **same sound spelled two ways** (F♯ = G♭) or two
+  **genuinely different** pitches? Graded by `midiNumber` equality, so it is exact
+  and the child must read past the spelling. Five sharp/flat twins for beginners;
+  the trickier white-key twins (E♯ = F, F♭ = E) join at 2★; "different" rounds are
+  guaranteed non-enharmonic and non-trivial (adjacent steps, at least one
+  accidental). Correct → both notes play. SRI `reading.enharmonic.<yes|no>`.
 - **Connect the Notes — four new modes** (Notenwerte) — the connect-a-line board
   grew from 3 to 7 modes, each one `ConnectMode` case reusing an existing catalog
   so nothing drifts: **Dynamics** (mark glyph ↔ meaning, `connect_dynamics`,

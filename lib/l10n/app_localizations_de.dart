@@ -699,6 +699,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get slurLabel => 'Bindebogen';
 
   @override
+  String get gameEnharmonic => 'Enharmonische Zwillinge';
+
+  @override
+  String get gameEnharmonicSubtitle =>
+      'Gleicher Klang, zwei Schreibweisen – oder verschiedene Töne?';
+
+  @override
+  String get enharmonicPrompt => 'Klingen diese beiden Noten gleich?';
+
+  @override
+  String get enharmonicSame => 'Gleicher Klang';
+
+  @override
+  String get enharmonicDifferent => 'Verschieden';
+
+  @override
   String get gameBeamFlag => 'Balken oder Fähnchen?';
 
   @override

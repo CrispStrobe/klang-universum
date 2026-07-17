@@ -59,6 +59,7 @@ import 'package:comet_beat/features/games/note_reading/articulation_read_screen.
 import 'package:comet_beat/features/games/note_reading/beam_flag_screen.dart';
 import 'package:comet_beat/features/games/note_reading/connect_line_screen.dart';
 import 'package:comet_beat/features/games/note_reading/duet_screen.dart';
+import 'package:comet_beat/features/games/note_reading/enharmonic_screen.dart';
 import 'package:comet_beat/features/games/note_reading/falling_notes_screen.dart';
 import 'package:comet_beat/features/games/note_reading/hear_voice_screen.dart';
 import 'package:comet_beat/features/games/note_reading/ledger_leap_screen.dart';
@@ -397,6 +398,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameBeamFlag,
       subtitle: (l) => l.gameBeamFlagSubtitle,
       builder: (_) => const BeamFlagScreen(),
+    ),
+    // Enharmonic Twins — same sound spelled two ways (F♯/G♭) or different?
+    GameInfo(
+      id: 'enharmonic',
+      icon: Icons.swap_horiz,
+      title: (l) => l.gameEnharmonic,
+      subtitle: (l) => l.gameEnharmonicSubtitle,
+      builder: (_) => const EnharmonicScreen(),
     ),
     // Read the clef sign itself — Treble vs Bass (Alto/Tenor at 2★).
     GameInfo(

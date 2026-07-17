@@ -19,16 +19,18 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (enharmonic)** · 🚧 **ACTIVE — "Enharmonic Twins" minigame** (item 1, a
-  genuine gap — nothing drills enharmonic equivalence). A binary staff-read on the
-  `tie_slur` scaffold: two notes are shown (each with its accidental); same sound
-  spelled differently (F♯/G♭) or genuinely different? Graded by `midiNumber`
-  equality (deterministic). New
-  `features/games/note_reading/enharmonic_screen.dart` + `GameInfo` in
-  `game_registry.dart` + a `kStarThresholds` bracket in `core/tuning.dart` + EN/DE
-  ARBs + a `pumpGame` test. SRI `reading.enharmonic.<yes|no>`. Worktree
-  `../mus-enharmonic`, branch `feature/enharmonic`. Touching hot shared files
-  (registry, tuning, ARBs) — rebasing often.
+- **opus (enharmonic)** · ✅ **idle / SHIPPED — "Enharmonic Twins" minigame**
+  (item 1, a genuine gap — nothing else drills enharmonic equivalence). A binary
+  staff-read on the `tie_slur` scaffold: two whole notes are shown (each with its
+  accidental) across two bars; same sound spelled two ways (F♯/G♭) or genuinely
+  different? Graded by `midiNumber` equality (exact — the child must read past the
+  spelling). Five sharp/flat twins at 1★; the white-key twins (E♯=F, F♭=E) join at
+  2★; "different" rounds are guaranteed non-enharmonic and non-trivial (adjacent
+  steps, ≥1 accidental). Correct → both notes play. New
+  `features/games/note_reading/enharmonic_screen.dart` + `GameInfo` + tuning
+  `[100,600,900]` + EN/DE ARBs + `test/enharmonic_test.dart` (3 tests incl. a
+  per-round invariant `answerSame ⇔ notesShareMidi`). Analyze clean; consistency +
+  star suites green.
 
 - **opus (tracker)** · 🚧 **ACTIVE — per-channel FX chain (Tracker)**. Wire the
   shipped DSP units (`crisp_dsp/modulated_delay.dart` + `reverb.dart`) into the
@@ -173,11 +175,14 @@ still free on the board before starting** (search the agent name / feature).
 1. **Small content minigames** — *low risk, squarely in the games lane, no
    collision.* One `GameInfo` in `game_registry.dart` + a screen + a
    `kStarThresholds` bracket in `core/tuning.dart` (games with scores) + EN/DE ARBs
-   + a widget test via `pumpGame`. ✅ **Spot the Upbeat** (`spot_upbeat`, Auftakt /
-   anacrusis) and ✅ **Write It for the Instrument** (`transpose_write`, the
-   concert→written inverse of Concert Pitch) SHIPPED. Still unclaimed: **SATB
-   chorale reading** / a richer Grand Staff. Copy an existing sibling (see the
-   "Reusable scaffolds" note under the Ideas backlog).
+   + a widget test via `pumpGame`. Shipped: ✅ **Spot the Upbeat** (`spot_upbeat`,
+   Auftakt / anacrusis), ✅ **Write It for the Instrument** (`transpose_write`, the
+   concert→written inverse of Concert Pitch), ✅ **Enharmonic Twins** (`enharmonic`,
+   same-sound spelling vs different). Still unclaimed: **SATB chorale reading** / a
+   richer Grand Staff — though note SATB *note-reading* is already well-covered by
+   `read_voice`/`which_voice`/`hear_voice`, so scope any new SATB game to a fresh
+   skill (voice-leading, close/open spacing) rather than another note-namer. Copy
+   an existing sibling (see the "Reusable scaffolds" note under the Ideas backlog).
 2. **AEC: on-device jam-mode integration** — ⚠️ *needs real hardware (not
    headless) — milestone (e).* The whole native algorithm stack is DONE and
    headlessly verified: DTD ported to the C DSP core (`f7487fd`) + wired into the

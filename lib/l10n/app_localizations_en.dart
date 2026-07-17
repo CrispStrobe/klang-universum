@@ -696,6 +696,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get slurLabel => 'Slur';
 
   @override
+  String get gameEnharmonic => 'Enharmonic Twins';
+
+  @override
+  String get gameEnharmonicSubtitle =>
+      'Same sound spelled two ways, or different notes?';
+
+  @override
+  String get enharmonicPrompt => 'Do these two notes sound the same?';
+
+  @override
+  String get enharmonicSame => 'Same sound';
+
+  @override
+  String get enharmonicDifferent => 'Different';
+
+  @override
   String get gameBeamFlag => 'Beam or Flag?';
 
   @override

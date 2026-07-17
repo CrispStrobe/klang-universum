@@ -1358,6 +1358,36 @@ abstract class AppLocalizations {
   /// **'Slur'**
   String get slurLabel;
 
+  /// No description provided for @gameEnharmonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Enharmonic Twins'**
+  String get gameEnharmonic;
+
+  /// No description provided for @gameEnharmonicSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Same sound spelled two ways, or different notes?'**
+  String get gameEnharmonicSubtitle;
+
+  /// No description provided for @enharmonicPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Do these two notes sound the same?'**
+  String get enharmonicPrompt;
+
+  /// No description provided for @enharmonicSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Same sound'**
+  String get enharmonicSame;
+
+  /// No description provided for @enharmonicDifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'Different'**
+  String get enharmonicDifferent;
+
   /// No description provided for @gameBeamFlag.
   ///
   /// In en, this message translates to:
