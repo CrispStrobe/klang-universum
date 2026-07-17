@@ -948,6 +948,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Play or sing along — green fits the chord! Headphones help the mic hear only you.';
 
   @override
+  String get loopMixerJamHintAec =>
+      'Play or sing along — the band listens back! Green fits the chord.';
+
+  @override
+  String get loopMixerJamGraded => '🎧 Band cancelled — this grades you';
+
+  @override
+  String get loopMixerJamHeadphones => 'Headphones help the mic hear only you';
+
+  @override
   String get loopMixerTempoChill => 'Chill';
 
   @override

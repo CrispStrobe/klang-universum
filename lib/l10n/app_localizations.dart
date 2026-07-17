@@ -1832,6 +1832,24 @@ abstract class AppLocalizations {
   /// **'Play or sing along — green fits the chord! Headphones help the mic hear only you.'**
   String get loopMixerJamHint;
 
+  /// No description provided for @loopMixerJamHintAec.
+  ///
+  /// In en, this message translates to:
+  /// **'Play or sing along — the band listens back! Green fits the chord.'**
+  String get loopMixerJamHintAec;
+
+  /// No description provided for @loopMixerJamGraded.
+  ///
+  /// In en, this message translates to:
+  /// **'🎧 Band cancelled — this grades you'**
+  String get loopMixerJamGraded;
+
+  /// No description provided for @loopMixerJamHeadphones.
+  ///
+  /// In en, this message translates to:
+  /// **'Headphones help the mic hear only you'**
+  String get loopMixerJamHeadphones;
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:

@@ -29,11 +29,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:klang_universum/core/audio/aec_capability.dart';
+import 'package:klang_universum/core/audio/aec_engine.dart';
 import 'package:klang_universum/core/audio/beat_capture.dart';
 import 'package:klang_universum/core/audio/groove_capture.dart';
 import 'package:klang_universum/core/audio/loop_engine.dart';
+import 'package:klang_universum/core/audio/loop_reference.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
 import 'package:klang_universum/core/audio/pitch_analysis.dart';
+import 'package:klang_universum/core/audio/wav_io.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
 import 'package:klang_universum/features/games/composition/groove_notation.dart';
@@ -44,7 +48,14 @@ import 'package:klang_universum/shared/score_theme.dart';
 import 'package:provider/provider.dart';
 
 class LoopMixerScreen extends StatefulWidget {
-  const LoopMixerScreen({super.key});
+  const LoopMixerScreen({super.key, this.aecFactory});
+
+  /// Builds the native Tier-3b [AecEngine] for graded jam mode, or returns null
+  /// when the platform has no full-duplex plugin (web / not built) — then jam
+  /// falls back to the platform `echoCancel`. Defaults to [createNativeAecEngine];
+  /// tests inject a fake engine to drive the graded path headlessly.
+  @visibleForTesting
+  final AecEngine? Function()? aecFactory;
 
   /// The tempo presets (all keep the step grid integral — see LoopTiming).
   static const tempos = [75, 100, 120];
@@ -84,6 +95,13 @@ abstract interface class LoopMixerTester {
   bool get hasBeatTrack;
   bool get isJamming;
   void toggleJam();
+
+  /// True while jam mode is running on the Tier-3b full-duplex AEC (vs the
+  /// platform `echoCancel` fallback).
+  bool get usesAecJam;
+
+  /// The latest live jam reading (null when not jamming / silent).
+  PitchReading? get jamReading;
 
   /// True when a pitched track is enabled — the Song Book / MusicXML export
   /// is offered (and enabled) only then.
@@ -149,8 +167,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _loop.dispose();
     _countInTimer?.cancel();
     _captureStopTimer?.cancel();
+    _refPump?.cancel();
     _micSub?.cancel();
     _mic?.dispose();
+    _jamMic?.dispose();
     super.dispose();
   }
 
@@ -373,8 +393,28 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool _jamming = false;
   final _jamReading = ValueNotifier<PitchReading?>(null);
 
+  // Tier-3b graded jam: the native full-duplex engine plays the loop PCM we
+  // feed it AND cancels it from the mic, so the cleaned reading grades the
+  // player, not the speaker. Null in the echoCancel fallback path.
+  AecEngine? _jamAec;
+  MicrophonePitchService? _jamMic;
+  LoopReferenceScheduler? _refScheduler;
+  Timer? _refPump;
+
+  static const _kJamSampleRate = 44100;
+  static const _refPumpInterval = Duration(milliseconds: 50);
+  static const _refTickSamples =
+      _kJamSampleRate * 50 ~/ 1000; // one interval's worth
+  static const _refPrimeSamples = _refTickSamples * 2; // ~100 ms prebuffer
+
   @override
   bool get isJamming => _jamming;
+
+  @override
+  bool get usesAecJam => _jamAec != null;
+
+  @override
+  PitchReading? get jamReading => _jamReading.value;
 
   @override
   void toggleJam() {
@@ -387,12 +427,57 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
 
   Future<void> _startJam() async {
     if (_capturePhase != _CapturePhase.idle || _jamming) return;
+    final aec = (widget.aecFactory ?? createNativeAecEngine)();
+    if (aec != null) {
+      await _startAecJam(aec);
+    } else {
+      await _startEchoCancelJam();
+    }
+  }
+
+  /// Tier-3b graded jam. Hands playback to the full-duplex engine: stop the
+  /// loop player and pump the loop PCM into the engine's reference (which it
+  /// plays out the speaker AND cancels), then analyse the cleaned near-end.
+  Future<void> _startAecJam(AecEngine aec) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final mic = MicrophonePitchService(aec: aec);
+    unawaited(_loop.stop());
+    final scheduler = LoopReferenceScheduler(_loopPcm());
+    try {
+      _micSub = mic.readings.listen((r) => _jamReading.value = r);
+      await mic.start();
+    } catch (e) {
+      await _micSub?.cancel();
+      await mic.dispose();
+      if (kDebugMode) {
+        debugPrint('[LOOP] AEC jam unavailable, falling back: $e');
+      }
+      _syncPlayback(); // resume the audible groove
+      await _startEchoCancelJam(); // Tier 0/1 fallback
+      return;
+    }
+    _jamAec = aec;
+    _jamMic = mic;
+    _refScheduler = scheduler;
+    // Prime the reference ring, then keep it fed just ahead of the drain.
+    mic.pushReference(scheduler.nextWindow(_refPrimeSamples));
+    _refPump = Timer.periodic(_refPumpInterval, (_) {
+      final s = _refScheduler;
+      if (s != null) _jamMic?.pushReference(s.nextWindow(_refTickSamples));
+    });
+    if (!mounted) return;
+    setState(() => _jamming = true);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.loopMixerJamHintAec)));
+  }
+
+  /// Fallback jam (tiers 0/1): the groove keeps playing on the loop player and
+  /// the platform's echo canceller pulls the speaker out of the mic (headphones
+  /// are better — the hint says so). No AEC here → the meter is just noisier.
+  Future<void> _startEchoCancelJam() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final mic = _mic ??= MicrophonePitchService();
-    // The groove keeps playing while jamming, so ask the platform's echo
-    // canceller to pull the speaker out of the mic (headphones are better —
-    // the hint says so). No AEC on this platform → the meter is just noisier.
     mic.echoCancel = true;
     try {
       _micSub = mic.readings.listen((r) => _jamReading.value = r);
@@ -414,11 +499,41 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   }
 
   Future<void> _stopJam() async {
-    await _mic?.stop();
-    await _micSub?.cancel();
-    _mic?.echoCancel = false;
+    // Flip the visible state synchronously (instant button response); the
+    // engine/mic teardown runs after and its awaits don't gate the UI.
+    _refPump?.cancel();
+    _refPump = null;
+    final aecMic = _jamMic;
+    final sub = _micSub;
+    _micSub = null;
+    _jamMic = null;
+    _jamAec = null;
+    _refScheduler = null;
     _jamReading.value = null;
     if (mounted) setState(() => _jamming = false);
+    if (aecMic != null) {
+      await aecMic.stop();
+      await sub?.cancel();
+      await aecMic.dispose();
+      _syncPlayback(); // hand playback back to the loop player
+      return;
+    }
+    await _mic?.stop();
+    await sub?.cancel();
+    _mic?.echoCancel = false;
+  }
+
+  /// The current loop as raw mono PCM16 (the AEC reference), stripped of the
+  /// WAV header — the same bytes the loop player would sound.
+  Uint8List _loopPcm() => _pcmOf(
+        _infinite
+            ? _engine.renderVariedLoop(_iteration, fill: _fillDue)
+            : _engine.renderLoop(fill: _fillDue),
+      );
+
+  Uint8List _pcmOf(Uint8List wav) {
+    final data = readWavPcm16(wav).samples;
+    return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
   }
 
   /// The bar the groove is in right now (for chord-fit feedback).
@@ -696,6 +811,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         : _engine.renderLoop(fill: _fillDue);
     if (identical(wanted, _currentWav)) return;
     _currentWav = wanted;
+    // AEC jam owns audio via the reference pump: queue the new loop for the
+    // scheduler's next seam instead of restarting the (stopped) loop player.
+    if (_jamAec != null) {
+      _refScheduler?.swap(_pcmOf(wanted));
+      return;
+    }
     _loop.playLoop(
       wanted,
       position: Duration(
@@ -755,6 +876,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   /// the musical phase: the new mix starts exactly where the clock says the
   /// groove is, so the beat never resets when something changes.
   void _syncPlayback() {
+    // AEC jam owns audio: a live edit (variant/level/swing) re-feeds the
+    // reference scheduler; the loop player stays silent until jam ends.
+    if (_jamAec != null) {
+      if (_engine.enabled.isNotEmpty) _refScheduler?.swap(_loopPcm());
+      return;
+    }
     if (_engine.enabled.isEmpty) {
       _clock
         ..stop()
@@ -912,17 +1039,32 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                     };
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.circle, size: 14, color: color),
-                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.circle, size: 14, color: color),
+                              const SizedBox(width: 8),
+                              Text(
+                                hasNote ? reading!.noteName : '—',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: color),
+                              ),
+                            ],
+                          ),
+                          // Tell the child whether the colour can be trusted:
+                          // Tier-3b cancels the speaker (the grade is really
+                          // them), otherwise headphones keep the mic honest.
                           Text(
-                            hasNote ? reading!.noteName : '—',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(color: color),
+                            usesAecJam
+                                ? l10n.loopMixerJamGraded
+                                : l10n.loopMixerJamHeadphones,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

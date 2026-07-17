@@ -953,6 +953,16 @@ class AppLocalizationsDe extends AppLocalizations {
       'Spiel oder sing mit — grün passt zum Akkord! Mit Kopfhörern hört das Mikro nur dich.';
 
   @override
+  String get loopMixerJamHintAec =>
+      'Spiel oder sing mit — die Band hört zu! Grün passt zum Akkord.';
+
+  @override
+  String get loopMixerJamGraded => '🎧 Band rausgerechnet — das bewertet dich';
+
+  @override
+  String get loopMixerJamHeadphones => 'Mit Kopfhörern hört das Mikro nur dich';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override

@@ -2,9 +2,14 @@
 // LoopMixerTester seam (audio is a no-op in the headless test binding — the
 // assertions are on the enabled set, the play state and the render).
 
+import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/audio/aec_engine.dart';
 import 'package:klang_universum/core/audio/loop_engine.dart';
 import 'package:klang_universum/core/audio/synth.dart';
 import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
@@ -17,6 +22,48 @@ import 'support/game_test_support.dart';
 LoopMixerTester _game(WidgetTester tester) =>
     tester.state<State<LoopMixerScreen>>(find.byType(LoopMixerScreen))
         as LoopMixerTester;
+
+/// A stand-in for the native Tier-3b engine: records the reference PCM the
+/// screen pushes and lets the test emit synthetic cleaned near-end frames. No
+/// device, no `dart:ffi` — the graded-jam path runs entirely headless.
+class FakeAecEngine implements AecEngine {
+  final _cleaned = StreamController<Uint8List>.broadcast();
+  final List<Uint8List> references = [];
+  bool started = false;
+  bool stopped = false;
+
+  @override
+  Future<void> start({int sampleRate = 44100, int frame = 256}) async =>
+      started = true;
+
+  @override
+  void reference(Uint8List pcm16) => references.add(pcm16);
+
+  @override
+  Stream<Uint8List> get cleaned => _cleaned.stream;
+
+  @override
+  Future<void> stop() async => stopped = true;
+
+  /// Push a cleaned near-end frame as if the mic (minus echo) produced it.
+  void emitCleaned(Uint8List pcm16) => _cleaned.add(pcm16);
+}
+
+/// A steady sine at [freq] as mono PCM16 — a synthetic "instrument" line the
+/// AEC would hand back on the cleaned stream.
+Uint8List _tonePcm16(
+  double freq, {
+  int sampleRate = 44100,
+  double seconds = 0.6,
+  double amp = 0.3,
+}) {
+  final n = (sampleRate * seconds).round();
+  final out = Int16List(n);
+  for (var i = 0; i < n; i++) {
+    out[i] = (amp * 32767 * sin(2 * pi * freq * i / sampleRate)).round();
+  }
+  return out.buffer.asUint8List();
+}
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -236,6 +283,55 @@ void main() {
     game.toggleJam();
     await tester.pump();
     expect(game.isJamming, isFalse);
+  });
+
+  testWidgets('AEC jam feeds the loop as reference and grades the cleaned '
+      'near-end', (tester) async {
+    final fake = FakeAecEngine();
+    await pumpGame(tester, LoopMixerScreen(aecFactory: () => fake));
+    final game = _game(tester);
+
+    // Jam needs a groove to play/grade against.
+    game.toggleTrack('melody');
+    await tester.pump();
+
+    game.toggleJam();
+    await tester.pump(); // _startAecJam completes (fake start is instant)
+    await tester.pump(const Duration(milliseconds: 120)); // reference pump ticks
+
+    expect(game.isJamming, isTrue);
+    expect(game.usesAecJam, isTrue, reason: 'picked the Tier-3b path');
+    expect(fake.started, isTrue);
+    // The loop PCM is pushed as the AEC reference (prime window + pump ticks).
+    expect(fake.references, isNotEmpty);
+    expect(fake.references.first, isNotEmpty);
+
+    // The engine hands back a cleaned A4 (mic minus echo) → the jam grades it.
+    final tone = _tonePcm16(440); // A4 = midi 69
+    for (var i = 0; i < tone.length; i += 8192) {
+      fake.emitCleaned(
+        Uint8List.sublistView(tone, i, min(i + 8192, tone.length)),
+      );
+    }
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(game.jamReading?.hasPitch, isTrue);
+    expect(
+      game.jamReading!.nearestMidi,
+      69,
+      reason: 'the cleaned near-end grades as A4',
+    );
+
+    // Stopping jam flips the visible state synchronously and tears the engine
+    // down in the background.
+    game.toggleJam();
+    await tester.pump();
+    expect(game.isJamming, isFalse);
+    expect(game.usesAecJam, isFalse);
+    // The async teardown (stop/dispose) needs the real event loop to settle.
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    expect(fake.stopped, isTrue);
   });
 
   testWidgets('a groove code captures and restores the whole state',
