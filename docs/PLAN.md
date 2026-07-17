@@ -476,22 +476,25 @@ and push to origin/main** before/after touching shared files. Format:
   `command_caller` unconstrained hint `Text` after a `Spacer` → `Flexible`+ellipsis
   (107/90px on SE, 42/25px on 6.9"); `_ModuleCard` title 2-line cap + card ratio
   1.15→1.05. iPad is clean at every screen. Analyze + affected suites green.
-  ✅ **Layout audit — ALL findings resolved.** Every RenderFlex overflow across
-  `kGamesByModule` + home/curriculum/progress at iPhone SE (375×667) / 6.9"
-  (440×956) / iPad 13" is fixed or shown to be a false positive:
-  • button Row→Wrap: the 5 play-alongs, `chord_play_along`, `cello_play_it`;
-  • `chord_grip_hero` + `command_caller` hint Text→Flexible;
-  • `_ModuleCard` title cap + ratio;
-  • `accidental_sort`(+`_bass`) vertical: LayoutBuilder+ConstrainedBox(minHeight)+
-    IntrinsicHeight+SingleChildScrollView (fills viewport normally, scrolls on SE);
-  • `tracker`: Swing toggle moved to the overflow menu (CheckedPopupMenuItem) —
-    ~9 app-bar actions didn't fit 375px (title spacing/ellipsis didn't help).
-  `_curriculum` (130px SE / 65px 6.9") was a **FALSE POSITIVE** (the real 6.9"
-  screenshot renders clean). Also an **a11y audit** (tap-target/contrast/label
-  guidelines) came back clean bar one fix (debug-title `excludeFromSemantics`).
-  Re-run either audit by pumping `kGamesByModule` builders × sizes and collecting
-  `takeException()` / `AccessibilityGuideline.evaluate`; probe file:line via
-  `FlutterError.onError`. Full method: `../testing_dart.md`.
+  ✅ **Layout audit — 0 overflows across 828 checks** (138 screens × SE 375×667 /
+  6.9" 440×956 / iPad 13" × **EN + DE**). Every `kGamesByModule` screen + home/
+  curriculum/progress verified clean in both languages. Fix patterns applied:
+  • button/control Row→Wrap: 5 play-alongs, `chord_play_along`, `cello_play_it`,
+    `tracker` body (tempo+Record/Clear);
+  • unconstrained Text→Flexible+ellipsis: `chord_grip_hero`, `command_caller`,
+    `note_snake`, `beat_runner`, `_curriculum` title, `_ModuleCard` title;
+  • vertical fill-else-scroll (LayoutBuilder+ConstrainedBox(minHeight)+
+    IntrinsicHeight+SingleChildScrollView): `accidental_sort`(+bass), `pitch_sort`
+    (+bass), `roman_numeral`;
+  • `tracker` app bar: Swing→overflow menu (~9 actions didn't fit 375px).
+  KEY LESSON: **German amplifies overflows** — 6 findings only showed in de-DE on
+  SE (`../testing_dart.md` §6); an EN-only audit misses them. `_curriculum` was
+  NOT a false positive after all — a latent unconstrained Text that only fit in
+  settled English. Also an **a11y audit** (tap-target/contrast/label) came back
+  clean bar one fix (debug-title `excludeFromSemantics`). Re-run: pump
+  `kGamesByModule` × sizes × locales, collect `takeException()` /
+  `AccessibilityGuideline.evaluate`; probe file:line via `FlutterError.onError`.
+  Full method: `../testing_dart.md`.
 
 - **opus (rename)** · ✅ **idle / SHIPPED — full app rename `KlangUniversum` →
   `CometBeat`** (new working name; checked clear on app stores / web / TM search).
