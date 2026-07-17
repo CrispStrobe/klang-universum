@@ -136,7 +136,11 @@ and push to origin/main** before/after touching shared files. Format:
   import/export = the MIDI↔MOD hub** (via crisp_notation `scoreFromMidi`/
   `scoreToMidi`, no external converter) `8a80421`. ✅ **`.s3m` reader SHIPPED**
   `2860ce2` (golden oracle + real "Illustrious Fields"; agent-built against my
-  contract+tests). 🚧 **`.xm` then `.it` readers next** (same pattern; port
+  contract+tests). ✅ **`.xm` reader SHIPPED** (`xm_module.dart` model+byte-spec +
+  `xm_reader.dart` `parseXm` + golden oracle `test/fixtures/golden.xm` + real "The
+  final support" 24ch/20pat/77ins live test; agent-built against my contract+tests;
+  MSB-mask pattern unpack + delta-decoded 8/16-bit samples). 🚧 **`.it` reader next**
+  (same pattern; IT214/215 sample decompression as its own tested unit; port
   **libxmp-lite MIT** loaders, libopenmpt-BSD oracle; §6). 📋 **Full idea backlog —
   codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio
   depth — in [`docs/TRACKER_IDEAS.md`](TRACKER_IDEAS.md); the FX effort in
