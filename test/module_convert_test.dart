@@ -14,6 +14,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/audio/mod/it_reader.dart';
 import 'package:klang_universum/core/audio/mod/mod_module.dart';
 import 'package:klang_universum/core/audio/mod/mod_reader.dart';
 import 'package:klang_universum/core/audio/mod/module_convert.dart';
@@ -182,8 +183,10 @@ void main() {
       expect(cell.note, 0x40); // MIDI 60 → S3M note (oct4 semi0)
       expect(cell.instrument, 1);
       // sample "sine" survives the signed round-trip exactly (×128 inverts /128)
-      expect(back.samples[0].pcm,
-          Int8List.fromList([0, 64, 127, 64, 0, -64, -128, -64]));
+      expect(
+        back.samples[0].pcm,
+        Int8List.fromList([0, 64, 127, 64, 0, -64, -128, -64]),
+      );
     });
 
     test('IT golden → .s3m preserves note + sample', () {
@@ -194,6 +197,36 @@ void main() {
       expect(cell.note, 0x40); // MIDI 60
       expect(cell.instrument, 1);
       expect(back.samples[0].pcm, Int8List.fromList([0, 10, 20, -10, -20]));
+    });
+  });
+
+  group('convertToIt — mod/xm round-trip through the hub to .it', () {
+    test('MOD golden → .it preserves note + sample', () {
+      final doc = parseAnyModule(_read('test/fixtures/golden.mod'));
+      final back = parseIt(convertToIt(doc));
+      expect(back.name, 'TESTMOD');
+      // NB: IT infers channelCount from USED channels — golden.mod only uses
+      // channel 0, so it round-trips to 1 (musical content is fully preserved).
+      final cell = back.patterns.first.rows[0][0];
+      expect(cell.note, 60); // MIDI 60 → IT note 60 (identity)
+      expect(cell.instrument, 1);
+      // sample "sine" survives the signed round-trip exactly (×128 inverts /128)
+      final pcm = back.samples[0].pcm;
+      expect(pcm[1], closeTo(64 / 128, 1e-9));
+      expect(pcm[2], closeTo(127 / 128, 1e-9));
+      expect(pcm[6], closeTo(-1.0, 1e-9));
+    });
+
+    test('XM golden → .it preserves note + sample', () {
+      final doc = parseAnyModule(_read('test/fixtures/golden.xm'));
+      final back = parseIt(convertToIt(doc));
+      expect(back.name, 'GOLDENXM');
+      final cell = back.patterns.first.rows[0][0];
+      expect(cell.note, 60); // MIDI 60 → IT note 60
+      expect(cell.instrument, 1);
+      final pcm = back.samples[0].pcm;
+      expect(pcm.length, 5);
+      expect(pcm[2], closeTo(20 / 128, 1e-9));
     });
   });
 

@@ -63,6 +63,7 @@ import 'dart:typed_data';
 
 import 'package:klang_universum/core/audio/mod/it_module.dart';
 import 'package:klang_universum/core/audio/mod/it_reader.dart';
+import 'package:klang_universum/core/audio/mod/it_writer.dart';
 import 'package:klang_universum/core/audio/mod/mod_module.dart';
 import 'package:klang_universum/core/audio/mod/mod_reader.dart';
 import 'package:klang_universum/core/audio/mod/mod_writer.dart';
@@ -548,6 +549,69 @@ S3mModule docToS3m(ModuleDoc doc) {
 
 /// Convenience: convert a neutral module straight to `.s3m` bytes.
 Uint8List convertToS3m(ModuleDoc doc) => writeS3m(docToS3m(doc));
+
+/// Neutral → [ItModule] (sample mode; one PCM sample per neutral sample).
+///
+/// IT note numbers equal MIDI (itNoteToMidi is identity for 0..119), so notes map
+/// directly. Samples convert exactly (×128/×32768 inverts the reader's /128//32768;
+/// v1 writes 8-bit — the neutral model carries no bit depth). Written uncompressed.
+ItModule docToIt(ModuleDoc doc) {
+  final samples = <ItSample>[];
+  for (final ds in doc.samples) {
+    if (ds.isEmpty) {
+      samples.add(ItSample.empty());
+      continue;
+    }
+    samples.add(
+      ItSample(
+        name: ds.name,
+        defaultVolume: ds.volume.clamp(0, 64),
+        length: ds.pcm.length,
+        loopStart: ds.loopStart,
+        loopEnd: ds.loopStart + ds.loopLength,
+        c5speed: ds.c5speed,
+        pcm: Float64List.fromList(ds.pcm),
+      ),
+    );
+  }
+
+  final patterns = <ItPattern>[];
+  for (final dp in doc.patterns) {
+    final rows = <List<ItCell>>[];
+    for (final srcRow in dp.rows) {
+      final cells = <ItCell>[];
+      for (var ch = 0; ch < doc.channelCount; ch++) {
+        if (ch < srcRow.length) {
+          final c = srcRow[ch];
+          cells.add(
+            ItCell(
+              note: c.note < 0 ? -1 : c.note.clamp(0, 119),
+              instrument: c.instrument.clamp(0, 255),
+              volpan: c.volume < 0 ? -1 : c.volume.clamp(0, 64),
+            ),
+          );
+        } else {
+          cells.add(ItCell.empty);
+        }
+      }
+      rows.add(cells);
+    }
+    patterns.add(ItPattern(rows, doc.channelCount));
+  }
+
+  return ItModule(
+    name: doc.title,
+    channelCount: doc.channelCount,
+    initialSpeed: doc.initialSpeed,
+    initialTempo: doc.initialTempo,
+    order: List<int>.from(doc.order),
+    patterns: patterns,
+    samples: samples,
+  );
+}
+
+/// Convenience: convert a neutral module straight to `.it` bytes.
+Uint8List convertToIt(ModuleDoc doc) => writeIt(docToIt(doc));
 
 // ─── Tuning helpers ──────────────────────────────────────────────────────────
 

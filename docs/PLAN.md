@@ -403,10 +403,15 @@ double-talk detector to the native C engine (verify harness now green:
   `s3m_writer.dart` `writeS3m` (paragraph-aligned layout, parapointer patch pass,
   signed PCM, "what"-byte pattern packing) + `docToS3m`/`convertToS3m` → **mod2s3m /
   xm2s3m / it2s3m**. Round-trip verified (golden + hand-built loop/multi-channel) +
-  mod→s3m & it→s3m hub conversions. Converter matrix now
-  **{mod,s3m,xm,it} → {mod,xm,s3m}**. **Next: IT writer** (completes N×N; IT214/215
-  sample compression optional — write uncompressed), then "borrow a sample from a
-  module" (readers already expose PCM); CLI tools (§H).
+  mod→s3m & it→s3m hub conversions. ✅ **IT writer + convertToIt SHIPPED** (slice
+  C4): `it_writer.dart` `writeIt` (sample-mode, absolute-offset layout + patch pass,
+  uncompressed signed 8/16-bit, channelvar+mask packing) + `docToIt`/`convertToIt`.
+  Compressed source samples write back uncompressed (PCM intact). **Converter matrix
+  now COMPLETE — full N×N: {mod,s3m,xm,it} → {mod,xm,s3m,it}.** Verified by golden +
+  hand-built round-trips + mod→it & xm→it hub conversions. **Next: "borrow a sample
+  from a module"** (readers already expose normalized PCM — wire a module→sample→
+  SampleInstrument picker); the headless **CLI tools** (§H — modinfo/modconv/render);
+  optional IT214/215 *compressor* + a cross-format effect table (v1 drops effects).
   📋 **Full idea backlog —
   codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio
   depth — in [`docs/TRACKER_IDEAS.md`](TRACKER_IDEAS.md); the FX effort in
