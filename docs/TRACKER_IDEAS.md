@@ -117,13 +117,15 @@ without a device. Candidates, roughly in value order:
   token, or `--demo`) to a `.wav` via the pure-Dart `LoopEngine`; `--send reverb|
   delay` for the master send, `--print-token`. Live-verified: token round-trips
   byte-identical; `listen.dart` reads the groove's bass root back.
-- ✅ **`bin/notaconv.dart`** SHIPPED — module → Standard MIDI File, importing the
-  **Flutter-free `crisp_notation_core`** directly (`scoreToMidi`) — NOT the Flutter
-  `crisp_notation`. Busiest (or `--channel N`) channel's rows → a Score → MIDI;
-  1084 note-ons out of the real "terrascape" module. **Found + fixed a latent app
-  bug in passing:** `scoreToMidi` drops notes without ids, so the Tracker's own
-  "Export MIDI" was silent — `_trackerAsScore` now sets ids (`8a753e1`).
-  (MusicXML from the shell — `multiPartToMusicXml` — is a further extension.)
+- ✅ **`bin/notaconv.dart`** SHIPPED — now a **universal, BIDIRECTIONAL** notation
+  ↔ module converter (by extension), on the `lib/core/audio/mod/module_notation.dart`
+  bridge: module ↔ MIDI (`--multi` = multi-track), MusicXML, and the text notations
+  ABC / kern / MEI / MuseScore (LilyPond write-only). Both directions where the
+  library has a reader; e.g. `notaconv tune.abc out.it`, `notaconv song.it out.xml`.
+  Imports the **Flutter-free `crisp_notation_core`** directly. **Found + fixed a
+  latent app bug originally:** `scoreToMidi` drops notes without ids, so the
+  Tracker's own "Export MIDI" was silent — `_trackerAsScore` now sets ids
+  (`8a753e1`). Round-trips are unit-tested in `test/module_notation_test.dart`.
 - ✅ **`bin/fxproc.dart`** SHIPPED — applies a crisp_dsp effect to a `.wav` offline:
   `--effect reverb|delay|chorus|flanger|distortion|ringmod|stretch` + the voice
   presets (chipmunk/robot/alien/…), params `--mix/--drive/--carrier/--factor/--kind`.
