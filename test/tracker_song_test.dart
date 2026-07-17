@@ -211,6 +211,16 @@ void main() {
       expect(song.isAudible(1), isTrue);
     });
 
+    test('setChannelGain scales a channel down in the mix', () {
+      final song = TrackerSong();
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      final loud = peak(song.renderCurrentPatternWav());
+      song.setChannelGain(0, 0.1);
+      final quiet = peak(song.renderCurrentPatternWav());
+      expect(quiet, lessThan(loud));
+      expect(quiet, greaterThan(0));
+    });
+
     test('mute/solo indices follow a channel removal', () {
       final song = TrackerSong();
       song.toggleMute(3);

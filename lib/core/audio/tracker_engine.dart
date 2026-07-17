@@ -459,7 +459,11 @@ class TrackerChannel {
   /// recorded [SampleInstrument] to the voice channel). Go through
   /// [TrackerEngine.setChannelInstrument] so caches are invalidated.
   TrackerInstrument instrument;
-  final double gain;
+
+  /// The channel's mix level. Mutable — go through [TrackerEngine.setChannelGain]
+  /// so the mixed WAV invalidates. (It scales the stem at mixdown, not the stem
+  /// itself, so the per-channel stem cache is untouched.)
+  double gain;
 
   /// The channel's insert-effect CHAIN, applied to its stem in order (before
   /// mixStems). Empty = dry. Mutate via [TrackerEngine.setChannelEffects] so
@@ -619,6 +623,14 @@ class TrackerEngine {
   void setChannelMuted(int channel, bool muted) {
     if (channels[channel].muted == muted) return;
     channels[channel].muted = muted;
+    _wav = null;
+  }
+
+  /// Sets a channel's mix [gain] (0..~1.2) and invalidates the mixed WAV. Like
+  /// muting, gain scales at mixdown, so the per-channel stem cache is untouched.
+  void setChannelGain(int channel, double gain) {
+    if (channels[channel].gain == gain) return;
+    channels[channel].gain = gain;
     _wav = null;
   }
 

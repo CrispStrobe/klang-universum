@@ -462,6 +462,7 @@
   "trackerEntryNames": "Notennamen",
   "trackerKeyHelp": "Tastatur",
   "trackerCursor": "Cursor bewegen",
+  "trackerMixer": "Spuren & Mixer",
   "trackerBlock": "Block",
   "trackerBlockMark": "Markieren (Zellen antippen)",
   "trackerBlockTrack": "Spur auswählen",

@@ -493,6 +493,7 @@
   "trackerEntryNames": "Note names",
   "trackerKeyHelp": "Keyboard",
   "trackerCursor": "Move cursor",
+  "trackerMixer": "Tracks & mixer",
   "trackerBlock": "Block",
   "trackerBlockMark": "Mark (tap cells to select)",
   "trackerBlockTrack": "Select track",

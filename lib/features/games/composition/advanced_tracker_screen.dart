@@ -830,6 +830,114 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _vScroll.jumpTo(target.clamp(0.0, max));
   }
 
+  // --- Mixer / instrument panel (per-track instrument + gain + mute/solo) ---
+
+  void _showMixer(AppLocalizations l10n) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      l10n.trackerMixer,
+                      style: Theme.of(ctx).textTheme.titleLarge,
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.trackerAddTrack),
+                      onPressed: () {
+                        addTrack();
+                        setSheet(() {});
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _song.channelCount,
+                    itemBuilder: (ctx, c) => _mixerRow(ctx, l10n, c, setSheet),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mixerRow(
+    BuildContext ctx,
+    AppLocalizations l10n,
+    int c,
+    void Function(void Function()) setSheet,
+  ) {
+    final ch = _song.channels[c];
+    final scheme = Theme.of(ctx).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(width: 24, child: Text('${c + 1}')),
+          // Instrument (tap to change).
+          SizedBox(
+            width: 96,
+            child: OutlinedButton(
+              onPressed: () async {
+                await _pickInstrument(c);
+                setSheet(() {});
+              },
+              child: Text(
+                _instrumentLabel(ch.instrument.id),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          // Gain slider.
+          Expanded(
+            child: Slider(
+              value: ch.gain.clamp(0.0, 1.2),
+              max: 1.2,
+              onChanged: (v) {
+                _song.setChannelGain(c, v);
+                _syncPlayback();
+                setSheet(() {});
+              },
+            ),
+          ),
+          _headerToggle('M', _song.isMuted(c), scheme.error, () {
+            toggleMute(c);
+            setSheet(() {});
+          }),
+          _headerToggle('S', _song.isSoloed(c), scheme.tertiary, () {
+            toggleSolo(c);
+            setSheet(() {});
+          }),
+          if (_song.channelCount > 1)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () {
+                removeTrack(c);
+                setSheet(() {});
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
   // --- Per-track instrument picker ---
 
   Future<void> _pickInstrument(int channel) async {
@@ -1079,6 +1187,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             icon: const Icon(Icons.playlist_play),
             tooltip: l10n.trackerPlaySong,
             onPressed: _playSong,
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: l10n.trackerMixer,
+            onPressed: () => _showMixer(l10n),
           ),
           _blockMenu(l10n),
           IconButton(

@@ -264,6 +264,10 @@ class TrackerSong {
   void setChannelInstrument(int index, TrackerInstrument instrument) =>
       _engine.setChannelInstrument(index, instrument);
 
+  /// Sets channel [index]'s mix gain (delegates to the engine).
+  void setChannelGain(int index, double gain) =>
+      _engine.setChannelGain(index, gain);
+
   // --- Block operations (classic tracker copy/cut/paste/transpose) -------
   //
   // A block is a rectangle of the CURRENT pattern's cells, returned/consumed as

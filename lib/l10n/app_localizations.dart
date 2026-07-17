@@ -2666,6 +2666,12 @@ abstract class AppLocalizations {
   /// **'Move cursor'**
   String get trackerCursor;
 
+  /// No description provided for @trackerMixer.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks & mixer'**
+  String get trackerMixer;
+
   /// No description provided for @trackerBlock.
   ///
   /// In en, this message translates to:

@@ -1374,6 +1374,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerCursor => 'Move cursor';
 
   @override
+  String get trackerMixer => 'Tracks & mixer';
+
+  @override
   String get trackerBlock => 'Block';
 
   @override
