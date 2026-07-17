@@ -414,12 +414,23 @@ class DoubleTalkDetector {
   /// Feed a just-processed block (its [reference], [mic] and [cleaned] output)
   /// to update the freeze state for subsequent blocks.
   void update(Float64List reference, Float64List mic, Float64List cleaned) {
-    _block += 1;
     var refMs = 0.0;
     for (var i = 0; i < reference.length; i++) {
       refMs += reference[i] * reference[i];
     }
-    if (refMs / reference.length >= farEndFloor && _block > warmupBlocks) {
+    final farEndActive = refMs / reference.length >= farEndFloor;
+
+    // Count warmup ONLY over blocks where the filter can actually converge.
+    // EchoCanceller.process skips its own update while the far-end is silent,
+    // so counting those blocks burns the warmup before W has learned anything —
+    // and what follows is self-sustaining: warmup expires with W still zero →
+    // echoEst = mic − cleaned = 0 → rho = 0 → freeze → adapt:false → W stays
+    // zero → rho stays 0 → the freeze re-arms every block, forever. ~280 ms of
+    // capture-before-playback (the normal case) used to cost ~28 dB of ERLE for
+    // the rest of the session.
+    if (farEndActive) _block += 1;
+
+    if (farEndActive && _block > warmupBlocks) {
       var dot = 0.0, mm = 0.0, ee = 0.0;
       for (var i = 0; i < mic.length; i++) {
         final e = mic[i] - cleaned[i]; // echo estimate W·x
@@ -427,8 +438,21 @@ class DoubleTalkDetector {
         mm += mic[i] * mic[i];
         ee += e * e;
       }
-      final rho = dot / (sqrt(mm * ee) + 1e-12);
-      if (rho < threshold) _hangover = hangoverBlocks;
+      // ee == 0 means the filter has produced NO echo estimate yet (W still
+      // zero) — that is "no information", not "near-end detected". Correlating
+      // against it yields rho = 0, which reads as double-talk and freezes the
+      // very adaptation that would fix it. Belt-and-braces against the loop
+      // above.
+      if (ee > 0 && mm > 0) {
+        final rho = dot / (sqrt(mm * ee) + 1e-12);
+        if (rho < threshold) {
+          // Just armed: hold the FULL hangover. Falling through to the
+          // decrement below would spend one block here and hold N-1, contrary
+          // to [hangoverBlocks]'s contract.
+          _hangover = hangoverBlocks;
+          return;
+        }
+      }
     }
     if (_hangover > 0) _hangover -= 1;
   }

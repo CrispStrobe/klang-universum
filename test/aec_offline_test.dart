@@ -385,6 +385,40 @@ void main() {
       expect(dtd.frozenBlocks, greaterThan(0), reason: 'froze on double-talk');
     });
 
+    // Regression: `_block` counted EVERY block, including far-end-silent ones.
+    // But EchoCanceller.process skips its own update while the far-end is
+    // silent, so warmup expired with W still all-zero. Then
+    // echoEst = mic − cleaned = 0 → rho = 0 → freeze → adapt:false → W stays
+    // zero → rho stays 0: the freeze re-armed every block and NEVER released,
+    // costing ~28 dB of ERLE for the rest of the session. ~280 ms of
+    // capture-before-playback is the normal case. Every other DTD test here has
+    // the far-end active from block 0 — which is exactly why this hid.
+    test('a silent far-end lead-in does not deadlock the filter', () {
+      const block = 1024;
+      const silent = 13; // just past the 12-block dtd warmup
+      const tail = 40;
+      final ref = Float64List((silent + tail) * block);
+      final active = _noise(tail * block);
+      for (var i = 0; i < active.length; i++) {
+        ref[silent * block + i] = active[i];
+      }
+      final mic = _echo(ref); // echo only — no near-end talker at all
+
+      final linear = cancelEcho(mic, ref, delay: 0);
+      final dtd = cancelEcho(mic, ref, delay: 0, doubleTalkDetect: true);
+
+      final sl = segmentalErleDb(mic, linear.cleaned);
+      final sd = segmentalErleDb(mic, dtd.cleaned);
+      // Opting into DTD must never be WORSE than the linear-only path.
+      expect(sd, greaterThan(sl - 3), reason: 'linear $sl dB → DTD $sd dB');
+      expect(
+        dtd.frozenBlocks,
+        0,
+        reason: 'echo only, no near-end: nothing to freeze on '
+            '(${dtd.frozenBlocks} blocks frozen)',
+      );
+    });
+
     test('stays out of the way on far-end single-talk (echo only)', () {
       final ref = _noise(n, seed: 4);
       final mic = _echo(ref);
