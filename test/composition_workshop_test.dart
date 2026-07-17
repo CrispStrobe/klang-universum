@@ -262,12 +262,13 @@ void main() {
     // default, anchored to the selected note.
     expect(find.text(l10n.workshopChangeHereTitle), findsOneWidget);
     expect(find.text(l10n.workshopClef), findsOneWidget);
+    expect(find.text(l10n.workshopClefMidBar), findsOneWidget);
     expect(find.text(l10n.workshopKey), findsOneWidget);
     expect(find.text(l10n.workshopTimeSignature), findsOneWidget);
     expect(find.text(l10n.workshopTempo), findsOneWidget);
     expect(find.text(l10n.workshopVolta), findsOneWidget);
     expect(find.text(l10n.workshopNavigation), findsOneWidget);
-    expect(find.text(l10n.workshopNoChange), findsNWidgets(6));
+    expect(find.text(l10n.workshopNoChange), findsNWidgets(7));
   });
 
   testWidgets('the transport plays and stops, toggling its icon',

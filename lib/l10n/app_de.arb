@@ -54,6 +54,7 @@
   "workshopTapStaff": "Tippe ins System, um eine Note zu setzen",
   "workshopScoreSettings": "Noteneinstellungen",
   "workshopClef": "Schlüssel",
+  "workshopClefMidBar": "Schlüssel (im Takt)",
   "workshopZoomIn": "Vergrößern",
   "workshopZoomOut": "Verkleinern",
   "workshopOpen": "Datei öffnen…",

@@ -1409,6 +1409,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   Future<void> _showChangeHereDialog(String id) async {
     final l10n = AppLocalizations.of(context)!;
     var clef = _doc.clefChanges[id];
+    var inlineClef = _doc.inlineClefs[id];
     var key = _doc.keyChanges[id];
     var time = _doc.timeChanges[id];
     var tempo = _doc.tempoChangeAt(id);
@@ -1433,6 +1434,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 },
                 noChange: l10n.workshopNoChange,
                 onChanged: (v) => setLocal(() => clef = v),
+              ),
+              _changeRow<Clef>(
+                label: l10n.workshopClefMidBar,
+                value: inlineClef,
+                items: {
+                  for (final c in clefOptions) c: '${_clefGlyph(c)}  ${c.name}',
+                },
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => inlineClef = v),
               ),
               _changeRow<KeySignature>(
                 label: l10n.workshopKey,
@@ -1490,6 +1500,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     if (apply != true) return;
     setState(() {
       _doc.setClefChangeAt(id, clef);
+      _doc.setInlineClefAt(id, inlineClef);
       _doc.setKeyChangeAt(id, key);
       _doc.setTimeChangeAt(id, time);
       _doc.setTempoChangeAt(id, tempo);

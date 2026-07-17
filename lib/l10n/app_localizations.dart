@@ -404,6 +404,12 @@ abstract class AppLocalizations {
   /// **'Clef'**
   String get workshopClef;
 
+  /// No description provided for @workshopClefMidBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Clef (mid-bar)'**
+  String get workshopClefMidBar;
+
   /// No description provided for @workshopZoomIn.
   ///
   /// In en, this message translates to:

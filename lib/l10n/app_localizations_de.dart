@@ -183,6 +183,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopClef => 'Schlüssel';
 
   @override
+  String get workshopClefMidBar => 'Schlüssel (im Takt)';
+
+  @override
   String get workshopZoomIn => 'Vergrößern';
 
   @override
