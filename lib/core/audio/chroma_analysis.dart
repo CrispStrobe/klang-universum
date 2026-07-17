@@ -143,7 +143,9 @@ class ChordReading {
   /// The 12-bin normalized pitch-class profile (for visualisation).
   final List<double> chroma;
 
-  /// Total spectral energy in the analysed band — a silence/confidence gate.
+  /// Absolute level in the analysed band: the summed pitch-class magnitude per
+  /// input sample. An absolute measure (NOT read off the peak-normalized
+  /// chroma), so it actually tracks loudness and can serve as a silence gate.
   final double energy;
 
   factory ChordReading.silent() =>
@@ -175,7 +177,8 @@ class ChordDetector {
   final double minFrequency;
   final double maxFrequency;
 
-  /// Below this total band energy, treat the window as silence.
+  /// Below this absolute band level ([ChordReading.energy]), treat the window as
+  /// silence and report no chord.
   final double energyGate;
 
   /// Best-candidate cosine below this → report no chord (too ambiguous).
@@ -209,9 +212,23 @@ class ChordDetector {
 
   /// Analyse one window of mono samples in [-1, 1].
   ChordReading analyze(Float64List samples) {
-    final chroma = chromagram(samples);
-    final energy = chroma.fold<double>(0, (a, b) => a + b);
+    // Gate on the ABSOLUTE band level, which means measuring it *before* peak
+    // normalization: `chromagram` scales its output so the loudest bin is 1, so
+    // any sum over it is scale-invariant (always ≈1..12 for any non-zero input).
+    // Gating on that can only ever catch bit-exact silence — inaudible noise
+    // sails through and is emitted as a confident chord.
+    final raw = _rawChroma(samples);
+    var sum = 0.0;
+    for (final v in raw) {
+      sum += v;
+    }
+    // Per input sample, so the gate is window-size independent and stays
+    // comparable to the signal's amplitude.
+    final energy = sum / samples.length;
     if (energy < energyGate) return ChordReading.silent();
+
+    final chroma = List<double>.of(raw);
+    _peakNormalize(chroma);
 
     final norm = List<double>.of(chroma);
     _l2Normalize(norm);
@@ -241,6 +258,14 @@ class ChordDetector {
   /// The 12-bin pitch-class energy profile of [samples], normalized so its max
   /// is 1 (0 for silence). Public for tests and visualisation.
   List<double> chromagram(Float64List samples) {
+    final chroma = _rawChroma(samples);
+    _peakNormalize(chroma);
+    return chroma;
+  }
+
+  /// The un-normalized 12-bin pitch-class magnitude profile — the absolute
+  /// spectral level, which the silence gate needs (see [analyze]).
+  List<double> _rawChroma(Float64List samples) {
     final n = _pow2AtLeast(samples.length);
     final re = Float64List(n);
     final im = Float64List(n);
@@ -262,17 +287,20 @@ class ChordDetector {
       final pc = (midi.round() % 12 + 12) % 12;
       chroma[pc] += mag;
     }
+    return chroma;
+  }
 
+  /// Scale [v] so its largest entry is 1 (a no-op on an all-zero profile).
+  static void _peakNormalize(List<double> v) {
     var peak = 0.0;
-    for (final v in chroma) {
-      if (v > peak) peak = v;
+    for (final x in v) {
+      if (x > peak) peak = x;
     }
     if (peak > 0) {
-      for (var i = 0; i < 12; i++) {
-        chroma[i] /= peak;
+      for (var i = 0; i < v.length; i++) {
+        v[i] /= peak;
       }
     }
-    return chroma;
   }
 
   static void _l2Normalize(List<double> v) {

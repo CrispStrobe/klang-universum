@@ -94,4 +94,43 @@ void main() {
     final detector = ChordDetector();
     expect(detector.analyze(Float64List(4096)).hasChord, isFalse);
   });
+
+  // Regression: the silence gate used to sum `chromagram`, which peak-normalizes
+  // its output — so the sum was scale-invariant (always ≈1..12 for ANY non-zero
+  // input) and the gate could only ever fire on bit-exact silence. Inaudible
+  // room noise was emitted as a confident chord. The all-zeros test above was
+  // vacuous: it hit the one case the broken gate happened to catch.
+  group('silence gate is an absolute level (regression: scale invariance)', () {
+    final detector = ChordDetector();
+    final loud = _chordWindow([_f(60), _f(64), _f(67)], 4096); // C major
+
+    Float64List scaled(double by) =>
+        Float64List.fromList([for (final s in loud) s * by]);
+
+    test('an audible chord still matches', () {
+      expect(detector.analyze(loud).hasChord, isTrue);
+    });
+
+    test('the same chord at an inaudible level is silence', () {
+      expect(detector.analyze(scaled(1e-6)).hasChord, isFalse);
+    });
+
+    test('energy tracks level rather than being scale-invariant', () {
+      final full = detector.analyze(loud).energy;
+      final tenth = detector.analyze(scaled(0.1)).energy;
+      expect(full, greaterThan(0));
+      // Magnitudes are linear in amplitude, so a tenth of the level is a tenth
+      // of the energy — the old normalized sum returned the SAME value for both.
+      expect(tenth, closeTo(full * 0.1, full * 0.02));
+    });
+
+    test('near-silent noise yields no chord', () {
+      final rnd = Random(7);
+      final noise = Float64List(4096);
+      for (var i = 0; i < noise.length; i++) {
+        noise[i] = 1e-7 * (rnd.nextDouble() * 2 - 1);
+      }
+      expect(detector.analyze(noise).hasChord, isFalse);
+    });
+  });
 }

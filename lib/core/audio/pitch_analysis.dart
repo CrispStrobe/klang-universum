@@ -188,11 +188,19 @@ class PitchDetector {
     // Key maxima: the highest NSDF point in each stretch between successive
     // positively-sloped zero crossings, starting after the first one (so we
     // skip the tau=0 self-correlation peak).
+    //
+    // NB: scan from tau=1, NOT from minLag. For a tone of period T the upward
+    // zero crossing that opens the fundamental's segment sits near 3T/4, which
+    // for short periods falls BELOW minLag. Starting at minLag lands mid-segment
+    // (prev and cur both already positive), so no crossing is seen, the peak at
+    // T is skipped entirely and the first one found is at 2T — reporting the
+    // pitch an octave low, at full clarity. minLag still bounds the *result*
+    // via the frequency range check below.
     final peakLags = <int>[];
     var pos = false; // are we currently past the first positive zero crossing?
     var maxLagInSegment = -1;
     var maxValInSegment = -double.infinity;
-    for (var tau = minLag; tau <= maxLag; tau++) {
+    for (var tau = 1; tau <= maxLag; tau++) {
       final prev = nsdf[tau - 1];
       final cur = nsdf[tau];
       if (!pos) {

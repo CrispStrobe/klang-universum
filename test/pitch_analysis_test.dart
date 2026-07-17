@@ -69,6 +69,43 @@ void main() {
     expect(r.noteName, 'G2');
   });
 
+  // Regression: the key-maxima scan used to start at `minLag` rather than 1.
+  // The NSDF zero crossing that opens the fundamental's segment sits near 3T/4,
+  // which for short periods falls BELOW minLag — so that segment was never
+  // opened, the peak at T was skipped, and the peak at 2T won: the pitch came
+  // back an octave low AT FULL CLARITY. With minLag = 44100/2000 = 22 that hit
+  // everything above ~1503 Hz — the top quarter of the detector's own declared
+  // range (maxFrequency = 2000). The suite missed it by topping out at A5.
+  group('high register (regression: octave halving above ~1503 Hz)', () {
+    final cases = <String, double>{
+      'G6': 1567.98,
+      'A6': 1760.00,
+      'B6': 1975.53,
+    };
+    cases.forEach((name, freq) {
+      test('$name is detected, not reported an octave low', () {
+        final r = detector.analyze(_window(freq, detector));
+        expect(r.hasPitch, isTrue, reason: '$name should be detected');
+        expect(
+          r.frequency,
+          closeTo(freq, freq * 0.02),
+          reason: '$name came back as ${r.frequency.toStringAsFixed(1)} Hz',
+        );
+      });
+    });
+
+    test('a tone above maxFrequency is silent, not halved into range', () {
+      // 3000 Hz is out of range: it must report nothing rather than be folded
+      // to a confident (and wrong) ~1500 Hz.
+      final r = detector.analyze(_window(3000.0, detector));
+      expect(
+        r.hasPitch,
+        isFalse,
+        reason: 'got ${r.frequency.toStringAsFixed(1)} Hz',
+      );
+    });
+  });
+
   test('reports intonation error in cents (fretless use-case)', () {
     // 25 cents sharp of A3 (220 Hz).
     final sharp = 220.0 * pow(2, 25 / 1200);
