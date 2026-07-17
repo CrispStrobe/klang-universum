@@ -60,6 +60,11 @@ class AudioService {
     }
   }
 
+  /// Play a ready-made WAV clip (e.g. TTS narration from the neural backend).
+  /// Honours the master sound switch and the same error-guarding as everything
+  /// else here.
+  Future<void> playWavBytes(Uint8List wav) => _play(wav);
+
   Future<void> playMidiNote(int midi, {int ms = 700}) => _play(
         _wav([
           (freqs: [midiToFrequency(midi)], ms: ms),

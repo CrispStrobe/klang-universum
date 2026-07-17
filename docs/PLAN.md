@@ -19,6 +19,8 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (tts-crispasr)** · ✅ **idle / SHIPPED — TTS slice 2: the CrispASR/Kokoro NEURAL backend.** Behind the existing `TtsBackend` seam: `core/audio/tts/crispasr_tts_backend.dart` (crispasr pub FFI → libcrispasr → **Kokoro**, Apache-2.0, de+en; `synthesize` on a **background isolate** → PCM16 → `wavBytes` → `AudioService.playWavBytes`) + `kokoro_model_store.dart` (**download-on-first-use** to `$HOME/.cache`, never bundled; `isReady` gates it) + `tts_neural.dart` conditional-import facade (**web gets a null stub** — mirrors aec_capability). `TtsService` now **prefers neural when ready, else flutter_tts**. **Verified the REAL macOS path** (flutter test → libcrispasr.dylib → valid German audio) + fake-seam unit tests — 15 TTS tests green, analyze clean (lib+test). Dep `crispasr: ^0.8.11` (pub.dev), so **CI/pub-get/analyze/test need no native lib**. Remaining = maintainer native work: bundle libcrispasr per platform (macOS first), publish the Kokoro GGUFs + set `COMET_KOKORO_BASE_URL`. Full detail in the TTS section below. Touched shared `main.dart`+`pubspec` — rebased.
+
 - **opus (tracker)** · ✅ **idle / SHIPPED — multi-part MIDI/ABC export in the
   Workshop** (`4210a62`). MIDI + ABC now write EVERY instrument part, not just the
   active one. New pure-notation `lib/core/notation/multi_part_export.dart`
@@ -1152,14 +1154,43 @@ no button). Tests: `tts_service_test` (fake backend — gating, voice mapping,
 stop) + tutorial tests green. ⚠ needs `pod install` before the next Apple build
 (new plugin); CI (analyze+test) unaffected.
 
-**Follow-ups:** a dedicated *narration* toggle (accessibility) separate from the
-master sound switch; **auto-narrate** a step when its example plays (opt-in);
-per-game instruction narration on first entry; and the higher-quality **neural
-backend** — the `TtsBackend` seam is ready for **CrispTTS / Kokoro-ONNX** (via
-`onnx_runtime_dart`) or a CrispTTS server, when the model-size/App-Store trade-off
-is worth it. (CrispTTS is a Python CLI of 28+ engines — desktop/server, not a
-Flutter package — so a neural backend means porting one lightweight ONNX voice,
-e.g. Kokoro/Piper, not embedding CrispTTS.)
+**Slice 2 — SHIPPED (2026-07-17): the CrispASR neural backend.** The higher-quality
+voice, behind the same seam. `core/audio/tts/`:
+- `crispasr_tts_backend.dart` — `CrispAsrTtsBackend implements TtsBackend` over the
+  **`crispasr`** pub package (pure-Dart FFI → `libcrispasr`, ggml). Backend =
+  **Kokoro** (82 M params, Apache-2.0, multilingual). `synthesize()` (a ~3 s
+  blocking C call → 24 kHz float32 PCM) runs in a **background isolate**; PCM →
+  PCM16 → `wavBytes` → `AudioService.playWavBytes` (so the master sound switch still
+  governs it). NaN/empty decode → null → silent fallback.
+- `kokoro_model_store.dart` — resolves the dylib + model + per-locale voice
+  (de → `df_eva`, en → `af_heart`); **download-on-first-use into `$HOME/.cache`**,
+  never bundled. `isReady()` = lib loadable + model cached; false ⇒ platform voice.
+- `tts_neural.dart` — conditional-import facade (mirrors `aec_capability.dart`):
+  the io/ffi impl compiles only where `dart:io` exists; **web gets a null stub**, so
+  `flutter build web` never sees dart:io/ffi/isolate.
+- `TtsService` now **prefers neural when `neuralReady()` passes, else platform** —
+  so the app always speaks.
+
+**Verified:** the real macOS synth path (flutter test → `libcrispasr.dylib` →
+Kokoro → valid German audio, peak-checked) plus fake-seam unit tests for
+resolution/playback/fallback — 15 TTS tests green; analyze clean (lib+test). Dep
+`crispasr: ^0.8.11` from pub.dev, so **pub-get/analyze/test/CI need no native lib**.
+
+**Remaining native work (maintainer-driven):**
+1. **Bundle `libcrispasr` per platform** — macOS `.dylib` into the `.app`
+   Frameworks first (I can build/verify macOS); then iOS xcframework, Android `.so`
+   per-ABI, web WASM. Until a platform's lib ships, that platform falls back to
+   flutter_tts automatically.
+2. **Publish the Kokoro GGUFs** (model + de/en voice packs) to a HuggingFace repo
+   (cf. `cstr/aecmos-onnx`) and set `COMET_KOKORO_BASE_URL` (dart-define) — then
+   download-on-first-use goes live. Until then neural stays inert (platform voice).
+3. **Model quality**: load the German backbone (`kokoro-de-hui-base`) + proper
+   `-l de` phonemizer routing for cleaner German; expose `set_length_scale` as a
+   kid-friendly slower rate.
+
+**Other follow-ups:** a dedicated *narration* toggle (accessibility) separate from
+the master sound switch; **auto-narrate** a step when its example plays (opt-in);
+per-game instruction narration on first entry.
 
 ### Extending the syllabus toward bachelor level (2026-07-17)
 The grade-1–10 spine is the floor; the concept map extends **upward toward

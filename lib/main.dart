@@ -1,3 +1,4 @@
+import 'package:comet_beat/core/audio/tts/tts_neural.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/progress_service.dart';
@@ -55,7 +56,20 @@ class CometBeatApp extends StatelessWidget {
           create: (_) => DebugService()..load(),
         ),
         ChangeNotifierProvider(
-          create: (_) => TtsService(),
+          create: (context) {
+            // Prefer the neural (CrispASR/Kokoro) voice where it can run; the
+            // platform voice (flutter_tts) covers everywhere else. Playback goes
+            // through AudioService so the master sound switch still governs it.
+            final audio = context.read<AudioService>();
+            final neural = createNeuralTts(
+              play: audio.playWavBytes,
+              stopPlayback: audio.stop,
+            );
+            return TtsService(
+              neural: neural?.backend,
+              neuralReady: neural?.ready,
+            );
+          },
         ),
       ],
       child: Consumer<SettingsService>(

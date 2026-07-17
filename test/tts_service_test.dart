@@ -60,4 +60,43 @@ void main() {
     expect(tts.isSpeaking, isFalse);
     expect(fake.stops, greaterThanOrEqualTo(1));
   });
+
+  test('prefers the neural backend when it reports ready', () async {
+    final platform = _FakeBackend();
+    final neural = _FakeBackend();
+    final tts = TtsService(
+      backend: platform,
+      neural: neural,
+      neuralReady: () async => true,
+    );
+    await tts.speak('Ein Test', locale: const Locale('de'));
+    expect(neural.spoken, [('Ein Test', 'de-DE')]);
+    expect(platform.spoken, isEmpty);
+  });
+
+  test('falls back to the platform backend when neural is not ready', () async {
+    final platform = _FakeBackend();
+    final neural = _FakeBackend();
+    final tts = TtsService(
+      backend: platform,
+      neural: neural,
+      neuralReady: () async => false,
+    );
+    await tts.speak('A test', locale: const Locale('en'));
+    expect(platform.spoken, [('A test', 'en-US')]);
+    expect(neural.spoken, isEmpty);
+  });
+
+  test('falls back when the neural readiness check throws', () async {
+    final platform = _FakeBackend();
+    final neural = _FakeBackend();
+    final tts = TtsService(
+      backend: platform,
+      neural: neural,
+      neuralReady: () async => throw StateError('lib missing'),
+    );
+    await tts.speak('A test', locale: const Locale('en'));
+    expect(platform.spoken, [('A test', 'en-US')]);
+    expect(neural.spoken, isEmpty);
+  });
 }

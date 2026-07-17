@@ -46,9 +46,16 @@ dependencies:
   # Platform text-to-speech (AVSpeechSynthesizer / Android TTS / web
   # SpeechSynthesis) — on-device, offline, free de+en voices. Reached only
   # through core/services/tts_service.dart (the sole plugin-facing file), which
-  # abstracts a TtsBackend so a neural backend (CrispTTS / Kokoro-ONNX) can slot
-  # in later. Narrates lesson/primer text for pre-readers + accessibility.
+  # abstracts a TtsBackend so the neural backend (crispasr, below) can slot in.
+  # Narrates lesson/primer text for pre-readers + accessibility.
   flutter_tts: ^4.2.2
+  # CrispASR — the on-device NEURAL TTS backend (ggml/Kokoro, Apache-2.0, de+en).
+  # Pure-Dart FFI over libcrispasr; pub-get/analyze/test need no native lib (it's
+  # DynamicLibrary.open'd only when narration actually runs, and only where the
+  # dylib + Kokoro model are present — else TtsService falls back to flutter_tts).
+  # Model is downloaded on first use + cached, never bundled. Reached only through
+  # core/audio/tts/crispasr_tts_backend.dart. Native lib bundling: macOS first.
+  crispasr: ^0.8.11
   # AEC Tier 3b native full-duplex echo canceller (in-repo Flutter FFI plugin).
   # Used only on native platforms + only when speaker-backing AEC is wanted;
   # reached exclusively through core/audio/aec_capability.dart, whose web build

@@ -28,8 +28,11 @@ void main() {
     for (final band in GradeBand.values) {
       final trained =
           kConcepts.where((c) => c.band == band && c.isTrained).length;
-      expect(trained, greaterThan(0),
-          reason: 'no trained concept in ${band.label}',);
+      expect(
+        trained,
+        greaterThan(0),
+        reason: 'no trained concept in ${band.label}',
+      );
     }
   });
 

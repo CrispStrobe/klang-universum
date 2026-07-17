@@ -22,8 +22,11 @@ void main() {
     final cuckoo = intervalSongFor(3, ascending: false);
     expect(cuckoo, isNotNull);
     expect(cuckoo!.song, 'Kuckuck');
-    expect(intervalSongFor(3), isNull,
-        reason: 'no ASCENDING minor-3rd mnemonic',);
+    expect(
+      intervalSongFor(3),
+      isNull,
+      reason: 'no ASCENDING minor-3rd mnemonic',
+    );
   });
 
   test('no duplicate (size, direction) keys', () {

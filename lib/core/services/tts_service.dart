@@ -71,10 +71,33 @@ class FlutterTtsBackend implements TtsBackend {
   }
 }
 
-class TtsService with ChangeNotifier {
-  TtsService({TtsBackend? backend}) : _backend = backend ?? FlutterTtsBackend();
+/// A constructed neural backend paired with its readiness probe. Built by the
+/// platform-conditional factory in `core/audio/tts/tts_neural.dart` (null on
+/// web / where dart:io is unavailable), then handed to [TtsService].
+class NeuralTts {
+  const NeuralTts(this.backend, this.ready);
+  final TtsBackend backend;
+  final Future<bool> Function() ready;
+}
 
+class TtsService with ChangeNotifier {
+  TtsService({
+    TtsBackend? backend,
+    TtsBackend? neural,
+    Future<bool> Function()? neuralReady,
+  })  : _backend = backend ?? FlutterTtsBackend(),
+        _neural = neural,
+        _neuralReady = neuralReady;
+
+  /// The platform fallback (flutter_tts).
   final TtsBackend _backend;
+
+  /// Optional higher-quality neural backend (CrispASR/Kokoro). Used in
+  /// preference to [_backend] when [_neuralReady] reports it can run on this
+  /// device right now (native lib loadable + model cached); otherwise the
+  /// platform voice covers it, so the app always speaks.
+  final TtsBackend? _neural;
+  final Future<bool> Function()? _neuralReady;
 
   /// Master sound switch, mirrored from SettingsService (see main.dart). When
   /// off, narration is silent along with the rest of the app.
@@ -91,12 +114,28 @@ class TtsService with ChangeNotifier {
       locale.languageCode == 'de' ? 'de-DE' : 'en-US';
 
   /// Narrate [text] in [locale]. No-op when the master sound switch is off or
-  /// the text is blank. Interrupts any current utterance.
+  /// the text is blank. Interrupts any current utterance. Prefers the neural
+  /// backend when it's ready, else the platform voice.
   Future<void> speak(String text, {required Locale locale}) async {
     if (!soundOn || text.trim().isEmpty) return;
     _speaking = true;
     notifyListeners();
-    await _backend.speak(text, langCode: voiceTag(locale));
+    final langCode = voiceTag(locale);
+    final backend = await _pick();
+    await backend.speak(text, langCode: langCode);
+  }
+
+  Future<TtsBackend> _pick() async {
+    final neural = _neural;
+    final ready = _neuralReady;
+    if (neural != null && ready != null) {
+      try {
+        if (await ready()) return neural;
+      } catch (_) {
+        // fall through to the platform backend
+      }
+    }
+    return _backend;
   }
 
   /// Stop narrating (e.g. the sheet was dismissed or the page changed).
@@ -105,11 +144,13 @@ class TtsService with ChangeNotifier {
       _speaking = false;
       notifyListeners();
     }
+    await _neural?.stop();
     await _backend.stop();
   }
 
   @override
   void dispose() {
+    _neural?.stop();
     _backend.stop();
     super.dispose();
   }
