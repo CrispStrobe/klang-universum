@@ -150,14 +150,14 @@ packages:
       path: "../crisp_notation/packages/crisp_notation"
       relative: true
     source: path
-    version: "0.4.1"
+    version: "0.4.3"
   crisp_notation_core:
     dependency: "direct overridden"
     description:
       path: "../crisp_notation/packages/crisp_notation_core"
       relative: true
     source: path
-    version: "0.4.3"
+    version: "0.4.4"
   cross_file:
     dependency: transitive
     description:

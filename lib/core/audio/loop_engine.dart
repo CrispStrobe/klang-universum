@@ -147,6 +147,11 @@ List<bool> euclid(int hits, int steps, {int rotation = 0}) => [
 List<bool> stepRow(String pattern) =>
     [for (final ch in pattern.split('')) ch == 'x'];
 
+/// The inverse of [stepRow] — used to carry captured beat rows in the share
+/// token in the same drum-machine notation the patterns are authored in.
+String rowToString(List<bool> row) =>
+    [for (final hit in row) hit ? 'x' : '.'].join();
+
 // --- Harmony: the chord-progression lane ---
 
 /// A harmonic degree of C major the groove can sit on.
@@ -281,6 +286,7 @@ class GrooveSpec {
     this.progressionId,
     this.userCells,
     this.userInstrument,
+    this.beatRows,
   });
 
   final Set<String> enabled;
@@ -298,6 +304,10 @@ class GrooveSpec {
 
   /// [Instrument] name the user track renders with.
   final String? userInstrument;
+
+  /// The beatboxed drum rows (see beat_capture.dart) as step strings keyed
+  /// by drum name — a share token carries the captured beat too.
+  final Map<Drum, List<bool>>? beatRows;
 
   factory GrooveSpec.fromJson(Map<String, dynamic> json) => GrooveSpec(
         enabled: {...(json['e'] as List? ?? const []).cast<String>()},
@@ -318,6 +328,7 @@ class GrooveSpec {
             json['u'] is Map ? _cellsFromJson((json['u'] as Map)['c']) : null,
         userInstrument:
             json['u'] is Map ? (json['u'] as Map)['i'] as String? : null,
+        beatRows: _beatRowsFromJson(json['b']),
       );
 
   /// Compact json (defaults omitted) — the share token payload.
@@ -341,6 +352,10 @@ class GrooveSpec {
           'u': {
             'c': _cellsToJson(userCells!),
             if (userInstrument != null) 'i': userInstrument,
+          },
+        if (beatRows != null)
+          'b': {
+            for (final e in beatRows!.entries) e.key.name: rowToString(e.value),
           },
       };
 
@@ -375,6 +390,20 @@ List<PatternCell>? _cellsFromJson(dynamic json) {
     total += steps;
   }
   return total == kPatternSteps ? cells : null;
+}
+
+/// Parses beat rows from token json; null on any structural violation.
+Map<Drum, List<bool>>? _beatRowsFromJson(dynamic json) {
+  if (json is! Map) return null;
+  final rows = <Drum, List<bool>>{};
+  for (final MapEntry(:key, :value) in json.entries) {
+    final drum = Drum.values.asNameMap()[key];
+    if (drum == null || value is! String || value.length != kPatternSteps) {
+      return null;
+    }
+    rows[drum] = stepRow(value);
+  }
+  return rows.isEmpty ? null : rows;
 }
 
 /// Groove share token: `KU1.` + url-safe base64 of the spec's compact json.
@@ -678,6 +707,9 @@ final DrumRowsPattern kDrumFillPattern = DrumRowsPattern({
   Drum.hat: stepRow('.x.x.x.x.x.x....'),
 });
 
+/// How a live note relates to the groove's harmony (jam mode feedback).
+enum JamFit { chordTone, scaleTone, outside }
+
 /// Holds the groove state and renders the current spec to a loopable WAV.
 class LoopEngine {
   LoopEngine({List<LoopTrack>? tracks, int tempoBpm = 100})
@@ -687,12 +719,36 @@ class LoopEngine {
   /// The sung layer's track id.
   static const userTrackId = 'voice';
 
+  /// The beatboxed layer's track id.
+  static const beatTrackId = 'beat';
+
   final List<LoopTrack> _baseTracks;
   LoopTrack? _userTrack;
+  LoopTrack? _userBeatTrack;
 
-  /// The built-in band plus the sung user track once one is captured.
-  List<LoopTrack> get tracks =>
-      [..._baseTracks, if (_userTrack != null) _userTrack!];
+  /// The built-in band plus the captured user tracks (voice / beatbox).
+  List<LoopTrack> get tracks => [
+        ..._baseTracks,
+        if (_userTrack != null) _userTrack!,
+        if (_userBeatTrack != null) _userBeatTrack!,
+      ];
+
+  /// Installs (or replaces) the beatboxed layer from a captured pattern
+  /// (beat_capture.dart) — a normal drum track from here on.
+  void setUserBeatTrack(DrumRowsPattern pattern) {
+    _userBeatTrack = LoopTrack(
+      id: beatTrackId,
+      gain: 0.5,
+      variants: [pattern],
+    );
+    _clearRenderCaches();
+  }
+
+  void clearUserBeatTrack() {
+    _userBeatTrack = null;
+    enabled.remove(beatTrackId);
+    _clearRenderCaches();
+  }
 
   /// Installs (or replaces) the sung layer from captured cells
   /// (groove_capture.dart) — a normal track from here on: toggleable,
@@ -776,6 +832,7 @@ class LoopEngine {
         userInstrument: _userTrack == null
             ? null
             : (_userTrack!.variants.first as MelodicPattern).instrument.name,
+        beatRows: (_userBeatTrack?.variants.first as DrumRowsPattern?)?.rows,
       );
 
   /// Restores a snapshot (unknown track ids are dropped defensively).
@@ -790,6 +847,12 @@ class LoopEngine {
       );
     } else {
       _userTrack = null;
+    }
+    final beatRows = next.beatRows;
+    if (beatRows != null) {
+      setUserBeatTrack(DrumRowsPattern(beatRows));
+    } else {
+      _userBeatTrack = null;
     }
     final known = tracks.map((t) => t.id).toSet();
     enabled
@@ -938,6 +1001,28 @@ class LoopEngine {
         totalSamples: timing.totalSamples,
       ),
     );
+  }
+
+  // --- Jam mode: harmony fit for a live played/sung note ---
+
+  /// The chord sounding in bar [bar] of the loop: the progression's degree,
+  /// or the vamp's C↔Am alternation.
+  ChordDegree chordAtBar(int bar) {
+    final prog = _progression;
+    if (prog != null) return prog.degrees[bar % prog.degrees.length];
+    return bar.isEven ? ChordDegree.i : ChordDegree.vi;
+  }
+
+  /// How a played/sung [midi] fits the groove at [bar]: a tone of the
+  /// sounding chord, a C-pentatonic scale tone, or outside.
+  JamFit jamFit(int midi, {required int bar}) {
+    final degree = chordAtBar(bar);
+    final pc = midi % 12;
+    for (final interval in degree.triad) {
+      if ((degree.rootOffset + interval) % 12 == pc) return JamFit.chordTone;
+    }
+    if (const [0, 2, 4, 7, 9].contains(pc)) return JamFit.scaleTone;
+    return JamFit.outside;
   }
 
   // --- Infinite mode: seeded per-iteration variation ---

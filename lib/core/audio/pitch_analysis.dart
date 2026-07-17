@@ -46,6 +46,8 @@ class PitchReading {
     required this.frequency,
     required this.clarity,
     required this.a4,
+    this.rms = 0,
+    this.zcr = 0,
   });
 
   /// Detected fundamental in Hz, or ≤ 0 when nothing was found.
@@ -58,9 +60,23 @@ class PitchReading {
   /// The tuning reference this reading was scored against.
   final double a4;
 
+  /// The window's DC-removed RMS level (0..~1). Carried on every frame —
+  /// including no-pitch ones — so percussive/onset consumers (the Loop
+  /// Mixer's beatbox capture) can see energy where MPM sees no period.
+  final double rms;
+
+  /// Zero-crossing rate as the fraction of adjacent sample pairs that change
+  /// sign (0..1). A crude brightness measure: a bass thump sits near 0, a
+  /// hissy "ts" near 0.5+. Only meaningful when [rms] is non-negligible.
+  final double zcr;
+
   /// A silent/no-pitch reading.
-  factory PitchReading.silent({double a4 = kDefaultA4}) =>
-      PitchReading(frequency: 0, clarity: 0, a4: a4);
+  factory PitchReading.silent({
+    double a4 = kDefaultA4,
+    double rms = 0,
+    double zcr = 0,
+  }) =>
+      PitchReading(frequency: 0, clarity: 0, a4: a4, rms: rms, zcr: zcr);
 
   bool get hasPitch => frequency > 0;
 
@@ -140,13 +156,20 @@ class PitchDetector {
     mean /= n;
 
     // Bail on near-silence: RMS gate avoids "detecting" a pitch in room noise.
+    // The same pass counts sign changes — the zero-crossing rate rides along
+    // on every reading as a cheap brightness measure (see PitchReading.zcr).
     var energy = 0.0;
+    var crossings = 0;
+    var prev = samples[0] - mean;
     for (var i = 0; i < n; i++) {
       final v = samples[i] - mean;
       energy += v * v;
+      if ((v < 0) != (prev < 0)) crossings++;
+      prev = v;
     }
     final rms = sqrt(energy / n);
-    if (rms < 1e-3) return PitchReading.silent(a4: a4);
+    final zcr = crossings / n;
+    if (rms < 1e-3) return PitchReading.silent(a4: a4, rms: rms, zcr: zcr);
 
     // Normalized square difference function (NSDF), lags 0..maxLag.
     final nsdf = Float64List(maxLag + 1);
@@ -195,7 +218,9 @@ class PitchDetector {
       }
     }
     if (pos && maxLagInSegment >= 0) peakLags.add(maxLagInSegment);
-    if (peakLags.isEmpty) return PitchReading.silent(a4: a4);
+    if (peakLags.isEmpty) {
+      return PitchReading.silent(a4: a4, rms: rms, zcr: zcr);
+    }
 
     // The MPM choice: the FIRST key maximum that clears k × (global max).
     // Taking the first (not the tallest) is what avoids octave-too-low errors.
@@ -216,16 +241,20 @@ class PitchDetector {
     // Parabolic interpolation around the chosen integer lag for sub-sample
     // (sub-cent) precision.
     final (refinedLag, peakVal) = _parabolicPeak(nsdf, chosenLag);
-    if (peakVal < clarityThreshold) return PitchReading.silent(a4: a4);
+    if (peakVal < clarityThreshold) {
+      return PitchReading.silent(a4: a4, rms: rms, zcr: zcr);
+    }
 
     final freq = sampleRate / refinedLag;
     if (freq < minFrequency || freq > maxFrequency) {
-      return PitchReading.silent(a4: a4);
+      return PitchReading.silent(a4: a4, rms: rms, zcr: zcr);
     }
     return PitchReading(
       frequency: freq,
       clarity: peakVal.clamp(0.0, 1.0),
       a4: a4,
+      rms: rms,
+      zcr: zcr,
     );
   }
 

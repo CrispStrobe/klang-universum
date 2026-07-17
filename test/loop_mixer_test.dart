@@ -5,6 +5,8 @@
 import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:klang_universum/core/audio/loop_engine.dart';
+import 'package:klang_universum/core/audio/synth.dart';
 import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -156,6 +158,28 @@ void main() {
     await tester.tap(find.text('My voice'));
     await tester.pump();
     expect(game.enabledTracks, isNot(contains('voice')));
+  });
+
+  testWidgets('a captured beat joins the band; jam mode degrades gracefully',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.hasBeatTrack, isFalse);
+    expect(find.text('Beatbox a beat!'), findsOneWidget);
+
+    game.debugCaptureBeat(
+      DrumRowsPattern({Drum.kick: stepRow('x.......x.......')}),
+    );
+    await tester.pump();
+    expect(game.hasBeatTrack, isTrue);
+    expect(game.enabledTracks, contains('beat'));
+    expect(find.text('My beat'), findsOneWidget);
+
+    // Jam mode: no mic in the headless binding → the toggle must not throw
+    // and must not report an active jam.
+    game.toggleJam();
+    await tester.pump();
+    expect(game.isJamming, isFalse);
   });
 
   testWidgets('a groove code captures and restores the whole state',

@@ -894,6 +894,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerTrackVoice => 'Meine Stimme';
 
   @override
+  String get loopMixerBeatbox => 'Beatbox einen Beat!';
+
+  @override
+  String get loopMixerBeatboxAgain => 'Nochmal beatboxen';
+
+  @override
+  String get loopMixerBeatNow => 'Jetzt beatboxen!';
+
+  @override
+  String get loopMixerTrackBeat => 'Mein Beat';
+
+  @override
+  String get loopMixerJam => 'Mitspielen — am besten mit Kopfhörern';
+
+  @override
+  String get loopMixerJamHint =>
+      'Spiel oder sing mit — grün passt zum Akkord! Mit Kopfhörern hört das Mikro nur dich.';
+
+  @override
   String get loopMixerTempoChill => 'Gemütlich';
 
   @override

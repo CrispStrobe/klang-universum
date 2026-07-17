@@ -27,6 +27,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:klang_universum/core/audio/beat_capture.dart';
 import 'package:klang_universum/core/audio/groove_capture.dart';
 import 'package:klang_universum/core/audio/loop_engine.dart';
 import 'package:klang_universum/core/audio/microphone_pitch_service.dart';
@@ -77,9 +78,15 @@ abstract interface class LoopMixerTester {
   bool get isInfinite;
   void toggleInfinite();
   bool get hasVoiceTrack;
+  bool get hasBeatTrack;
+  bool get isJamming;
+  void toggleJam();
 
   /// Installs a sung layer without the mic (headless tests can't record).
   void debugCaptureCells(List<PatternCell> cells);
+
+  /// Installs a beatboxed layer without the mic.
+  void debugCaptureBeat(DrumRowsPattern pattern);
 
   /// Forces the seam handler (normally driven by the real-time clock, which
   /// widget tests can't advance) — asserts fill scheduling without waiting.
@@ -188,20 +195,27 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   @override
   void toggleInfinite() => setState(() => _infinite = !_infinite);
 
-  // --- Sing a track: count-in → record 2 bars → quantize → a voice card ---
+  // --- Capture (sing / beatbox): count-in → record 2 bars → a new card ---
 
   MicrophonePitchService? _mic;
   StreamSubscription<PitchReading>? _micSub;
   final _captureClock = Stopwatch();
-  final List<PitchSample> _samples = [];
+
+  /// Raw capture frames — the voice path reads (ms, midi), the beat path
+  /// reads (ms, rms, zcr, pitchedLow); one recording serves both.
+  final List<({double ms, int? midi, double rms, double zcr})> _frames = [];
   Timer? _countInTimer;
   Timer? _captureStopTimer;
   _CapturePhase _capturePhase = _CapturePhase.idle;
+  _CaptureMode _captureMode = _CaptureMode.voice;
   int _countdown = 0;
 
   @override
   bool get hasVoiceTrack =>
       _engine.tracks.any((t) => t.id == LoopEngine.userTrackId);
+  @override
+  bool get hasBeatTrack =>
+      _engine.tracks.any((t) => t.id == LoopEngine.beatTrackId);
 
   @override
   void debugCaptureCells(List<PatternCell> cells) {
@@ -212,18 +226,30 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _restartGroove();
   }
 
+  @override
+  void debugCaptureBeat(DrumRowsPattern pattern) {
+    setState(() {
+      _engine.setUserBeatTrack(pattern);
+      _engine.enabled.add(LoopEngine.beatTrackId);
+    });
+    _restartGroove();
+  }
+
   /// The capture always spans 2 straight bars at the current tempo (what a
   /// non-follower track tiles from), regardless of progression or swing.
   int get _captureMs => LoopTiming(tempoBpm: _engine.tempoBpm).totalMs;
 
-  Future<void> _startSingFlow() async {
+  Future<void> _startCapture(_CaptureMode mode) async {
     if (_capturePhase != _CapturePhase.idle) return;
+    final audio = context.read<AudioService>();
+    if (_jamming) await _stopJam();
+    if (!mounted) return;
     // Silence the band while the mic listens — the detector is monophonic
-    // and would transcribe the loop playback instead of the singer.
+    // and would transcribe the loop playback instead of the performer.
     unawaited(_loop.stop());
     _clock.stop();
-    final audio = context.read<AudioService>();
     setState(() {
+      _captureMode = mode;
       _capturePhase = _CapturePhase.countIn;
       _countdown = 4;
     });
@@ -246,15 +272,18 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   Future<void> _beginRecording() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
-    _samples.clear();
+    _frames.clear();
     final mic = _mic ??= MicrophonePitchService();
+    mic.echoCancel = false; // full accuracy; nothing plays during capture
     try {
       _micSub = mic.readings.listen((reading) {
-        final sample = (
-          _captureClock.elapsedMilliseconds.toDouble(),
-          reading.hasPitch ? reading.nearestMidi : null,
+        final frame = (
+          ms: _captureClock.elapsedMilliseconds.toDouble(),
+          midi: reading.hasPitch ? reading.nearestMidi : null,
+          rms: reading.rms,
+          zcr: reading.zcr,
         );
-        _samples.add(sample);
+        _frames.add(frame);
       });
       await mic.start();
     } on PitchCaptureException {
@@ -282,23 +311,110 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     await _micSub?.cancel();
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
-    final cells = quantizeToGroove(_samples, totalMs: _captureMs);
+    var captured = false;
     setState(() {
       _capturePhase = _CapturePhase.idle;
-      if (cells != null) {
-        _engine.setUserTrack(
-          cells,
-          instrument: context.read<AudioService>().instrument,
-        );
-        _engine.enabled.add(LoopEngine.userTrackId);
+      switch (_captureMode) {
+        case _CaptureMode.voice:
+          final cells = quantizeToGroove(
+            [for (final f in _frames) (f.ms, f.midi)],
+            totalMs: _captureMs,
+          );
+          if (cells != null) {
+            _engine.setUserTrack(
+              cells,
+              instrument: context.read<AudioService>().instrument,
+            );
+            _engine.enabled.add(LoopEngine.userTrackId);
+            captured = true;
+          }
+        case _CaptureMode.beat:
+          final pattern = quantizeToBeat(
+            [
+              for (final f in _frames)
+                (
+                  ms: f.ms,
+                  rms: f.rms,
+                  zcr: f.zcr,
+                  pitchedLow: f.midi != null && f.midi! < 60,
+                ),
+            ],
+            totalMs: _captureMs,
+          );
+          if (pattern != null) {
+            _engine.setUserBeatTrack(pattern);
+            _engine.enabled.add(LoopEngine.beatTrackId);
+            captured = true;
+          }
       }
     });
-    if (cells == null) {
+    if (!captured) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.loopMixerSingNothing)),
       );
     }
     _restartGroove();
+  }
+
+  // --- Jam mode: play/sing over the groove, see how each note fits ---
+
+  bool _jamming = false;
+  final _jamReading = ValueNotifier<PitchReading?>(null);
+
+  @override
+  bool get isJamming => _jamming;
+
+  @override
+  void toggleJam() {
+    if (_jamming) {
+      unawaited(_stopJam());
+    } else {
+      unawaited(_startJam());
+    }
+  }
+
+  Future<void> _startJam() async {
+    if (_capturePhase != _CapturePhase.idle || _jamming) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final mic = _mic ??= MicrophonePitchService();
+    // The groove keeps playing while jamming, so ask the platform's echo
+    // canceller to pull the speaker out of the mic (headphones are better —
+    // the hint says so). No AEC on this platform → the meter is just noisier.
+    mic.echoCancel = true;
+    try {
+      _micSub = mic.readings.listen((r) => _jamReading.value = r);
+      await mic.start();
+    } catch (e) {
+      await _micSub?.cancel();
+      mic.echoCancel = false;
+      if (kDebugMode) debugPrint('[LOOP] jam mic unavailable: $e');
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.loopMixerSingNothing)),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _jamming = true);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.loopMixerJamHint)));
+  }
+
+  Future<void> _stopJam() async {
+    await _mic?.stop();
+    await _micSub?.cancel();
+    _mic?.echoCancel = false;
+    _jamReading.value = null;
+    if (mounted) setState(() => _jamming = false);
+  }
+
+  /// The bar the groove is in right now (for chord-fit feedback).
+  int get _currentBar {
+    final t = _engine.timing;
+    if (!_clock.isRunning) return 0;
+    return (_clock.elapsedMilliseconds % t.totalMs) ~/
+        (t.beatMs * LoopTiming.beatsPerBar);
   }
 
   @override
@@ -536,6 +652,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     'melody': Icons.music_note,
     'sparkle': Icons.auto_awesome,
     'voice': Icons.mic,
+    'beat': Icons.graphic_eq,
   };
 
   // One stable colour per card (the drums are unpitched, so a warm brown
@@ -547,6 +664,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     'melody': Color(0xFFF9A825), // E amber
     'sparkle': Color(0xFF3949AB), // A indigo
     'voice': Color(0xFF8E24AA), // B purple — the singer's own layer
+    'beat': Color(0xFF00897B), // teal — the beatboxer's own layer
   };
 
   String _trackLabel(AppLocalizations l10n, String id) => switch (id) {
@@ -555,6 +673,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         'chords' => l10n.loopMixerTrackChords,
         'melody' => l10n.loopMixerTrackMelody,
         'voice' => l10n.loopMixerTrackVoice,
+        'beat' => l10n.loopMixerTrackBeat,
         _ => l10n.loopMixerTrackSparkle,
       };
 
@@ -616,6 +735,18 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(
+                    icon: Icon(
+                      Icons.hearing,
+                      color: _jamming
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    isSelected: _jamming,
+                    tooltip: l10n.loopMixerJam,
+                    onPressed: toggleJam,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.ios_share),
                     tooltip: l10n.loopMixerShare,
                     onPressed: _openShareSheet,
@@ -623,6 +754,44 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                   ),
                 ],
               ),
+              // Jam feedback: the live note, coloured by how it fits the
+              // sounding chord (green = chord tone, amber = scale, red = out).
+              if (_jamming)
+                ValueListenableBuilder<PitchReading?>(
+                  valueListenable: _jamReading,
+                  builder: (context, reading, _) {
+                    final hasNote = reading?.hasPitch ?? false;
+                    final fit = hasNote
+                        ? _engine.jamFit(
+                            reading!.nearestMidi,
+                            bar: _currentBar,
+                          )
+                        : null;
+                    final color = switch (fit) {
+                      JamFit.chordTone => Colors.green,
+                      JamFit.scaleTone => Colors.amber.shade700,
+                      JamFit.outside => Colors.redAccent,
+                      null => Theme.of(context).disabledColor,
+                    };
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.circle, size: 14, color: color),
+                          const SizedBox(width: 8),
+                          Text(
+                            hasNote ? reading!.noteName : '—',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(color: color),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               // Live engraving: the leading enabled track as a real score.
               if (_showScore && _engravedTrackId != null)
                 SizedBox(
@@ -672,34 +841,40 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 ),
               ),
               const SizedBox(height: 6),
-              // Sing a track: count-in, record 2 bars, join the band.
+              // Capture row: sing a melody / beatbox a beat — count-in,
+              // record 2 bars, the capture joins the band as a card.
               SizedBox(
                 height: 34,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(34),
-                    foregroundColor: _capturePhase == _CapturePhase.recording
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                  ),
-                  onPressed: _capturePhase == _CapturePhase.idle
-                      ? _startSingFlow
-                      : null,
-                  icon: Icon(
-                    _capturePhase == _CapturePhase.recording
-                        ? Icons.fiber_manual_record
-                        : Icons.mic,
-                    size: 18,
-                  ),
-                  label: Text(
-                    switch (_capturePhase) {
-                      _CapturePhase.idle => hasVoiceTrack
-                          ? l10n.loopMixerSingAgain
-                          : l10n.loopMixerSing,
-                      _CapturePhase.countIn => '$_countdown…',
-                      _CapturePhase.recording => l10n.loopMixerSingNow,
-                    },
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _CaptureButton(
+                        icon: Icons.mic,
+                        idleLabel: hasVoiceTrack
+                            ? l10n.loopMixerSingAgain
+                            : l10n.loopMixerSing,
+                        busyLabel: l10n.loopMixerSingNow,
+                        active: _captureMode == _CaptureMode.voice,
+                        phase: _capturePhase,
+                        countdown: _countdown,
+                        onPressed: () => _startCapture(_CaptureMode.voice),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _CaptureButton(
+                        icon: Icons.graphic_eq,
+                        idleLabel: hasBeatTrack
+                            ? l10n.loopMixerBeatboxAgain
+                            : l10n.loopMixerBeatbox,
+                        busyLabel: l10n.loopMixerBeatNow,
+                        active: _captureMode == _CaptureMode.beat,
+                        phase: _capturePhase,
+                        countdown: _countdown,
+                        onPressed: () => _startCapture(_CaptureMode.beat),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 6),
@@ -780,6 +955,52 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
 }
 
 enum _CapturePhase { idle, countIn, recording }
+
+enum _CaptureMode { voice, beat }
+
+/// One of the two capture buttons; the non-active one greys out while a
+/// capture runs, the active one shows the countdown / recording state.
+class _CaptureButton extends StatelessWidget {
+  const _CaptureButton({
+    required this.icon,
+    required this.idleLabel,
+    required this.busyLabel,
+    required this.active,
+    required this.phase,
+    required this.countdown,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String idleLabel;
+  final String busyLabel;
+  final bool active;
+  final _CapturePhase phase;
+  final int countdown;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final recording = active && phase == _CapturePhase.recording;
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(34),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        foregroundColor: recording ? Theme.of(context).colorScheme.error : null,
+      ),
+      onPressed: phase == _CapturePhase.idle ? onPressed : null,
+      icon: Icon(recording ? Icons.fiber_manual_record : icon, size: 18),
+      label: Text(
+        !active || phase == _CapturePhase.idle
+            ? idleLabel
+            : phase == _CapturePhase.countIn
+                ? '$countdown…'
+                : busyLabel,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
 
 /// A row of beat dots (grouped per bar) with the sounding beat lit. Only
 /// this leaf listens to the ticker's beat notifier, so the per-frame update

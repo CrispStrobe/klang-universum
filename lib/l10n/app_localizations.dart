@@ -1718,6 +1718,42 @@ abstract class AppLocalizations {
   /// **'My voice'**
   String get loopMixerTrackVoice;
 
+  /// No description provided for @loopMixerBeatbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Beatbox a beat!'**
+  String get loopMixerBeatbox;
+
+  /// No description provided for @loopMixerBeatboxAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Beatbox again'**
+  String get loopMixerBeatboxAgain;
+
+  /// No description provided for @loopMixerBeatNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Beatbox now!'**
+  String get loopMixerBeatNow;
+
+  /// No description provided for @loopMixerTrackBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'My beat'**
+  String get loopMixerTrackBeat;
+
+  /// No description provided for @loopMixerJam.
+  ///
+  /// In en, this message translates to:
+  /// **'Jam along — best with headphones'**
+  String get loopMixerJam;
+
+  /// No description provided for @loopMixerJamHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Play or sing along — green fits the chord! Headphones help the mic hear only you.'**
+  String get loopMixerJamHint;
+
   /// No description provided for @loopMixerTempoChill.
   ///
   /// In en, this message translates to:
