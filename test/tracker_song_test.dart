@@ -211,6 +211,15 @@ void main() {
       expect(song.isAudible(1), isTrue);
     });
 
+    test('channelRms is >0 where a note sounds and 0 when muted', () {
+      final song = TrackerSong();
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      song.engine.renderLoop(); // populate the stem cache
+      expect(song.engine.channelRms(0, 100, 1470), greaterThan(0));
+      song.toggleMute(0);
+      expect(song.engine.channelRms(0, 100, 1470), 0);
+    });
+
     test('setChannelGain scales a channel down in the mix', () {
       final song = TrackerSong();
       song.engine.setCell(0, 0, const TrackerCell(midi: 60));

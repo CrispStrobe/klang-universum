@@ -207,6 +207,9 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// Which order-list position is sounding in song mode (else -1).
   final _playingOrder = ValueNotifier<int>(-1);
 
+  /// Per-channel VU levels (0..1), updated each frame while playing.
+  final _levels = ValueNotifier<List<double>>(const []);
+
   /// True while playing the whole arrangement (the order list) rather than
   /// looping the current pattern.
   bool _songMode = false;
@@ -271,9 +274,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       if (!_clock.isRunning) {
         if (_row.value != -1) _row.value = -1;
         if (_playingOrder.value != -1) _playingOrder.value = -1;
+        if (_levels.value.isNotEmpty) _levels.value = const [];
         return;
       }
       final t = _song.timing;
+      int posInPattern;
       if (_songMode && _song.songTotalMs > 0) {
         final elapsed = _elapsedMs;
         // Loop off: stop at the end instead of wrapping.
@@ -283,16 +288,19 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         }
         final pos = elapsed % _song.songTotalMs;
         _playingOrder.value = pos ~/ t.totalMs;
-        final step = (pos % t.totalMs) ~/ t.stepMs;
+        posInPattern = pos % t.totalMs;
+        final step = posInPattern ~/ t.stepMs;
         if (step != _row.value) _row.value = step;
       } else {
         if (_playingOrder.value != -1) _playingOrder.value = -1;
-        final step = (_elapsedMs % t.totalMs) ~/ t.stepMs;
+        posInPattern = _elapsedMs % t.totalMs;
+        final step = posInPattern ~/ t.stepMs;
         if (step != _row.value) {
           _row.value = step;
           _followPlayhead(step);
         }
       }
+      _updateLevels(posInPattern);
     })
       ..start();
     // Optional onboarding — shows once on first entry (and via the "?" button).
@@ -308,6 +316,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _ticker.dispose();
     _row.dispose();
     _playingOrder.dispose();
+    _levels.dispose();
     _vScroll.dispose();
     _pianoScroll.dispose();
     _focus.dispose();
@@ -820,6 +829,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       milliseconds: total > 0 ? _elapsedMs % total : 0,
     );
     _loop.playLoop(wav, position: position);
+  }
+
+  /// Reads each channel's RMS at the current in-pattern position for the VU
+  /// meters (a ~1/30 s window). Cheap — the stems are already cached.
+  void _updateLevels(int posInPatternMs) {
+    final startSample = (posInPatternMs * 44100) ~/ 1000;
+    const window = 1470; // ~33 ms at 44.1 kHz
+    final out = List<double>.filled(_song.channelCount, 0);
+    for (var c = 0; c < _song.channelCount; c++) {
+      // sqrt-scaled so quiet notes still show; clamp to the meter range.
+      final rms = _song.engine.channelRms(c, startSample, window);
+      out[c] = (rms * 3.0).clamp(0.0, 1.0);
+    }
+    _levels.value = out;
   }
 
   void _followPlayhead(int step) {
@@ -1655,7 +1678,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
-  static const _headerHeight = 48.0;
+  static const _headerHeight = 56.0;
 
   Widget _headerRow(ColorScheme scheme) {
     return Container(
@@ -1710,6 +1733,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 ),
             ],
           ),
+          // VU meter — lights up with the channel's live level during playback.
+          _ChannelMeter(levels: _levels, channel: c, muted: muted),
         ],
       ),
     );
@@ -2083,3 +2108,44 @@ Tutorial advancedTrackerPrimer(AppLocalizations l10n) => Tutorial(
         TutorialStep(text: l10n.trackerTutTracks),
       ],
     );
+
+/// A thin per-channel VU meter that repaints only on level changes (listens to
+/// the shared [levels] notifier for its [channel]).
+class _ChannelMeter extends StatelessWidget {
+  const _ChannelMeter({
+    required this.levels,
+    required this.channel,
+    required this.muted,
+  });
+
+  final ValueNotifier<List<double>> levels;
+  final int channel;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ValueListenableBuilder<List<double>>(
+      valueListenable: levels,
+      builder: (context, values, _) {
+        final level =
+            (channel < values.length && !muted) ? values[channel] : 0.0;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: level,
+              minHeight: 4,
+              backgroundColor: scheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation(
+                Color.lerp(scheme.primary, scheme.error, level) ??
+                    scheme.primary,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

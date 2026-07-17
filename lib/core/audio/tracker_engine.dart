@@ -720,6 +720,26 @@ class TrackerEngine {
 
   bool get isEmpty => channels.every((c) => !c.hasAnyNote);
 
+  /// The RMS level of [channel]'s stem over [windowSamples] starting at
+  /// [startSample] — for a VU meter. 0 for a muted/silent channel. Uses the
+  /// cached stem (already rendered during playback), so it's cheap per frame.
+  double channelRms(int channel, int startSample, int windowSamples) {
+    final ch = channels[channel];
+    if (ch.muted || !ch.hasAnyNote) return 0;
+    final s = _stem(channel);
+    if (s.isEmpty) return 0;
+    var sum = 0.0;
+    var n = 0;
+    for (var i = startSample;
+        i < startSample + windowSamples && i < s.length;
+        i++) {
+      if (i < 0) continue;
+      sum += s[i] * s[i];
+      n++;
+    }
+    return n == 0 ? 0 : sqrt(sum / n) * ch.gain;
+  }
+
   Float64List _stem(int channel) =>
       _stemCache[channel] ??= _renderWithDynamics(channel);
 
