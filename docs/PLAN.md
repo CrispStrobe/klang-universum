@@ -14,11 +14,14 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (next)** · 🚧 **ACTIVE — Workshop notation batch: tempo → grace →
-  playback ALL SHIPPED; now the next handover items** (`docs/
-  WORKSHOP_NEXT_HANDOVER.md`). Worktree `../mus-next`, branch
-  `feature/workshop-next`. **HOT set:** `score_document.dart` + `screens/
-  composition_workshop_screen.dart` + tests.
+- **opus (next)** · ✅ **idle / SHIPPED — Workshop notation batch: tempo → grace →
+  playback** (`docs/WORKSHOP_NEXT_HANDOVER.md`, all three merged to main). Worktree
+  `../mus-next`, branch `feature/workshop-next`. Suite green, analyze clean.
+  **Next handover item** is mid-*bar* clef changes (⚠ blocked: the crisp_notation
+  MusicXML *writer* doesn't emit `inlineClefs` — fix the library first or it's
+  lossy), then voice 2, then the Studio shell (Causes 2+3). Playback follow-up:
+  multi-part mixing + per-part mute (needs a `mixStems`-style overlapping
+  renderer, not wiring). Details in the handover's "Shipped since" section.
   ✅ **Tempo marks** — document-level `Tempo? tempo` (→ `Score.tempo`) + id-anchored
   `_tempoChanges` side-map (→ `Measure.tempoChange`), the clef/key stamp pattern;
   Tempo row in the change-here dialog + "Initial tempo…" in the ⋮ menu;

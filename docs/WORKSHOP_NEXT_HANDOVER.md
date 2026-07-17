@@ -93,6 +93,29 @@ every feature at a fraction of the risk. Don't resurrect the flip.
 
 ---
 
+## Shipped since this handover was written (2026-07-17)
+
+- ✅ **Tempo marks** — document-level `Tempo? tempo` (→ `Score.tempo`) + id-anchored
+  `_tempoChanges` side-map (→ `Measure.tempoChange`), the clef/key stamp pattern.
+  Tempo row in the change-here dialog + "Initial tempo…" in the ⋮ menu.
+  `test/tempo_test.dart`. **Caveat:** the crisp_notation MusicXML *reader* treats
+  the first `<metronome>` it sees as `Score.tempo`, so a doc with a mid-score
+  change but no initial tempo reads that change back AS the initial tempo — set an
+  initial tempo (real scores do) for an exact round-trip.
+- ✅ **Grace notes** — per-note `EditorElement.graceNotes: List<Pitch>` + `graceStyle`
+  FIELD (pattern 1). **NB the handover below was wrong:** `NoteElement.graceNotes`
+  is a `List<Pitch>` (drawn as small notes), NOT a `List<NoteElement>`. Zero bar
+  duration → packing untouched. "Grace notes…" palette editor. `test/grace_note_test.dart`.
+- ✅ **Playback (bucket F)** — real transport + moving green cursor over
+  `playbackTimeline`/`TempoMap`. `AudioService.playTimedChords` renders one gap-
+  accurate WAV (empty pitch list = rest; chords together; tempo-scaled). A `Timer`
+  drives the cursor over a seconds schedule shared with the audio (no player
+  position stream needed). **Scoped to the active part** — multi-part mixing +
+  per-part mute is unbuilt (needs a `mixStems`-style overlapping renderer; the
+  synth's `renderWav` only sequences segments, so this is a real audio task, not
+  wiring). Multi-part canvas cursor also unbuilt (its `highlightedIds` are global
+  ids, not the active part's local element ids).
+
 ## Remaining work, scoped (pick one; each is its own commit + board claim)
 
 Ordered roughly easiest → hardest. Full context in `WORKSHOP_PARITY.md`
@@ -100,14 +123,14 @@ Ordered roughly easiest → hardest. Full context in `WORKSHOP_PARITY.md`
 
 ### Small notation follow-ups (the id-anchor / field pattern, low risk)
 
-- **Tempo marks** — `Score.tempo` + `Measure.tempoChange`. A bar-anchored
-  side-map exactly like the clef/key stamps (`_withMidScoreChanges`). Bonus: it
-  feeds crisp_notation's `TempoMap`, so it's a prerequisite for real playback.
-  ~½ day. Verify the engine draws `tempoChange` first (grep `layout_engine.dart`).
-- **Mid-*bar* clef changes** — `Measure.inlineClefs` (onset-addressed within a
-  bar), vs today's bar-start `clefChange`. Needs the anchor to also carry the
-  onset (the note's tick within its bar), which `reflow` output can compute. A
-  refinement of the existing clef feature.
+- **Mid-*bar* clef changes** — `Measure.inlineClefs` (`InlineClefChange(onset,
+  clef)`, onset-addressed within a bar), vs today's bar-start `clefChange`. Needs
+  the anchor to also carry the onset (sum of durations before it in its reflowed
+  bar). ⚠ **BLOCKED for a lossless ship:** the crisp_notation MusicXML **writer
+  does not emit `inlineClefs`** (the reader does parse them), so save→reopen would
+  silently drop mid-bar clefs — breaking the lossless invariant. Add
+  `inlineClefs` to `musicxml_writer.dart` in the crisp_notation repo FIRST (public
+  `CrispStrobe/crisp_notation`, since CI resolves it), then do the editor side.
 - **Voice 2** — `Measure.voice2` (crisp_notation engraves voices 1 **and** 2 only
   — stop there). The flat `_elements` gains a sibling `_voice2` list; `reflow`
   packs each independently onto the **shared** bar grid (they must agree on bar
