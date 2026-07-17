@@ -1155,12 +1155,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     // and the cursor schedule, so they stay locked together.
     final stretch = 1 / _playSpeed;
 
-    // Element id → its sounding midis (a chord contributes several).
+    // Element id → its sounding midis (a chord contributes several). Every voice
+    // is scanned, so voice-2 notes sound too — the playback timeline emits them
+    // and the cursor already highlights them.
     final midisOf = <String, List<int>>{};
     for (final m in score.measures) {
-      for (final e in m.elements) {
-        if (e is NoteElement && e.id != null) {
-          midisOf[e.id!] = [for (final p in e.pitches) p.midiNumber];
+      for (final voice in [m.elements, m.voice2, m.voice3, m.voice4]) {
+        for (final e in voice) {
+          if (e is NoteElement && e.id != null) {
+            midisOf[e.id!] = [for (final p in e.pitches) p.midiNumber];
+          }
         }
       }
     }

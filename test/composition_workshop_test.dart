@@ -324,6 +324,25 @@ void main() {
     expect(find.byIcon(Icons.stop), findsNothing);
   });
 
+  testWidgets('playback drives both voices without crashing', (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(_pianoKey()); // a voice-1 note
+    await tester.pump();
+    await tester.tap(find.text(l10n.workshopVoice2));
+    await tester.pump();
+    await tester.tap(_pianoKey()); // a voice-2 note
+    await tester.pump();
+
+    // The transport renders both voices into the mix (voice 2 used to be silent).
+    await tester.tap(find.byIcon(Icons.play_arrow));
+    await tester.pump();
+    expect(find.byIcon(Icons.stop), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.stop));
+    await tester.pump();
+    expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+  });
+
   testWidgets('the playback speed control switches the shown speed',
       (tester) async {
     await pump(tester);
