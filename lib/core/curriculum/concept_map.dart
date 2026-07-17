@@ -450,8 +450,8 @@ const List<Concept> kConcepts = [
     GradeBand.g78,
     ConceptArea.form,
     'Form: ABA, rondo, theme & variations',
-    ['form_read'],
-  ), // GAP
+    ['form_read', 'analysis_view'],
+  ),
   Concept(
     'modulation',
     GradeBand.g78,

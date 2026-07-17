@@ -7,6 +7,7 @@ import 'package:comet_beat/features/games/composition/form_analysis_view.dart';
 import 'package:comet_beat/features/games/composition/form_timeline.dart';
 import 'package:comet_beat/features/textbook/textbook_i18n.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:crisp_notation/crisp_notation.dart' show NoteElement;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +49,43 @@ void main() {
       expect(ex.sectionPhrase(0), ex.sectionPhrase(2));
       expect(ex.sectionPhrase(0), isNot(ex.sectionPhrase(1)));
     });
+
+    test('the engraved score is one bar per section with unique ids', () {
+      final ex = kFormExamples['musical_form']!.last; // A-B-A-C-A → 5 bars
+      final score = ex.scoreOf();
+      expect(score.measures.length, ex.pattern.length);
+      final ids = <String?>{};
+      for (final m in score.measures) {
+        for (final e in m.elements) {
+          expect(ids.add((e as NoteElement).id), isTrue, reason: 'dup id');
+        }
+      }
+    });
+  });
+
+  group('harmony example data', () {
+    test('the harmony concepts carry function-coloured progressions', () {
+      expect(kHarmonyExamples['harmonic_function'], isNotNull);
+      expect(kHarmonyExamples['cadences'], isNotNull);
+      // I–IV–V–I walks home → away → tension → home.
+      final auth = kHarmonyExamples['harmonic_function']!.first;
+      expect(auth.chords.map((c) => c.function).toList(), [
+        HarmonyFunction.tonic,
+        HarmonyFunction.subdominant,
+        HarmonyFunction.dominant,
+        HarmonyFunction.tonic,
+      ]);
+      // A perfect cadence ends on the tonic; a half cadence on the dominant.
+      final cads = kHarmonyExamples['cadences']!;
+      expect(cads.first.chords.last.function, HarmonyFunction.tonic);
+      expect(cads.last.chords.last.function, HarmonyFunction.dominant);
+      // Every chord is a real triad.
+      for (final ex in kHarmonyExamples.values.expand((l) => l)) {
+        for (final c in ex.chords) {
+          expect(c.midis.length, 3);
+        }
+      }
+    });
   });
 
   testWidgets('the analysis screen renders each example and is tappable',
@@ -72,6 +110,42 @@ void main() {
     await tester.tap(find.byType(FormTimeline).first);
     await tester.pump();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the harmony screen shows function-coloured chords + legend',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(600, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      _app(HarmonyAnalysisScreen(examples: kHarmonyExamples['cadences']!)),
+    );
+    await tester.pumpAndSettle();
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.harmonyExamplePerfect), findsOneWidget);
+    expect(find.text(l10n.harmonyExampleHalf), findsOneWidget);
+    // The function legend names all three jobs across the two examples.
+    expect(find.text(l10n.funcTonic), findsWidgets);
+    expect(find.text(l10n.funcDominant), findsWidgets);
+    // Chord blocks are tappable without throwing.
+    await tester.tap(find.text('V').first);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the analysis hub shows both the form and harmony sections',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(600, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_app(const AnalysisHubScreen()));
+    await tester.pumpAndSettle();
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.analysisHubForm.toUpperCase()), findsOneWidget);
+    expect(find.text(l10n.analysisHubHarmony.toUpperCase()), findsOneWidget);
+    // Both view types are present.
+    expect(find.byType(FormAnalysisView), findsWidgets);
+    expect(find.byType(HarmonyAnalysisView), findsWidgets);
   });
 
   group('per-concept prose', () {

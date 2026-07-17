@@ -4026,6 +4026,70 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe einen Block an, um diesen Teil zu hören.';
 
   @override
+  String get harmonyAnalysisTitle => 'Die Harmonie sehen';
+
+  @override
+  String get harmonyAnalysisHint => 'Tippe einen Akkord an, um ihn zu hören.';
+
+  @override
+  String get funcTonic => 'Zuhause (Tonika)';
+
+  @override
+  String get funcSubdominant => 'Weg (Subdominante)';
+
+  @override
+  String get funcDominant => 'Spannung (Dominante)';
+
+  @override
+  String get harmonyExampleAuthentic =>
+      'Zuhause → weg → Spannung → zuhause (I–IV–V–I)';
+
+  @override
+  String get harmonyExampleAuthenticCaption =>
+      'Die Geschichte hinter fast jeder Musik: die Tonika (I) ist zuhause, die Subdominante (IV) tritt weg, die Dominante (V) baut Spannung auf, und I bringt dich wieder nach Hause.';
+
+  @override
+  String get harmonyExampleTwoFive => 'ii – V – I';
+
+  @override
+  String get harmonyExampleTwoFiveCaption =>
+      'Der häufigste Weg nach Hause: eine Subdominante (ii) bereitet die Dominante (V) vor, die stark in die Tonika (I) zieht.';
+
+  @override
+  String get harmonyExamplePerfect => 'Authentische Kadenz (… V → I)';
+
+  @override
+  String get harmonyExamplePerfectCaption =>
+      'Auf der Tonika nach der Dominante zu enden klingt fertig und beruhigt — ein Punkt. Hör, wie der letzte Akkord zur Ruhe kommt.';
+
+  @override
+  String get harmonyExampleHalf => 'Halbkadenz (… → V)';
+
+  @override
+  String get harmonyExampleHalfCaption =>
+      'Stattdessen auf der Dominante zu halten klingt unfertig, wie eine offene Frage — die Musik will noch nach Hause.';
+
+  @override
+  String get gameAnalysisView => 'Die Musik sehen';
+
+  @override
+  String get gameAnalysisViewSubtitle =>
+      'Form und Harmonie eines Stücks betrachten';
+
+  @override
+  String get analysisHubTitle => 'Die Musik sehen';
+
+  @override
+  String get analysisHubIntro =>
+      'Musik hat Formen, die man sehen kann. Betrachte die Form eines Stücks als farbige Teile und eine Akkordfolge nach ihrer Aufgabe eingefärbt — tippe dann, um jeden Teil zu hören.';
+
+  @override
+  String get analysisHubForm => 'Form';
+
+  @override
+  String get analysisHubHarmony => 'Harmonie & Funktion';
+
+  @override
   String get formExampleTernary => 'Dreiteilige Form (A–B–A)';
 
   @override

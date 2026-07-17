@@ -4004,6 +4004,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get formAnalysisHint => 'Tap a block to hear that section.';
 
   @override
+  String get harmonyAnalysisTitle => 'See the harmony';
+
+  @override
+  String get harmonyAnalysisHint => 'Tap a chord to hear it.';
+
+  @override
+  String get funcTonic => 'Home (tonic)';
+
+  @override
+  String get funcSubdominant => 'Away (subdominant)';
+
+  @override
+  String get funcDominant => 'Tension (dominant)';
+
+  @override
+  String get harmonyExampleAuthentic =>
+      'Home → away → tension → home (I–IV–V–I)';
+
+  @override
+  String get harmonyExampleAuthenticCaption =>
+      'The story behind most music: the tonic (I) is home, the subdominant (IV) steps away, the dominant (V) builds tension, and I brings you home again.';
+
+  @override
+  String get harmonyExampleTwoFive => 'ii – V – I';
+
+  @override
+  String get harmonyExampleTwoFiveCaption =>
+      'The most common way to arrive home: a subdominant (ii) sets up the dominant (V), which pulls strongly into the tonic (I).';
+
+  @override
+  String get harmonyExamplePerfect => 'Perfect cadence (… V → I)';
+
+  @override
+  String get harmonyExamplePerfectCaption =>
+      'Ending on the tonic after the dominant sounds finished and settled — a full stop. Listen how the last chord comes to rest.';
+
+  @override
+  String get harmonyExampleHalf => 'Half cadence (… → V)';
+
+  @override
+  String get harmonyExampleHalfCaption =>
+      'Stopping on the dominant instead sounds unfinished, like a question left hanging — the music still wants to go home.';
+
+  @override
+  String get gameAnalysisView => 'See the Music';
+
+  @override
+  String get gameAnalysisViewSubtitle => 'Watch a piece\'s form and harmony';
+
+  @override
+  String get analysisHubTitle => 'See the Music';
+
+  @override
+  String get analysisHubIntro =>
+      'Music has shapes you can see. Watch a piece\'s form as coloured sections, and a chord progression coloured by its job — then tap to hear each part.';
+
+  @override
+  String get analysisHubForm => 'Form';
+
+  @override
+  String get analysisHubHarmony => 'Harmony & function';
+
+  @override
   String get formExampleTernary => 'Ternary form (A–B–A)';
 
   @override

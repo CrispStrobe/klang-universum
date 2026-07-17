@@ -25,6 +25,7 @@ import 'package:comet_beat/features/games/chords/sing_interval_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_builder_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_seventh_screen.dart';
 import 'package:comet_beat/features/games/composition/ending_detective_screen.dart';
+import 'package:comet_beat/features/games/composition/form_analysis_view.dart';
 import 'package:comet_beat/features/games/composition/form_read_screen.dart';
 import 'package:comet_beat/features/games/composition/free_sing_screen.dart';
 import 'package:comet_beat/features/games/composition/grid_composer_screen.dart';
@@ -1088,6 +1089,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMelodyDoodle,
       subtitle: (l) => l.gameMelodyDoodleSubtitle,
       builder: (_) => const MelodyDoodleScreen(),
+    ),
+    // AnaVis-style analysis: see + hear a piece's FORM (colour-coded sections
+    // over an engraved staff) and a progression's HARMONIC FUNCTION (chords
+    // coloured tonic/subdominant/dominant). A sandbox, no stars.
+    GameInfo(
+      id: 'analysis_view',
+      icon: Icons.insights,
+      title: (l) => l.gameAnalysisView,
+      subtitle: (l) => l.gameAnalysisViewSubtitle,
+      builder: (_) => const AnalysisHubScreen(),
     ),
     // Loop-mixer toy — cards layer synced 2-bar loops (drums/bass/chords/
     // melody/sparkle, all C-pentatonic so any combo grooves). A sandbox,

@@ -7298,6 +7298,120 @@ abstract class AppLocalizations {
   /// **'Tap a block to hear that section.'**
   String get formAnalysisHint;
 
+  /// No description provided for @harmonyAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See the harmony'**
+  String get harmonyAnalysisTitle;
+
+  /// No description provided for @harmonyAnalysisHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a chord to hear it.'**
+  String get harmonyAnalysisHint;
+
+  /// No description provided for @funcTonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Home (tonic)'**
+  String get funcTonic;
+
+  /// No description provided for @funcSubdominant.
+  ///
+  /// In en, this message translates to:
+  /// **'Away (subdominant)'**
+  String get funcSubdominant;
+
+  /// No description provided for @funcDominant.
+  ///
+  /// In en, this message translates to:
+  /// **'Tension (dominant)'**
+  String get funcDominant;
+
+  /// No description provided for @harmonyExampleAuthentic.
+  ///
+  /// In en, this message translates to:
+  /// **'Home → away → tension → home (I–IV–V–I)'**
+  String get harmonyExampleAuthentic;
+
+  /// No description provided for @harmonyExampleAuthenticCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'The story behind most music: the tonic (I) is home, the subdominant (IV) steps away, the dominant (V) builds tension, and I brings you home again.'**
+  String get harmonyExampleAuthenticCaption;
+
+  /// No description provided for @harmonyExampleTwoFive.
+  ///
+  /// In en, this message translates to:
+  /// **'ii – V – I'**
+  String get harmonyExampleTwoFive;
+
+  /// No description provided for @harmonyExampleTwoFiveCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'The most common way to arrive home: a subdominant (ii) sets up the dominant (V), which pulls strongly into the tonic (I).'**
+  String get harmonyExampleTwoFiveCaption;
+
+  /// No description provided for @harmonyExamplePerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect cadence (… V → I)'**
+  String get harmonyExamplePerfect;
+
+  /// No description provided for @harmonyExamplePerfectCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Ending on the tonic after the dominant sounds finished and settled — a full stop. Listen how the last chord comes to rest.'**
+  String get harmonyExamplePerfectCaption;
+
+  /// No description provided for @harmonyExampleHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'Half cadence (… → V)'**
+  String get harmonyExampleHalf;
+
+  /// No description provided for @harmonyExampleHalfCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping on the dominant instead sounds unfinished, like a question left hanging — the music still wants to go home.'**
+  String get harmonyExampleHalfCaption;
+
+  /// No description provided for @gameAnalysisView.
+  ///
+  /// In en, this message translates to:
+  /// **'See the Music'**
+  String get gameAnalysisView;
+
+  /// No description provided for @gameAnalysisViewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch a piece\'s form and harmony'**
+  String get gameAnalysisViewSubtitle;
+
+  /// No description provided for @analysisHubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See the Music'**
+  String get analysisHubTitle;
+
+  /// No description provided for @analysisHubIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Music has shapes you can see. Watch a piece\'s form as coloured sections, and a chord progression coloured by its job — then tap to hear each part.'**
+  String get analysisHubIntro;
+
+  /// No description provided for @analysisHubForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Form'**
+  String get analysisHubForm;
+
+  /// No description provided for @analysisHubHarmony.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmony & function'**
+  String get analysisHubHarmony;
+
   /// No description provided for @formExampleTernary.
   ///
   /// In en, this message translates to:

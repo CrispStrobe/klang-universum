@@ -157,8 +157,9 @@ class _ConceptTile extends StatelessWidget {
     final lesson = helpPrimerFor(games.first);
     // The textbook's own teaching paragraph (null where not yet authored).
     final prose = conceptProse(l10n, concept.id);
-    // Worked AnaVis-style form examples, if this concept has any.
+    // Worked AnaVis-style form / harmony examples, if this concept has any.
     final formExamples = kFormExamples[concept.id];
+    final harmonyExamples = kHarmonyExamples[concept.id];
 
     return ExpansionTile(
       leading: Icon(
@@ -190,6 +191,17 @@ class _ConceptTile extends StatelessWidget {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => FormAnalysisScreen(examples: formExamples),
+              ),
+            ),
+          ),
+        if (harmonyExamples != null && harmonyExamples.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.account_tree),
+            title: Text(l10n.harmonyAnalysisTitle),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    HarmonyAnalysisScreen(examples: harmonyExamples),
               ),
             ),
           ),
