@@ -75,7 +75,11 @@ List<(int?, int)> _flat(Score s, int spb) {
 /// for codecs that re-quantize durations or split a held note into tied pieces
 /// but must preserve the tune.
 List<int> _pitches(Score s) {
-  return [for (final r in _flat(s, 4)) if (r.$1 != null) r.$1!];
+  final out = <int>[];
+  for (final r in _flat(s, 4)) {
+    if (r.$1 != null) out.add(r.$1!);
+  }
+  return out;
 }
 
 /// Packs per-channel DocCell columns into a one-pattern ModuleDoc.
@@ -246,6 +250,38 @@ void main() {
       );
       // The rest is absorbed: C rings 8 steps, then G — no (null, 4) in between.
       expect(_flat(back, 4).any((r) => r.$1 == null), isFalse);
+    });
+  });
+
+  group('module ↔ text notations (ABC / kern / MEI / MuseScore)', () {
+    final doc = _pack([
+      [_n(60), _e, _e, _e, _n(64), _e, _e, _e, _n(67), _e, _e, _e],
+    ]);
+
+    for (final fmt in [
+      TextNotation.abc,
+      TextNotation.kern,
+      TextNotation.mei,
+      TextNotation.musescore,
+    ]) {
+      test('${fmt.name}: module → text → module preserves the melody', () {
+        final text = moduleToTextNotation(doc, fmt);
+        expect(text, isNotEmpty);
+        final back = textNotationToModuleDoc(text, fmt);
+        expect(back, isNotNull);
+        expect(
+          _pitches(moduleChannelToScore(back!, 0)),
+          _pitches(moduleChannelToScore(doc, 0)),
+          reason: '${fmt.name} round-trip melody',
+        );
+      });
+    }
+
+    test('LilyPond is write-only (text out, no reader)', () {
+      expect(moduleToTextNotation(doc, TextNotation.lilypond), isNotEmpty);
+      expect(textNotationToScore('x', TextNotation.lilypond), isNull);
+      expect(textNotationReadable(TextNotation.lilypond), isFalse);
+      expect(textNotationReadable(TextNotation.abc), isTrue);
     });
   });
 

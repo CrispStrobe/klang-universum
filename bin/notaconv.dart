@@ -39,6 +39,16 @@ const _extToFormat = <String, ModuleFormat>{
   'it': ModuleFormat.it,
 };
 
+const _extToText = <String, TextNotation>{
+  'abc': TextNotation.abc,
+  'krn': TextNotation.kern,
+  'kern': TextNotation.kern,
+  'mei': TextNotation.mei,
+  'mscx': TextNotation.musescore,
+  'ly': TextNotation.lilypond,
+  'lily': TextNotation.lilypond,
+};
+
 String _ext(String path) => path.split('.').last.toLowerCase();
 bool _isMidi(String e) => e == 'mid' || e == 'midi';
 bool _isXml(String e) => e == 'xml' || e == 'musicxml';
@@ -110,9 +120,18 @@ void main(List<String> args) {
         outExt: outExt,
         stepsPerBeat: stepsPerBeat,
       );
+    } else if (_extToText[_ext(inPath)] != null) {
+      final inFmt = _extToText[_ext(inPath)]!;
+      final score = textNotationToScore(String.fromCharCodes(bytes), inFmt);
+      if (score == null) {
+        stderr.writeln('notaconv: ${inFmt.name} is write-only (no reader)');
+        exitCode = 2;
+      } else {
+        _fromScore(score, outPath, outExt, stepsPerBeat: stepsPerBeat);
+      }
     } else {
-      stderr
-          .writeln('notaconv: unrecognized input (not a module, .mid or .xml)');
+      stderr.writeln('notaconv: unrecognized input '
+          '(not a module, .mid, .xml, .abc/.krn/.mei/.mscx)');
       exitCode = 1;
     }
   } catch (e) {
@@ -159,9 +178,16 @@ void _fromModule(
     final xml = moduleToMusicXml(doc, stepsPerBeat: stepsPerBeat);
     File(outPath).writeAsStringSync(xml);
     _ok(doc, outPath, '${xml.length} bytes MusicXML');
+  } else if (_extToText[outExt] != null) {
+    final fmt = _extToText[outExt]!;
+    final ch = channel ?? busiestChannel(doc);
+    final txt =
+        moduleToTextNotation(doc, fmt, channel: ch, stepsPerBeat: stepsPerBeat);
+    File(outPath).writeAsStringSync(txt);
+    _ok(doc, outPath, 'channel $ch, ${txt.length} bytes ${fmt.name}');
   } else {
     stderr.writeln('notaconv: module → .$outExt not supported '
-        '(use .mid or .xml; for module→module use modconv)');
+        '(use .mid/.xml/.abc/.krn/.mei/.mscx/.ly; module→module = modconv)');
     exitCode = 2;
   }
 }
@@ -178,12 +204,19 @@ void _fromScore(
     final doc =
         scoreToModuleDoc(score, stepsPerBeat: stepsPerBeat, format: fmt);
     File(outPath).writeAsBytesSync(convertDocTo(doc, fmt));
-    stdout.writeln('notaconv: MIDI → .$outExt ($outPath)');
+    stdout.writeln('notaconv: notation → .$outExt ($outPath)');
   } else if (_isXml(outExt)) {
     File(outPath).writeAsStringSync(scoreToMusicXml(score));
-    stdout.writeln('notaconv: MIDI → MusicXML ($outPath)');
+    stdout.writeln('notaconv: notation → MusicXML ($outPath)');
+  } else if (_isMidi(outExt)) {
+    File(outPath).writeAsBytesSync(scoreToMidi(score));
+    stdout.writeln('notaconv: notation → MIDI ($outPath)');
+  } else if (_extToText[outExt] != null) {
+    File(outPath)
+        .writeAsStringSync(scoreToTextNotation(score, _extToText[outExt]!));
+    stdout.writeln('notaconv: notation → .$outExt ($outPath)');
   } else {
-    stderr.writeln('notaconv: MIDI → .$outExt not supported');
+    stderr.writeln('notaconv: notation → .$outExt not supported');
     exitCode = 2;
   }
 }

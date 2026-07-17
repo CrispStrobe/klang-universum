@@ -528,3 +528,69 @@ ModuleDoc musicXmlToModuleDoc(
       title: title,
       format: format,
     );
+
+// ─── Module ↔ the single-Score text notations (ABC / MEI / kern / MuseScore /
+//     LilyPond) — one channel each, through crisp_notation_core's codecs ───────
+
+/// The text notation formats crisp_notation_core carries. All are readable
+/// except [lilypond] (write-only in the library).
+enum TextNotation { abc, kern, mei, musescore, lilypond }
+
+/// True if this format can be parsed back to a Score (everything but LilyPond).
+bool textNotationReadable(TextNotation fmt) => fmt != TextNotation.lilypond;
+
+/// A single [score] serialized to [fmt] text.
+String scoreToTextNotation(Score score, TextNotation fmt) => switch (fmt) {
+      TextNotation.abc => scoreToAbc(score),
+      TextNotation.kern => scoreToKern(score),
+      TextNotation.mei => scoreToMei(score),
+      TextNotation.musescore => scoreToMscx(score),
+      TextNotation.lilypond => scoreToLilyPond(score),
+    };
+
+/// [text] in [fmt] parsed to a Score; null for a write-only format
+/// ([TextNotation.lilypond]).
+Score? textNotationToScore(String text, TextNotation fmt) => switch (fmt) {
+      TextNotation.abc => scoreFromAbc(text),
+      TextNotation.kern => scoreFromKern(text),
+      TextNotation.mei => scoreFromMei(text),
+      TextNotation.musescore => scoreFromMscx(text),
+      TextNotation.lilypond => null, // write-only in the library
+    };
+
+/// One channel of [doc] serialized to [fmt] text (the busiest channel unless
+/// [channel] is given). These library writers take a single Score, so this is a
+/// per-channel melody dump — use [moduleToMusicXml] for the full multi-part score.
+String moduleToTextNotation(
+  ModuleDoc doc,
+  TextNotation fmt, {
+  int? channel,
+  int stepsPerBeat = 4,
+}) =>
+    scoreToTextNotation(
+      moduleChannelToScore(
+        doc,
+        channel ?? busiestChannel(doc),
+        stepsPerBeat: stepsPerBeat,
+      ),
+      fmt,
+    );
+
+/// [text] in [fmt] → a playable single-channel [ModuleDoc]. Returns null for a
+/// write-only format ([TextNotation.lilypond]).
+ModuleDoc? textNotationToModuleDoc(
+  String text,
+  TextNotation fmt, {
+  int stepsPerBeat = 4,
+  String title = 'SCORE',
+  ModuleFormat format = ModuleFormat.it,
+}) {
+  final score = textNotationToScore(text, fmt);
+  if (score == null) return null;
+  return scoreToModuleDoc(
+    score,
+    stepsPerBeat: stepsPerBeat,
+    title: title,
+    format: format,
+  );
+}
