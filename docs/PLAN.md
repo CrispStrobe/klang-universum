@@ -19,6 +19,19 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (spacing)** · 🚧 **ACTIVE — "Close or Open?" SATB spacing minigame**
+  (scoped item #1's remaining suggestion — a *fresh* voice-leading skill, not
+  another note-namer). Read an SATB chord on the grand staff, tap whether the
+  upper voices are in **close** vs **open** position (soprano-tenor span ≤ vs >
+  an octave). Reuses `note_reading/satb_voicing.dart` (`SatbPart`/`satbSystem`)
+  for rendering; own close/open voicing generator. **HOT files:**
+  `game_registry.dart` (new `spacing_read` GameInfo, note_reading module),
+  `core/tuning.dart` (`'spacing_read': [100,600,900]`), **both ARBs**
+  (`gameSpacingRead*`/`spacingReadPrompt`/`spacingClose`/`spacingOpen` — new game
+  keys, distinct from the workshop-inspector `showNoteNames*` region). New screen
+  `note_reading/spacing_read_screen.dart` + test. Worktree `../mus-spacing`,
+  branch `feature/spacing-read`. Rebasing before push.
+
 - **opus (smufl)** · ✅ **idle / SHIPPED — Leland + Leipzig notation faces**. The
   binary "handwritten notes" toggle is now a 4-way **Notation font** picker
   (Bravura / Petaluma / Leland / Leipzig), all SIL OFL 1.1. New `ScoreFont` enum +
