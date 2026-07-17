@@ -264,9 +264,28 @@ void main() {
     expect(find.text(l10n.workshopClef), findsOneWidget);
     expect(find.text(l10n.workshopKey), findsOneWidget);
     expect(find.text(l10n.workshopTimeSignature), findsOneWidget);
+    expect(find.text(l10n.workshopTempo), findsOneWidget);
     expect(find.text(l10n.workshopVolta), findsOneWidget);
     expect(find.text(l10n.workshopNavigation), findsOneWidget);
-    expect(find.text(l10n.workshopNoChange), findsNWidgets(5));
+    expect(find.text(l10n.workshopNoChange), findsNWidgets(6));
+  });
+
+  testWidgets('the ⋮ menu opens the initial-tempo dialog', (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKey()); // a non-empty document
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.tap(find.text(l10n.workshopInitialTempo));
+    await tester.pumpAndSettle();
+
+    // The dialog offers the tempo presets, defaulting to "None" (unset).
+    expect(find.text(l10n.workshopInitialTempo), findsOneWidget); // title
+    expect(find.text(l10n.workshopTempo), findsOneWidget); // row label
+    expect(find.text(l10n.workshopTempoNone), findsOneWidget); // default value
   });
 
   testWidgets('computer keyboard: letters place notes, Del deletes',

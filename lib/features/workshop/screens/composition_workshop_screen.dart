@@ -1310,9 +1310,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     var clef = _doc.clefChanges[id];
     var key = _doc.keyChanges[id];
     var time = _doc.timeChanges[id];
+    var tempo = _doc.tempoChangeAt(id);
     var volta = _doc.voltaAt(id);
     var nav = _doc.navigationAt(id);
     const clefOptions = [Clef.treble, Clef.bass, Clef.alto, Clef.tenor];
+    final tempoItems = _tempoItems(tempo);
 
     final apply = await showDialog<bool>(
       context: context,
@@ -1346,6 +1348,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 items: _timeChoices,
                 noChange: l10n.workshopNoChange,
                 onChanged: (v) => setLocal(() => time = v),
+              ),
+              _changeRow<Tempo>(
+                label: l10n.workshopTempo,
+                value: tempo,
+                items: tempoItems,
+                noChange: l10n.workshopNoChange,
+                onChanged: (v) => setLocal(() => tempo = v),
               ),
               _changeRow<int>(
                 label: l10n.workshopVolta,
@@ -1382,9 +1391,79 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       _doc.setClefChangeAt(id, clef);
       _doc.setKeyChangeAt(id, key);
       _doc.setTimeChangeAt(id, time);
+      _doc.setTempoChangeAt(id, tempo);
       _doc.setVoltaAt(id, volta);
       _doc.setNavigationAt(id, nav);
     });
+  }
+
+  /// Common metronome marks (quarter-note beat), each labelled with its rough
+  /// Italian tempo term. [Tempo] has value equality, so an anchored mark that
+  /// matches one of these preselects in the dropdown.
+  static final Map<Tempo, String> _tempoChoices = {
+    const Tempo(60): '♩ = 60 · Largo',
+    const Tempo(72): '♩ = 72 · Adagio',
+    const Tempo(88): '♩ = 88 · Andante',
+    const Tempo(108): '♩ = 108 · Moderato',
+    const Tempo(132): '♩ = 132 · Allegro',
+    const Tempo(168): '♩ = 168 · Presto',
+  };
+
+  /// A bpm as a compact string (no trailing `.0`).
+  static String _bpmStr(double bpm) =>
+      bpm == bpm.roundToDouble() ? bpm.round().toString() : bpm.toString();
+
+  /// A readable label for an off-preset tempo (e.g. one imported from a file).
+  static String _tempoLabel(Tempo t) =>
+      '${t.beatUnit.name}${'.' * t.dots} = ${_bpmStr(t.bpm)}';
+
+  /// The tempo dropdown items, always including [current] so a mark that isn't
+  /// one of the presets (an imported custom bpm/beat-unit) still shows and the
+  /// dropdown never asserts on an unlisted value.
+  Map<Tempo, String> _tempoItems(Tempo? current) {
+    final items = Map<Tempo, String>.from(_tempoChoices);
+    if (current != null && !items.containsKey(current)) {
+      items[current] = _tempoLabel(current);
+    }
+    return items;
+  }
+
+  /// Pick the document's **initial tempo** (the metronome mark at the start of
+  /// the piece → `Score.tempo`, feeding crisp_notation's `TempoMap`). Bar-anchored
+  /// mid-score changes are set through [_showChangeHereDialog] instead.
+  Future<void> _showInitialTempoDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    var tempo = _doc.tempo;
+    final items = _tempoItems(tempo);
+
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.workshopInitialTempo),
+        content: StatefulBuilder(
+          builder: (ctx, setLocal) => _changeRow<Tempo>(
+            label: l10n.workshopTempo,
+            value: tempo,
+            items: items,
+            noChange: l10n.workshopTempoNone,
+            onChanged: (v) => setLocal(() => tempo = v),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(MaterialLocalizations.of(ctx).okButtonLabel),
+          ),
+        ],
+      ),
+    );
+
+    if (apply != true) return;
+    setState(() => _doc.setInitialTempo(tempo));
   }
 
   /// One labelled row of the change dialog: a dropdown whose first entry is
@@ -1915,6 +1994,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                 ? RhythmPolicy.spill
                                 : RhythmPolicy.split;
                       });
+                    case 'tempo':
+                      _showInitialTempoDialog();
                     case 'save':
                       _save();
                     case 'export':
@@ -1952,6 +2033,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     child: Text(l10n.workshopSplitNotes),
                   ),
                   const PopupMenuDivider(),
+                  _menuItem(
+                    'tempo',
+                    Icons.speed,
+                    l10n.workshopInitialTempo,
+                    true,
+                  ),
                   _menuItem(
                     'save',
                     Icons.bookmark_add_outlined,

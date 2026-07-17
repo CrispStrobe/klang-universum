@@ -566,6 +566,24 @@ abstract class AppLocalizations {
   /// **'Navigation'**
   String get workshopNavigation;
 
+  /// No description provided for @workshopTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get workshopTempo;
+
+  /// No description provided for @workshopInitialTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial tempo…'**
+  String get workshopInitialTempo;
+
+  /// No description provided for @workshopTempoNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get workshopTempoNone;
+
   /// No description provided for @workshopArticulations.
   ///
   /// In en, this message translates to:

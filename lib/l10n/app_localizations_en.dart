@@ -278,6 +278,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopNavigation => 'Navigation';
 
   @override
+  String get workshopTempo => 'Tempo';
+
+  @override
+  String get workshopInitialTempo => 'Initial tempo…';
+
+  @override
+  String get workshopTempoNone => 'None';
+
+  @override
   String get workshopArticulations => 'Articulations & ties';
 
   @override

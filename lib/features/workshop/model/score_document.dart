@@ -169,11 +169,17 @@ class _Snapshot {
     this.voltas,
     this.navigation,
     this.tuplets,
+    this.tempo,
+    this.tempoChanges,
   );
   final List<EditorElement> elements;
   final TimeSignature timeSignature;
   final KeySignature keySignature;
   final Clef clef;
+
+  /// The document-start tempo and mid-score tempo changes (id → mark).
+  final Tempo? tempo;
+  final Map<String, Tempo> tempoChanges;
 
   /// Mid-score clef / key / time changes (element id → value), captured for undo.
   final Map<String, Clef> clefChanges;
@@ -209,6 +215,7 @@ class ScoreDocument {
     this.timeSignature = TimeSignature.fourFour,
     this.keySignature = const KeySignature(0),
     this.clef = Clef.treble,
+    this.tempo,
   });
 
   final List<EditorElement> _elements = [];
@@ -217,6 +224,12 @@ class ScoreDocument {
 
   /// The staff clef — chosen by the user; no automatic mid-score flipping.
   Clef clef;
+
+  /// The initial (document-start) tempo, or null if unspecified. A document-
+  /// level default like [clef] / [keySignature]; mid-score tempo changes live in
+  /// [_tempoChanges]. Feeds crisp_notation's `Score.tempo` → `TempoMap`, so it
+  /// is the anchor real variable-tempo playback reads.
+  Tempo? tempo;
 
   /// How an over-long note is handled when it doesn't fit the current bar.
   /// [RhythmPolicy.spill] (the default, kid-sandbox behaviour) short-fills the
@@ -263,6 +276,12 @@ class ScoreDocument {
   // time changes (which do affect capacity) will need a reflow tweak too.
   final Map<String, Clef> _clefChanges = {};
   final Map<String, KeySignature> _keyChanges = {};
+
+  // Mid-score tempo (metronome) changes, same element-id anchor as clef/key: the
+  // change takes effect at the start of the bar its anchor note reflows into.
+  // A pure post-reflow stamp — tempo does not affect bar capacity — with the
+  // running value seeded from the document-level [tempo].
+  final Map<String, Tempo> _tempoChanges = {};
 
   // Mid-score time-signature changes, same element-id anchor — but unlike
   // clef/key these change bar *capacity*, so they're applied inside [reflow]
@@ -427,6 +446,8 @@ class ScoreDocument {
         Map.of(_voltas),
         Map.of(_navigation),
         [for (final t in _tuplets) t.copy()],
+        tempo,
+        Map.of(_tempoChanges),
       );
 
   void _snapshot() {
@@ -477,6 +498,10 @@ class ScoreDocument {
     _tuplets
       ..clear()
       ..addAll(s.tuplets);
+    tempo = s.tempo;
+    _tempoChanges
+      ..clear()
+      ..addAll(s.tempoChanges);
     _invalidate();
     // Drop selected ids that the restored document no longer contains.
     _selectedIds.removeWhere((id) => _indexOf(id) < 0);
@@ -946,6 +971,7 @@ class ScoreDocument {
     _lyrics.clear();
     _clefChanges.clear();
     _keyChanges.clear();
+    _tempoChanges.clear();
     _timeChanges.clear();
     _repeatStarts.clear();
     _repeatEnds.clear();
@@ -978,6 +1004,7 @@ class ScoreDocument {
     _lyrics.clear();
     _clefChanges.clear();
     _keyChanges.clear();
+    _tempoChanges.clear();
     _timeChanges.clear();
     _repeatStarts.clear();
     _repeatEnds.clear();
@@ -987,6 +1014,7 @@ class ScoreDocument {
     clef = score.clef;
     keySignature = score.keySignature;
     timeSignature = score.timeSignature ?? TimeSignature.fourFour;
+    tempo = score.tempo;
     pickup = _pickupOf(score);
     // Dynamics live in a side list keyed by element id, so they have to be
     // re-anchored onto the elements as we rebuild them.
@@ -1026,6 +1054,8 @@ class ScoreDocument {
         if (cc != null) _clefChanges[firstIdInBar] = cc;
         final kc = measure.keyChange;
         if (kc != null) _keyChanges[firstIdInBar] = kc;
+        final tmpo = measure.tempoChange;
+        if (tmpo != null) _tempoChanges[firstIdInBar] = tmpo;
         final tc = measure.timeChange;
         if (tc != null) _timeChanges[firstIdInBar] = tc;
         if (measure.startRepeat) _repeatStarts.add(firstIdInBar);
@@ -1112,6 +1142,35 @@ class ScoreDocument {
   Map<String, Clef> get clefChanges => Map.unmodifiable(_clefChanges);
   Map<String, KeySignature> get keyChanges => Map.unmodifiable(_keyChanges);
   Map<String, TimeSignature> get timeChanges => Map.unmodifiable(_timeChanges);
+
+  /// The mid-score tempo changes as (element id → mark), read-only.
+  Map<String, Tempo> get tempoChanges => Map.unmodifiable(_tempoChanges);
+
+  /// The mid-score tempo mark anchored at element [id], or null.
+  Tempo? tempoChangeAt(String id) => _tempoChanges[id];
+
+  /// Set (or clear, with null) the document's **initial tempo** (metronome mark
+  /// at the start of the piece). Undoable; a no-op for an unchanged value.
+  void setInitialTempo(Tempo? value) {
+    if (value == tempo) return;
+    _snapshot();
+    tempo = value;
+  }
+
+  /// Set (or clear, with null) a **mid-score tempo change** that takes effect at
+  /// the start of the bar containing element [id]. Undoable; element-anchored
+  /// like [setClefChangeAt], so it rides re-barring. Does not affect bar
+  /// capacity, so it is a pure post-reflow stamp.
+  void setTempoChangeAt(String id, Tempo? mark) {
+    if (_indexOf(id) < 0) return;
+    if (_tempoChanges[id] == mark) return;
+    _snapshot();
+    if (mark == null) {
+      _tempoChanges.remove(id);
+    } else {
+      _tempoChanges[id] = mark;
+    }
+  }
 
   /// Set (or clear, with null) a **mid-score clef change** that takes effect at
   /// the start of the bar containing element [id]. Undoable; a no-op for an
@@ -1254,6 +1313,7 @@ class ScoreDocument {
       clef: clef,
       keySignature: keySignature,
       timeSignature: timeSignature,
+      tempo: tempo,
       measures: _withTuplets(
         _withMidScoreChanges(
           reflow(
@@ -1336,6 +1396,7 @@ class ScoreDocument {
   List<Measure> _withMidScoreChanges(List<Measure> bars) {
     if (_clefChanges.isEmpty &&
         _keyChanges.isEmpty &&
+        _tempoChanges.isEmpty &&
         _repeatStarts.isEmpty &&
         _repeatEnds.isEmpty &&
         _voltas.isEmpty &&
@@ -1344,6 +1405,7 @@ class ScoreDocument {
     }
     var runningClef = clef;
     var runningKey = keySignature;
+    var runningTempo = tempo;
     final out = <Measure>[];
     for (final m in bars) {
       var next = m;
@@ -1356,6 +1418,11 @@ class ScoreDocument {
       if (keyHere != null && keyHere != runningKey) {
         next = next.copyWith(keyChange: keyHere);
         runningKey = keyHere;
+      }
+      final tempoHere = _anchoredIn(m, _tempoChanges);
+      if (tempoHere != null && tempoHere != runningTempo) {
+        next = next.copyWith(tempoChange: tempoHere);
+        runningTempo = tempoHere;
       }
       if (_anchoredInSet(m, _repeatStarts)) {
         next = next.copyWith(startRepeat: true);

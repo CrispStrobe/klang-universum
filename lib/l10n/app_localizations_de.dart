@@ -278,6 +278,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopNavigation => 'Navigation';
 
   @override
+  String get workshopTempo => 'Tempo';
+
+  @override
+  String get workshopInitialTempo => 'Anfangstempo…';
+
+  @override
+  String get workshopTempoNone => 'Ohne';
+
+  @override
   String get workshopArticulations => 'Artikulation & Bindebögen';
 
   @override
