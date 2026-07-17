@@ -19,6 +19,47 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (bughunt)** · ✅ **idle / SHIPPED — 4 real defects found by an adversarial
+  audit of the numeric core.** Each verified by running the code before/after,
+  each pinned by a regression test proven to fail on the old code:
+  1. **`pitch_analysis`: octave-halving above ~1503 Hz** (`ff5dde1`). The
+     key-maxima scan started at `minLag`, not 1; the NSDF crossing that opens the
+     fundamental's segment sits at ~3T/4, which for short periods is *below*
+     minLag → the peak at T was skipped and 2T won. `1600→800, 1760→880,
+     2000→1000, 2100→1050`, all at **clarity 1.00**. Broke the top quarter of the
+     detector's own declared range; the suite topped out at A5 so it never saw it.
+  2. **`chroma_analysis`: the silence gate gated nothing** (`ff5dde1`). It summed
+     the *peak-normalized* chroma → scale-invariant → only bit-exact silence ever
+     gated. A triad at amp 1e-9 scored identically to 0.5; near-silent noise was
+     emitted as a confident "A#maj7 (68%)". Now gated on absolute band level.
+  3. **`loop_engine`: unvalidated tempo from a share token** (`a0a94e5`). Every
+     other spec field is validated; tempo passed raw into `60000 ~/ tempoBpm`.
+     `t:0`→IntegerDivisionByZero, `t:-100`→negative buffer RangeError,
+     `t:60001`→ticker modulo-by-zero every frame, `t:1`→42 MB WAV on the UI
+     thread. Clamped to 40..240 at both entry points.
+  4. **`aec_offline`: DTD deadlocked the filter** (`8d803ee`). Warmup counted
+     far-end-*silent* blocks (where the filter can't converge), so it expired with
+     W zero → ee=0 → rho=0 → freeze → W can never adapt → frozen forever. ~280 ms
+     of capture-before-playback (the normal case) cost **~28 dB for the session**.
+     Every existing DTD test had the far-end active from block 0.
+
+  ⚠ **OPEN — needs a maintainer decision, NOT fixed:** `crisp_dsp/formant_shift.dart`
+  scales *time-domain* indices, which is a **pitch** shift, not a formant shift.
+  That breaks `voice_fx.dart`'s load-bearing contract ("all presets are pitch- AND
+  length-preserving… so a recorded sample stays in tune as a channel instrument") —
+  5 of 9 presets are affected; measured through our own detector, a recorded C4
+  plays back at **chipmunk +493¢, monster −693¢, deep −1908¢**, i.e. the voice
+  channel is badly out of tune against every other channel. `sample_dsp_test` only
+  asserts length/finite/differs — never pitch. Fix is a **design call**: either
+  reframe these as pitch shifts and move `baseMidi` with them, or implement a real
+  spectral-envelope shift. Also open (lower): `siSdrDb` returns **0 dB** for an
+  all-zero estimate (out-ranking a real but noisy one at −1.23 dB; convention is
+  −∞); `LoopSend.delay/reverb` don't wrap the loop seam (echo drops out on every
+  downbeat, 37.8 % deviation — possibly an accepted trade-off, undocumented);
+  swing breaks the sample-integrality invariant at most slider positions (≤8
+  samples ≈ 0.18 ms, inaudible, `mixStems` absorbs it — but the guarding test
+  passes by luck: swing 0.5 is the one reachable value that's integral at 100 bpm).
+
 - **opus (aec-tune)** · ✅ **idle / SHIPPED — AEC tuning knobs reachable from the
   CLI / pipe**. The pipe harness existed but only exposed `--delay/--rate/--dtd/
   --res`: `cancelEcho` and `StreamingEchoCanceller` built `EchoCanceller()`,
