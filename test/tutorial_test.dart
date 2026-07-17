@@ -143,6 +143,9 @@ void main() {
       'The tenor clef': tenorClefPrimer, // tenor-clef Score path
       'Two staves, two hands': grandStaffPrimer,
       'Fast or slow, loud or soft': expressionPrimer,
+      'On the beat, or off?': syncopationPrimer,
+      'Two or three in a beat': tripletPrimer, // tuplet Score path
+      'Decorating a note': ornamentPrimer, // ornament Score path
     };
     for (final entry in primers.entries) {
       await pumpGame(

@@ -314,6 +314,19 @@ Games built on crisp_notation capabilities the app didn't use before.
   exploit the real rule; the beam/flag contrast was verified at the crisp_notation
   layout level (same-beat eighths → 1 `BeamPrimitive`, eighth-rest between → 0).
   SRI `reading.beam.<beamed|flagged>`.
+- **On the Beat or Off?** (Takte) — reading + hearing **syncopation**. A straight
+  bar (four quarters on the beats) vs a syncopated one (eighth + 3 quarters +
+  eighth, so the inner notes land off the beat); playback uses the real note
+  lengths so the push is audible. Fills the curriculum's syncopation gap. SRI
+  `measures.syncopation.<straight|syncopated>`.
+- **Even or Triplet?** (Notenwerte) — reading how a beat is split: two even eighths
+  vs a **triplet** (a real `TupletSpan(0,2,actual:3,normal:2)` → the engraver draws
+  the bracket + 3), heard as 2-in-a-beat vs 3-in-a-beat. Fills the triplet/tuplet
+  gap. SRI `note_values.tuplet.<even|triplet>`.
+- **Which Ornament?** (Noten lesen) — read the sign over a note: **trill** (tr),
+  **mordent** (squiggle), or **turn** (sideways S), drawn via `NoteElement.ornament`
+  and each played as a little flourish (trill = fast alternation, turn = the curl
+  around). Fills the ornaments gap. SRI `note_reading.ornament.<trill|mordent|turn>`.
 - **Spot the Upbeat** (Takte) — a binary staff-read on where a tune begins: a
   short two-bar melody starts either on the downbeat (a full first measure) or
   with a **pickup / anacrusis** (an incomplete first measure — a few notes before

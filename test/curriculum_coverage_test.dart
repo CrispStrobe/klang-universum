@@ -41,7 +41,12 @@ void main() {
     expect(report.concepts, isNotEmpty);
     // Sanity: known gaps are surfaced, not silently trained.
     final untrainedIds = report.untrained.map((c) => c.id).toSet();
-    expect(untrainedIds, contains('syncopation'));
+    // Still-open gaps (syncopation/triplets/ornaments are now trained).
     expect(untrainedIds, contains('musical_form'));
+    expect(untrainedIds, contains('modes'));
+    // And the ones we just filled are no longer flagged.
+    expect(untrainedIds, isNot(contains('syncopation')));
+    expect(untrainedIds, isNot(contains('triplets')));
+    expect(untrainedIds, isNot(contains('ornaments')));
   });
 }

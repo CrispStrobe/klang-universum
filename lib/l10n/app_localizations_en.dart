@@ -3635,4 +3635,86 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutOpenSourceLicenses => 'Open-source licenses';
+
+  @override
+  String get gameSyncRead => 'On the Beat or Off?';
+
+  @override
+  String get gameSyncReadSubtitle => 'Straight rhythm, or syncopated?';
+
+  @override
+  String get syncReadPrompt => 'Is this rhythm on the beat, or syncopated?';
+
+  @override
+  String get syncReadStraight => 'On the beat';
+
+  @override
+  String get syncReadSyncopated => 'Syncopated';
+
+  @override
+  String get gameTripletRead => 'Even or Triplet?';
+
+  @override
+  String get gameTripletReadSubtitle =>
+      'Is the beat split in two, or in three?';
+
+  @override
+  String get tripletReadPrompt => 'How is the beat split?';
+
+  @override
+  String get tripletReadEven => 'Even (2)';
+
+  @override
+  String get tripletReadTriplet => 'Triplet (3)';
+
+  @override
+  String get gameOrnamentRead => 'Which Ornament?';
+
+  @override
+  String get gameOrnamentReadSubtitle => 'Read the trill, mordent or turn';
+
+  @override
+  String get ornamentReadPrompt => 'Which ornament is on the note?';
+
+  @override
+  String get ornamentTrill => 'Trill';
+
+  @override
+  String get ornamentMordent => 'Mordent';
+
+  @override
+  String get ornamentTurn => 'Turn';
+
+  @override
+  String get primerSyncTitle => 'On the beat, or off?';
+
+  @override
+  String get primerSyncStraight =>
+      'Usually the notes land right ON the beats — count 1-2-3-4 and each note lands on a number. Steady and square.';
+
+  @override
+  String get primerSyncOff =>
+      'Syncopation pushes notes OFF the beat, onto the \"and\" in between. The accent lands where your ear didnt expect it — thats the kick you feel in pop and jazz.';
+
+  @override
+  String get primerTripletTitle => 'Two or three in a beat';
+
+  @override
+  String get primerTripletEven =>
+      'Normally a beat splits into TWO even halves: \"1-and\". Two eighth notes.';
+
+  @override
+  String get primerTripletThree =>
+      'A triplet squeezes THREE equal notes into that same beat: \"trip-o-let\". It gets a little 3 above it.';
+
+  @override
+  String get primerOrnamentTitle => 'Decorating a note';
+
+  @override
+  String get primerOrnamentTrill =>
+      'Ornaments are little signs that dress up a note. A trill (tr) shakes quickly between the note and the one just above it.';
+
+  @override
+  String get primerOrnamentTurn =>
+      'A turn (a sideways S) curls AROUND the note: the note above, the note, the note below, then back. A mordent is just one quick flick up and back.';
 }

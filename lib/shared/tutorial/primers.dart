@@ -23,12 +23,14 @@ import 'package:crisp_notation/crisp_notation.dart'
         Measure,
         NoteDuration,
         NoteElement,
+        Ornament,
         Pitch,
         RestElement,
         Score,
         Slur,
         Step,
-        TimeSignature;
+        TimeSignature,
+        TupletSpan;
 
 // ---- notation helpers -------------------------------------------------------
 
@@ -1094,6 +1096,116 @@ Tutorial expressionPrimer(AppLocalizations l10n) => Tutorial(
             await a.playPhrase([60, 64, 67], gain: 0.22);
             await a.playPhrase([60, 64, 67]);
           },
+        ),
+      ],
+    );
+
+/// Syncopation: pushing the accent off the beat, where the ear doesn't expect it.
+/// Game: sync_read.
+Tutorial syncopationPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerSyncTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerSyncStraight,
+          score: _notes([60, 60, 60, 60]), // four quarters, on the beats
+          play: (a) => a.playSequence([for (var i = 0; i < 4; i++) (60, 600)]),
+        ),
+        TutorialStep(
+          text: l10n.primerSyncOff,
+          // Eighth + 3 quarters + eighth: the middle notes land off the beat.
+          score: Score(
+            clef: Clef.treble,
+            timeSignature: TimeSignature.fourFour,
+            measures: [
+              Measure([
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
+                    id: 's0',),
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.quarter),
+                    id: 's1',),
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.quarter),
+                    id: 's2',),
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.quarter),
+                    id: 's3',),
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
+                    id: 's4',),
+              ]),
+            ],
+          ),
+          play: (a) => a.playSequence(
+              [(60, 300), (60, 600), (60, 600), (60, 600), (60, 300)],),
+        ),
+      ],
+    );
+
+/// Triplets: three equal notes squeezed into one beat instead of two.
+/// Game: triplet_read.
+Tutorial tripletPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerTripletTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerTripletEven,
+          score: _notes([60, 60], dur: DurationBase.eighth), // 1-and
+          play: (a) => a.playSequence([(60, 300), (60, 300)]),
+        ),
+        TutorialStep(
+          text: l10n.primerTripletThree,
+          // A real triplet (bracket + 3): three eighths in the beat.
+          score: Score(
+            clef: Clef.treble,
+            measures: [
+              Measure([
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
+                    id: 't0',),
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
+                    id: 't1',),
+                NoteElement.note(
+                    pitchFromMidi(60), const NoteDuration(DurationBase.eighth),
+                    id: 't2',),
+              ], tuplets: const [
+                TupletSpan(0, 2, actual: 3, normal: 2),
+              ],),
+            ],
+          ),
+          play: (a) => a.playSequence([(60, 200), (60, 200), (60, 200)]),
+        ),
+      ],
+    );
+
+/// Ornaments: little signs that tell you to decorate a note.
+/// Game: ornament_read.
+Tutorial ornamentPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerOrnamentTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerOrnamentTrill,
+          score: Score(clef: Clef.treble, measures: [
+            Measure([
+              NoteElement.note(
+                  pitchFromMidi(67), const NoteDuration(DurationBase.half),
+                  id: 'o', ornament: Ornament.trill,),
+            ]),
+          ],),
+          play: (a) => a.playSequence(
+              [(67, 90), (69, 90), (67, 90), (69, 90), (67, 240)],),
+        ),
+        TutorialStep(
+          text: l10n.primerOrnamentTurn,
+          score: Score(clef: Clef.treble, measures: [
+            Measure([
+              NoteElement.note(
+                  pitchFromMidi(67), const NoteDuration(DurationBase.half),
+                  id: 'o', ornament: Ornament.turn,),
+            ]),
+          ],),
+          play: (a) =>
+              a.playSequence([(69, 140), (67, 140), (66, 140), (67, 360)]),
         ),
       ],
     );

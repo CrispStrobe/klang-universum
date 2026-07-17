@@ -3653,4 +3653,88 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aboutOpenSourceLicenses => 'Open-Source-Lizenzen';
+
+  @override
+  String get gameSyncRead => 'Auf dem Schlag oder daneben?';
+
+  @override
+  String get gameSyncReadSubtitle => 'Gerader Rhythmus oder synkopiert?';
+
+  @override
+  String get syncReadPrompt =>
+      'Ist dieser Rhythmus auf dem Schlag oder synkopiert?';
+
+  @override
+  String get syncReadStraight => 'Auf dem Schlag';
+
+  @override
+  String get syncReadSyncopated => 'Synkopiert';
+
+  @override
+  String get gameTripletRead => 'Gerade oder Triole?';
+
+  @override
+  String get gameTripletReadSubtitle =>
+      'Wird der Schlag in zwei oder in drei geteilt?';
+
+  @override
+  String get tripletReadPrompt => 'Wie wird der Schlag geteilt?';
+
+  @override
+  String get tripletReadEven => 'Gerade (2)';
+
+  @override
+  String get tripletReadTriplet => 'Triole (3)';
+
+  @override
+  String get gameOrnamentRead => 'Welche Verzierung?';
+
+  @override
+  String get gameOrnamentReadSubtitle =>
+      'Lies Triller, Mordent oder Doppelschlag';
+
+  @override
+  String get ornamentReadPrompt => 'Welche Verzierung steht über der Note?';
+
+  @override
+  String get ornamentTrill => 'Triller';
+
+  @override
+  String get ornamentMordent => 'Mordent';
+
+  @override
+  String get ornamentTurn => 'Doppelschlag';
+
+  @override
+  String get primerSyncTitle => 'Auf dem Schlag oder daneben?';
+
+  @override
+  String get primerSyncStraight =>
+      'Meist landen die Noten genau AUF den Schlägen — zähl 1-2-3-4, und jede Note fällt auf eine Zahl. Ruhig und gerade.';
+
+  @override
+  String get primerSyncOff =>
+      'Die Synkope schiebt Noten NEBEN den Schlag, auf das „und“ dazwischen. Die Betonung kommt, wo dein Ohr sie nicht erwartet — das ist der Groove in Pop und Jazz.';
+
+  @override
+  String get primerTripletTitle => 'Zwei oder drei im Schlag';
+
+  @override
+  String get primerTripletEven =>
+      'Normalerweise teilt sich ein Schlag in ZWEI gleiche Hälften: „1-und“. Zwei Achtelnoten.';
+
+  @override
+  String get primerTripletThree =>
+      'Eine Triole quetscht DREI gleiche Noten in denselben Schlag: „tri-o-le“. Darüber steht eine kleine 3.';
+
+  @override
+  String get primerOrnamentTitle => 'Eine Note verzieren';
+
+  @override
+  String get primerOrnamentTrill =>
+      'Verzierungen sind kleine Zeichen, die eine Note schmücken. Ein Triller (tr) wechselt schnell zwischen der Note und der direkt darüber.';
+
+  @override
+  String get primerOrnamentTurn =>
+      'Ein Doppelschlag (ein liegendes S) windet sich UM die Note: die Note darüber, die Note, die darunter, dann zurück. Ein Mordent ist nur ein kurzer Schlenker hinauf und zurück.';
 }

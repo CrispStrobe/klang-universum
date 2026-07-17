@@ -53,6 +53,7 @@ import 'package:comet_beat/features/games/measures/measure_fill_screen.dart';
 import 'package:comet_beat/features/games/measures/meter_detective_screen.dart';
 import 'package:comet_beat/features/games/measures/spot_upbeat_screen.dart';
 import 'package:comet_beat/features/games/measures/strong_beat_screen.dart';
+import 'package:comet_beat/features/games/measures/sync_read_screen.dart';
 import 'package:comet_beat/features/games/measures/time_signature_screen.dart';
 import 'package:comet_beat/features/games/measures/which_beat_screen.dart';
 import 'package:comet_beat/features/games/note_reading/accidental_sort_screen.dart';
@@ -73,6 +74,7 @@ import 'package:comet_beat/features/games/note_reading/note_reading_quiz_screen.
 import 'package:comet_beat/features/games/note_reading/note_snake_screen.dart';
 import 'package:comet_beat/features/games/note_reading/note_whack_screen.dart';
 import 'package:comet_beat/features/games/note_reading/odd_one_out_screen.dart';
+import 'package:comet_beat/features/games/note_reading/ornament_read_screen.dart';
 import 'package:comet_beat/features/games/note_reading/perform_it_screen.dart';
 import 'package:comet_beat/features/games/note_reading/pitch_sort_screen.dart';
 import 'package:comet_beat/features/games/note_reading/place_note_screen.dart';
@@ -92,6 +94,7 @@ import 'package:comet_beat/features/games/note_values/dynamics_duel_screen.dart'
 import 'package:comet_beat/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:comet_beat/features/games/note_values/rhythm_tap_screen.dart';
 import 'package:comet_beat/features/games/note_values/tempo_duel_screen.dart';
+import 'package:comet_beat/features/games/note_values/triplet_read_screen.dart';
 import 'package:comet_beat/features/games/note_values/value_order_screen.dart';
 import 'package:comet_beat/features/games/playalong/play_along_screen.dart';
 import 'package:comet_beat/features/games/scales/command_caller_screen.dart';
@@ -226,6 +229,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameTempoDuelSubtitle,
       builder: (_) => const TempoDuelScreen(),
       tutorial: tempoTermsPrimer,
+    ),
+    // Even or Triplet? — read/hear a beat split in two vs three.
+    GameInfo(
+      id: 'triplet_read',
+      icon: Icons.looks_3,
+      title: (l) => l.gameTripletRead,
+      subtitle: (l) => l.gameTripletReadSubtitle,
+      builder: (_) => const TripletReadScreen(),
+      tutorial: tripletPrimer,
     ),
     // Louder or Softer? — read two dynamic marks, tap the louder.
     GameInfo(
@@ -401,6 +413,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameArticulationSubtitle,
       builder: (_) => const ArticulationReadScreen(),
       tutorial: articulationPrimer,
+    ),
+    // Which Ornament? — read the trill / mordent / turn over a note.
+    GameInfo(
+      id: 'ornament_read',
+      icon: Icons.waves,
+      title: (l) => l.gameOrnamentRead,
+      subtitle: (l) => l.gameOrnamentReadSubtitle,
+      builder: (_) => const OrnamentReadScreen(),
+      tutorial: ornamentPrimer,
     ),
     // Beam or Flag? — the two looks of eighth notes: joined by a beam vs each
     // keeping its flag. Same rhythm, different engraving.
@@ -727,6 +748,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameSpotUpbeatSubtitle,
       builder: (_) => const SpotUpbeatScreen(),
       tutorial: upbeatPrimer,
+    ),
+    // On the Beat or Off? — read/hear straight vs syncopated rhythm.
+    GameInfo(
+      id: 'sync_read',
+      icon: Icons.stream,
+      title: (l) => l.gameSyncRead,
+      subtitle: (l) => l.gameSyncReadSubtitle,
+      builder: (_) => const SyncReadScreen(),
+      tutorial: syncopationPrimer,
     ),
   ],
   'scales': [

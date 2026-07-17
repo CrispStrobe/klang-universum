@@ -41,14 +41,7 @@ and push to origin/main** before/after touching shared files. Format:
   Grand total across both waves: **13 real defects found, fixed, and pinned;
   theory core + most game/scoring paths verified clean.**
 
-- **opus (gap-games)** · 🚧 **ACTIVE — filling the 8 untrained-concept gaps**. The
-  coverage report's 8 concepts with no game. Batch A (reading/rhythm): **syncopation**
-  (`sync_read`), **triplets** (`triplet_read`), **ornaments** (`ornament_read`) —
-  binary/triple staff-reads with a primer + concept-map wiring each. Batch B:
-  **musical form** (AnaVis-style view + label-the-form), then modes / modulation /
-  instrument-families. Touching `game_registry.dart`, `core/tuning.dart`, ARBs,
-  `primers.dart`, `concept_map.dart`, `tutorial_test`, PLAN + HISTORY. Worktree
-  `../mus-gaps`, branch `feature/gap-games`.
+- **opus (gap-games)** · 🚧 **ACTIVE — filling the 8 untrained-concept gaps**. ✅ **Batch A SHIPPED (3 gaps closed):** `sync_read` (On the Beat or Off? — straight vs syncopated, heard via displaced note lengths), `triplet_read` (Even or Triplet? — a real `TupletSpan`, 2-vs-3 split heard), `ornament_read` (Which Ornament? — trill/mordent/turn read + a flourish played). Each with a 9yo-bar primer (`syncopationPrimer`/`tripletPrimer`/`ornamentPrimer`, shown + heard) and wired into `concept_map` (coverage: those 3 concepts now trained). 20 tests green; analyze clean. **Remaining 5 gaps:** musical form (→ AnaVis-style view + label-the-form), verse/chorus form, modulation, modes, instrument families. Worktree `../mus-gaps`, branch `feature/gap-games`.
 
 - **opus (textbook-p2)** · ✅ **idle / SHIPPED — song mnemonics + orphan-game
   placement.** (1) `core/curriculum/interval_songs.dart` — interval-mnemonic table

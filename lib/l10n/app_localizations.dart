@@ -6607,6 +6607,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open-source licenses'**
   String get aboutOpenSourceLicenses;
+
+  /// No description provided for @gameSyncRead.
+  ///
+  /// In en, this message translates to:
+  /// **'On the Beat or Off?'**
+  String get gameSyncRead;
+
+  /// No description provided for @gameSyncReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight rhythm, or syncopated?'**
+  String get gameSyncReadSubtitle;
+
+  /// No description provided for @syncReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this rhythm on the beat, or syncopated?'**
+  String get syncReadPrompt;
+
+  /// No description provided for @syncReadStraight.
+  ///
+  /// In en, this message translates to:
+  /// **'On the beat'**
+  String get syncReadStraight;
+
+  /// No description provided for @syncReadSyncopated.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncopated'**
+  String get syncReadSyncopated;
+
+  /// No description provided for @gameTripletRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Even or Triplet?'**
+  String get gameTripletRead;
+
+  /// No description provided for @gameTripletReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is the beat split in two, or in three?'**
+  String get gameTripletReadSubtitle;
+
+  /// No description provided for @tripletReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How is the beat split?'**
+  String get tripletReadPrompt;
+
+  /// No description provided for @tripletReadEven.
+  ///
+  /// In en, this message translates to:
+  /// **'Even (2)'**
+  String get tripletReadEven;
+
+  /// No description provided for @tripletReadTriplet.
+  ///
+  /// In en, this message translates to:
+  /// **'Triplet (3)'**
+  String get tripletReadTriplet;
+
+  /// No description provided for @gameOrnamentRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Ornament?'**
+  String get gameOrnamentRead;
+
+  /// No description provided for @gameOrnamentReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the trill, mordent or turn'**
+  String get gameOrnamentReadSubtitle;
+
+  /// No description provided for @ornamentReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which ornament is on the note?'**
+  String get ornamentReadPrompt;
+
+  /// No description provided for @ornamentTrill.
+  ///
+  /// In en, this message translates to:
+  /// **'Trill'**
+  String get ornamentTrill;
+
+  /// No description provided for @ornamentMordent.
+  ///
+  /// In en, this message translates to:
+  /// **'Mordent'**
+  String get ornamentMordent;
+
+  /// No description provided for @ornamentTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn'**
+  String get ornamentTurn;
+
+  /// No description provided for @primerSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'On the beat, or off?'**
+  String get primerSyncTitle;
+
+  /// No description provided for @primerSyncStraight.
+  ///
+  /// In en, this message translates to:
+  /// **'Usually the notes land right ON the beats — count 1-2-3-4 and each note lands on a number. Steady and square.'**
+  String get primerSyncStraight;
+
+  /// No description provided for @primerSyncOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncopation pushes notes OFF the beat, onto the \"and\" in between. The accent lands where your ear didnt expect it — thats the kick you feel in pop and jazz.'**
+  String get primerSyncOff;
+
+  /// No description provided for @primerTripletTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two or three in a beat'**
+  String get primerTripletTitle;
+
+  /// No description provided for @primerTripletEven.
+  ///
+  /// In en, this message translates to:
+  /// **'Normally a beat splits into TWO even halves: \"1-and\". Two eighth notes.'**
+  String get primerTripletEven;
+
+  /// No description provided for @primerTripletThree.
+  ///
+  /// In en, this message translates to:
+  /// **'A triplet squeezes THREE equal notes into that same beat: \"trip-o-let\". It gets a little 3 above it.'**
+  String get primerTripletThree;
+
+  /// No description provided for @primerOrnamentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decorating a note'**
+  String get primerOrnamentTitle;
+
+  /// No description provided for @primerOrnamentTrill.
+  ///
+  /// In en, this message translates to:
+  /// **'Ornaments are little signs that dress up a note. A trill (tr) shakes quickly between the note and the one just above it.'**
+  String get primerOrnamentTrill;
+
+  /// No description provided for @primerOrnamentTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'A turn (a sideways S) curls AROUND the note: the note above, the note, the note below, then back. A mordent is just one quick flick up and back.'**
+  String get primerOrnamentTurn;
 }
 
 class _AppLocalizationsDelegate
