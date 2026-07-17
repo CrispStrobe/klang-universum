@@ -65,7 +65,15 @@ and push to origin/main** before/after touching shared files. Format:
   of the BlackHole rig, runnable in CI. **No app screens / ARBs / Workshop /
   native plugin touched.**
 
-- **opus (parity)** · ✅ **idle / SHIPPED — Sandbox/Studio shelf toggle**
+- **opus (parity)** · ✅ **idle / SHIPPED — inspector multi-select** (polish).
+  The Studio inspector now edits a **multi-note selection**, not just a single
+  note (the ⌃ palette's old Cause-3 limitation): articulation/tie chips reflect
+  "all selected have it" and toggle the whole selection; dynamic/ornament
+  dropdowns show the shared value (or blank when mixed) and set all; the
+  single-anchor grace / change-here buttons disable for a multi-selection. Rests
+  now read out instead of showing the empty hint. Widget test drives a 2-note
+  selection into the inspector. `screens/composition_workshop_screen.dart` only.
+- **opus (parity)** · ✅ **SHIPPED — Sandbox/Studio shelf toggle**
   (`5d467dc`, the two-shelves capstone). One `_Shelf { sandbox, studio }` switch
   (⋮ menu, default Sandbox): Sandbox hides the Studio-tier controls (V1/V2 voice
   toggle, Insert/Select mode toggle, inspector) → simple kid surface; Studio

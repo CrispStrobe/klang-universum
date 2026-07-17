@@ -197,6 +197,34 @@ void main() {
     expect(find.text(l10n.workshopStaccato), findsOneWidget);
   });
 
+  testWidgets('the inspector edits a multi-note selection', (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // Two notes, then extend the selection to cover both.
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+    await tester.pump();
+    expect(editor.noteCount, 2);
+    await tester.ensureVisible(
+      find.byIcon(Icons.keyboard_double_arrow_left),
+    );
+    await tester.tap(find.byIcon(Icons.keyboard_double_arrow_left));
+    await tester.pump();
+    expect(editor.selectedCount, 2);
+
+    // Studio inspector shows the shared controls for the whole selection
+    // (a multi-note selection, not just a single note).
+    await _enterStudio(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.workshopInspector));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.workshopStaccato), findsOneWidget);
+  });
+
   testWidgets('the Studio shelf reveals the depth controls', (tester) async {
     await pump(tester);
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));

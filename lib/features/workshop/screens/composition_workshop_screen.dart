@@ -1533,7 +1533,20 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// menu; off by default so the Sandbox surface is unchanged.
   Widget _inspectorPanel(AppLocalizations l10n) {
     final theme = Theme.of(context);
-    final note = _doc.selected;
+    // The selected NOTES (rests carry none of these properties). The controls
+    // apply to the whole selection — the `…OfSelected` mutators already do — so
+    // the inspector works for a multi-note selection, not just a single note (the
+    // ⌃ palette's old limitation, Cause 3).
+    final notes = _doc.selectedElements.where((e) => !e.isRest).toList();
+    final multi = notes.length > 1;
+    bool allHave(bool Function(EditorElement) p) =>
+        notes.isNotEmpty && notes.every(p);
+    // The shared value across the selection, or null when it's mixed.
+    T? common<T>(T? Function(EditorElement) get) {
+      final values = notes.map(get).toSet();
+      return values.length == 1 ? values.first : null;
+    }
+
     return Container(
       width: 264,
       decoration: BoxDecoration(
@@ -1546,13 +1559,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
           Text(l10n.workshopInspector, style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(
-            _statusText(context, l10n),
+            _statusText(context, l10n), // "C♯4", "Rest" or "3 selected"
             style: theme.textTheme.bodySmall,
           ),
           const Divider(height: 20),
-          if (note == null || note.isRest)
+          if (notes.isEmpty)
             Text(
-              note == null ? l10n.workshopInspectorEmpty : l10n.workshopRest,
+              _doc.hasSelection
+                  ? l10n.workshopRest
+                  : l10n.workshopInspectorEmpty,
               style: theme.textTheme.bodySmall,
             )
           else ...[
@@ -1568,13 +1583,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 for (final art in _articulationOptions)
                   FilterChip(
                     label: Text(_articulationLabel(l10n, art)),
-                    selected: note.articulations.contains(art),
+                    selected: allHave((e) => e.articulations.contains(art)),
                     onSelected: (_) =>
                         setState(() => _doc.toggleArticulationOfSelected(art)),
                   ),
                 FilterChip(
                   label: Text(l10n.workshopTie),
-                  selected: note.tieToNext,
+                  selected: allHave((e) => e.tieToNext),
                   onSelected: (_) => setState(() => _doc.toggleTieOfSelected()),
                 ),
               ],
@@ -1584,7 +1599,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               l10n.workshopDynamics,
               DropdownButton<DynamicLevel?>(
                 isExpanded: true,
-                value: note.dynamic,
+                value: common((e) => e.dynamic),
                 onChanged: (v) => setState(() => _doc.setDynamicOfSelected(v)),
                 items: [
                   DropdownMenuItem(child: Text(l10n.workshopDynamicNone)),
@@ -1597,7 +1612,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               l10n.workshopOrnament,
               DropdownButton<Ornament?>(
                 isExpanded: true,
-                value: note.ornament,
+                value: common((e) => e.ornament),
                 onChanged: (v) => setState(() => _doc.setOrnamentOfSelected(v)),
                 items: [
                   DropdownMenuItem(child: Text(l10n.workshopDynamicNone)),
@@ -1609,6 +1624,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             const Divider(height: 20),
             Align(
               alignment: Alignment.centerLeft,
+              // Grace notes and "change from here" anchor to one element, so they
+              // only make sense for a single selected note.
               child: Wrap(
                 spacing: 8,
                 runSpacing: 4,
@@ -1616,18 +1633,22 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                   TextButton.icon(
                     icon: const Icon(Icons.grade_outlined, size: 18),
                     label: Text(l10n.workshopGraceNotes),
-                    onPressed: () {
-                      final id = _doc.selectedId;
-                      if (id != null) _showGraceDialog(id);
-                    },
+                    onPressed: multi
+                        ? null
+                        : () {
+                            final id = _doc.selectedId;
+                            if (id != null) _showGraceDialog(id);
+                          },
                   ),
                   TextButton.icon(
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     label: Text(l10n.workshopChangeHere),
-                    onPressed: () {
-                      final id = _doc.selectedId;
-                      if (id != null) _showChangeHereDialog(id);
-                    },
+                    onPressed: multi
+                        ? null
+                        : () {
+                            final id = _doc.selectedId;
+                            if (id != null) _showChangeHereDialog(id);
+                          },
                   ),
                 ],
               ),
