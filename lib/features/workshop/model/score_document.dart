@@ -26,6 +26,7 @@ class EditorElement {
     this.articulations = const {},
     this.tieToNext = false,
     this.dynamic,
+    this.ornament,
   }) : pitches = [pitch];
 
   /// A chord: two or more simultaneous pitches (kept low → high).
@@ -36,13 +37,15 @@ class EditorElement {
     this.articulations = const {},
     this.tieToNext = false,
     this.dynamic,
+    this.ornament,
   });
 
   const EditorElement.rest(this.duration, {required this.id})
       : pitches = const [],
         articulations = const {},
         tieToNext = false,
-        dynamic = null;
+        dynamic = null,
+        ornament = null;
 
   /// The simultaneous pitches, low → high; empty for a rest.
   final List<Pitch> pitches;
@@ -55,6 +58,10 @@ class EditorElement {
 
   /// A dynamic marking anchored on this element (null = none).
   final DynamicLevel? dynamic;
+
+  /// A single ornament above the note — trill / mordent / turn (null = none;
+  /// rests carry none).
+  final Ornament? ornament;
 
   bool get isRest => pitches.isEmpty;
 
@@ -72,6 +79,7 @@ class EditorElement {
           id: id,
           articulations: articulations,
           tieToNext: tieToNext,
+          ornament: ornament,
         );
 
   EditorElement _copyWith({
@@ -81,6 +89,8 @@ class EditorElement {
     bool? tieToNext,
     DynamicLevel? dyn,
     bool clearDynamic = false,
+    Ornament? orn,
+    bool clearOrnament = false,
   }) =>
       EditorElement.chord(
         pitches ?? this.pitches,
@@ -89,7 +99,11 @@ class EditorElement {
         articulations: articulations ?? this.articulations,
         tieToNext: tieToNext ?? this.tieToNext,
         dynamic: clearDynamic ? null : (dyn ?? dynamic),
+        ornament: clearOrnament ? null : (orn ?? ornament),
       );
+
+  EditorElement withOrnament(Ornament? o) =>
+      _copyWith(orn: o, clearOrnament: o == null);
 
   /// Replace with a single pitch (collapses a chord).
   EditorElement withPitch(Pitch pitch) => _copyWith(pitches: [pitch]);
@@ -106,6 +120,7 @@ class EditorElement {
         articulations: articulations,
         tieToNext: tieToNext,
         dynamic: dynamic,
+        ornament: ornament,
       );
 
   EditorElement withArticulations(Set<Articulation> a) =>
@@ -694,6 +709,16 @@ class ScoreDocument {
     _elements[notes.first] = _elements[notes.first].withDynamic(level);
   }
 
+  /// Set (or clear, with null) the ornament on every selected note. Undoable.
+  void setOrnamentOfSelected(Ornament? ornament) {
+    final notes = _selectedNoteIndices;
+    if (notes.isEmpty) return;
+    _snapshot();
+    for (final i in notes) {
+      _elements[i] = _elements[i].withOrnament(ornament);
+    }
+  }
+
   /// Tie every selected note to the next (or untie, if all are already tied).
   void toggleTieOfSelected() {
     final notes = _selectedNoteIndices;
@@ -985,6 +1010,7 @@ class ScoreDocument {
               articulations: Set.of(el.articulations),
               tieToNext: el.tieToNext,
               dynamic: el.id == null ? null : dynamics[el.id!],
+              ornament: el.ornament,
             ),
           );
         } else if (el is RestElement) {
