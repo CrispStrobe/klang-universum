@@ -219,11 +219,29 @@ patent-encumbered** — a deliberate choice for this MIT-clean tree:
   report SI-SDR of the cleaned output vs the *true* near-end instead.
 
 **Deliberately NOT used:** **PESQ** (ITU-T P.862) and **POLQA** — both are
-license/patent-encumbered for commercial use. **AECMOS** (Microsoft AEC
-Challenge) is MIT-licensed but is a CNN+GRU model: our pure-Dart
-`onnx_runtime_dart` has no conv/pooling/recurrent ops, so it would need a native
-ONNX runtime (FFI) + a ~few-MB weights file — out of scope for a headless,
-dependency-light harness. The objective metrics above need nothing.
+license/patent-encumbered for commercial use.
+
+**AECMOS** (Microsoft AEC Challenge) — MIT-licensed, a Conv+MaxPool+GRU model —
+**is now available** (headless eval only). It was previously skipped because our
+pure-Dart `onnx_runtime_dart` lacked conv/pooling/recurrent ops; the runtime has
+since gained them (mel front-end matched to librosa at 2.4e-7, MOS to ~1e-6 vs
+the Python reference), so AECMOS runs in **pure Dart on every target — no FFI**.
+Wired as a dev-only harness so it never reaches the app / web bundle:
+- `bin/aecmos.dart <model|run-id> <lpb.raw> <mic.raw> <enh.raw> <st|nst|dt>`
+  prints the echo-MOS + degradation-MOS pair.
+- `onnx_runtime_dart` is a **`dev_dependency`** (path `../onnx_runtime_dart`,
+  public `CrispStrobe/onnx_runtime_dart`; CI/deploy check it out as a sibling like
+  crisp_notation). Its `_io` model loader uses `dart:io`, so keeping it dev-only +
+  confined to `bin/` is what guarantees web-safety.
+- The scorer + mel front-end (`bin/aecmos/`) are copied from the runtime's
+  `example/aecmos/`; a model-free smoke test (`test/aecmos_smoke_test.dart`) guards
+  the mus-side wiring (the DSP is exhaustively tested upstream).
+- The **model is user-provided, never bundled** — a Microsoft AEC-Challenge
+  artifact (run id `1663915512` / `1663829550` @ 16 kHz, `1668423760` @ 48 kHz)
+  dropped into `~/.cache/onnx_runtime_dart_models/`. Full scoring therefore can't
+  run in CI (same skip convention as upstream); it's a local/dev tool.
+
+The objective metrics (ERLE / convergence / SI-SDR) still need nothing.
 
 ### Algorithm upgrades — safe (patent-free)
 

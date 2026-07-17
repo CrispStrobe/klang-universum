@@ -33,19 +33,26 @@ and push to origin/main** before/after touching shared files. Format:
   workshop-inspector `showNoteNames` claim on `settings_service`/`settings_screen`/
   both ARBs — coordinate on rebase.
 
-- **opus (aecmos)** · 🚧 **ACTIVE — AECMOS neural MOS scoring in the AEC eval CLI**.
-  `onnx_runtime_dart` (pure-Dart, public sibling) now has the conv/GRU ops AECMOS
-  needs, so the metric `AEC_TIER3B.md` rejected as "needs a native ORT" is doable.
-  Scoping it **dev-only / headless** (no app or web-bundle impact): `onnx_runtime_dart`
-  as a **dev_dependency** (path `../onnx_runtime_dart`), the copied `AecmosScorer` +
-  `MelFrontEnd` under `bin/aecmos/`, a `bin/aecmos.dart` CLI (`<model> <lpb> <mic>
-  <enh> <st|nst|dt>`; model is a **user-provided** Microsoft AEC-Challenge artifact
-  in `~/.cache/onnx_runtime_dart_models/`, never bundled), a model-free smoke test,
-  and the `AEC_TIER3B.md` correction. **HOT files (coordinate):** `pubspec.yaml`,
-  `.github/workflows/ci.yml` + `deploy.yml` (a sibling checkout step, mirroring
-  crisp_notation — every `pub get` resolves dev deps), `docs/AEC_TIER3B.md`.
-  Worktree `../mus-aecmos`, branch `feature/aecmos`. NOT touching the app / native
-  plugin / game registry.
+- **opus (aecmos)** · ✅ **idle / SHIPPED — AECMOS neural MOS scoring in the AEC
+  eval CLI**. `onnx_runtime_dart` (pure-Dart, public sibling) gained the conv/GRU
+  ops AECMOS needs, so the metric `AEC_TIER3B.md` rejected as "needs a native ORT"
+  now runs in pure Dart. Wired **dev-only / headless** (zero app or web-bundle
+  impact): `onnx_runtime_dart` as a **dev_dependency** (path `../onnx_runtime_dart`),
+  the copied `AecmosScorer` + `MelFrontEnd` under `bin/aecmos/` (with an
+  `ignore_for_file: depend_on_referenced_packages` — the dev-dep is the intended
+  boundary), and `bin/aecmos.dart <model|run-id> <lpb> <mic> <enh> <st|nst|dt>`.
+  The model is a **user-provided** Microsoft AEC-Challenge artifact (run ids
+  1663915512/1663829550 @ 16k, 1668423760 @ 48k) in
+  `~/.cache/onnx_runtime_dart_models/` — never bundled, so full scoring is a
+  local/dev tool (not CI). `test/aecmos_smoke_test.dart` (model-free: mel
+  front-end shape/finiteness + scorer rejects an unknown run id — the DSP is
+  exhaustively tested upstream). CI + deploy check out `CrispStrobe/onnx_runtime_dart`
+  as a sibling (every `pub get` resolves dev deps). `AEC_TIER3B.md` corrected.
+  Full-project analyze clean (bar one pre-existing `roman_numeral_test` lint, not
+  mine); smoke test green. NOT touching the app / native plugin / game registry.
+  ⚠ **Follow-up (maintainer):** publishing the MIT AECMOS model to a HuggingFace
+  repo (with a README + the cache-dir path) would make the CLI turnkey; today it's
+  a manual Microsoft-download step.
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — record voice slow/fast (time-stretch)**.
   A Slow/Normal/Fast chip row in the record sheet applies the shipped `timeStretch`

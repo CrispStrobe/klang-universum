@@ -30,6 +30,15 @@ jobs:
           ref: main
           path: crisp_notation
 
+      # onnx_runtime_dart is a dev_dependency (headless AECMOS eval in bin/); pub
+      # get resolves dev deps, so the sibling must be present even for app builds.
+      - name: Checkout onnx_runtime_dart (sibling dev path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: CrispStrobe/onnx_runtime_dart
+          ref: main
+          path: onnx_runtime_dart
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:

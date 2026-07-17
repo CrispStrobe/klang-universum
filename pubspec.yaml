@@ -67,6 +67,13 @@ dev_dependencies:
   # Test-only: fake the file picker to drive the import file-pick paths.
   file_selector_platform_interface: ^2.7.0
   plugin_platform_interface: ^2.1.8
+  # Headless AEC-eval only (bin/aecmos.dart): pure-Dart ONNX runtime for AECMOS
+  # neural MOS scoring. A dev_dependency on purpose — its `_io` model loader pulls
+  # in dart:io, which must never reach the app / web build; keeping it dev-only +
+  # confining the scorer to bin/ guarantees that. Resolved as a sibling path dep,
+  # like crisp_notation (CI/deploy check out CrispStrobe/onnx_runtime_dart too).
+  onnx_runtime_dart:
+    path: ../onnx_runtime_dart
 
 flutter_launcher_icons:
   android: true
