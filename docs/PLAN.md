@@ -31,18 +31,23 @@ and push to origin/main** before/after touching shared files. Format:
   of the BlackHole rig, runnable in CI. **No app screens / ARBs / Workshop /
   native plugin touched.**
 
-- **opus (parity)** · 🚧 **ACTIVE — Studio shell (Cause 3: the inspector).**
-  A selection-driven properties panel (`WORKSHOP_PARITY.md` Cause 3) — the scalable
-  home for note/bar attributes as the ⌃ palette strains. Starting with the
-  inspector (Cause 3); input modes (Cause 2) follow. Worktree `../mus-parity`,
-  branch `feature/workshop-parity`. **HOT:** `screens/
-  composition_workshop_screen.dart` (a side/bottom panel reflecting the selection;
-  reuses existing `_doc` mutators). Additive + behind the existing surface; small
-  commits, rebasing often. ✅ **voice 2 SHIPPED** (`bb6b7d0`): `Measure.voice2`, a
-  sibling `_v2` stream sharing the bar grid via the `_elements` active-voice getter
-  (mutation sites untouched); `_withVoice2` reflow+stamp (byte-identity fast path);
-  V1/V2 toolbar toggle; `test/voice2_test.dart` (9) + widget test; MusicXML
-  round-trips (writer backup). crisp_notation engraves voices 1+2 only.
+- **opus (parity)** · ✅ **idle / Studio shell — Cause 3 (inspector) SHIPPED**
+  (`6306151`). A selection-driven properties panel (`WORKSHOP_PARITY.md` Cause 3):
+  an **opt-in** side panel (⋮ menu toggle, OFF by default → Sandbox unchanged) that
+  reflects/edits the selected note — articulations/tie (FilterChips), dynamic +
+  ornament dropdowns, buttons to the grace + change-here dialogs; reuses the `_doc`
+  mutators. Canvas `Expanded` became `Row[canvas, panel]`. The ⌃ palette stays.
+  EN/DE; widget test (off-by-default → toggles on → shows controls). **Remaining
+  Studio work — Cause 2 (input modes):** an explicit insert-vs-select state machine
+  (today staff-taps always place; `_onElementTap` already selects, so the piece is a
+  "select mode" that stops empty-staff placement + a status-line mode + keyboard-
+  first entry). Also open: richer inspector (multi-select, rests, bar attributes),
+  a real Sandbox/Studio shelf toggle. ✅ **voice 2 SHIPPED** (`bb6b7d0`):
+  `Measure.voice2`, a sibling `_v2` stream sharing the bar grid via the `_elements`
+  active-voice getter (mutation sites untouched); `_withVoice2` reflow+stamp
+  (byte-identity fast path); V1/V2 toolbar toggle; MusicXML round-trips. ✅ **mid-bar
+  clef SHIPPED, fully lossless** (`12404e1`/`854ab25` + crisp_notation writer
+  `3c1b8bd`).
 - **opus (next)** · ✅ **idle / SHIPPED — playback practice-speed control**
   (0.5×/0.75×/1×). Worktree `../mus-next`, branch `feature/workshop-next`. Suite
   green (50 widget), analyze clean. A `_playSpeed` wall-clock stretch (1/speed) in

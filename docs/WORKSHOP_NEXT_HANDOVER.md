@@ -168,10 +168,16 @@ of attributes now — that's the signal these are due.
   keyboard-first entry needs the separation. Rides on the caret (already an
   address via `caretBeforeId`). Design it as a mode enum on the screen with the
   status line always showing the current mode.
-- **Cause 3 — the inspector.** A selection-driven properties panel that reflects
-  whatever is selected, replacing the growing ⌃ popup. Scales to arbitrary
-  element types at ~zero marginal UI cost. Pair it with categorized *insertion*
-  palettes (the popup stays for quick actions).
+- **Cause 3 — the inspector.** ✅ **FIRST SLICE SHIPPED** (`6306151`). An opt-in
+  selection-driven panel (`_inspectorPanel`), docked right of the canvas
+  (`Row[canvas, panel]`), toggled from the ⋮ view menu, **OFF by default** so the
+  Sandbox surface is unchanged. Shows the selected note's articulations/tie
+  (FilterChips), dynamic + ornament dropdowns, and buttons to the grace +
+  change-here dialogs — reusing the `_doc` mutators. The ⌃ palette stays for quick
+  actions. **Remaining inspector work:** multi-select and rest/bar-attribute views;
+  categorized *insertion* palettes; a real Sandbox/Studio **shelf toggle** (right
+  now the inspector is the only Studio-tier surface and it's gated by its own
+  menu item, not a shelf).
 
 **These two are where the "Studio shelf" gets built** (`WORKSHOP_PARITY.md`
 §"The strategic tension" — two shelves, Sandbox + Studio, on one document). Keep
