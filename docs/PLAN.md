@@ -14,10 +14,10 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-> The long list of `✅ idle / SHIPPED` entries below is **history** — the same
-> features are written up in [HISTORY.md](HISTORY.md). Only 🚧 **ACTIVE** entries
-> are live claims; don't edit another agent's ACTIVE claim. **Pending, actionable
-> work is scoped in the two blocks immediately below.**
+> Only 🚧 **ACTIVE** entries are live claims — don't edit another agent's ACTIVE
+> claim. The long chronological log of shipped board entries has been moved to
+> [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
+> **Pending, actionable work is scoped in the two blocks immediately below.**
 
 - **opus (aec-engine-dtd)** · 🚧 **ACTIVE — wire the native DTD into the engine
   block loop** (remaining-work item 2a). Worktree `../mus-aec-engine-dtd`, branch
@@ -29,48 +29,43 @@ and push to origin/main** before/after touching shared files. Format:
   through the pump, DTD-on beats DTD-off). Verify `bash native/aec/build.sh`.
   NOT touching app/Workshop.
 
-- **opus (aec-native-dtd)** · ✅ **idle / SHIPPED — double-talk detector ported to
-  the native C engine** (`f7487fd`). Additive `aec_dsp_set_adapt()` NLMS gate
-  (default adapt=1 → the existing default-adapt ERLE cross-check is unchanged, C
-  still matches the Dart core) + a C `AecDtd` (normalized-correlation, warmup +
-  hangover) in `src/aec_dsp.{c,h}`; FFI bindings in `lib/aec_dsp.dart`
-  (`AecDsp.setAdapt` + `AecDtd`). FFI double-talk cross-check in
-  `test/aec_erle_test.dart`: with the native DTD, near-end error over the
-  double-talk tail is **<0.7× linear** (froze during double-talk). Also **fixed
-  `build.sh`** — it now runs `flutter test` OUTSIDE the GEM wrapper (which hangs
-  the runner) with `AEC_LIBRARY_PATH` → the full libaec; whole native suite green
-  on macOS (7/7). All inside `native/aec/` (out of app CI) — no app change.
-  **Remaining (unclaimed):** wire the C DTD into `aec_shim.c`'s real-time
-  callback (so jam mode actually uses it), port RES to C, and milestone (e)
-  on-device tuning — see `docs/AEC_TIER3B.md` § "Native port status".
+- **opus (studio-polish)** · 🚧 **ACTIVE — Workshop Studio polish** (remaining-work
+  item 3). Categorized insertion palettes + richer multi-select inspector in
+  `lib/features/workshop/screens/composition_workshop_screen.dart` (hot shared
+  file — coordinate). Worktree `../mus-studio-polish`, branch
+  `feature/studio-polish`.
+
+- **_(otherwise idle as of 2026-07-17)._** Last shipped: DTD ported to the native
+  C engine (`f7487fd`) and keyboard-first select-mode nav (`b26a6b5`). The
+  shipped board log is now in
+  [HISTORY.md](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 
 ### 🎯 Remaining work — scoped (start here; pick one, claim it, then build)
 
 Ordered by value ÷ effort. Each is unclaimed unless noted. **Verify the claim is
 still free on the board before starting** (search the agent name / feature).
 
-1. **AEC: port the double-talk detector (DTD) to the native C engine** — *high
-   value, self-contained, verifiable, no app/Workshop collision.* The DTD (+7 dB
-   double-talk protection) and RES (deeper echo suppression) exist only in the
-   Dart/CLI path (`lib/core/audio/aec_offline.dart`); the app's jam mode runs the
-   native C engine in `native/aec/`, which has neither. **The verify harness is now
-   fixed** (`native/aec/build.sh`, `eba8c4d` — the 6-test ERLE cross-check runs
-   green), so this is finally testable. Do **DTD first** (simpler, higher value),
-   RES second. Scope + the exact fidelity trap (far-end-silent block-counter
-   bookkeeping) are in the **"AEC — what's left"** entry below. Verify:
-   `bash native/aec/build.sh`. Keep DTD off-by-default so the existing cross-check
-   still matches; add a native-vs-Dart-with-DTD test.
-2. **Small content minigames** — *low risk, squarely in the games lane, no
+1. **Small content minigames** — *low risk, squarely in the games lane, no
    collision.* One `GameInfo` in `game_registry.dart` + a screen + a
    `kStarThresholds` bracket in `core/tuning.dart` (games with scores) + EN/DE ARBs
    + a widget test via `pumpGame`. Concrete unclaimed ideas: **Spot the upbeat**
    (Auftakt / anacrusis reading), a **written↔concert toggle** for transposing
    instruments, **SATB chorale reading** / a richer Grand Staff. Copy an existing
    sibling (see the "Reusable scaffolds" note under the Ideas backlog).
-3. **Workshop Studio polish** — *coordinate: `composition_workshop_screen.dart` is
-   `opus (parity)`'s active turf (keyboard-first select-nav in flight).* Open:
-   **categorized insertion palettes**, richer multi-select inspector. Claim on the
-   board and rebase often, or wait until parity goes idle.
+2. **AEC: wire the native DTD into jam mode + port RES to C** — *self-contained,
+   headless-verifiable, no app/Workshop collision.* The double-talk detector is
+   **already ported to the native C engine** (`f7487fd` — `AecDtd` +
+   `aec_dsp_set_adapt()` gate, cross-checked against the Dart core), but it isn't
+   wired into `aec_shim.c`'s real-time callback yet, so jam mode doesn't actually
+   use it. Remaining: (a) call the C DTD from the shim's block loop and gate the
+   NLMS adapt — **CLAIMED by `opus (aec-engine-dtd)`**; (b) port the residual echo
+   suppressor (RES) to C next — still open. Both live in
+   `native/aec/` (out of app CI, analyzer-excluded — no app collision). Verify:
+   `bash native/aec/build.sh` (the 6-test ERLE cross-check runs green). See
+   `docs/AEC_TIER3B.md` § "Native port status".
+3. **Workshop Studio polish** — **CLAIMED by `opus (studio-polish)` (in progress).**
+   `composition_workshop_screen.dart` (hot shared file). Open: **categorized
+   insertion palettes**, richer multi-select inspector.
 
 **Blocked on crisp_notation (need a library change first — CI tracks public
 `CrispStrobe/crisp_notation@main`):** app-wide `showNoteNames` (only on
@@ -115,9 +110,10 @@ main hazard. Before writing any code:
    or docs.
 
 The Workshop editor, playback, songs, Tracker, Loop Mixer and the AEC *algorithm*
-are essentially complete; the highest-leverage open item is porting the AEC
-double-talk detector to the native C engine (verify harness now green:
-`bash native/aec/build.sh`). Do that, or a small self-contained minigame.
+are essentially complete; the AEC double-talk detector is now ported to the
+native C engine too (`f7487fd`). Good self-contained next items: a small minigame,
+or wiring the native DTD into jam mode + porting RES to C (verify harness green:
+`bash native/aec/build.sh`).
 ```
 
 _The long chronological log of shipped board entries now lives in_
