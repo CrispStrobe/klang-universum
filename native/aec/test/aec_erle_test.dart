@@ -134,6 +134,61 @@ void main() {
       );
     });
 
+    test('the double-talk detector preserves the near-end better than linear',
+        () {
+      final rng = Random(23);
+      const blocks = 120;
+      const half = blocks ~/ 2; // near-end joins here (converge first)
+      final ref =
+          List<double>.generate(blocks * b, (_) => rng.nextDouble() * 2 - 1);
+      double near(int t) => 0.3 * sin(2 * pi * 300 * t / 44100);
+
+      // Run the converge-then-double-talk scenario, returning the near-end
+      // error over the (fully double-talk) tail. With [useDtd] the native
+      // detector freezes the filter on the near-end via aec.setAdapt.
+      double runNearErr({required bool useDtd, void Function()? onFreeze}) {
+        final aec = AecDsp.create(blockSize: b, libraryPath: libPath);
+        final dtd = useDtd ? AecDtd.createFor(aec) : null;
+        var err = 0.0;
+        for (var bi = 0; bi < blocks; bi++) {
+          final rb = Float64List(b);
+          final mb = Float64List(b);
+          for (var i = 0; i < b; i++) {
+            final t = bi * b + i;
+            rb[i] = ref[t];
+            mb[i] = echoAt(ref, t) + (bi >= half ? near(t) : 0);
+          }
+          if (dtd != null) {
+            final freeze = dtd.freeze;
+            aec.setAdapt(!freeze);
+            if (freeze) onFreeze?.call();
+          }
+          final out = aec.process(rb, mb);
+          dtd?.update(rb, mb, out);
+          if (bi >= blocks - 10) {
+            for (var i = 0; i < b; i++) {
+              final t = bi * b + i;
+              err += (out[i] - near(t)) * (out[i] - near(t));
+            }
+          }
+        }
+        dtd?.dispose();
+        aec.dispose();
+        return err;
+      }
+
+      var frozen = 0;
+      final linearErr = runNearErr(useDtd: false);
+      final dtdErr = runNearErr(useDtd: true, onFreeze: () => frozen++);
+      expect(frozen, greaterThan(0), reason: 'froze during double-talk');
+      expect(
+        dtdErr,
+        lessThan(linearErr * 0.7),
+        reason: 'near-end error: linear '
+            '${linearErr.toStringAsFixed(3)} → DTD ${dtdErr.toStringAsFixed(3)}',
+      );
+    });
+
     test('reset clears the adaptive filter', () {
       final aec = AecDsp.create(blockSize: 256, libraryPath: libPath);
       addTearDown(aec.dispose);

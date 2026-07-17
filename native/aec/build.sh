@@ -22,5 +22,14 @@ run cmake --build build --config Release
 echo "==> flutter pub get"
 run flutter pub get
 
-echo "==> offline ERLE cross-check"
-run flutter test
+# Run the cross-check OUTSIDE the GEM-env wrapper: that wrapper hangs the flutter
+# test runner on this Mac (it's only needed for cmake/pod/xcodebuild). Point the
+# FFI loader at the FULL library (libaec) — it carries the DSP + DTD symbols the
+# aec_erle test needs AND the aec_engine_* symbols the engine test needs.
+echo "==> offline ERLE + DTD cross-check"
+ext=so; libpref=lib
+case "$(uname -s)" in
+  Darwin) ext=dylib ;;
+  MINGW*|MSYS*|CYGWIN*) ext=dll; libpref="" ;;
+esac
+AEC_LIBRARY_PATH="$HERE/build/${libpref}aec.$ext" flutter test

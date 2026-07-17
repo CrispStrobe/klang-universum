@@ -43,10 +43,42 @@ int aec_dsp_block_size(const AecDsp* a);
 void aec_dsp_process(AecDsp* a, const double* reference, const double* mic,
                      double* out);
 
+// Gate the NLMS filter update: adapt!=0 learns (default); adapt==0 FREEZES the
+// filter for subsequent blocks (still cancels with the current coefficients but
+// doesn't learn) — how the double-talk detector protects the filter from
+// adapting on near-end speech. Additive: default behaviour is unchanged, so the
+// Dart↔C ERLE cross-check still holds.
+void aec_dsp_set_adapt(AecDsp* a, int adapt);
+
 // Zero the adaptive filter and history (EchoCanceller.reset).
 void aec_dsp_reset(AecDsp* a);
 
 void aec_dsp_destroy(AecDsp* a);
+
+// --- Double-talk detector (port of aec_offline.dart's DoubleTalkDetector) ----
+// Decides, per block, whether to freeze the filter because near-end speech is
+// present. Uses a normalized-correlation statistic (no echo-path-gain threshold
+// to tune, unlike Geigel). Feed it `aec_dtd_update` after each processed block;
+// read `aec_dtd_freeze` before the next to drive `aec_dsp_set_adapt`.
+typedef struct AecDtd AecDtd;
+
+// Create a detector. Defaults (via *_create_default) mirror the Dart:
+//   threshold=0.9, hangoverBlocks=8, warmupBlocks=12, farEndFloor=1e-5.
+AecDtd* aec_dtd_create(double threshold, int hangoverBlocks, int warmupBlocks,
+                       double farEndFloor);
+AecDtd* aec_dtd_create_default(void);
+
+// 1 if the next block should freeze adaptation (a double-talk decision is held
+// active by the hangover), else 0.
+int aec_dtd_freeze(const AecDtd* d);
+
+// Update the freeze state from a just-processed block: its `reference`, `mic`
+// and `cleaned` output (all `blockSize` long).
+void aec_dtd_update(AecDtd* d, const double* reference, const double* mic,
+                    const double* cleaned, int blockSize);
+
+void aec_dtd_reset(AecDtd* d);
+void aec_dtd_destroy(AecDtd* d);
 
 // Exposed for the FFT self-check / reuse. In-place radix-2 Cooley-Tukey FFT;
 // `n` must be a power of two. Direct port of chroma_analysis.dart's fft().

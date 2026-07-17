@@ -19,6 +19,16 @@ typedef _ProcessD = void Function(
     Pointer<Void>, Pointer<Double>, Pointer<Double>, Pointer<Double>);
 typedef _VoidPtrC = Void Function(Pointer<Void>);
 typedef _VoidPtrD = void Function(Pointer<Void>);
+typedef _SetAdaptC = Void Function(Pointer<Void>, Int32);
+typedef _SetAdaptD = void Function(Pointer<Void>, int);
+typedef _DtdCreateDefaultC = Pointer<Void> Function();
+typedef _DtdCreateDefaultD = Pointer<Void> Function();
+typedef _DtdFreezeC = Int32 Function(Pointer<Void>);
+typedef _DtdFreezeD = int Function(Pointer<Void>);
+typedef _DtdUpdateC = Void Function(
+    Pointer<Void>, Pointer<Double>, Pointer<Double>, Pointer<Double>, Int32);
+typedef _DtdUpdateD = void Function(
+    Pointer<Void>, Pointer<Double>, Pointer<Double>, Pointer<Double>, int);
 
 /// A single adaptive-filter instance backed by the native `aec_dsp_*` core.
 class AecDsp {
@@ -55,6 +65,16 @@ class AecDsp {
       _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_dsp_reset');
   late final _VoidPtrD _destroy =
       _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_dsp_destroy');
+  late final _SetAdaptD _setAdapt =
+      _lib.lookupFunction<_SetAdaptC, _SetAdaptD>('aec_dsp_set_adapt');
+
+  /// Gate the NLMS update: false freezes the filter for subsequent blocks
+  /// (cancels with the current coefficients, doesn't learn) — driven by a
+  /// [AecDtd] to protect the filter during double-talk.
+  void setAdapt(bool adapt) => _setAdapt(_handle, adapt ? 1 : 0);
+
+  /// The library handle, so an [AecDtd] can share the same loaded native lib.
+  DynamicLibrary get library => _lib;
 
   /// Cancel the echo of [reference] from [mic] (both [blockSize] long,
   /// time-aligned). Returns the near-end estimate (a fresh [Float64List]).
@@ -77,5 +97,68 @@ class AecDsp {
     calloc.free(_ref);
     calloc.free(_mic);
     calloc.free(_out);
+  }
+}
+
+/// The native double-talk detector (`aec_dtd_*`) — decides, per block, whether
+/// the filter should freeze because near-end speech is present. Pair it with an
+/// [AecDsp]: read [freeze] before processing a block (feed to [AecDsp.setAdapt]),
+/// then call [update] with that block's reference, mic and cleaned output.
+class AecDtd {
+  AecDtd._(this._lib, this._handle, this._blockSize)
+      : _ref = calloc<Double>(_blockSize),
+        _mic = calloc<Double>(_blockSize),
+        _cleaned = calloc<Double>(_blockSize);
+
+  /// Create a detector with the Dart `DoubleTalkDetector` defaults, sharing
+  /// [aec]'s loaded native library.
+  factory AecDtd.createFor(AecDsp aec) {
+    final lib = aec.library;
+    final create = lib.lookupFunction<_DtdCreateDefaultC, _DtdCreateDefaultD>(
+        'aec_dtd_create_default');
+    final handle = create();
+    if (handle == nullptr) {
+      throw StateError('aec_dtd_create_default returned null');
+    }
+    return AecDtd._(lib, handle, aec.blockSize);
+  }
+
+  final DynamicLibrary _lib;
+  final Pointer<Void> _handle;
+  final int _blockSize;
+  final Pointer<Double> _ref;
+  final Pointer<Double> _mic;
+  final Pointer<Double> _cleaned;
+  bool _disposed = false;
+
+  late final _DtdFreezeD _freeze =
+      _lib.lookupFunction<_DtdFreezeC, _DtdFreezeD>('aec_dtd_freeze');
+  late final _DtdUpdateD _update =
+      _lib.lookupFunction<_DtdUpdateC, _DtdUpdateD>('aec_dtd_update');
+  late final _VoidPtrD _reset =
+      _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_dtd_reset');
+  late final _VoidPtrD _destroy =
+      _lib.lookupFunction<_VoidPtrC, _VoidPtrD>('aec_dtd_destroy');
+
+  /// Whether the next block should freeze adaptation.
+  bool get freeze => _freeze(_handle) != 0;
+
+  /// Update the freeze state from a just-processed block.
+  void update(Float64List reference, Float64List mic, Float64List cleaned) {
+    _ref.asTypedList(_blockSize).setAll(0, reference);
+    _mic.asTypedList(_blockSize).setAll(0, mic);
+    _cleaned.asTypedList(_blockSize).setAll(0, cleaned);
+    _update(_handle, _ref, _mic, _cleaned, _blockSize);
+  }
+
+  void reset() => _reset(_handle);
+
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _destroy(_handle);
+    calloc.free(_ref);
+    calloc.free(_mic);
+    calloc.free(_cleaned);
   }
 }

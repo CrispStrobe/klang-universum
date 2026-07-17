@@ -21,6 +21,7 @@ struct AecDsp {
   double farEndFloor;
   double regFactor;
   double leak;
+  int adapt;  // 1 = learn (default); 0 = freeze the filter this block (DTD)
 
   // Persistent state (mirrors the Dart fields).
   double* wRe;    // n — frequency-domain filter
@@ -114,6 +115,7 @@ AecDsp* aec_dsp_create(int blockSize, double mu, double powerSmoothing,
   a->farEndFloor = farEndFloor;
   a->regFactor = regFactor;
   a->leak = leak;
+  a->adapt = 1;
 
   int n = a->n, b = a->blockSize;
   // One calloc'd pool would be nicer, but keep it obvious: individual buffers.
@@ -187,10 +189,11 @@ void aec_dsp_process(AecDsp* a, const double* reference, const double* mic,
     out[i] = mic[i] - yRe[b + i];
   }
 
-  // Far-end VAD: pause learning when the reference is (near) silent.
+  // Frozen (double-talk detector) or far-end silent: cancel with the current
+  // filter, but don't learn. Advance the overlap-save state and return.
   double refMs = 0.0;
   for (int i = 0; i < b; i++) refMs += reference[i] * reference[i];
-  if (refMs / b < a->farEndFloor) {
+  if (!a->adapt || refMs / b < a->farEndFloor) {
     for (int i = 0; i < b; i++) a->xPrev[i] = reference[i];
     return;
   }
@@ -249,3 +252,74 @@ void aec_dsp_destroy(AecDsp* a) {
   free(a->gIm);
   free(a);
 }
+
+void aec_dsp_set_adapt(AecDsp* a, int adapt) {
+  if (a) a->adapt = adapt ? 1 : 0;
+}
+
+// --- Double-talk detector (port of aec_offline.dart's DoubleTalkDetector) ----
+//
+// Statistic: normalized correlation between the mic and the filter's echo
+// estimate (echoEst = mic - cleaned = W·x). Far-end single-talk -> the estimate
+// tracks the mic -> correlation ~1; double-talk -> the near-end enters the mic
+// but not the estimate -> correlation drops. A warmup guard lets the filter
+// converge first; a hangover holds the freeze through brief dips.
+
+struct AecDtd {
+  double threshold;
+  int hangoverBlocks;
+  int warmupBlocks;
+  double farEndFloor;
+  int block;
+  int hangover;
+};
+
+AecDtd* aec_dtd_create(double threshold, int hangoverBlocks, int warmupBlocks,
+                       double farEndFloor) {
+  AecDtd* d = (AecDtd*)calloc(1, sizeof(AecDtd));
+  if (!d) return NULL;
+  d->threshold = threshold;
+  d->hangoverBlocks = hangoverBlocks;
+  d->warmupBlocks = warmupBlocks;
+  d->farEndFloor = farEndFloor;
+  d->block = 0;
+  d->hangover = 0;
+  return d;
+}
+
+AecDtd* aec_dtd_create_default(void) {
+  // Mirrors the Dart DoubleTalkDetector defaults.
+  return aec_dtd_create(0.9, 8, 12, 1e-5);
+}
+
+// True (1) if the NEXT block should freeze adaptation. Read before processing,
+// then call aec_dtd_update() after.
+int aec_dtd_freeze(const AecDtd* d) { return (d && d->hangover > 0) ? 1 : 0; }
+
+void aec_dtd_update(AecDtd* d, const double* reference, const double* mic,
+                    const double* cleaned, int blockSize) {
+  if (!d) return;
+  d->block += 1;
+  double refMs = 0.0;
+  for (int i = 0; i < blockSize; i++) refMs += reference[i] * reference[i];
+  if (refMs / blockSize >= d->farEndFloor && d->block > d->warmupBlocks) {
+    double dot = 0.0, mm = 0.0, ee = 0.0;
+    for (int i = 0; i < blockSize; i++) {
+      double e = mic[i] - cleaned[i];  // echo estimate W·x
+      dot += mic[i] * e;
+      mm += mic[i] * mic[i];
+      ee += e * e;
+    }
+    double rho = dot / (sqrt(mm * ee) + 1e-12);
+    if (rho < d->threshold) d->hangover = d->hangoverBlocks;
+  }
+  if (d->hangover > 0) d->hangover -= 1;
+}
+
+void aec_dtd_reset(AecDtd* d) {
+  if (!d) return;
+  d->block = 0;
+  d->hangover = 0;
+}
+
+void aec_dtd_destroy(AecDtd* d) { free(d); }

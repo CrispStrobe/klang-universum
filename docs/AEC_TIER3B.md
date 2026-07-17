@@ -267,10 +267,25 @@ Reference algorithms in the same patent-free family: **SpeexDSP MDF** (Valin,
 BSD-3, designed to avoid patents) and **WebRTC AEC3** (BSD-3) — read for
 technique, don't vendor unless the licence + tree stay clean.
 
-**Note on the native C port:** the `adapt` gate is additive, so `native/aec`'s
-C canceller still matches the Dart core for its existing (default-`adapt`) ERLE
-cross-check. Porting the DTD to the native engine (to get double-talk protection
-in the app's jam mode) is a separate follow-up.
+### Native port status
+
+- ✅ **DTD ported to C.** `src/aec_dsp.c`/`.h` gained an additive
+  `aec_dsp_set_adapt()` gate (default adapt=1, so the existing default-`adapt`
+  ERLE cross-check is unchanged) and an `AecDtd` struct/functions
+  (`aec_dtd_create_default` / `_freeze` / `_update` / `_reset` / `_destroy`) — a
+  line-for-line port of the Dart `DoubleTalkDetector` (normalized correlation,
+  warmup + hangover). FFI-bound in `lib/aec_dsp.dart` (`AecDsp.setAdapt`,
+  `AecDtd`). Verified by an FFI cross-check in `test/aec_erle_test.dart` (the C
+  DTD preserves the near-end better than linear-only, mirroring the Dart test)
+  — green via `build.sh` on macOS.
+- **`build.sh` fixed:** it now runs the cross-check with `flutter test` +
+  `AEC_LIBRARY_PATH` OUTSIDE the GEM-env wrapper (the wrapper hangs the flutter
+  test runner; the old `dart test` couldn't resolve the flutter_test suite).
+- **Remaining:** (a) **wire the C DTD into the real-time shim** (`aec_shim.c`'s
+  duplex callback: read `aec_dtd_freeze` → `aec_dsp_set_adapt` → process →
+  `aec_dtd_update`) so the app's jam path actually gets it; (b) **port RES to
+  C** (needs the FFT the DSP already has); (c) **milestone (e)** on-device
+  tuning. (a)+(c) are what make jam AEC real on hardware.
 
 ## Effort
 
