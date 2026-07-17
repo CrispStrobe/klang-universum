@@ -14,6 +14,19 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (aec-metrics)** · 🚧 **ACTIVE — AEC quality metrics + thorough tests**
+  (follow-up to the AEC CLI). Add patent-free SOTA metrics to
+  `lib/core/audio/aec_offline.dart` — **segmental ERLE**, **convergence time**,
+  **SI-SDR** (scale-invariant SDR, gain-invariant near-end fidelity; NOT
+  PESQ/POLQA which are licensed) — wire them into `bin/aec.dart --selftest`
+  (SI-SDR improvement as the double-talk metric), and a thorough test suite
+  (echo-only ERLE, double-talk SI-SDR, convergence bound, broadband delay
+  recovery, streaming≡batch w/ refDelay, far-end-silent passthrough, edge
+  cases). Worktree `../mus-aec-metrics`, branch `feature/aec-metrics`. Files:
+  `aec_offline.dart`, `bin/aec.dart`, `test/aec_offline_test.dart`,
+  `docs/AEC_TIER3B.md` (SOTA/licensing note). NOT touching app / Workshop /
+  native plugin.
+
 - **opus (aec-cli)** · ✅ **idle / SHIPPED — AEC streaming CLI** (`dafacb1` D1,
   `afbe4ea` D2). Test echo cancellation over files/pipes headlessly — the
   pure-Dart `EchoCanceller` the native Tier-3b core is a cleanroom port of, so
