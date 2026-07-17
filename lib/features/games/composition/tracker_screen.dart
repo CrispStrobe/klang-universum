@@ -30,7 +30,7 @@ import 'package:klang_universum/core/audio/synth.dart' show Drum;
 import 'package:klang_universum/core/audio/tracker_engine.dart';
 import 'package:klang_universum/core/audio/voice_clip_recorder.dart';
 import 'package:klang_universum/core/services/audio_service.dart';
-import 'package:klang_universum/core/services/loop_player_service.dart';
+import 'package:klang_universum/core/services/gapless_loop_player.dart';
 import 'package:klang_universum/features/games/composition/tracker_notation.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
 import 'package:klang_universum/features/games/songs/song_book.dart';
@@ -146,7 +146,7 @@ class _TrackerScreenState extends State<TrackerScreen>
       stepsPerBeat: 2,
     ),
   );
-  final _loop = LoopPlayerService();
+  final _loop = GaplessLoopPlayer();
   final _recorder = VoiceClipRecorder();
 
   /// The groove's musical clock: playback phase derives from it, never from the
