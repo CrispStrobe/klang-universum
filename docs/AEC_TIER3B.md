@@ -278,14 +278,28 @@ technique, don't vendor unless the licence + tree stay clean.
   `AecDtd`). Verified by an FFI cross-check in `test/aec_erle_test.dart` (the C
   DTD preserves the near-end better than linear-only, mirroring the Dart test)
   — green via `build.sh` on macOS.
+- ✅ **DTD wired into the engine block loop.** `aec_shim.c`'s `engine_run`
+  (the shared core the realtime duplex callback AND the headless test pump both
+  run) now, when the DTD is enabled, reads `aec_dtd_freeze` → `aec_dsp_set_adapt`
+  → process → `aec_dtd_update` each block. It's **opt-in** via a new
+  `aec_engine_set_dtd()` (default off — the existing continuous-double-talk
+  engine test stays green; a DTD can hurt when there's no clean convergence
+  window). FFI-bound as `AecEngineFfi.setDtd(bool)`. Verified headlessly by a new
+  double-talk test in `test/aec_engine_test.dart` (pump: converge→double-talk,
+  DTD-on near-end error <0.7× DTD-off) — the whole native suite is green (8/8).
+  NB the divergence the DTD fixes shows at the 1024-sample AEC block; a
+  256-sample filter is already robust, so enable the DTD only with a matching
+  block size.
 - **`build.sh` fixed:** it now runs the cross-check with `flutter test` +
-  `AEC_LIBRARY_PATH` OUTSIDE the GEM-env wrapper (the wrapper hangs the flutter
-  test runner; the old `dart test` couldn't resolve the flutter_test suite).
-- **Remaining:** (a) **wire the C DTD into the real-time shim** (`aec_shim.c`'s
-  duplex callback: read `aec_dtd_freeze` → `aec_dsp_set_adapt` → process →
-  `aec_dtd_update`) so the app's jam path actually gets it; (b) **port RES to
-  C** (needs the FFT the DSP already has); (c) **milestone (e)** on-device
-  tuning. (a)+(c) are what make jam AEC real on hardware.
+  `AEC_LIBRARY_PATH` (→ the full `libaec`, which carries the DSP + DTD + engine
+  symbols) OUTSIDE the GEM-env wrapper (the wrapper hangs the flutter test
+  runner; the old `dart test` couldn't resolve the flutter_test suite).
+- **Remaining:** (a) **app opt-in** — have `NativeAecEngine`/the jam screen call
+  `setDtd(true)` (and pick a 1024-block engine) once speaker-backing is on; part
+  of milestone (e) since it needs on-device tuning to be meaningful. (b) **port
+  RES to C** (needs the FFT the DSP already has). (c) **milestone (e)** on-device
+  tuning — the real duplex path on iOS/Android hardware. (a)+(c) are what make
+  jam AEC real.
 
 ## Effort
 

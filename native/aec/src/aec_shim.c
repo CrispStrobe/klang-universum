@@ -57,6 +57,8 @@ struct AecEngine {
   int frame;   // AEC block size
   int period;  // device frames per callback (defaults to frame)
   AecDsp* aec;
+  AecDtd* dtd;     // double-talk detector (owned; used only when dtdEnabled)
+  int dtdEnabled;  // opt-in — off keeps the plain linear-canceller behaviour
   ma_device device;
   ma_context context;
   int started;
@@ -101,7 +103,16 @@ static void engine_run(AecEngine* e, const int16_t* mic, int16_t* spk,
     e->fill++;
 
     if (e->fill == e->frame) {
+      // Double-talk detector (opt-in): freeze adaptation while the near-end is
+      // present, then update its decision from this block's result. Off ⇒ the
+      // filter always adapts (unchanged linear behaviour).
+      if (e->dtdEnabled) {
+        aec_dsp_set_adapt(e->aec, aec_dtd_freeze(e->dtd) ? 0 : 1);
+      }
       aec_dsp_process(e->aec, e->refBlock, e->micBlock, e->outBlock);
+      if (e->dtdEnabled) {
+        aec_dtd_update(e->dtd, e->refBlock, e->micBlock, e->outBlock, e->frame);
+      }
       for (int j = 0; j < e->frame; j++) {
         rb_push1(&e->cleanedRing, clamp_i16(e->outBlock[j] * 32768.0));
       }
@@ -125,6 +136,8 @@ AecEngine* aec_engine_create(int sampleRate, int frame) {
   e->frame = frame;
   e->period = frame;  // default: one AEC block per callback
   e->aec = aec_dsp_create_default(frame);
+  e->dtd = aec_dtd_create_default();
+  e->dtdEnabled = 0;
   e->micBlock = (double*)calloc((size_t)frame, sizeof(double));
   e->refBlock = (double*)calloc((size_t)frame, sizeof(double));
   e->outBlock = (double*)calloc((size_t)frame, sizeof(double));
@@ -141,7 +154,8 @@ AecEngine* aec_engine_create(int sampleRate, int frame) {
           MA_SUCCESS;
   e->ringsReady = okRings;
 
-  if (!e->aec || !e->micBlock || !e->refBlock || !e->outBlock || !okRings) {
+  if (!e->aec || !e->dtd || !e->micBlock || !e->refBlock || !e->outBlock ||
+      !okRings) {
     aec_engine_destroy(e);
     return NULL;
   }
@@ -259,6 +273,19 @@ void aec_engine_set_period(AecEngine* e, int period) {
   if (e && !e->started && period > 0) e->period = period;
 }
 
+void aec_engine_set_dtd(AecEngine* e, int enabled) {
+  if (!e) return;
+  int on = enabled ? 1 : 0;
+  if (on != e->dtdEnabled) {
+    // Start clean when the mode changes: re-arm the detector and un-freeze the
+    // filter so a stale hangover can't leave adaptation off after turning DTD
+    // back off.
+    aec_dtd_reset(e->dtd);
+    aec_dsp_set_adapt(e->aec, 1);
+  }
+  e->dtdEnabled = on;
+}
+
 void aec_engine_reference(AecEngine* e, const int16_t* pcm, int frames) {
   if (!e || !pcm) return;
   // Drop-newest on overflow: keeps the ring strictly single-producer (the audio
@@ -301,6 +328,7 @@ void aec_engine_destroy(AecEngine* e) {
   if (!e) return;
   aec_engine_stop(e);
   aec_dsp_destroy(e->aec);
+  aec_dtd_destroy(e->dtd);
   if (e->ringsReady) {
     ma_pcm_rb_uninit(&e->refRing);
     ma_pcm_rb_uninit(&e->cleanedRing);

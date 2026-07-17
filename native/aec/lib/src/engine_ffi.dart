@@ -74,6 +74,8 @@ class AecEngineFfi {
       _lib.lookupFunction<_ReadC, _ReadD>('aec_engine_read_raw');
   late final _SetPeriodD _setPeriod =
       _lib.lookupFunction<_SetPeriodC, _SetPeriodD>('aec_engine_set_period');
+  late final _SetPeriodD _setDtd =
+      _lib.lookupFunction<_SetPeriodC, _SetPeriodD>('aec_engine_set_dtd');
   late final _StopD _stop =
       _lib.lookupFunction<_StopC, _StopD>('aec_engine_stop');
   late final _DestroyD _destroy =
@@ -83,6 +85,11 @@ class AecEngineFfi {
   /// AEC block size. Call before starting. Keeps device latency (and thus the
   /// acoustic round-trip delay) short while the longer AEC block covers it.
   void setPeriod(int period) => _setPeriod(_handle, period);
+
+  /// Enable/disable the double-talk detector (default off). When on, the engine
+  /// freezes filter adaptation on near-end-present blocks, so the user's own
+  /// playing/singing survives with far less residual echo.
+  void setDtd(bool enabled) => _setDtd(_handle, enabled ? 1 : 0);
 
   /// Start on the system default duplex device. Returns 0 on success.
   int start() => _start(_handle);

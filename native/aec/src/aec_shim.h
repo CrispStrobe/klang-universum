@@ -38,6 +38,13 @@ AecEngine* aec_engine_create(int sampleRate, int frame);
 // No-op if period <= 0.
 void aec_engine_set_period(AecEngine* e, int period);
 
+// Enable/disable the double-talk detector (default off). When on, the engine
+// freezes filter adaptation on blocks where near-end speech is detected, so the
+// filter isn't corrupted by the user's own playing/singing — the near-end
+// survives with far less residual echo. Safe to toggle at any time (it re-arms
+// the detector and un-freezes the filter on a mode change). See AEC_TIER3B.md.
+void aec_engine_set_dtd(AecEngine* e, int enabled);
+
 // Open + start the full-duplex device on the system DEFAULT playback+capture.
 // Returns 0 on success, non-zero (a miniaudio ma_result) on failure — e.g. no
 // mic permission / no device.

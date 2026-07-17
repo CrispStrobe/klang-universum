@@ -125,6 +125,59 @@ void main() {
             'near-end error ${(nearErr / nearEnergy * 100).toStringAsFixed(0)}%',
       );
     });
+
+    test('the double-talk detector cuts near-end error vs the plain engine', () {
+      // frame 1024 matches the AEC block size where the linear filter visibly
+      // diverges under continuous double-talk (a 256-frame filter is already
+      // robust, so the DTD has nothing to fix there).
+      const frame = 1024;
+      const blocks = 120;
+      const half = blocks ~/ 2; // near-end joins here (converge on echo first)
+      final rng = Random(29);
+      final ref = List<double>.generate(
+          blocks * frame, (_) => (rng.nextDouble() * 2 - 1) * 0.4);
+      double near(int t) => 0.25 * sin(2 * pi * 300 * t / 44100);
+
+      // Run the converge-then-double-talk scenario through the engine pump,
+      // returning the near-end error over the (fully double-talk) tail.
+      double runNearErr({required bool dtd}) {
+        final e = AecEngineFfi.create(frame: frame, libraryPath: libPath);
+        e.setDtd(dtd);
+        var err = 0.0, energy = 0.0;
+        for (var bi = 0; bi < blocks; bi++) {
+          final r = <double>[];
+          final m = <double>[];
+          for (var i = 0; i < frame; i++) {
+            final t = bi * frame + i;
+            r.add(ref[t]);
+            m.add(echoAt(ref, t) + (bi >= half ? near(t) : 0));
+          }
+          e.reference(_toPcm16(r));
+          e.pump(_toPcm16(m));
+          final cleaned = e.read();
+          if (bi >= blocks - 20) {
+            for (var i = 0; i < frame; i++) {
+              final t = bi * frame + i;
+              final nearPcm = near(t) * 32767;
+              err += (cleaned[i] - nearPcm) * (cleaned[i] - nearPcm);
+              energy += nearPcm * nearPcm;
+            }
+          }
+        }
+        e.dispose();
+        return err / energy; // normalized near-end error
+      }
+
+      final plain = runNearErr(dtd: false);
+      final withDtd = runNearErr(dtd: true);
+      expect(
+        withDtd,
+        lessThan(plain * 0.7),
+        reason: 'near-end error: plain '
+            '${(plain * 100).toStringAsFixed(0)}% → '
+            'DTD ${(withDtd * 100).toStringAsFixed(0)}%',
+      );
+    });
   },
       skip: libPath == null
           ? 'native library not built — run: cmake --build native/aec/build'
