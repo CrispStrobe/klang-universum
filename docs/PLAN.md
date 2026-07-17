@@ -27,7 +27,13 @@ and push to origin/main** before/after touching shared files. Format:
   monophonic overlap-drop, running-status, format-1 track selection, rest-gap
   insertion), `SriItemData`/`GameProgress` `fromJson` default-fill + roundtrip,
   and `parseAnyModule`'s unknown-format throw. 19 new cases across 4 new test
-  files; whole-project analyze clean.
+  files; whole-project analyze clean. **Follow-up shipped:** `mod_signature_test`
+  closes the last item on that shortlist — `mod_reader`'s signature→channelCount
+  map (the 4/6/8-channel tags, the generic `%dCHN`/`%dCH` regexes, the
+  unknown-signature throw, and that the count shapes each pattern row); the
+  golden fixture only ever covered `M.K.`/4ch. All mappings verified correct —
+  no bug, now pinned. **The confirmed coverage-gap shortlist is now fully
+  closed.**
 
 - **opus (primer-coverage)** · 🚧 **ACTIVE — real per-concept primers for every
   game** (learnability §1, multi-batch). Audit: 130 games, 29 had a per-game
