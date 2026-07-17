@@ -1770,39 +1770,111 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             const Divider(height: 20),
             Align(
               alignment: Alignment.centerLeft,
-              // Grace notes and "change from here" anchor to one element, so they
-              // only make sense for a single selected note.
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  TextButton.icon(
-                    icon: const Icon(Icons.grade_outlined, size: 18),
-                    label: Text(l10n.workshopGraceNotes),
-                    onPressed: multi
-                        ? null
-                        : () {
-                            final id = _doc.selectedId;
-                            if (id != null) _showGraceDialog(id);
-                          },
-                  ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: Text(l10n.workshopChangeHere),
-                    onPressed: multi
-                        ? null
-                        : () {
-                            final id = _doc.selectedId;
-                            if (id != null) _showChangeHereDialog(id);
-                          },
-                  ),
-                ],
+              // Grace notes anchor to a single note (rests carry none), so this
+              // stays single-note only. "Change from here…" moved to the shared
+              // Structure section below, which works for a rest too.
+              child: TextButton.icon(
+                icon: const Icon(Icons.grade_outlined, size: 18),
+                label: Text(l10n.workshopGraceNotes),
+                onPressed: multi
+                    ? null
+                    : () {
+                        final id = _doc.selectedId;
+                        if (id != null) _showGraceDialog(id);
+                      },
               ),
             ),
           ],
+          // The bar-anchored "Structure" view: for ANY single selection — note
+          // OR rest — summarise the mid-score changes anchored at the focused
+          // element and host the "Change from here…" editor, so a rest selection
+          // is no longer a dead end.
+          if (_doc.selectedIds.length == 1) _inspectorStructure(l10n, theme),
         ],
       ),
     );
+  }
+
+  /// The bar-anchored **Structure** view of the inspector: for a single selected
+  /// element (note OR rest) it lists the mid-score changes anchored there — the
+  /// same set the "Change from here…" dialog edits — as read-only chips, and
+  /// hosts that editor. Shown for a rest too, so a rest selection has actions.
+  Widget _inspectorStructure(AppLocalizations l10n, ThemeData theme) {
+    final id = _doc.selectedId!;
+    final summary = _barChangeSummary(l10n, id);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 20),
+        Text(l10n.workshopStructure, style: theme.textTheme.labelMedium),
+        const SizedBox(height: 6),
+        if (summary.isEmpty)
+          Text(l10n.workshopNoChange, style: theme.textTheme.bodySmall)
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final s in summary)
+                Chip(
+                  label: Text(s),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+            ],
+          ),
+        const SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: Text(l10n.workshopChangeHere),
+            onPressed: () => _showChangeHereDialog(id),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Short labels for the bar-anchored changes anchored at element [id] — clef,
+  /// mid-bar clef, key, time, tempo, repeat start/end, volta and navigation.
+  /// Empty when nothing is anchored there (the inspector then shows "No change").
+  List<String> _barChangeSummary(AppLocalizations l10n, String id) {
+    final out = <String>[];
+    final clef = _doc.clefChanges[id];
+    if (clef != null) {
+      out.add('${l10n.workshopClef}: ${_clefGlyph(clef)} ${clef.name}');
+    }
+    final inlineClef = _doc.inlineClefs[id];
+    if (inlineClef != null) {
+      out.add(
+        '${l10n.workshopClefMidBar}: ${_clefGlyph(inlineClef)} ${inlineClef.name}',
+      );
+    }
+    final key = _doc.keyChanges[id];
+    if (key != null) out.add('${l10n.workshopKey}: ${_keyLabel(key.fifths)}');
+    final time = _doc.timeChanges[id];
+    if (time != null) {
+      out.add(
+        '${l10n.workshopTimeSignature}: '
+        '${_timeChoices[time] ?? '${time.beats}/${time.beatUnit}'}',
+      );
+    }
+    final tempo = _doc.tempoChangeAt(id);
+    if (tempo != null) {
+      out.add('${l10n.workshopTempo}: ♩=${tempo.quarterBpm.round()}');
+    }
+    if (_doc.repeatStartsAt(id)) out.add(l10n.workshopRepeatStart);
+    if (_doc.repeatEndsAt(id)) out.add(l10n.workshopRepeatEnd);
+    final volta = _doc.voltaAt(id);
+    if (volta != null) out.add('${l10n.workshopVolta}: $volta.');
+    final nav = _doc.navigationAt(id);
+    if (nav != null) {
+      out.add(
+        '${l10n.workshopNavigation}: ${_navigationLabels[nav] ?? nav.name}',
+      );
+    }
+    return out;
   }
 
   /// One labelled inspector row: a caption above a full-width control.

@@ -130,6 +130,7 @@
   "workshopNoteNames": "Notennamen",
   "workshopInspector": "Inspektor",
   "workshopInspectorEmpty": "Wähle eine Note, um ihre Eigenschaften zu sehen.",
+  "workshopStructure": "Struktur",
   "workshopInsertMode": "Einfügen",
   "workshopSelectMode": "Auswählen",
   "workshopStudioMode": "Studio-Modus",

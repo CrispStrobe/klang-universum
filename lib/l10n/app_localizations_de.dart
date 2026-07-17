@@ -358,6 +358,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle eine Note, um ihre Eigenschaften zu sehen.';
 
   @override
+  String get workshopStructure => 'Struktur';
+
+  @override
   String get workshopInsertMode => 'Einfügen';
 
   @override

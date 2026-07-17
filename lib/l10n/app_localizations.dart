@@ -722,6 +722,12 @@ abstract class AppLocalizations {
   /// **'Select a note to see its properties.'**
   String get workshopInspectorEmpty;
 
+  /// No description provided for @workshopStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Structure'**
+  String get workshopStructure;
+
   /// No description provided for @workshopInsertMode.
   ///
   /// In en, this message translates to:

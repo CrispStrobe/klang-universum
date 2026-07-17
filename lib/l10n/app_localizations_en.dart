@@ -357,6 +357,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopInspectorEmpty => 'Select a note to see its properties.';
 
   @override
+  String get workshopStructure => 'Structure';
+
+  @override
   String get workshopInsertMode => 'Insert';
 
   @override

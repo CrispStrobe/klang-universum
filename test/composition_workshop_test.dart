@@ -225,6 +225,64 @@ void main() {
     expect(find.text(l10n.workshopStaccato), findsOneWidget);
   });
 
+  testWidgets('the inspector gives a rest a Structure view (not a dead end)',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // A rest is selected on insertion — it carries no note properties, so the
+    // inspector used to show only a "Rest" label with nothing to do.
+    await tester.ensureVisible(find.byIcon(Icons.music_off_outlined));
+    await tester.tap(find.byIcon(Icons.music_off_outlined));
+    await tester.pump();
+    expect(editor.selectedCount, 1);
+
+    await _enterStudio(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.workshopInspector));
+    await tester.pumpAndSettle();
+
+    // The rest now has a bar-anchored Structure section: it defaults to "No
+    // change" and hosts the "Change from here…" editor, which opens for a rest.
+    expect(find.text(l10n.workshopStructure), findsOneWidget);
+    expect(find.text(l10n.workshopNoChange), findsWidgets);
+    await tester.tap(find.text(l10n.workshopChangeHere));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.workshopChangeHereTitle), findsOneWidget);
+  });
+
+  testWidgets('the inspector Structure section lists an anchored change',
+      (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    await tester.tap(_pianoKey()); // place + select a note
+    await tester.pump();
+
+    // Anchor a repeat-end at the note via the ⌃ palette.
+    final palette = find.byIcon(Icons.expand_less);
+    await tester.ensureVisible(palette);
+    await tester.pumpAndSettle();
+    await tester.tap(palette);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.workshopRepeatEnd));
+    await tester.pumpAndSettle();
+
+    // The Studio inspector's Structure section reflects that anchored change
+    // instead of "No change".
+    await _enterStudio(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.workshopInspector));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.workshopStructure), findsOneWidget);
+    expect(find.text(l10n.workshopRepeatEnd), findsOneWidget);
+    expect(find.text(l10n.workshopNoChange), findsNothing);
+  });
+
   testWidgets('the Studio shelf reveals the depth controls', (tester) async {
     await pump(tester);
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
