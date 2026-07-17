@@ -204,8 +204,14 @@ class _Snapshot {
     this.tempo,
     this.tempoChanges,
     this.inlineClefs,
+    this.elements2,
+    this.activeVoice,
   );
   final List<EditorElement> elements;
+
+  /// The voice-2 element stream and which voice was active, captured for undo.
+  final List<EditorElement> elements2;
+  final int activeVoice;
   final TimeSignature timeSignature;
   final KeySignature keySignature;
   final Clef clef;
@@ -255,7 +261,22 @@ class ScoreDocument {
     this.tempo,
   });
 
-  final List<EditorElement> _elements = [];
+  // Two engraved voices share one bar grid. Voice 1 (`_v1`) is the primary
+  // stream; voice 2 (`_v2`) is an optional second voice (crisp_notation engraves
+  // voices 1 and 2 only, so we stop at two). All the editing/selection commands
+  // operate on the ACTIVE voice via the [_elements] getter; only the render and
+  // persistence paths (buildScore / loadScore / capture / restore) address a
+  // voice explicitly. When `_v2` is empty the document renders byte-for-byte as a
+  // single-voice score.
+  final List<EditorElement> _v1 = [];
+  final List<EditorElement> _v2 = [];
+
+  /// The voice the editing commands target: 0 = voice 1, 1 = voice 2.
+  int _activeVoice = 0;
+
+  /// The active voice's backing list — what every edit/selection command reads
+  /// and mutates. Render/persist code uses [_v1] / [_v2] directly instead.
+  List<EditorElement> get _elements => _activeVoice == 0 ? _v1 : _v2;
   TimeSignature timeSignature;
   KeySignature keySignature;
 
@@ -370,7 +391,25 @@ class ScoreDocument {
 
   List<EditorElement> get elements => List.unmodifiable(_elements);
   int get length => _elements.length;
-  bool get isEmpty => _elements.isEmpty;
+
+  /// True only when **both** voices are empty (so Save/Clear reflect the whole
+  /// document, not just the active voice).
+  bool get isEmpty => _v1.isEmpty && _v2.isEmpty;
+
+  /// The voice the editing commands currently target (0 = voice 1, 1 = voice 2).
+  int get activeVoice => _activeVoice;
+
+  /// Whether the document has any voice-2 content (drives showing the voice UI).
+  bool get hasVoice2 => _v2.isNotEmpty;
+
+  /// Switch the voice that entry/selection commands target. Clears the selection
+  /// (ids are per-voice) and is a no-op for an out-of-range or unchanged value.
+  /// Not itself undoable — it changes the edit target, not the document.
+  void setActiveVoice(int voice) {
+    if (voice < 0 || voice > 1 || voice == _activeVoice) return;
+    _activeVoice = voice;
+    clearSelection();
+  }
 
   /// The document indices of the currently-selected elements, ascending, with
   /// any stale ids (from deleted elements) dropped. The single source of truth
@@ -476,7 +515,7 @@ class ScoreDocument {
   // ---- history -----------------------------------------------------------
 
   _Snapshot _capture() => _Snapshot(
-        List.of(_elements),
+        List.of(_v1),
         timeSignature,
         keySignature,
         clef,
@@ -495,6 +534,8 @@ class ScoreDocument {
         tempo,
         Map.of(_tempoChanges),
         Map.of(_inlineClefs),
+        List.of(_v2),
+        _activeVoice,
       );
 
   void _snapshot() {
@@ -504,9 +545,13 @@ class ScoreDocument {
   }
 
   void _restore(_Snapshot s) {
-    _elements
+    _v1
       ..clear()
       ..addAll(s.elements);
+    _v2
+      ..clear()
+      ..addAll(s.elements2);
+    _activeVoice = s.activeVoice;
     timeSignature = s.timeSignature;
     keySignature = s.keySignature;
     clef = s.clef;
@@ -866,7 +911,7 @@ class ScoreDocument {
   /// Drop any slur/lyric that references an id no longer in the stream (called
   /// after structural edits so spans never dangle).
   void _pruneOrnaments() {
-    final ids = {for (final e in _elements) e.id};
+    final ids = {for (final e in _v1) e.id, for (final e in _v2) e.id};
     _slurs.removeWhere(
       (s) => !ids.contains(s.startId) || !ids.contains(s.endId),
     );
@@ -1028,9 +1073,11 @@ class ScoreDocument {
   // ---- document settings -------------------------------------------------
 
   void clearAll() {
-    if (_elements.isEmpty) return;
+    if (isEmpty) return;
     _snapshot();
-    _elements.clear();
+    _v1.clear();
+    _v2.clear();
+    _activeVoice = 0;
     _slurs.clear();
     _hairpins.clear();
     _lyrics.clear();
@@ -1067,7 +1114,9 @@ class ScoreDocument {
   /// see docs/WORKSHOP_PARITY.md.
   void loadScore(Score score) {
     _snapshot();
-    _elements.clear();
+    _v1.clear();
+    _v2.clear();
+    _activeVoice = 0;
     _slurs.clear();
     _hairpins.clear();
     _lyrics.clear();
@@ -1100,7 +1149,7 @@ class ScoreDocument {
         barNewIds.add(id);
         if (el.id != null) remap[el.id!] = id;
         if (el is NoteElement) {
-          _elements.add(
+          _v1.add(
             EditorElement.chord(
               List.of(el.pitches),
               el.duration,
@@ -1114,7 +1163,27 @@ class ScoreDocument {
             ),
           );
         } else if (el is RestElement) {
-          _elements.add(EditorElement.rest(el.duration, id: id));
+          _v1.add(EditorElement.rest(el.duration, id: id));
+        }
+      }
+      // Recover voice 2 (notes/rests + their per-note attributes; dynamics,
+      // slurs and lyrics are voice-1 side lists, so voice 2 carries none).
+      for (final el in measure.voice2) {
+        if (el is NoteElement) {
+          _v2.add(
+            EditorElement.chord(
+              List.of(el.pitches),
+              el.duration,
+              id: _newId(),
+              articulations: Set.of(el.articulations),
+              tieToNext: el.tieToNext,
+              ornament: el.ornament,
+              graceNotes: List.of(el.graceNotes),
+              graceStyle: el.graceStyle,
+            ),
+          );
+        } else if (el is RestElement) {
+          _v2.add(EditorElement.rest(el.duration, id: _newId()));
         }
       }
       // Recover mid-bar clef changes: each InlineClefChange sits at an onset
@@ -1422,33 +1491,62 @@ class ScoreDocument {
       keySignature: keySignature,
       timeSignature: timeSignature,
       tempo: tempo,
-      measures: _withTuplets(
-        _withInlineClefs(
-          _withMidScoreChanges(
-            reflow(
-              [for (final e in _elements) e.toElement()],
-              timeSignature: timeSignature,
-              pickup: pickup,
-              timeChanges: _timeChanges,
-              durationScale: _tupletScale(),
-              split: _rhythmPolicy == RhythmPolicy.split,
+      measures: _withVoice2(
+        _withTuplets(
+          _withInlineClefs(
+            _withMidScoreChanges(
+              reflow(
+                [for (final e in _v1) e.toElement()],
+                timeSignature: timeSignature,
+                pickup: pickup,
+                timeChanges: _timeChanges,
+                durationScale: _tupletScale(),
+                split: _rhythmPolicy == RhythmPolicy.split,
+              ),
             ),
           ),
         ),
       ),
       dynamics: [
-        for (final e in _elements)
+        for (final e in _v1)
           if (!e.isRest && e.dynamic != null) DynamicMarking(e.id, e.dynamic!),
       ],
       slurs: List.of(_slurs),
       hairpins: List.of(_hairpins),
       lyrics: [
-        for (final e in _elements)
+        for (final e in _v1)
           if (_lyrics[e.id] != null)
             for (final v in _lyrics[e.id]!.entries)
               Lyric(e.id, v.value, verse: v.key),
       ],
     );
+  }
+
+  /// Reflows voice 2 onto the **shared** bar grid and stamps each bar's
+  /// [Measure.voice2]. Voice 2 packs with the same meter / pickup / time changes
+  /// as voice 1 so the two agree on bar boundaries; it carries no tuplets or
+  /// mid-score changes of its own (those stay voice-1 features). The empty-voice
+  /// fast path returns [bars] untouched, so a single-voice document is
+  /// byte-identical to before.
+  List<Measure> _withVoice2(List<Measure> bars) {
+    if (_v2.isEmpty) return bars;
+    final v2 = reflow(
+      [for (final e in _v2) e.toElement()],
+      timeSignature: timeSignature,
+      pickup: pickup,
+      timeChanges: _timeChanges,
+      split: _rhythmPolicy == RhythmPolicy.split,
+    );
+    final n = bars.length > v2.length ? bars.length : v2.length;
+    final out = <Measure>[];
+    for (var i = 0; i < n; i++) {
+      final base = i < bars.length
+          ? bars[i]
+          : const Measure([RestElement(NoteDuration(DurationBase.whole))]);
+      final voice2 = i < v2.length ? v2[i].elements : const <MusicElement>[];
+      out.add(base.copyWith(voice2: voice2));
+    }
+    return out;
   }
 
   /// The score rendered across two clefs: each note goes on the treble staff
@@ -1460,7 +1558,7 @@ class ScoreDocument {
     if (cached != null) return cached;
     final upper = <MusicElement>[];
     final lower = <MusicElement>[];
-    for (final e in _elements) {
+    for (final e in _v1) {
       if (e.isRest) {
         upper.add(RestElement(e.duration, id: e.id));
         lower.add(RestElement(e.duration));

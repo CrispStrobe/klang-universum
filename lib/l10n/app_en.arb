@@ -79,6 +79,8 @@
   "workshopScoreSettings": "Score settings",
   "workshopClef": "Clef",
   "workshopClefMidBar": "Clef (mid-bar)",
+  "workshopVoice1": "V1",
+  "workshopVoice2": "V2",
   "workshopZoomIn": "Zoom in",
   "workshopZoomOut": "Zoom out",
   "workshopOpen": "Open a file…",

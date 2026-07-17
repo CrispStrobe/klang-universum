@@ -186,6 +186,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopClefMidBar => 'Clef (mid-bar)';
 
   @override
+  String get workshopVoice1 => 'V1';
+
+  @override
+  String get workshopVoice2 => 'V2';
+
+  @override
   String get workshopZoomIn => 'Zoom in';
 
   @override

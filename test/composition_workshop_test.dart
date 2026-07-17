@@ -131,6 +131,33 @@ void main() {
     expect(editor.hasSelection, isTrue);
   });
 
+  testWidgets('the voice toggle routes note entry to the active voice',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // A note in voice 1.
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    expect(editor.noteCount, 1);
+
+    // Switch to voice 2 — the active voice is empty, so noteCount reads 0.
+    await tester.tap(find.text(l10n.workshopVoice2));
+    await tester.pump();
+    expect(editor.noteCount, 0);
+
+    // Entry now lands in voice 2.
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    expect(editor.noteCount, 1);
+
+    // Voice 1 kept its note.
+    await tester.tap(find.text(l10n.workshopVoice1));
+    await tester.pump();
+    expect(editor.noteCount, 1);
+  });
+
   testWidgets('copy then paste duplicates the selection', (tester) async {
     await pump(tester);
     final editor = _editor(tester);

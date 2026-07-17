@@ -2247,6 +2247,24 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               onZoomOut: () => _zoomBy(-3),
             ),
             actions: [
+              // Which voice note-entry targets (crisp_notation engraves two).
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: SegmentedButton<int>(
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(value: 0, label: Text(l10n.workshopVoice1)),
+                    ButtonSegment(value: 1, label: Text(l10n.workshopVoice2)),
+                  ],
+                  selected: {_doc.activeVoice},
+                  onSelectionChanged: (s) =>
+                      setState(() => _doc.setActiveVoice(s.first)),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.undo),
                 tooltip: l10n.myMelodyUndo,

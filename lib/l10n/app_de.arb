@@ -55,6 +55,8 @@
   "workshopScoreSettings": "Noteneinstellungen",
   "workshopClef": "Schlüssel",
   "workshopClefMidBar": "Schlüssel (im Takt)",
+  "workshopVoice1": "St.1",
+  "workshopVoice2": "St.2",
   "workshopZoomIn": "Vergrößern",
   "workshopZoomOut": "Verkleinern",
   "workshopOpen": "Datei öffnen…",
