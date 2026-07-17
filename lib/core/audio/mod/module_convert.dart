@@ -71,6 +71,7 @@ import 'package:klang_universum/core/audio/mod/s3m_module.dart';
 import 'package:klang_universum/core/audio/mod/s3m_reader.dart';
 import 'package:klang_universum/core/audio/mod/xm_module.dart';
 import 'package:klang_universum/core/audio/mod/xm_reader.dart';
+import 'package:klang_universum/core/audio/mod/xm_writer.dart';
 
 /// Detects the module container format by signature; null if unrecognized.
 ModuleFormat? sniffModuleFormat(Uint8List bytes) {
@@ -402,6 +403,74 @@ ModModule docToMod(ModuleDoc doc) {
 /// one longer than the neutral source. That's the format, not a lossy step.
 Uint8List convertToMod(ModuleDoc doc) => writeMod(docToMod(doc));
 
+/// Neutral → [XmModule] (one single-sample XM instrument per neutral sample).
+///
+/// v1 writes 8-bit samples (the neutral model doesn't carry bit depth); notes,
+/// instruments, the volume column, samples, loops and structure convert.
+XmModule docToXm(ModuleDoc doc) {
+  final instruments = <XmInstrument>[];
+  for (final ds in doc.samples) {
+    if (ds.isEmpty) {
+      instruments.add(const XmInstrument(samples: []));
+      continue;
+    }
+    final (rel, ft) = _c5speedToXmTuning(ds.c5speed);
+    instruments.add(
+      XmInstrument(
+        name: ds.name,
+        samples: [
+          XmSample(
+            name: ds.name,
+            volume: ds.volume.clamp(0, 64),
+            finetune: ft,
+            relativeNote: rel,
+            loopStart: ds.loopStart,
+            loopLength: ds.loopLength,
+            pcm: Float64List.fromList(ds.pcm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  final patterns = <XmPattern>[];
+  for (final dp in doc.patterns) {
+    final rows = <List<XmCell>>[];
+    for (final srcRow in dp.rows) {
+      final cells = <XmCell>[];
+      for (var ch = 0; ch < doc.channelCount; ch++) {
+        if (ch < srcRow.length) {
+          final c = srcRow[ch];
+          cells.add(
+            XmCell(
+              note: c.note < 0 ? 0 : (c.note - 11).clamp(1, 96),
+              instrument: c.instrument.clamp(0, 255),
+              volume: c.volume < 0 ? 0 : (0x10 + c.volume).clamp(0x10, 0x50),
+            ),
+          );
+        } else {
+          cells.add(XmCell.empty);
+        }
+      }
+      rows.add(cells);
+    }
+    patterns.add(XmPattern(rows));
+  }
+
+  return XmModule(
+    name: doc.title,
+    channelCount: doc.channelCount,
+    defaultTempo: doc.initialSpeed,
+    defaultBpm: doc.initialTempo,
+    order: List<int>.from(doc.order),
+    patterns: patterns,
+    instruments: instruments,
+  );
+}
+
+/// Convenience: convert a neutral module straight to `.xm` bytes.
+Uint8List convertToXm(ModuleDoc doc) => writeXm(docToXm(doc));
+
 // ─── Tuning helpers ──────────────────────────────────────────────────────────
 
 double _log2(num x) => math.log(x) / math.ln2;
@@ -415,3 +484,21 @@ int c5speedToFinetune(int hz) => (96 * _log2(hz / 8363)).round().clamp(-8, 7);
 /// XM relativeNote + finetune → C-5 playback rate (Hz).
 int xmTuningToC5speed(int rel, int ft) =>
     (8363 * math.pow(2, (rel * 128 + ft) / (12 * 128))).round();
+
+/// C-5 playback rate (Hz) → XM (relativeNote, finetune). Inverse of
+/// [xmTuningToC5speed]: total 1/128-semitone units split into whole semitones
+/// (relativeNote) and the finetune remainder, clamped to signed-byte ranges.
+(int, int) _c5speedToXmTuning(int hz) {
+  if (hz <= 0) return (0, 0);
+  final total = (12 * 128 * _log2(hz / 8363)).round();
+  var rel = (total / 128).round();
+  var ft = total - rel * 128;
+  if (ft > 127) {
+    ft -= 128;
+    rel += 1;
+  } else if (ft < -128) {
+    ft += 128;
+    rel -= 1;
+  }
+  return (rel.clamp(-128, 127), ft.clamp(-128, 127));
+}

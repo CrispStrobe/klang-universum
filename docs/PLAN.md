@@ -290,7 +290,12 @@ and push to origin/main** before/after touching shared files. Format:
   MIDI, PCM normalized ±1, 1-based instruments) → `.mod`. v1 drops per-cell effects
   (cross-format effect table = follow-up); notes/instruments/volume/samples/
   structure convert cleanly. Test: 4 goldens through the hub + XM→MOD round-trip +
-  live wild files. **Next: XM writer** (→ mod2xm/s3m2xm/it2xm), then S3M/IT writers;
+  live wild files. ✅ **XM writer + convertToXm SHIPPED** (slice C2): `xm_writer.dart`
+  `writeXm` (byte-inverse of `parseXm`: header, MSB-mask packing, instrument/sample
+  headers, delta-encoded 8/16-bit) + `docToXm`/`convertToXm` — now **mod2xm /
+  s3m2xm / it2xm** work (xm2mod already did via convertToMod). Verified by
+  write→parse round-trips (golden + hand-built multi-channel/16-bit) + mod→xm &
+  it→xm hub conversions. **Next: S3M + IT writers** (→ full N×N matrix), then
   "borrow a sample from a module" (readers already expose PCM); CLI tools (§H).
   📋 **Full idea backlog —
   codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio

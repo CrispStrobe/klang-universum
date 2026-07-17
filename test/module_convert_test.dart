@@ -18,6 +18,7 @@ import 'package:klang_universum/core/audio/mod/mod_module.dart';
 import 'package:klang_universum/core/audio/mod/mod_reader.dart';
 import 'package:klang_universum/core/audio/mod/module_convert.dart';
 import 'package:klang_universum/core/audio/mod/module_doc.dart';
+import 'package:klang_universum/core/audio/mod/xm_reader.dart';
 
 Uint8List _read(String path) => File(path).readAsBytesSync();
 
@@ -137,6 +138,36 @@ void main() {
         back.samples[0].pcm.sublist(0, 5),
         Int8List.fromList([0, 10, 20, 10, 0]),
       );
+    });
+  });
+
+  group('convertToXm — mod/it round-trip through the hub to .xm', () {
+    test('MOD golden → .xm preserves note + sample', () {
+      final doc = parseAnyModule(_read('test/fixtures/golden.mod'));
+      final back = parseXm(convertToXm(doc));
+      expect(back.name, 'TESTMOD');
+      expect(back.channelCount, 4);
+      final cell = back.patterns.first.rows[0][0];
+      expect(cell.note, 49); // MIDI 60 → XM note 49; instrument preserved
+      expect(cell.instrument, 1);
+      // sample "sine" [0,64,127,64,0,-64,-128,-64]/128 survives the 8-bit round-trip
+      final pcm = back.instruments[0].samples.first.pcm;
+      expect(pcm[1], closeTo(64 / 128, 1 / 128));
+      expect(pcm[2], closeTo(127 / 128, 1 / 128));
+      expect(pcm[6], closeTo(-1.0, 1 / 128));
+    });
+
+    test('IT golden → .xm preserves note + sample', () {
+      final doc = parseAnyModule(_read('test/fixtures/golden.it'));
+      final back = parseXm(convertToXm(doc));
+      expect(back.name, 'GOLDENIT');
+      final cell = back.patterns.first.rows[0][0];
+      expect(cell.note, 49); // MIDI 60 → XM note 49
+      expect(cell.instrument, 1);
+      final pcm = back.instruments[0].samples.first.pcm;
+      expect(pcm.length, 5);
+      expect(pcm[2], closeTo(20 / 128, 1 / 128));
+      expect(pcm[3], closeTo(-10 / 128, 1 / 128));
     });
   });
 
