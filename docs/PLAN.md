@@ -242,6 +242,24 @@ and push to origin/main** before/after touching shared files. Format:
   the 800×600 smoke surface). `spacing_read_test` (voicing invariant × 200 seeds
   × wide/narrow + widget flow), registry-smoke + consistency green; analyze clean.
 
+- **opus (tracker)** · ✅ **idle / SHIPPED — Score↔ModuleDoc bridge + full round-trips
+  (§D)**. Filled the notation-conversion gaps end-to-end.
+  (1) `lib/core/audio/mod/module_notation.dart` (Flutter-free, imports
+  crisp_notation_core): module→Score (`moduleChannelToScore`) + module→multi-part
+  (`moduleToMultiPart`, staff-per-channel, clef auto); reverse `scoreToModuleDoc`/
+  `multiPartToModuleDoc` (chord split; rests survive via a new additive
+  `DocCell.off`); `multiPartToMidi`+`splitMultiTrackMidi` (format-1 SMF the
+  library can't write); module↔MusicXML via the lib's readers/writers.
+  (2) `bin/notaconv.dart` now BIDIRECTIONAL by extension: module→(.mid/.xml),
+  .mid/.xml→module, `--multi`=multi-track. Old in-CLI Score port removed.
+  (3) note-off through the XM(97)/IT(255)/S3M(254) codecs (`module_convert.dart`)
+  so a rest survives real module bytes; MOD can't (documented).
+  16 round-trip tests (`module_notation_test`), N×N matrix unaffected.
+  Commits `808dc74`+`efd4b6a`. Files: `module_notation.dart`, `module_doc.dart`
+  (DocCell.noteOff), `module_convert.dart`, `bin/notaconv.dart`,
+  `docs/TRACKER_IDEAS.md` §D. Remaining §D = app plumbing (Workshop↔Tracker
+  handoff, module-pattern→tracker-grid import).
+
 - **opus (tracker)** · ✅ **idle / SHIPPED — full converter matrix + Sampling §B**.
   (1) **Converter matrix** (`2946016`): `convertModule(bytes, target)` /
   `convertDocTo(doc, target)` is now the single MOD/XM/S3M/IT dispatch point
