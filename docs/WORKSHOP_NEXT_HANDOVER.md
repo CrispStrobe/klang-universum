@@ -125,20 +125,23 @@ every feature at a fraction of the risk. Don't resurrect the flip.
 
 ## Remaining work, scoped (pick one; each is its own commit + board claim)
 
-**The Workshop parity arc is substantially complete** (as of 2026-07-17): every
-big bucket — notation depth (tempo, grace, ornaments, tuplets, mid-bar clef,
-voice 2, repeats/voltas/navigation), the Studio shell (input modes, inspector,
-Sandbox/Studio shelf), and playback (transport, cursor, multi-part mix/mute,
-practice speed) — has shipped. **What's left is polish and a few blocked-on-library
-items, not architecture:**
+**The Workshop parity arc is essentially complete** (as of 2026-07-17): every big
+bucket — notation depth (tempo, grace, ornaments, tuplets, mid-bar clef, voice 2,
+repeats/voltas/navigation), the Studio shell (input modes, inspector, Sandbox/
+Studio shelf), playback (transport, cursor, multi-part mix/mute, practice speed,
+**count-in + loop-a-selection**), and **PDF export** — has shipped. **What's left is
+a little polish; nothing is architecture:**
 
 - **Polish (doable now):** richer inspector (multi-select / rests / bar
   attributes), categorized *insertion* palettes, keyboard-first navigation in
-  select mode, un-dual-purposing the value strip, a metronome/count-in for
-  playback, loop-a-selection.
+  select mode (⚠ `opus (parity)` in flight — check the board), un-dual-purposing
+  the value strip.
 - **Voice-2 v1 gaps (doable now, model-side):** voice 2 carries no dynamics/
   lyrics/slurs, and tuplets/mid-score changes anchored while voice 2 is active
   don't stamp; cross-voice tap-select isn't wired.
+- ✅ **Playback count-in + loop-a-selection SHIPPED** (`3c89abc`) — opt-in from the
+  ⋮ menu, default off; count-in clicks render into the same WAV so they can't
+  drift, loop clips every part and rebases to 0.
 - ✅ **PDF export SHIPPED** (`e0954bd`) — turned out **not** to need a
   crisp_notation change: `SystemLayout.layout` is a `ScoreLayout`, so
   `layoutPages` (pagination) + `renderLayoutToPng` (per-system raster) + the `pdf`
@@ -221,23 +224,23 @@ studio }` toggle (⋮ menu, default Sandbox) hides the Studio-tier controls (voi
 toggle, input-mode toggle, inspector) on the kid surface and reveals them together
 in Studio; leaving Studio resets those to their Sandbox defaults. **What's left is
 polish, not architecture:** richer inspector, insertion palettes, keyboard-first
-navigation in select mode, un-dual-purposing the value strip, page/print view, PDF
-export. The capability-parity-with-progressive-disclosure goal is met.
+navigation in select mode, un-dual-purposing the value strip. PDF export ✅ shipped;
+the capability-parity-with-progressive-disclosure goal is met.
 
 ### Playback (bucket F)
 
-- ✅ **SHIPPED** — see the "Shipped since" list above (real transport + moving
-  cursor + multi-part mix/mute/full-score-cursor + voice-2 audio + practice speed).
-  Reflects repeats/navigation/`RhythmPolicy.split` via `playbackTimeline`. Open
-  polish only: a metronome/count-in click track, loop-a-selection, and page/print
-  (below).
+- ✅ **SHIPPED, fully** — real transport + moving cursor + multi-part mix/mute/
+  full-score-cursor + voice-2 audio + practice speed + **count-in + loop-a-selection**
+  (`3c89abc`). Reflects repeats/navigation/`RhythmPolicy.split` via `playbackTimeline`.
+  Nothing open here.
 
 ### Scale (bucket G — only if needed)
 
-- The layout ceiling is done. Still open: no incremental/dirty-range layout (each
-  edit re-engraves the whole score's *cheap* natural pass — measured near-free,
-  **not** worth a crisp_notation contract yet), the `maxNotes = 256` flat cap,
-  page/print view, PDF export (crisp_notation has none).
+- The layout ceiling is done; **PDF export shipped** (`e0954bd`). Still open (all
+  low value): no incremental/dirty-range layout (each edit re-engraves the whole
+  score's *cheap* natural pass — measured near-free, **not** worth a crisp_notation
+  contract yet), the `maxNotes = 256` flat cap, an in-app print *preview* (the PDF
+  raster recipe would reuse).
 
 ---
 

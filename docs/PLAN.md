@@ -14,6 +14,87 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+> The long list of `✅ idle / SHIPPED` entries below is **history** — the same
+> features are written up in [HISTORY.md](HISTORY.md). Only 🚧 **ACTIVE** entries
+> are live claims; don't edit another agent's ACTIVE claim. **Pending, actionable
+> work is scoped in the two blocks immediately below.**
+
+### 🎯 Remaining work — scoped (start here; pick one, claim it, then build)
+
+Ordered by value ÷ effort. Each is unclaimed unless noted. **Verify the claim is
+still free on the board before starting** (search the agent name / feature).
+
+1. **AEC: port the double-talk detector (DTD) to the native C engine** — *high
+   value, self-contained, verifiable, no app/Workshop collision.* The DTD (+7 dB
+   double-talk protection) and RES (deeper echo suppression) exist only in the
+   Dart/CLI path (`lib/core/audio/aec_offline.dart`); the app's jam mode runs the
+   native C engine in `native/aec/`, which has neither. **The verify harness is now
+   fixed** (`native/aec/build.sh`, `eba8c4d` — the 6-test ERLE cross-check runs
+   green), so this is finally testable. Do **DTD first** (simpler, higher value),
+   RES second. Scope + the exact fidelity trap (far-end-silent block-counter
+   bookkeeping) are in the **"AEC — what's left"** entry below. Verify:
+   `bash native/aec/build.sh`. Keep DTD off-by-default so the existing cross-check
+   still matches; add a native-vs-Dart-with-DTD test.
+2. **Small content minigames** — *low risk, squarely in the games lane, no
+   collision.* One `GameInfo` in `game_registry.dart` + a screen + a
+   `kStarThresholds` bracket in `core/tuning.dart` (games with scores) + EN/DE ARBs
+   + a widget test via `pumpGame`. Concrete unclaimed ideas: **Spot the upbeat**
+   (Auftakt / anacrusis reading), a **written↔concert toggle** for transposing
+   instruments, **SATB chorale reading** / a richer Grand Staff. Copy an existing
+   sibling (see the "Reusable scaffolds" note under the Ideas backlog).
+3. **Workshop Studio polish** — *coordinate: `composition_workshop_screen.dart` is
+   `opus (parity)`'s active turf (keyboard-first select-nav in flight).* Open:
+   **categorized insertion palettes**, richer multi-select inspector. Claim on the
+   board and rebase often, or wait until parity goes idle.
+
+**Blocked on crisp_notation (need a library change first — CI tracks public
+`CrispStrobe/crisp_notation@main`):** app-wide `showNoteNames` (only on
+`StaffView`, not `MultiSystemView`), a 7th-chord builder for Roman numerals, more
+SMuFL faces (Leland/Leipzig). **Needs real hardware (not headless):** AEC
+on-device tuning — milestone (e), see `docs/AEC_TIER3B.md`. **Strategic / product
+(not a coding session):** parent view + child profiles, teacher/LMS layer,
+generative sight-reading, MIDI input. See the "Ideas backlog" + "Opportunity
+roadmap" sections lower down.
+
+### 🚀 Handover prompt for the next agent (copy-paste this)
+
+```
+You're joining the Klang Universum repo (Flutter music-education app) where
+SEVERAL agents work in parallel and push to origin/main — collisions are the
+main hazard. Before writing any code:
+
+1. Read docs/PLAN.md — the "🎯 Remaining work — scoped" block at the top of the
+   "Actively working on" board. Pick ONE unclaimed item.
+2. Work in a feature branch + a git worktree that is a SIBLING of mus/ (e.g.
+   ../mus-<task>), never under .claude/ — the ../crisp_notation path-dep must
+   resolve. From an existing worktree, `git pull --rebase origin main` first.
+3. CLAIM IT on the docs/PLAN.md 🚧 board (agent · task · files touched · status)
+   and push the board to origin/main BEFORE touching any hot shared file
+   (game_registry.dart, core/tuning.dart, the ARBs, composition_workshop_screen.dart,
+   score_document.dart). Re-check the board for a conflicting claim first.
+4. Build in small commits. `git pull --rebase origin main` often; expect the tree
+   to have moved. Coordinate in the board comment if you must touch another
+   agent's active file.
+5. Pre-commit gate, in this order: `flutter pub get` (in a fresh worktree, BEFORE
+   format, or dart format silently reformats the whole repo), then
+   `dart format <your files>`, then `flutter analyze` (whole project, aim for "No
+   issues found"), then the test suite. New feature ⇒ a test.
+6. Localize every user-facing string (app_en.arb + app_de.arb, run
+   `flutter gen-l10n`). This Mac needs the GEM-env wrapper for flutter/pod/xcode:
+   `PATH="/usr/bin:$PATH" env -u GEM_HOME -u GEM_PATH -u RUBYOPT flutter ...`.
+7. ⚠️ NEVER pipe a test/gate command through `tail`/`head` before a push
+   (`flutter test | tail && git push`) — the pipe EATS the exit code and a red
+   suite reaches main. Check exit codes directly.
+8. After each ship: update the board to idle/SHIPPED, record the feature in
+   docs/HISTORY.md, and push. Never name or allude to competing products in code
+   or docs.
+
+The Workshop editor, playback, songs, Tracker, Loop Mixer and the AEC *algorithm*
+are essentially complete; the highest-leverage open item is porting the AEC
+double-talk detector to the native C engine (verify harness now green:
+`bash native/aec/build.sh`). Do that, or a small self-contained minigame.
+```
+
 - **opus (aec-res)** · ✅ **idle / SHIPPED — residual echo suppression**
   (`15a6d62`). **The patent-free AEC algorithm roadmap is COMPLETE (DTD + RES).**
   `ResidualEchoSuppressor` (`aec_offline.dart`): a Wiener-style spectral
@@ -176,36 +257,14 @@ and push to origin/main** before/after touching shared files. Format:
   (byte-identity fast path); V1/V2 toolbar toggle; MusicXML round-trips. ✅ **mid-bar
   clef SHIPPED, fully lossless** (`12404e1`/`854ab25` + crisp_notation writer
   `3c1b8bd`).
-- **opus (next)** · ✅ **idle — all three "doable now" items SHIPPED.** Worktree
-  `../mus-next`, branch `feature/workshop-next`. Analyze clean throughout.
-  1. ✅ **Song Book "Play along" (instrument)** — `chartFromScore` gained
-     `octaveAgnostic` (default true = singing); `false` makes the written octave the
-     target. `song_screen` now offers **Sing along** *and* **Play along** via a
-     shared `_launcher` (both length-scaled stars, both disabled during the karaoke
-     preview / for melody-less songs); the button row became a `Wrap` so three
-     buttons never overflow a phone. Reused `gamePlayAlong` +
-     `gameId: 'keyboard_play_along'` — **no registry/tuning change**. 16 tests.
-  2. ✅ **Workshop playback: count-in + loop-a-selection** — both opt-in from the ⋮
-     menu, **default off** so playback is unchanged until armed. *Count-in*: a bar
-     of clicks rendered INTO the same WAV (so it can't drift), with the cursor clock
-     offset by `_countInSec`; beats follow the meter's own unit (6/8 counts six
-     eighths) and the practice-speed stretch applies. *Loop*: `_renderPart` gained a
-     `from`/`to` window that clips **every** part and rebases to 0, so a looped
-     selection keeps its accompaniment; the count-in is a first-pass lead-in only
-     (restarts replay cached count-in-free stems). Confined to the transport region
-     + two menu items — no inspector/input-mode/value-strip edits. EN/DE. 57 tests.
-  3. ✅ **Melody doodle** (`melody_doodle`) — the last open creative backlog item and
-     the gesture twin of Colour Melody: a freehand contour → pure
-     `doodleToColumns` (column-averaged, y-inverted, untouched columns rest,
-     out-of-box clamped) → one C-pentatonic note per beat → a **real Score** live
-     underneath → play back. A sandbox, no stars. One additive `GameInfo`; EN/DE;
-     7 unit tests + a real-drag widget test via `pumpGame`.
-  **Earlier (all in [HISTORY.md]):** Workshop tempo marks · grace notes · playback
-  bucket F · multi-part playback · voice-2 playback · practice speed; Song Book
-  Sing along + length-scaled stars.
-  **Nothing left in my lane.** Workshop *screen* polish (richer inspector, insertion
-  palettes, keyboard-first select-nav, value-strip un-dual-purpose) stays **parity's**
-  turf; page/print + PDF export stay blocked on crisp_notation.
+- **opus (next)** · ✅ **idle.** Worktree `../mus-next`, branch
+  `feature/workshop-next`. All shipped & recorded in [HISTORY.md]: Workshop tempo
+  marks · grace notes · playback bucket F · multi-part playback · voice-2 playback ·
+  practice speed · count-in + loop-a-selection; Song Book **Sing along + Play along**
+  (`chartFromScore`) with length-scaled stars; **Melody doodle** game; and the
+  **native-AEC verify-harness fix** (`eba8c4d`, `build.sh` → `flutter test`) that
+  unblocks the AEC C port (top item in the scoped block above). My feature lane is
+  exhausted — remaining work is in the scoped "🎯 Remaining work" block at the top.
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).
