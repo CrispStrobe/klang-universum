@@ -2666,6 +2666,12 @@ abstract class AppLocalizations {
   /// **'Move cursor'**
   String get trackerCursor;
 
+  /// No description provided for @trackerFxColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Effect column (MOD)'**
+  String get trackerFxColumn;
+
   /// No description provided for @trackerMixer.
   ///
   /// In en, this message translates to:

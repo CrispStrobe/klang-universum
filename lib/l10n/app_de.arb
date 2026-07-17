@@ -462,6 +462,7 @@
   "trackerEntryNames": "Notennamen",
   "trackerKeyHelp": "Tastatur",
   "trackerCursor": "Cursor bewegen",
+  "trackerFxColumn": "Effekt-Spalte (MOD)",
   "trackerMixer": "Spuren & Mixer",
   "trackerRecordSample": "Sample aufnehmen",
   "trackerSampleTrim": "Stille kürzen",

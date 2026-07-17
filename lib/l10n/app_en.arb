@@ -493,6 +493,7 @@
   "trackerEntryNames": "Note names",
   "trackerKeyHelp": "Keyboard",
   "trackerCursor": "Move cursor",
+  "trackerFxColumn": "Effect column (MOD)",
   "trackerMixer": "Tracks & mixer",
   "trackerRecordSample": "Record sample",
   "trackerSampleTrim": "Trim silence",

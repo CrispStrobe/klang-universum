@@ -26,6 +26,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/sfxr.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/tracker_effects.dart';
+import 'package:comet_beat/core/audio/tracker_replay.dart';
 
 export 'package:comet_beat/core/audio/tracker_effects.dart' show TrackerEffect;
 
@@ -92,16 +93,30 @@ class TrackerCell {
     this.midi,
     this.volume,
     this.effect = TrackerEffect.none,
+    this.fxCmd = 0,
+    this.fxParam = 0,
   });
 
   final int? midi;
   final double? volume;
 
   /// A per-note effect command (arp/vibrato/slide). Honoured by additive voices
-  /// (see [AdditiveInstrument]); other instruments ignore it.
+  /// (see [AdditiveInstrument]); other instruments ignore it. This is the simple
+  /// legacy effect used by the Beginner grid.
   final TrackerEffect effect;
 
+  /// The classic MOD-style effect COLUMN: a command nibble [fxCmd] (0x0–0xF) and
+  /// an 8-bit parameter [fxParam] (0x00–0xFF), e.g. C20 = command 0xC param 0x20.
+  /// `0/0` = no command. Applied by the tracker replayer (tracker_replay.dart);
+  /// the Advanced tracker authors these. Kept alongside [effect] so nothing in
+  /// the Beginner path changes.
+  final int fxCmd;
+  final int fxParam;
+
   bool get isEmpty => midi == null;
+
+  /// Whether an effect-column command is present (any non-zero cmd/param).
+  bool get hasCommand => fxCmd != 0 || fxParam != 0;
 
   static const empty = TrackerCell();
 
@@ -110,10 +125,12 @@ class TrackerCell {
       other is TrackerCell &&
       other.midi == midi &&
       other.volume == volume &&
-      other.effect == effect;
+      other.effect == effect &&
+      other.fxCmd == fxCmd &&
+      other.fxParam == fxParam;
 
   @override
-  int get hashCode => Object.hash(midi, volume, effect);
+  int get hashCode => Object.hash(midi, volume, effect, fxCmd, fxParam);
 }
 
 /// Collapses a channel's cells into runs using the classic tracker rule: a
@@ -761,7 +778,10 @@ class TrackerEngine {
       }
       startStep += steps;
     }
-    return applyChannelEffects(buf, ch.effects);
+    // Effect-column volume commands (Cxx/Axy) — a no-op when the channel has
+    // none, so patterns without an effect column are untouched.
+    final withVol = applyVolumeColumn(buf, ch.cells, _timing);
+    return applyChannelEffects(withVol, ch.effects);
   }
 
   /// The current pattern mixed to PCM16 (one loop's worth). Used by [renderLoop]

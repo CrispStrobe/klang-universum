@@ -1286,6 +1286,16 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                     ),
                 ],
               ),
+              const Divider(height: 20),
+              // Classic MOD effect COLUMN (Cxx set-volume, Axy volume-slide);
+              // more commands land as the replayer grows. Applies live.
+              _CommandEditor(
+                l10n: l10n,
+                initialCmd: cell.fxCmd,
+                initialParam: cell.fxParam,
+                onChanged: (cmd, param) =>
+                    _setCellCommand(channel, row, cmd, param),
+              ),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
@@ -1303,6 +1313,24 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         ),
       ),
     );
+  }
+
+  void _setCellCommand(int channel, int row, int cmd, int param) {
+    final cur = _song.engine.cellAt(channel, row);
+    setState(
+      () => _song.engine.setCell(
+        channel,
+        row,
+        TrackerCell(
+          midi: cur.midi,
+          volume: cur.volume,
+          effect: cur.effect,
+          fxCmd: cmd,
+          fxParam: param,
+        ),
+      ),
+    );
+    _syncPlayback();
   }
 
   String _effectLabel(AppLocalizations l10n, TrackerEffect fx) => switch (fx) {
@@ -2046,9 +2074,13 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final vol = hasNote && cell.volume != null && cell.volume != 1.0
         ? (cell.volume! * 99).round().toString().padLeft(2, '0')
         : '··';
-    final fx = hasNote && cell.effect != TrackerEffect.none
-        ? _effectCode(cell.effect)
-        : '·';
+    // Effect column: the classic hex command (e.g. C20/A04) when present, else
+    // the legacy arp/vibrato/slide letter, else a dot.
+    final fx = cell.hasCommand
+        ? _commandHex(cell)
+        : (hasNote && cell.effect != TrackerEffect.none
+            ? _effectCode(cell.effect)
+            : '·');
     return GestureDetector(
       onTap: () {
         if (_marking) {
@@ -2101,6 +2133,13 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         ),
       ),
     );
+  }
+
+  /// The effect column as a 3-char hex code (command nibble + param byte).
+  static String _commandHex(TrackerCell c) {
+    final cmd = c.fxCmd.toRadixString(16).toUpperCase();
+    final p = c.fxParam.toRadixString(16).toUpperCase().padLeft(2, '0');
+    return '$cmd$p';
   }
 
   static String _effectCode(TrackerEffect fx) => switch (fx) {
@@ -2349,6 +2388,86 @@ class _ChannelMeter extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The MOD effect-column editor for one cell: a command dropdown + a hex param
+/// slider, applied live. Phase 1 exposes the working commands (None · C set-
+/// volume · A volume-slide); more appear as the replayer (tracker_replay.dart)
+/// gains them.
+class _CommandEditor extends StatefulWidget {
+  const _CommandEditor({
+    required this.l10n,
+    required this.initialCmd,
+    required this.initialParam,
+    required this.onChanged,
+  });
+
+  final AppLocalizations l10n;
+  final int initialCmd;
+  final int initialParam;
+  final void Function(int cmd, int param) onChanged;
+
+  @override
+  State<_CommandEditor> createState() => _CommandEditorState();
+}
+
+class _CommandEditorState extends State<_CommandEditor> {
+  late int _cmd = widget.initialCmd;
+  late int _param = widget.initialParam;
+
+  // Supported commands (nibble → label). 0 with param 0 = none.
+  static const _commands = <int, String>{
+    0x0: 'None',
+    0xC: 'Cxx  Set volume',
+    0xA: 'Axy  Volume slide',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.l10n.trackerFxColumn),
+        Row(
+          children: [
+            DropdownButton<int>(
+              value: _commands.containsKey(_cmd) ? _cmd : 0x0,
+              items: [
+                for (final e in _commands.entries)
+                  DropdownMenuItem(value: e.key, child: Text(e.value)),
+              ],
+              onChanged: (v) {
+                setState(() {
+                  _cmd = v ?? 0;
+                  if (_cmd == 0) _param = 0;
+                });
+                widget.onChanged(_cmd, _param);
+              },
+            ),
+            const SizedBox(width: 12),
+            Text(
+              _param.toRadixString(16).toUpperCase().padLeft(2, '0'),
+              style: const TextStyle(
+                fontFeatures: [FontFeature.tabularFigures()],
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        if (_cmd != 0)
+          Slider(
+            value: _param.toDouble(),
+            max: 255,
+            divisions: 255,
+            label: _param.toRadixString(16).toUpperCase().padLeft(2, '0'),
+            onChanged: (v) {
+              setState(() => _param = v.round());
+              widget.onChanged(_cmd, _param);
+            },
+          ),
+      ],
     );
   }
 }

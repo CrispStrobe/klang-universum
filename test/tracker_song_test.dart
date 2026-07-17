@@ -298,6 +298,39 @@ void main() {
     });
   });
 
+  group('effect column (replayer)', () {
+    // The mix normalizes each stem to unit peak, so a Cxx on a note is only
+    // observable RELATIVE to a louder note in the same channel. Keep a loud
+    // reference note at row 0 (the peak) and measure a later note's region with
+    // vs. without the command.
+    int regionPeak(Uint8List wav, TrackerTiming t, int row) {
+      final data = ByteData.sublistView(wav);
+      final s0 = 44 + t.stepStartSample(row) * 2;
+      final s1 = 44 + t.stepStartSample(row + 1) * 2;
+      var p = 0;
+      for (var i = s0; i + 1 < s1 && i + 1 < wav.length; i += 2) {
+        final s = data.getInt16(i, Endian.little).abs();
+        if (s > p) p = s;
+      }
+      return p;
+    }
+
+    test('a Cxx set-volume command quietens that note', () {
+      final song = TrackerSong()..setRows(8);
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60)); // loud reference
+      song.engine.setCell(0, 4, const TrackerCell(midi: 72)); // full
+      final full = regionPeak(song.renderCurrentPatternWav(), song.timing, 4);
+      song.engine.setCell(
+        0,
+        4,
+        const TrackerCell(midi: 72, fxCmd: 0xC, fxParam: 0x10), // C10 = 16/64
+      );
+      final quiet = regionPeak(song.renderCurrentPatternWav(), song.timing, 4);
+      expect(quiet, lessThan(full));
+      expect(quiet, greaterThan(0));
+    });
+  });
+
   group('orderIndexAtMs', () {
     test('maps song time to the sounding order position', () {
       final song = TrackerSong(); // 32 rows
