@@ -11,10 +11,8 @@ name: iOS Release (App Store)
 #   ASC_API_KEY_P8_BASE64  base64 of AuthKey_<KEYID>.p8
 #   ASC_KEY_ID             App Store Connect API key id            (9RMU3C7422)
 #   ASC_ISSUER_ID          App Store Connect issuer id
-#   ASC_APP_ID             numeric app id  (⚠ set to the NEW CometBeat record's
-#                          id once created in the browser; old klangUniversum
-#                          record 6790143999 is being retired — only needed for
-#                          the real upload step, not dry_run)
+#   ASC_APP_ID             numeric app id  (CometBeat record 6791962816; old
+#                          klangUniversum record 6790143999 retired)
 #   ASC_TEAM_ID            Apple Developer team id                 (N9XSJ4M3GT)
 #   DIST_CERT_P12_BASE64   base64 of the "Apple Distribution" .p12 (cert + key)
 #   DIST_CERT_PASSWORD     password for that .p12
@@ -36,14 +34,30 @@ on:
 env:
   BUNDLE_ID: com.crispstrobe.cometBeat
   PROFILE_NAME: CometBeat AppStore CI
-  FLUTTER_VERSION: '3.44.2'
+  FLUTTER_VERSION: '3.44.4'
 
 jobs:
   build-upload:
     runs-on: macos-latest
     timeout-minutes: 40
+    # The app path-depends on the sibling crisp_notation library
+    # (../crisp_notation), so lay the two repos out as siblings and run from
+    # within this one — same layout as ci.yml / deploy.yml.
+    defaults:
+      run:
+        working-directory: cometbeat
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout cometbeat
+        uses: actions/checkout@v4
+        with:
+          path: cometbeat
+
+      - name: Checkout crisp_notation (sibling path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: CrispStrobe/crisp_notation
+          ref: main
+          path: crisp_notation
 
       - uses: subosito/flutter-action@v2
         with:
@@ -159,7 +173,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cometbeat-ipa
-          path: build/ios/ipa/*.ipa
+          path: cometbeat/build/ios/ipa/*.ipa
           if-no-files-found: error
 
       - name: Upload to App Store Connect
