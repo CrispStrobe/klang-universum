@@ -7717,6 +7717,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Grades 9–10'**
   String get textbookGradesG910;
+
+  /// No description provided for @tutorialReadAloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get tutorialReadAloud;
 }
 
 class _AppLocalizationsDelegate

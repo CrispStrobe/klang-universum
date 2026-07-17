@@ -3,6 +3,7 @@ import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
+import 'package:comet_beat/core/services/tts_service.dart';
 import 'package:comet_beat/features/games/game_registry.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/tutorial_gate.dart';
@@ -53,12 +54,16 @@ class CometBeatApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => DebugService()..load(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => TtsService(),
+        ),
       ],
       child: Consumer<SettingsService>(
         builder: (context, settings, _) {
           // Keep the audio voice + master sound switch in sync with settings.
           context.read<AudioService>().instrument = settings.instrument;
           context.read<AudioService>().soundOn = settings.soundOn;
+          context.read<TtsService>().soundOn = settings.soundOn;
           return MaterialApp(
             onGenerateTitle: (context) =>
                 AppLocalizations.of(context)?.appTitle ?? 'CometBeat',

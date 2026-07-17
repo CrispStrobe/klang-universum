@@ -43,6 +43,12 @@ dependencies:
   crisp_notation:
     path: ../crisp_notation/packages/crisp_notation
   record: ^7.1.1
+  # Platform text-to-speech (AVSpeechSynthesizer / Android TTS / web
+  # SpeechSynthesis) — on-device, offline, free de+en voices. Reached only
+  # through core/services/tts_service.dart (the sole plugin-facing file), which
+  # abstracts a TtsBackend so a neural backend (CrispTTS / Kokoro-ONNX) can slot
+  # in later. Narrates lesson/primer text for pre-readers + accessibility.
+  flutter_tts: ^4.2.2
   # AEC Tier 3b native full-duplex echo canceller (in-repo Flutter FFI plugin).
   # Used only on native platforms + only when speaker-backing AEC is wanted;
   # reached exclusively through core/audio/aec_capability.dart, whose web build

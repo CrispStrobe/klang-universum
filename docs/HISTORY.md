@@ -43,6 +43,8 @@ A read-through learning path over the grade-1–10 concept map (`core/curriculum
 
 **Fully localised + narrative (de/en).** `features/textbook/textbook_i18n.dart` (ARB-backed) localises all 70 concept titles, the 19 concept-area sub-headers and the 5 grade-band short labels, and supplies a **narrative intro paragraph per grade band**. Each band's concepts are grouped **by area** (sub-headers in first-appearance order, so the map's teaching sequence is preserved), so the reader reads like a book rather than a flat list.
 
+**Read-aloud narration (TTS).** A 🗣 read-aloud button in the shared tutorial sheet speaks the current lesson/how-to step, so a pre-reader (6–8yo) can *hear* it before they can read it — the same sheet backs both the textbook's "Read the lesson" and every game's "?" primer, so both narrate from one change. `core/services/tts_service.dart` wraps `flutter_tts` (on-device platform voices, offline, de+en) behind a `TtsBackend` seam; locale-aware, gated by the master sound switch, best-effort (a missing OS voice just stays quiet). The seam leaves room for a neural backend (Kokoro/Piper ONNX) later.
+
 ## Composition Workshop
 
 A section *outside* the minigames (home-bar piano button) — a full touch- and

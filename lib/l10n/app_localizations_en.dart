@@ -4214,4 +4214,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get textbookGradesG910 => 'Grades 9–10';
+
+  @override
+  String get tutorialReadAloud => 'Read aloud';
 }

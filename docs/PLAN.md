@@ -33,6 +33,8 @@ and push to origin/main** before/after touching shared files. Format:
 
 - **opus (modulation)** · ✅ **idle / SHIPPED — "Key Change?" ear game (`modulation_ear`, scales module).** Binary ear game: a C-major phrase either stays in one key or has its second half lifted a perfect 4th/5th to a new tonic; child taps Same key / Key changed. Correct replays the phrase; own SRI `scales.modulation.<same|changed>`. `modulationPrimer` teaches it by ear (stay vs move). **Closes the `modulation` gap** in concept_map (2 gaps left: modes, instrument families). EN/DE; analyze clean (pre-existing composition import-order info untouched); modulation_ear + tutorial + curriculum_coverage + consistency tests green.
 
+- **opus (tts)** · ✅ **idle / SHIPPED — TTS narration, slice 1 (read lessons/instructions aloud).** New `core/services/tts_service.dart`: a `TtsBackend`-abstracted, locale-aware (de-DE/en-US), sound-gated `TtsService` on `flutter_tts` (platform voices — on-device, offline, free). A **🗣 read-aloud button in the shared tutorial sheet** narrates the current step, so **both** textbook lessons and every game's how-to primer get it from one change. Provided in `main.dart` (soundOn synced from settings); degrades safely when unprovided. New dep `flutter_tts: ^4.2.2` (⚠ `pod install` before next Apple build; CI unaffected). Touched shared `main.dart`+ARBs+pubspec — rebased. `tts_service_test` (fake backend) + tutorial tests green; analyze clean (lib+test). CrispTTS = Python-CLI neural engines; the `TtsBackend` seam is left ready for a lightweight ONNX voice (Kokoro/Piper via onnx_runtime_dart) later.
+
 - **opus (textbook-p3)** · ✅ **idle / SHIPPED — Textbook phase 3: narrative + full i18n.** New `features/textbook/textbook_i18n.dart` (ARB-backed, de/en) localises **all 70 concept titles**, the **19 concept-area sub-headers** and **5 grade-band short labels**, plus a **narrative intro paragraph per grade band**. The reader now groups each band's concepts **by area** (sub-headers, first-appearance order) with an italic band intro on top, so it reads like a book. +94 ARB keys ×2 (concept/area/band) +5 label keys ×2, generated from one source of truth. Touched shared ARBs — kept both key sets on rebase. Analyze clean (lib+test); textbook (now incl. a **de-locale** assertion) + curriculum tests green. Also logged the **TTS-narration (CrispASR)** follow-up in PLAN.
 
 - **opus (textbook-ui)** · ✅ **idle / SHIPPED — read-through Textbook reader.** New `features/textbook/textbook_screen.dart` walks the grade-1–10 concept map band by band; each concept expands to its **lesson** (the game's primer via `showTutorial`/`helpPrimerFor`) + **practise** links (`gameRoute`) to its games; untrained concepts show "coming soon", so the reader stays honest as gaps fill. Home app-bar gets a 📖 Textbook button. Reuses the primers as lesson content (phase 0 work). EN/DE chrome; concept titles English for now (l10n a follow-up). New files + home entry + 5 ARB keys; analyze clean; 2 widget tests green. (Textbook phase 4 — the reader UI.)
@@ -1129,14 +1131,31 @@ bachelor-tier extension (draw facts from the OER registry below); the AnaVis-sty
 form view; and **TTS narration** (below).
 
 ### TTS narration — read the lessons + instructions aloud (maintainer, 2026-07-17)
-Use **TTS from CrispASR** to read out the text explanations / instructions of the
-minigames and the textbook. High learnability value: a **pre-reader (6–8yo)** can
-*hear* a lesson or a game's how-to-play even before they can read it, and it makes
-the app accessible. Scope: a small `TtsService` (mirrors `AudioService`'s gate +
-the sound toggle) that speaks (a) a `TutorialStep.text` while its example plays in
-the primer/textbook reader, and (b) a game's instruction line on first entry.
-Locale-aware (de/en voices). Gate behind the existing sound/settings toggle;
-offline/on-device if CrispASR supports it. Unclaimed.
+Use TTS to read out the text explanations / instructions of the minigames and the
+textbook. High learnability value: a **pre-reader (6–8yo)** can *hear* a lesson or
+a game's how-to-play even before they can read it, and it makes the app accessible.
+
+**Slice 1 — SHIPPED (2026-07-17).** `core/services/tts_service.dart`: a
+`TtsBackend`-abstracted `TtsService` (mirrors `AudioService`'s `soundOn` gate),
+locale-aware (`de→de-DE`, else `en-US`), best-effort (a missing OS voice degrades
+to silence). Backend = `flutter_tts` (platform AVSpeechSynthesizer / Android TTS /
+web SpeechSynthesis — on-device, offline, free). Wired a **🗣 read-aloud button**
+into the shared **tutorial sheet**, so **both** the textbook lessons *and* every
+game's how-to primer get narration from one change (the reader's "Read the lesson"
+and the games' "?" both open this sheet). Provided in `main.dart`; `soundOn` synced
+from settings alongside AudioService. Safe when unprovided (widget tests degrade to
+no button). Tests: `tts_service_test` (fake backend — gating, voice mapping,
+stop) + tutorial tests green. ⚠ needs `pod install` before the next Apple build
+(new plugin); CI (analyze+test) unaffected.
+
+**Follow-ups:** a dedicated *narration* toggle (accessibility) separate from the
+master sound switch; **auto-narrate** a step when its example plays (opt-in);
+per-game instruction narration on first entry; and the higher-quality **neural
+backend** — the `TtsBackend` seam is ready for **CrispTTS / Kokoro-ONNX** (via
+`onnx_runtime_dart`) or a CrispTTS server, when the model-size/App-Store trade-off
+is worth it. (CrispTTS is a Python CLI of 28+ engines — desktop/server, not a
+Flutter package — so a neural backend means porting one lightweight ONNX voice,
+e.g. Kokoro/Piper, not embedding CrispTTS.)
 
 ### Extending the syllabus toward bachelor level (2026-07-17)
 The grade-1–10 spine is the floor; the concept map extends **upward toward

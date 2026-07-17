@@ -4239,4 +4239,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get textbookGradesG910 => 'Klasse 9–10';
+
+  @override
+  String get tutorialReadAloud => 'Vorlesen';
 }

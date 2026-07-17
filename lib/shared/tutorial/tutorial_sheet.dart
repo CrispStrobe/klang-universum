@@ -7,6 +7,7 @@
 // [maybeShowTutorial] (open once on a game's first visit, then remember).
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/tts_service.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
@@ -61,11 +62,33 @@ class _TutorialSheet extends StatefulWidget {
 class _TutorialSheetState extends State<_TutorialSheet> {
   final PageController _pages = PageController();
   int _index = 0;
+  TtsService? _tts;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Narration is optional: only wired when a TtsService is in the tree (it is
+    // in the running app; widget tests that don't provide one just omit the
+    // read-aloud button and keep working).
+    try {
+      _tts = context.read<TtsService>();
+    } on ProviderNotFoundException {
+      _tts = null;
+    }
+  }
 
   @override
   void dispose() {
+    _tts?.stop();
     _pages.dispose();
     super.dispose();
+  }
+
+  void _readAloud() {
+    _tts?.speak(
+      widget.tutorial.steps[_index].text,
+      locale: Localizations.localeOf(context),
+    );
   }
 
   bool get _isLast => _index == widget.tutorial.steps.length - 1;
@@ -96,16 +119,33 @@ class _TutorialSheetState extends State<_TutorialSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                widget.tutorial.title,
-                style: theme.textTheme.titleLarge,
-                textAlign: TextAlign.center,
+              Row(
+                children: [
+                  // Balances the read-aloud button so the title stays centred.
+                  if (_tts != null) const SizedBox(width: 48),
+                  Expanded(
+                    child: Text(
+                      widget.tutorial.title,
+                      style: theme.textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  if (_tts != null)
+                    IconButton(
+                      icon: const Icon(Icons.record_voice_over_rounded),
+                      tooltip: l10n.tutorialReadAloud,
+                      onPressed: _readAloud,
+                    ),
+                ],
               ),
               const SizedBox(height: 8),
               Flexible(
                 child: PageView.builder(
                   controller: _pages,
-                  onPageChanged: (i) => setState(() => _index = i),
+                  onPageChanged: (i) {
+                    _tts?.stop(); // don't talk over the next step
+                    setState(() => _index = i);
+                  },
                   itemCount: steps.length,
                   itemBuilder: (context, i) => _StepView(step: steps[i]),
                 ),
