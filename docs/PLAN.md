@@ -19,6 +19,18 @@ and push to origin/main** before/after touching shared files. Format:
 > are live claims; don't edit another agent's ACTIVE claim. **Pending, actionable
 > work is scoped in the two blocks immediately below.**
 
+- **opus (aec-native-dtd)** · 🚧 **ACTIVE — port the double-talk detector to the
+  native C engine** (so the app's jam path can get it, not just the Dart/CLI).
+  Worktree `../mus-aec-native-dtd`, branch `feature/aec-native-dtd`. All inside
+  `native/aec/` (out of app CI, analyzer-excluded — no app collision): additive
+  `aec_dsp_set_adapt()` gate + a C `AecDtd` (normalized-correlation, mirrors the
+  Dart `DoubleTalkDetector`) in `src/aec_dsp.{c,h}`; FFI bindings in
+  `lib/aec_dsp.dart`; an FFI double-talk cross-check in `test/aec_erle_test.dart`
+  asserting the C DTD lifts the near-end fidelity like the Dart one. Also fix
+  `build.sh` (it runs `dart test`, which can't load the flutter_test suite — use
+  `flutter test` with `AEC_LIBRARY_PATH`, outside the GEM wrapper). Verified on
+  this Mac via cmake build + the cross-check. NOT touching app/Workshop.
+
 ### 🎯 Remaining work — scoped (start here; pick one, claim it, then build)
 
 Ordered by value ÷ effort. Each is unclaimed unless noted. **Verify the claim is
