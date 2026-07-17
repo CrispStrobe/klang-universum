@@ -117,14 +117,29 @@ and push to origin/main** before/after touching shared files. Format:
     drift-prone tempo×swing grid; a new seam test pins the send steady state.
   **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
 
-- **opus (aec-rate)** · ✅ **idle / SHIPPED (layers 1–2 of 4) — self-tuning AEC:
-  Valin closed-loop learning rate** (the "how do we tune automatically" answer).
+- **opus (aec-rate)** · ✅ **idle / SHIPPED (layers 1,2,4 of 4; 3 partial) —
+  self-tuning AEC: Valin closed-loop rate + automatic tuner**. The full
+  automatic-tuning answer, end to end.
+  **Layer 4 (CMA-ES auto-tuner) DONE**: `bin/aec_tune.dart` + `bin/aec_tune/`
+  (CLI-only, out of the app). A ground-truth corpus (`corpus.dart`, parametric
+  rooms — measured-RIR swap is drop-in), a domain objective (`objective.dart` —
+  note-survival + double-talk SI-SDR, NOT speech-MOS, per the handover's
+  "judge by the decoded outcome"), and a separable CMA-ES (`cmaes.dart`,
+  verified against sphere + ill-conditioned ellipsoid). Tunes the rate's own
+  hand-picked constants (rateGamma/rateBeta0/rateMuMax — the paper leaves
+  gamma/beta0 unspecified). **Result on the synthetic corpus:** untuned adaptive
+  8.9 dB SI-SDR / 83% notes → tuned **20.4 dB / 100%** (+11.5 dB), also +10.5 dB
+  over fixed-`mu`. gamma/beta0 pin to their bounds (corpus wants extremes → real
+  corpus + wider bounds is the follow-up). 5 tests (optimizer correctness,
+  corpus/objective sanity, end-to-end loop ≥ baseline).
+  **Layer 3 (corpus) PARTIAL:** synthetic parametric-room generator shipped;
+  real speaker→mic captures (record-separately-and-sum) + measured RIRs still
+  need hardware — the generator interface is ready for that swap.
   **Layer 2 (C port) DONE** (`610acb2`): `AecRate` in `native/aec/src/aec_dsp.c`
   mirrors the Dart `AdaptiveLearningRate`; attach via `aec_dsp_set_rate` (NULL =
   fixed-`mu` path, byte-identical — the property `aec_erle_test` pins). FFI
-  binding + 2 new cross-check tests (adaptive protects near-end; detach →
-  bit-identical). NOT wired into `aec_shim`/`aec_engine` (no app consumer; that's
-  on-device milestone (e)). Remaining: (3) real corpus, (4) CMA-ES sweep.
+  binding + 2 new cross-check tests. NOT wired into `aec_shim`/`aec_engine`
+  (on-device milestone (e)).
   Layer 1 detail: Instead of hand-picking
   `mu`, the filter derives its own step per bin per block from its live leakage
   estimate — Valin, "On Adjusting the Learning Rate in Frequency Domain Echo

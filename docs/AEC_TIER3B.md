@@ -284,6 +284,43 @@ implementation.
 **The patent-free algorithm roadmap is complete** (DTD + RES). Recommended
 combination: `--dtd --res` (they compose — RES's leakage estimate is DTD-gated).
 
+3. ✅ **Closed-loop learning rate (self-tuning) — DONE.** Instead of a
+   hand-picked `mu`, the filter derives its own step per bin per block from its
+   live leakage estimate: Valin, "On Adjusting the Learning Rate in Frequency
+   Domain Echo Cancellation With Double-Talk" (IEEE TASLP 2007;
+   arXiv:1602.08044), written from the paper (SpeexDSP MDF uses the same law;
+   we did not vendor it). `mu_opt(k) = min(η·|Ŷ(k)|²/|E(k)|², μ_max)` with η
+   (=1/ERLE) regressed from DC-rejected error/echo power spectra. Shipped as
+   `AdaptiveLearningRate` in `echo_canceller.dart`; opt in via
+   `EchoCanceller(rate:)` / `cancelEcho(..., AecTuning(adaptiveRate:true))` /
+   `bin/aec.dart --adaptive-rate`. On `--selftest` it lifts the **linear**
+   double-talk SI-SDR from ~9 dB to **~33 dB** — beating fixed-`mu`+DTD (~16 dB)
+   with no DTD, and it **subsumes double-talk detection** (adding a DTD on top
+   hurts, since the rate already collapses on near-end). Trade-off: slower
+   convergence (~0.9 s vs a hot fixed `mu`'s ~0.1 s), so it's opt-in. **Ported to
+   C** (`aec_rate_*` in `src/aec_dsp.c`, `aec_dsp_set_rate`; NULL = fixed-`mu`
+   path, byte-identical — the ERLE cross-check still pins it). NOT yet wired into
+   `aec_shim`/`aec_engine` — that's the on-device milestone (e).
+
+### Automatic tuning (`bin/aec_tune.dart`)
+
+The adaptive rate removes the hand-tuning of `mu`, but its own control law
+introduces a few constants that are still hand-picked (`rateGamma`, `rateBeta0`,
+`rateMuMax` — the paper leaves γ/β₀ unspecified). `bin/aec_tune.dart` tunes those
+**automatically**: it builds a ground-truth corpus (`bin/aec_tune/corpus.dart` —
+parametric rooms today; the interface accepts measured RIRs / real captures as a
+drop-in), scores a config on a **domain objective** (`objective.dart` —
+note-survival + double-talk SI-SDR, deliberately NOT speech-MOS, per this doc's
+"judge by the decoded outcome"), and runs **separable CMA-ES** (`cmaes.dart`,
+correctness-tested against sphere + ill-conditioned ellipsoid) to maximize it.
+On the synthetic corpus it takes the untuned adaptive rate (8.9 dB SI-SDR / 83%
+note-survival) to **20.4 dB / 100%** (+11.5 dB). CLI-only (out of the app);
+tests in `test/aec_tune_test.dart`. Honesty: the numbers are only as real as the
+synthetic corpus — the trustworthy upgrade is real captures, at which point the
+tuner code is unchanged. This is the industry-standard black-box recipe (a
+non-intrusive metric + a corpus + CMA-ES), with a music-appropriate objective in
+place of AECMOS (which `bin/aecmos` provides as a cross-check).
+
 Reference algorithms in the same patent-free family: **SpeexDSP MDF** (Valin,
 BSD-3, designed to avoid patents) and **WebRTC AEC3** (BSD-3) — read for
 technique, don't vendor unless the licence + tree stay clean.
