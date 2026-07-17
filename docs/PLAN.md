@@ -47,11 +47,10 @@ and push to origin/main** before/after touching shared files. Format:
   Play (playback rides a real Stopwatch → a timed pump could end a short piece
   under load). Confined to transport + app-bar — no reflow/note-entry edits.
   **Shipped by opus (next):** tempo marks · grace notes · playback (bucket F) ·
-  multi-part playback (mix + full-score cursor + per-part mute) · practice speed.
-  🚧 **Now: voice-2 playback fix** — `_renderPart` builds its pitch map from
-  `m.elements` only, so the just-shipped voice-2 notes get a cursor highlight but
-  sound silent. Adding `m.voice2` (+ v3/v4) to the map in the transport (no model
-  change, doesn't touch parity's inspector region).
+  multi-part playback (mix + full-score cursor + per-part mute) · practice speed ·
+  ✅ **voice-2 playback** (`_renderPart` now scans elements + voice2/3/4, so the
+  just-shipped voice 2 sounds, not just highlights; transport-only, 51 widget green).
+  **idle.** Remaining Workshop items are parity's (Studio shell / input modes).
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).
