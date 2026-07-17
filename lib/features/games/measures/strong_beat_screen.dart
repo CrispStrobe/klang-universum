@@ -1,6 +1,6 @@
 // lib/features/games/measures/strong_beat_screen.dart
 //
-// "Strong Beat?" — metric-accent training on crisp_notation-public's new
+// "Strong Beat?" — metric-accent training on crisp_notation's new
 // `beatStrength`. A measure is shown with its beat numbers; one beat is
 // highlighted and the child says whether it is a STRONG (accented) or WEAK beat.
 // The answer isn't hard-coded — `TimeSignature.beatStrength(position)` grades it,

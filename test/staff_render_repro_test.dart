@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   setUpAll(() {
     final metadata = File(
-      '../crisp_notation-public/packages/crisp_notation/assets/smufl/bravura_metadata.json',
+      '../crisp_notation/packages/crisp_notation/assets/smufl/bravura_metadata.json',
     ).readAsStringSync();
     Bravura.debugOverrideMetadata(
       SmuflMetadata.fromJson(jsonDecode(metadata) as Map<String, Object?>),

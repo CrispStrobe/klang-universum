@@ -24,7 +24,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> loadRealBravura() async {
-  const base = '../crisp_notation-public/packages/crisp_notation/assets';
+  const base = '../crisp_notation/packages/crisp_notation/assets';
   Bravura.debugOverrideMetadata(
     SmuflMetadata.fromJson(
       jsonDecode(File('$base/smufl/bravura_metadata.json').readAsStringSync())

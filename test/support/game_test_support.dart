@@ -4,7 +4,7 @@
 // CI's small default test surface (800×600, Linux glyph metrics) those staves
 // can overflow and render off-screen, so `tap`/`drag`/`ensureVisible` throw
 // `getElementPoint` — even though the same test passes locally (macOS, larger
-// effective metrics). This got worse as crisp_notation-public's rendering evolved
+// effective metrics). This got worse as crisp_notation's rendering evolved
 // under mus CI, which tracks `crisp_notation@main`.
 //
 // Use [useGameSurface] (or [pumpGame], which calls it) in every staff-based
