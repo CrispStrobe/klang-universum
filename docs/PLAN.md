@@ -19,6 +19,20 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (aecmos)** · 🚧 **ACTIVE — AECMOS neural MOS scoring in the AEC eval CLI**.
+  `onnx_runtime_dart` (pure-Dart, public sibling) now has the conv/GRU ops AECMOS
+  needs, so the metric `AEC_TIER3B.md` rejected as "needs a native ORT" is doable.
+  Scoping it **dev-only / headless** (no app or web-bundle impact): `onnx_runtime_dart`
+  as a **dev_dependency** (path `../onnx_runtime_dart`), the copied `AecmosScorer` +
+  `MelFrontEnd` under `bin/aecmos/`, a `bin/aecmos.dart` CLI (`<model> <lpb> <mic>
+  <enh> <st|nst|dt>`; model is a **user-provided** Microsoft AEC-Challenge artifact
+  in `~/.cache/onnx_runtime_dart_models/`, never bundled), a model-free smoke test,
+  and the `AEC_TIER3B.md` correction. **HOT files (coordinate):** `pubspec.yaml`,
+  `.github/workflows/ci.yml` + `deploy.yml` (a sibling checkout step, mirroring
+  crisp_notation — every `pub get` resolves dev deps), `docs/AEC_TIER3B.md`.
+  Worktree `../mus-aecmos`, branch `feature/aecmos`. NOT touching the app / native
+  plugin / game registry.
+
 - **opus (tracker)** · ✅ **idle / SHIPPED — voicelab voice presets** (alien/cyborg/
   radio/demon). `VoiceEffect` in `voice_fx.dart` gains 4 presets composing formant +
   the shipped `ring_mod`/`distortion` + a 1-pole bandpass (radio); record-sheet icons
