@@ -508,8 +508,8 @@ const List<Concept> kConcepts = [
     GradeBand.g910,
     ConceptArea.scales,
     'Church modes (Dorian, etc.)',
-    [],
-  ), // GAP
+    ['mode_ear'],
+  ),
   Concept(
     'instrument_families',
     GradeBand.g910,

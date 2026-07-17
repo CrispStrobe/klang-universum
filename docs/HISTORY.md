@@ -324,6 +324,7 @@ Games built on crisp_notation capabilities the app didn't use before.
   the bracket + 3), heard as 2-in-a-beat vs 3-in-a-beat. Fills the triplet/tuplet
   gap. SRI `note_values.tuplet.<even|triplet>`.
 - **Label the Form** (Komponieren) — hearing and *seeing* a piece's shape, an AnaVis-in-miniature. Each section is a short motif; a reusable `FormTimeline` widget draws the sections as colour-coded blocks (same colour = same tune), and the child picks the form — ABA / AAB / ABC for beginners, AABA / ABAB / rondo (ABACA) at 2★ (where the block labels hide, so the repeat pattern must be read from the colours). Fills the musical-form + verse/chorus gaps. SRI `composition.form.<FORM>`.
+- **Which Mode?** (Skalen) — a three-way modal ear game beyond major/minor: a scale plays ascending from a tonic as **Major** (Ionian), natural **Minor** (Aeolian), or **Dorian**, and the child picks which. Dorian is the trap — minor-shaped but with a *raised 6th*, so it sounds "minor with a brighter twist"; the scales are built from exact semitone step patterns so that one distinguishing note is really there. `modePrimer` teaches the three colours (shown + heard). Fills the modes gap. SRI `scales.mode.<major|minor|dorian>`.
 - **Which Ornament?** (Noten lesen) — read the sign over a note: **trill** (tr),
   **mordent** (squiggle), or **turn** (sideways S), drawn via `NoteElement.ornament`
   and each played as a little flourish (trill = fast alternation, turn = the curl

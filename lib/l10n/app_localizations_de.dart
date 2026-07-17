@@ -3787,4 +3787,37 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerFormAba =>
       'Eine andere Melodie ist ein neuer Buchstabe — Teil B. Melodie, andere Melodie, dann wieder die erste ergibt die Form A-B-A. Ganz viele Lieder sind so gebaut!';
+
+  @override
+  String get gameMode => 'Welcher Modus?';
+
+  @override
+  String get gameModeSubtitle => 'Dur, Moll oder Dorisch?';
+
+  @override
+  String get modePrompt => 'Hör hin! Welcher Modus ist das?';
+
+  @override
+  String get modeMajor => 'Dur';
+
+  @override
+  String get modeMinor => 'Moll';
+
+  @override
+  String get modeDorian => 'Dorisch';
+
+  @override
+  String get primerModeTitle => 'Drei Farben einer Tonleiter';
+
+  @override
+  String get primerModeMajor =>
+      'Eine Dur-Tonleiter klingt hell und fröhlich. Hör, wie sie nach oben steigt.';
+
+  @override
+  String get primerModeMinor =>
+      'Eine Moll-Tonleiter klingt dunkler — ihre 3., 6. und 7. Stufe liegen etwas tiefer.';
+
+  @override
+  String get primerModeDorian =>
+      'Dorisch ist wie Moll, aber die 6. Stufe ist erhöht — es klingt nach Moll mit einem helleren Schimmer. Diese eine Note ist das ganze Geheimnis!';
 }

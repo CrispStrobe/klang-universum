@@ -1511,5 +1511,15 @@
   "formReadListen": "Listen",
   "primerFormTitle": "The shape of a piece",
   "primerFormSection": "Music is built from sections. Here is a little tune — call it section A. Whenever it comes back, it is A again.",
-  "primerFormAba": "A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!"
+  "primerFormAba": "A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!",
+  "gameMode": "Which Mode?",
+  "gameModeSubtitle": "Major, minor or Dorian?",
+  "modePrompt": "Listen! Which mode is it?",
+  "modeMajor": "Major",
+  "modeMinor": "Minor",
+  "modeDorian": "Dorian",
+  "primerModeTitle": "Three colours of scale",
+  "primerModeMajor": "A major scale sounds bright and happy. Listen to it climb.",
+  "primerModeMinor": "A minor scale sounds darker — its 3rd, 6th and 7th steps sit a little lower.",
+  "primerModeDorian": "Dorian is like minor, but its 6th step is raised — so it sounds minor with a brighter twist. That one note is the whole secret!"
 }

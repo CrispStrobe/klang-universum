@@ -3766,4 +3766,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerFormAba =>
       'A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!';
+
+  @override
+  String get gameMode => 'Which Mode?';
+
+  @override
+  String get gameModeSubtitle => 'Major, minor or Dorian?';
+
+  @override
+  String get modePrompt => 'Listen! Which mode is it?';
+
+  @override
+  String get modeMajor => 'Major';
+
+  @override
+  String get modeMinor => 'Minor';
+
+  @override
+  String get modeDorian => 'Dorian';
+
+  @override
+  String get primerModeTitle => 'Three colours of scale';
+
+  @override
+  String get primerModeMajor =>
+      'A major scale sounds bright and happy. Listen to it climb.';
+
+  @override
+  String get primerModeMinor =>
+      'A minor scale sounds darker — its 3rd, 6th and 7th steps sit a little lower.';
+
+  @override
+  String get primerModeDorian =>
+      'Dorian is like minor, but its 6th step is raised — so it sounds minor with a brighter twist. That one note is the whole secret!';
 }

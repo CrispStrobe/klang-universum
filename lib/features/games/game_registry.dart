@@ -105,6 +105,7 @@ import 'package:comet_beat/features/games/scales/echo_sequence_screen.dart';
 import 'package:comet_beat/features/games/scales/in_scale_screen.dart';
 import 'package:comet_beat/features/games/scales/key_signature_screen.dart';
 import 'package:comet_beat/features/games/scales/major_minor_ear_screen.dart';
+import 'package:comet_beat/features/games/scales/mode_ear_screen.dart';
 import 'package:comet_beat/features/games/scales/modulation_ear_screen.dart';
 import 'package:comet_beat/features/games/scales/run_direction_screen.dart';
 import 'package:comet_beat/features/games/scales/same_diff_screen.dart';
@@ -784,6 +785,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMajorMinorEar,
       subtitle: (l) => l.gameMajorMinorEarSubtitle,
       builder: (_) => const MajorMinorEarScreen(),
+    ),
+    // Which Mode? — a third colour (Dorian) beyond major/minor: the raised 6th.
+    GameInfo(
+      id: 'mode_ear',
+      icon: Icons.blur_on,
+      title: (l) => l.gameMode,
+      subtitle: (l) => l.gameModeSubtitle,
+      builder: (_) => const ModeEarScreen(),
+      tutorial: modePrimer,
     ),
     // Modulation ear game: does the phrase stay in one key or change key?
     GameInfo(

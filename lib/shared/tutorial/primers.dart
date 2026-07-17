@@ -1345,6 +1345,34 @@ Tutorial dottedNotePrimer(AppLocalizations l10n) => Tutorial(
       ],
     );
 
+/// Modes: three colours of scale from the same tonic — Major (bright), natural
+/// Minor (darker), and Dorian (minor-shaped but with a brighter raised 6th).
+/// Game: mode_ear.
+Tutorial modePrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerModeTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerModeMajor,
+          score: _notes(_cMajor), // C major = bright
+          play: (a) => a.playSequence(_run(_cMajor)),
+        ),
+        TutorialStep(
+          text: l10n.primerModeMinor,
+          // C natural minor: lowered 3rd, 6th and 7th — darker.
+          score: _notes(const [60, 62, 63, 65, 67, 68, 70, 72]),
+          play: (a) =>
+              a.playSequence(_run(const [60, 62, 63, 65, 67, 68, 70, 72])),
+        ),
+        TutorialStep(
+          text: l10n.primerModeDorian,
+          // C Dorian = C minor but the 6th (A♭→A) is raised: minor, yet brighter.
+          score: _notes(const [60, 62, 63, 65, 67, 69, 70, 72]),
+          play: (a) =>
+              a.playSequence(_run(const [60, 62, 63, 65, 67, 69, 70, 72])),
+        ),
+      ],
+    );
+
 /// Rests: silence with a written length. Shown as note/rest/note/rest and heard
 /// with real gaps, then paired value-for-value with notes.
 /// Game: connect_rests.

@@ -1253,5 +1253,15 @@
   "formReadListen": "Anhören",
   "primerFormTitle": "Die Form eines Stücks",
   "primerFormSection": "Musik besteht aus Teilen. Hier ist eine kleine Melodie — nenn sie Teil A. Immer wenn sie wiederkommt, ist es wieder A.",
-  "primerFormAba": "Eine andere Melodie ist ein neuer Buchstabe — Teil B. Melodie, andere Melodie, dann wieder die erste ergibt die Form A-B-A. Ganz viele Lieder sind so gebaut!"
+  "primerFormAba": "Eine andere Melodie ist ein neuer Buchstabe — Teil B. Melodie, andere Melodie, dann wieder die erste ergibt die Form A-B-A. Ganz viele Lieder sind so gebaut!",
+  "gameMode": "Welcher Modus?",
+  "gameModeSubtitle": "Dur, Moll oder Dorisch?",
+  "modePrompt": "Hör hin! Welcher Modus ist das?",
+  "modeMajor": "Dur",
+  "modeMinor": "Moll",
+  "modeDorian": "Dorisch",
+  "primerModeTitle": "Drei Farben einer Tonleiter",
+  "primerModeMajor": "Eine Dur-Tonleiter klingt hell und fröhlich. Hör, wie sie nach oben steigt.",
+  "primerModeMinor": "Eine Moll-Tonleiter klingt dunkler — ihre 3., 6. und 7. Stufe liegen etwas tiefer.",
+  "primerModeDorian": "Dorisch ist wie Moll, aber die 6. Stufe ist erhöht — es klingt nach Moll mit einem helleren Schimmer. Diese eine Note ist das ganze Geheimnis!"
 }

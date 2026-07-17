@@ -6847,6 +6847,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A different tune is a new letter — section B. Tune, different tune, then the first tune again makes the form A-B-A. Lots of songs are shaped this way!'**
   String get primerFormAba;
+
+  /// No description provided for @gameMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Mode?'**
+  String get gameMode;
+
+  /// No description provided for @gameModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Major, minor or Dorian?'**
+  String get gameModeSubtitle;
+
+  /// No description provided for @modePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen! Which mode is it?'**
+  String get modePrompt;
+
+  /// No description provided for @modeMajor.
+  ///
+  /// In en, this message translates to:
+  /// **'Major'**
+  String get modeMajor;
+
+  /// No description provided for @modeMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor'**
+  String get modeMinor;
+
+  /// No description provided for @modeDorian.
+  ///
+  /// In en, this message translates to:
+  /// **'Dorian'**
+  String get modeDorian;
+
+  /// No description provided for @primerModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Three colours of scale'**
+  String get primerModeTitle;
+
+  /// No description provided for @primerModeMajor.
+  ///
+  /// In en, this message translates to:
+  /// **'A major scale sounds bright and happy. Listen to it climb.'**
+  String get primerModeMajor;
+
+  /// No description provided for @primerModeMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'A minor scale sounds darker — its 3rd, 6th and 7th steps sit a little lower.'**
+  String get primerModeMinor;
+
+  /// No description provided for @primerModeDorian.
+  ///
+  /// In en, this message translates to:
+  /// **'Dorian is like minor, but its 6th step is raised — so it sounds minor with a brighter twist. That one note is the whole secret!'**
+  String get primerModeDorian;
 }
 
 class _AppLocalizationsDelegate

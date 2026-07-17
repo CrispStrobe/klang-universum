@@ -148,6 +148,7 @@ void main() {
       'Decorating a note': ornamentPrimer, // ornament Score path
       'The shape of a piece': formPrimer,
       'Same key, or a new one?': modulationPrimer,
+      'Three colours of scale': modePrimer,
     };
     for (final entry in primers.entries) {
       await pumpGame(
