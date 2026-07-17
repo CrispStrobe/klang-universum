@@ -21,9 +21,28 @@ import 'dart:typed_data';
 import 'package:klang_universum/core/audio/chroma_analysis.dart' show fft;
 import 'package:klang_universum/core/audio/echo_canceller.dart';
 
+// --- Quality metrics -------------------------------------------------------
+//
+// The metrics below are all objective and PATENT-FREE / freely usable — an
+// explicit choice for this MIT-clean tree (docs/AEC_TIER3B.md). ERLE and
+// segmental ERLE are standard engineering measures; SI-SDR is the modern,
+// gain-invariant fidelity metric from source separation (Le Roux et al.,
+// "SDR – half-baked or well done?", 2019). We deliberately DO NOT use PESQ
+// (ITU-T P.862) or POLQA — both are license/patent-encumbered for commercial
+// use — nor a neural MOS (AECMOS), which would need an ONNX runtime.
+//
+// Which metric when:
+//   * far-end single-talk (echo only, near-end silent): ERLE / segmental ERLE
+//     measure how deeply the echo is suppressed.
+//   * double-talk (near-end present): ERLE is MISLEADING (preserving the
+//     near-end keeps residual energy up), so use SI-SDR of the cleaned output
+//     against the true near-end — how close the estimate is to the wanted
+//     signal, invariant to overall gain.
+
 /// Echo Return Loss Enhancement in dB over the first [length] samples (default:
 /// all) — how much louder the mic was than the residual. Higher = more echo
-/// removed. Meaningless below ~0; a good linear cancel is 20 dB+.
+/// removed. Meaningless below ~0; a good linear cancel is 20 dB+. Valid only
+/// for far-end single-talk (echo only); under double-talk use [siSdrDb].
 double erleDb(Float64List mic, Float64List cleaned, {int? length}) {
   final n = length ?? min(mic.length, cleaned.length);
   var micE = 0.0, outE = 0.0;
@@ -32,6 +51,136 @@ double erleDb(Float64List mic, Float64List cleaned, {int? length}) {
     outE += cleaned[i] * cleaned[i];
   }
   return 10 * (log((micE + 1e-12) / (outE + 1e-12)) / ln10);
+}
+
+/// Mean per-segment ERLE in dB — a truer picture than one global figure, since
+/// cancellation varies over time (convergence, echo-path changes). Segments
+/// whose mic energy is below [activityFloor] (silence) are skipped; each
+/// segment's ERLE is clamped to [floorDb, ceilDb] so one near-perfect or one
+/// pathological block can't dominate the mean. Standard AEC evaluation measure.
+double segmentalErleDb(
+  Float64List mic,
+  Float64List cleaned, {
+  int segment = 1024,
+  double activityFloor = 1e-6,
+  double floorDb = -10,
+  double ceilDb = 60,
+}) {
+  final n = min(mic.length, cleaned.length);
+  var sum = 0.0;
+  var count = 0;
+  for (var s = 0; s + segment <= n; s += segment) {
+    var micE = 0.0, outE = 0.0;
+    for (var i = s; i < s + segment; i++) {
+      micE += mic[i] * mic[i];
+      outE += cleaned[i] * cleaned[i];
+    }
+    if (micE / segment < activityFloor) continue; // silent input segment
+    final erle = (10 * (log((micE + 1e-12) / (outE + 1e-12)) / ln10))
+        .clamp(floorDb, ceilDb);
+    sum += erle;
+    count += 1;
+  }
+  return count == 0 ? 0 : sum / count;
+}
+
+/// The first sample offset at which per-segment ERLE reaches [targetDb] — the
+/// convergence point of the adaptive filter — or -1 if it never does. Divide by
+/// the sample rate for a time; a good linear AEC converges in tens of ms.
+int convergenceSample(
+  Float64List mic,
+  Float64List cleaned, {
+  int segment = 1024,
+  double targetDb = 15,
+}) {
+  final n = min(mic.length, cleaned.length);
+  for (var s = 0; s + segment <= n; s += segment) {
+    var micE = 0.0, outE = 0.0;
+    for (var i = s; i < s + segment; i++) {
+      micE += mic[i] * mic[i];
+      outE += cleaned[i] * cleaned[i];
+    }
+    final erle = 10 * (log((micE + 1e-12) / (outE + 1e-12)) / ln10);
+    if (erle >= targetDb) return s;
+  }
+  return -1;
+}
+
+/// Scale-invariant signal-to-distortion ratio (dB) of [estimate] against the
+/// target [reference] over `[from, from+length)`. The gain-invariant fidelity
+/// metric (Le Roux et al. 2019): it projects the estimate onto the reference,
+/// so an overall level difference doesn't count as distortion — only the shape
+/// does. Under double-talk, `reference` = the true near-end: higher = the
+/// cleaned output is closer to the wanted signal (residual echo far below it).
+double siSdrDb(
+  Float64List reference,
+  Float64List estimate, {
+  int from = 0,
+  int? length,
+}) {
+  final n = length ?? (min(reference.length, estimate.length) - from);
+  var dot = 0.0, refE = 0.0;
+  for (var i = from; i < from + n; i++) {
+    dot += estimate[i] * reference[i];
+    refE += reference[i] * reference[i];
+  }
+  final scale = dot / (refE + 1e-12);
+  var targetE = 0.0, noiseE = 0.0;
+  for (var i = from; i < from + n; i++) {
+    final t = scale * reference[i];
+    final e = estimate[i] - t;
+    targetE += t * t;
+    noiseE += e * e;
+  }
+  return 10 * (log((targetE + 1e-12) / (noiseE + 1e-12)) / ln10);
+}
+
+/// A bundle of the far-end-single-talk metrics for a cancellation pass — what a
+/// CLI / test prints for "how good was this?". Under double-talk pair it with
+/// [siSdrDb] against the known near-end.
+class AecMetrics {
+  const AecMetrics({
+    required this.erle,
+    required this.segErle,
+    required this.convergedAtSample,
+  });
+
+  /// Global ERLE (dB).
+  final double erle;
+
+  /// Mean per-segment ERLE (dB).
+  final double segErle;
+
+  /// Sample offset where ERLE first reached the convergence target (-1 = never).
+  final int convergedAtSample;
+
+  /// Measures [mic] vs [cleaned] (an echo-only pass; near-end must be absent
+  /// for ERLE to mean echo suppression).
+  factory AecMetrics.measure(
+    Float64List mic,
+    Float64List cleaned, {
+    int segment = 1024,
+    double convergenceTargetDb = 15,
+  }) =>
+      AecMetrics(
+        erle: erleDb(mic, cleaned),
+        segErle: segmentalErleDb(mic, cleaned, segment: segment),
+        convergedAtSample: convergenceSample(
+          mic,
+          cleaned,
+          segment: segment,
+          targetDb: convergenceTargetDb,
+        ),
+      );
+
+  String report({int sampleRate = 44100}) {
+    final conv = convergedAtSample < 0
+        ? 'never'
+        : '${(convergedAtSample * 1000 / sampleRate).toStringAsFixed(0)} ms';
+    return 'ERLE ${erle.toStringAsFixed(1)} dB · '
+        'segmental ${segErle.toStringAsFixed(1)} dB · '
+        'converged $conv';
+  }
 }
 
 /// FFT cross-correlation: the lag (in samples) at which [mic] best matches

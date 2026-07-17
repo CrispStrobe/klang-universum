@@ -117,53 +117,81 @@ Float64List _roomEcho(Float64List ref, {int delay = 200}) {
   return out;
 }
 
-/// Synthetic end-to-end check, two properties:
-///  1. Echo-only: cancelling the reference out of its pure room echo gives a
-///     high ERLE (the cancellation is strong).
-///  2. Double-talk: with an "instrument" note also present, the cleaned signal
-///     reads the instrument, not the "band" — the speaker is gone, the player
-///     survives. (ERLE is deliberately NOT the metric here: preserving the
-///     near-end keeps residual energy up, so ERLE stays low by design.)
+/// Synthetic end-to-end check, reported with the full metric set:
+///  1. Echo-only (far-end single-talk): cancelling the reference out of its
+///     room echo → segmental ERLE + convergence time (echo suppression).
+///  2. Double-talk (an "instrument" note also present): SI-SDR of the cleaned
+///     output against the TRUE near-end, vs the raw mic — the gain-invariant
+///     fidelity gain. ERLE is deliberately not used here (preserving the
+///     near-end keeps residual energy up). The detector confirms the surviving
+///     pitch is the instrument, not the band.
 void _selftest({required int rate, required bool detect}) {
-  const bandMidi = 48; // C3 "band" (the speaker/reference)
   const instrumentMidi = 69; // A4 "instrument" (must survive)
   final n = rate * 2; // 2 seconds
-  final ref = _tone(bandMidi, n, rate, amp: 0.5);
+  // A broadband "band" reference (seeded white noise) — a well-conditioned
+  // signal for the adaptive filter, and closer to real music/speech than a
+  // tone (a narrowband reference leaves the filter under-determined).
+  final rng = Random(20260717);
+  final ref = Float64List(n);
+  for (var i = 0; i < n; i++) {
+    ref[i] = 0.3 * (rng.nextDouble() * 2 - 1);
+  }
 
   // 1. Echo-only cancellation strength.
   final echoOnly = _roomEcho(ref);
   final r1 = cancelEcho(echoOnly, ref);
-  final tail = r1.cleaned.length ~/ 2;
-  final erle = erleDb(
-    Float64List.sublistView(echoOnly, tail, r1.cleaned.length),
-    Float64List.sublistView(r1.cleaned, tail),
-  );
+  final m1 = AecMetrics.measure(echoOnly, r1.cleaned);
   stderr.writeln('estimated delay: ${r1.delay} samples');
-  stderr.writeln('echo-only ERLE: converged tail ${erle.toStringAsFixed(1)} dB '
-      '(whole ${r1.erleDb.toStringAsFixed(1)} dB)');
+  stderr.writeln('echo-only: ${m1.report(sampleRate: rate)}');
 
-  // 2. Double-talk: instrument + the band's echo → cancel → what survives?
+  // 2. Standard AEC scenario: the filter converges on far-end single-talk
+  //    (first half, echo only), THEN the near-end "instrument" joins (second
+  //    half, double-talk). Measure SI-SDR over the double-talk region, where the
+  //    filter is already converged so the residual echo is deep below the voice.
   final near = _tone(instrumentMidi, n, rate, amp: 0.35);
+  final half = n ~/ 2;
   final mic = Float64List(n);
   for (var i = 0; i < n; i++) {
-    mic[i] = echoOnly[i] + near[i];
+    mic[i] = echoOnly[i] + (i >= half ? near[i] : 0);
   }
   final r2 = cancelEcho(mic, ref);
-  final heard = _detectDominant(r2.cleaned, rate);
-  final rawHeard = _detectDominant(mic, rate);
-  stderr.writeln('double-talk: raw mic reads '
+  final siClean = siSdrDb(near, r2.cleaned, from: half);
+  final siMic = siSdrDb(near, mic, from: half);
+  stderr.writeln('double-talk SI-SDR vs the true near-end: '
+      'raw mic ${siMic.toStringAsFixed(1)} dB → '
+      'cleaned ${siClean.toStringAsFixed(1)} dB '
+      '(+${(siClean - siMic).toStringAsFixed(1)} dB)');
+
+  final heard =
+      _detectDominant(Float64List.sublistView(r2.cleaned, half), rate);
+  final rawHeard = _detectDominant(Float64List.sublistView(mic, half), rate);
+  stderr.writeln('detector: raw mic reads '
       '${rawHeard == null ? "—" : _noteName(rawHeard)}, '
       'cleaned reads ${heard == null ? "—" : _noteName(heard)}  '
-      '(instrument ${_noteName(instrumentMidi)}, band ${_noteName(bandMidi)})');
-
-  final erleOk = erle > 15;
-  final surviveOk = heard == instrumentMidi;
-  final ok = erleOk && surviveOk;
+      '(instrument ${_noteName(instrumentMidi)})');
   if (detect && heard != null) _printFrameNote(r2.cleaned, rate);
+
+  // The linear canceller has no double-talk detector, so it keeps adapting on
+  // the near-end and the double-talk SI-SDR gain is modest (a few dB) — a real
+  // limitation a DTD (roadmap) fixes. PASS on what it reliably does: strong
+  // echo-only cancellation, convergence, a positive SI-SDR gain, and the
+  // instrument surviving.
+  final erleOk = m1.segErle > 15;
+  final convOk = m1.convergedAtSample >= 0;
+  final sdrOk = (siClean - siMic) > 2;
+  final surviveOk = heard == instrumentMidi;
+  final ok = erleOk && convOk && sdrOk && surviveOk;
+  if ((siClean - siMic) < 10) {
+    stderr.writeln('note: modest double-talk SI-SDR gain is expected without a '
+        'double-talk detector (see AEC_TIER3B.md roadmap).');
+  }
   stdout.writeln(
     ok
         ? 'PASS'
-        : 'FAIL${erleOk ? "" : " (weak ERLE)"}'
+        : 'FAIL'
+            '${erleOk ? "" : " (weak ERLE)"}'
+            '${convOk ? "" : " (no convergence)"}'
+            '${sdrOk ? "" : " (no SI-SDR gain)"}'
             '${surviveOk ? "" : " (instrument not recovered)"}',
   );
   if (!ok) exitCode = 1;
@@ -196,14 +224,14 @@ void _files({
     return;
   }
   final sr = micWav.sampleRate;
-  final result = cancelEcho(
-    wavToMonoFloat(micWav),
-    wavToMonoFloat(refWav),
-    delay: delay,
-  );
+  final mic = wavToMonoFloat(micWav);
+  final result = cancelEcho(mic, wavToMonoFloat(refWav), delay: delay);
+  final metrics = AecMetrics.measure(mic, result.cleaned);
   stderr.writeln('delay ${result.delay} samples '
-      '(${(result.delay * 1000 / sr).toStringAsFixed(1)} ms), '
-      'ERLE ${result.erleDb.toStringAsFixed(1)} dB');
+      '(${(result.delay * 1000 / sr).toStringAsFixed(1)} ms)');
+  stderr.writeln(metrics.report(sampleRate: sr));
+  stderr.writeln('(ERLE assumes far-end single-talk; if the recording has '
+      'near-end speech, judge by --detect / SI-SDR instead)');
 
   if (outPath != null) {
     final pcm = Int16List(result.cleaned.length);

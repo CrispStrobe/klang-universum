@@ -204,6 +204,48 @@ cross-correlation; the streaming path takes a fixed `--delay` (default 0, for a
 pre-aligned full-duplex/loopback capture). `bin/listen.dart --aec` shares the
 same core (whole-file only). Tested: `test/aec_offline_test.dart`.
 
+### Quality metrics (patent-free by design)
+
+`aec_offline.dart` reports objective metrics that are all **freely usable / not
+patent-encumbered** — a deliberate choice for this MIT-clean tree:
+
+- **ERLE** and **segmental ERLE** (mean of per-frame ERLE) — standard echo-
+  suppression measures. Valid only for **far-end single-talk** (echo only).
+- **Convergence time** — first offset the segmental ERLE crosses a target (the
+  adaptive filter settling; a good linear AEC is tens of ms on a broadband ref).
+- **SI-SDR** (scale-invariant signal-to-distortion, Le Roux et al. 2019) — the
+  gain-invariant fidelity metric from source separation. Under **double-talk**
+  ERLE is misleading (preserving the near-end keeps residual energy up), so we
+  report SI-SDR of the cleaned output vs the *true* near-end instead.
+
+**Deliberately NOT used:** **PESQ** (ITU-T P.862) and **POLQA** — both are
+license/patent-encumbered for commercial use. **AECMOS** (Microsoft AEC
+Challenge) is MIT-licensed but is a CNN+GRU model: our pure-Dart
+`onnx_runtime_dart` has no conv/pooling/recurrent ops, so it would need a native
+ONNX runtime (FFI) + a ~few-MB weights file — out of scope for a headless,
+dependency-light harness. The objective metrics above need nothing.
+
+### Roadmap — safe (patent-free) algorithm upgrades
+
+The linear core has no double-talk handling, so its **double-talk SI-SDR gain is
+modest** (a few dB — the near-end corrupts adaptation). Two classic, patent-free
+upgrades close that gap; both are old enough that any foundational patents have
+expired, and neither copies an encumbered implementation:
+
+1. **Double-talk detector (DTD)** — freeze filter adaptation when near-end
+   speech is present. Start with the **Geigel** detector (compare mic vs a max
+   over recent reference samples) or a **normalized cross-correlation** DTD
+   (correlation of mic and echo estimate drops during double-talk). Foundational,
+   textbook, expired-patent territory.
+2. **Residual echo suppression (RES)** — a light spectral / Wiener-style
+   post-filter on the linear residual (the basic short-time gain approach is
+   decades old and patent-free; avoid copying WebRTC AEC3's specific statistical
+   model). Lifts the tail suppression the linear filter leaves.
+
+Reference algorithms in the same patent-free family: **SpeexDSP MDF** (Valin,
+BSD-3, designed to avoid patents) and **WebRTC AEC3** (BSD-3) — read for
+technique, don't vendor unless the licence + tree stay clean.
+
 ## Effort
 
 Days–weeks: most of it is the 5-platform native build + on-device tuning, not
