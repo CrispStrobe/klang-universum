@@ -1524,7 +1524,7 @@ class ScoreDocument {
                 [for (final e in _v1) e.toElement()],
                 timeSignature: timeSignature,
                 pickup: pickup,
-                timeChanges: _timeChanges,
+                timeChanges: _timeChangesFor(_v1, _tupletScale()),
                 durationScale: _tupletScale(),
                 split: _rhythmPolicy == RhythmPolicy.split,
               ),
@@ -1562,7 +1562,9 @@ class ScoreDocument {
       [for (final e in _v2) e.toElement()],
       timeSignature: timeSignature,
       pickup: pickup,
-      timeChanges: _timeChanges,
+      // A meter change re-bars BOTH voices (it's bar-level); translate the
+      // anchors onto voice 2 by onset so it packs on the same barlines as v1.
+      timeChanges: _timeChangesFor(_v2, _tupletScale()),
       // Scale voice-2 tuplet members so a triplet packs at its sounding
       // duration, exactly as voice 1 does (ids not in _v2 are ignored).
       durationScale: _tupletScale(),
@@ -1702,7 +1704,7 @@ class ScoreDocument {
       [for (final e in _v2) e.toElement()],
       timeSignature: timeSignature,
       pickup: pickup,
-      timeChanges: _timeChanges,
+      timeChanges: _timeChangesFor(_v2, _tupletScale()),
       durationScale: _tupletScale(),
       split: _rhythmPolicy == RhythmPolicy.split,
     );
@@ -1739,7 +1741,7 @@ class ScoreDocument {
             [for (final e in _v2) e.toElement()],
             timeSignature: timeSignature,
             pickup: pickup,
-            timeChanges: _timeChanges,
+            timeChanges: _timeChangesFor(_v2, scale),
             durationScale: scale,
             split: _rhythmPolicy == RhythmPolicy.split,
           );
@@ -1817,6 +1819,62 @@ class ScoreDocument {
         for (final t in _tuplets)
           for (final id in t.memberIds) id: t.scale,
       };
+
+  /// [_timeChanges] re-keyed onto [voice]'s element ids by cumulative onset.
+  ///
+  /// A meter change is bar-level: it re-bars the WHOLE system, both voices. But
+  /// [_timeChanges] anchors it to one element id, which lives in only one
+  /// voice's stream — so passing the raw map to the other voice's [reflow] left
+  /// that voice at the old capacity and desynced the barlines. Both voices share
+  /// barlines and pack on the same grid, so a change anchored at grid-onset X
+  /// (in either voice) applies to whichever element starts at X in [voice].
+  /// Re-key by onset so a change entered in either voice re-bars both.
+  ///
+  /// Onset is the prefix sum of scaled (sounding) durations, matching how
+  /// [reflow] accumulates. A change whose onset has no element in [voice] (a
+  /// note straddles that point — no shared barline is possible there, which is
+  /// musically ill-defined) is dropped for that voice. Empty map → const {}, so
+  /// a document with no meter changes is byte-identical.
+  Map<String, TimeSignature> _timeChangesFor(
+    List<EditorElement> voice,
+    Map<String, Fraction> scale,
+  ) {
+    if (_timeChanges.isEmpty) return const {};
+    Fraction scaledDur(EditorElement e) {
+      final d = e.duration.toFraction();
+      final s = scale[e.id];
+      return s == null ? d : d * s;
+    }
+
+    // Onset of every anchored element (anchors live in one voice or the other).
+    final onsetOf = <String, Fraction>{};
+    for (final v in [_v1, _v2]) {
+      var acc = Fraction(0, 1);
+      for (final e in v) {
+        onsetOf[e.id] = acc;
+        acc = acc + scaledDur(e);
+      }
+    }
+    // (onset, id) for the target voice, in reading order.
+    final targetOnsets = <(Fraction, String)>[];
+    var acc = Fraction(0, 1);
+    for (final e in voice) {
+      targetOnsets.add((acc, e.id));
+      acc = acc + scaledDur(e);
+    }
+    final out = <String, TimeSignature>{};
+    _timeChanges.forEach((id, ts) {
+      final onset = onsetOf[id];
+      if (onset == null) return;
+      for (final (o, tid) in targetOnsets) {
+        if (o == onset) {
+          out[tid] = ts;
+          break;
+        }
+      }
+    });
+    return out;
+  }
 
   /// Emits a [TupletSpan] per group over the index range its members occupy in
   /// the bar they landed in. A group is skipped (no bracket) when re-barring has
