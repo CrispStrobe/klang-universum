@@ -426,7 +426,7 @@ class _ModuleCard extends StatelessWidget {
                   size: 28,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 10),
               Text(
                 module.title(l10n),
                 maxLines: 2,
@@ -437,13 +437,17 @@ class _ModuleCard extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 4),
-              Text(
-                module.subtitle(l10n),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: unlocked ? null : Colors.grey,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              // Flexible so the subtitle clips instead of overflowing when the
+              // card is short (iPhone SE) or the text is longer (German).
+              Flexible(
+                child: Text(
+                  module.subtitle(l10n),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: unlocked ? null : Colors.grey,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
