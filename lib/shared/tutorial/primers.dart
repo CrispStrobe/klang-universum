@@ -541,3 +541,40 @@ Tutorial chordChartPrimer(AppLocalizations l10n) => Tutorial(
         ),
       ],
     );
+
+/// Where a tune begins: on the downbeat (beat 1) vs with an upbeat / anacrusis —
+/// a note or two BEFORE the first barline that lead into beat 1.
+/// Game: spot_upbeat.
+Tutorial upbeatPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerUpbeatTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerUpbeatDownbeat,
+          score: _notes([60, 62, 64, 65]), // C D E F — starts on beat 1
+          play: (a) => a.playSequence(_run([60, 62, 64, 65], ms: 500)),
+        ),
+        TutorialStep(
+          text: l10n.primerUpbeatUpbeat,
+          // A single pickup note leading into the downbeat — hear the lead-in.
+          play: (a) => a.playSequence(_run([67, 60, 62, 64], ms: 500)),
+        ),
+      ],
+    );
+
+/// Enharmonic twins: one piano key, two spellings (F♯ = G♭), the same sound.
+/// Game: enharmonic.
+Tutorial enharmonicPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerEnharmonicTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerEnharmonicSame,
+          score: _notes([66]), // one key — spelled F♯ or G♭
+          play: (a) => a.playSequence(_run([66], ms: 600)),
+        ),
+        TutorialStep(
+          text: l10n.primerEnharmonicTwins,
+          // The same pitch twice — identical sound, two names.
+          play: (a) => a.playSequence(_run([66, 66], ms: 500)),
+        ),
+      ],
+    );

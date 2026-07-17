@@ -3042,6 +3042,28 @@ class AppLocalizationsEn extends AppLocalizations {
       'A small ‘m’ after the letter means minor: ‘Am’ is A minor — the same family, but a softer, sadder colour.';
 
   @override
+  String get primerUpbeatTitle => 'Starting on the upbeat';
+
+  @override
+  String get primerUpbeatDownbeat =>
+      'Most tunes start on beat 1 — the strong downbeat. Count ‘1-2-3-4’ and begin on the 1.';
+
+  @override
+  String get primerUpbeatUpbeat =>
+      'An upbeat (or pickup) starts with a note or two BEFORE the first barline, leading into beat 1. Listen — the tune leans in.';
+
+  @override
+  String get primerEnharmonicTitle => 'The same note, two names';
+
+  @override
+  String get primerEnharmonicSame =>
+      'This piano key can be written as F♯ or G♭ — the very same sound, spelled two ways. They are ‘enharmonic’ twins.';
+
+  @override
+  String get primerEnharmonicTwins =>
+      'So F♯ and G♭ sound identical. Other twins: C♯=D♭, D♯=E♭, G♯=A♭, A♯=B♭.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

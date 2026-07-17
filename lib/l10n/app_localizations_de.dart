@@ -3055,6 +3055,28 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ein kleines „m“ hinter dem Buchstaben heißt Moll: „Am“ ist a-Moll — dieselbe Familie, aber weicher und trauriger.';
 
   @override
+  String get primerUpbeatTitle => 'Mit dem Auftakt beginnen';
+
+  @override
+  String get primerUpbeatDownbeat =>
+      'Die meisten Stücke beginnen auf Zählzeit 1 — dem betonten Taktanfang. Zähl „1-2-3-4“ und fang auf der 1 an.';
+
+  @override
+  String get primerUpbeatUpbeat =>
+      'Ein Auftakt beginnt mit einer oder zwei Noten VOR dem ersten Taktstrich, die zur 1 hinführen. Hör hin — die Melodie holt Schwung.';
+
+  @override
+  String get primerEnharmonicTitle => 'Derselbe Ton, zwei Namen';
+
+  @override
+  String get primerEnharmonicSame =>
+      'Diese Klaviertaste kann Fis oder Ges heißen — genau derselbe Klang, zwei Schreibweisen. Das sind „enharmonische“ Zwillinge.';
+
+  @override
+  String get primerEnharmonicTwins =>
+      'Fis und Ges klingen also gleich. Weitere Zwillinge: Cis=Des, Dis=Es, Gis=As, Ais=B.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override

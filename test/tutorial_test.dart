@@ -119,6 +119,8 @@ void main() {
       'Key signatures': keySignaturePrimer, // key-signature Score path
       'Time signatures': timeSignaturePrimer, // time-signature Score path
       'Chord symbols': chordChartPrimer, // chord-symbol Score path
+      'Starting on the upbeat': upbeatPrimer,
+      'The same note, two names': enharmonicPrimer,
     };
     for (final entry in primers.entries) {
       await pumpGame(

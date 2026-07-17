@@ -408,6 +408,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameEnharmonic,
       subtitle: (l) => l.gameEnharmonicSubtitle,
       builder: (_) => const EnharmonicScreen(),
+      tutorial: enharmonicPrimer,
     ),
     // Read the clef sign itself — Treble vs Bass (Alto/Tenor at 2★).
     GameInfo(
@@ -698,6 +699,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameSpotUpbeat,
       subtitle: (l) => l.gameSpotUpbeatSubtitle,
       builder: (_) => const SpotUpbeatScreen(),
+      tutorial: upbeatPrimer,
     ),
   ],
   'scales': [
@@ -829,6 +831,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMajorMinorSort,
       subtitle: (l) => l.gameMajorMinorSortSubtitle,
       builder: (_) => const MajorMinorSortScreen(),
+      tutorial: chordsPrimer,
     ),
     GameInfo(
       id: 'triad_builder',

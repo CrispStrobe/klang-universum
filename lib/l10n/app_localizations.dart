@@ -5564,6 +5564,42 @@ abstract class AppLocalizations {
   /// **'A small ‘m’ after the letter means minor: ‘Am’ is A minor — the same family, but a softer, sadder colour.'**
   String get primerChartMinor;
 
+  /// No description provided for @primerUpbeatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting on the upbeat'**
+  String get primerUpbeatTitle;
+
+  /// No description provided for @primerUpbeatDownbeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Most tunes start on beat 1 — the strong downbeat. Count ‘1-2-3-4’ and begin on the 1.'**
+  String get primerUpbeatDownbeat;
+
+  /// No description provided for @primerUpbeatUpbeat.
+  ///
+  /// In en, this message translates to:
+  /// **'An upbeat (or pickup) starts with a note or two BEFORE the first barline, leading into beat 1. Listen — the tune leans in.'**
+  String get primerUpbeatUpbeat;
+
+  /// No description provided for @primerEnharmonicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The same note, two names'**
+  String get primerEnharmonicTitle;
+
+  /// No description provided for @primerEnharmonicSame.
+  ///
+  /// In en, this message translates to:
+  /// **'This piano key can be written as F♯ or G♭ — the very same sound, spelled two ways. They are ‘enharmonic’ twins.'**
+  String get primerEnharmonicSame;
+
+  /// No description provided for @primerEnharmonicTwins.
+  ///
+  /// In en, this message translates to:
+  /// **'So F♯ and G♭ sound identical. Other twins: C♯=D♭, D♯=E♭, G♯=A♭, A♯=B♭.'**
+  String get primerEnharmonicTwins;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:
