@@ -6,6 +6,7 @@
 
 import 'dart:math';
 
+import 'package:comet_beat/core/curriculum/interval_songs.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
@@ -144,6 +145,18 @@ class _IntervalEarScreenState extends State<IntervalEarScreen>
                     ),
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
+                    // Once answered, name the interval by a tune the child knows
+                    // (locale-neutral: the folk-song name + a ♪). See
+                    // core/curriculum/interval_songs.dart.
+                    if (intervalSongFor(_interval.semitones) case final s?
+                        when _lastAnswer != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Chip(
+                          avatar: const Text('♪'),
+                          label: Text(s.song),
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     AnswerGrid(
                       children: [
