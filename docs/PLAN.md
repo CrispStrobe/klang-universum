@@ -19,6 +19,8 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (tts-settings)** · ✅ **idle / SHIPPED — TTS slice 3: the "Natural voice (HD)" settings tile.** A tile in Settings (below the sound switch) that opt-in **downloads the ~135 MB Kokoro model** (`backend.download()` → CrispASR's registry+`cacheEnsureFile`) with a spinner, then "On ✓"; once cached, narration auto-upgrades to the neural voice. `TtsService` gains `hasNeural`/`neuralSupported`/`neuralReady`/`downloadNeuralVoice`; `NeuralTts` holder carries `supported`+`download`. **Shown only where libcrispasr loads** (invisible until it's bundled per platform), and degrades gracefully with no TtsService (settings tests untouched). EN/DE ARB; 24 TTS/settings tests green; analyze clean. Touched shared `main.dart`+ARBs+settings — rebased. Remaining TTS work: per-platform lib bundling (macOS first).
+
 - **opus (tts-crispasr)** · ✅ **idle / SHIPPED — TTS slice 2: CrispASR/Kokoro NEURAL backend via CrispASR's OWN registry + downloader.** Behind the `TtsBackend` seam: `crispasr_tts_backend.dart` (crispasr pub FFI → libcrispasr → **Kokoro**, Apache-2.0; a background-isolate `runKokoroJob` resolves via `registryLookup` + downloads via `cacheEnsureFile` = the CLI's `-m auto` path; `synthesize` → PCM16 → `wavBytes` → `AudioService.playWavBytes`) + `kokoro_model_store.dart` (**no hand-rolled URLs** — the GGUFs are already published at `cstr/kokoro-82m-GGUF` + `cstr/kokoro-voices-GGUF`; cached into `~/.cache/crispasr`; `isReady` = lib+model cached) + `tts_neural.dart` conditional facade (**web null stub**). Download is **consent-gated** (playback never fetches; `backend.download(lang)` is the opt-in). `TtsService` prefers neural when ready, else flutter_tts. **Verified**: registry→published cstr URL resolves from the app dep, + REAL macOS synth (libcrispasr.dylib → valid German audio); download ABI symbols present. 16 TTS tests green, analyze clean. Dep `crispasr: ^0.8.11` (pub.dev) → CI needs no native lib. Remaining: a settings "Download voice" trigger; per-platform lib bundling (macOS first). Detail in TTS section. Touched shared `main.dart`+`pubspec` — rebased.
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — multi-part MIDI/ABC export in the
@@ -1190,13 +1192,19 @@ playback/download-gating/locale routing. Download ABI symbols
 green; analyze clean (lib+test). Dep `crispasr: ^0.8.11` (pub.dev) → CI needs no
 native lib.
 
+**Slice 3 — SHIPPED (2026-07-17): the settings download trigger.** A **"Natural
+voice (HD)" tile** in Settings (below the sound switch) — `_HdVoiceTile` +
+`TtsService.neuralSupported/neuralReady/downloadNeuralVoice` + `NeuralTts` holder
+(now carries `supported`/`download` too). It's **shown only where the native lib
+loads** (invisible until libcrispasr is bundled), offers a one-tap **Download
+(~135 MB)** → spinner → "On ✓"; once cached, narration auto-upgrades to the neural
+voice. Degrades gracefully with no TtsService (settings tests untouched). EN/DE
+ARB; 24 TTS/settings tests green; analyze clean.
+
 **Remaining work:**
-1. **A settings trigger** — "Download natural voice (~135 MB)" tile calling
-   `backend.download()` with progress (mirror CrisperWeaver's model manager). Until
-   then neural activates only if the model is already in `~/.cache/crispasr`.
-2. **Bundle `libcrispasr` per platform** — macOS `.dylib` into the `.app` first;
+1. **Bundle `libcrispasr` per platform** — macOS `.dylib` into the `.app` first;
    then iOS xcframework, Android `.so` per-ABI, web WASM. Each platform falls back
-   to flutter_tts until its lib ships.
+   to flutter_tts until its lib ships. (The HD-voice tile then appears + works.)
 3. **German quality** (optional): fetch the `kokoro-de-hui-base` backbone (a second
    ~135 MB model) + route `-l de` for a cleaner German phonemizer; expose
    `set_length_scale` as a kid-friendly slower rate.

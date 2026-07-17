@@ -519,7 +519,7 @@ packages:
       path: "../onnx_runtime_dart"
       relative: true
     source: path
-    version: "0.3.3"
+    version: "0.3.5"
   package_config:
     dependency: transitive
     description:

@@ -4251,4 +4251,24 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tutorialReadAloud => 'Vorlesen';
+
+  @override
+  String get ttsHdVoiceTitle => 'Natürliche Stimme (HD)';
+
+  @override
+  String get ttsHdVoiceSubtitle =>
+      'Eine wärmere, natürlichere Vorlesestimme für die Lektionen';
+
+  @override
+  String get ttsHdVoiceReady => 'An — Vorlesen nutzt die natürliche Stimme';
+
+  @override
+  String get ttsHdVoiceDownload => 'Herunterladen (~135 MB)';
+
+  @override
+  String get ttsHdVoiceDownloading => 'Wird heruntergeladen …';
+
+  @override
+  String get ttsHdVoiceFailed =>
+      'Download fehlgeschlagen – zum Wiederholen tippen';
 }

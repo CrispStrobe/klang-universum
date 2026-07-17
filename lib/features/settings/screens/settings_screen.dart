@@ -8,6 +8,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
+import 'package:comet_beat/core/services/tts_service.dart';
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/settings/screens/about_screen.dart';
@@ -139,6 +140,7 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           ),
+          const _HdVoiceTile(),
           const SizedBox(height: 12),
           Card(
             child: SwitchListTile(
@@ -318,3 +320,96 @@ String _scoreFontName(AppLocalizations l10n, ScoreFont font) => switch (font) {
       ScoreFont.leland => l10n.scoreFontLeland,
       ScoreFont.leipzig => l10n.scoreFontLeipzig,
     };
+
+/// The optional HD (neural, CrispASR/Kokoro) narration voice. Shown only where
+/// the native lib is present (so it's invisible until libcrispasr is bundled for
+/// the platform). Offers a one-tap opt-in download of the ~135 MB model; once
+/// cached, narration automatically upgrades to the natural voice.
+enum _HdState { checking, hidden, notDownloaded, downloading, ready, failed }
+
+class _HdVoiceTile extends StatefulWidget {
+  const _HdVoiceTile();
+
+  @override
+  State<_HdVoiceTile> createState() => _HdVoiceTileState();
+}
+
+class _HdVoiceTileState extends State<_HdVoiceTile> {
+  _HdState _state = _HdState.checking;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    // Optional: no-op (hidden) if TtsService isn't in the tree (e.g. some tests).
+    TtsService? tts;
+    try {
+      tts = context.read<TtsService>();
+    } on ProviderNotFoundException {
+      tts = null;
+    }
+    if (tts == null || !tts.hasNeural || !await tts.neuralSupported()) {
+      if (mounted) setState(() => _state = _HdState.hidden);
+      return;
+    }
+    final ready = await tts.neuralReady();
+    if (mounted) {
+      setState(() => _state = ready ? _HdState.ready : _HdState.notDownloaded);
+    }
+  }
+
+  Future<void> _download() async {
+    final tts = context.read<TtsService>();
+    final locale = Localizations.localeOf(context);
+    setState(() => _state = _HdState.downloading);
+    final ok = await tts.downloadNeuralVoice(locale);
+    if (mounted) {
+      setState(() => _state = ok ? _HdState.ready : _HdState.failed);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_state == _HdState.checking || _state == _HdState.hidden) {
+      return const SizedBox.shrink();
+    }
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    final Widget trailing = switch (_state) {
+      _HdState.ready =>
+        Icon(Icons.check_circle, color: theme.colorScheme.primary),
+      _HdState.downloading => const SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2.4),
+        ),
+      _ => FilledButton.tonal(
+          onPressed: _download,
+          child: Text(l10n.ttsHdVoiceDownload),
+        ),
+    };
+
+    final String subtitle = switch (_state) {
+      _HdState.ready => l10n.ttsHdVoiceReady,
+      _HdState.downloading => l10n.ttsHdVoiceDownloading,
+      _HdState.failed => l10n.ttsHdVoiceFailed,
+      _ => l10n.ttsHdVoiceSubtitle,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Card(
+        child: ListTile(
+          leading: const Icon(Icons.graphic_eq_rounded),
+          title: Text(l10n.ttsHdVoiceTitle),
+          subtitle: Text(subtitle),
+          trailing: trailing,
+        ),
+      ),
+    );
+  }
+}

@@ -197,6 +197,10 @@ class CrispAsrTtsBackend implements TtsBackend {
   /// True iff synthesis can run right now (native lib loadable + model cached).
   Future<bool> isAvailable() => store.isReady();
 
+  /// True iff the HD voice is possible on this platform (native lib loadable);
+  /// the model may still need downloading via [download].
+  Future<bool> supported() => store.supported();
+
   static String _lang(String langCode) =>
       langCode.toLowerCase().split(RegExp('[-_]')).first;
 

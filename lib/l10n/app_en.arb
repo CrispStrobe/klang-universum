@@ -1660,5 +1660,11 @@
   "textbookGradesG56": "Grades 5–6",
   "textbookGradesG78": "Grades 7–8",
   "textbookGradesG910": "Grades 9–10",
-  "tutorialReadAloud": "Read aloud"
+  "tutorialReadAloud": "Read aloud",
+  "ttsHdVoiceTitle": "Natural voice (HD)",
+  "ttsHdVoiceSubtitle": "A warmer, more natural reading voice for the lessons",
+  "ttsHdVoiceReady": "On — narration uses the natural voice",
+  "ttsHdVoiceDownload": "Download (~135 MB)",
+  "ttsHdVoiceDownloading": "Downloading…",
+  "ttsHdVoiceFailed": "Download failed — tap to retry"
 }

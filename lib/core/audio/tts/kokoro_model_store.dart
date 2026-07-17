@@ -59,6 +59,11 @@ class KokoroModelStore {
     }
   }
 
+  /// True iff the native lib loads on this platform — i.e. the HD voice is
+  /// *possible* here (the model may still need downloading). Gates the settings
+  /// tile so it only appears where neural TTS could run.
+  Future<bool> supported() async => _tryOpenLib() != null;
+
   /// True iff the native lib loads AND the model GGUF is already cached — i.e.
   /// synthesis can run now without a download. False ⇒ TtsService uses the
   /// platform voice (and a UI action can call the backend's `download`).

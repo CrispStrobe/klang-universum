@@ -66,8 +66,7 @@ void main() {
     final neural = _FakeBackend();
     final tts = TtsService(
       backend: platform,
-      neural: neural,
-      neuralReady: () async => true,
+      neural: _holder(neural, ready: true),
     );
     await tts.speak('Ein Test', locale: const Locale('de'));
     expect(neural.spoken, [('Ein Test', 'de-DE')]);
@@ -79,8 +78,7 @@ void main() {
     final neural = _FakeBackend();
     final tts = TtsService(
       backend: platform,
-      neural: neural,
-      neuralReady: () async => false,
+      neural: _holder(neural, ready: false),
     );
     await tts.speak('A test', locale: const Locale('en'));
     expect(platform.spoken, [('A test', 'en-US')]);
@@ -92,11 +90,63 @@ void main() {
     final neural = _FakeBackend();
     final tts = TtsService(
       backend: platform,
-      neural: neural,
-      neuralReady: () async => throw StateError('lib missing'),
+      neural: NeuralTts(
+        backend: neural,
+        ready: () async => throw StateError('lib missing'),
+        supported: () async => true,
+        download: (_) async => false,
+      ),
     );
     await tts.speak('A test', locale: const Locale('en'));
     expect(platform.spoken, [('A test', 'en-US')]);
     expect(neural.spoken, isEmpty);
   });
+
+  test('hasNeural + supported reflect the holder', () async {
+    final withNeural = TtsService(
+      backend: _FakeBackend(),
+      neural: _holder(_FakeBackend(), ready: false),
+    );
+    expect(withNeural.hasNeural, isTrue);
+    expect(await withNeural.neuralSupported(), isTrue);
+
+    final without = TtsService(backend: _FakeBackend());
+    expect(without.hasNeural, isFalse);
+    expect(await without.neuralSupported(), isFalse);
+    expect(await without.downloadNeuralVoice(const Locale('en')), isFalse);
+  });
+
+  test('downloadNeuralVoice forwards the locale tag + notifies', () async {
+    String? gotLang;
+    var notified = 0;
+    final tts = TtsService(
+      backend: _FakeBackend(),
+      neural: NeuralTts(
+        backend: _FakeBackend(),
+        ready: () async => false,
+        supported: () async => true,
+        download: (lang) async {
+          gotLang = lang;
+          return true;
+        },
+      ),
+    )..addListener(() => notified++);
+
+    final ok = await tts.downloadNeuralVoice(const Locale('de'));
+    expect(ok, isTrue);
+    expect(gotLang, 'de-DE');
+    expect(notified, greaterThanOrEqualTo(1));
+  });
 }
+
+NeuralTts _holder(
+  TtsBackend backend, {
+  required bool ready,
+  bool supported = true,
+}) =>
+    NeuralTts(
+      backend: backend,
+      ready: () async => ready,
+      supported: () async => supported,
+      download: (_) async => true,
+    );

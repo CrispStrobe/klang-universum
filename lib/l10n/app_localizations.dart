@@ -7741,6 +7741,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Read aloud'**
   String get tutorialReadAloud;
+
+  /// No description provided for @ttsHdVoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Natural voice (HD)'**
+  String get ttsHdVoiceTitle;
+
+  /// No description provided for @ttsHdVoiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A warmer, more natural reading voice for the lessons'**
+  String get ttsHdVoiceSubtitle;
+
+  /// No description provided for @ttsHdVoiceReady.
+  ///
+  /// In en, this message translates to:
+  /// **'On — narration uses the natural voice'**
+  String get ttsHdVoiceReady;
+
+  /// No description provided for @ttsHdVoiceDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download (~135 MB)'**
+  String get ttsHdVoiceDownload;
+
+  /// No description provided for @ttsHdVoiceDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading…'**
+  String get ttsHdVoiceDownloading;
+
+  /// No description provided for @ttsHdVoiceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed — tap to retry'**
+  String get ttsHdVoiceFailed;
 }
 
 class _AppLocalizationsDelegate

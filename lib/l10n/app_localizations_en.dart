@@ -4226,4 +4226,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialReadAloud => 'Read aloud';
+
+  @override
+  String get ttsHdVoiceTitle => 'Natural voice (HD)';
+
+  @override
+  String get ttsHdVoiceSubtitle =>
+      'A warmer, more natural reading voice for the lessons';
+
+  @override
+  String get ttsHdVoiceReady => 'On — narration uses the natural voice';
+
+  @override
+  String get ttsHdVoiceDownload => 'Download (~135 MB)';
+
+  @override
+  String get ttsHdVoiceDownloading => 'Downloading…';
+
+  @override
+  String get ttsHdVoiceFailed => 'Download failed — tap to retry';
 }

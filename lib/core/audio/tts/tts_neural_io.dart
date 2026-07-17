@@ -24,5 +24,10 @@ NeuralTts? createNeuralTts({
     play: play,
     stopPlayback: stopPlayback,
   );
-  return NeuralTts(backend, backend.isAvailable);
+  return NeuralTts(
+    backend: backend,
+    ready: backend.isAvailable,
+    supported: backend.supported,
+    download: backend.download,
+  );
 }
