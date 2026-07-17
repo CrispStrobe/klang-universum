@@ -328,8 +328,14 @@ and push to origin/main** before/after touching shared files. Format:
   headers, delta-encoded 8/16-bit) + `docToXm`/`convertToXm` — now **mod2xm /
   s3m2xm / it2xm** work (xm2mod already did via convertToMod). Verified by
   write→parse round-trips (golden + hand-built multi-channel/16-bit) + mod→xm &
-  it→xm hub conversions. **Next: S3M + IT writers** (→ full N×N matrix), then
-  "borrow a sample from a module" (readers already expose PCM); CLI tools (§H).
+  it→xm hub conversions. ✅ **S3M writer + convertToS3m SHIPPED** (slice C3):
+  `s3m_writer.dart` `writeS3m` (paragraph-aligned layout, parapointer patch pass,
+  signed PCM, "what"-byte pattern packing) + `docToS3m`/`convertToS3m` → **mod2s3m /
+  xm2s3m / it2s3m**. Round-trip verified (golden + hand-built loop/multi-channel) +
+  mod→s3m & it→s3m hub conversions. Converter matrix now
+  **{mod,s3m,xm,it} → {mod,xm,s3m}**. **Next: IT writer** (completes N×N; IT214/215
+  sample compression optional — write uncompressed), then "borrow a sample from a
+  module" (readers already expose PCM); CLI tools (§H).
   📋 **Full idea backlog —
   codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio
   depth — in [`docs/TRACKER_IDEAS.md`](TRACKER_IDEAS.md); the FX effort in

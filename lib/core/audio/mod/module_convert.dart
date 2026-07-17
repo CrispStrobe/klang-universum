@@ -69,6 +69,7 @@ import 'package:klang_universum/core/audio/mod/mod_writer.dart';
 import 'package:klang_universum/core/audio/mod/module_doc.dart';
 import 'package:klang_universum/core/audio/mod/s3m_module.dart';
 import 'package:klang_universum/core/audio/mod/s3m_reader.dart';
+import 'package:klang_universum/core/audio/mod/s3m_writer.dart';
 import 'package:klang_universum/core/audio/mod/xm_module.dart';
 import 'package:klang_universum/core/audio/mod/xm_reader.dart';
 import 'package:klang_universum/core/audio/mod/xm_writer.dart';
@@ -470,6 +471,83 @@ XmModule docToXm(ModuleDoc doc) {
 
 /// Convenience: convert a neutral module straight to `.xm` bytes.
 Uint8List convertToXm(ModuleDoc doc) => writeXm(docToXm(doc));
+
+/// MIDI note → S3M note byte ((octave << 4) | semitone). Inverse of
+/// [s3mNoteToMidi]; -1 → the empty-note sentinel.
+int _midiToS3mNote(int midi) {
+  if (midi < 0) return S3mCell.emptyNote;
+  final rel = midi - 12;
+  final octave = (rel ~/ 12).clamp(0, 15);
+  final semitone = rel % 12;
+  return (octave << 4) | semitone;
+}
+
+/// Neutral → [S3mModule] (one PCM sample per neutral sample).
+///
+/// Samples convert exactly (normalized ×128 inverts the reader's /128); notes,
+/// instruments, the volume column, loops and structure convert. Per-cell effects
+/// are already dropped on the neutral model.
+S3mModule docToS3m(ModuleDoc doc) {
+  final samples = <S3mSample>[];
+  for (final ds in doc.samples) {
+    if (ds.isEmpty) {
+      samples.add(S3mSample.empty());
+      continue;
+    }
+    final pcm = Int8List(ds.pcm.length);
+    for (var i = 0; i < ds.pcm.length; i++) {
+      pcm[i] = (ds.pcm[i] * 128).round().clamp(-128, 127);
+    }
+    samples.add(
+      S3mSample(
+        name: ds.name,
+        volume: ds.volume.clamp(0, 64),
+        c2spd: ds.c5speed,
+        loop: ds.loopLength > 0,
+        loopStart: ds.loopStart,
+        loopEnd: ds.loopStart + ds.loopLength,
+        pcm: pcm,
+      ),
+    );
+  }
+
+  final patterns = <S3mPattern>[];
+  for (final dp in doc.patterns) {
+    final rows = <List<S3mCell>>[];
+    for (final srcRow in dp.rows) {
+      final cells = <S3mCell>[];
+      for (var ch = 0; ch < doc.channelCount; ch++) {
+        if (ch < srcRow.length) {
+          final c = srcRow[ch];
+          cells.add(
+            S3mCell(
+              note: _midiToS3mNote(c.note),
+              instrument: c.instrument.clamp(0, 255),
+              volume: c.volume < 0 ? S3mCell.noVolume : c.volume.clamp(0, 64),
+            ),
+          );
+        } else {
+          cells.add(S3mCell.empty);
+        }
+      }
+      rows.add(cells);
+    }
+    patterns.add(S3mPattern(rows));
+  }
+
+  return S3mModule(
+    title: doc.title,
+    channelCount: doc.channelCount,
+    initialSpeed: doc.initialSpeed,
+    initialTempo: doc.initialTempo,
+    order: List<int>.from(doc.order),
+    samples: samples,
+    patterns: patterns,
+  );
+}
+
+/// Convenience: convert a neutral module straight to `.s3m` bytes.
+Uint8List convertToS3m(ModuleDoc doc) => writeS3m(docToS3m(doc));
 
 // ─── Tuning helpers ──────────────────────────────────────────────────────────
 
