@@ -126,6 +126,13 @@ enum _StaffMode { treble, bass, grand }
 /// behaviour). The explicit piano keyboard places in either mode.
 enum _InputMode { insert, select }
 
+/// The two shelves on one document (WORKSHOP_PARITY.md §"strategic tension").
+/// [sandbox] is the simple kid surface (glyph strip + piano, no modes);
+/// [studio] reveals the depth controls — the voice toggle, the input-mode toggle
+/// and the inspector. Default [sandbox], so the kid never meets Studio unless
+/// switched in.
+enum _Shelf { sandbox, studio }
+
 const _staffModeGlyph = {
   _StaffMode.treble: '𝄞',
   _StaffMode.bass: '𝄢',
@@ -433,9 +440,22 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   _Accidental _accidental = _Accidental.natural;
   double _zoom = 13;
   _StaffMode _mode = _StaffMode.treble;
+  _Shelf _shelf = _Shelf.sandbox; // two shelves on one document; kid default
+  bool get _studio => _shelf == _Shelf.studio;
   _InputMode _inputMode =
       _InputMode.insert; // Studio: insert vs select (Cause 2)
   bool get _selectMode => _inputMode == _InputMode.select;
+
+  /// Switch shelf. Leaving Studio resets the depth controls so Sandbox is never
+  /// left in a hidden Studio state (mid-select, editing voice 2, inspector open).
+  void _setShelf(_Shelf shelf) => setState(() {
+        _shelf = shelf;
+        if (shelf == _Shelf.sandbox) {
+          _inputMode = _InputMode.insert;
+          _inspector = false;
+          _doc.setActiveVoice(0);
+        }
+      });
   bool _chordMode = false; // placed pitches stack onto the selected note
   bool _barNumbers = false; // label each wrapped system with its bar number
   bool _noteNames = false; // draw each note's name below the staff
@@ -2402,6 +2422,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             title: _TopBar(
               mode: _mode,
               inputMode: _inputMode,
+              showInputMode: _studio,
               onToggleInputMode: () => setState(
                 () => _inputMode =
                     _selectMode ? _InputMode.insert : _InputMode.select,
@@ -2423,23 +2444,25 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             ),
             actions: [
               // Which voice note-entry targets (crisp_notation engraves two).
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: SegmentedButton<int>(
-                  style: const ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              // Studio-only — the Sandbox surface stays single-voice.
+              if (_studio)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: SegmentedButton<int>(
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(value: 0, label: Text(l10n.workshopVoice1)),
+                      ButtonSegment(value: 1, label: Text(l10n.workshopVoice2)),
+                    ],
+                    selected: {_doc.activeVoice},
+                    onSelectionChanged: (s) =>
+                        setState(() => _doc.setActiveVoice(s.first)),
                   ),
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(value: 0, label: Text(l10n.workshopVoice1)),
-                    ButtonSegment(value: 1, label: Text(l10n.workshopVoice2)),
-                  ],
-                  selected: {_doc.activeVoice},
-                  onSelectionChanged: (s) =>
-                      setState(() => _doc.setActiveVoice(s.first)),
                 ),
-              ),
               IconButton(
                 icon: const Icon(Icons.undo),
                 tooltip: l10n.myMelodyUndo,
@@ -2499,6 +2522,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       setState(() => _barNumbers = !_barNumbers);
                     case 'notenames':
                       setState(() => _noteNames = !_noteNames);
+                    case 'studio':
+                      _setShelf(_studio ? _Shelf.sandbox : _Shelf.studio);
                     case 'inspector':
                       setState(() => _inspector = !_inspector);
                     case 'split':
@@ -2541,11 +2566,20 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     checked: _noteNames,
                     child: Text(l10n.workshopNoteNames),
                   ),
+                  const PopupMenuDivider(),
                   CheckedPopupMenuItem<String>(
-                    value: 'inspector',
-                    checked: _inspector,
-                    child: Text(l10n.workshopInspector),
+                    value: 'studio',
+                    checked: _studio,
+                    child: Text(l10n.workshopStudioMode),
                   ),
+                  // The inspector lives inside Studio — hidden on the Sandbox
+                  // shelf so the kid surface stays a glyph strip + piano.
+                  if (_studio)
+                    CheckedPopupMenuItem<String>(
+                      value: 'inspector',
+                      checked: _inspector,
+                      child: Text(l10n.workshopInspector),
+                    ),
                   CheckedPopupMenuItem<String>(
                     value: 'split',
                     checked: _doc.rhythmPolicy == RhythmPolicy.split,
@@ -2731,7 +2765,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                         ),
                       ),
                     ),
-                    if (_inspector) _inspectorPanel(l10n),
+                    if (_studio && _inspector) _inspectorPanel(l10n),
                   ],
                 ),
               ),
@@ -2831,6 +2865,7 @@ class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.mode,
     required this.inputMode,
+    required this.showInputMode,
     required this.timeSignature,
     required this.fifths,
     required this.pickup,
@@ -2848,6 +2883,7 @@ class _TopBar extends StatelessWidget {
 
   final _StaffMode mode;
   final _InputMode inputMode;
+  final bool showInputMode;
   final TimeSignature timeSignature;
   final int fifths;
   final NoteDuration? pickup;
@@ -2923,27 +2959,30 @@ class _TopBar extends StatelessWidget {
             ),
             // Studio (Cause 2): Insert ⇄ Select mode. In Select, the staff and
             // keyboard stop placing notes so you can navigate/inspect safely.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: TextButton.icon(
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                ),
-                onPressed: onToggleInputMode,
-                icon: Icon(
-                  inputMode == _InputMode.select
-                      ? Icons.near_me_outlined
-                      : Icons.edit_outlined,
-                  size: 18,
-                ),
-                label: Text(
-                  inputMode == _InputMode.select
-                      ? l10n.workshopSelectMode
-                      : l10n.workshopInsertMode,
+            // Studio-only (hidden on the Sandbox shelf).
+            if (showInputMode) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  onPressed: onToggleInputMode,
+                  icon: Icon(
+                    inputMode == _InputMode.select
+                        ? Icons.near_me_outlined
+                        : Icons.edit_outlined,
+                    size: 18,
+                  ),
+                  label: Text(
+                    inputMode == _InputMode.select
+                        ? l10n.workshopSelectMode
+                        : l10n.workshopInsertMode,
+                  ),
                 ),
               ),
-            ),
-            const VerticalDivider(width: 1),
+              const VerticalDivider(width: 1),
+            ],
             IconButton(
               iconSize: 20,
               visualDensity: VisualDensity.compact,

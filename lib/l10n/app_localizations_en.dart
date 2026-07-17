@@ -357,6 +357,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopSelectMode => 'Select';
 
   @override
+  String get workshopStudioMode => 'Studio mode';
+
+  @override
   String get workshopSplitNotes => 'Split notes across barlines';
 
   @override

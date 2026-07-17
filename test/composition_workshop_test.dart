@@ -56,6 +56,16 @@ Finder _pianoKeyAt(int i) => find
 
 Finder _pianoKey() => _pianoKeyAt(16);
 
+// The Studio-tier controls (voice toggle, input-mode toggle, inspector) live on
+// the Studio shelf; flip it on via the ⋮ menu.
+Future<void> _enterStudio(WidgetTester tester) async {
+  final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+  await tester.tap(find.byIcon(Icons.more_vert));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(l10n.workshopStudioMode));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -136,6 +146,7 @@ void main() {
     await pump(tester);
     final editor = _editor(tester);
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await _enterStudio(tester); // the voice toggle is a Studio control
 
     // A note in voice 1.
     await tester.tap(_pianoKey());
@@ -167,10 +178,14 @@ void main() {
     await tester.tap(_pianoKey());
     await tester.pump();
 
-    // Off by default: no inspector panel, so its title isn't shown.
+    // On the Sandbox shelf the inspector isn't even offered.
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
     expect(find.text(l10n.workshopInspector), findsNothing);
+    await tester.tap(find.text(l10n.workshopStudioMode)); // enter Studio
+    await tester.pumpAndSettle();
 
-    // Toggle it on from the ⋮ menu.
+    // In Studio, toggle the inspector on from the ⋮ menu.
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text(l10n.workshopInspector));
@@ -180,6 +195,22 @@ void main() {
     expect(find.text(l10n.workshopInspector), findsOneWidget);
     expect(find.byType(FilterChip), findsWidgets); // articulation/tie chips
     expect(find.text(l10n.workshopStaccato), findsOneWidget);
+  });
+
+  testWidgets('the Studio shelf reveals the depth controls', (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // Sandbox (default): the voice + input-mode toggles are hidden, so the kid
+    // surface is simple.
+    expect(find.text(l10n.workshopVoice2), findsNothing);
+    expect(find.text(l10n.workshopInsertMode), findsNothing);
+
+    await _enterStudio(tester);
+
+    // Studio: the depth controls appear.
+    expect(find.text(l10n.workshopVoice2), findsOneWidget);
+    expect(find.text(l10n.workshopInsertMode), findsOneWidget);
   });
 
   testWidgets('copy then paste duplicates the selection', (tester) async {
@@ -353,6 +384,7 @@ void main() {
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
     await tester.tap(_pianoKey()); // a voice-1 note
     await tester.pump();
+    await _enterStudio(tester); // the voice toggle is a Studio control
     await tester.tap(find.text(l10n.workshopVoice2));
     await tester.pump();
     await tester.tap(_pianoKey()); // a voice-2 note
@@ -505,6 +537,8 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
     await tester.pump();
     expect(editor.noteCount, 1);
+
+    await _enterStudio(tester); // the mode toggle is a Studio control
 
     // Switch to Select mode (the toggle shows the current mode's name).
     await tester.ensureVisible(find.text(l10n.workshopInsertMode));

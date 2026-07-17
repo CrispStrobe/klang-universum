@@ -358,6 +358,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopSelectMode => 'Auswählen';
 
   @override
+  String get workshopStudioMode => 'Studio-Modus';
+
+  @override
   String get workshopSplitNotes => 'Noten über Taktstriche binden';
 
   @override

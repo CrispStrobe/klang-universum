@@ -722,6 +722,12 @@ abstract class AppLocalizations {
   /// **'Select'**
   String get workshopSelectMode;
 
+  /// No description provided for @workshopStudioMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Studio mode'**
+  String get workshopStudioMode;
+
   /// No description provided for @workshopSplitNotes.
   ///
   /// In en, this message translates to:
