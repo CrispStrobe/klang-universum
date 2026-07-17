@@ -108,14 +108,26 @@ and push to origin/main** before/after touching shared files. Format:
   touched only in `_paletteButton` + a new dialog. **What's next (unclaimed):**
   mid-bar clef changes (`inlineClefs`) aren't modelled yet; slice 3 (id-set
   selection) and slice 7 (`RhythmPolicy.split`) remain per WORKSHOP_PARITY.md.
-- **fable (loop-mixer)** · 🚧 **ACTIVE — Loop Mixer slice 10** (the last ladder
-  rung): beatbox→drum card (onset+timbre classification on new additive
-  rms/zcr fields in `PitchReading`, calibrated against our own synth drums)
-  + jam mode v1 (echoCancel + headphones hint, chord-fit feedback). Worktree
-  `../mus-loopmixer`, branch `feature/loop-mixer-3`. **Shared files:**
-  `core/audio/pitch_analysis.dart` (ADDITIVE ONLY — new optional fields,
-  every existing constructor/test unchanged), `loop_engine.dart` +
-  `loop_mixer_screen.dart` (mine), ARBs (additive). Pull-rebase before edits.
+- **fable (loop-mixer)** · ✅ **SHIPPED — slice 10, the groovebox ladder is
+  COMPLETE** (`866350c`); idle, worktree removed. **Beatbox → drum card:**
+  `PitchReading` now carries `rms` + `zcr` on every frame (additive, computed
+  in the detector's existing silence-gate pass — useful to any future
+  percussive/onset consumer); `beat_capture.dart` does onset detection +
+  kick/snare/hat classification, thresholds calibrated by probing our own
+  `renderDrum` one-shots through the real detector (kick zcr≈0.005
+  pitched-low · snare≈0.45 · hat≈0.67), acceptance = a synthesized beatbox
+  roundtrips to the EXACT rows. Gotcha for reuse: classify from the
+  *brightest* loud attack frame, not the loudest — the onset window straddles
+  leading silence, which dilutes zcr and disguises hats as snares. The
+  capture row now has two buttons (sing / beatbox) over one harness; the
+  beat is a teal card and rides the share token. **Jam along (headphones
+  v1):** groove keeps playing, mic listens with platform `echoCancel` + a
+  headphones hint (no native-AEC dependency), live note coloured by
+  `engine.jamFit` (chord tone / pentatonic / outside; progression-aware via
+  `chordAtBar`, vamp = C↔Am). Mic contention handled (capture stops jam).
+  63 slice tests + smoke green pre-push (with pipefail), analyze clean.
+  **Nothing of the ladder remains** — future ideas would be new roadmap
+  items (native AEC full-duplex jam grading, groove→Workshop export).
 - **fable (loop-mixer)** · ✅ **SHIPPED — Loop Mixer 2.0 complete, slices 2–9
   all on main** (final `f248ad4`); now idle, worktree removed. One session:
   **engine v2** (`5e5d81b`: GrooveSpec, data patterns, swing, A/B/C variants,
@@ -1089,9 +1101,8 @@ added here as they come up.
 
 ## Loop Mixer 2.0 — the groovebox ladder (roadmap)
 
-**STATUS 2026-07-16: slices 1–9 SHIPPED** (see the board entry + HISTORY.md;
-slice 5 deferred to the Tracker by design). **Only slice 10 remains open**
-(beatbox→drum card + AEC jam mode — unclaimed).
+**STATUS 2026-07-17: ALL SLICES SHIPPED — the ladder is complete** (slices
+1–10; slice 5 deferred to the Tracker by design). See the board + HISTORY.md.
 
 Evolve the shipped Loop Mixer (`32ebb96`) from kid toy into something adults
 find genuinely fascinating. Guiding idea: **kids love cause-and-effect; adults

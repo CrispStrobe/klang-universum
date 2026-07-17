@@ -457,6 +457,18 @@ Games built on crisp_notation capabilities the app didn't use before.
   the grid (partial — quantize + top-note + pentatonic snap), round-trip tested.
   Sandbox, no stars. (Mic capture is device-only; the DSP + assign→play path are
   unit-tested headlessly.)
+- **Loop Mixer — beatbox + jam along** (composition, ladder slice 10) — the
+  mic closes the circle twice more. **Beatbox a beat:** count-in, 2 bars of
+  "boom-ts-pss" into the mic, and it comes back as a teal drum card — onset
+  detection + kick/snare/hat classification (`beat_capture.dart`) on new
+  rms/zero-crossing-rate features every `PitchReading` now carries, with
+  thresholds calibrated against the app's own synth drums through the real
+  detector and an acceptance test that a synthesized beatbox reconstructs
+  the exact pattern. **Jam along:** the groove keeps playing while the mic
+  listens (platform echo-cancel + a headphones hint); every note you play or
+  sing lights up green (tone of the sounding chord — progression-aware),
+  amber (pentatonic) or red — the loop mixer as a backing band that tells
+  you when you fit.
 - **Loop Mixer 2.0 — the groovebox ladder** (composition) — the v1 toy grew
   into an instrument in seven shipped slices (engine v2 → sing-a-track), all
   behind the same five-cards kid surface. **Feel:** a swing slider (off-eighth
