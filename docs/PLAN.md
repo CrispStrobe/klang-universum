@@ -81,6 +81,20 @@ and push to origin/main** before/after touching shared files. Format:
   a per-round structural invariant: upbeat ⇔ short pickup first bar). Analyze clean;
   registry/consistency + star-score suites green.
 
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 mid-*bar* clef
+  changes** (`5071194`). MODEL-only (`score_document.dart`). `_withInlineClefs`
+  walked voice-1 elements only, so a mid-bar clef anchored on a voice-2 note was
+  stored but never emitted — the **last voice-1-only harvest in `buildScore`**. Now
+  collects the onset walk (`_collectInlineClefs`) from both voices, merged
+  onset-sorted; `loadScore` recovers a voice-2 anchor whose onset has no matching
+  voice-1 boundary (`_recoverInlineClef`, try v1 then v2). Empty-v2 → byte-identical
+  (inline-clef + packing goldens hold). `test/voice2_inline_clef_test.dart`. **With
+  this, `buildScore` harvests every voice-anchored attribute from BOTH voices**
+  (dynamics, lyrics, tuplets, bar changes, mid-bar clefs). Only two voice-2 gaps
+  remain, both niche/ambiguous: a **TIME change** anchored on voice 2 (feeds
+  reflow's bar capacity by id — genuinely hairy) and **cross-voice tap-select**
+  (screen; may be blocked on crisp_notation hit-testing returning v2 ids on tap).
+
 - **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 mid-score bar
   changes** (`27c8568`). MODEL-only (`score_document.dart`). A clef/key/tempo/
   repeat/volta/nav change anchored on a voice-2 note (the setters run on the active
