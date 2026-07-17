@@ -32,10 +32,16 @@ implements one file, maintainer integrates.** Sources: our MIT repos
 - **Borrow a sample from a module** — import a `.mod`/`.s3m`/`.it` sample's PCM as a
   tracker `SampleInstrument` ("steal an instrument sound from a classic module").
   The codecs already expose the PCM; wire a picker: module → sample → instrument.
-- **Multi-sample instruments** — a sample per note-range (the XM/IT instrument
-  model): record several notes, map across the keyboard. Bigger model change.
-- **Sample editing** — trim / loop-point / normalize / fade a recorded clip (ideas
-  from voicelab + crispaudio's timeline editor). Longer clips, multiple voice slots.
+- ✅ **Multi-sample instruments** SHIPPED — `MultiSampleInstrument` + `SampleZone`
+  (`multi_sample_instrument.dart`): a sample per note-range (XM/IT keymap model),
+  each note resamples the nearest zone. `MultiSampleInstrument.mapped([(sample,
+  baseMidi)…])` auto-splits ranges at base-note midpoints ("map recorded notes
+  across the keyboard"). Render acceptance proves the chosen zone reaches the audio
+  (`multi_sample_instrument_test.dart`). *(Not yet surfaced in the picker UI.)*
+- ✅ **Sample editing** SHIPPED (core) — `sample_edit.dart`: `trimPcm` /
+  `trimSilence` / `normalizePcm` / `fadeIn` / `fadeOut` / `reversePcm`, all
+  non-destructive (input never mutated). `sample_edit_test.dart`. *(loop-point =
+  an engine sustain-loop change, still open; UI slots still open.)*
 - **Instrument envelopes** — volume/pitch ADSR-ish envelopes on sampled/sfxr voices
   (from OpenMPT/IT). *(Also in FX_HANDOVER #4.)*
 
