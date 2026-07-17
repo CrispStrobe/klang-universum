@@ -325,10 +325,12 @@ still free on the board before starting** (search the agent name / feature).
 `showNoteNames` / `noteNameStyle` are now on every multi-part view:
 `MultiSystemView` + `InteractiveGrandStaffView` + `InteractiveMultiPartView`
 (crisp_notation 0.4.2) and the static `MultiPartView` (0.4.4, `044891d`); the
-Workshop already uses it via `InteractiveMultiPartView`/`MultiSystemView`. Still
-blocked: a 7th-chord builder for Roman numerals, more SMuFL faces
-(Leland/Leipzig). **Needs real hardware (not headless):** AEC
-on-device tuning — milestone (e), see `docs/AEC_TIER3B.md`. **Strategic / product
+Workshop already uses it via `InteractiveMultiPartView`/`MultiSystemView`. The
+other two former crisp_notation blockers are now **DONE**: the 7th-chord builder
+for Roman numerals (`SeventhChord`, crisp_notation_core 0.4.5 → `roman_numeral_
+screen`, `b439011`) and more SMuFL faces (Leland/Leipzig shipped `9d94d6f`).
+**Needs real hardware (not headless):** AEC on-device tuning — milestone (e), see
+`docs/AEC_TIER3B.md`. **Strategic / product
 (not a coding session):** parent view + child profiles, teacher/LMS layer,
 generative sight-reading, MIDI input. See the "Ideas backlog" + "Opportunity
 roadmap" sections lower down.
@@ -1093,15 +1095,18 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   `root.transposeBy(Interval.minorSeventh)`. SRI `chords.hear.<triad|seventh>`.
 
 ### E. Creative / toy modes (higher ceiling, higher effort)
-- [ ] **Loop mixer** — tap cards that trigger synced loops (bass/chords/melody/
-  drums). *L — needs multi-track synced playback.* (Also in the toy list above.)
+- [x] **Loop mixer** — tap cards that trigger synced loops (bass/chords/melody/
+  drums). **Shipped** as **Loop Mixer 2.0** (the groovebox ladder — GrooveSpec
+  spec→WAV engine, seam-scheduled synced stems, sing-a-track, beatbox, graded jam
+  mode). See the "Loop Mixer 2.0" roadmap section + HISTORY.md.
 - [x] **Grid composer for pre-readers** — **shipped**: *Colour Melody*
   (`grid_composer`, composition) — a 5-colour (C-pentatonic) × 8-beat grid; taps
   place notes that render live to a real `Score` (StaffView underneath), and play
   back with rests intact (`playChordSequence`, empty beats = silence). A sandbox
   like My Melody (no stars). The bridge to notation for non-readers.
-- [ ] **Melody doodle → hear it back** — freehand a contour, quantise to pitches,
-  play it. Feeds the songbook.
+- [x] **Melody doodle → hear it back** — **shipped** (`melody_doodle`,
+  composition): draw a contour → it quantises to the same C-pentatonic grid as
+  *Colour Melody* and plays back. The gesture twin of `grid_composer`.
 
 ### F. Infrastructure / platform (not kid-facing games)
 - [x] **Web-safe OMR-tokens import bridge** — **shipped** (2026-07-15): the
@@ -1111,19 +1116,25 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
   multi-part doc); a single spine loads into the active part. Pure helper
   unit-tested (1-/2-spine) + a widget test pastes tokens → notes. Localized
   de/en. (The image→tokens OMR recognition stays native/out-of-scope.)
-- [ ] **`showNoteNames` scaffold** — an accessibility/beginner toggle overlaying
-  letter names on noteheads. **Partly blocked:** crisp_notation exposes
-  `showNoteNames` only on `StaffView` (not `MultiSystemView` — which most mus
-  games + the Workshop use), so an *app-wide* toggle needs crisp_notation to
-  surface the flag on the other views first (a crisp_notation ask). A
-  StaffView-only version is possible now but covers few screens. Also decide how
-  it interacts with the app's `noteNaming` setting (German H/B vs English vs
-  Solfège — the crisp_notation flag likely draws fixed English letters; verify).
-- [ ] **7th chords in Roman Numerals** — `roman_numeral_screen.dart` is ready for
-  it but needs a crisp_notation **seventh-chord builder** (V7/ii7…). *CrispNotation handoff
-  — can't ship against an unreleased API since CI tracks public `crisp_notation@main`.*
-- [ ] **Leland / Leipzig font options** — extend the Bravura↔Petaluma switch
-  (`shared/score_theme.dart`) with more SMuFL faces. *CrispNotation-side bundling.*
+- [~] **`showNoteNames` scaffold** — an accessibility/beginner toggle overlaying
+  letter names on noteheads. **Unblocked** — crisp_notation now exposes
+  `showNoteNames`/`noteNameStyle` on every multi-part view (`MultiSystemView`,
+  `InteractiveMultiPartView`, `InteractiveGrandStaffView` in 0.4.2; the static
+  `MultiPartView` in 0.4.4). The app-side toggle is **actively claimed** on the
+  board (`opus (workshop-inspector)` — persisted `SettingsService.showNoteNames`
+  + a `ReadingStaffView` wrapper wired into games where the note's name isn't the
+  task). Still to decide there: how it reads the app's `noteNaming` setting
+  (German H/B vs English vs Solfège).
+- [x] **7th chords in Roman Numerals** — **shipped**: crisp_notation_core gained a
+  `SeventhChord(root, ChordType, {inversion})` builder (0.4.5, `61266be`) and
+  `roman_numeral_screen.dart` now mixes dominant/major/minor/ø7 chords into the
+  widened pool at 2★ in major keys (`b439011`), round-tripping through
+  `romanNumeralOf` (V7 / ii7 / viiø7 / V6/5).
+- [x] **Leland / Leipzig font options** — **shipped** (`9d94d6f`): the binary
+  "handwritten notes" toggle is now a 4-way **Notation font** picker (Bravura /
+  Petaluma / Leland / Leipzig, all SIL OFL 1.1), vendored app-side under
+  `assets/smufl/` with metadata + OFL. See `shared/score_theme.dart`
+  (`ScoreFont`/`musicFontFor`) + `notation_fonts_test`.
 - [ ] **MIDI input** — the one real-instrument input still open (mic side shipped).
   *L, big swing.*
 - [ ] **Parent view + multi-child profiles** and **Teacher / LMS layer** — see the
@@ -1132,8 +1143,17 @@ push → watch-CI loop, and keep the board above in sync (parallel agents!).
 ### G. Polish / cross-cutting (small, always welcome)
 - [ ] New games should adopt the just-landed **per-game tutorial** hook on
   `GameInfo` and the **mascot-as-guide** in `RoundHeader` (UX agent's work — check
-  `game_widgets.dart` for the current API before wiring).
-- [ ] Audit the new games for the **sound on/off toggle** + **reduced-motion**
-  paths (the sorts/arcades animate).
+  `game_widgets.dart` for the current API before wiring). NB the on-demand "?"
+  help is *already universal*: `helpPrimerFor` falls back to the game's module
+  primer, and all 13 modules have one — so a missing `GameInfo.tutorial` only
+  means no first-run auto-show, never an empty "?". This item is about the richer
+  per-game curation + mascot, not basic coverage.
+- [x] Audit the new games for the **sound on/off toggle** + **reduced-motion**
+  paths — **audited 2026-07-17, all clean.** Sound: every playback path routes
+  through `AudioService._play`, which no-ops when `soundOn` is false — no game
+  bypasses it (only 1 game imports `synth` directly and it still goes via the
+  service). Motion: no game uses a looping `.repeat()` animation; the only
+  significant-motion screens (`note_whack`, `falling_notes`) plus the shared
+  `note_mascot` already gate on `MediaQuery.disableAnimations`. Nothing to fix.
 - [ ] Consider grouping the fast-growing `note_reading` module (it's large) or
   surfacing the new binary drills as a "Warm-ups" strip for the youngest.
