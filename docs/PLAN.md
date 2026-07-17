@@ -19,6 +19,17 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (enharmonic)** · 🚧 **ACTIVE — "Enharmonic Twins" minigame** (item 1, a
+  genuine gap — nothing drills enharmonic equivalence). A binary staff-read on the
+  `tie_slur` scaffold: two notes are shown (each with its accidental); same sound
+  spelled differently (F♯/G♭) or genuinely different? Graded by `midiNumber`
+  equality (deterministic). New
+  `features/games/note_reading/enharmonic_screen.dart` + `GameInfo` in
+  `game_registry.dart` + a `kStarThresholds` bracket in `core/tuning.dart` + EN/DE
+  ARBs + a `pumpGame` test. SRI `reading.enharmonic.<yes|no>`. Worktree
+  `../mus-enharmonic`, branch `feature/enharmonic`. Touching hot shared files
+  (registry, tuning, ARBs) — rebasing often.
+
 - **opus (tracker)** · 🚧 **ACTIVE — per-channel FX chain (Tracker)**. Wire the
   shipped DSP units (`crisp_dsp/modulated_delay.dart` + `reverb.dart`) into the
   Tracker: a per-channel effect (none/delay/chorus/flanger/reverb) applied to the
