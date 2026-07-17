@@ -352,6 +352,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle eine Note, um ihre Eigenschaften zu sehen.';
 
   @override
+  String get workshopInsertMode => 'Einfügen';
+
+  @override
+  String get workshopSelectMode => 'Auswählen';
+
+  @override
   String get workshopSplitNotes => 'Noten über Taktstriche binden';
 
   @override

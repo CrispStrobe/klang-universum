@@ -710,6 +710,18 @@ abstract class AppLocalizations {
   /// **'Select a note to see its properties.'**
   String get workshopInspectorEmpty;
 
+  /// No description provided for @workshopInsertMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert'**
+  String get workshopInsertMode;
+
+  /// No description provided for @workshopSelectMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get workshopSelectMode;
+
   /// No description provided for @workshopSplitNotes.
   ///
   /// In en, this message translates to:

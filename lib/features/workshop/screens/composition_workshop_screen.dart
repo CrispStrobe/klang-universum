@@ -119,6 +119,13 @@ String _keyLabel(int fifths) =>
 /// (a grand staff that auto-splits the line by pitch).
 enum _StaffMode { treble, bass, grand }
 
+/// The pointer/keyboard interaction mode (Studio, Cause 2). In [insert] the staff
+/// is live for placement (tap empty staff / type a letter → a note); in [select]
+/// those stop placing so you can navigate and inspect safely (tap a note still
+/// selects it, tap empty staff deselects). Insert is the default (today's
+/// behaviour). The explicit piano keyboard places in either mode.
+enum _InputMode { insert, select }
+
 const _staffModeGlyph = {
   _StaffMode.treble: '𝄞',
   _StaffMode.bass: '𝄢',
@@ -426,6 +433,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   _Accidental _accidental = _Accidental.natural;
   double _zoom = 13;
   _StaffMode _mode = _StaffMode.treble;
+  _InputMode _inputMode =
+      _InputMode.insert; // Studio: insert vs select (Cause 2)
+  bool get _selectMode => _inputMode == _InputMode.select;
   bool _chordMode = false; // placed pitches stack onto the selected note
   bool _barNumbers = false; // label each wrapped system with its bar number
   bool _noteNames = false; // draw each note's name below the staff
@@ -610,6 +620,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// the selected note instead. Re-pitching an existing note is done by dragging
   /// it (or selecting it and using ↑/↓) — not by a blank-staff click.
   void _onStaffTap(StaffTarget target) {
+    // Select mode: the empty staff is inert for placement — tapping it deselects
+    // instead of creating a note (tapping a note still selects it).
+    if (_selectMode) {
+      setState(_doc.clearSelection);
+      return;
+    }
     final pitch = target.pitchFor(
       _clefForTarget(target),
       preferredAlter: _alterOf(_accidental),
@@ -641,6 +657,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       _mpd.setActive(partIndex);
       _syncControlsToSelection();
     });
+    // Select mode: switch to the tapped part but don't place a note (see
+    // [_onStaffTap]).
+    if (_selectMode) {
+      setState(_doc.clearSelection);
+      return;
+    }
     final pitch = target.pitchFor(
       _mpd.clefOf(partIndex),
       preferredAlter: _alterOf(_accidental),
@@ -1086,6 +1108,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
     final step = _letterSteps[key];
     if (step != null) {
+      // Select mode: typing doesn't enter notes (the staff is for navigation).
+      if (_selectMode) return KeyEventResult.ignored;
       final octave = _doc.selected?.pitch?.octave ?? 4;
       _placePitch(Pitch(step, alter: _alterOf(_accidental), octave: octave));
       return KeyEventResult.handled;
@@ -2377,6 +2401,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             // The score settings live inline in the top bar (one row).
             title: _TopBar(
               mode: _mode,
+              inputMode: _inputMode,
+              onToggleInputMode: () => setState(
+                () => _inputMode =
+                    _selectMode ? _InputMode.insert : _InputMode.select,
+              ),
               timeSignature: _doc.timeSignature,
               fifths: _doc.keySignature.fifths,
               pickup: _doc.pickup,
@@ -2801,6 +2830,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.mode,
+    required this.inputMode,
     required this.timeSignature,
     required this.fifths,
     required this.pickup,
@@ -2808,6 +2838,7 @@ class _TopBar extends StatelessWidget {
     required this.dotted,
     required this.status,
     required this.onMode,
+    required this.onToggleInputMode,
     required this.onTime,
     required this.onKey,
     required this.onPickup,
@@ -2816,6 +2847,7 @@ class _TopBar extends StatelessWidget {
   });
 
   final _StaffMode mode;
+  final _InputMode inputMode;
   final TimeSignature timeSignature;
   final int fifths;
   final NoteDuration? pickup;
@@ -2823,6 +2855,7 @@ class _TopBar extends StatelessWidget {
   final bool dotted;
   final String status;
   final ValueChanged<_StaffMode> onMode;
+  final VoidCallback onToggleInputMode;
   final ValueChanged<TimeSignature> onTime;
   final ValueChanged<int> onKey;
   final ValueChanged<NoteDuration?> onPickup;
@@ -2888,6 +2921,29 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
             ),
+            // Studio (Cause 2): Insert ⇄ Select mode. In Select, the staff and
+            // keyboard stop placing notes so you can navigate/inspect safely.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+                onPressed: onToggleInputMode,
+                icon: Icon(
+                  inputMode == _InputMode.select
+                      ? Icons.near_me_outlined
+                      : Icons.edit_outlined,
+                  size: 18,
+                ),
+                label: Text(
+                  inputMode == _InputMode.select
+                      ? l10n.workshopSelectMode
+                      : l10n.workshopInsertMode,
+                ),
+              ),
+            ),
+            const VerticalDivider(width: 1),
             IconButton(
               iconSize: 20,
               visualDensity: VisualDensity.compact,

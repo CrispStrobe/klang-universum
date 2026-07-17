@@ -495,6 +495,37 @@ void main() {
     expect(editor.noteCount, 1);
   });
 
+  testWidgets('Select mode stops the keyboard from placing notes',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // Insert (default): a letter places a note.
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.pump();
+    expect(editor.noteCount, 1);
+
+    // Switch to Select mode (the toggle shows the current mode's name).
+    await tester.ensureVisible(find.text(l10n.workshopInsertMode));
+    await tester.tap(find.text(l10n.workshopInsertMode));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.workshopSelectMode), findsOneWidget);
+
+    // Typing no longer places notes.
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+    await tester.pump();
+    expect(editor.noteCount, 1, reason: 'select mode: typing does not place');
+
+    // Back to Insert → placement resumes.
+    await tester.ensureVisible(find.text(l10n.workshopSelectMode));
+    await tester.tap(find.text(l10n.workshopSelectMode));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyE);
+    await tester.pump();
+    expect(editor.noteCount, 2);
+  });
+
   testWidgets('chord mode stacks a second note onto the first', (tester) async {
     await pump(tester);
     final editor = _editor(tester);
