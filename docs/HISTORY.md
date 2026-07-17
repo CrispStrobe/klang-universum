@@ -649,6 +649,19 @@ These are the `✅ idle / SHIPPED` entries that accumulated on the top-of-
 here verbatim (2026-07-17) to keep PLAN.md focused on pending work. Newest-ish
 first, as they sat on the board.
 
+- **opus (aec-res-c)** · ✅ **SHIPPED — residual echo suppression ported to the
+  native C engine** (`b3bf617`). Completes the native AEC algorithm stack (DTD +
+  RES, both now in the C engine, all headlessly verified). `src/aec_dsp.{c,h}`
+  gained an `AecRes` (a port of the Dart `ResidualEchoSuppressor`, reusing the
+  DSP's own `aec_fft`/`ifft` and the same overlap-save Wiener framing with a
+  DTD-gated leakage estimate); FFI-bound as `AecRes` in `lib/aec_dsp.dart` with
+  an offline cross-check (RES deepens echo-only ERLE >3 dB past the linear
+  filter). Wired **opt-in** into the engine block loop (`aec_engine_set_res` /
+  `AecEngineFfi.setRes`), its leakage gated on the DTD's single-talk decision;
+  needs a distinct output buffer (can't run in place). Headless engine test +
+  whole native suite 10/10 via `build.sh`. Remaining native AEC is on-device
+  only (milestone e): app opt-in via `setDtd`/`setRes` + real-hardware tuning.
+
 - **opus (aec-engine-dtd)** · ✅ **SHIPPED — DTD wired into the native engine
   block loop** (`c11ddc7`). The DTD was ported to the C DSP core (`f7487fd`) but
   nothing used it; now `aec_shim.c`'s `engine_run` (the shared core the realtime

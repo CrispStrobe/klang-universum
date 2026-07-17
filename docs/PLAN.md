@@ -19,16 +19,6 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (aec-res-c)** · 🚧 **ACTIVE — port residual echo suppression to the C
-  engine** (remaining-work item 2b). Worktree `../mus-aec-res-c`, branch
-  `feature/aec-res-c`. All in `native/aec/` (out of app CI): port the Dart
-  `ResidualEchoSuppressor` (`aec_offline.dart`) to a C `AecRes` in
-  `src/aec_dsp.{c,h}` (reuses the DSP's `aec_fft`/`ifft`); FFI-bind it
-  (`lib/aec_dsp.dart`); an offline cross-check in `test/aec_erle_test.dart` (RES
-  deepens echo-only ERLE, doesn't chew the near-end); wire it opt-in into the
-  engine (`aec_shim.c` `aec_engine_set_res()`) + a headless engine test. Verify
-  `bash native/aec/build.sh`. NOT touching app/Workshop.
-
 - **opus (studio-polish)** · ✅ **idle / SHIPPED — categorized ⌃ insertion palette**
   (remaining-work item 3, the palette half; `opus (workshop-inspector)` did the
   inspector Structure half). The flat property popup on the ⌃ button now reads as
@@ -73,17 +63,15 @@ still free on the board before starting** (search the agent name / feature).
    (Auftakt / anacrusis reading), a **written↔concert toggle** for transposing
    instruments, **SATB chorale reading** / a richer Grand Staff. Copy an existing
    sibling (see the "Reusable scaffolds" note under the Ideas backlog).
-2. **AEC: finish the native port (RES to C; app opt-in)** — *self-contained,
-   headless-verifiable, no app/Workshop collision.* Done: DTD ported to the C DSP
-   core (`f7487fd`) **and wired into the engine block loop** (`c11ddc7` —
-   `aec_engine_set_dtd()`, opt-in, headless double-talk test). **Still open:**
-   (b) **port the residual echo suppressor (RES) to C** (a Wiener spectral
-   post-filter reusing the DSP's FFT; the Dart `ResidualEchoSuppressor` in
-   `aec_offline.dart` is the reference); (c) **app opt-in** — call `setDtd(true)`
-   from `NativeAecEngine`/the jam screen with a 1024-block engine (part of
-   milestone (e), needs on-device tuning). All in `native/aec/` (out of app CI).
-   Verify: `bash native/aec/build.sh` (8/8 green). See `docs/AEC_TIER3B.md`
-   § "Native port status".
+2. **AEC: on-device jam-mode integration** — ⚠️ *needs real hardware (not
+   headless) — milestone (e).* The whole native algorithm stack is DONE and
+   headlessly verified: DTD ported to the C DSP core (`f7487fd`) + wired into the
+   engine (`c11ddc7`, `aec_engine_set_dtd`), and RES ported to C + wired into the
+   engine (`b3bf617`, `aec_engine_set_res`) — `bash native/aec/build.sh` is 10/10
+   green. **Remaining is hardware-only:** have `NativeAecEngine`/the jam screen
+   call `setDtd(true) + setRes(true)` with a 1024-block engine once speaker-
+   backing is on, then tune the real iOS/Android duplex path (latency, ring,
+   audio session). See `docs/AEC_TIER3B.md` § "Native port status".
 3. **Workshop Studio polish** — ✅ **SHIPPED.** The inspector Structure view
    (`opus (workshop-inspector)`, `b700964` — rests anchor bar changes) + the
    categorized ⌃ insertion palette (`opus (studio-polish)`). Remaining Studio
