@@ -1350,6 +1350,61 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerPatternClone => 'Pattern klonen';
 
   @override
+  String get trackerTempo => 'Tempo';
+
+  @override
+  String get trackerCustomLength => 'Eigene…';
+
+  @override
+  String get trackerCustomLengthPrompt => 'Zeilen (z. B. 64, 128, 256)';
+
+  @override
+  String get trackerEditStepHelp =>
+      'Zeilen, die der Cursor nach jeder Note nach unten springt';
+
+  @override
+  String get trackerCancel => 'Abbrechen';
+
+  @override
+  String get trackerOk => 'OK';
+
+  @override
+  String get trackerEntryPiano => 'Klaviertasten';
+
+  @override
+  String get trackerEntryNames => 'Notennamen';
+
+  @override
+  String get trackerKeyHelp => 'Tastatur';
+
+  @override
+  String get trackerCursor => 'Cursor bewegen';
+
+  @override
+  String get trackerTutGrid =>
+      'Das ist ein Pattern-Raster: Die Zeit läuft von oben nach unten in Zeilen, jede Spalte ist eine Spur. Tippe eine Zelle an, um den Cursor zu setzen, und spiele dann eine Note hinein.';
+
+  @override
+  String get trackerTutKeys =>
+      'Gib Noten über die Computertastatur ein. „Klaviertasten“ nutzt das klassische Tracker-Layout (Z–M ist eine Oktave, Q–I die nächste). „Notennamen“ erlaubt Buchstabe + Oktavziffer, z. B. F dann 2 = F2. Der ⓘ-Knopf zeigt alle Tastenkürzel. Auf dem Touchscreen nutzt du das Klavier unten.';
+
+  @override
+  String get trackerTutStep =>
+      '„Schritt“ ist, wie viele Zeilen der Cursor nach jeder Note nach unten springt — stell ihn auf deinen Takt (z. B. 4), um schnell Noten zu setzen, oder auf 0, um auf einer Zeile zu bleiben.';
+
+  @override
+  String get trackerTutTransport =>
+      'Die Transportleiste spielt und pausiert, stoppt und springt vor/zurück. „Länge“ legt fest, wie viele Zeilen ein Pattern hat (keine 2–3 Takte mehr!), und „Tempo“ die Geschwindigkeit.';
+
+  @override
+  String get trackerTutArrange =>
+      'Baue mehrere Patterns und reihe sie zu einem Song: Füge jedes zur Reihenfolge hinzu und drücke „Song abspielen“.';
+
+  @override
+  String get trackerTutTracks =>
+      'Füge beliebig viele Spuren hinzu, gib jeder ein eigenes Instrument und schalte sie stumm (M) oder solo (S). Du kannst sogar ein echtes .mod/.xm/.s3m/.it-Modul importieren und bearbeiten.';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

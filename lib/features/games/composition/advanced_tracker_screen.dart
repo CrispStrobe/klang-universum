@@ -24,9 +24,13 @@
 // Shipped over slices, all on this one document: S1 grid + endless length/
 // tracks + Play/Stop; S2 the edit cursor + keyboard/on-screen-piano entry +
 // per-track instruments + per-cell volume/effect; S3 multi-pattern songs + the
-// order list ("Play song"); S4 the full transport (Play/Pause/Stop/Back/Forward
-// + loop + a position readout). Deeper parity (import/export wiring, mute/solo,
-// the classic effect-command set) is layered next.
+// order list; S4 the full inline transport (Play/Pause/Stop/Back/Forward + loop
+// + position); S5a mute/solo; S5b module import (.mod/.s3m/.xm/.it) + Save to
+// Song Book; S5c the keyboard/layout modernization — a 2nd note-entry mode
+// (note names: "F" then "2"), a sweepable multi-octave piano (the Workshop's
+// PianoKeyboard), a keyboard legend (ⓘ), tempo + up-to-256/custom length, and an
+// optional onboarding tutorial (i18n). Next: block/selection editing (copy/cut/
+// paste/paste-mix, select track/pattern, transpose) — the classic block ops.
 
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
@@ -38,6 +42,9 @@ import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/tutorial/tutorial.dart';
+import 'package:comet_beat/shared/tutorial/tutorial_sheet.dart';
+import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show MultiPartScore, multiPartToMusicXml;
 import 'package:file_selector/file_selector.dart';
@@ -69,9 +76,33 @@ String trackerNoteName(int midi) {
   return name.length == 1 ? '$name-$octave' : '$name$octave';
 }
 
-/// Selectable pattern lengths (rows). "Endless" in practice — the grid handles
-/// any of these, well past the Beginner grid's single bar.
-const _kLengthOptions = [16, 32, 48, 64, 96, 128];
+/// Selectable pattern lengths (rows). Covers the classic ceilings — MOD/S3M 64,
+/// IT up to 200, XM up to 256 — plus a "Custom…" entry (the engine has no cap).
+const _kLengthOptions = [16, 32, 48, 64, 96, 128, 192, 200, 256];
+
+/// Common tempos (BPM) offered in the toolbar.
+const _kTempoOptions = [80, 100, 110, 120, 128, 140, 150, 160, 175, 200];
+
+/// Note letter -> semitone within an octave (for the "note-name" entry mode:
+/// type a letter then an octave digit, e.g. F then 2 -> F2).
+const _kLetterSemitone = <String, int>{
+  'c': 0,
+  'd': 2,
+  'e': 4,
+  'f': 5,
+  'g': 7,
+  'a': 9,
+  'b': 11,
+};
+
+/// How the computer keyboard enters notes.
+enum _NoteEntry {
+  /// The classic FastTracker-2 piano map (Z=C … / Q=C an octave up).
+  pianoKeys,
+
+  /// Note name + octave: a letter (C..B), optional #, then a digit (F #? 2).
+  noteNames,
+}
 
 /// FastTracker-2 style computer-keyboard piano map: the typed character ->
 /// semitone offset from the current base octave. Two rows span ~two octaves
@@ -187,8 +218,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// Keyboard/piano entry state.
   int _octave = 4;
   int _editStep = 1;
+  _NoteEntry _entryMode = _NoteEntry.pianoKeys;
+
+  /// Pending state for note-name entry ("F" then "2"): the note's semitone and
+  /// whether a sharp was typed, awaiting the octave digit. Null = nothing armed.
+  int? _pendingSemi;
+  bool _pendingSharp = false;
 
   final _vScroll = ScrollController();
+  // The on-screen piano sweeps C1..~C7; start scrolled to around C3.
+  static const _pianoStartMidi = 24; // C1
+  static const _pianoWhiteKeys = 42; // C1..~A6
+  static const _pianoKeyWidth = 40.0;
+  final _pianoScroll =
+      ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
   int _lastFollowedRow = -1;
 
   static const _rowNumWidth = 44.0;
@@ -227,6 +270,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       }
     })
       ..start();
+    // Optional onboarding — shows once on first entry (and via the "?" button).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        maybeShowTutorial(context, 'tracker_advanced', advancedTrackerPrimer);
+      }
+    });
   }
 
   @override
@@ -235,6 +284,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _row.dispose();
     _playingOrder.dispose();
     _vScroll.dispose();
+    _pianoScroll.dispose();
     _focus.dispose();
     _loop.dispose();
     super.dispose();
@@ -424,9 +474,17 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       return KeyEventResult.handled;
     }
 
-    // Otherwise a piano-map character.
+    // Note-name mode: a letter (C..B), optional #, then an octave digit.
+    if (_entryMode == _NoteEntry.noteNames) {
+      final r = _handleNoteNameKey(event);
+      if (r != null) return r;
+    }
+
+    // Otherwise the classic FT2 piano-map character.
     final ch = event.character?.toLowerCase();
-    if (ch != null && _typeKey(ch)) return KeyEventResult.handled;
+    if (_entryMode == _NoteEntry.pianoKeys && ch != null && _typeKey(ch)) {
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
   }
 
@@ -438,6 +496,46 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _enterNoteAtCursor(midi);
     return true;
   }
+
+  /// Note-name entry: "F" arms F, "#" makes it sharp, an octave digit commits it
+  /// (F #? 2 -> F#2 / F2). Returns null if the key isn't part of this mode.
+  KeyEventResult? _handleNoteNameKey(KeyEvent event) {
+    final ch = event.character?.toLowerCase();
+    if (ch == null) return null;
+    if (_kLetterSemitone.containsKey(ch)) {
+      setState(() {
+        _pendingSemi = _kLetterSemitone[ch];
+        _pendingSharp = false;
+      });
+      return KeyEventResult.handled;
+    }
+    if (ch == '#' || ch == '+') {
+      if (_pendingSemi != null) setState(() => _pendingSharp = true);
+      return KeyEventResult.handled;
+    }
+    if (ch.length == 1 &&
+        ch.codeUnitAt(0) >= 0x30 &&
+        ch.codeUnitAt(0) <= 0x39) {
+      if (_pendingSemi != null) {
+        final octave = int.parse(ch);
+        final midi =
+            ((octave + 1) * 12 + _pendingSemi! + (_pendingSharp ? 1 : 0))
+                .clamp(0, 127);
+        _enterNoteAtCursor(midi);
+        setState(() {
+          _pendingSemi = null;
+          _pendingSharp = false;
+        });
+      }
+      return KeyEventResult.handled;
+    }
+    return null;
+  }
+
+  /// The armed note-name entry as a label ("F#…"), or empty when nothing armed.
+  String get _pendingLabel => _pendingSemi == null
+      ? ''
+      : '${_kNoteNames[(_pendingSemi! + (_pendingSharp ? 1 : 0)) % 12]}…';
 
   // --- Transport (Play / Pause / Stop / Back / Forward — real-tracker set) ---
 
@@ -793,6 +891,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     return Scaffold(
       appBar: GameAppBar(
         title: l10n.trackerAdvancedTitle,
+        tutorial: advancedTrackerPrimer,
         actions: [
           IconButton(
             icon: const Icon(Icons.child_care),
@@ -844,15 +943,6 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: _togglePlay,
-        tooltip: (_clock.isRunning && !_paused)
-            ? l10n.trackerPause
-            : l10n.trackerPlay,
-        child: Icon(
-          (_clock.isRunning && !_paused) ? Icons.pause : Icons.play_arrow,
-        ),
-      ),
       body: SafeArea(
         child: Focus(
           focusNode: _focus,
@@ -879,61 +969,78 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
-  /// The classic transport row: Back · Stop · Forward · Loop + a position
-  /// readout (the FAB is the primary Play/Pause).
+  /// The classic transport row: Play/Pause · Back · Stop · Forward · Play-song ·
+  /// Loop + a position readout — all inline (no floating button over the grid).
   Widget _transportBar(AppLocalizations l10n) {
     final scheme = Theme.of(context).colorScheme;
+    final playing = _clock.isRunning && !_paused;
     return Container(
       color: scheme.surfaceContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.skip_previous),
-            tooltip: l10n.trackerBack,
-            onPressed:
-                _song.patterns.length > 1 || _songMode ? () => _step(-1) : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.stop),
-            tooltip: l10n.trackerStop,
-            onPressed: _clock.isRunning || _paused ? _stop : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.skip_next),
-            tooltip: l10n.trackerForward,
-            onPressed:
-                _song.patterns.length > 1 || _songMode ? () => _step(1) : null,
-          ),
-          IconButton(
-            icon: Icon(_loopOn ? Icons.repeat_on : Icons.repeat),
-            tooltip: l10n.trackerLoop,
-            color: _loopOn ? scheme.primary : null,
-            onPressed: () => setState(() => _loopOn = !_loopOn),
-          ),
-          const Spacer(),
-          AnimatedBuilder(
-            animation: Listenable.merge([_row, _playingOrder]),
-            builder: (context, _) {
-              final row = _row.value;
-              final rowStr = row < 0 ? '··' : row.toString().padLeft(2, '0');
-              final total = _song.rows.toString().padLeft(2, '0');
-              final pos = _songMode && _playingOrder.value >= 0
-                  ? '${(_playingOrder.value + 1).toString().padLeft(2, '0')}'
-                      '/${_song.order.length.toString().padLeft(2, '0')} · '
-                  : '';
-              return Text(
-                '$pos$rowStr/$total',
-                style: TextStyle(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  fontSize: 13,
-                  color: scheme.onSurfaceVariant,
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        reverse: true, // keep the readout end visible; buttons scroll off left
+        child: Row(
+          children: [
+            IconButton.filledTonal(
+              icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+              tooltip: playing ? l10n.trackerPause : l10n.trackerPlay,
+              onPressed: _togglePlay,
+            ),
+            IconButton(
+              icon: const Icon(Icons.skip_previous),
+              tooltip: l10n.trackerBack,
+              onPressed: _song.patterns.length > 1 || _songMode
+                  ? () => _step(-1)
+                  : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.stop),
+              tooltip: l10n.trackerStop,
+              onPressed: _clock.isRunning || _paused ? _stop : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.skip_next),
+              tooltip: l10n.trackerForward,
+              onPressed: _song.patterns.length > 1 || _songMode
+                  ? () => _step(1)
+                  : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.playlist_play),
+              tooltip: l10n.trackerPlaySong,
+              onPressed: _playSong,
+            ),
+            IconButton(
+              icon: Icon(_loopOn ? Icons.repeat_on : Icons.repeat),
+              tooltip: l10n.trackerLoop,
+              color: _loopOn ? scheme.primary : null,
+              onPressed: () => setState(() => _loopOn = !_loopOn),
+            ),
+            const SizedBox(width: 16),
+            AnimatedBuilder(
+              animation: Listenable.merge([_row, _playingOrder]),
+              builder: (context, _) {
+                final row = _row.value;
+                final rowStr = row < 0 ? '··' : row.toString().padLeft(2, '0');
+                final total = _song.rows.toString().padLeft(2, '0');
+                final pos = _songMode && _playingOrder.value >= 0
+                    ? '${(_playingOrder.value + 1).toString().padLeft(2, '0')}'
+                        '/${_song.order.length.toString().padLeft(2, '0')} · '
+                    : '';
+                return Text(
+                  '$pos$rowStr/$total',
+                  style: TextStyle(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    fontSize: 13,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }
@@ -1030,16 +1137,48 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         child: Row(
           children: [
             // Endless length — the direct fix for "stops after 2-3 Takte".
+            // (MOD/S3M 64 · IT ≤200 · XM ≤256 · Custom = any.)
             Text('${l10n.trackerLength}: '),
             DropdownButton<int>(
-              value: _kLengthOptions.contains(_song.rows) ? _song.rows : null,
-              hint: Text('${_song.rows}'),
+              value: _kLengthOptions.contains(_song.rows) ? _song.rows : -1,
               items: [
                 for (final n in _kLengthOptions)
                   DropdownMenuItem(value: n, child: Text('$n')),
+                DropdownMenuItem(
+                  value: -1,
+                  child: Text(
+                    _kLengthOptions.contains(_song.rows)
+                        ? l10n.trackerCustomLength
+                        : '${_song.rows} ✎',
+                  ),
+                ),
               ],
               onChanged: (v) {
-                if (v != null) setRows(v);
+                if (v == null) return;
+                if (v == -1) {
+                  _promptCustomLength(l10n);
+                } else {
+                  setRows(v);
+                }
+              },
+            ),
+            const SizedBox(width: 16),
+            // Tempo (BPM).
+            Text('${l10n.trackerTempo}: '),
+            DropdownButton<int>(
+              value: _kTempoOptions.contains(_song.timing.tempoBpm)
+                  ? _song.timing.tempoBpm
+                  : null,
+              hint: Text('${_song.timing.tempoBpm}'),
+              items: [
+                for (final b in _kTempoOptions)
+                  DropdownMenuItem(value: b, child: Text('$b')),
+              ],
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() => _song.setTempo(v));
+                  _syncPlayback();
+                }
               },
             ),
             const SizedBox(width: 16),
@@ -1050,25 +1189,58 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               onPressed: addTrack,
             ),
             const SizedBox(width: 16),
-            // Edit-step: rows the cursor advances after each note.
-            Text('${l10n.trackerEditStep}: '),
-            DropdownButton<int>(
-              value: _editStep,
-              items: [
-                for (final n in const [0, 1, 2, 4])
-                  DropdownMenuItem(value: n, child: Text('$n')),
-              ],
-              onChanged: (v) => setState(() => _editStep = v ?? 1),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '${_song.channelCount} × ${_song.rows}',
-              style: Theme.of(context).textTheme.labelMedium,
+            // Edit-step: rows the cursor auto-advances after each note entry.
+            Tooltip(
+              message: l10n.trackerEditStepHelp,
+              child: Row(
+                children: [
+                  const Icon(Icons.south, size: 16),
+                  const SizedBox(width: 2),
+                  Text('${l10n.trackerEditStep}: '),
+                  DropdownButton<int>(
+                    value: _editStep,
+                    items: [
+                      for (final n in const [0, 1, 2, 4])
+                        DropdownMenuItem(value: n, child: Text('$n')),
+                    ],
+                    onChanged: (v) => setState(() => _editStep = v ?? 1),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _promptCustomLength(AppLocalizations l10n) async {
+    final controller = TextEditingController(text: '${_song.rows}');
+    final value = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.trackerCustomLength),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: InputDecoration(hintText: l10n.trackerCustomLengthPrompt),
+          onSubmitted: (t) => Navigator.of(ctx).pop(int.tryParse(t)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.trackerCancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(int.tryParse(controller.text)),
+            child: Text(l10n.trackerOk),
+          ),
+        ],
+      ),
+    );
+    if (value != null && value > 0) setRows(value.clamp(1, 1024));
   }
 
   Widget _grid(BuildContext context) {
@@ -1308,12 +1480,37 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final scheme = Theme.of(context).colorScheme;
     return Container(
       color: scheme.surfaceContainerLow,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
+              // Which computer-keyboard scheme enters notes.
+              SegmentedButton<_NoteEntry>(
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: _NoteEntry.pianoKeys,
+                    label: Text(l10n.trackerEntryPiano),
+                  ),
+                  ButtonSegment(
+                    value: _NoteEntry.noteNames,
+                    label: Text(l10n.trackerEntryNames),
+                  ),
+                ],
+                selected: {_entryMode},
+                onSelectionChanged: (s) => setState(() {
+                  _entryMode = s.first;
+                  _pendingSemi = null;
+                }),
+              ),
+              const SizedBox(width: 8),
+              // Base octave for the computer keyboard.
               IconButton(
                 icon: const Icon(Icons.remove),
                 tooltip: '${l10n.trackerOctave} −',
@@ -1327,94 +1524,137 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 onPressed: () =>
                     setState(() => _octave = (_octave + 1).clamp(0, 8)),
               ),
+              if (_pendingLabel.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    _pendingLabel,
+                    style: TextStyle(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               const Spacer(),
               // Clear-at-cursor (the "===" key on a real tracker).
               OutlinedButton(
                 onPressed: _clearAtCursorAndAdvance,
                 child: const Text('···'),
               ),
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                tooltip: l10n.trackerKeyHelp,
+                onPressed: () => _showKeyHelp(l10n),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          SizedBox(height: 64, child: _MiniPiano(onNote: _pianoNote)),
+          const SizedBox(height: 2),
+          // The sweepable multi-octave piano (same widget as the Workshop). Tap
+          // a key to enter that absolute note at the cursor.
+          SizedBox(
+            height: 72,
+            child: Scrollbar(
+              controller: _pianoScroll,
+              child: SingleChildScrollView(
+                controller: _pianoScroll,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: _pianoWhiteKeys * _pianoKeyWidth,
+                  child: PianoKeyboard(
+                    startMidi: _pianoStartMidi,
+                    whiteKeyCount: _pianoWhiteKeys,
+                    showLabels: true,
+                    showOctaveNumbers: true,
+                    onKeyTap: (midi) {
+                      _enterNoteAtCursor(midi);
+                      _focus.requestFocus();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _pianoNote(int semitone) {
-    _enterNoteAtCursor(((_octave + 1) * 12 + semitone).clamp(0, 127));
-    _focus.requestFocus();
-  }
-}
-
-/// A one-octave on-screen piano (touch note entry). [onNote] gets the semitone
-/// offset 0..11 (C..B); the screen adds the current base octave.
-class _MiniPiano extends StatelessWidget {
-  const _MiniPiano({required this.onNote});
-
-  final void Function(int semitone) onNote;
-
-  static const _whiteSemitones = [0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
-  // A black key sits after white indices 0,1,3,4,5 (C#,D#,F#,G#,A#); 2 and 6
-  // have no black key.
-  static const _blackAfterWhite = <int, int>{0: 1, 1: 3, 3: 6, 4: 8, 5: 10};
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth / 7;
-        return Stack(
-          children: [
-            Row(
-              children: [
-                for (final semi in _whiteSemitones)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(1),
-                      child: Material(
-                        color: scheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                          side: BorderSide(color: scheme.outline),
-                        ),
-                        child: InkWell(
-                          onTap: () => onNote(semi),
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                _kNoteNames[semi],
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            for (final entry in _blackAfterWhite.entries)
-              Positioned(
-                left: (entry.key + 1) * w - w * 0.3,
-                width: w * 0.6,
-                top: 0,
-                height: 40,
-                child: Material(
-                  color: scheme.inverseSurface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: InkWell(onTap: () => onNote(entry.value)),
-                ),
+  /// A legend for the keyboard editing — the authentic classic-tracker piano
+  /// map plus the note-name shortcut and navigation keys.
+  void _showKeyHelp(AppLocalizations l10n) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.trackerKeyHelp,
+                style: Theme.of(ctx).textTheme.titleLarge,
               ),
-          ],
-        );
-      },
+              const SizedBox(height: 12),
+              _helpRow(
+                ctx,
+                l10n.trackerEntryPiano,
+                'Z S X D C V G B H N J M ,   ·   Q 2 W 3 E R 5 T 6 Y 7 U I',
+              ),
+              _helpRow(
+                ctx,
+                l10n.trackerEntryNames,
+                'C D E F G A B  +  # ?  +  0–9',
+              ),
+              _helpRow(ctx, l10n.trackerOctave, 'Page Up / Page Down'),
+              _helpRow(ctx, l10n.trackerCursor, '↑ ↓ ← →'),
+              _helpRow(ctx, l10n.trackerClear, 'Delete / Backspace'),
+              _helpRow(ctx, l10n.trackerEditStep, l10n.trackerEditStepHelp),
+            ],
+          ),
+        ),
+      ),
     );
   }
+
+  Widget _helpRow(BuildContext ctx, String label, String keys) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 110,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                keys,
+                style: TextStyle(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }
+
+/// The optional onboarding for the Advanced Tracker — opens once on first entry
+/// and from the app-bar "?" button. Explains the grid, the keyboard, transport
+/// and song arrangement. Localized (de/en).
+Tutorial advancedTrackerPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.trackerAdvancedTitle,
+      steps: [
+        TutorialStep(text: l10n.trackerTutGrid),
+        TutorialStep(text: l10n.trackerTutKeys),
+        TutorialStep(text: l10n.trackerTutStep),
+        TutorialStep(text: l10n.trackerTutTransport),
+        TutorialStep(text: l10n.trackerTutArrange),
+        TutorialStep(text: l10n.trackerTutTracks),
+      ],
+    );

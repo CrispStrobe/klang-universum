@@ -1343,6 +1343,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerPatternClone => 'Clone pattern';
 
   @override
+  String get trackerTempo => 'Tempo';
+
+  @override
+  String get trackerCustomLength => 'Custom…';
+
+  @override
+  String get trackerCustomLengthPrompt => 'Rows (e.g. 64, 128, 256)';
+
+  @override
+  String get trackerEditStepHelp =>
+      'Rows the cursor jumps down after each note';
+
+  @override
+  String get trackerCancel => 'Cancel';
+
+  @override
+  String get trackerOk => 'OK';
+
+  @override
+  String get trackerEntryPiano => 'Piano keys';
+
+  @override
+  String get trackerEntryNames => 'Note names';
+
+  @override
+  String get trackerKeyHelp => 'Keyboard';
+
+  @override
+  String get trackerCursor => 'Move cursor';
+
+  @override
+  String get trackerTutGrid =>
+      'This is a pattern grid: time runs top-to-bottom in rows, and each column is a track. Tap a cell to move the edit cursor, then play a note into it.';
+
+  @override
+  String get trackerTutKeys =>
+      'Type notes on your computer keyboard. \'Piano keys\' uses the classic tracker layout (Z–M is one octave, Q–I the next). \'Note names\' lets you type a letter then an octave digit, e.g. F then 2 = F2. The ⓘ button lists every shortcut. On a touch screen, use the piano at the bottom.';
+
+  @override
+  String get trackerTutStep =>
+      '\'Step\' is how many rows the cursor jumps down after each note — set it to your beat (e.g. 4) to enter notes quickly, or 0 to stay on one row.';
+
+  @override
+  String get trackerTutTransport =>
+      'The transport row plays and pauses, stops, and steps back/forward. \'Length\' sets how many rows a pattern has (no more 2–3 bars!), and \'Tempo\' sets the speed.';
+
+  @override
+  String get trackerTutArrange =>
+      'Build several patterns, then chain them into a song: add each one to the order list and press \'Play song\'.';
+
+  @override
+  String get trackerTutTracks =>
+      'Add as many tracks as you like, give each its own instrument, and mute (M) or solo (S) them while you work. You can even import a real .mod/.xm/.s3m/.it module and edit it.';
+
+  @override
   String get myMelodyPrompt =>
       'Write your melody — tap the staff or an instrument!';
 

@@ -2606,6 +2606,102 @@ abstract class AppLocalizations {
   /// **'Clone pattern'**
   String get trackerPatternClone;
 
+  /// No description provided for @trackerTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get trackerTempo;
+
+  /// No description provided for @trackerCustomLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom…'**
+  String get trackerCustomLength;
+
+  /// No description provided for @trackerCustomLengthPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows (e.g. 64, 128, 256)'**
+  String get trackerCustomLengthPrompt;
+
+  /// No description provided for @trackerEditStepHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows the cursor jumps down after each note'**
+  String get trackerEditStepHelp;
+
+  /// No description provided for @trackerCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get trackerCancel;
+
+  /// No description provided for @trackerOk.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get trackerOk;
+
+  /// No description provided for @trackerEntryPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Piano keys'**
+  String get trackerEntryPiano;
+
+  /// No description provided for @trackerEntryNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Note names'**
+  String get trackerEntryNames;
+
+  /// No description provided for @trackerKeyHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard'**
+  String get trackerKeyHelp;
+
+  /// No description provided for @trackerCursor.
+  ///
+  /// In en, this message translates to:
+  /// **'Move cursor'**
+  String get trackerCursor;
+
+  /// No description provided for @trackerTutGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a pattern grid: time runs top-to-bottom in rows, and each column is a track. Tap a cell to move the edit cursor, then play a note into it.'**
+  String get trackerTutGrid;
+
+  /// No description provided for @trackerTutKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Type notes on your computer keyboard. \'Piano keys\' uses the classic tracker layout (Z–M is one octave, Q–I the next). \'Note names\' lets you type a letter then an octave digit, e.g. F then 2 = F2. The ⓘ button lists every shortcut. On a touch screen, use the piano at the bottom.'**
+  String get trackerTutKeys;
+
+  /// No description provided for @trackerTutStep.
+  ///
+  /// In en, this message translates to:
+  /// **'\'Step\' is how many rows the cursor jumps down after each note — set it to your beat (e.g. 4) to enter notes quickly, or 0 to stay on one row.'**
+  String get trackerTutStep;
+
+  /// No description provided for @trackerTutTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'The transport row plays and pauses, stops, and steps back/forward. \'Length\' sets how many rows a pattern has (no more 2–3 bars!), and \'Tempo\' sets the speed.'**
+  String get trackerTutTransport;
+
+  /// No description provided for @trackerTutArrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Build several patterns, then chain them into a song: add each one to the order list and press \'Play song\'.'**
+  String get trackerTutArrange;
+
+  /// No description provided for @trackerTutTracks.
+  ///
+  /// In en, this message translates to:
+  /// **'Add as many tracks as you like, give each its own instrument, and mute (M) or solo (S) them while you work. You can even import a real .mod/.xm/.s3m/.it module and edit it.'**
+  String get trackerTutTracks;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:
