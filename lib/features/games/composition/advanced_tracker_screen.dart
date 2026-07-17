@@ -33,6 +33,7 @@
 // rectangle (Shift+arrows / tap-mark / select-track / select-pattern) then copy/
 // cut/paste/paste-mix/transpose/clear, via a Block menu AND keyboard shortcuts.
 
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/sample_edit.dart';
@@ -42,18 +43,22 @@ import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
+import 'package:comet_beat/core/notation/multi_part_export.dart'
+    show multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
+import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart'
+    show CompositionWorkshopScreen;
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
 import 'package:comet_beat/shared/tutorial/tutorial_sheet.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show MultiPartScore, multiPartToMusicXml;
+    show MultiPartScore, Score, multiPartScoreFromMusicXml, multiPartToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -180,6 +185,10 @@ abstract interface class AdvancedTrackerTester {
   /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
   void importModuleBytes(Uint8List bytes);
   bool debugSaveToSongBook(UserSongsService songs);
+
+  /// Export the whole song as MIDI / MusicXML bytes (null when nothing pitched).
+  Uint8List? debugExportMidi();
+  String? debugExportMusicXml();
 
   /// Assign a recorded/edited [raw] clip (with voice [fx]) to [channel] — the
   /// device-free path onto the sample editor (the mic is device-only).
@@ -1577,6 +1586,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         AppLocalizations.of(context)!.trackerAdvancedTitle,
       );
 
+  @override
+  Uint8List? debugExportMidi() {
+    final mp = _songMultiPart();
+    return mp == null ? null : multiPartToMidi(mp.score);
+  }
+
+  @override
+  String? debugExportMusicXml() {
+    final mp = _songMultiPart();
+    return mp == null
+        ? null
+        : multiPartToMusicXml(mp.score, partNames: mp.names);
+  }
+
   Future<void> _saveToSongBook() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
@@ -1589,6 +1612,160 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       SnackBar(
         content: Text(saved ? l10n.trackerSavedSong : l10n.trackerSaveEmpty),
       ),
+    );
+  }
+
+  /// The whole song as a multi-part score (+ part names), or null when nothing
+  /// pitched is placed. Shared by Save / Export / Open-in-Workshop.
+  ({MultiPartScore score, List<String> names})? _songMultiPart() {
+    final src = _songAsChannels();
+    if (src == null) return null;
+    final parts = trackerToScoreParts(src.channels, src.timing);
+    if (parts.isEmpty) return null;
+    final names = [
+      for (final c in src.channels)
+        if (c.hasAnyNote && c.instrument is! PercussionInstrument)
+          c.instrument.id,
+    ];
+    return (score: MultiPartScore(parts), names: names);
+  }
+
+  Future<void> _saveBytes(
+    Uint8List bytes,
+    String suggestedName,
+    String label,
+    List<String> extensions,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final location = await getSaveLocation(
+        suggestedName: suggestedName,
+        acceptedTypeGroups: [
+          XTypeGroup(label: label, extensions: extensions),
+        ],
+      );
+      if (location == null || !mounted) return;
+      await XFile.fromData(bytes, name: suggestedName).saveTo(location.path);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.trackerModFailed)));
+    }
+  }
+
+  Future<void> _exportMidi() async {
+    final mp = _songMultiPart();
+    final l10n = AppLocalizations.of(context)!;
+    if (mp == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.trackerSaveEmpty)),
+      );
+      return;
+    }
+    await _saveBytes(
+      multiPartToMidi(mp.score),
+      'tracker.mid',
+      'MIDI',
+      ['mid', 'midi'],
+    );
+  }
+
+  Future<void> _exportMusicXml() async {
+    final mp = _songMultiPart();
+    final l10n = AppLocalizations.of(context)!;
+    if (mp == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.trackerSaveEmpty)),
+      );
+      return;
+    }
+    final xml = multiPartToMusicXml(mp.score, partNames: mp.names);
+    await _saveBytes(
+      Uint8List.fromList(xml.codeUnits),
+      'tracker.musicxml',
+      'MusicXML',
+      ['musicxml', 'xml'],
+    );
+  }
+
+  /// Open the current song in the Composition (Score) Workshop for staff editing.
+  void _openInWorkshop() {
+    final mp = _songMultiPart();
+    final l10n = AppLocalizations.of(context)!;
+    if (mp == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.trackerSaveEmpty)),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CompositionWorkshopScreen(
+          initialScore: mp.score,
+          initialNames: mp.names,
+        ),
+      ),
+    );
+  }
+
+  /// Import a score file (MusicXML / MIDI / …) as a new tracker song — one track
+  /// per part, chromatic (no pentatonic snap). The reverse of Export/Open.
+  Future<void> _importScore() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(
+            label: 'Score',
+            extensions: ['musicxml', 'xml', 'mid', 'midi'],
+          ),
+        ],
+      );
+      if (file == null || !mounted) return;
+      final bytes = await file.readAsBytes();
+      final name = file.name.toLowerCase();
+      final mp = (name.endsWith('.mid') || name.endsWith('.midi'))
+          ? multiTrackMidiToMultiPart(bytes)
+          : multiPartScoreFromMusicXml(utf8.decode(bytes));
+      _replaceSong(_songFromMultiPart(mp));
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.trackerModFailed)));
+    }
+  }
+
+  TrackerSong _songFromMultiPart(MultiPartScore mp) {
+    const timing = TrackerTiming(rows: 64);
+    final channels = <TrackerChannel>[];
+    final cells = <List<TrackerCell>>[];
+    for (var p = 0; p < mp.parts.length; p++) {
+      final Score part = mp.parts[p];
+      final col = scoreToChannels(
+        part,
+        timing,
+        channelCount: 1,
+        snapToScale: false,
+      ).first;
+      channels.add(
+        TrackerChannel(
+          id: 'part${p + 1}',
+          instrument: kTrackerInstruments.first.build(),
+          rows: timing.rows,
+          cells: col,
+        ),
+      );
+      cells.add(col);
+    }
+    if (channels.isEmpty) return TrackerSong();
+    return TrackerSong.fromParts(
+      channels: channels,
+      timing: timing,
+      patterns: [TrackerPattern(name: '00', cells: cells)],
+      order: [0],
     );
   }
 
@@ -1635,31 +1812,35 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               switch (v) {
                 case 'import':
                   _importModule();
+                case 'importScore':
+                  _importScore();
                 case 'saveSong':
                   _saveToSongBook();
+                case 'exportMidi':
+                  _exportMidi();
+                case 'exportXml':
+                  _exportMusicXml();
+                case 'workshop':
+                  _openInWorkshop();
               }
             },
             itemBuilder: (ctx) => [
-              PopupMenuItem(
-                value: 'import',
-                child: Row(
-                  children: [
-                    const Icon(Icons.library_music, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.trackerImportMod),
-                  ],
-                ),
+              _menuRow('import', Icons.library_music, l10n.trackerImportMod),
+              _menuRow(
+                'importScore',
+                Icons.file_open_outlined,
+                l10n.trackerImportScore,
               ),
-              PopupMenuItem(
-                value: 'saveSong',
-                child: Row(
-                  children: [
-                    const Icon(Icons.bookmark_add_outlined, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.trackerSaveSong),
-                  ],
-                ),
+              const PopupMenuDivider(),
+              _menuRow(
+                'saveSong',
+                Icons.bookmark_add_outlined,
+                l10n.trackerSaveSong,
               ),
+              _menuRow('exportMidi', Icons.piano, l10n.trackerExportMidi),
+              _menuRow('exportXml', Icons.description, l10n.trackerExportXml),
+              const PopupMenuDivider(),
+              _menuRow('workshop', Icons.edit_note, l10n.trackerOpenWorkshop),
             ],
           ),
         ],
@@ -1693,6 +1874,18 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// The classic block-editing menu (touch-friendly; the same ops have keyboard
   /// shortcuts on desktop — see the ⓘ legend). Mark begin/drag-select, select
   /// track/pattern, copy/cut/paste/paste-mix, transpose, clear, unmark.
+  PopupMenuItem<String> _menuRow(String value, IconData icon, String label) =>
+      PopupMenuItem<String>(
+        value: value,
+        child: Row(
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 12),
+            Text(label),
+          ],
+        ),
+      );
+
   Widget _blockMenu(AppLocalizations l10n) => PopupMenuButton<String>(
         icon: Icon(
           _marking || _hasSelection ? Icons.select_all : Icons.highlight_alt,

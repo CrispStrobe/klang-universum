@@ -1190,6 +1190,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerSaveSong => 'Save to Song Book';
 
   @override
+  String get trackerImportScore => 'Import score (MusicXML/MIDI)…';
+
+  @override
+  String get trackerExportXml => 'Export MusicXML…';
+
+  @override
+  String get trackerOpenWorkshop => 'Open in Score Workshop';
+
+  @override
   String get trackerSavedSong => 'Saved to the Song Book';
 
   @override

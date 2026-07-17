@@ -381,9 +381,19 @@ const kExportFormats = <ExportFormat>[
 ];
 
 class CompositionWorkshopScreen extends StatefulWidget {
-  const CompositionWorkshopScreen({super.key});
+  const CompositionWorkshopScreen({
+    super.key,
+    this.initialScore,
+    this.initialNames,
+  });
 
   static const maxNotes = 256;
+
+  /// When set, the editor opens pre-loaded with this multi-part score (one
+  /// [ScoreDocument] per part) instead of a blank document — used by the
+  /// Advanced Tracker's "Open in Workshop".
+  final MultiPartScore? initialScore;
+  final List<String>? initialNames;
 
   @override
   State<CompositionWorkshopScreen> createState() =>
@@ -448,7 +458,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   // and every editing command target the *active* part through the [_doc]
   // getter, so the single-part editing pipeline is reused unchanged; only the
   // canvas/parts-strip below know there can be more than one part.
-  final MultiPartDocument _mpd = MultiPartDocument();
+  // Seeded from an [initialScore] when one is passed (e.g. the Tracker → Workshop
+  // handoff), else a blank document.
+  late final MultiPartDocument _mpd = widget.initialScore == null
+      ? MultiPartDocument()
+      : MultiPartDocument.fromMultiPartScore(
+          widget.initialScore!,
+          names: widget.initialNames,
+        );
 
   /// The part the toolbar edits — every existing command reads/writes this.
   ScoreDocument get _doc => _mpd.activePart;

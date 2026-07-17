@@ -2300,6 +2300,24 @@ abstract class AppLocalizations {
   /// **'Save to Song Book'**
   String get trackerSaveSong;
 
+  /// No description provided for @trackerImportScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Import score (MusicXML/MIDI)…'**
+  String get trackerImportScore;
+
+  /// No description provided for @trackerExportXml.
+  ///
+  /// In en, this message translates to:
+  /// **'Export MusicXML…'**
+  String get trackerExportXml;
+
+  /// No description provided for @trackerOpenWorkshop.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Score Workshop'**
+  String get trackerOpenWorkshop;
+
   /// No description provided for @trackerSavedSong.
   ///
   /// In en, this message translates to:

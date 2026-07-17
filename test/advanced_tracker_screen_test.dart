@@ -9,6 +9,8 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:crisp_notation/crisp_notation.dart'
+    show multiPartScoreFromMusicXml;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -321,6 +323,42 @@ void main() {
     final songs = UserSongsService();
     expect(game.debugSaveToSongBook(songs), isTrue);
     expect(songs.songs, isNotEmpty);
+  });
+
+  testWidgets('exports the whole song as MIDI and MusicXML', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    expect(game.debugExportMidi(), isNull); // nothing placed yet
+    game.setNote(0, 0, 60);
+    game.setNote(0, 4, 64);
+    await tester.pump();
+
+    final midi = game.debugExportMidi();
+    expect(midi, isNotNull);
+    expect(midi!.length, greaterThan(0));
+    // MIDI files start with the 'MThd' header.
+    expect(String.fromCharCodes(midi.take(4)), 'MThd');
+
+    final xml = game.debugExportMusicXml();
+    expect(xml, isNotNull);
+    expect(xml, contains('<score-partwise'));
+  });
+
+  testWidgets(
+      'exported MusicXML round-trips to a real score (Workshop handoff)',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    await tester.pump();
+
+    final xml = game.debugExportMusicXml();
+    expect(xml, isNotNull);
+    // The same score the "Open in Workshop" handoff passes as initialScore.
+    final mp = multiPartScoreFromMusicXml(xml!);
+    expect(mp.parts, isNotEmpty);
+    expect(mp.parts.first.measures, isNotEmpty);
   });
 
   testWidgets('undo/redo restores and reapplies cell edits', (tester) async {
