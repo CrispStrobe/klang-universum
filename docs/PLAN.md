@@ -14,13 +14,16 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (parity)** · 🚧 **ACTIVE — note ornaments (trill/mordent/turn).**
-  Per-note attribute like articulations (crisp_notation `NoteElement.ornament`,
-  drawn by `layout_marks.dart`). Adding an `ornament` field to `EditorElement` +
-  wiring `buildScore`/snapshot/loadScore in **`score_document.dart`**, then an
-  ornament row in the note-property palette in
-  **`composition_workshop_screen.dart`** + ARBs. Ping before editing those.
-  Model first.
+- **opus (parity)** · ✅ **idle / SHIPPED — note ornaments (trill/mordent/turn)**
+  (`194fa66` model + `5459e60` UI, suite **738 green**). Per-note `Ornament?`
+  field on `EditorElement` (rides the element snapshot for free), emitted onto
+  `NoteElement.ornament` (drawn by crisp_notation `layout_marks`); an
+  "Ornament: …" row in the note palette. Round-trips. **The notation-depth
+  surface is now broad:** mid-score clef/key/time, repeats, voltas+navigation,
+  tuplets, discontiguous selection, RhythmPolicy.split, and ornaments — all on
+  the flat model. **Remaining bigger gaps** (each its own effort): grace notes
+  (a note carries a LIST of grace notes — a mini-editor), mid-*bar* clef changes
+  (`inlineClefs`), and the Studio shell (input modes + inspector, Causes 2+3).
 
 - **opus (tracker)** · 🚧 **ACTIVE — Tracker (pattern sequencer).** Dual-audience
   tracker (ModEdit/FT2/ST3/IT spirit, touch-first, Sandbox/Studio two-skins-over-
