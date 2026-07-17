@@ -2444,6 +2444,24 @@ abstract class AppLocalizations {
   /// **'Demon'**
   String get trackerVoiceDemon;
 
+  /// No description provided for @trackerSpeedSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow'**
+  String get trackerSpeedSlow;
+
+  /// No description provided for @trackerSpeedNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get trackerSpeedNormal;
+
+  /// No description provided for @trackerSpeedFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get trackerSpeedFast;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:

@@ -373,4 +373,30 @@ void main() {
     expect(game.channelEffect, TrackerChannelEffect.none);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the voice speed control time-stretches a recorded clip',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    final raw = Float64List(4000);
+    for (var i = 0; i < raw.length; i++) {
+      raw[i] = sin(2 * pi * 220 * i / 44100);
+    }
+
+    // As-recorded (1.0) keeps the length.
+    game.setVoiceStretch(1.0);
+    await tester.pump();
+    game.injectRecording(raw, VoiceEffect.normal);
+    await tester.pump();
+    expect(game.voiceSampleLength, raw.length);
+
+    // Slower (1.5) yields a longer sample (pitch preserved by WSOLA).
+    game.setVoiceStretch(1.5);
+    await tester.pump();
+    game.injectRecording(raw, VoiceEffect.normal);
+    await tester.pump();
+    expect(game.voiceStretch, 1.5);
+    expect(game.voiceSampleLength, closeTo(raw.length * 1.5, 2048));
+    expect(tester.takeException(), isNull);
+  });
 }

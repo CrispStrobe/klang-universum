@@ -17,6 +17,7 @@
 // full note·instrument·volume·fx cell, keyboard entry, sfxr/sampled instruments)
 // hangs off the same TrackerEngine document later — see docs/TRACKER_HANDOVER.md.
 
+import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/mod/mod.dart';
 import 'package:comet_beat/core/audio/mod/mod_bridge.dart';
@@ -97,6 +98,12 @@ abstract interface class TrackerTester {
   /// channel as if it had just been recorded.
   void injectRecording(Float64List raw, VoiceEffect fx);
 
+  /// The time-stretch factor applied to a recorded clip (1.0 = as-recorded), and
+  /// a setter; plus the length of the voice channel's current sample (0 if none).
+  double get voiceStretch;
+  void setVoiceStretch(double factor);
+  int get voiceSampleLength;
+
   bool get notationVisible;
   void toggleNotation();
 
@@ -173,6 +180,10 @@ class _TrackerScreenState extends State<TrackerScreen>
   int _selected = 0;
   bool _isRecording = false;
   bool _showNotation = false;
+
+  /// Time-stretch factor applied to a recorded voice clip before it becomes an
+  /// instrument (pitch preserved): 1.0 = as-recorded, >1 slower/longer, <1 faster.
+  double _voiceStretch = 1.0;
 
   /// Arrangement: four pattern slots (A–D). The engine edits the current slot's
   /// cells live; switching slots saves/loads snapshots. "Play song" chains the
@@ -273,6 +284,17 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   void injectRecording(Float64List raw, VoiceEffect fx) =>
       _assignVoice(raw, fx);
+  @override
+  double get voiceStretch => _voiceStretch;
+  @override
+  void setVoiceStretch(double factor) => setState(() => _voiceStretch = factor);
+  @override
+  int get voiceSampleLength {
+    if (_voiceIndex < 0) return 0;
+    final inst = _engine.channels[_voiceIndex].instrument;
+    return inst is SampleInstrument ? inst.sample.length : 0;
+  }
+
   @override
   bool get notationVisible => _showNotation;
   @override
@@ -695,9 +717,10 @@ class _TrackerScreenState extends State<TrackerScreen>
   void _assignVoice(Float64List raw, VoiceEffect fx) {
     final v = _voiceIndex;
     if (v < 0) return;
+    final clip = _voiceStretch == 1.0 ? raw : timeStretch(raw, _voiceStretch);
     _engine.setChannelInstrument(
       v,
-      SampleInstrument.recorded('voice', raw, fx),
+      SampleInstrument.recorded('voice', clip, fx),
     );
     setState(() => _selected = v);
     _syncPlayback();
@@ -1063,7 +1086,28 @@ class _TrackerScreenState extends State<TrackerScreen>
                   style: Theme.of(sheetContext).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                // Speed (time-stretch, pitch preserved) — sticky across records.
+                StatefulBuilder(
+                  builder: (context, setSheetState) => Wrap(
+                    spacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final (label, factor) in <(String, double)>[
+                        (l10n.trackerSpeedSlow, 1.5),
+                        (l10n.trackerSpeedNormal, 1.0),
+                        (l10n.trackerSpeedFast, 0.6),
+                      ])
+                        ChoiceChip(
+                          label: Text(label),
+                          selected: _voiceStretch == factor,
+                          onSelected: (_) =>
+                              setSheetState(() => _voiceStretch = factor),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,

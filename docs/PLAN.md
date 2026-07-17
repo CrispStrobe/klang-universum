@@ -33,6 +33,13 @@ and push to origin/main** before/after touching shared files. Format:
   Worktree `../mus-aecmos`, branch `feature/aecmos`. NOT touching the app / native
   plugin / game registry.
 
+- **opus (tracker)** · ✅ **idle / SHIPPED — record voice slow/fast (time-stretch)**.
+  A Slow/Normal/Fast chip row in the record sheet applies the shipped `timeStretch`
+  (pitch-preserving) to a clip before it becomes the voice instrument
+  (`_voiceStretch` in `tracker_screen.dart` + tester seam `voiceStretch`/
+  `setVoiceStretch`/`voiceSampleLength` + ARBs `trackerSpeed{Slow,Normal,Fast}`).
+  Screen test: inject at 1.5× → voice sample ~1.5× longer. **FX_HANDOVER §3 complete.**
+
 - **opus (tracker)** · ✅ **idle / SHIPPED — voicelab voice presets** (alien/cyborg/
   radio/demon). `VoiceEffect` in `voice_fx.dart` gains 4 presets composing formant +
   the shipped `ring_mod`/`distortion` + a 1-pole bandpass (radio); record-sheet icons

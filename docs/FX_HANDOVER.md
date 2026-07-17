@@ -51,9 +51,10 @@ effects.dart` (arp/vibrato/slide). See auto-memory `tracker-effort`.
 3. **Richer voice FX** (from voicelab). ✅ **PSOLA/WSOLA time-stretch DONE**
    (`crisp_dsp/time_stretch.dart`, MPM-verified). ✅ **Voice presets DONE** — alien /
    cyborg / radio / demon in `voice_fx.dart` (compose formant + ring_mod/distortion +
-   a 1-pole bandpass), wired into the record-sheet picker + ARBs. Remaining: a
-   **slow/fast control** wiring `timeStretch` into the record flow (a stretched clip
-   is a different-length sample on the SampleInstrument seam).
+   a 1-pole bandpass), wired into the record-sheet picker + ARBs. ✅ **Slow/fast
+   control DONE** — a Slow/Normal/Fast chip row in the record sheet applies
+   `timeStretch` to the clip before it becomes the voice instrument (`_voiceStretch`
+   + tester seam `voiceStretch`/`voiceSampleLength`). **§3 complete.**
 4. **Instrument envelopes** (from OpenMPT/IT) — optional volume/pitch envelopes on
    sampled/sfxr instruments for expressiveness. New model + render hook.
 5. **Groove / swing** — a tempo-swing option in the Tracker/Loop Mixer timing (from

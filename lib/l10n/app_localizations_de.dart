@@ -1269,6 +1269,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerVoiceDemon => 'Dämon';
 
   @override
+  String get trackerSpeedSlow => 'Langsam';
+
+  @override
+  String get trackerSpeedNormal => 'Normal';
+
+  @override
+  String get trackerSpeedFast => 'Schnell';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 
