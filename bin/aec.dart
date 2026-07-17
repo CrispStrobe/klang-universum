@@ -58,6 +58,8 @@ Options:
                   (proves which pitch survives the cancellation).
   --dtd           Enable the double-talk detector (freeze adaptation on near-end
                   speech) in file/stream mode. --selftest always compares both.
+  --res           Enable residual echo suppression (spectral post-filter on what
+                  the linear filter leaves). Best combined with --dtd.
   -h, --help      Show this help.
 ''';
 
@@ -70,6 +72,7 @@ Future<void> main(List<String> argv) async {
   final rate = int.tryParse(args.value('rate') ?? '') ?? kSampleRate;
   final detect = args.flag('detect');
   final dtd = args.flag('dtd');
+  final res = args.flag('res');
   final delay = int.tryParse(args.value('delay') ?? '');
 
   if (args.flag('selftest')) {
@@ -77,7 +80,13 @@ Future<void> main(List<String> argv) async {
     return;
   }
   if (args.flag('stdin')) {
-    await _stream(rate: rate, refDelay: delay ?? 0, detect: detect, dtd: dtd);
+    await _stream(
+      rate: rate,
+      refDelay: delay ?? 0,
+      detect: detect,
+      dtd: dtd,
+      res: res,
+    );
     return;
   }
   if (args.value('mic') != null && args.value('ref') != null) {
@@ -88,6 +97,7 @@ Future<void> main(List<String> argv) async {
       delay: delay,
       detect: detect,
       dtd: dtd,
+      res: res,
     );
     return;
   }
@@ -141,12 +151,16 @@ void _selftest({required int rate, required bool detect}) {
     ref[i] = 0.3 * (rng.nextDouble() * 2 - 1);
   }
 
-  // 1. Echo-only cancellation strength.
+  // 1. Echo-only cancellation strength — linear, then with the residual
+  //    suppressor mopping up what the linear filter leaves.
   final echoOnly = _roomEcho(ref);
   final r1 = cancelEcho(echoOnly, ref);
   final m1 = AecMetrics.measure(echoOnly, r1.cleaned);
+  final r1res = cancelEcho(echoOnly, ref, residualSuppress: true);
+  final m1res = AecMetrics.measure(echoOnly, r1res.cleaned);
   stderr.writeln('estimated delay: ${r1.delay} samples');
-  stderr.writeln('echo-only: ${m1.report(sampleRate: rate)}');
+  stderr.writeln('echo-only, linear: ${m1.report(sampleRate: rate)}');
+  stderr.writeln('echo-only, +RES  : ${m1res.report(sampleRate: rate)}');
 
   // 2. Standard AEC scenario: the filter converges on far-end single-talk
   //    (first half, echo only), THEN the near-end "instrument" joins (second
@@ -160,9 +174,16 @@ void _selftest({required int rate, required bool detect}) {
   }
   final r2 = cancelEcho(mic, ref); // linear only
   final r2dtd = cancelEcho(mic, ref, doubleTalkDetect: true); // + DTD
+  final r2full = cancelEcho(
+    mic,
+    ref,
+    doubleTalkDetect: true,
+    residualSuppress: true,
+  ); // + DTD + RES
   final siMic = siSdrDb(near, mic, from: half);
   final siLinear = siSdrDb(near, r2.cleaned, from: half);
   final siClean = siSdrDb(near, r2dtd.cleaned, from: half);
+  final siFull = siSdrDb(near, r2full.cleaned, from: half);
   stderr.writeln('double-talk SI-SDR vs the true near-end: '
       'raw mic ${siMic.toStringAsFixed(1)} dB → '
       'linear ${siLinear.toStringAsFixed(1)} dB → '
@@ -170,6 +191,9 @@ void _selftest({required int rate, required bool detect}) {
       '(froze ${r2dtd.frozenBlocks} blocks; '
       '+${(siClean - siMic).toStringAsFixed(1)} dB vs mic, '
       '+${(siClean - siLinear).toStringAsFixed(1)} dB vs linear)');
+  stderr.writeln('             …and +DTD+RES: ${siFull.toStringAsFixed(1)} dB '
+      '(${(siFull - siClean).toStringAsFixed(1)} dB vs DTD-only — RES must not '
+      'chew the voice)');
 
   final heard =
       _detectDominant(Float64List.sublistView(r2dtd.cleaned, half), rate);
@@ -180,16 +204,17 @@ void _selftest({required int rate, required bool detect}) {
       '(instrument ${_noteName(instrumentMidi)})');
   if (detect && heard != null) _printFrameNote(r2dtd.cleaned, rate);
 
-  // With the double-talk detector the filter freezes on the near-end instead of
-  // adapting to it, so the double-talk SI-SDR is substantially better than the
-  // linear-only path. PASS on: strong echo-only cancellation, convergence, a
-  // clear SI-SDR gain (with DTD) over the raw mic AND over linear-only, and the
-  // instrument surviving.
+  // The DTD freezes the filter on the near-end instead of adapting to it (big
+  // double-talk SI-SDR win); the RES mops up the residual echo the linear filter
+  // leaves (big echo-only win) without chewing the voice — its leakage estimate
+  // is DTD-gated, so it doesn't over-suppress during double-talk.
   final erleOk = m1.segErle > 15;
   final convOk = m1.convergedAtSample >= 0;
   final sdrOk = (siClean - siMic) > 6 && (siClean - siLinear) > 2;
   final surviveOk = heard == instrumentMidi;
-  final ok = erleOk && convOk && sdrOk && surviveOk;
+  final resOk = m1res.segErle > m1.segErle + 5; // RES adds real suppression
+  final voiceOk = (siFull - siClean) > -1.5; // …and doesn't eat the near-end
+  final ok = erleOk && convOk && sdrOk && surviveOk && resOk && voiceOk;
   stdout.writeln(
     ok
         ? 'PASS'
@@ -197,7 +222,9 @@ void _selftest({required int rate, required bool detect}) {
             '${erleOk ? "" : " (weak ERLE)"}'
             '${convOk ? "" : " (no convergence)"}'
             '${sdrOk ? "" : " (weak SI-SDR gain)"}'
-            '${surviveOk ? "" : " (instrument not recovered)"}',
+            '${surviveOk ? "" : " (instrument not recovered)"}'
+            '${resOk ? "" : " (RES adds no suppression)"}'
+            '${voiceOk ? "" : " (RES chews the voice)"}',
   );
   if (!ok) exitCode = 1;
 }
@@ -220,6 +247,7 @@ void _files({
   int? delay,
   required bool detect,
   required bool dtd,
+  required bool res,
 }) {
   final micWav = readWavPcm16(File(micPath).readAsBytesSync());
   final refWav = readWavPcm16(File(refPath).readAsBytesSync());
@@ -236,6 +264,7 @@ void _files({
     wavToMonoFloat(refWav),
     delay: delay,
     doubleTalkDetect: dtd,
+    residualSuppress: res,
   );
   final metrics = AecMetrics.measure(mic, result.cleaned);
   stderr.writeln('delay ${result.delay} samples '
@@ -266,8 +295,13 @@ Future<void> _stream({
   required int refDelay,
   required bool detect,
   required bool dtd,
+  required bool res,
 }) async {
-  final aec = StreamingEchoCanceller(refDelay: refDelay, doubleTalkDetect: dtd);
+  final aec = StreamingEchoCanceller(
+    refDelay: refDelay,
+    doubleTalkDetect: dtd,
+    residualSuppress: res,
+  );
   final analyzer = detect
       ? StreamingAudioAnalyzer(detector: PitchDetector(sampleRate: rate))
       : null;

@@ -429,4 +429,80 @@ void main() {
       expect(streamer.frozenBlocks, greaterThan(0));
     });
   });
+
+  group('residual echo suppression', () {
+    test('deepens echo-only suppression well past the linear filter', () {
+      final ref = _noise(n);
+      final mic = _echo(ref);
+      final linear = cancelEcho(mic, ref, delay: 0);
+      final withRes = cancelEcho(mic, ref, delay: 0, residualSuppress: true);
+
+      final segLinear = segmentalErleDb(mic, linear.cleaned);
+      final segRes = segmentalErleDb(mic, withRes.cleaned);
+      expect(
+        segRes,
+        greaterThan(segLinear + 5),
+        reason: 'linear $segLinear dB → +RES $segRes dB',
+      );
+    });
+
+    test('does not chew the near-end under double-talk (DTD-gated leakage)',
+        () {
+      final ref = _noise(n);
+      final echo = _echo(ref);
+      final near = Float64List(n);
+      for (var t = 0; t < n; t++) {
+        near[t] = 0.35 * sin(2 * pi * 440 * t / _sr);
+      }
+      const half = n ~/ 2;
+      final mic = Float64List(n);
+      for (var t = 0; t < n; t++) {
+        mic[t] = echo[t] + (t >= half ? near[t] : 0);
+      }
+      final dtd = cancelEcho(mic, ref, delay: 0, doubleTalkDetect: true);
+      final full = cancelEcho(
+        mic,
+        ref,
+        delay: 0,
+        doubleTalkDetect: true,
+        residualSuppress: true,
+      );
+      final siDtd = siSdrDb(near, dtd.cleaned, from: half);
+      final siFull = siSdrDb(near, full.cleaned, from: half);
+      // RES may cost a hair of fidelity, but must not meaningfully damage it.
+      expect(
+        siFull,
+        greaterThan(siDtd - 1.5),
+        reason: 'DTD $siDtd dB → +RES $siFull dB',
+      );
+    });
+
+    test('passes a pure near-end through when there is no echo estimate', () {
+      // Far-end silent ⇒ echoEst is 0 ⇒ nothing to subtract ⇒ unity gain.
+      final ref = Float64List(n); // silent
+      final near = _noise(n, seed: 13, amp: 0.4);
+      final out = cancelEcho(near, ref, delay: 0, residualSuppress: true);
+      // The suppressor must not attenuate a signal it has no echo model for.
+      final si = siSdrDb(near, out.cleaned);
+      expect(si, greaterThan(30), reason: 'near-end SI-SDR $si dB');
+    });
+
+    test('output stays finite and bounded', () {
+      final ref = _noise(n, amp: 0.9);
+      final out =
+          cancelEcho(_echo(ref), ref, delay: 0, residualSuppress: true).cleaned;
+      expect(out.every((s) => s.isFinite), isTrue);
+      expect(out.every((s) => s.abs() <= 2.0), isTrue);
+    });
+
+    test('streaming supports RES and stays byte-stable', () {
+      final ref = _noise(n);
+      final mic = _echo(ref);
+      final streamer = StreamingEchoCanceller(residualSuppress: true);
+      final outBytes = streamer.addInterleavedPcm16(_interleave(mic, ref));
+      expect(outBytes, isNotEmpty);
+      // Cancellation still happens end-to-end through the streaming path.
+      expect(streamer.erleDb, greaterThan(0));
+    });
+  });
 }

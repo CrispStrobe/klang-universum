@@ -243,10 +243,25 @@ implementation.
    leaving far-end-single-talk cancellation untouched. Opt in via
    `cancelEcho(..., doubleTalkDetect: true)` / `StreamingEchoCanceller(...,
    doubleTalkDetect: true)` / `bin/aec.dart --dtd`.
-2. **Residual echo suppression (RES)** — *next.* A light spectral / Wiener-style
-   post-filter on the linear residual (the basic short-time gain approach is
-   decades old and patent-free; avoid copying WebRTC AEC3's specific statistical
-   model). Lifts the tail suppression the linear filter leaves.
+2. ✅ **Residual echo suppression (RES) — DONE.** A Wiener-style spectral
+   post-filter on what the linear filter leaves (misadjustment, the tail beyond
+   the filter). Shipped as `ResidualEchoSuppressor` in `aec_offline.dart`; opt in
+   via `cancelEcho(..., residualSuppress: true)` / `StreamingEchoCanceller(...,
+   residualSuppress: true)` / `bin/aec.dart --res`. It reuses the canceller's own
+   **overlap-save framing** (a 2·blockSize `[prev ; cur]` frame, spectrally
+   gained, keep the last block) so there's no window/COLA bookkeeping. Per bin
+   the residual echo is `λ(k)·|Ŷ(k)|²`, with the **echo leakage λ learned only on
+   far-end single-talk** — gated by the DTD, because during double-talk the
+   near-end inflates the residual and would drive λ (and the suppression) far too
+   high. A `gainFloor` bounds the attenuation. Result on `--selftest`: echo-only
+   segmental ERLE **39 → 55 dB (+15)**, while the double-talk SI-SDR is
+   **unchanged (−0.1 dB)** — it deepens the echo suppression without chewing the
+   voice. The short-time spectral-gain approach is decades old and patent-free;
+   this copies no encumbered implementation (notably not AEC3's statistical
+   model).
+
+**The patent-free algorithm roadmap is complete** (DTD + RES). Recommended
+combination: `--dtd --res` (they compose — RES's leakage estimate is DTD-gated).
 
 Reference algorithms in the same patent-free family: **SpeexDSP MDF** (Valin,
 BSD-3, designed to avoid patents) and **WebRTC AEC3** (BSD-3) — read for

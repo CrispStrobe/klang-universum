@@ -218,6 +218,137 @@ int estimateEchoDelay(Float64List mic, Float64List ref) {
   return best;
 }
 
+/// In-place inverse FFT via the conjugate trick (the shared [fft] is forward-
+/// only): ifft(x) = conj(fft(conj(x)))/n.
+void _ifft(Float64List re, Float64List im) {
+  final n = re.length;
+  for (var i = 0; i < n; i++) {
+    im[i] = -im[i];
+  }
+  fft(re, im);
+  for (var i = 0; i < n; i++) {
+    re[i] /= n;
+    im[i] = -im[i] / n;
+  }
+}
+
+/// Residual echo suppression (RES): a classic Wiener-style spectral post-filter
+/// on what the linear canceller leaves behind (filter misadjustment, the echo
+/// tail beyond the filter, mild nonlinearity). Patent-free — the short-time
+/// spectral-gain approach is decades old; this copies no specific encumbered
+/// implementation (notably not WebRTC AEC3's statistical model).
+///
+/// Framing reuses the canceller's own overlap-save structure — a 2·[blockSize]
+/// frame of `[previous ; current]`, spectrally gained, keeping the last block —
+/// so there's no window/COLA bookkeeping and it drops straight into the block
+/// loop.
+///
+/// Per bin: the residual echo power is estimated as `λ(k)·|Ŷ(k)|²`, where Ŷ is
+/// the canceller's echo estimate and λ is the smoothed **echo leakage** — how
+/// much echo survives into the residual. λ is learned ONLY on far-end
+/// single-talk (pass `updateLeak: false` when the double-talk detector says the
+/// near-end is present), because during double-talk the near-end inflates the
+/// residual and would drive λ — and thus the suppression — far too high.
+///
+/// [gainFloor] bounds the attenuation (a suppressor chews the wanted signal if
+/// let loose), and [overSubtract] scales aggressiveness.
+class ResidualEchoSuppressor {
+  ResidualEchoSuppressor({
+    this.blockSize = 1024,
+    this.overSubtract = 1.0,
+    this.gainFloor = 0.1,
+    this.powerSmoothing = 0.8,
+    this.leakSmoothing = 0.95,
+    this.eps = 1e-12,
+  })  : _n = 2 * blockSize,
+        _prevCleaned = Float64List(blockSize),
+        _prevEcho = Float64List(blockSize),
+        _pe = Float64List(2 * blockSize),
+        _py = Float64List(2 * blockSize),
+        _leak = Float64List(2 * blockSize);
+
+  final int blockSize;
+
+  /// Scales the subtracted residual-echo estimate (higher = more aggressive).
+  final double overSubtract;
+
+  /// Minimum per-bin gain — the suppression floor (0 = mute, 1 = untouched).
+  final double gainFloor;
+
+  /// Per-bin power smoothing for the residual/echo spectra.
+  final double powerSmoothing;
+
+  /// Per-bin smoothing for the leakage estimate λ.
+  final double leakSmoothing;
+
+  final double eps;
+
+  final int _n;
+  final Float64List _prevCleaned;
+  final Float64List _prevEcho;
+  final Float64List _pe; // smoothed residual power
+  final Float64List _py; // smoothed echo-estimate power
+  final Float64List _leak; // λ per bin
+
+  /// Suppress residual echo in one [cleaned] block, given the canceller's
+  /// [echoEst] for the same block (`mic − cleaned`). Both must be [blockSize]
+  /// long. Set [updateLeak] false during double-talk. Returns the suppressed
+  /// block (a fresh list).
+  Float64List process(
+    Float64List cleaned,
+    Float64List echoEst, {
+    bool updateLeak = true,
+  }) {
+    assert(cleaned.length == blockSize && echoEst.length == blockSize);
+    final b = blockSize;
+
+    // Overlap-save frames: [previous ; current].
+    final eRe = Float64List(_n), eIm = Float64List(_n);
+    final yRe = Float64List(_n), yIm = Float64List(_n);
+    for (var i = 0; i < b; i++) {
+      eRe[i] = _prevCleaned[i];
+      eRe[b + i] = cleaned[i];
+      yRe[i] = _prevEcho[i];
+      yRe[b + i] = echoEst[i];
+    }
+    fft(eRe, eIm);
+    fft(yRe, yIm);
+
+    for (var k = 0; k < _n; k++) {
+      final pe = eRe[k] * eRe[k] + eIm[k] * eIm[k];
+      final py = yRe[k] * yRe[k] + yIm[k] * yIm[k];
+      _pe[k] = powerSmoothing * _pe[k] + (1 - powerSmoothing) * pe;
+      _py[k] = powerSmoothing * _py[k] + (1 - powerSmoothing) * py;
+
+      // Leakage λ = residual power / echo-estimate power, learned on far-end
+      // single-talk only, and never above 1 (the residual can't exceed the echo
+      // it came from — a higher ratio means near-end, not leakage).
+      if (updateLeak && _py[k] > eps) {
+        final ratio = (_pe[k] / (_py[k] + eps)).clamp(0.0, 1.0);
+        _leak[k] = leakSmoothing * _leak[k] + (1 - leakSmoothing) * ratio;
+      }
+
+      // Wiener-style gain: subtract the estimated residual echo power.
+      final residual = overSubtract * _leak[k] * _py[k];
+      final gain =
+          (1 - residual / (_pe[k] + eps)).clamp(gainFloor, 1.0).toDouble();
+      eRe[k] *= gain;
+      eIm[k] *= gain;
+    }
+
+    _ifft(eRe, eIm);
+
+    // Overlap-save: the last block is the valid output.
+    final out = Float64List(b);
+    for (var i = 0; i < b; i++) {
+      out[i] = eRe[b + i];
+    }
+    _prevCleaned.setAll(0, cleaned);
+    _prevEcho.setAll(0, echoEst);
+    return out;
+  }
+}
+
 /// The result of an offline [cancelEcho] pass.
 class AecResult {
   const AecResult({
@@ -318,6 +449,7 @@ AecResult cancelEcho(
   int? delay,
   int blockSize = 1024,
   bool doubleTalkDetect = false,
+  bool residualSuppress = false,
 }) {
   final d = delay ?? estimateEchoDelay(mic, ref);
   final aligned = Float64List(mic.length);
@@ -327,6 +459,8 @@ AecResult cancelEcho(
   }
   final aec = EchoCanceller(blockSize: blockSize);
   final dtd = doubleTalkDetect ? DoubleTalkDetector() : null;
+  final res =
+      residualSuppress ? ResidualEchoSuppressor(blockSize: blockSize) : null;
   final blocks = mic.length ~/ blockSize;
   final out = Float64List(blocks * blockSize);
   var frozen = 0;
@@ -337,8 +471,17 @@ AecResult cancelEcho(
     final adapt = dtd == null || !dtd.freeze;
     if (!adapt) frozen += 1;
     final cleaned = aec.process(refBlock, micBlock, adapt: adapt);
-    out.setRange(from, from + blockSize, cleaned);
     dtd?.update(refBlock, micBlock, cleaned);
+    var block = cleaned;
+    if (res != null) {
+      // echoEst = mic − cleaned = W·x; don't learn the leakage on double-talk.
+      final echoEst = Float64List(blockSize);
+      for (var i = 0; i < blockSize; i++) {
+        echoEst[i] = micBlock[i] - cleaned[i];
+      }
+      block = res.process(cleaned, echoEst, updateLeak: adapt);
+    }
+    out.setRange(from, from + blockSize, block);
   }
   return AecResult(
     cleaned: out,
@@ -361,9 +504,13 @@ class StreamingEchoCanceller {
     this.blockSize = 1024,
     this.refDelay = 0,
     bool doubleTalkDetect = false,
+    bool residualSuppress = false,
   })  : assert(refDelay >= 0),
         _aec = EchoCanceller(blockSize: blockSize),
         _dtd = doubleTalkDetect ? DoubleTalkDetector() : null,
+        _res = residualSuppress
+            ? ResidualEchoSuppressor(blockSize: blockSize)
+            : null,
         // Seed the reference with `refDelay` zeros so ref[i] lines up with
         // mic[i-refDelay] — the reference arriving delayed relative to the mic.
         _ref = List<double>.filled(refDelay, 0, growable: true);
@@ -372,6 +519,7 @@ class StreamingEchoCanceller {
   final int refDelay;
   final EchoCanceller _aec;
   final DoubleTalkDetector? _dtd;
+  final ResidualEchoSuppressor? _res;
   final _mic = <double>[];
   final List<double> _ref;
 
@@ -433,10 +581,19 @@ class StreamingEchoCanceller {
       if (!adapt) frozenBlocks += 1;
       final cleaned = _aec.process(refBlock, micBlock, adapt: adapt);
       _dtd?.update(refBlock, micBlock, cleaned);
+      var block = cleaned;
+      final res = _res;
+      if (res != null) {
+        final echoEst = Float64List(blockSize);
+        for (var i = 0; i < blockSize; i++) {
+          echoEst[i] = micBlock[i] - cleaned[i];
+        }
+        block = res.process(cleaned, echoEst, updateLeak: adapt);
+      }
       final bytes = Uint8List(blockSize * 2);
       final out = ByteData.sublistView(bytes);
       for (var i = 0; i < blockSize; i++) {
-        final c = cleaned[i];
+        final c = block[i];
         out.setInt16(
           i * 2,
           (c.clamp(-1.0, 1.0) * 32767).round(),
