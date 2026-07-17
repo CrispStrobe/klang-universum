@@ -77,14 +77,14 @@ Everything in `lib/core/audio/` is **Flutter-free pure Dart** (that's why
 exposed as CLI tools — great for scripted acceptance tests (the proven
 `render → dart run bin/listen.dart --wav → assert` loop), batch conversion, and CI
 without a device. Candidates, roughly in value order:
-- **`bin/modinfo.dart`** — parse ANY module (`.mod`/`.s3m`/`.xm`/`.it`, sniff by
-  signature) and dump structure: title, channels, order, per-pattern rows, per-
-  sample name/length/loop/bit-depth. The Dart port of the Python inspectors used to
-  build the golden fixtures; doubles as a fixture-verifier. *(Unblocked by the
-  module readers — all shipped.)*
-- **`bin/modconv.dart`** — convert between formats (`--to mod|xm|…`) once the
-  converters (§A) land; also `--extract-samples` a module's PCM to `.wav` files
-  ("steal an instrument", §B, from the shell).
+- ✅ **`bin/modinfo.dart`** SHIPPED — parses ANY module (`.mod`/`.s3m`/`.xm`/`.it`,
+  sniff by signature) and dumps structure: format, title, channels, speed/tempo,
+  order, patterns, per-sample name/length/loop/c5speed (`--patterns` lists rows).
+  The Dart port of the Python inspectors; doubles as a fixture-verifier.
+- ✅ **`bin/modconv.dart`** SHIPPED — converts between formats (out format = output
+  extension, e.g. `modconv song.s3m song.xm`) via the neutral-hub converters, and
+  `--extract-samples <dir>` writes each sample to a `.wav` ("steal an instrument",
+  §B, from the shell — verified PCM-exact via `wavBytes`).
 - **`bin/render.dart`** — render a Tracker song / `GrooveSpec` / imported module to
   a `.wav` headlessly via the pure-Dart `renderSong`/`mixStems` path (the Loop
   Mixer/Tracker already synth offline). Pairs with `listen.dart` for round-trip
