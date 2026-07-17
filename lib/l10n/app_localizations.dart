@@ -5516,6 +5516,12 @@ abstract class AppLocalizations {
   /// **'Narrow intervals sound close and gentle; wide ones sound open and bold. Listen to a small gap, then a big one.'**
   String get primerIntervalsEar;
 
+  /// No description provided for @primerIntervalsSong.
+  ///
+  /// In en, this message translates to:
+  /// **'You already know intervals from songs! A cuckoos call — “Kuck-uck” — is a falling minor 3rd. “Alle meine Entchen” starts with a major 2nd going up.'**
+  String get primerIntervalsSong;
+
   /// No description provided for @primerKeySigTitle.
   ///
   /// In en, this message translates to:

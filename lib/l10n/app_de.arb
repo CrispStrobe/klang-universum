@@ -997,6 +997,7 @@
   "primerIntervalsCount": "Der Abstand zwischen zwei Tönen ist ein Intervall. Zähl die Buchstaben mit beiden Enden: C bis E ist C-D-E — eine Terz (3).",
   "primerIntervalsWide": "Je größer der Abstand, desto größer die Zahl. C hinauf bis G ist eine Quinte (5): C-D-E-F-G.",
   "primerIntervalsEar": "Enge Intervalle klingen nah und sanft, weite offen und kräftig. Hör einen kleinen Abstand, dann einen großen.",
+  "primerIntervalsSong": "Intervalle kennst du schon aus Liedern! Der Ruf des Kuckucks — \u201eKuck-uck\u201c — ist eine fallende kleine Terz. \u201eAlle meine Entchen\u201c beginnt mit einer großen Sekunde aufwärts.",
   "primerKeySigTitle": "Vorzeichen (Tonart)",
   "primerKeySigWhat": "Statt jedes Kreuz einzeln zu schreiben, setzen wir sie einmal ganz an den Anfang — die Vorzeichen der Tonart. Sie gelten fürs ganze Stück. Das hier ist G-Dur: ein Kreuz, Fis.",
   "primerKeySigCompare": "C-Dur hat gar keine Vorzeichen. Hör dir C-Dur an — lauter weiße Tasten.",

@@ -1248,6 +1248,7 @@
   "primerIntervalsCount": "The distance between two notes is an interval. Count the letters including both ends: C to E is C-D-E — a 3rd.",
   "primerIntervalsWide": "The wider the gap, the bigger the number. C up to G is a 5th: C-D-E-F-G.",
   "primerIntervalsEar": "Narrow intervals sound close and gentle; wide ones sound open and bold. Listen to a small gap, then a big one.",
+  "primerIntervalsSong": "You already know intervals from songs! A cuckoos call — \u201cKuck-uck\u201d — is a falling minor 3rd. \u201cAlle meine Entchen\u201d starts with a major 2nd going up.",
   "primerKeySigTitle": "Key signatures",
   "primerKeySigWhat": "Instead of marking every sharp, we write them once at the very start — a key signature. It applies to the whole piece. This is G major: one sharp, F♯.",
   "primerKeySigCompare": "C major has no sharps or flats at all. Listen to C major — every note is a plain white key.",

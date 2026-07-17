@@ -19,13 +19,18 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (textbook-p2)** · 🚧 **ACTIVE — Textbook phase 2: song-mnemonic examples**.
-  Anchor abstract intervals to melodies kids know (the maintainer's "Kuckuck =
-  descending minor 3rd"). New `core/curriculum/interval_songs.dart` (`IntervalSong`
-  table + `intervalSongFor()`), a test that the demo notes actually match each
-  stated interval/direction, and a song-mnemonic step added to `intervalsPrimer`
-  (Kuckuck — shown + heard). EN/DE. Touching `primers.dart` + both ARBs + a new
-  data file + test. Worktree `../mus-textbook2`, branch `feature/textbook-p2`.
+- **opus (textbook-p2)** · ✅ **idle / SHIPPED — song mnemonics + orphan-game
+  placement.** (1) `core/curriculum/interval_songs.dart` — interval-mnemonic table
+  (Kuckuck = falling minor 3rd; Alle-meine-Entchen = major 2nd up; …) with a test
+  that each demo's notes span exactly the stated interval + direction; a Kuckuck
+  step added to `intervalsPrimer` (shown + heard). (2) **Placed all 56 orphan
+  games** — not Zeitvertreib but the practical strands the theory map omitted:
+  added `ConceptArea.technique` (keyboard/cello/guitar/percussion corners),
+  `aural` (sing/echo), `creating` (compose/arrange), `repertoire` (real songs), a
+  `reading_fluency` concept, and attached the bass/theory twins to their existing
+  concept. **Coverage 74/130 → 130/130 placed (0 orphans), 70 concepts**; the gap
+  report now shows only the 8 truly-untrained concepts. EN/DE; analyze clean; 9
+  tests green.
 
 - **opus (textbook-p1)** · ✅ **idle / SHIPPED — Textbook phase 1: concept inventory + gap analysis.** `core/curriculum/concept_map.dart` (60 grade-1–10 concepts, our words) + `coverage_gaps.dart` + a test that PRINTS the gap report and guards no-dangling-refs. **Reveals the 8 untrained concepts** (verse/chorus form, syncopation, triplets, ABA/rondo form, modulation, ornaments, modes, instrument families), many thin (1-game) concepts, and 56 orphan games; 74/130 games placed. Also wrote up the **bachelor-level extension + OER-source licence registry** (GFDL/NC = facts-only; CC-BY(-SA) = adaptable) and an **AnaVis-style form-analysis view** idea (fills the form gap). Pure Dart + test, no game/UI touch. Analyze clean; 3 tests green.
 

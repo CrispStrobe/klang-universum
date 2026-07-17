@@ -3025,6 +3025,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Enge Intervalle klingen nah und sanft, weite offen und kräftig. Hör einen kleinen Abstand, dann einen großen.';
 
   @override
+  String get primerIntervalsSong =>
+      'Intervalle kennst du schon aus Liedern! Der Ruf des Kuckucks — „Kuck-uck“ — ist eine fallende kleine Terz. „Alle meine Entchen“ beginnt mit einer großen Sekunde aufwärts.';
+
+  @override
   String get primerKeySigTitle => 'Vorzeichen (Tonart)';
 
   @override

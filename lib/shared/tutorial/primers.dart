@@ -594,6 +594,13 @@ Tutorial intervalsPrimer(AppLocalizations l10n) => Tutorial(
             [60, 69], // a 6th
           ]),
         ),
+        TutorialStep(
+          text: l10n.primerIntervalsSong,
+          // You already know intervals from songs: the cuckoo's falling call is
+          // a descending minor 3rd (G → E).
+          score: _notes([67, 64]),
+          play: (a) => a.playSequence(_run([67, 64], ms: 700)),
+        ),
       ],
     );
 

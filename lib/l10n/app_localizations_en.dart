@@ -3012,6 +3012,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Narrow intervals sound close and gentle; wide ones sound open and bold. Listen to a small gap, then a big one.';
 
   @override
+  String get primerIntervalsSong =>
+      'You already know intervals from songs! A cuckoos call — “Kuck-uck” — is a falling minor 3rd. “Alle meine Entchen” starts with a major 2nd going up.';
+
+  @override
   String get primerKeySigTitle => 'Key signatures';
 
   @override
