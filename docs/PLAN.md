@@ -105,7 +105,15 @@ and push to origin/main** before/after touching shared files. Format:
   ✅ **voice-2 playback** (`_renderPart` now scans elements + voice2/3/4, so the
   just-shipped voice 2 sounds, not just highlights; transport-only, 51 widget green).
   **idle.** Remaining Workshop items are parity's (Studio shell / input modes).
-- **opus (next)** · ✅ **idle / SHIPPED — Sing along for the Song Book**
+- **opus (next)** · 🚧 **ACTIVE — length-scaled sing-along stars** (the flagged
+  follow-up: sing-along stars now reflect the *fraction* of a song sung, not a fixed
+  count). Worktree `../mus-next`, branch `feature/workshop-next`. **NOT a Workshop
+  file.** Adds a pure `scaledStarScore(hits,total,thresholds)` to `play_along.dart`
+  (maps hit% → a `starScore` under the game's bracket: ≥90%→3★, ≥70%→2★) + an
+  opt-in `scaleStarsToLength` flag on `PlayAlongScreen` (default off = every
+  existing game unchanged; feeds both `recordResult` stars and
+  `GameResultView.starScore`); `song_screen.dart` passes it true. + a unit test.
+- **opus (next)** · ✅ **SHIPPED — Sing along for the Song Book**
   (`song_play_along.dart` + `song_screen.dart`; 15 song tests green, analyze clean).
   A child sings any stored song against the moving-score highway (mic-graded),
   connecting the Song Book + groove-export to the shipped `PlayAlongEngine`. Pure
