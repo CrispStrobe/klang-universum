@@ -28,17 +28,6 @@ and push to origin/main** before/after touching shared files. Format:
   to keep the rebase window tiny. 🙏 Please hold shared-file pushes
   (`game_registry`/ARBs/`score_document`) for a few minutes. Branch: `main`.
 
-- **opus (articulation)** · 🚧 **ACTIVE — "Read the Mark" articulation minigame**
-  (item 1, a genuine gap — `tie_slur` exists but no articulation reading game).
-  A binary staff-read on the `step_skip` scaffold: one note carries an
-  articulation glyph (Staccato / Accent, +Tenuto / Marcato at 2★, drawn by
-  crisp_notation `layout_marks`); match the glyph to its name. New
-  `features/games/note_reading/articulation_read_screen.dart` + `GameInfo` in
-  `game_registry.dart` + a `kStarThresholds` bracket in `core/tuning.dart` + EN/DE
-  ARBs + a `pumpGame` test. SRI `reading.articulation.<name>`. Worktree
-  `../mus-articulation`, branch `feature/articulation-game`. Touching hot shared
-  files (registry, tuning, ARBs) — rebasing often.
-
 - **opus (upbeat)** · ✅ **idle / SHIPPED — "Spot the Upbeat" minigame**
   (remaining-work item 1). A binary staff-read (Takte module): a short two-bar
   melody starts either on the downbeat (a full first measure) or with a pickup /

@@ -658,6 +658,18 @@ These are the `✅ idle / SHIPPED` entries that accumulated on the top-of-
 here verbatim (2026-07-17) to keep PLAN.md focused on pending work. Newest-ish
 first, as they sat on the board.
 
+- **opus (articulation)** · ✅ **SHIPPED — "Read the Mark" articulation minigame**
+  (`cedf4da`, Noten lesen). Fills a real gap: ties/slurs + note values were
+  covered, but the note-attached articulation marks had no reading game. A
+  binary staff-read on the `step_skip` scaffold — one note carries an
+  articulation glyph (staccato dot / accent wedge, drawn by crisp_notation
+  `layout_marks`); the child matches it to its name. Binary at 1★ (Staccato vs
+  Accent), full four-way (+Tenuto/Marcato) from 2★; a correct answer sounds the
+  note (short for staccato). `GameInfo` in note_reading + `kStarThresholds`
+  bracket + EN/DE ARBs. SRI `reading.articulation.<name>`. 4 tests (incl. an
+  assertion that the rendered `StaffView` actually carries the glyph). Whole-
+  project analyze clean.
+
 - **opus (aec-res-c)** · ✅ **SHIPPED — residual echo suppression ported to the
   native C engine** (`b3bf617`). Completes the native AEC algorithm stack (DTD +
   RES, both now in the C engine, all headlessly verified). `src/aec_dsp.{c,h}`
