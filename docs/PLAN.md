@@ -43,16 +43,28 @@ and push to origin/main** before/after touching shared files. Format:
      of capture-before-playback (the normal case) cost **~28 dB for the session**.
      Every existing DTD test had the far-end active from block 0.
 
-  ⚠ **OPEN — needs a maintainer decision, NOT fixed:** `crisp_dsp/formant_shift.dart`
-  scales *time-domain* indices, which is a **pitch** shift, not a formant shift.
-  That breaks `voice_fx.dart`'s load-bearing contract ("all presets are pitch- AND
-  length-preserving… so a recorded sample stays in tune as a channel instrument") —
-  5 of 9 presets are affected; measured through our own detector, a recorded C4
-  plays back at **chipmunk +493¢, monster −693¢, deep −1908¢**, i.e. the voice
-  channel is badly out of tune against every other channel. `sample_dsp_test` only
-  asserts length/finite/differs — never pitch. Fix is a **design call**: either
-  reframe these as pitch shifts and move `baseMidi` with them, or implement a real
-  spectral-envelope shift. Also open (lower): `siSdrDb` returns **0 dB** for an
+  ✅ **FOLLOW-UP SHIPPED — formantShift is now a real formant shifter.** It scaled
+  *time-domain* indices (= a resample = a PITCH shift), breaking `voice_fx`'s
+  pitch-preserving contract: a recorded C4 came back at chipmunk +608¢, monster
+  −1893¢, deep −368¢, demon −1892¢. Time-domain resampling *cannot* decouple
+  envelope from pitch, so it's now a real STFT method (Hann 75% overlap →
+  cepstral-liftered envelope → warp → magnitude-only gain, phase untouched →
+  harmonics stay put → pitch preserved; ifft → COLA overlap-add). All four are now
+  **0¢** and the centroid moves the right way (dry 1130 Hz → +0.5: 1527, −0.5:
+  755). Also fixed en route: a 0.7-peak voice came out at **2.12** (hard clipping
+  in PCM16) → capped to the input peak, attenuate-only; and clips under 512
+  samples returned **pure silence** (`frameCount = len ~/ hop` skipped the loop)
+  → now processed. **Honest split recorded in the contract:** `robot`/`alien`/
+  `cyborg` use ring modulation (f → f ± carrier), which *by construction* cannot
+  preserve pitch — the old "ALL presets are pitch-preserving" doc was a lie about
+  those three independently of this bug. New `kPitchPreservingVoiceEffects` makes
+  the in-tune subset testable, and a test pins that every preset is classified.
+  `sample_dsp_test` grew the pitch/centroid/level/short-input assertions it never
+  had (the old "changes the content" check passed happily on a transposed
+  signal); verified to fail on the old code ("shift 0.5 moved the pitch by 608¢").
+  84 consumer tests green.
+
+  ⚠ **STILL OPEN (smaller, not fixed):** `siSdrDb` returns **0 dB** for an
   all-zero estimate (out-ranking a real but noisy one at −1.23 dB; convention is
   −∞); `LoopSend.delay/reverb` don't wrap the loop seam (echo drops out on every
   downbeat, 37.8 % deviation — possibly an accepted trade-off, undocumented);

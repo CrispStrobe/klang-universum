@@ -1,13 +1,22 @@
 // lib/core/audio/crisp_dsp/voice_fx.dart
 //
 // Kid voice effects for the Tracker's record-your-voice instrument. Each takes a
-// recorded sample and returns a transformed one that is still usable as an
-// in-tune sampled instrument — so the effects are PITCH- AND LENGTH-PRESERVING
-// (timbral only): chipmunk/monster/deep via [formantShift] (change vocal-tract
-// character, not pitch), robot via ring-modulation + bit-crush. This keeps the
-// sample's base pitch fixed, so a channel's notes still land where the grid says.
+// recorded sample and returns a transformed one, same length.
 //
-// (A pitch-changing "high/low voice" mode can use granularPitchShift from
+// PITCH, honestly (all are LENGTH-preserving):
+//  • Pitch-PRESERVING — the sample stays in tune, so a channel's notes land
+//    where the grid says: normal, chipmunk, monster, deep (all [formantShift] —
+//    vocal-tract character only), radio (band-pass + grit), demon (formantShift
+//    + fuzz).
+//  • Pitch-CHANGING BY CONSTRUCTION — robot, alien, cyborg. These use ring
+//    modulation, which replaces each harmonic f with the sidebands f ± carrier
+//    (s·cos(2πfc·t) = ½[cos(2π(f−fc)t) + cos(2π(f+fc)t)]). That IS the effect;
+//    no implementation of it can preserve pitch. Measured on a recorded C4:
+//    robot −2400 ¢, cyborg −1902 ¢, alien −1021 ¢. They are character/texture
+//    voices — a melody played with them will not track the grid's pitch. Kept
+//    because the robot voice is the point; flagged so the contract isn't a lie.
+//
+// (A deliberate "high/low voice" mode can use granularPitchShift from
 // pitch_shift.dart, but then the instrument's baseMidi must move with it — out of
 // scope for the in-tune presets here.)
 
@@ -20,8 +29,10 @@ import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 
 /// The voice-transform palette offered when recording an instrument. All presets
-/// are pitch- AND length-preserving (timbral only), so a recorded sample stays in
-/// tune as a channel instrument.
+/// are length-preserving. All are pitch-preserving too — so a recorded sample
+/// stays in tune as a channel instrument — EXCEPT the ring-modulated trio
+/// ([robot], [alien], [cyborg]), which shift perceived pitch by construction;
+/// see the file header. [kPitchPreservingVoiceEffects] is the in-tune subset.
 enum VoiceEffect {
   normal,
   chipmunk,
@@ -34,7 +45,20 @@ enum VoiceEffect {
   demon,
 }
 
-/// Applies [fx] to [sample], returning a new (pitch/length-preserving) buffer.
+/// The presets that keep the sample in tune (see the file header). The rest
+/// ([VoiceEffect.robot], [VoiceEffect.alien], [VoiceEffect.cyborg]) are
+/// ring-modulated and shift perceived pitch by construction.
+const kPitchPreservingVoiceEffects = <VoiceEffect>{
+  VoiceEffect.normal,
+  VoiceEffect.chipmunk,
+  VoiceEffect.monster,
+  VoiceEffect.deep,
+  VoiceEffect.radio,
+  VoiceEffect.demon,
+};
+
+/// Applies [fx] to [sample], returning a new, same-length buffer. Pitch is
+/// preserved for every preset in [kPitchPreservingVoiceEffects].
 Float64List applyVoiceEffect(
   Float64List sample,
   VoiceEffect fx, {
