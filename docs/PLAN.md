@@ -14,6 +14,18 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (aec-res)** · 🚧 **ACTIVE — residual echo suppression** (patent-free AEC
+  roadmap item 2, the last one). Worktree `../mus-aec-res`, branch
+  `feature/aec-res`. A classic Wiener-style spectral post-filter on the linear
+  residual, in the canceller's own overlap-save framing (frame = [prev;cur],
+  gain per bin from a DTD-gated echo-leakage estimate λ·|Ŷ|²) — no COLA/window
+  bookkeeping. New `ResidualEchoSuppressor` in `aec_offline.dart`, opt-in via
+  `cancelEcho(residualSuppress:)` / `StreamingEchoCanceller` / `bin/aec.dart
+  --res`. Must show: echo-only ERLE up, double-talk SI-SDR not degraded (RES is
+  a suppressor — it can chew the voice; λ updates gate on the DTD). Files:
+  `aec_offline.dart`, `bin/aec.dart`, `test/aec_offline_test.dart`,
+  `docs/AEC_TIER3B.md`. NOT touching app / Workshop / native plugin.
+
 - **opus (aec-dtd)** · ✅ **idle / SHIPPED — double-talk detector** (`a10d6bd`,
   patent-free AEC roadmap item 1). The linear core kept adapting on near-end
   speech; a DTD freezes it while the near-end is present. **`DoubleTalkDetector`**
