@@ -19,6 +19,28 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (bughunt-2)** · ✅ **idle / SHIPPED — 2nd bug-hunt wave (new subsystems).**
+  Four reviewers over scoring/SRI, Workshop serializers, crisp_notation theory,
+  and game answer-generation. **crisp_notation theory core = clean** (verified the
+  enharmonic edges: B dim7→A♭, ø7 vs °7, 6–7-accidental keys, secondary-dominant
+  labels — all correct + test-pinned). **5 real defects found, fixed + pinned:**
+  1. **Streak breaks on spring-forward DST** (`50fbdd4`) — `currentStreak` walked
+     back with `subtract(Duration(days:1))` (24 h absolute); the day after
+     spring-forward has 23 h, so it skipped the short day and the streak silently
+     broke. German (CET/CEST) audience → every spring. Now walks by calendar day.
+  2. **Scale Detective could be unsolvable** (`29d5c6d`) — a harmonic-minor round
+     could pick the raised 7th as the odd note and neutralize its accidental
+     (G♯→G in A minor), rendering a plain valid natural-minor scale with no odd
+     note. ~1/6 of minor rounds, every minor tonic. Wrong-note pick now excludes
+     the raised leading tone (keeps it as the intended distractor).
+  3–5. **Workshop silent data loss** (`34d01de`) — `_splitPiece` dropped
+     ornament/grace/accidental/fingerings from every tied piece; `_reid` dropped
+     the same for every note in multi-part assembly; `_reindex` left voice-2 ids
+     unprefixed so voice-2 dynamics/lyrics detached (and collided across parts).
+     All three lost data on render/export/reopen. Fixed + regression-tested.
+  Grand total across both waves: **13 real defects found, fixed, and pinned;
+  theory core + most game/scoring paths verified clean.**
+
 - **opus (gap-games)** · 🚧 **ACTIVE — filling the 8 untrained-concept gaps**. The
   coverage report's 8 concepts with no game. Batch A (reading/rhythm): **syncopation**
   (`sync_read`), **triplets** (`triplet_read`), **ornaments** (`ornament_read`) —
