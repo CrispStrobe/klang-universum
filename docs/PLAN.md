@@ -28,6 +28,19 @@ and push to origin/main** before/after touching shared files. Format:
   handler + a sample-picker dialog) + **both ARBs** (`trackerBorrowSample` key).
   Small, landing in one commit; rebasing before push.
 
+- **opus (workshop-inspector)** · 🚧 **ACTIVE — voice-2 dynamics + lyrics
+  (silent-loss fix)**. MODEL-only, `lib/features/workshop/model/score_document.dart`
+  (NOT the screen — no overlap with studio-polish). `buildScore` harvests
+  dynamics/lyrics from voice 1 only, and `loadScore`'s voice-2 loop neither applies
+  dynamics nor records the `remap` lyrics/slurs re-anchor through — so a
+  dynamic/lyric set on a voice-2 note is stored but never rendered and lost on
+  reopen. crisp_notation already resolves markings by id across voices (verified:
+  `layout_spans.dart:284`, `layout_annotations.dart:122`), so the fix is ours:
+  harvest both voices in `buildScore`, apply dynamics + populate `remap` for v2 in
+  `loadScore`. Empty-v2 fast path keeps single-voice goldens byte-identical. Test:
+  `test/voice2_markings_test.dart` (build→assert Score.dynamics/lyrics carry the v2
+  id; loadScore→recover; byte-identity). Worktree `../mus-workshop-inspector`.
+
 - **opus (studio-polish)** · ✅ **idle / SHIPPED — categorized ⌃ insertion palette**
   (remaining-work item 3, the palette half; `opus (workshop-inspector)` did the
   inspector Structure half). The flat property popup on the ⌃ button now reads as
