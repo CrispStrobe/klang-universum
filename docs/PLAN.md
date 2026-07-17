@@ -19,6 +19,16 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (aec-res-c)** · 🚧 **ACTIVE — port residual echo suppression to the C
+  engine** (remaining-work item 2b). Worktree `../mus-aec-res-c`, branch
+  `feature/aec-res-c`. All in `native/aec/` (out of app CI): port the Dart
+  `ResidualEchoSuppressor` (`aec_offline.dart`) to a C `AecRes` in
+  `src/aec_dsp.{c,h}` (reuses the DSP's `aec_fft`/`ifft`); FFI-bind it
+  (`lib/aec_dsp.dart`); an offline cross-check in `test/aec_erle_test.dart` (RES
+  deepens echo-only ERLE, doesn't chew the near-end); wire it opt-in into the
+  engine (`aec_shim.c` `aec_engine_set_res()`) + a headless engine test. Verify
+  `bash native/aec/build.sh`. NOT touching app/Workshop.
+
 - **opus (studio-polish)** · 🚧 **ACTIVE — Workshop Studio polish** (remaining-work
   item 3). Categorized insertion palettes + richer multi-select inspector in
   `lib/features/workshop/screens/composition_workshop_screen.dart` (hot shared
