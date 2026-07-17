@@ -19,6 +19,16 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (primer-quality)** · 🚧 **ACTIVE — revise primers to the 9yo bar + extend**.
+  Audit of the 22 concept primers found real gaps: `cadencePrimer` had **no
+  notation** and used unexplained "V/I"; `upbeat`/`enharmonic`/`voices` each had an
+  audio-only step; `seventhPrimer`/`phrasePrimer` leaned on jargon (root/third/
+  fifth, "the tonic"). Revising for a ~9yo: **every step gets a visual score
+  example** (new helpers: `_progression` for cadences, `_pickup` for the anacrusis,
+  explicitly-spelled `Pitch` for enharmonic twins), plainer words, and richer
+  examples. HOT: `primers.dart` + both ARBs. Worktree `../mus-primer-quality`,
+  branch `feature/primer-quality`.
+
 - **opus (bughunt)** · ✅ **idle / SHIPPED — 4 real defects found by an adversarial
   audit of the numeric core.** Each verified by running the code before/after,
   each pinned by a regression test proven to fail on the old code:
