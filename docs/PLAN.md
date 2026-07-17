@@ -29,11 +29,17 @@ and push to origin/main** before/after touching shared files. Format:
   engine (`aec_shim.c` `aec_engine_set_res()`) + a headless engine test. Verify
   `bash native/aec/build.sh`. NOT touching app/Workshop.
 
-- **opus (studio-polish)** · 🚧 **ACTIVE — Workshop Studio polish** (remaining-work
-  item 3). Categorized insertion palettes + richer multi-select inspector in
-  `lib/features/workshop/screens/composition_workshop_screen.dart` (hot shared
-  file — coordinate). Worktree `../mus-studio-polish`, branch
-  `feature/studio-polish`.
+- **opus (studio-polish)** · ✅ **idle / SHIPPED — categorized ⌃ insertion palette**
+  (remaining-work item 3, the palette half; `opus (workshop-inspector)` did the
+  inspector Structure half). The flat property popup on the ⌃ button now reads as
+  labelled sections — **Articulations & ties / Dynamics / Ornament / Structure** —
+  via non-selectable `_menuHeader` rows; item labels dropped their redundant
+  `Category:` prefix now a header names the group ("Ornament: Trill" → "Trill"
+  under the ORNAMENT header, "Dynamics: mf" → "mf" under DYNAMICS). Reuses the
+  existing `workshopStructure` key. Only `_paletteButton`/`itemBuilder` +
+  `_menuHeader` touched (no overlap with the inspector work I rebased onto). 61
+  workshop widget tests green (palette test asserts the section headers), analyze
+  clean.
 
 - **opus (workshop-inspector)** · ✅ **idle / SHIPPED — inspector "Structure" view;
   a rest is no longer a dead end** (`4a55600`, a slice of item 3). Added an
@@ -78,9 +84,12 @@ still free on the board before starting** (search the agent name / feature).
    milestone (e), needs on-device tuning). All in `native/aec/` (out of app CI).
    Verify: `bash native/aec/build.sh` (8/8 green). See `docs/AEC_TIER3B.md`
    § "Native port status".
-3. **Workshop Studio polish** — **CLAIMED by `opus (studio-polish)` (in progress).**
-   `composition_workshop_screen.dart` (hot shared file). Open: **categorized
-   insertion palettes**, richer multi-select inspector.
+3. **Workshop Studio polish** — ✅ **SHIPPED.** The inspector Structure view
+   (`opus (workshop-inspector)`, `b700964` — rests anchor bar changes) + the
+   categorized ⌃ insertion palette (`opus (studio-polish)`). Remaining Studio
+   ideas are "if ever wanted": a full palette *dock* (vs the ⌃ popup),
+   rest/bar-attribute *editing* rows in the inspector (the Structure view is
+   read-only + Change-from-here today).
 
 **Blocked on crisp_notation (need a library change first — CI tracks public
 `CrispStrobe/crisp_notation@main`):** app-wide `showNoteNames` (only on

@@ -1610,7 +1610,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       },
       itemBuilder: (ctx) {
         final n = _doc.selected;
+        // Categorized insertion palette: a non-selectable header opens each
+        // group so the flat list reads as sections (Articulations / Dynamics /
+        // Ornament / Structure) instead of one long menu.
         return [
+          _menuHeader(l10n.workshopArticulations),
           for (final art in _articulationOptions)
             CheckedPopupMenuItem<(String, Object?)>(
               value: ('art', art),
@@ -1623,30 +1627,30 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             child: Text(l10n.workshopTie),
           ),
           const PopupMenuDivider(),
+          _menuHeader(l10n.workshopDynamics),
           CheckedPopupMenuItem<(String, Object?)>(
             value: const ('dyn', null),
             checked: n?.dynamic == null,
-            child:
-                Text('${l10n.workshopDynamics}: ${l10n.workshopDynamicNone}'),
+            child: Text(l10n.workshopDynamicNone),
           ),
           for (final d in _dynamicOptions)
             CheckedPopupMenuItem<(String, Object?)>(
               value: ('dyn', d),
               checked: n?.dynamic == d,
-              child: Text('${l10n.workshopDynamics}: ${d.name}'),
+              child: Text(d.name),
             ),
           const PopupMenuDivider(),
+          _menuHeader(l10n.workshopOrnament),
           CheckedPopupMenuItem<(String, Object?)>(
             value: const ('orn', null),
             checked: n?.ornament == null,
-            child:
-                Text('${l10n.workshopOrnament}: ${l10n.workshopDynamicNone}'),
+            child: Text(l10n.workshopDynamicNone),
           ),
           for (final e in _ornamentOptions.entries)
             CheckedPopupMenuItem<(String, Object?)>(
               value: ('orn', e.key),
               checked: n?.ornament == e.key,
-              child: Text('${l10n.workshopOrnament}: ${e.value}'),
+              child: Text(e.value),
             ),
           CheckedPopupMenuItem<(String, Object?)>(
             value: const ('grace', null),
@@ -1654,6 +1658,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
             child: Text(l10n.workshopGraceNotes),
           ),
           const PopupMenuDivider(),
+          _menuHeader(l10n.workshopStructure),
           CheckedPopupMenuItem<(String, Object?)>(
             value: const ('repStart', null),
             checked: _selectedIdRepeatStarts,
@@ -1672,6 +1677,22 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       },
     );
   }
+
+  /// A non-selectable section header for the categorized ⌃ palette (a disabled
+  /// item styled as a small caption, so a group reads as a labelled section).
+  PopupMenuItem<(String, Object?)> _menuHeader(String label) =>
+      PopupMenuItem<(String, Object?)>(
+        enabled: false,
+        height: 28,
+        child: Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+        ),
+      );
 
   /// Cause 3: the selection-driven inspector. A docked panel that reflects and
   /// edits whatever is selected — the scalable home for note properties, next to

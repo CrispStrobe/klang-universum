@@ -345,11 +345,14 @@ void main() {
     // Repeat barlines are toggles in the same palette.
     expect(find.text(l10n.workshopRepeatStart), findsOneWidget);
     expect(find.text(l10n.workshopRepeatEnd), findsOneWidget);
-    // Ornaments too.
-    expect(
-      find.textContaining('${l10n.workshopOrnament}: Trill'),
-      findsOneWidget,
-    );
+    // The palette reads as labelled sections (categorized insertion palette):
+    // a non-selectable header opens each group.
+    expect(find.text(l10n.workshopArticulations.toUpperCase()), findsOneWidget);
+    expect(find.text(l10n.workshopDynamics.toUpperCase()), findsOneWidget);
+    expect(find.text(l10n.workshopStructure.toUpperCase()), findsOneWidget);
+    // Ornaments too, grouped under the categorized "Ornament" section header.
+    expect(find.text(l10n.workshopOrnament.toUpperCase()), findsOneWidget);
+    expect(find.text('Trill'), findsOneWidget);
   });
 
   testWidgets('the palette sets a trill on the selected note', (tester) async {
@@ -362,8 +365,7 @@ void main() {
     await tester.tap(palette);
     await tester.pumpAndSettle();
 
-    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-    await tester.tap(find.text('${l10n.workshopOrnament}: Trill'));
+    await tester.tap(find.text('Trill'));
     await tester.pumpAndSettle();
 
     // Reopen; the Trill item is now checked.
@@ -373,7 +375,7 @@ void main() {
     await tester.pumpAndSettle();
     final item = tester.widget<CheckedPopupMenuItem<(String, Object?)>>(
       find.ancestor(
-        of: find.text('${l10n.workshopOrnament}: Trill'),
+        of: find.text('Trill'),
         matching: find.byType(CheckedPopupMenuItem<(String, Object?)>),
       ),
     );
