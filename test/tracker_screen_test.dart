@@ -183,4 +183,33 @@ void main() {
     expect(game.selectedChannel, 0); // melody
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('pattern slots hold separate patterns and play as a song',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    expect(game.slotCount, greaterThanOrEqualTo(2));
+    expect(game.currentSlot, 0);
+    expect(game.songHasContent, isFalse);
+
+    game.tapCell(0, 0); // note in slot A
+    await tester.pump();
+    expect(game.songHasContent, isTrue);
+
+    game.selectSlot(1); // switch to slot B — its own (empty) pattern
+    await tester.pump();
+    expect(game.currentSlot, 1);
+    expect(game.noteCount, 0); // B is empty; A's note was saved away
+
+    game.tapCell(1, 2); // note in slot B
+    await tester.pump();
+
+    game.selectSlot(0); // back to A — its note is restored
+    await tester.pump();
+    expect(game.noteCount, 1);
+
+    game.playSong(); // A then B, chained
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
 }

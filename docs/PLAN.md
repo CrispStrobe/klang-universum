@@ -61,8 +61,12 @@ and push to origin/main** before/after touching shared files. Format:
   percussion, pentatonic pitch rows otherwise). ✅ **Workshop↔Tracker handoff
   SHIPPED:** the "Load a tune" action is now a **song picker over the shared
   `kSongs` book** (Alle meine Entchen / Twinkle / …) — import a real tune's opening
-  bar onto the grid to remix (via `scoreToTrackerCells`; partial by design). 🚧
-  **Now working:** arrangement / order-list (song mode). Handover:
+  bar onto the grid to remix (via `scoreToTrackerCells`; partial by design). ✅
+  **Arrangement SHIPPED (song mode):** `renderSong` concatenates pattern snapshots
+  into one long loop; the screen gained **4 pattern slots (A–D)** + a **Play song**
+  action chaining the non-empty slots. ✅ **ALL LISTED NEXT-STEPS DONE** — the
+  Tracker is feature-complete for this pass (Sandbox + Studio picker + percussion +
+  voice bridge + notation bridge + song mode). **opus (tracker) → idle.** Handover:
   [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
 - **opus (parity)** · ✅ **idle / SHIPPED — notation-depth batch (voltas/nav, tuplets, discontiguous selection, RhythmPolicy.split).**
   Working through the tracked roadmap in

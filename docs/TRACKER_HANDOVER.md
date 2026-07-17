@@ -11,8 +11,9 @@ behind the Sandbox/Studio shelf — the same split Workshop uses.
 **Shipped so far** (see §5 for per-slice detail): the additive `TrackerEngine`
 (`0`), the Sandbox grid screen (`1`), sfxr chiptune instruments (`2`), the sample
 DSP + `SampleInstrument` (`4a`), and the **record-your-voice bridge** (`4b`).
-**Not yet built:** Slice 3 (Studio instrument picker), Slice 5 (notation bridge —
-Tracker↔Score), percussion instrument, arrangement/order-list.
+**Also shipped since:** the Studio instrument picker, percussion, the Workshop↔
+Tracker song import, and song-mode arrangement (see §4). The Tracker is
+feature-complete for this pass.
 
 The good news, twice over (and both now proven out in the shipped slices):
 1. **The playback foundation already shipped.** The Loop Mixer (`32ebb96`) landed
@@ -168,17 +169,26 @@ pentatonic; a "Load a tune" action imports `kTrackerDemoTune`. A Tracker → Sco
 Tracker round-trip is unit-tested. Pattern-literacy ↔ staff-literacy, the bridge
 to the Workshop.
 
-**🚧 Slice 3 — Studio instrument picker** (next). The 9 sfxr presets exist but
-only `zap` is wired; a per-channel picker (additive voices + sfxr palette) unlocks
-them — the smallest high-yield remaining step.
+**✅ Slice 3 — Studio instrument picker** (`dcc0a67`). `kTrackerInstruments`
+palette (4 additive + 5 sfxr) + a `tune` app-bar picker (`setChannelInstrument`)
+that re-voices the selected channel — unlocks the chiptune presets.
 
-**🚧 Slice 6 — arrangement + polish** (not started). Pattern order-list / song
-mode, per-cell effect commands, gapless swap, tempo/speed. **Percussion
-instrument:** the pitch grid needs a per-channel row model (drum rows instead of
-pentatonic) before `renderDrumPattern`/`Drum` slots in — a small model extension,
-not free. **Workshop ↔ Tracker file handoff:** the converter (Slice 5) is ready;
-this is the plumbing to open a real Workshop score into the tracker. Stretch: load
-a real `.mod`/`.xm` (substantial parsers — later).
+**✅ Percussion** (`0188e34`). `PercussionInstrument` (cell = a one-shot drum hit,
+`midi` encodes the `Drum`) + a `drums` channel; the screen gained a **per-channel
+grid-row model** (drum rows w/ icons for percussion, pentatonic otherwise).
+
+**✅ Workshop ↔ Tracker handoff** (`4e573b2`). "Load a tune" is a song picker over
+the shared `kSongs` book (Alle meine Entchen / Twinkle / …); importing drops a
+tune's opening bar onto the grid via `scoreToTrackerCells`.
+
+**✅ Arrangement — song mode** (this pass). `renderSong(engine, patterns)`
+concatenates pattern snapshots into one long loop; the screen has **4 pattern
+slots (A–D)** (`exportCells`/`importCells` snapshots) + a **Play song** action
+chaining the non-empty slots.
+
+**🚧 Remaining stretch** (not started). Per-cell effect commands (arp/porta/
+vibrato), gapless swap, an editable order-list (vs. the current A→D auto-order), a
+song-length playhead, and loading a real `.mod`/`.xm` (substantial parsers).
 
 ---
 

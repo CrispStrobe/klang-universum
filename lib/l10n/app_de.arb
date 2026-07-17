@@ -327,6 +327,8 @@
   "trackerImportTune": "Melodie laden",
   "trackerDemoTune": "Kurze Melodie (C D E G)",
   "trackerChangeInstrument": "Instrument wechseln",
+  "trackerPattern": "Muster",
+  "trackerPlaySong": "Song spielen",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",
   "trackerSfxrLaser": "Laser",

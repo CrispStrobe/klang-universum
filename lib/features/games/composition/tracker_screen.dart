@@ -104,6 +104,15 @@ abstract interface class TrackerTester {
 
   /// Re-voices the selected channel to the palette option with [optionId].
   void setInstrument(String optionId);
+
+  // --- Arrangement (pattern slots + song) ---
+  int get slotCount;
+  int get currentSlot;
+  void selectSlot(int index);
+
+  /// Whether any slot (or the live pattern) has notes to play as a song.
+  bool get songHasContent;
+  void playSong();
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -129,6 +138,13 @@ class _TrackerScreenState extends State<TrackerScreen>
   bool _isRecording = false;
   bool _showNotation = false;
 
+  /// Arrangement: four pattern slots (A–D). The engine edits the current slot's
+  /// cells live; switching slots saves/loads snapshots. "Play song" chains the
+  /// non-empty slots in order.
+  static const _slotCount = 4;
+  late final List<List<List<TrackerCell>>> _slots;
+  int _currentSlot = 0;
+
   int get _voiceIndex => _engine.channels.indexWhere((c) => c.id == 'voice');
 
   /// The selected channel's pattern as staff notation (the "score view").
@@ -152,6 +168,7 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   void initState() {
     super.initState();
+    _slots = List.generate(_slotCount, (_) => _engine.exportCells());
     _ticker = createTicker((_) {
       final t = _engine.timing;
       _step.value = _clock.isRunning
@@ -220,6 +237,51 @@ class _TrackerScreenState extends State<TrackerScreen>
     _engine.setChannelInstrument(_selected, option.build());
     setState(() {});
     _syncPlayback();
+  }
+
+  @override
+  int get slotCount => _slotCount;
+  @override
+  int get currentSlot => _currentSlot;
+  @override
+  void selectSlot(int index) => _selectSlot(index);
+  @override
+  bool get songHasContent =>
+      !_engine.isEmpty ||
+      [
+        for (var i = 0; i < _slotCount; i++)
+          if (i != _currentSlot) _slots[i],
+      ].any((s) => !_slotEmpty(s));
+  @override
+  void playSong() => _playSong();
+
+  bool _slotEmpty(List<List<TrackerCell>> snap) =>
+      snap.every((ch) => ch.every((c) => c.isEmpty));
+
+  /// Saves the live pattern into the current slot, then loads slot [index].
+  void _selectSlot(int index) {
+    if (index == _currentSlot) return;
+    _slots[_currentSlot] = _engine.exportCells();
+    _engine.importCells(_slots[index]);
+    setState(() => _currentSlot = index);
+    _syncPlayback();
+  }
+
+  /// Renders the non-empty slots in order (A→D) into one song and loops it.
+  void _playSong() {
+    _slots[_currentSlot] = _engine.exportCells();
+    final order = [
+      for (final s in _slots)
+        if (!_slotEmpty(s)) s,
+    ];
+    if (order.isEmpty) return;
+    if (!context.read<AudioService>().soundOn) return;
+    final wav = renderSong(_engine, order);
+    _clock
+      ..reset()
+      ..start();
+    _loop.playLoop(wav);
+    setState(() {});
   }
 
   /// Imports [score] onto the melody channel (index 0 — treble, so octave-4
@@ -541,6 +603,11 @@ class _TrackerScreenState extends State<TrackerScreen>
         title: l10n.gameTracker,
         actions: [
           IconButton(
+            icon: const Icon(Icons.playlist_play),
+            tooltip: l10n.trackerPlaySong,
+            onPressed: songHasContent ? _playSong : null,
+          ),
+          IconButton(
             icon: const Icon(Icons.tune),
             tooltip: l10n.trackerChangeInstrument,
             onPressed: _showInstrumentSheet,
@@ -583,7 +650,34 @@ class _TrackerScreenState extends State<TrackerScreen>
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
+              // Pattern slots (A–D) — build a few patterns, then Play song.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    l10n.trackerPattern,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  const SizedBox(width: 8),
+                  for (var i = 0; i < _slotCount; i++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: ChoiceChip(
+                        label: Text(String.fromCharCode(65 + i)), // A B C D
+                        selected: i == _currentSlot,
+                        onSelected: (_) => _selectSlot(i),
+                        side: (i != _currentSlot && !_slotEmpty(_slots[i]))
+                            ? BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 1.5,
+                              )
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
               _Playhead(step: _step, steps: _engine.rows),
               const SizedBox(height: 8),
               // The selected channel's grid: pentatonic pitch rows, or drum rows.

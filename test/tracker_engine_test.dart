@@ -216,6 +216,43 @@ void main() {
     });
   });
 
+  group('arrangement (renderSong)', () {
+    int wavSamples(Uint8List wav) => (wav.length - 44) ~/ 2;
+
+    test('a song is the patterns concatenated (length adds up)', () {
+      final e = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      );
+      final a = e.exportCells();
+      e.toggleNote(0, 0, 60);
+      final b = e.exportCells();
+
+      final oneBar = e.timing.totalSamples;
+      expect(wavSamples(renderSong(e, [a])), oneBar);
+      expect(wavSamples(renderSong(e, [a, b])), oneBar * 2);
+      expect(wavSamples(renderSong(e, [a, b, a])), oneBar * 3);
+    });
+
+    test('rendering a song restores the live pattern (no side effects)', () {
+      final e = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      )..toggleNote(0, 0, 67);
+      final before = e.renderLoop();
+      final empty = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      ).exportCells();
+      renderSong(e, [empty, e.exportCells()]);
+      expect(e.renderLoop(), equals(before)); // live pattern untouched
+    });
+
+    test('an empty order renders nothing', () {
+      final e = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      );
+      expect(wavSamples(renderSong(e, const [])), 0);
+    });
+  });
+
   group('instrument palette', () {
     test('every option builds an instrument with a matching id', () {
       expect(kTrackerInstruments, isNotEmpty);

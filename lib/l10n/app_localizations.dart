@@ -1886,6 +1886,18 @@ abstract class AppLocalizations {
   /// **'Change instrument'**
   String get trackerChangeInstrument;
 
+  /// No description provided for @trackerPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Pattern'**
+  String get trackerPattern;
+
+  /// No description provided for @trackerPlaySong.
+  ///
+  /// In en, this message translates to:
+  /// **'Play song'**
+  String get trackerPlaySong;
+
   /// No description provided for @trackerSfxrZap.
   ///
   /// In en, this message translates to:

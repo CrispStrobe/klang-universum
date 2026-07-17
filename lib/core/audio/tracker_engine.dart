@@ -474,18 +474,56 @@ class TrackerEngine {
       .instrument
       .renderChannel(channels[channel].cells, _timing);
 
-  /// The current pattern as one loop-ready WAV. An empty pattern renders silence
-  /// of the full loop length.
-  Uint8List renderLoop() {
-    return _wav ??= wavBytes(
-      mixStems(
+  /// The current pattern mixed to PCM16 (one loop's worth). Used by [renderLoop]
+  /// and by [renderSong] (which concatenates one per order-list entry).
+  Int16List renderLoopPcm() => mixStems(
         [
           for (var i = 0; i < channels.length; i++)
             if (channels[i].hasAnyNote)
               (samples: _stem(i), gain: channels[i].gain),
         ],
         totalSamples: _timing.totalSamples,
-      ),
-    );
+      );
+
+  /// The current pattern as one loop-ready WAV. An empty pattern renders silence
+  /// of the full loop length.
+  Uint8List renderLoop() => _wav ??= wavBytes(renderLoopPcm());
+
+  /// A deep copy of every channel's cells — a pattern snapshot for arrangement.
+  List<List<TrackerCell>> exportCells() =>
+      [for (final c in channels) List<TrackerCell>.of(c.cells)];
+
+  /// Loads a snapshot from [exportCells] back into the channels.
+  void importCells(List<List<TrackerCell>> data) {
+    for (var i = 0; i < channels.length && i < data.length; i++) {
+      setChannelCells(i, data[i]);
+    }
   }
+}
+
+/// Renders a song: the [patterns] (each a snapshot from [TrackerEngine.
+/// exportCells]) played back-to-back into one long loop-ready WAV — the
+/// arrangement / order-list. Uses [engine]'s band + timing; the engine's live
+/// pattern is saved and restored, so this is side-effect-free to the caller.
+Uint8List renderSong(
+  TrackerEngine engine,
+  List<List<List<TrackerCell>>> patterns,
+) {
+  if (patterns.isEmpty) return wavBytes(Int16List(0));
+  final saved = engine.exportCells();
+  final chunks = <Int16List>[];
+  for (final pattern in patterns) {
+    engine.importCells(pattern);
+    chunks.add(engine.renderLoopPcm());
+  }
+  engine.importCells(saved);
+
+  final total = chunks.fold<int>(0, (sum, c) => sum + c.length);
+  final out = Int16List(total);
+  var offset = 0;
+  for (final chunk in chunks) {
+    out.setRange(offset, offset + chunk.length, chunk);
+    offset += chunk.length;
+  }
+  return wavBytes(out);
 }

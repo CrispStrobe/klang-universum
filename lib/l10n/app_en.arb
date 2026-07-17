@@ -358,6 +358,8 @@
   "trackerImportTune": "Load a tune",
   "trackerDemoTune": "Simple tune (C D E G)",
   "trackerChangeInstrument": "Change instrument",
+  "trackerPattern": "Pattern",
+  "trackerPlaySong": "Play song",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",
   "trackerSfxrLaser": "Laser",
