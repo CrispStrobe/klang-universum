@@ -1,31 +1,53 @@
 // bin/notaconv.dart
 //
-// Headless notation converter — turns a tracker module's melody into a Standard
-// MIDI File, using the pure-Dart module readers + crisp_notation_core's Score→MIDI
-// writer (the Flutter-free notation core, NOT the Flutter `crisp_notation` package).
-// Runs under plain `dart run`, like bin/listen.dart / bin/modinfo.dart.
+// Headless notation bridge — converts BETWEEN tracker modules and notation files
+// (Standard MIDI + MusicXML), both directions, through the ModuleDoc ↔ Score
+// bridge (lib/core/audio/mod/module_notation.dart). Pure Dart, runs under plain
+// `dart run` like bin/listen.dart. The conversion logic lives in lib and is
+// unit-tested (test/module_notation_test.dart); this file is just I/O + routing.
 //
-//   dart run bin/notaconv.dart song.xm out.mid            # busiest channel → MIDI
-//   dart run bin/notaconv.dart song.it out.mid --channel 2
-//   dart run bin/notaconv.dart song.mod out.mid --steps-per-beat 2
+//   Module → notation
+//     dart run bin/notaconv.dart song.xm out.mid            # busiest channel → MIDI
+//     dart run bin/notaconv.dart song.it out.mid --channel 2
+//     dart run bin/notaconv.dart song.it out.mid --multi    # every channel → a MIDI track
+//     dart run bin/notaconv.dart song.s3m out.xml           # all channels → MusicXML
 //
-// One channel → one MIDI track. Rows are quantized to a [stepsPerBeat] grid
-// (default 4 = sixteenths); a held run (a note ringing across empty rows) becomes
-// tied notes. Deliberately simple: a melody dump, not a faithful module render.
+//   Notation → module (the reverse)
+//     dart run bin/notaconv.dart tune.mid out.it            # MIDI → a playable .it
+//     dart run bin/notaconv.dart score.xml out.xm           # MusicXML → .xm (one channel/part)
+//
+//   Notation → notation
+//     dart run bin/notaconv.dart tune.mid out.xml           # MIDI → MusicXML (and vice-versa)
+//
+// Rows quantize to a --steps-per-beat grid (default 4 = sixteenths); held runs
+// become tied notes; a rest round-trips via a neutral note-off.
 
 import 'dart:io';
 
 import 'package:comet_beat/core/audio/mod/module_convert.dart';
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
-// crisp_notation_core is the Flutter-free notation core (a dependency_override, so
-// re-exported via crisp_notation) — import it directly to keep this CLI Flutter-free.
+import 'package:comet_beat/core/audio/mod/module_notation.dart';
+// crisp_notation_core is the Flutter-free notation core (a dependency_override,
+// re-exported via crisp_notation) — import it directly to stay Flutter-free.
 // ignore: depend_on_referenced_packages
 import 'package:crisp_notation_core/crisp_notation_core.dart';
+
+const _extToFormat = <String, ModuleFormat>{
+  'mod': ModuleFormat.mod,
+  'xm': ModuleFormat.xm,
+  's3m': ModuleFormat.s3m,
+  'it': ModuleFormat.it,
+};
+
+String _ext(String path) => path.split('.').last.toLowerCase();
+bool _isMidi(String e) => e == 'mid' || e == 'midi';
+bool _isXml(String e) => e == 'xml' || e == 'musicxml';
 
 void main(List<String> args) {
   final positional = <String>[];
   int? channel;
   var stepsPerBeat = 4;
+  var multi = false;
   for (var i = 0; i < args.length; i++) {
     final a = args[i];
     switch (a) {
@@ -33,6 +55,8 @@ void main(List<String> args) {
         channel = int.tryParse(i + 1 < args.length ? args[++i] : '');
       case '--steps-per-beat':
         stepsPerBeat = int.tryParse(i + 1 < args.length ? args[++i] : '') ?? 4;
+      case '--multi':
+        multi = true;
       default:
         if (a.startsWith('-')) {
           stderr.writeln('notaconv: unknown option $a');
@@ -43,197 +67,152 @@ void main(List<String> args) {
     }
   }
   if (positional.length < 2 || stepsPerBeat < 1) {
-    stderr.writeln('usage: dart run bin/notaconv.dart <module> <out.mid> '
-        '[--channel N] [--steps-per-beat K]');
+    stderr.writeln('usage: dart run bin/notaconv.dart <in> <out> '
+        '[--channel N] [--steps-per-beat K] [--multi]\n'
+        '  in/out by extension: module (.mod/.xm/.s3m/.it), MIDI (.mid), '
+        'MusicXML (.xml)');
     exitCode = 2;
     return;
   }
 
-  final inFile = File(positional[0]);
+  final inPath = positional[0], outPath = positional[1];
+  final inFile = File(inPath);
   if (!inFile.existsSync()) {
-    stderr.writeln('notaconv: no such file: ${positional[0]}');
+    stderr.writeln('notaconv: no such file: $inPath');
     exitCode = 2;
     return;
   }
   final bytes = inFile.readAsBytesSync();
-  if (sniffModuleFormat(bytes) == null) {
-    stderr.writeln('notaconv: not a recognized module (.mod/.s3m/.xm/.it)');
-    exitCode = 1;
-    return;
-  }
+  final outExt = _ext(outPath);
 
-  final ModuleDoc doc;
   try {
-    doc = parseAnyModule(bytes);
+    // ── Source: a module, a MIDI file, or a MusicXML file ─────────────────────
+    if (sniffModuleFormat(bytes) != null) {
+      _fromModule(
+        parseAnyModule(bytes),
+        outPath,
+        outExt,
+        channel: channel,
+        stepsPerBeat: stepsPerBeat,
+        multi: multi,
+      );
+    } else if (_isMidi(_ext(inPath))) {
+      _fromScore(
+        scoreFromMidi(bytes),
+        outPath,
+        outExt,
+        stepsPerBeat: stepsPerBeat,
+      );
+    } else if (_isXml(_ext(inPath))) {
+      _fromMultiPart(
+        multiPartScoreFromMusicXml(String.fromCharCodes(bytes)),
+        outPath,
+        outExt: outExt,
+        stepsPerBeat: stepsPerBeat,
+      );
+    } else {
+      stderr
+          .writeln('notaconv: unrecognized input (not a module, .mid or .xml)');
+      exitCode = 1;
+    }
   } catch (e) {
-    stderr.writeln('notaconv: failed to parse: $e');
+    stderr.writeln('notaconv: $e');
     exitCode = 1;
-    return;
   }
+}
 
-  // Flatten each channel's notes across the order list (a hold = -1).
-  final chCount = doc.channelCount;
-  if (chCount == 0) {
+// ── module → MIDI / MusicXML ──────────────────────────────────────────────────
+void _fromModule(
+  ModuleDoc doc,
+  String outPath,
+  String outExt, {
+  int? channel,
+  required int stepsPerBeat,
+  required bool multi,
+}) {
+  if (doc.channelCount == 0) {
     stderr.writeln('notaconv: the module has no channels');
     exitCode = 1;
     return;
   }
-  final flats = List.generate(chCount, (_) => <int>[]);
-  for (final entry in doc.order) {
-    if (entry < 0 || entry >= doc.patterns.length) continue;
-    final pat = doc.patterns[entry];
-    for (final row in pat.rows) {
-      for (var c = 0; c < chCount; c++) {
-        flats[c].add(c < row.length ? row[c].note : -1);
-      }
-    }
-  }
-
-  // Pick the channel: the requested one, or the busiest (most notes).
-  final busiest = _busiest(flats);
-  final ch = channel ?? busiest;
-  if (ch < 0 || ch >= chCount) {
-    stderr.writeln('notaconv: channel $ch out of range (0..${chCount - 1})');
-    exitCode = 2;
-    return;
-  }
-
-  final score = _runsToScore(_runs(flats[ch]), stepsPerBeat);
-  final midi = scoreToMidi(score, quarterBpm: doc.initialTempo.toDouble());
-  File(positional[1]).writeAsBytesSync(midi);
-  final noteCount = flats[ch].where((m) => m >= 0).length;
-  stdout.writeln('notaconv: ${doc.title.isEmpty ? positional[0] : doc.title} '
-      'channel $ch ($noteCount notes) → ${positional[1]} (${midi.length} bytes)');
-}
-
-int _busiest(List<List<int>> flats) {
-  var best = 0, bestCount = -1;
-  for (var c = 0; c < flats.length; c++) {
-    final count = flats[c].where((m) => m >= 0).length;
-    if (count > bestCount) {
-      bestCount = count;
-      best = c;
-    }
-  }
-  return best;
-}
-
-/// A flat per-row midi list into `(midi?, steps)` runs — a -1 row extends the
-/// previous note (or is a leading rest). Mirrors the Tracker's cellRuns.
-List<(int?, int)> _runs(List<int> midis) {
-  final runs = <(int?, int)>[];
-  for (final m in midis) {
-    if (m < 0) {
-      if (runs.isEmpty) {
-        runs.add((null, 1));
-      } else {
-        final (pm, s) = runs.last;
-        runs[runs.length - 1] = (pm, s + 1);
-      }
+  final tempo = doc.initialTempo.toDouble();
+  if (_isMidi(outExt)) {
+    if (multi) {
+      final mp = moduleToMultiPart(doc, stepsPerBeat: stepsPerBeat);
+      final smf = multiPartToMidi(mp.score, quarterBpm: tempo);
+      File(outPath).writeAsBytesSync(smf);
+      _ok(doc, outPath, '${mp.score.parts.length} tracks, ${smf.length} bytes');
     } else {
-      runs.add((m, 1));
-    }
-  }
-  return runs;
-}
-
-// --- Ported from tracker_notation.dart (Flutter-free notation core types) ------
-
-const _pcSpelling = <(Step, int)>[
-  (Step.c, 0),
-  (Step.c, 1),
-  (Step.d, 0),
-  (Step.d, 1),
-  (Step.e, 0),
-  (Step.f, 0),
-  (Step.f, 1),
-  (Step.g, 0),
-  (Step.g, 1),
-  (Step.a, 0),
-  (Step.a, 1),
-  (Step.b, 0),
-];
-
-Pitch _pitchFromMidi(int midi) {
-  final (step, alter) = _pcSpelling[midi % 12];
-  return Pitch(step, alter: alter, octave: (midi ~/ 12) - 1);
-}
-
-List<(NoteDuration, int)> _durationLadder(int stepsPerBeat) {
-  final stepsPerWhole = stepsPerBeat * 4;
-  const candidates = <(NoteDuration, double)>[
-    (NoteDuration(DurationBase.whole), 1.0),
-    (NoteDuration(DurationBase.half, dots: 1), 0.75),
-    (NoteDuration(DurationBase.half), 0.5),
-    (NoteDuration(DurationBase.quarter, dots: 1), 0.375),
-    (NoteDuration(DurationBase.quarter), 0.25),
-    (NoteDuration(DurationBase.eighth, dots: 1), 0.1875),
-    (NoteDuration(DurationBase.eighth), 0.125),
-    (NoteDuration(DurationBase.sixteenth, dots: 1), 0.09375),
-    (NoteDuration(DurationBase.sixteenth), 0.0625),
-  ];
-  final out = <(NoteDuration, int)>[];
-  for (final (dur, frac) in candidates) {
-    final steps = frac * stepsPerWhole;
-    if ((steps - steps.roundToDouble()).abs() < 1e-9) {
-      out.add((dur, steps.round()));
-    }
-  }
-  return out;
-}
-
-List<NoteDuration> _decompose(int steps, List<(NoteDuration, int)> ladder) {
-  final out = <NoteDuration>[];
-  var rem = steps;
-  while (rem > 0) {
-    final piece =
-        ladder.firstWhere((d) => d.$2 <= rem, orElse: () => ladder.last);
-    out.add(piece.$1);
-    rem -= piece.$2;
-  }
-  return out;
-}
-
-Score _runsToScore(List<(int?, int)> runs, int stepsPerBeat) {
-  final ladder = _durationLadder(stepsPerBeat);
-  final barSteps = stepsPerBeat * 4;
-  final measures = <Measure>[];
-  var current = <MusicElement>[];
-  var posInBar = 0;
-  var idCounter = 0;
-
-  void closeBar() {
-    measures.add(Measure(current));
-    current = [];
-    posInBar = 0;
-  }
-
-  for (final (midi, steps) in runs) {
-    var rem = steps;
-    while (rem > 0) {
-      final avail = barSteps - posInBar;
-      final take = rem < avail ? rem : avail;
-      final pieces = _decompose(take, ladder);
-      for (var i = 0; i < pieces.length; i++) {
-        final lastOfRun = rem - take == 0 && i == pieces.length - 1;
-        if (midi == null) {
-          current.add(RestElement(pieces[i]));
-        } else {
-          current.add(
-            NoteElement.note(
-              _pitchFromMidi(midi),
-              pieces[i],
-              tieToNext: !lastOfRun,
-              id: 'n${idCounter++}',
-            ),
-          );
-        }
+      final ch = channel ?? busiestChannel(doc);
+      if (ch < 0 || ch >= doc.channelCount) {
+        stderr.writeln('notaconv: channel $ch out of range '
+            '(0..${doc.channelCount - 1})');
+        exitCode = 2;
+        return;
       }
-      posInBar += take;
-      rem -= take;
-      if (posInBar >= barSteps) closeBar();
+      final score = moduleChannelToScore(doc, ch, stepsPerBeat: stepsPerBeat);
+      final smf = scoreToMidi(score, quarterBpm: tempo);
+      File(outPath).writeAsBytesSync(smf);
+      _ok(doc, outPath, 'channel $ch, ${smf.length} bytes');
     }
+  } else if (_isXml(outExt)) {
+    final xml = moduleToMusicXml(doc, stepsPerBeat: stepsPerBeat);
+    File(outPath).writeAsStringSync(xml);
+    _ok(doc, outPath, '${xml.length} bytes MusicXML');
+  } else {
+    stderr.writeln('notaconv: module → .$outExt not supported '
+        '(use .mid or .xml; for module→module use modconv)');
+    exitCode = 2;
   }
-  if (current.isNotEmpty) closeBar();
-  return Score(clef: Clef.treble, measures: measures);
+}
+
+// ── a single Score (from MIDI) → module / MusicXML ───────────────────────────
+void _fromScore(
+  Score score,
+  String outPath,
+  String outExt, {
+  required int stepsPerBeat,
+}) {
+  final fmt = _extToFormat[outExt];
+  if (fmt != null) {
+    final doc =
+        scoreToModuleDoc(score, stepsPerBeat: stepsPerBeat, format: fmt);
+    File(outPath).writeAsBytesSync(convertDocTo(doc, fmt));
+    stdout.writeln('notaconv: MIDI → .$outExt ($outPath)');
+  } else if (_isXml(outExt)) {
+    File(outPath).writeAsStringSync(scoreToMusicXml(score));
+    stdout.writeln('notaconv: MIDI → MusicXML ($outPath)');
+  } else {
+    stderr.writeln('notaconv: MIDI → .$outExt not supported');
+    exitCode = 2;
+  }
+}
+
+// ── a MultiPartScore (from MusicXML) → module / MIDI ─────────────────────────
+void _fromMultiPart(
+  MultiPartScore mp,
+  String outPath, {
+  required String outExt,
+  required int stepsPerBeat,
+}) {
+  final fmt = _extToFormat[outExt];
+  if (fmt != null) {
+    final doc =
+        multiPartToModuleDoc(mp, stepsPerBeat: stepsPerBeat, format: fmt);
+    File(outPath).writeAsBytesSync(convertDocTo(doc, fmt));
+    stdout.writeln('notaconv: MusicXML → .$outExt '
+        '(${mp.parts.length} parts → ${doc.channelCount} ch, $outPath)');
+  } else if (_isMidi(outExt)) {
+    File(outPath).writeAsBytesSync(multiPartToMidi(mp));
+    stdout.writeln('notaconv: MusicXML → MIDI '
+        '(${mp.parts.length} tracks, $outPath)');
+  } else {
+    stderr.writeln('notaconv: MusicXML → .$outExt not supported');
+    exitCode = 2;
+  }
+}
+
+void _ok(ModuleDoc doc, String outPath, String detail) {
+  stdout.writeln('notaconv: ${doc.title.isEmpty ? '(untitled)' : doc.title} '
+      '→ $outPath  ($detail)');
 }

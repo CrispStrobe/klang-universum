@@ -51,11 +51,26 @@ distortion set + sfxr FM/LFO), richer voicelab presets + PSOLA time-stretch, a
 per-channel effect chain in the Tracker, tempo **swing/groove**, and the cubic
 interpolation above. Order + contracts/tests plan: `FX_HANDOVER.md`.
 
-## D. Notation bridge (Tracker ↔ Score/MIDI)
+## D. Notation bridge (Tracker/Module ↔ Score/MIDI/MusicXML)
 - ✅ Tracker→Score (per-channel staves), Score→Tracker (chord split), MIDI↔MOD hub.
-- **Multi-track MIDI export** — today it's a single block-chord Score; export each
-  channel as its own MIDI track (needs a channels→multi-track writer, since
-  `scoreToMidi` is single-Score).
+- ✅ **ModuleDoc ↔ Score bridge** SHIPPED (`lib/core/audio/mod/module_notation.dart`,
+  Flutter-free): `moduleChannelToScore` / `moduleToMultiPart` (one staff per
+  sounding channel, clef auto) and the reverse `scoreToModuleDoc` /
+  `multiPartToModuleDoc` (chord-split, and a rest survives via `DocCell.off` —
+  the new neutral note-off). `module_notation_test.dart` round-trips
+  Score↔doc, doc↔multiPart, and module→multi-part→MIDI end-to-end.
+- ✅ **Multi-track MIDI** SHIPPED — `multiPartToMidi` assembles a format-1 SMF
+  (one MTrk per part; `scoreToMidi` is single-Score/format-0), with
+  `splitMultiTrackMidi` as the inverse for round-trips.
+- ✅ **Module ↔ MusicXML** SHIPPED — `moduleToMusicXml` / `musicXmlToModuleDoc`
+  through the library's `multiPartToMusicXml` ⇄ `multiPartScoreFromMusicXml`.
+- ✅ **Bidirectional CLI** — `bin/notaconv.dart` now converts BOTH ways by
+  extension: module→(.mid/.xml), and `.mid`/`.xml`→module (`--multi` =
+  multi-track). Live-verified: module→multi-track-MIDI→.xm and
+  module→MusicXML→.it round-trip through real files.
+- ⏳ **Note-off through the codecs** — XM/IT/S3M readers+writers don't yet map
+  their key-off to `DocCell.off`, so a rest survives Score↔doc but NOT a real
+  module-bytes round-trip (MOD has no key-off at all). Next.
 - **Score→Tracker beyond one bar** — more of the grid / variable pattern length.
 - **Live Workshop↔Tracker handoff** — open a Workshop score directly into the
   Tracker and back (the converter's ready; this is app plumbing).

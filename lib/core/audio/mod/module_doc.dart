@@ -49,25 +49,42 @@ class DocSample {
 
 /// One cell in the neutral model. Absent fields use sentinels.
 class DocCell {
-  const DocCell({this.note = -1, this.instrument = 0, this.volume = -1});
+  const DocCell({
+    this.note = -1,
+    this.instrument = 0,
+    this.volume = -1,
+    this.noteOff = false,
+  });
+
+  /// A key-off cell: stops the ringing note (the formats' note-off / note-cut).
+  /// Distinct from an empty cell, which lets the note ring on. Readers don't
+  /// emit these yet; the Score→ModuleDoc bridge uses them so a rest survives the
+  /// round-trip (an empty cell would be absorbed into the held note).
+  const DocCell.off()
+      : note = -1,
+        instrument = 0,
+        volume = -1,
+        noteOff = true;
 
   static const empty = DocCell();
 
   final int note; // -1 = none, else MIDI note 0..127
   final int instrument; // 0 = none, else 1-based
   final int volume; // -1 = none, else 0..64 (volume column)
+  final bool noteOff; // true = key-off (stop the ringing note)
 
-  bool get isEmpty => note == -1 && instrument == 0 && volume == -1;
+  bool get isEmpty => note == -1 && instrument == 0 && volume == -1 && !noteOff;
 
   @override
   bool operator ==(Object other) =>
       other is DocCell &&
       other.note == note &&
       other.instrument == instrument &&
-      other.volume == volume;
+      other.volume == volume &&
+      other.noteOff == noteOff;
 
   @override
-  int get hashCode => Object.hash(note, instrument, volume);
+  int get hashCode => Object.hash(note, instrument, volume, noteOff);
 }
 
 /// A pattern: [numRows] rows × [channelCount] cells.
