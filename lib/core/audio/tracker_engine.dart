@@ -444,6 +444,14 @@ class TrackerEngine {
   void clearCell(int channel, int row) =>
       setCell(channel, row, TrackerCell.empty);
 
+  /// Sets the [volume] (a soft/ghost note, 0..1; null = normal) of the note at
+  /// [row]. No-op on an empty cell — only notes carry dynamics.
+  void setCellVolume(int channel, int row, double? volume) {
+    final cur = channels[channel].cells[row];
+    if (cur.isEmpty) return;
+    setCell(channel, row, TrackerCell(midi: cur.midi, volume: volume));
+  }
+
   /// Tap-to-place/remove for the grid: placing [midi] where the same note
   /// already sits clears it; otherwise sets it. Returns the note now at the cell
   /// (null if cleared).
@@ -470,9 +478,30 @@ class TrackerEngine {
 
   bool get isEmpty => channels.every((c) => !c.hasAnyNote);
 
-  Float64List _stem(int channel) => _stemCache[channel] ??= channels[channel]
-      .instrument
-      .renderChannel(channels[channel].cells, _timing);
+  Float64List _stem(int channel) =>
+      _stemCache[channel] ??= _renderWithDynamics(channel);
+
+  /// Renders a channel, then scales each note's sample range by that note's
+  /// [TrackerCell.volume] (a soft/ghost note) — a renderer-agnostic volume
+  /// column: additive, sfxr, sampled and percussion voices all honour it.
+  Float64List _renderWithDynamics(int channel) {
+    final ch = channels[channel];
+    final buf = ch.instrument.renderChannel(ch.cells, _timing);
+    var startStep = 0;
+    for (final (midi, steps) in cellRuns(ch.cells)) {
+      final vol = midi != null ? ch.cells[startStep].volume : null;
+      if (vol != null && vol != 1.0) {
+        final start = (startStep * _timing.stepMs * kSampleRate) ~/ 1000;
+        final end =
+            ((startStep + steps) * _timing.stepMs * kSampleRate) ~/ 1000;
+        for (var i = start; i < end && i < buf.length; i++) {
+          buf[i] *= vol;
+        }
+      }
+      startStep += steps;
+    }
+    return buf;
+  }
 
   /// The current pattern mixed to PCM16 (one loop's worth). Used by [renderLoop]
   /// and by [renderSong] (which concatenates one per order-list entry).

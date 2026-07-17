@@ -216,6 +216,33 @@ void main() {
     });
   });
 
+  group('per-note dynamics (volume)', () {
+    test('a soft note shifts the balance (dynamics are relative in a channel)',
+        () {
+      // Two notes in one channel: softening one changes the relative levels
+      // (a lone note would be normalized back to unit peak — dynamics are
+      // relative to the loudest note in the stem).
+      final e = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      )
+        ..toggleNote(0, 0, 60)
+        ..toggleNote(0, 4, 67);
+      final normal = e.renderLoop();
+      e.setCellVolume(0, 0, 0.4);
+      expect(e.cellAt(0, 0).volume, 0.4);
+      final soft = e.renderLoop();
+      expect(soft, isNot(equals(normal)));
+      expect(soft.length, normal.length);
+    });
+
+    test('setCellVolume is a no-op on an empty cell', () {
+      final e = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2),
+      )..setCellVolume(0, 0, 0.4);
+      expect(e.cellAt(0, 0).isEmpty, isTrue);
+    });
+  });
+
   group('arrangement (renderSong)', () {
     int wavSamples(Uint8List wav) => (wav.length - 44) ~/ 2;
 

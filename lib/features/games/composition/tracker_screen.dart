@@ -118,6 +118,10 @@ abstract interface class TrackerTester {
   List<int> get songOrder;
   void addToOrder(int slot);
   void clearOrder();
+
+  /// Long-press equivalent: toggle the note at ([row], [step]) soft/normal.
+  void toggleAccent(int row, int step);
+  bool isSoft(int row, int step);
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -282,6 +286,13 @@ class _TrackerScreenState extends State<TrackerScreen>
   void addToOrder(int slot) => _addToOrder(slot);
   @override
   void clearOrder() => setState(_order.clear);
+  @override
+  void toggleAccent(int row, int step) =>
+      _onLongPressCode(_gridRows(_selected)[row].code, step);
+  @override
+  bool isSoft(int row, int step) =>
+      _engine.cellAt(_selected, step).volume != null &&
+      _engine.cellAt(_selected, step).midi == _gridRows(_selected)[row].code;
 
   bool _slotEmpty(List<List<TrackerCell>> snap) =>
       snap.every((ch) => ch.every((c) => c.isEmpty));
@@ -447,6 +458,21 @@ class _TrackerScreenState extends State<TrackerScreen>
     if (placed != null && !_isPercussion(_selected)) {
       context.read<AudioService>().playMidiNote(code, ms: 300);
     }
+    _syncPlayback();
+  }
+
+  /// Long-press toggles a note between normal and soft (a quiet "ghost" note) —
+  /// the volume column, for dynamics.
+  static const _softVolume = 0.45;
+  void _onLongPressCode(int code, int step) {
+    final cell = _engine.cellAt(_selected, step);
+    if (cell.midi != code) return; // only the note that's actually there
+    _engine.setCellVolume(
+      _selected,
+      step,
+      cell.volume != null ? null : _softVolume,
+    );
+    setState(() {});
     _syncPlayback();
   }
 
@@ -789,8 +815,14 @@ class _TrackerScreenState extends State<TrackerScreen>
                                               .cellAt(_selected, step)
                                               .midi ==
                                           gridRow.code,
+                                      soft: _engine
+                                              .cellAt(_selected, step)
+                                              .volume !=
+                                          null,
                                       onTap: () =>
                                           _onTapCode(gridRow.code, step),
+                                      onLongPress: () =>
+                                          _onLongPressCode(gridRow.code, step),
                                     ),
                                   ),
                                 ),
@@ -948,20 +980,29 @@ class _Cell extends StatelessWidget {
     required this.color,
     required this.active,
     required this.onTap,
+    required this.onLongPress,
+    this.soft = false,
   });
 
   final Color color;
   final bool active;
+
+  /// A soft/ghost note — drawn half-filled so dynamics are visible.
+  final bool soft;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
+    // A placed note fills the cell; a soft note fills it only partway.
+    final fillAlpha = active ? (soft ? 0.5 : 1.0) : 0.14;
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
-          color: active ? color : color.withValues(alpha: 0.14),
+          color: color.withValues(alpha: fillAlpha),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: active ? color : color.withValues(alpha: 0.35),

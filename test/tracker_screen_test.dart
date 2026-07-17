@@ -240,4 +240,22 @@ void main() {
     await tester.pump();
     expect(game.songOrder, isEmpty);
   });
+
+  testWidgets('long-press toggles a note soft (dynamics)', (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+
+    game.tapCell(0, 0);
+    await tester.pump();
+    expect(game.isSoft(0, 0), isFalse);
+
+    game.toggleAccent(0, 0);
+    await tester.pump();
+    expect(game.isSoft(0, 0), isTrue);
+
+    game.toggleAccent(0, 0);
+    await tester.pump();
+    expect(game.isSoft(0, 0), isFalse);
+    expect(tester.takeException(), isNull);
+  });
 }
