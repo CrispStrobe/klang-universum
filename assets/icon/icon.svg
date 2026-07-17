@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e1065"/>
+      <stop offset="0.55" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="0.55" stop-color="#c4b5fd" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#c4b5fd" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tail" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#e9d5ff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#e9d5ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- cosmic background -->
+  <rect width="1024" height="1024" fill="url(#sky)"/>
+
+  <!-- stars -->
+  <g fill="#ffffff">
+    <circle cx="792" cy="212" r="7" opacity="0.9"/>
+    <circle cx="864" cy="392" r="4.5" opacity="0.75"/>
+    <circle cx="236" cy="286" r="6" opacity="0.85"/>
+    <circle cx="720" cy="836" r="5" opacity="0.7"/>
+    <circle cx="896" cy="700" r="3.5" opacity="0.6"/>
+    <circle cx="150" cy="560" r="3.5" opacity="0.6"/>
+    <!-- a sparkle -->
+    <path d="M300 170 l10 34 34 10 -34 10 -10 34 -10 -34 -34 -10 34 -10 z" opacity="0.85"/>
+  </g>
+
+  <!-- comet tail (behind the note) -->
+  <path d="M470 636
+           C 320 690 210 800 132 902
+           C 250 856 356 792 452 700 Z" fill="url(#tail)"/>
+  <path d="M486 700
+           C 372 760 296 850 246 928
+           C 336 862 430 806 520 742 Z" fill="url(#tail)" opacity="0.55"/>
+
+  <!-- comet-head glow -->
+  <circle cx="470" cy="606" r="290" fill="url(#glow)"/>
+
+  <!-- eighth note = the comet -->
+  <g fill="#ffffff">
+    <!-- stem -->
+    <rect x="556" y="286" width="30" height="330" rx="15"/>
+    <!-- flag -->
+    <path d="M586 286
+             C 706 316 742 430 660 512
+             C 712 430 684 350 586 356 Z"/>
+    <!-- note head (the bright comet head) -->
+    <ellipse cx="470" cy="606" rx="132" ry="98" transform="rotate(-22 470 606)"/>
+  </g>
+</svg>
