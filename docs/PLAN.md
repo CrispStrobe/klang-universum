@@ -19,6 +19,15 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (gap-games)** · 🚧 **ACTIVE — filling the 8 untrained-concept gaps**. The
+  coverage report's 8 concepts with no game. Batch A (reading/rhythm): **syncopation**
+  (`sync_read`), **triplets** (`triplet_read`), **ornaments** (`ornament_read`) —
+  binary/triple staff-reads with a primer + concept-map wiring each. Batch B:
+  **musical form** (AnaVis-style view + label-the-form), then modes / modulation /
+  instrument-families. Touching `game_registry.dart`, `core/tuning.dart`, ARBs,
+  `primers.dart`, `concept_map.dart`, `tutorial_test`, PLAN + HISTORY. Worktree
+  `../mus-gaps`, branch `feature/gap-games`.
+
 - **opus (textbook-p2)** · ✅ **idle / SHIPPED — song mnemonics + orphan-game
   placement.** (1) `core/curriculum/interval_songs.dart` — interval-mnemonic table
   (Kuckuck = falling minor 3rd; Alle-meine-Entchen = major 2nd up; …) with a test
