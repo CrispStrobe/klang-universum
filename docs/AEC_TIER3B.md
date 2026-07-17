@@ -225,19 +225,25 @@ Challenge) is MIT-licensed but is a CNN+GRU model: our pure-Dart
 ONNX runtime (FFI) + a ~few-MB weights file — out of scope for a headless,
 dependency-light harness. The objective metrics above need nothing.
 
-### Roadmap — safe (patent-free) algorithm upgrades
+### Algorithm upgrades — safe (patent-free)
 
-The linear core has no double-talk handling, so its **double-talk SI-SDR gain is
-modest** (a few dB — the near-end corrupts adaptation). Two classic, patent-free
-upgrades close that gap; both are old enough that any foundational patents have
-expired, and neither copies an encumbered implementation:
+Both are classic, expired-patent techniques; neither copies an encumbered
+implementation.
 
-1. **Double-talk detector (DTD)** — freeze filter adaptation when near-end
-   speech is present. Start with the **Geigel** detector (compare mic vs a max
-   over recent reference samples) or a **normalized cross-correlation** DTD
-   (correlation of mic and echo estimate drops during double-talk). Foundational,
-   textbook, expired-patent territory.
-2. **Residual echo suppression (RES)** — a light spectral / Wiener-style
+1. ✅ **Double-talk detector (DTD) — DONE.** The linear core kept adapting on
+   near-end speech (double-talk SI-SDR gain only a few dB); a DTD freezes the
+   filter while the near-end is present. Shipped in `aec_offline.dart` as
+   `DoubleTalkDetector` + an additive `EchoCanceller.process(..., {bool adapt})`
+   gate (default true — the C port and existing callers are untouched). Uses a
+   **normalized cross-correlation** statistic — `corr(mic, echoEst)` where
+   `echoEst = mic − cleaned = W·x` — which needs no echo-path-gain threshold
+   (unlike Geigel); a warmup guard lets the filter converge first, a hangover
+   stops flapping. On the `--selftest` scenario (converge → double-talk) it lifts
+   the double-talk SI-SDR from ~9 dB (linear) to ~16 dB (**+7 dB**), while
+   leaving far-end-single-talk cancellation untouched. Opt in via
+   `cancelEcho(..., doubleTalkDetect: true)` / `StreamingEchoCanceller(...,
+   doubleTalkDetect: true)` / `bin/aec.dart --dtd`.
+2. **Residual echo suppression (RES)** — *next.* A light spectral / Wiener-style
    post-filter on the linear residual (the basic short-time gain approach is
    decades old and patent-free; avoid copying WebRTC AEC3's specific statistical
    model). Lifts the tail suppression the linear filter leaves.
@@ -245,6 +251,11 @@ expired, and neither copies an encumbered implementation:
 Reference algorithms in the same patent-free family: **SpeexDSP MDF** (Valin,
 BSD-3, designed to avoid patents) and **WebRTC AEC3** (BSD-3) — read for
 technique, don't vendor unless the licence + tree stay clean.
+
+**Note on the native C port:** the `adapt` gate is additive, so `native/aec`'s
+C canceller still matches the Dart core for its existing (default-`adapt`) ERLE
+cross-check. Porting the DTD to the native engine (to get double-talk protection
+in the app's jam mode) is a separate follow-up.
 
 ## Effort
 

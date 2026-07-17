@@ -85,7 +85,17 @@ class EchoCanceller {
 
   /// Cancel the echo of [reference] from [mic]. Both must be [blockSize] long
   /// and time-aligned (same block index). Returns the near-end estimate.
-  Float64List process(Float64List reference, Float64List mic) {
+  ///
+  /// [adapt] gates the NLMS filter update: pass false to FREEZE the filter for
+  /// this block (still cancels with the current coefficients, but doesn't learn)
+  /// — how a double-talk detector protects the filter from adapting on near-end
+  /// speech. Overlap-save state advances either way. Default true = unchanged
+  /// behaviour, so the C port and existing callers are untouched.
+  Float64List process(
+    Float64List reference,
+    Float64List mic, {
+    bool adapt = true,
+  }) {
     assert(reference.length == blockSize && mic.length == blockSize);
     final b = blockSize;
     final n = _n;
@@ -119,7 +129,9 @@ class EchoCanceller {
     for (var i = 0; i < b; i++) {
       refMs += reference[i] * reference[i];
     }
-    if (refMs / b < farEndFloor) {
+    if (!adapt || refMs / b < farEndFloor) {
+      // Frozen (double-talk) or far-end silent: cancel with the current filter,
+      // but don't learn. Advance the overlap-save state and return.
       for (var i = 0; i < b; i++) {
         _xPrev[i] = reference[i];
       }

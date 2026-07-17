@@ -56,6 +56,8 @@ Options:
   --rate <hz>     Sample rate for --stdin / --detect (default 44100).
   --detect        Run the pitch detector on the cleaned output and print notes
                   (proves which pitch survives the cancellation).
+  --dtd           Enable the double-talk detector (freeze adaptation on near-end
+                  speech) in file/stream mode. --selftest always compares both.
   -h, --help      Show this help.
 ''';
 
@@ -67,6 +69,7 @@ Future<void> main(List<String> argv) async {
   }
   final rate = int.tryParse(args.value('rate') ?? '') ?? kSampleRate;
   final detect = args.flag('detect');
+  final dtd = args.flag('dtd');
   final delay = int.tryParse(args.value('delay') ?? '');
 
   if (args.flag('selftest')) {
@@ -74,7 +77,7 @@ Future<void> main(List<String> argv) async {
     return;
   }
   if (args.flag('stdin')) {
-    await _stream(rate: rate, refDelay: delay ?? 0, detect: detect);
+    await _stream(rate: rate, refDelay: delay ?? 0, detect: detect, dtd: dtd);
     return;
   }
   if (args.value('mic') != null && args.value('ref') != null) {
@@ -84,6 +87,7 @@ Future<void> main(List<String> argv) async {
       outPath: args.value('out'),
       delay: delay,
       detect: detect,
+      dtd: dtd,
     );
     return;
   }
@@ -154,44 +158,45 @@ void _selftest({required int rate, required bool detect}) {
   for (var i = 0; i < n; i++) {
     mic[i] = echoOnly[i] + (i >= half ? near[i] : 0);
   }
-  final r2 = cancelEcho(mic, ref);
-  final siClean = siSdrDb(near, r2.cleaned, from: half);
+  final r2 = cancelEcho(mic, ref); // linear only
+  final r2dtd = cancelEcho(mic, ref, doubleTalkDetect: true); // + DTD
   final siMic = siSdrDb(near, mic, from: half);
+  final siLinear = siSdrDb(near, r2.cleaned, from: half);
+  final siClean = siSdrDb(near, r2dtd.cleaned, from: half);
   stderr.writeln('double-talk SI-SDR vs the true near-end: '
       'raw mic ${siMic.toStringAsFixed(1)} dB → '
-      'cleaned ${siClean.toStringAsFixed(1)} dB '
-      '(+${(siClean - siMic).toStringAsFixed(1)} dB)');
+      'linear ${siLinear.toStringAsFixed(1)} dB → '
+      '+DTD ${siClean.toStringAsFixed(1)} dB '
+      '(froze ${r2dtd.frozenBlocks} blocks; '
+      '+${(siClean - siMic).toStringAsFixed(1)} dB vs mic, '
+      '+${(siClean - siLinear).toStringAsFixed(1)} dB vs linear)');
 
   final heard =
-      _detectDominant(Float64List.sublistView(r2.cleaned, half), rate);
+      _detectDominant(Float64List.sublistView(r2dtd.cleaned, half), rate);
   final rawHeard = _detectDominant(Float64List.sublistView(mic, half), rate);
   stderr.writeln('detector: raw mic reads '
       '${rawHeard == null ? "—" : _noteName(rawHeard)}, '
       'cleaned reads ${heard == null ? "—" : _noteName(heard)}  '
       '(instrument ${_noteName(instrumentMidi)})');
-  if (detect && heard != null) _printFrameNote(r2.cleaned, rate);
+  if (detect && heard != null) _printFrameNote(r2dtd.cleaned, rate);
 
-  // The linear canceller has no double-talk detector, so it keeps adapting on
-  // the near-end and the double-talk SI-SDR gain is modest (a few dB) — a real
-  // limitation a DTD (roadmap) fixes. PASS on what it reliably does: strong
-  // echo-only cancellation, convergence, a positive SI-SDR gain, and the
+  // With the double-talk detector the filter freezes on the near-end instead of
+  // adapting to it, so the double-talk SI-SDR is substantially better than the
+  // linear-only path. PASS on: strong echo-only cancellation, convergence, a
+  // clear SI-SDR gain (with DTD) over the raw mic AND over linear-only, and the
   // instrument surviving.
   final erleOk = m1.segErle > 15;
   final convOk = m1.convergedAtSample >= 0;
-  final sdrOk = (siClean - siMic) > 2;
+  final sdrOk = (siClean - siMic) > 6 && (siClean - siLinear) > 2;
   final surviveOk = heard == instrumentMidi;
   final ok = erleOk && convOk && sdrOk && surviveOk;
-  if ((siClean - siMic) < 10) {
-    stderr.writeln('note: modest double-talk SI-SDR gain is expected without a '
-        'double-talk detector (see AEC_TIER3B.md roadmap).');
-  }
   stdout.writeln(
     ok
         ? 'PASS'
         : 'FAIL'
             '${erleOk ? "" : " (weak ERLE)"}'
             '${convOk ? "" : " (no convergence)"}'
-            '${sdrOk ? "" : " (no SI-SDR gain)"}'
+            '${sdrOk ? "" : " (weak SI-SDR gain)"}'
             '${surviveOk ? "" : " (instrument not recovered)"}',
   );
   if (!ok) exitCode = 1;
@@ -214,6 +219,7 @@ void _files({
   String? outPath,
   int? delay,
   required bool detect,
+  required bool dtd,
 }) {
   final micWav = readWavPcm16(File(micPath).readAsBytesSync());
   final refWav = readWavPcm16(File(refPath).readAsBytesSync());
@@ -225,10 +231,16 @@ void _files({
   }
   final sr = micWav.sampleRate;
   final mic = wavToMonoFloat(micWav);
-  final result = cancelEcho(mic, wavToMonoFloat(refWav), delay: delay);
+  final result = cancelEcho(
+    mic,
+    wavToMonoFloat(refWav),
+    delay: delay,
+    doubleTalkDetect: dtd,
+  );
   final metrics = AecMetrics.measure(mic, result.cleaned);
   stderr.writeln('delay ${result.delay} samples '
-      '(${(result.delay * 1000 / sr).toStringAsFixed(1)} ms)');
+      '(${(result.delay * 1000 / sr).toStringAsFixed(1)} ms)'
+      '${dtd ? ', DTD froze ${result.frozenBlocks} blocks' : ''}');
   stderr.writeln(metrics.report(sampleRate: sr));
   stderr.writeln('(ERLE assumes far-end single-talk; if the recording has '
       'near-end speech, judge by --detect / SI-SDR instead)');
@@ -253,8 +265,9 @@ Future<void> _stream({
   required int rate,
   required int refDelay,
   required bool detect,
+  required bool dtd,
 }) async {
-  final aec = StreamingEchoCanceller(refDelay: refDelay);
+  final aec = StreamingEchoCanceller(refDelay: refDelay, doubleTalkDetect: dtd);
   final analyzer = detect
       ? StreamingAudioAnalyzer(detector: PitchDetector(sampleRate: rate))
       : null;

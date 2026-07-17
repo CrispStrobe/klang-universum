@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/aec_offline.dart';
+import 'package:klang_universum/core/audio/echo_canceller.dart';
 
 const _sr = 44100;
 
@@ -297,8 +298,8 @@ void main() {
       final out = cancelEcho(mic, ref, delay: 0).cleaned;
       final gain =
           siSdrDb(near, out, from: half) - siSdrDb(near, mic, from: half);
-      // A positive gain (the linear core; a double-talk detector — roadmap —
-      // would push this much higher).
+      // A positive gain from the linear core alone (the double-talk detector,
+      // tested below, pushes it much higher).
       expect(gain, greaterThan(2), reason: 'SI-SDR gain = $gain dB');
     });
   });
@@ -345,6 +346,87 @@ void main() {
 
     test('empty streamer flush is a no-op', () {
       expect(StreamingEchoCanceller().flush(), isEmpty);
+    });
+  });
+
+  group('double-talk detector', () {
+    // Converge on echo-only (first half), near-end voice joins (second half).
+    ({Float64List mic, Float64List near, Float64List ref}) scene() {
+      final ref = _noise(n);
+      final echo = _echo(ref);
+      final near = Float64List(n);
+      for (var t = 0; t < n; t++) {
+        near[t] = 0.35 * sin(2 * pi * 440 * t / _sr);
+      }
+      const half = n ~/ 2;
+      final mic = Float64List(n);
+      for (var t = 0; t < n; t++) {
+        mic[t] = echo[t] + (t >= half ? near[t] : 0);
+      }
+      return (mic: mic, near: near, ref: ref);
+    }
+
+    test('lifts double-talk SI-SDR well over the linear-only path', () {
+      final s = scene();
+      const half = n ~/ 2;
+      final linear = cancelEcho(s.mic, s.ref, delay: 0);
+      final dtd = cancelEcho(s.mic, s.ref, delay: 0, doubleTalkDetect: true);
+
+      final siLinear = siSdrDb(s.near, linear.cleaned, from: half);
+      final siDtd = siSdrDb(s.near, dtd.cleaned, from: half);
+      expect(
+        siDtd,
+        greaterThan(siLinear + 3),
+        reason: 'linear $siLinear dB → DTD $siDtd dB',
+      );
+      expect(dtd.frozenBlocks, greaterThan(0), reason: 'froze on double-talk');
+    });
+
+    test('stays out of the way on far-end single-talk (echo only)', () {
+      final ref = _noise(n, seed: 4);
+      final mic = _echo(ref);
+      final dtd = cancelEcho(mic, ref, delay: 0, doubleTalkDetect: true);
+      final plain = cancelEcho(mic, ref, delay: 0);
+
+      // Rarely freezes with no near-end present…
+      final totalBlocks = mic.length ~/ 1024;
+      expect(
+        dtd.frozenBlocks,
+        lessThan(totalBlocks * 0.1),
+        reason: '${dtd.frozenBlocks}/$totalBlocks blocks frozen',
+      );
+      // …and cancellation is not meaningfully degraded.
+      expect(
+        segmentalErleDb(mic, dtd.cleaned),
+        greaterThan(segmentalErleDb(mic, plain.cleaned) - 3),
+      );
+    });
+
+    test('adapt:false freezes the filter — no learning, no cancellation', () {
+      final ref = _noise(n);
+      final mic = _echo(ref);
+      final aec = EchoCanceller();
+      const blocks = n ~/ 1024;
+      final out = Float64List(blocks * 1024);
+      for (var bi = 0; bi < blocks; bi++) {
+        final from = bi * 1024;
+        final cleaned = aec.process(
+          Float64List.sublistView(ref, from, from + 1024),
+          Float64List.sublistView(mic, from, from + 1024),
+          adapt: false, // never learn
+        );
+        out.setRange(from, from + 1024, cleaned);
+      }
+      // The filter stays at zero ⇒ the echo is essentially untouched.
+      expect(segmentalErleDb(mic, out), lessThan(3));
+    });
+
+    test('streaming exposes frozenBlocks under double-talk', () {
+      final s = scene();
+      final streamer = StreamingEchoCanceller(doubleTalkDetect: true);
+      streamer.addInterleavedPcm16(_interleave(s.mic, s.ref));
+      streamer.flush();
+      expect(streamer.frozenBlocks, greaterThan(0));
     });
   });
 }

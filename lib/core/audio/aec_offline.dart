@@ -224,6 +224,7 @@ class AecResult {
     required this.cleaned,
     required this.erleDb,
     required this.delay,
+    this.frozenBlocks = 0,
   });
 
   /// The cleaned near-end estimate (length = whole blocks × blockSize).
@@ -234,6 +235,77 @@ class AecResult {
 
   /// The reference→mic delay used to align (given or estimated), in samples.
   final int delay;
+
+  /// How many blocks the double-talk detector froze the filter (0 when the DTD
+  /// is off) — a rough "how much near-end was present" indicator.
+  final int frozenBlocks;
+}
+
+/// A double-talk detector: decides, per block, whether to FREEZE the adaptive
+/// filter because near-end speech is present (adapting on it would corrupt the
+/// filter). Patent-free, and it reuses what the canceller already produces — no
+/// echo-path-gain threshold to tune (unlike a Geigel detector).
+///
+/// Statistic: the normalized correlation between the mic and the filter's echo
+/// estimate (`echoEst = mic − cleaned = W·x`). Far-end single-talk → the
+/// estimate tracks the mic → correlation ≈ 1. Double-talk → the near-end enters
+/// the mic but not the estimate → correlation drops. A warmup guard lets the
+/// filter converge first (the estimate is poor early), and a hangover holds the
+/// freeze through brief correlation dips so it doesn't flap.
+class DoubleTalkDetector {
+  DoubleTalkDetector({
+    this.threshold = 0.9,
+    this.hangoverBlocks = 8,
+    this.warmupBlocks = 12,
+    this.farEndFloor = 1e-5,
+  });
+
+  /// Correlation below this ⇒ double-talk.
+  final double threshold;
+
+  /// Hold the freeze this many blocks after a double-talk decision.
+  final int hangoverBlocks;
+
+  /// Always adapt for this many blocks first, so the filter can converge.
+  final int warmupBlocks;
+
+  /// Below this per-sample reference power the far-end is silent (no echo to
+  /// protect against) — the DTD stays out of the way.
+  final double farEndFloor;
+
+  int _block = 0;
+  int _hangover = 0;
+
+  /// Whether the NEXT [EchoCanceller.process] call should freeze (`adapt:
+  /// false`). Read before processing a block, then call [update] after.
+  bool get freeze => _hangover > 0;
+
+  /// Feed a just-processed block (its [reference], [mic] and [cleaned] output)
+  /// to update the freeze state for subsequent blocks.
+  void update(Float64List reference, Float64List mic, Float64List cleaned) {
+    _block += 1;
+    var refMs = 0.0;
+    for (var i = 0; i < reference.length; i++) {
+      refMs += reference[i] * reference[i];
+    }
+    if (refMs / reference.length >= farEndFloor && _block > warmupBlocks) {
+      var dot = 0.0, mm = 0.0, ee = 0.0;
+      for (var i = 0; i < mic.length; i++) {
+        final e = mic[i] - cleaned[i]; // echo estimate W·x
+        dot += mic[i] * e;
+        mm += mic[i] * mic[i];
+        ee += e * e;
+      }
+      final rho = dot / (sqrt(mm * ee) + 1e-12);
+      if (rho < threshold) _hangover = hangoverBlocks;
+    }
+    if (_hangover > 0) _hangover -= 1;
+  }
+
+  void reset() {
+    _block = 0;
+    _hangover = 0;
+  }
 }
 
 /// Cancels the echo of [ref] from [mic] over the whole signal. Aligns [ref] to
@@ -245,6 +317,7 @@ AecResult cancelEcho(
   Float64List ref, {
   int? delay,
   int blockSize = 1024,
+  bool doubleTalkDetect = false,
 }) {
   final d = delay ?? estimateEchoDelay(mic, ref);
   final aligned = Float64List(mic.length);
@@ -253,20 +326,25 @@ AecResult cancelEcho(
     aligned[i] = (j >= 0 && j < ref.length) ? ref[j] : 0;
   }
   final aec = EchoCanceller(blockSize: blockSize);
+  final dtd = doubleTalkDetect ? DoubleTalkDetector() : null;
   final blocks = mic.length ~/ blockSize;
   final out = Float64List(blocks * blockSize);
+  var frozen = 0;
   for (var bi = 0; bi < blocks; bi++) {
     final from = bi * blockSize;
-    final cleaned = aec.process(
-      Float64List.sublistView(aligned, from, from + blockSize),
-      Float64List.sublistView(mic, from, from + blockSize),
-    );
+    final refBlock = Float64List.sublistView(aligned, from, from + blockSize);
+    final micBlock = Float64List.sublistView(mic, from, from + blockSize);
+    final adapt = dtd == null || !dtd.freeze;
+    if (!adapt) frozen += 1;
+    final cleaned = aec.process(refBlock, micBlock, adapt: adapt);
     out.setRange(from, from + blockSize, cleaned);
+    dtd?.update(refBlock, micBlock, cleaned);
   }
   return AecResult(
     cleaned: out,
     erleDb: erleDb(mic, out, length: blocks * blockSize),
     delay: d,
+    frozenBlocks: frozen,
   );
 }
 
@@ -279,9 +357,13 @@ AecResult cancelEcho(
 /// [refDelay] (samples the reference trails the mic); 0 suits a pre-aligned
 /// full-duplex / loopback capture.
 class StreamingEchoCanceller {
-  StreamingEchoCanceller({this.blockSize = 1024, this.refDelay = 0})
-      : assert(refDelay >= 0),
+  StreamingEchoCanceller({
+    this.blockSize = 1024,
+    this.refDelay = 0,
+    bool doubleTalkDetect = false,
+  })  : assert(refDelay >= 0),
         _aec = EchoCanceller(blockSize: blockSize),
+        _dtd = doubleTalkDetect ? DoubleTalkDetector() : null,
         // Seed the reference with `refDelay` zeros so ref[i] lines up with
         // mic[i-refDelay] — the reference arriving delayed relative to the mic.
         _ref = List<double>.filled(refDelay, 0, growable: true);
@@ -289,8 +371,12 @@ class StreamingEchoCanceller {
   final int blockSize;
   final int refDelay;
   final EchoCanceller _aec;
+  final DoubleTalkDetector? _dtd;
   final _mic = <double>[];
   final List<double> _ref;
+
+  /// How many blocks the double-talk detector has frozen the filter.
+  int frozenBlocks = 0;
 
   /// Leftover bytes of a partial stereo frame carried to the next chunk (input
   /// need not arrive on frame boundaries — a pipe can split anywhere).
@@ -343,7 +429,10 @@ class StreamingEchoCanceller {
         micBlock[i] = _mic[i];
         refBlock[i] = _ref[i];
       }
-      final cleaned = _aec.process(refBlock, micBlock);
+      final adapt = _dtd == null || !_dtd.freeze;
+      if (!adapt) frozenBlocks += 1;
+      final cleaned = _aec.process(refBlock, micBlock, adapt: adapt);
+      _dtd?.update(refBlock, micBlock, cleaned);
       final bytes = Uint8List(blockSize * 2);
       final out = ByteData.sublistView(bytes);
       for (var i = 0; i < blockSize; i++) {
