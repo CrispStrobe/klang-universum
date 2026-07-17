@@ -142,8 +142,11 @@ and push to origin/main** before/after touching shared files. Format:
   `engine.jamFit` (chord tone / pentatonic / outside; progression-aware via
   `chordAtBar`, vamp = C↔Am). Mic contention handled (capture stops jam).
   63 slice tests + smoke green pre-push (with pipefail), analyze clean.
-  **Nothing of the ladder remains** — future ideas would be new roadmap
-  items (native AEC full-duplex jam grading, groove→Workshop export).
+  **Nothing of the ladder remains.** The two natural follow-ups (groove→
+  Song Book/Workshop export · native-AEC full-duplex jam grading) are
+  written up as a buildable handover:
+  [`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md`](LOOP_MIXER_FOLLOWUPS_HANDOVER.md)
+  — unclaimed, each is a session-sized effort.
 - **fable (loop-mixer)** · ✅ **SHIPPED — Loop Mixer 2.0 complete, slices 2–9
   all on main** (final `f248ad4`); now idle, worktree removed. One session:
   **engine v2** (`5e5d81b`: GrooveSpec, data patterns, swing, A/B/C variants,
@@ -1119,6 +1122,8 @@ added here as they come up.
 
 **STATUS 2026-07-17: ALL SLICES SHIPPED — the ladder is complete** (slices
 1–10; slice 5 deferred to the Tracker by design). See the board + HISTORY.md.
+Follow-ups (groove→score export, native-AEC jam grading) are specced in
+[`LOOP_MIXER_FOLLOWUPS_HANDOVER.md`](LOOP_MIXER_FOLLOWUPS_HANDOVER.md).
 
 Evolve the shipped Loop Mixer (`32ebb96`) from kid toy into something adults
 find genuinely fascinating. Guiding idea: **kids love cause-and-effect; adults
