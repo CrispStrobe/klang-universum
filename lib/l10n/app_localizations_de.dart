@@ -1384,6 +1384,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerMixer => 'Spuren & Mixer';
 
   @override
+  String get trackerRecordSample => 'Sample aufnehmen';
+
+  @override
+  String get trackerSampleTrim => 'Stille kürzen';
+
+  @override
+  String get trackerSampleNormalize => 'Normalisieren';
+
+  @override
+  String get trackerSampleReverse => 'Umkehren';
+
+  @override
+  String get trackerAssignSample => 'Für diese Spur verwenden';
+
+  @override
   String get trackerBlock => 'Block';
 
   @override

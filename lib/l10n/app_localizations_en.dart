@@ -1377,6 +1377,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerMixer => 'Tracks & mixer';
 
   @override
+  String get trackerRecordSample => 'Record sample';
+
+  @override
+  String get trackerSampleTrim => 'Trim silence';
+
+  @override
+  String get trackerSampleNormalize => 'Normalize';
+
+  @override
+  String get trackerSampleReverse => 'Reverse';
+
+  @override
+  String get trackerAssignSample => 'Use for this track';
+
+  @override
   String get trackerBlock => 'Block';
 
   @override

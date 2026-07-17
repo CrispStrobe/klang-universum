@@ -2672,6 +2672,36 @@ abstract class AppLocalizations {
   /// **'Tracks & mixer'**
   String get trackerMixer;
 
+  /// No description provided for @trackerRecordSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Record sample'**
+  String get trackerRecordSample;
+
+  /// No description provided for @trackerSampleTrim.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim silence'**
+  String get trackerSampleTrim;
+
+  /// No description provided for @trackerSampleNormalize.
+  ///
+  /// In en, this message translates to:
+  /// **'Normalize'**
+  String get trackerSampleNormalize;
+
+  /// No description provided for @trackerSampleReverse.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse'**
+  String get trackerSampleReverse;
+
+  /// No description provided for @trackerAssignSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Use for this track'**
+  String get trackerAssignSample;
+
   /// No description provided for @trackerBlock.
   ///
   /// In en, this message translates to:

@@ -3,7 +3,10 @@
 // play state, track count and pattern length). Mirrors tracker_screen_test.dart.
 
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:flutter/material.dart';
@@ -279,6 +282,28 @@ void main() {
     game.clearBlock();
     await tester.pump();
     expect(game.noteCount, 0);
+  });
+
+  testWidgets('sample editor: an injected clip becomes a track instrument',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    // A synthetic 0.2 s sine (the mic path is device-only; injectRecording is
+    // the device-free seam onto the sample editor).
+    final clip = Float64List(8820);
+    for (var i = 0; i < clip.length; i++) {
+      clip[i] = 0.5 * sin(2 * pi * 220 * i / 44100);
+    }
+    game.injectRecording(0, clip, VoiceEffect.normal);
+    // Placing a note on that track and playing produces audio (no crash).
+    game.setNote(0, 0, 60);
+    game.togglePlay();
+    await tester.pump();
+    expect(game.isPlaying, isTrue);
+    expect(game.noteCount, 1);
+    game.stop();
+    await tester.pump();
   });
 
   testWidgets('imports a real module and can save it to the Song Book',

@@ -33,9 +33,15 @@
 // rectangle (Shift+arrows / tap-mark / select-track / select-pattern) then copy/
 // cut/paste/paste-mix/transpose/clear, via a Block menu AND keyboard shortcuts.
 
+import 'dart:typed_data';
+
+import 'package:comet_beat/core/audio/crisp_dsp/sample_edit.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
+import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
@@ -175,6 +181,10 @@ abstract interface class AdvancedTrackerTester {
   void importModuleBytes(Uint8List bytes);
   bool debugSaveToSongBook(UserSongsService songs);
 
+  /// Assign a recorded/edited [raw] clip (with voice [fx]) to [channel] — the
+  /// device-free path onto the sample editor (the mic is device-only).
+  void injectRecording(int channel, Float64List raw, VoiceEffect fx);
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -193,6 +203,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   // Non-final so a module import can swap in a whole new document.
   TrackerSong _song = TrackerSong();
   final _loop = GaplessLoopPlayer();
+  final _recorder = VoiceClipRecorder();
   final _focus = FocusNode();
 
   /// The musical clock — playback phase derives from it, never the player, so an
@@ -321,6 +332,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _pianoScroll.dispose();
     _focus.dispose();
     _loop.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -948,6 +960,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             toggleSolo(c);
             setSheet(() {});
           }),
+          IconButton(
+            icon: const Icon(Icons.mic, size: 20),
+            tooltip: l10n.trackerRecordSample,
+            onPressed: () async {
+              await _recordSampleSheet(c);
+              setSheet(() {});
+            },
+          ),
           if (_song.channelCount > 1)
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),
@@ -960,6 +980,189 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       ),
     );
   }
+
+  // --- Sample / voice editor (record → effect/trim/normalize → assign) ------
+
+  /// Builds a [SampleInstrument] from raw PCM with the chosen non-destructive
+  /// edits (each returns a new buffer), then the voice effect.
+  SampleInstrument _sampleFrom(
+    Float64List raw, {
+    VoiceEffect fx = VoiceEffect.normal,
+    double stretch = 1.0,
+    bool trim = false,
+    bool normalize = false,
+    bool reverse = false,
+  }) {
+    var pcm = raw;
+    if (stretch != 1.0 && pcm.isNotEmpty) pcm = timeStretch(pcm, stretch);
+    if (trim && pcm.isNotEmpty) pcm = trimSilence(pcm);
+    if (normalize && pcm.isNotEmpty) pcm = normalizePcm(pcm);
+    if (reverse && pcm.isNotEmpty) pcm = reversePcm(pcm);
+    return SampleInstrument.recorded('rec', pcm, fx);
+  }
+
+  void _assignSample(int channel, SampleInstrument inst) {
+    setState(() => _song.setChannelInstrument(channel, inst));
+    _syncPlayback();
+  }
+
+  @override
+  void injectRecording(int channel, Float64List raw, VoiceEffect fx) =>
+      _assignSample(channel, _sampleFrom(raw, fx: fx));
+
+  static const _voiceIcons = <VoiceEffect, IconData>{
+    VoiceEffect.normal: Icons.person,
+    VoiceEffect.chipmunk: Icons.pets,
+    VoiceEffect.monster: Icons.sentiment_very_dissatisfied,
+    VoiceEffect.deep: Icons.waves,
+    VoiceEffect.robot: Icons.smart_toy,
+    VoiceEffect.alien: Icons.blur_on,
+    VoiceEffect.cyborg: Icons.memory,
+    VoiceEffect.radio: Icons.radio,
+    VoiceEffect.demon: Icons.local_fire_department,
+  };
+
+  Future<void> _recordSampleSheet(int channel) async {
+    final l10n = AppLocalizations.of(context)!;
+    Float64List? clip;
+    var recording = false;
+    var fx = VoiceEffect.normal;
+    var stretch = 1.0;
+    var trim = false, normalize = false, reverse = false;
+    String? error;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${l10n.trackerRecordSample} → ${_song.channels[channel].id}',
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  icon: Icon(recording ? Icons.mic : Icons.fiber_manual_record),
+                  label: Text(
+                    recording ? l10n.trackerRecording : l10n.trackerRecord,
+                  ),
+                  onPressed: recording
+                      ? null
+                      : () async {
+                          setSheet(() {
+                            recording = true;
+                            error = null;
+                          });
+                          try {
+                            clip = await _recorder.record();
+                          } catch (_) {
+                            error = l10n.trackerRecordFailed;
+                          } finally {
+                            if (ctx.mounted) setSheet(() => recording = false);
+                          }
+                        },
+                ),
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      error!,
+                      style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                    ),
+                  ),
+                if (clip != null && clip!.isNotEmpty) ...[
+                  const Divider(height: 20),
+                  Text(l10n.trackerVoiceNormal),
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      for (final v in VoiceEffect.values)
+                        ChoiceChip(
+                          avatar: Icon(_voiceIcons[v], size: 18),
+                          label: Text(_voiceLabel(l10n, v)),
+                          selected: fx == v,
+                          onSelected: (_) => setSheet(() => fx = v),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      for (final (label, s) in [
+                        (l10n.trackerSpeedSlow, 1.5),
+                        (l10n.trackerSpeedNormal, 1.0),
+                        (l10n.trackerSpeedFast, 0.6),
+                      ])
+                        ChoiceChip(
+                          label: Text(label),
+                          selected: stretch == s,
+                          onSelected: (_) => setSheet(() => stretch = s),
+                        ),
+                      FilterChip(
+                        label: Text(l10n.trackerSampleTrim),
+                        selected: trim,
+                        onSelected: (v) => setSheet(() => trim = v),
+                      ),
+                      FilterChip(
+                        label: Text(l10n.trackerSampleNormalize),
+                        selected: normalize,
+                        onSelected: (v) => setSheet(() => normalize = v),
+                      ),
+                      FilterChip(
+                        label: Text(l10n.trackerSampleReverse),
+                        selected: reverse,
+                        onSelected: (v) => setSheet(() => reverse = v),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton(
+                      onPressed: () {
+                        _assignSample(
+                          channel,
+                          _sampleFrom(
+                            clip!,
+                            fx: fx,
+                            stretch: stretch,
+                            trim: trim,
+                            normalize: normalize,
+                            reverse: reverse,
+                          ),
+                        );
+                        Navigator.of(ctx).pop();
+                      },
+                      child: Text(l10n.trackerAssignSample),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _voiceLabel(AppLocalizations l10n, VoiceEffect v) => switch (v) {
+        VoiceEffect.normal => l10n.trackerVoiceNormal,
+        VoiceEffect.chipmunk => l10n.trackerVoiceChipmunk,
+        VoiceEffect.monster => l10n.trackerVoiceMonster,
+        VoiceEffect.deep => l10n.trackerVoiceDeep,
+        VoiceEffect.robot => l10n.trackerVoiceRobot,
+        VoiceEffect.alien => l10n.trackerVoiceAlien,
+        VoiceEffect.cyborg => l10n.trackerVoiceCyborg,
+        VoiceEffect.radio => l10n.trackerVoiceRadio,
+        VoiceEffect.demon => l10n.trackerVoiceDemon,
+      };
 
   // --- Per-track instrument picker ---
 
