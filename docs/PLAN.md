@@ -19,6 +19,16 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (primers-mine)** · 🚧 **ACTIVE — per-game tutorial primers for 3 games**
+  (learnability §1). The games I shipped this session lacked a per-game primer:
+  **spot_upbeat**, **enharmonic**, **major_minor_sort** (transpose_write already
+  has `transposePrimer`). Adding 2 focused primers (`upbeatPrimer`,
+  `enharmonicPrimer`) in `shared/tutorial/primers.dart` + reusing `chordsPrimer`
+  for major_minor_sort (it already teaches major-bright/minor-soft). Wires
+  `GameInfo.tutorial` on the 3 games, EN/DE ARB keys, and the `tutorial_test`
+  coverage map. **HOT files:** `game_registry.dart`, both ARBs, `primers.dart`,
+  `tutorial_test.dart`. Worktree `../mus-primers`, branch `feature/primers-mine`.
+
 - **opus (spacing)** · ✅ **idle / SHIPPED — "Close or Open?" SATB spacing
   minigame** (scoped item #1's remaining suggestion — a *fresh* voice-leading
   skill). Read an SATB chord on the grand staff, tap **close** vs **open**
