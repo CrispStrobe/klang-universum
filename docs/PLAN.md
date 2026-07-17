@@ -82,7 +82,18 @@ and push to origin/main** before/after touching shared files. Format:
   of the BlackHole rig, runnable in CI. **No app screens / ARBs / Workshop /
   native plugin touched.**
 
-- **opus (parity)** · ✅ **idle / SHIPPED — value strip un-dual-purposed**
+- **opus (parity)** · 🚧 **ACTIVE — PDF export** (bucket G's last open item; the
+  maintainer OK'd the new dep). **No library change needed** — `SystemLayout.
+  layout` *is* a `ScoreLayout`, and `renderLayoutToPng` takes one, so: core's
+  `layoutPages(score, settings, metrics: PageMetrics)` line-breaks + paginates,
+  each `PositionedSystem` renders to a PNG, and the app composes real A4 pages
+  with the `pdf` package (all coords are staff-spaces → points via one spatium).
+  Raster-per-system, because the SVG path embeds `@font-face` text that the pdf
+  package can't parse and Bravura is CFF/OTF (its TTF parser won't embed it).
+  Worktree `../mus-parity`. **Files:** `pubspec.yaml` (+`pdf`), NEW
+  `lib/features/workshop/export/score_pdf.dart`, `composition_workshop_screen.dart`
+  (`kExportFormats` + `_generateExport`), NEW `test/score_pdf_test.dart`.
+- **opus (parity)** · ✅ **SHIPPED — value strip un-dual-purposed**
   (Cause 2's other grievance). The strip stays deliberately dual-purpose on
   **Sandbox** (arm the next note *and* fix the selected one — forgiving, what kids
   expect; unchanged, no regression). **Studio** honours the input mode instead:
