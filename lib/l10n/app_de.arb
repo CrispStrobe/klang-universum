@@ -319,6 +319,7 @@
   "trackerChannelVoice": "Stimme",
   "trackerToggleNotation": "Noten zeigen",
   "trackerImportTune": "Melodie laden",
+  "trackerDemoTune": "Kurze Melodie (C D E G)",
   "trackerChangeInstrument": "Instrument wechseln",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",

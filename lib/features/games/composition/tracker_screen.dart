@@ -30,6 +30,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/loop_player_service.dart';
 import 'package:klang_universum/features/games/composition/tracker_notation.dart';
 import 'package:klang_universum/features/games/note_reading/note_colors.dart';
+import 'package:klang_universum/features/games/songs/song_book.dart';
 import 'package:klang_universum/features/games/widgets/game_app_bar.dart';
 import 'package:klang_universum/l10n/app_localizations.dart';
 import 'package:klang_universum/shared/score_theme.dart';
@@ -94,6 +95,9 @@ abstract interface class TrackerTester {
 
   /// Imports the built-in demo tune into the melody channel (Score → Tracker).
   void importDemo();
+
+  /// Imports a built-in song book tune (by id) into the melody channel.
+  void importSong(String id);
 
   /// The id of the selected channel's current instrument.
   String get selectedInstrumentId;
@@ -204,7 +208,10 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   void toggleNotation() => setState(() => _showNotation = !_showNotation);
   @override
-  void importDemo() => _importDemo();
+  void importDemo() => _importScore(kTrackerDemoTune);
+  @override
+  void importSong(String id) =>
+      _importScore(kSongs.firstWhere((s) => s.id == id).score);
   @override
   String get selectedInstrumentId => _engine.channels[_selected].instrument.id;
   @override
@@ -215,15 +222,60 @@ class _TrackerScreenState extends State<TrackerScreen>
     _syncPlayback();
   }
 
-  /// Fills the melody channel (index 0 — treble, so the demo's octave-4 notes
-  /// land exactly on its grid) from the built-in tune, and switches to it.
-  void _importDemo() {
+  /// Imports [score] onto the melody channel (index 0 — treble, so octave-4
+  /// notes land on its grid) and switches to it. Partial: it quantizes to the
+  /// grid and keeps only the first bar (see [scoreToTrackerCells]).
+  void _importScore(Score score) {
     _engine.setChannelCells(
       0,
-      scoreToTrackerCells(kTrackerDemoTune, _engine.timing),
+      scoreToTrackerCells(score, _engine.timing),
     );
     setState(() => _selected = 0);
     _syncPlayback();
+  }
+
+  /// The song picker — the Workshop ↔ Tracker bridge: the built-in song book
+  /// (shared with the Workshop / Song Book) plus a simple demo tune. Importing a
+  /// real tune drops its opening bar onto the grid to remix.
+  void _showSongSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext)!;
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.trackerImportTune,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.music_note),
+                title: Text(l10n.trackerDemoTune),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _importScore(kTrackerDemoTune);
+                },
+              ),
+              for (final song in kSongs)
+                ListTile(
+                  leading: const Icon(Icons.library_music),
+                  title: Text(song.title),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _importScore(song.score);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   /// Voices the recorded [raw] (+ [fx]) onto the voice channel and switches to
@@ -496,7 +548,7 @@ class _TrackerScreenState extends State<TrackerScreen>
           IconButton(
             icon: const Icon(Icons.library_music),
             tooltip: l10n.trackerImportTune,
-            onPressed: _importDemo,
+            onPressed: _showSongSheet,
           ),
           IconButton(
             icon: Icon(_showNotation ? Icons.grid_view : Icons.music_note),

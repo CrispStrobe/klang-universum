@@ -58,8 +58,11 @@ and push to origin/main** before/after touching shared files. Format:
   presets. ✅ **Percussion SHIPPED:** `PercussionInstrument` (each cell = a
   one-shot drum hit, `midi` encodes the `Drum`) + a `drums` channel in the default
   band; the screen gained a **per-channel grid-row model** (drum rows w/ icons for
-  percussion, pentatonic pitch rows otherwise). 🚧 **Now working:** arrangement/
-  order-list + Workshop↔Tracker handoff. Handover:
+  percussion, pentatonic pitch rows otherwise). ✅ **Workshop↔Tracker handoff
+  SHIPPED:** the "Load a tune" action is now a **song picker over the shared
+  `kSongs` book** (Alle meine Entchen / Twinkle / …) — import a real tune's opening
+  bar onto the grid to remix (via `scoreToTrackerCells`; partial by design). 🚧
+  **Now working:** arrangement / order-list (song mode). Handover:
   [`docs/TRACKER_HANDOVER.md`](TRACKER_HANDOVER.md).
 - **opus (parity)** · ✅ **idle / SHIPPED — notation-depth batch (voltas/nav, tuplets, discontiguous selection, RhythmPolicy.split).**
   Working through the tracked roadmap in

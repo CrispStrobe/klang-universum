@@ -350,6 +350,7 @@
   "trackerChannelVoice": "Voice",
   "trackerToggleNotation": "Show notation",
   "trackerImportTune": "Load a tune",
+  "trackerDemoTune": "Simple tune (C D E G)",
   "trackerChangeInstrument": "Change instrument",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",

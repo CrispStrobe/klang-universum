@@ -950,6 +950,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerImportTune => 'Load a tune';
 
   @override
+  String get trackerDemoTune => 'Simple tune (C D E G)';
+
+  @override
   String get trackerChangeInstrument => 'Change instrument';
 
   @override

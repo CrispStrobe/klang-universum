@@ -1838,6 +1838,12 @@ abstract class AppLocalizations {
   /// **'Load a tune'**
   String get trackerImportTune;
 
+  /// No description provided for @trackerDemoTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple tune (C D E G)'**
+  String get trackerDemoTune;
+
   /// No description provided for @trackerChangeInstrument.
   ///
   /// In en, this message translates to:

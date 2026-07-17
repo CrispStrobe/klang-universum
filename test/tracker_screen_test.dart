@@ -169,4 +169,18 @@ void main() {
     expect(game.isPlaying, isTrue);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('importing a song book tune fills the melody channel',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+
+    game.importSong('alle_meine_entchen');
+    await tester.pump();
+
+    // Its opening bar landed on the grid.
+    expect(game.noteCount, greaterThan(0));
+    expect(game.selectedChannel, 0); // melody
+    expect(tester.takeException(), isNull);
+  });
 }

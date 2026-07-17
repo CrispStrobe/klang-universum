@@ -954,6 +954,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerImportTune => 'Melodie laden';
 
   @override
+  String get trackerDemoTune => 'Kurze Melodie (C D E G)';
+
+  @override
   String get trackerChangeInstrument => 'Instrument wechseln';
 
   @override
