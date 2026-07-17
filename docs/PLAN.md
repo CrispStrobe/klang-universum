@@ -88,10 +88,15 @@ and push to origin/main** before/after touching shared files. Format:
     drift-prone tempo×swing grid; a new seam test pins the send steady state.
   **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
 
-- **opus (aec-rate)** · ✅ **idle / SHIPPED (layer 1 of 4) — self-tuning AEC:
+- **opus (aec-rate)** · ✅ **idle / SHIPPED (layers 1–2 of 4) — self-tuning AEC:
   Valin closed-loop learning rate** (the "how do we tune automatically" answer).
-  Arc continues: (2) C port, (3) real corpus, (4) CMA-ES sweep — see tail of
-  this entry. Layer 1 detail: Instead of hand-picking
+  **Layer 2 (C port) DONE** (`610acb2`): `AecRate` in `native/aec/src/aec_dsp.c`
+  mirrors the Dart `AdaptiveLearningRate`; attach via `aec_dsp_set_rate` (NULL =
+  fixed-`mu` path, byte-identical — the property `aec_erle_test` pins). FFI
+  binding + 2 new cross-check tests (adaptive protects near-end; detach →
+  bit-identical). NOT wired into `aec_shim`/`aec_engine` (no app consumer; that's
+  on-device milestone (e)). Remaining: (3) real corpus, (4) CMA-ES sweep.
+  Layer 1 detail: Instead of hand-picking
   `mu`, the filter derives its own step per bin per block from its live leakage
   estimate — Valin, "On Adjusting the Learning Rate in Frequency Domain Echo
   Cancellation With Double-Talk" (IEEE TASLP 2007, arXiv:1602.08044), written
