@@ -57,6 +57,10 @@ class SfxrParams {
     this.distortion = 0,
     this.bitCrush = 0,
     this.soundVol = 0.5,
+    this.fmDepth = 0,
+    this.fmRatio = 2,
+    this.lfoDepth = 0,
+    this.lfoSpeed = 0.2,
   });
 
   final int waveType;
@@ -72,6 +76,12 @@ class SfxrParams {
   final double subBass;
   final double distortion, bitCrush;
   final double soundVol;
+
+  /// FM: a sine modulator at [fmRatio] × the carrier frequency modulates the
+  /// carrier by ±[fmDepth] × carrier — metallic/bell timbres. Applied only when
+  /// fmDepth > 0. LFO: a tremolo at [lfoSpeed] (×20 Hz) dips the amplitude by up
+  /// to [lfoDepth] — applied only when lfoDepth > 0.
+  final double fmDepth, fmRatio, lfoDepth, lfoSpeed;
 
   SfxrParams copyWith({double? baseFreq}) => SfxrParams(
         waveType: waveType,
@@ -95,6 +105,10 @@ class SfxrParams {
         distortion: distortion,
         bitCrush: bitCrush,
         soundVol: soundVol,
+        fmDepth: fmDepth,
+        fmRatio: fmRatio,
+        lfoDepth: lfoDepth,
+        lfoSpeed: lfoSpeed,
       );
 }
 
@@ -200,6 +214,11 @@ Float64List sfxrGenerate(
       cur += v * params.vibStrength * cur * 0.1;
     }
 
+    // FM: a sine modulator at fmRatio × the carrier deviates the frequency.
+    if (params.fmDepth > 0) {
+      cur += sin(2 * pi * params.fmRatio * cur * t) * params.fmDepth * cur;
+    }
+
     if (params.dutyRamp != 0) {
       dutyCycle = _clamp(dutyCycle + params.dutyRamp * 0.0001, 0.01, 0.99);
     }
@@ -250,6 +269,14 @@ Float64List sfxrGenerate(
       final bits = (16 - params.bitCrush * 15).floor();
       final levels = pow(2, bits).toDouble();
       s = (s * levels).floor() / levels;
+    }
+
+    // LFO tremolo: dip the amplitude by up to lfoDepth at lfoSpeed.
+    if (params.lfoDepth > 0) {
+      final trem = 1 -
+          params.lfoDepth *
+              (0.5 - 0.5 * sin(2 * pi * params.lfoSpeed * 20 * t));
+      env *= trem;
     }
 
     s = _clamp(s, -1, 1);
@@ -356,6 +383,19 @@ SfxrParams sfxrClick(Random r) => SfxrParams(
       hpfFreq: 0.2 + r.nextDouble() * 0.3,
     );
 
+/// An FM/LFO showcase: a sine carrier with a harmonic-ratio FM modulator (metallic
+/// bell partials) and a gentle tremolo LFO.
+SfxrParams sfxrBell(Random r) => SfxrParams(
+      waveType: SfxrWave.sine,
+      baseFreq: 0.4 + r.nextDouble() * 0.3,
+      sustain: 0.02,
+      decay: 0.3 + r.nextDouble() * 0.4,
+      fmDepth: 0.3 + r.nextDouble() * 0.4,
+      fmRatio: 2 + (r.nextDouble() * 3).floorToDouble(),
+      lfoDepth: 0.1 + r.nextDouble() * 0.2,
+      lfoSpeed: 0.15 + r.nextDouble() * 0.2,
+    );
+
 /// The named preset palette (for instrument pickers / tests).
 const Map<String, SfxrPreset> kSfxrPresets = {
   'coin': sfxrCoin,
@@ -367,4 +407,5 @@ const Map<String, SfxrPreset> kSfxrPresets = {
   'blip': sfxrBlip,
   'zap': sfxrZap,
   'click': sfxrClick,
+  'bell': sfxrBell,
 };
