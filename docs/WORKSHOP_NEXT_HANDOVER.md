@@ -178,13 +178,16 @@ of attributes now — that's the signal these are due.
   (FilterChips), dynamic + ornament dropdowns, and buttons to the grace +
   change-here dialogs — reusing the `_doc` mutators. The ⌃ palette stays for quick
   actions. **Remaining inspector work:** multi-select and rest/bar-attribute views;
-  categorized *insertion* palettes; a real Sandbox/Studio **shelf toggle** (right
-  now the inspector is the only Studio-tier surface and it's gated by its own
-  menu item, not a shelf).
+  categorized *insertion* palettes.
 
-**These two are where the "Studio shelf" gets built** (`WORKSHOP_PARITY.md`
-§"The strategic tension" — two shelves, Sandbox + Studio, on one document). Keep
-the kid Sandbox surface unchanged; reveal Studio depth behind a toggle.
+**The "Studio shelf" is built** ✅ (`5d467dc`, `WORKSHOP_PARITY.md` §"The strategic
+tension" — two shelves, Sandbox + Studio, on one document). A `_Shelf { sandbox,
+studio }` toggle (⋮ menu, default Sandbox) hides the Studio-tier controls (voice
+toggle, input-mode toggle, inspector) on the kid surface and reveals them together
+in Studio; leaving Studio resets those to their Sandbox defaults. **What's left is
+polish, not architecture:** richer inspector, insertion palettes, keyboard-first
+navigation in select mode, un-dual-purposing the value strip, page/print view, PDF
+export. The capability-parity-with-progressive-disclosure goal is met.
 
 ### Playback (bucket F — high user value, mostly wiring)
 

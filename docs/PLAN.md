@@ -65,15 +65,18 @@ and push to origin/main** before/after touching shared files. Format:
   of the BlackHole rig, runnable in CI. **No app screens / ARBs / Workshop /
   native plugin touched.**
 
-- **opus (parity)** · 🚧 **ACTIVE — Sandbox/Studio shelf toggle** (the two-shelves
-  capstone, `WORKSHOP_PARITY.md` §"strategic tension"). One `_Shelf { sandbox,
-  studio }` switch (⋮ menu, default Sandbox = kid surface): Sandbox hides the
-  Studio-tier controls (voice V1/V2 toggle, Insert/Select mode toggle, inspector)
-  so the kid surface is simple; Studio reveals them. Leaving Studio resets input
-  mode→insert, inspector→off, active voice→0 (so Sandbox never gets stuck).
-  Worktree `../mus-parity`, branch `feature/workshop-parity`. **HOT:** `screens/
-  composition_workshop_screen.dart`, **both ARBs**; existing voice2/select-mode/
-  inspector widget tests updated to enter Studio first. Additive, small commit.
+- **opus (parity)** · ✅ **idle / SHIPPED — Sandbox/Studio shelf toggle**
+  (`5d467dc`, the two-shelves capstone). One `_Shelf { sandbox, studio }` switch
+  (⋮ menu, default Sandbox): Sandbox hides the Studio-tier controls (V1/V2 voice
+  toggle, Insert/Select mode toggle, inspector) → simple kid surface; Studio
+  reveals them all together. Leaving Studio resets input mode→insert,
+  inspector→off, active voice→0. **This closes the Studio-shell arc** — voice 2,
+  the inspector (Cause 3), input modes (Cause 2) and now the shelf that unifies
+  them. EN/DE; widget tests (Sandbox hides / Studio reveals; the depth-control
+  tests enter Studio first). **The WORKSHOP_PARITY.md arc is now substantially
+  complete** (A–G + the two shelves); remaining is polish — richer inspector
+  (multi-select/rests/bar attrs), insertion palettes, keyboard-first nav in
+  select mode, page/print view, PDF. Next agent: see `WORKSHOP_NEXT_HANDOVER.md`.
 - **opus (parity)** · ✅ **SHIPPED — Studio shell Causes 2+3.** **Cause 2
   (input modes)** `8526bc0`: an `_InputMode { insert, select }` on the screen,
   default insert (= today). Select mode makes empty-staff taps deselect (not
