@@ -37,18 +37,20 @@ and push to origin/main** before/after touching shared files. Format:
   ARBs (`trackerBorrowSample`/`trackerBorrowEmpty`) + regenerated l10n. Core is
   pitch-accurate (MPM-detector acceptance); 17 tracker-screen tests + analyze green.
 
-- **opus (workshop-inspector)** · 🚧 **ACTIVE — voice-2 dynamics + lyrics
-  (silent-loss fix)**. MODEL-only, `lib/features/workshop/model/score_document.dart`
-  (NOT the screen — no overlap with studio-polish). `buildScore` harvests
-  dynamics/lyrics from voice 1 only, and `loadScore`'s voice-2 loop neither applies
-  dynamics nor records the `remap` lyrics/slurs re-anchor through — so a
-  dynamic/lyric set on a voice-2 note is stored but never rendered and lost on
-  reopen. crisp_notation already resolves markings by id across voices (verified:
-  `layout_spans.dart:284`, `layout_annotations.dart:122`), so the fix is ours:
-  harvest both voices in `buildScore`, apply dynamics + populate `remap` for v2 in
-  `loadScore`. Empty-v2 fast path keeps single-voice goldens byte-identical. Test:
-  `test/voice2_markings_test.dart` (build→assert Score.dynamics/lyrics carry the v2
-  id; loadScore→recover; byte-identity). Worktree `../mus-workshop-inspector`.
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 dynamics + lyrics
+  render and round-trip** (`9163d19`, closes a voice-2 v1-limit / silent-loss bug).
+  MODEL-only (`score_document.dart`; no screen overlap). `buildScore` now harvests
+  dynamics + lyrics from `[..._v1, ..._v2]`, and `loadScore`'s voice-2 loop applies
+  `dynamics[el.id]` + records `remap[old]=new` so id-keyed lyrics/slurs re-anchor
+  onto voice 2. crisp_notation resolves markings by id across voices
+  (`layout_spans.dart:284`, `layout_annotations.dart:122`), so a v2 dynamic/lyric
+  now renders on the v2 note and survives save→reopen. Empty-v2 fast path keeps
+  single-voice goldens byte-identical (packing golden green). Snapshots already
+  capture `_v1/_v2/_lyrics`, so undo is free. `test/voice2_markings_test.dart` (4
+  tests); 187 Workshop-model tests + analyze green. **Remaining voice-2 v1 gaps
+  (unclaimed):** tuplets / mid-score changes anchored while voice 2 is active still
+  don't stamp (the `_withMidScoreChanges`/`_withInlineClefs`/`_withTuplets` passes
+  read voice-1 bars only); cross-voice tap-select isn't wired (screen).
 
 - **opus (studio-polish)** · ✅ **idle / SHIPPED — categorized ⌃ insertion palette**
   (remaining-work item 3, the palette half; `opus (workshop-inspector)` did the
