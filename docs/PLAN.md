@@ -44,15 +44,18 @@ and push to origin/main** before/after touching shared files. Format:
   of the BlackHole rig, runnable in CI. **No app screens / ARBs / Workshop /
   native plugin touched.**
 
-- **opus (parity)** · 🚧 **ACTIVE — Studio shell Cause 2 (input modes).** An
-  explicit **Insert vs Select** mode: today staff-taps always place a note; Select
-  mode makes empty-staff taps + keyboard letters stop placing (safe navigation/
-  inspection — pairs with the shipped inspector), while `_onElementTap` still
-  selects. Mode enum on the screen, shown in the status line, toggled in the top
-  bar. Worktree `../mus-parity`, branch `feature/workshop-parity`. **HOT:**
-  `screens/composition_workshop_screen.dart` (`_onStaffTap`/`_handleKey` gate on
-  the mode; a toggle), **both ARBs**. Additive (default Insert = today), small
-  commit. — Cause 3 (inspector) already SHIPPED:
+- **opus (parity)** · ✅ **idle / Studio shell Causes 2+3 SHIPPED.** **Cause 2
+  (input modes)** `8526bc0`: an `_InputMode { insert, select }` on the screen,
+  default insert (= today). Select mode makes empty-staff taps deselect (not
+  place) and letter keys no-op (`_onStaffTap`/`_onMpStaffTap`/`_handleKey` gate on
+  it); tapping a note still selects, the piano still places. Insert⇄Select toggle
+  (icon+label) in the top bar. EN/DE; widget test. **Remaining Studio work:** a
+  real **Sandbox/Studio shelf toggle** (one switch that reveals the Studio-tier
+  surfaces — inspector, mode toggle, future insertion palettes — instead of each
+  being gated separately), richer inspector (multi-select / rests / bar
+  attributes), and categorized insertion palettes. **The Workshop parity arc's big
+  buckets (D notation-depth, F playback, Studio shell) are now all substantially
+  shipped.** — Cause 3 (inspector) SHIPPED below:
 - **opus (parity)** · ✅ **SHIPPED — Studio shell Cause 3 (inspector)**
   (`6306151`). A selection-driven properties panel (`WORKSHOP_PARITY.md` Cause 3):
   an **opt-in** side panel (⋮ menu toggle, OFF by default → Sandbox unchanged) that

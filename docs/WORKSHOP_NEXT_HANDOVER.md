@@ -162,12 +162,15 @@ These are **not** notation attributes; they're the editor's interaction model,
 and the biggest remaining lift. The palette popup is straining under the number
 of attributes now — that's the signal these are due.
 
-- **Cause 2 — input modes.** An explicit *insert* vs *select/object* state
-  machine. Today the staff is always live for placement and the value strip is
-  dual-purpose (arming the next note *and* rewriting the selection). Real
-  keyboard-first entry needs the separation. Rides on the caret (already an
-  address via `caretBeforeId`). Design it as a mode enum on the screen with the
-  status line always showing the current mode.
+- **Cause 2 — input modes.** ✅ **FIRST SLICE SHIPPED** (`8526bc0`). An
+  `_InputMode { insert, select }` on the screen, default insert. In select mode
+  empty-staff taps deselect instead of placing (`_onStaffTap`/`_onMpStaffTap`) and
+  letter keys no-op (`_handleKey`); tapping a note still selects, and the explicit
+  piano keyboard still places in either mode. An Insert⇄Select toggle (icon+label)
+  in the top bar keeps the mode visible. **Remaining:** keyboard-first *navigation*
+  in select mode (letter keys currently just no-op — could jump the caret), and
+  un-dual-purposing the value strip (picking a duration both arms the next note
+  *and* rewrites the selection — the doc's other Cause-2 grievance).
 - **Cause 3 — the inspector.** ✅ **FIRST SLICE SHIPPED** (`6306151`). An opt-in
   selection-driven panel (`_inspectorPanel`), docked right of the canvas
   (`Row[canvas, panel]`), toggled from the ⋮ view menu, **OFF by default** so the
