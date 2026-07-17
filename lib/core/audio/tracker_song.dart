@@ -89,6 +89,31 @@ class TrackerSong {
     return TrackerSong._(engine, patterns, [0], 0);
   }
 
+  /// Builds a song directly from prepared [channels] + [patterns] + [order] —
+  /// the shape a module importer produces (see tracker_song_module.dart). Every
+  /// pattern must be channel-major with `channels.length` columns of
+  /// `timing.rows` cells.
+  factory TrackerSong.fromParts({
+    required List<TrackerChannel> channels,
+    required TrackerTiming timing,
+    required List<TrackerPattern> patterns,
+    required List<int> order,
+  }) {
+    final engine = TrackerEngine(channels: channels, timing: timing);
+    final pats = patterns.isEmpty
+        ? [
+            TrackerPattern.empty(
+              name: '00',
+              channels: channels.length,
+              rows: timing.rows,
+            ),
+          ]
+        : patterns;
+    engine.importCells(pats.first.cells);
+    final ord = order.isEmpty ? [0] : List<int>.of(order);
+    return TrackerSong._(engine, pats, ord, 0);
+  }
+
   TrackerEngine _engine;
   TrackerEngine get engine => _engine;
 

@@ -2,7 +2,10 @@
 // (audio is a no-op in the headless binding — assertions are on placed notes,
 // play state, track count and pattern length). Mirrors tracker_screen_test.dart.
 
+import 'dart:io';
+
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -231,5 +234,22 @@ void main() {
     game.toggleSolo(1);
     await tester.pump();
     expect(game.isSoloed(1), isFalse);
+  });
+
+  testWidgets('imports a real module and can save it to the Song Book',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    final bytes = File('test/fixtures/golden.mod').readAsBytesSync();
+    game.importModuleBytes(bytes);
+    await tester.pump();
+    // The imported module replaced the default document with real content.
+    expect(game.patternCount, greaterThanOrEqualTo(1));
+    expect(game.noteCount, greaterThan(0));
+
+    final songs = UserSongsService();
+    expect(game.debugSaveToSongBook(songs), isTrue);
+    expect(songs.songs, isNotEmpty);
   });
 }

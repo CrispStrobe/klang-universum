@@ -30,11 +30,17 @@
 
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
+import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
+import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:crisp_notation/crisp_notation.dart'
+    show MultiPartScore, multiPartToMusicXml;
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -132,12 +138,17 @@ abstract interface class AdvancedTrackerTester {
   bool isSoloed(int channel);
   void toggleMute(int channel);
   void toggleSolo(int channel);
+
+  /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
+  void importModuleBytes(Uint8List bytes);
+  bool debugSaveToSongBook(UserSongsService songs);
 }
 
 class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     with SingleTickerProviderStateMixin
     implements AdvancedTrackerTester {
-  final _song = TrackerSong();
+  // Non-final so a module import can swap in a whole new document.
+  TrackerSong _song = TrackerSong();
   final _loop = GaplessLoopPlayer();
   final _focus = FocusNode();
 
@@ -697,6 +708,83 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         MaterialPageRoute(builder: (_) => const TrackerScreen()),
       );
 
+  // --- Import / export (reuses the existing module + notation bridges) ---
+
+  void _replaceSong(TrackerSong song) {
+    _stop();
+    setState(() {
+      _song = song;
+      _cursorChannel = 0;
+      _cursorRow = 0;
+    });
+  }
+
+  @override
+  void importModuleBytes(Uint8List bytes) =>
+      _replaceSong(songFromModuleBytes(bytes));
+
+  Future<void> _importModule() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = AppLocalizations.of(context)!.trackerModFailed;
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(
+            label: 'Module',
+            extensions: ['mod', 'xm', 's3m', 'it'],
+          ),
+        ],
+      );
+      if (file == null || !mounted) return;
+      importModuleBytes(await file.readAsBytes());
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
+  }
+
+  /// Writes the current pattern's pitched channels to the Song Book as
+  /// multi-part MusicXML (mirrors the Beginner screen). Returns false when
+  /// nothing pitched is placed.
+  bool _writeToSongBook(UserSongsService songs, String title) {
+    final parts = trackerToScoreParts(_song.engine.channels, _song.timing);
+    if (parts.isEmpty) return false;
+    final names = [
+      for (final c in _song.engine.channels)
+        if (c.hasAnyNote && c.instrument is! PercussionInstrument)
+          c.instrument.id,
+    ];
+    songs.addSong(
+      ImportedSong(
+        id: 'tracker-adv-${DateTime.now().millisecondsSinceEpoch}',
+        title: title,
+        musicXml: multiPartToMusicXml(MultiPartScore(parts), partNames: names),
+      ),
+    );
+    return true;
+  }
+
+  @override
+  bool debugSaveToSongBook(UserSongsService songs) => _writeToSongBook(
+        songs,
+        AppLocalizations.of(context)!.trackerAdvancedTitle,
+      );
+
+  Future<void> _saveToSongBook() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final saved = _writeToSongBook(
+      context.read<UserSongsService>(),
+      l10n.trackerAdvancedTitle,
+    );
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(saved ? l10n.trackerSavedSong : l10n.trackerSaveEmpty),
+      ),
+    );
+  }
+
   // --- Build ---
 
   @override
@@ -720,6 +808,39 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: l10n.trackerClear,
             onPressed: _clearAll,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) {
+              switch (v) {
+                case 'import':
+                  _importModule();
+                case 'saveSong':
+                  _saveToSongBook();
+              }
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    const Icon(Icons.library_music, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.trackerImportMod),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'saveSong',
+                child: Row(
+                  children: [
+                    const Icon(Icons.bookmark_add_outlined, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.trackerSaveSong),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
