@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:klang_universum/core/audio/mod/mod.dart';
 import 'package:klang_universum/core/audio/tracker_engine.dart'
     show TrackerEffect;
 import 'package:klang_universum/features/games/composition/tracker_screen.dart';
@@ -253,6 +254,33 @@ void main() {
     game.setNoteEffect(0, 0, TrackerEffect.vibrato);
     await tester.pump();
     expect(game.effectAt(0), TrackerEffect.vibrato);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a MOD imports into the tracker and re-exports', (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+
+    // A tiny 1-channel module with a note on row 0.
+    final rows = List.generate(64, (_) => <ModCell>[const ModCell()]);
+    rows[0] = [const ModCell(sample: 1, period: 428)];
+    final mod = ModModule(
+      channelCount: 1,
+      samples: [
+        ModSample(name: 's', pcm: Int8List.fromList([0, 50, -50])),
+        for (var i = 1; i < 31; i++) ModSample.empty(),
+      ],
+      order: const [0],
+      patterns: [ModPattern(rows)],
+    );
+
+    game.importModModule(mod);
+    await tester.pump();
+    expect(game.noteCount, greaterThan(0)); // the note landed on the grid
+
+    // Export re-parses as a valid module (round-trips through the codec).
+    final back = parseMod(game.exportModBytes());
+    expect(back.channelCount, greaterThanOrEqualTo(1));
     expect(tester.takeException(), isNull);
   });
 

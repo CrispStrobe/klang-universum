@@ -1988,6 +1988,24 @@ abstract class AppLocalizations {
   /// **'Slide down'**
   String get trackerEffectSlideDown;
 
+  /// No description provided for @trackerImportMod.
+  ///
+  /// In en, this message translates to:
+  /// **'Import .mod…'**
+  String get trackerImportMod;
+
+  /// No description provided for @trackerExportMod.
+  ///
+  /// In en, this message translates to:
+  /// **'Export .mod…'**
+  String get trackerExportMod;
+
+  /// No description provided for @trackerModFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read/write that .mod.'**
+  String get trackerModFailed;
+
   /// No description provided for @trackerSfxrZap.
   ///
   /// In en, this message translates to:

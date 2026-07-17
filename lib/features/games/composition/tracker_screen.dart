@@ -18,11 +18,14 @@
 // hangs off the same TrackerEngine document later — see docs/TRACKER_HANDOVER.md.
 
 import 'package:crisp_notation/crisp_notation.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart';
 import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:klang_universum/core/audio/mod/mod.dart';
+import 'package:klang_universum/core/audio/mod/mod_bridge.dart';
 import 'package:klang_universum/core/audio/synth.dart' show Drum;
 import 'package:klang_universum/core/audio/tracker_engine.dart';
 import 'package:klang_universum/core/audio/voice_clip_recorder.dart';
@@ -126,6 +129,12 @@ abstract interface class TrackerTester {
   /// Sets/reads the per-note effect at ([row], [step]) on the selected channel.
   void setNoteEffect(int row, int step, TrackerEffect effect);
   TrackerEffect effectAt(int step);
+
+  /// Loads a parsed MOD module (the mic-less/file-less test path).
+  void importModModule(ModModule mod);
+
+  /// The current song serialized to MOD bytes.
+  Uint8List exportModBytes();
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -302,6 +311,10 @@ class _TrackerScreenState extends State<TrackerScreen>
       _setCellEffect(step, effect);
   @override
   TrackerEffect effectAt(int step) => _engine.cellAt(_selected, step).effect;
+  @override
+  void importModModule(ModModule mod) => _loadMod(mod);
+  @override
+  Uint8List exportModBytes() => writeMod(_currentAsMod());
 
   bool _slotEmpty(List<List<TrackerCell>> snap) =>
       snap.every((ch) => ch.every((c) => c.isEmpty));
@@ -358,6 +371,102 @@ class _TrackerScreenState extends State<TrackerScreen>
     );
     setState(() => _selected = 0);
     _syncPlayback();
+  }
+
+  // ── MOD import / export ────────────────────────────────────────────────────
+
+  /// Loads a parsed [mod] into the tracker: re-voices channels from the module's
+  /// samples and fills the pattern slots (partial — see mod_bridge.dart).
+  void _loadMod(ModModule mod) {
+    final imp = modToTracker(mod, rows: _engine.rows);
+    final chN = _engine.channels.length;
+    for (var c = 0; c < imp.channelCount && c < chN; c++) {
+      _engine.setChannelInstrument(c, imp.channelInstruments[c]);
+    }
+    List<List<TrackerCell>> emptySnap() => [
+          for (var c = 0; c < chN; c++)
+            List<TrackerCell>.filled(
+              _engine.rows,
+              TrackerCell.empty,
+              growable: true,
+            ),
+        ];
+    List<List<TrackerCell>> fullSnap(List<List<TrackerCell>> p) => [
+          for (var c = 0; c < chN; c++)
+            c < p.length
+                ? List<TrackerCell>.of(p[c])
+                : List<TrackerCell>.filled(
+                    _engine.rows,
+                    TrackerCell.empty,
+                    growable: true,
+                  ),
+        ];
+    for (var s = 0; s < _slotCount; s++) {
+      _slots[s] =
+          s < imp.patterns.length ? fullSnap(imp.patterns[s]) : emptySnap();
+    }
+    _engine.importCells(_slots[0]);
+    setState(() {
+      _selected = 0;
+      _currentSlot = 0;
+      _order.clear();
+    });
+    _syncPlayback();
+  }
+
+  /// The current song as a MOD module: the non-empty slots become patterns; each
+  /// channel's instrument becomes a sample (see trackerToMod).
+  ModModule _currentAsMod() {
+    _slots[_currentSlot] = _engine.exportCells();
+    final patterns = [
+      for (final s in _slots)
+        if (!_slotEmpty(s)) s,
+    ];
+    return trackerToMod(
+      patterns.isEmpty ? [_engine.exportCells()] : patterns,
+      channelInstruments: [for (final c in _engine.channels) c.instrument],
+      rows: _engine.rows,
+    );
+  }
+
+  Future<void> _importMod() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = AppLocalizations.of(context)!.trackerModFailed;
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'MOD', extensions: ['mod']),
+        ],
+      );
+      if (file == null || !mounted) return;
+      final bytes = await file.readAsBytes();
+      _loadMod(parseMod(bytes));
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
+  }
+
+  Future<void> _exportMod() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bytes = writeMod(_currentAsMod());
+      final location = await getSaveLocation(
+        suggestedName: 'tracker.mod',
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'MOD', extensions: ['mod']),
+        ],
+      );
+      if (location == null || !mounted) return;
+      await XFile.fromData(bytes, name: 'tracker.mod').saveTo(location.path);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.trackerModFailed)));
+    }
   }
 
   /// The song picker — the Workshop ↔ Tracker bridge: the built-in song book
@@ -772,6 +881,19 @@ class _TrackerScreenState extends State<TrackerScreen>
             icon: Icon(_showNotation ? Icons.grid_view : Icons.music_note),
             tooltip: l10n.trackerToggleNotation,
             onPressed: () => setState(() => _showNotation = !_showNotation),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (v) => v == 'import' ? _importMod() : _exportMod(),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'import',
+                child: Text(l10n.trackerImportMod),
+              ),
+              PopupMenuItem(
+                value: 'export',
+                child: Text(l10n.trackerExportMod),
+              ),
+            ],
           ),
         ],
       ),

@@ -1030,6 +1030,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerEffectSlideDown => 'Runter gleiten';
 
   @override
+  String get trackerImportMod => '.mod importieren…';
+
+  @override
+  String get trackerExportMod => '.mod exportieren…';
+
+  @override
+  String get trackerModFailed => 'Diese .mod ließ sich nicht lesen/schreiben.';
+
+  @override
   String get trackerSfxrZap => 'Zap';
 
   @override
