@@ -1193,6 +1193,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerBorrowSample => 'Instrument leihen…';
 
   @override
+  String get trackerSaveSong => 'Ins Liederbuch';
+
+  @override
+  String get trackerSavedSong => 'Im Liederbuch gespeichert';
+
+  @override
+  String get trackerSaveEmpty => 'Erst ein paar Noten setzen';
+
+  @override
   String get trackerBorrowEmpty => 'Dieses Modul hat keine Samples zum Leihen.';
 
   @override

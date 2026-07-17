@@ -33,6 +33,7 @@ import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/songs/song_book.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart';
@@ -164,6 +165,10 @@ abstract interface class TrackerTester {
 
   /// The current pattern serialized to Standard MIDI File bytes.
   Uint8List exportMidiBytes();
+
+  /// Saves the groove's pitched channels to the Song Book as a multi-part score;
+  /// returns true if anything was saved (false when nothing is placed).
+  bool debugSaveToSongBook(UserSongsService songs);
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -394,6 +399,52 @@ class _TrackerScreenState extends State<TrackerScreen>
   void importMidiScore(Score score) => _loadMidi(score);
   @override
   Uint8List exportMidiBytes() => scoreToMidi(_trackerAsScore());
+  @override
+  bool debugSaveToSongBook(UserSongsService songs) =>
+      _writeToSongBook(songs, AppLocalizations.of(context)!.gameTracker);
+
+  /// The pitched channels as a multi-part score + localized part names, or null
+  /// when nothing pitched is placed (drums/empty channels are skipped, matching
+  /// [trackerToScoreParts]).
+  ({MultiPartScore score, List<String> names})? _trackerScoreParts() {
+    final parts = trackerToScoreParts(_engine.channels, _engine.timing);
+    if (parts.isEmpty) return null;
+    final l10n = AppLocalizations.of(context)!;
+    final names = [
+      for (final c in _engine.channels)
+        if (c.hasAnyNote && c.instrument is! PercussionInstrument)
+          _channelLabel(l10n, c.id),
+    ];
+    return (score: MultiPartScore(parts), names: names);
+  }
+
+  /// Writes the groove to the Song Book as MusicXML (every pitched channel a
+  /// staff). Returns false when there's nothing to save.
+  bool _writeToSongBook(UserSongsService songs, String title) {
+    final parts = _trackerScoreParts();
+    if (parts == null) return false;
+    songs.addSong(
+      ImportedSong(
+        id: 'tracker-${DateTime.now().millisecondsSinceEpoch}',
+        title: title,
+        musicXml: multiPartToMusicXml(parts.score, partNames: parts.names),
+      ),
+    );
+    return true;
+  }
+
+  Future<void> _saveToSongBook() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final saved =
+        _writeToSongBook(context.read<UserSongsService>(), l10n.gameTracker);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(saved ? l10n.trackerSavedSong : l10n.trackerSaveEmpty),
+      ),
+    );
+  }
 
   bool _slotEmpty(List<List<TrackerCell>> snap) =>
       snap.every((ch) => ch.every((c) => c.isEmpty));
@@ -1241,6 +1292,8 @@ class _TrackerScreenState extends State<TrackerScreen>
                   _exportMidi();
                 case 'borrow':
                   _borrowInstrument();
+                case 'saveSong':
+                  _saveToSongBook();
                 case 'swing':
                   setSwing(!swingOn);
               }
@@ -1270,6 +1323,10 @@ class _TrackerScreenState extends State<TrackerScreen>
               PopupMenuItem(
                 value: 'borrow',
                 child: Text(l10n.trackerBorrowSample),
+              ),
+              PopupMenuItem(
+                value: 'saveSong',
+                child: Text(l10n.trackerSaveSong),
               ),
             ],
           ),

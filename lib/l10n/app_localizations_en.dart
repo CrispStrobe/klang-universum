@@ -1187,6 +1187,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerBorrowSample => 'Borrow instrument…';
 
   @override
+  String get trackerSaveSong => 'Save to Song Book';
+
+  @override
+  String get trackerSavedSong => 'Saved to the Song Book';
+
+  @override
+  String get trackerSaveEmpty => 'Place some notes first';
+
+  @override
   String get trackerBorrowEmpty => 'That module has no samples to borrow.';
 
   @override

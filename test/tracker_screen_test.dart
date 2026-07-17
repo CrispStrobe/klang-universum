@@ -11,6 +11,7 @@ import 'package:comet_beat/core/audio/mod/mod.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerChannelEffect, TrackerEffect;
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
         Clef,
@@ -309,6 +310,25 @@ void main() {
     // Export re-parses as a valid module (round-trips through the codec).
     final back = parseMod(game.exportModBytes());
     expect(back.channelCount, greaterThanOrEqualTo(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('saves the groove to the Song Book as a multi-part score',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    final songs = UserSongsService();
+
+    // Nothing placed yet → nothing saved.
+    expect(game.debugSaveToSongBook(songs), isFalse);
+    expect(songs.songs, isEmpty);
+
+    // Place a note, then save → one Song Book entry, real notation.
+    game.tapCell(0, 0);
+    await tester.pump();
+    expect(game.debugSaveToSongBook(songs), isTrue);
+    expect(songs.songs.length, 1);
+    expect(songs.songs.single.score.measures, isNotEmpty);
     expect(tester.takeException(), isNull);
   });
 

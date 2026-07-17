@@ -2294,6 +2294,24 @@ abstract class AppLocalizations {
   /// **'Borrow instrument…'**
   String get trackerBorrowSample;
 
+  /// No description provided for @trackerSaveSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Song Book'**
+  String get trackerSaveSong;
+
+  /// No description provided for @trackerSavedSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to the Song Book'**
+  String get trackerSavedSong;
+
+  /// No description provided for @trackerSaveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Place some notes first'**
+  String get trackerSaveEmpty;
+
   /// No description provided for @trackerBorrowEmpty.
   ///
   /// In en, this message translates to:
