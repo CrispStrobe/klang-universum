@@ -7,6 +7,12 @@ name: App Store Screenshots
 
 on:
   workflow_dispatch:
+    inputs:
+      locale:
+        description: 'App language to capture (en or de) — the store needs a set per localization'
+        type: choice
+        options: ['en', 'de']
+        default: 'en'
 
 jobs:
   screenshots:
@@ -76,7 +82,8 @@ jobs:
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshots_test.dart \
-            --dart-define=SHOT_PREFIX=iphone \
+            --dart-define=SHOT_PREFIX=iphone_${{ inputs.locale }} \
+            --dart-define=SHOT_LOCALE=${{ inputs.locale }} \
             -d "$IPHONE_UDID"
 
       - name: Capture — iPad 13"
@@ -85,7 +92,8 @@ jobs:
           flutter drive \
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshots_test.dart \
-            --dart-define=SHOT_PREFIX=ipad \
+            --dart-define=SHOT_PREFIX=ipad_${{ inputs.locale }} \
+            --dart-define=SHOT_LOCALE=${{ inputs.locale }} \
             -d "$IPAD_UDID"
 
       - name: Report captured sizes
@@ -101,6 +109,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: app-store-screenshots
+          name: app-store-screenshots-${{ inputs.locale }}
           path: cometbeat/screenshots/*.png
           if-no-files-found: warn

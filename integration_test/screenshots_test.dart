@@ -7,15 +7,20 @@
 // render, and so takeScreenshot() bytes reach the driver's onScreenshot sink.
 //
 // SHOT_PREFIX (a --dart-define) tags the files per device, e.g. iphone_01_home.
+import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/tutorial_gate.dart';
 import 'package:comet_beat/main.dart' as app;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const prefix = String.fromEnvironment('SHOT_PREFIX', defaultValue: 'shot');
+  // Force the app language so we can capture an EN and a DE set from one test
+  // (the store needs screenshots per localization). Empty = follow the device.
+  const shotLocale = String.fromEnvironment('SHOT_LOCALE', defaultValue: '');
 
   // Never pumpAndSettle — a looping animation (mascot, animated background)
   // never settles and would hang the run. Hold a screen by pumping fixed steps.
@@ -51,6 +56,16 @@ void main() {
     await app.main();
     autoShowTutorials = false; // don't let a first-run tutorial cover a screen
     await hold(tester, ms: 1500); // let the first frame render
+
+    if (shotLocale.isNotEmpty) {
+      // MultiProvider sits above MaterialApp in main.dart, so MaterialApp's
+      // context can read SettingsService and force this capture's language.
+      final ctx = tester.element(find.byType(MaterialApp));
+      await Provider.of<SettingsService>(ctx, listen: false)
+          .setLocale(Locale(shotLocale));
+      await hold(tester, ms: 900);
+    }
+
     await binding
         .convertFlutterSurfaceToImage(); // required on iOS before shots
     await hold(tester, ms: 600);
