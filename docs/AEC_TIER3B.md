@@ -315,11 +315,34 @@ note-survival + double-talk SI-SDR, deliberately NOT speech-MOS, per this doc's
 correctness-tested against sphere + ill-conditioned ellipsoid) to maximize it.
 On the synthetic corpus it takes the untuned adaptive rate (8.9 dB SI-SDR / 83%
 note-survival) to **20.4 dB / 100%** (+11.5 dB). CLI-only (out of the app);
-tests in `test/aec_tune_test.dart`. Honesty: the numbers are only as real as the
-synthetic corpus — the trustworthy upgrade is real captures, at which point the
-tuner code is unchanged. This is the industry-standard black-box recipe (a
-non-intrusive metric + a corpus + CMA-ES), with a music-appropriate objective in
-place of AECMOS (which `bin/aecmos` provides as a cross-check).
+tests in `test/aec_tune_test.dart`. This is the industry-standard black-box
+recipe (a non-intrusive metric + a corpus + CMA-ES), with a music-appropriate
+objective in place of AECMOS (which `bin/aecmos` provides as a cross-check).
+
+**Tier-2 real-acoustics corpus (shipped).** `buildCorpusFromAssets` builds the
+same ground-truth scenarios from **real measured room IRs** ([MIT IR Survey](https://mcdermottlab.mit.edu/Reverb/IR_Survey.html),
+CC-BY) × **real cello** ([University of Iowa MIS](https://theremin.music.uiowa.edu/MIS.html),
+free/unrestricted) instead of synthesized rooms/tones. Point the tuner at asset
+dirs:
+
+```bash
+dart run bin/aec_tune.dart --rir-dir <dir-of-RIR-wavs> --cello-dir <dir-of-cello-wavs>
+```
+
+The RIR is truncated to its early field (~90 ms) — the high-energy, cancellable
+part a single-block filter models; the long reverb tail exceeds a 1024-tap
+filter (an MDF filter would capture more — a known upgrade). The echo is
+level-calibrated to a realistic echo-to-near ratio (measured RIRs aren't
+energy-normalized). The near-end note is DETECTED on the clean cello (not
+assumed), so note-survival honestly asks "same note before and after". On the
+real corpus (6 MIT rooms × 3 Iowa cello runs, 54 notes) the tuner lifts the
+untuned adaptive rate **3.4 dB SI-SDR / 74% notes → 9.0 dB / 94%** (+5.6 dB). The
+lower absolute SI-SDR vs the synthetic corpus (20 dB) is the honest point — real
+rooms are harder, and `rateGamma` settles to an *interior* optimum (0.36) the
+synthetic corpus never revealed (it pinned to the bound). Assets live on
+`/Volumes/backups/ai/aec_corpus/` (never checked in; research/eval-use licences,
+local tuning only). **Remaining realism gap:** speaker/mic NONLINEARITY (an RIR
+is linear) — that last step needs a real device capture.
 
 Reference algorithms in the same patent-free family: **SpeexDSP MDF** (Valin,
 BSD-3, designed to avoid patents) and **WebRTC AEC3** (BSD-3) — read for

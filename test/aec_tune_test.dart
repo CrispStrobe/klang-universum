@@ -5,9 +5,12 @@
 //      discriminates a good config from a broken one (a sanity gate on the
 //      thing the optimizer maximizes).
 
+import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/aec_offline.dart';
+import 'package:comet_beat/core/audio/synth.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../bin/aec_tune/cmaes.dart';
@@ -136,6 +139,77 @@ void main() {
         -r.bestValue,
         greaterThanOrEqualTo(baseline.score - 1e-9),
         reason: 'tuned ${-r.bestValue} vs baseline ${baseline.score}',
+      );
+    });
+  });
+
+  group('real-acoustics corpus loader (buildCorpusFromAssets)', () {
+    // Exercises the tier-2 loader WITHOUT the real downloads: write a tiny
+    // synthetic RIR WAV and a sustained-note WAV to a temp dir, then check the
+    // loader reads them, detects the note, and builds a scored-able scenario.
+    // The real MIT-IR × Iowa-cello corpus is manually verified (needs the
+    // multi-MB assets, which don't belong in CI).
+    late Directory tmp;
+    setUp(() => tmp = Directory.systemTemp.createTempSync('aec_assets'));
+    tearDown(() => tmp.deleteSync(recursive: true));
+
+    void writeWav(String path, Float64List mono) {
+      final pcm = Int16List(mono.length);
+      for (var i = 0; i < mono.length; i++) {
+        pcm[i] = (mono[i].clamp(-1.0, 1.0) * 32767).round();
+      }
+      File(path).writeAsBytesSync(wavBytes(pcm));
+    }
+
+    test('loads RIR + cello WAVs, detects the note, builds scenarios', () {
+      final rirDir = Directory('${tmp.path}/rir')..createSync();
+      final celloDir = Directory('${tmp.path}/cello')..createSync();
+
+      // A short synthetic RIR (a couple of reflections).
+      final ir = Float64List(200);
+      ir[10] = 0.8;
+      ir[60] = -0.3;
+      ir[130] = 0.15;
+      writeWav('${rirDir.path}/room.wav', ir);
+
+      // A sustained A3 (220 Hz) "cello" note, long enough for several windows.
+      const midiA3 = 57;
+      final f = 440.0 * pow(2.0, (midiA3 - 69) / 12.0);
+      final cello = Float64List(44100 * 8);
+      for (var i = 0; i < cello.length; i++) {
+        final t = i / 44100;
+        cello[i] = 0.5 * sin(2 * pi * f * t);
+      }
+      writeWav('${celloDir.path}/note.wav', cello);
+
+      final corpus = buildCorpusFromAssets(
+        rirDir: rirDir.path,
+        celloDir: celloDir.path,
+        seconds: 2.0,
+        windowsPerCello: 2,
+      );
+      expect(corpus, isNotEmpty);
+      // The detector may read a harmonic, so assert the note is a stable A
+      // (octave-robust) rather than exactly midi 57.
+      for (final s in corpus) {
+        expect(
+          s.nearMidi % 12,
+          midiA3 % 12,
+          reason: 'detected ${s.nearMidi}, expected an A',
+        );
+        expect(s.mic.length, s.trueNear.length);
+        expect(s.doubleTalkFrom, s.mic.length ~/ 2);
+      }
+      // And the objective runs on it end to end.
+      final score = scoreTuning(const AecTuning(adaptiveRate: true), corpus);
+      expect(score.noteSurvival, greaterThanOrEqualTo(0.0));
+    });
+
+    test('throws a clear error when a directory has no WAVs', () {
+      final empty = Directory('${tmp.path}/empty')..createSync();
+      expect(
+        () => buildCorpusFromAssets(rirDir: empty.path, celloDir: empty.path),
+        throwsStateError,
       );
     });
   });

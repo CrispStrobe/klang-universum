@@ -128,9 +128,21 @@ and push to origin/main** before/after touching shared files. Format:
     drift-prone tempo×swing grid; a new seam test pins the send steady state.
   **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
 
-- **opus (aec-rate)** · ✅ **idle / SHIPPED (layers 1,2,4 of 4; 3 partial) —
-  self-tuning AEC: Valin closed-loop rate + automatic tuner**. The full
-  automatic-tuning answer, end to end.
+- **opus (aec-rate)** · ✅ **idle / SHIPPED (layers 1,2,3,4 of 4) —
+  self-tuning AEC: Valin closed-loop rate + automatic tuner + REAL corpus**. The
+  full automatic-tuning answer, end to end, now on real acoustics.
+  **Layer 3 (real corpus) DONE**: `buildCorpusFromAssets` (corpus.dart) builds
+  ground-truth scenarios from **real measured room IRs** (MIT IR Survey, CC-BY) ×
+  **real cello** (U. Iowa MIS, unrestricted) — `--rir-dir/--cello-dir`. RIR
+  truncated to its early field (~90 ms, the cancellable part), echo
+  level-calibrated (measured IRs aren't normalized), near-end note DETECTED (not
+  assumed). **On the real corpus (6 rooms × 3 cello runs, 54 notes): untuned
+  adaptive 3.4 dB SI-SDR / 74% notes → tuned 9.0 dB / 94%** (+5.6 dB). Lower than
+  synthetic (honest — real rooms are harder); rateGamma settles INTERIOR (0.36),
+  not pinned. Assets on `/Volumes/backups/ai/aec_corpus/` (never checked in;
+  eval-only). CI-safe loader test (synthetic WAVs in a temp dir). **Only realism
+  gap left: speaker/mic nonlinearity → a real device capture (on-device
+  milestone (e)).**
   **Layer 4 (CMA-ES auto-tuner) DONE**: `bin/aec_tune.dart` + `bin/aec_tune/`
   (CLI-only, out of the app). A ground-truth corpus (`corpus.dart`, parametric
   rooms — measured-RIR swap is drop-in), a domain objective (`objective.dart` —
@@ -143,9 +155,6 @@ and push to origin/main** before/after touching shared files. Format:
   over fixed-`mu`. gamma/beta0 pin to their bounds (corpus wants extremes → real
   corpus + wider bounds is the follow-up). 5 tests (optimizer correctness,
   corpus/objective sanity, end-to-end loop ≥ baseline).
-  **Layer 3 (corpus) PARTIAL:** synthetic parametric-room generator shipped;
-  real speaker→mic captures (record-separately-and-sum) + measured RIRs still
-  need hardware — the generator interface is ready for that swap.
   **Layer 2 (C port) DONE** (`610acb2`): `AecRate` in `native/aec/src/aec_dsp.c`
   mirrors the Dart `AdaptiveLearningRate`; attach via `aec_dsp_set_rate` (NULL =
   fixed-`mu` path, byte-identical — the property `aec_erle_test` pins). FFI

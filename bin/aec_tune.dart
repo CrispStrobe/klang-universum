@@ -71,12 +71,27 @@ List<double> _initialZ() => List<double>.generate(_params.length, (i) {
 
 void main(List<String> argv) {
   final args = _parse(argv);
+  final strs = _parseStr(argv);
   final evals = args['evals'] ?? 300;
   final rooms = args['rooms'] ?? 4;
   final seed = args['seed'] ?? 20260717;
+  final rirDir = strs['rir-dir'];
+  final celloDir = strs['cello-dir'];
 
-  stderr.writeln('Building corpus (rooms=$rooms, seed=$seed)…');
-  final corpus = buildCorpus(rooms: rooms, seed: seed);
+  final List<AecScenario> corpus;
+  if (rirDir != null && celloDir != null) {
+    // Tier 2: real measured RIRs × real cello, with detected ground-truth notes.
+    stderr.writeln('Building REAL-acoustics corpus '
+        '(rir=$rirDir, cello=$celloDir)…');
+    corpus = buildCorpusFromAssets(
+      rirDir: rirDir,
+      celloDir: celloDir,
+      seed: seed,
+    );
+  } else {
+    stderr.writeln('Building synthetic corpus (rooms=$rooms, seed=$seed)…');
+    corpus = buildCorpus(rooms: rooms, seed: seed);
+  }
   stderr.writeln('${corpus.length} scenarios.');
 
   // Baselines: the untuned adaptive rate, and the old fixed-mu default, so the
@@ -138,6 +153,17 @@ Map<String, int> _parse(List<String> argv) {
     if (a.startsWith('--')) {
       final v = int.tryParse(argv[i + 1]);
       if (v != null) out[a.substring(2)] = v;
+    }
+  }
+  return out;
+}
+
+Map<String, String> _parseStr(List<String> argv) {
+  final out = <String, String>{};
+  for (var i = 0; i < argv.length - 1; i++) {
+    final a = argv[i];
+    if (a.startsWith('--') && !argv[i + 1].startsWith('--')) {
+      out[a.substring(2)] = argv[i + 1];
     }
   }
   return out;
