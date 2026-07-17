@@ -87,7 +87,11 @@ class _LevelCard extends StatelessWidget {
         leading: Text(level.badge, style: const TextStyle(fontSize: 30)),
         title: Row(
           children: [
-            Text(level.name(l10n)),
+            // Flexible so a long level name (or a longer locale) yields to the
+            // "Continue here" badge instead of overflowing the ListTile title.
+            Flexible(
+              child: Text(level.name(l10n), overflow: TextOverflow.ellipsis),
+            ),
             if (recommended) ...[
               const SizedBox(width: 8),
               Container(
