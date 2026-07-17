@@ -53,19 +53,27 @@ and push to origin/main** before/after touching shared files. Format:
   Song Book). **No Workshop files touched.** Only §B (native-AEC jam grading)
   of the handover remains unclaimed.
 
-- **opus (jam-grading)** · 🚧 **ACTIVE — Groove jam: native-AEC play-along
-  grading** (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §B). Worktree
-  `../mus-jam-grading`, branch `feature/jam-grading`. **B1:** NEW pure-Dart
-  `lib/core/audio/loop_reference.dart` (`LoopReferenceScheduler`: loop PCM +
-  clock → reference windows, seam wrap + phase-preserving swap) + test. **B2:**
-  jam mode in `loop_mixer_screen.dart` picks the Tier-3b `AecEngine`
-  (`createNativeAecEngine`) when present — feeds the loop PCM as the AEC
-  reference, analyses the cleaned stream; else keeps the shipped `echoCancel`
-  fallback (plugin already a path-dep behind `aec_capability.dart`, so CI stays
-  green with it absent). **B3:** trustworthy jamFit colour at speaker volume +
-  optional "follow the melody" via `PlayAlongEngine`. Files: `loop_reference.dart`
-  (new), `loop_mixer_screen.dart`, maybe both ARBs. NOT touching Workshop/AEC
-  plugin internals.
+- **opus (jam-grading)** · ✅ **idle / SHIPPED — Groove jam: native-AEC grading
+  ("the band listens back")** (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §B;
+  `915a17a` B1, `5e99e84` B2+B3). This closes the Loop Mixer follow-ups handover
+  — **both §A and §B done.** **B1:** pure-Dart `lib/core/audio/loop_reference.dart`
+  (`LoopReferenceScheduler`: loop PCM → real-time reference windows, seam wrap +
+  phase-preserving swap-at-downbeat, `barAt`), 6 tests. **B2:** jam mode picks the
+  Tier-3b `AecEngine` (`createNativeAecEngine`) when present — the engine plays
+  the loop PCM we feed it AND cancels it, so the jamFit colour grades the player
+  not the speaker; a 50ms reference pump (2205 samples/tick = the 44.1k drain)
+  keeps the ring fed; live edits re-feed the scheduler at its seam. Graceful
+  fallback to the shipped `echoCancel` path when no plugin (web / device open
+  fails). `aecFactory` injection drives it headless. **B3:** AEC start hint +
+  a trust caption under the live note ("band cancelled — this grades you" vs the
+  headphones reminder). CI-safe: `dart:ffi` stays out of web (conditional
+  export), plugin stays analyzer-excluded, app green with plugin absent. Tests:
+  14/14 loop_mixer (fake-AEC round-trip: reference pushed + synth A4 on the
+  cleaned stream graded as A4) + 6/6 loop_reference; whole-project analyze clean.
+  ⚠ **On-device pump tuning (ring latency) is milestone (e) — needs hardware, not
+  verifiable headless.** Deferred-optional: "follow the melody" per-note grading
+  via `PlayAlongEngine` (a moving-score highway over the groove) — its own effort.
+  **No Workshop / AEC-plugin internals touched.**
 
 - **opus (parity)** · ✅ **idle / SHIPPED — mid-*bar* clef changes (`inlineClefs`)**
   (`12404e1` model + `854ab25` UI). Onset-addressed clef change *within* a bar
