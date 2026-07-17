@@ -75,20 +75,20 @@ and push to origin/main** before/after touching shared files. Format:
   Chipmunk/Monster/Deep/Robot/Alien/Cyborg/Radio/Demon.** 31 screen + voice tests
   green; analyze clean.
 
-- **opus (workshop-inspector)** · 🚧 **ACTIVE — note-name reading scaffold**
-  (app-wide learning aid, user-requested; the "showNoteNames" item is NO LONGER
-  crisp_notation-blocked — `MultiSystemView`/`StaffView` support it). A persisted
-  `SettingsService.showNoteNames` (default off, sibling of `colorScaffold`) +
-  Settings toggle; a shared `noteNameStyleFor(context)` (in `note_names.dart`,
-  reuses the `NoteNaming` setting) + a `ReadingStaffView` wrapper (games/widgets)
-  that reads the setting. Wired into games where the note's NAME is NOT the task
-  (rhythm/articulation/beaming: `whole_half`, `tie_slur`, `articulation_read`,
-  `beam_flag`) — **deliberately NOT the naming quizzes** (printing the letter would
-  reveal the answer). **Files:** `core/services/settings_service.dart`,
-  `features/settings/screens/settings_screen.dart`, `core/note_naming`/`note_names`,
-  a new `features/games/widgets/reading_staff.dart`, the 4 game screens + both ARBs
-  (`showNoteNamesLabel/Subtitle`). Worktree `../mus-workshop-inspector`. Rebasing
-  often; the ARBs + settings_screen are hot.
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — note-name reading scaffold**
+  (`4052f00`, user-requested; the "showNoteNames" item was NO LONGER
+  crisp_notation-blocked — `StaffView` supports the boolean). A persisted
+  `SettingsService.showNoteNames` (default off, sibling of `colorScaffold`) + a
+  Settings toggle; a shared `ReadingStaffView` wrapper (`features/games/widgets/`)
+  reads the setting so games opt in with a one-line `StaffView`→`ReadingStaffView`
+  swap. Wired into games where the note's NAME is NOT the task (`whole_half`,
+  `tie_slur`, `articulation_read`, `beam_flag`) — **deliberately NOT the naming
+  quizzes** (printing the letter reveals the answer). `test/reading_staff_test.dart`;
+  lib analyze clean; the 4 games' tests stay green. **Scope note:** `StaffView`
+  spells names as international letters (C…B) — it has no `noteNameStyle` param
+  (only `MultiSystemView` does), so **per-locale spelling (German H, solfège) is a
+  one-param crisp_notation follow-up** (flagged in `reading_staff.dart`). Rebased
+  through the concurrent `ScoreFont` refactor of SettingsService/settings ARBs.
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — ring-mod + crunch in the channel FX
   picker**. DSP units `9b1b4c8`; `TrackerChannelEffect` now has `ringMod` (Robot) +
