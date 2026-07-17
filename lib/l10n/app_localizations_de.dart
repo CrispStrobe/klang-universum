@@ -3234,6 +3234,83 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Taktart bestimmt, welcher Schlag betont ist. Im 3/4-Takt zählst du 1-2-3, und wieder ist die 1 betont — der Schwung eines Walzers.';
 
   @override
+  String get primerSeventhTitle => 'Die Septime dazu';
+
+  @override
+  String get primerSeventhTriad =>
+      'Ein Dreiklang sind drei Töne im Terzabstand: Grundton, Terz, Quinte. Hier C-Dur — C E G. Das klingt in sich ruhend.';
+
+  @override
+  String get primerSeventhAdd =>
+      'Stapelst du NOCH eine Terz obendrauf, wird ein Septakkord daraus: C E G B. Der klingt unruhig — als wollte er weiter.';
+
+  @override
+  String get primerRomanTitle => 'Akkorde nummerieren';
+
+  @override
+  String get primerRomanDegree =>
+      'Nummeriere die Töne der Tonleiter von 1 bis 7. Auf jeder Stufe baust du einen Akkord und benennst ihn mit einer römischen Ziffer. Auf Stufe 1 von C-Dur steht C E G — Akkord I.';
+
+  @override
+  String get primerRomanCase =>
+      'GROSSBUCHSTABEN meinen einen Dur-Akkord (I, IV, V); kleine Ziffern meinen Moll (ii, iii, vi). Auf Stufe 2 von C-Dur steht D F A — Akkord ii, d-Moll.';
+
+  @override
+  String get primerCadenceTitle => 'Wie eine Phrase endet';
+
+  @override
+  String get primerCadenceFull =>
+      'Eine Kadenz ist die Satzzeichen-Setzung der Musik. V dann I ist ein Punkt: es kommt heim und klingt abgeschlossen.';
+
+  @override
+  String get primerCadenceHalf =>
+      'Bleibst du stattdessen auf V stehen, hängt es in der Luft — wie ein Fragezeichen. Dein Ohr erwartet, dass es weitergeht.';
+
+  @override
+  String get primerPhraseTitle => 'Frage und Antwort';
+
+  @override
+  String get primerPhraseQuestion =>
+      'Musik kommt in Phrasen, wie Sätze. Diese hier steigt weg und bleibt in der Luft stehen — sie klingt wie eine FRAGE.';
+
+  @override
+  String get primerPhraseAnswer =>
+      'Die antwortende Phrase kehrt zum ersten Ton der Tonleiter zurück (dem Grundton). Darum klingt sie abgeschlossen.';
+
+  @override
+  String get primerBowTitle => 'Wohin der Bogen geht';
+
+  @override
+  String get primerBowDown =>
+      '⊓ heißt ABSTRICH: Zieh den Bogen vom Frosch (deiner Hand) zur Spitze. Das ist die schwerere Richtung — sie passt zu betonten Schlägen.';
+
+  @override
+  String get primerBowUp =>
+      '∨ heißt AUFSTRICH: Schieb von der Spitze zurück zum Frosch. Der ist leichter — gut für Auftakte und Anläufe.';
+
+  @override
+  String get primerTenorTitle => 'Der Tenorschlüssel';
+
+  @override
+  String get primerTenorC =>
+      'Der Tenorschlüssel ist ein C-Schlüssel: die Mitte des Zeichens zeigt genau auf das eingestrichene C. Auf welcher Linie das Zeichen sitzt, DIESE Linie ist das c′.';
+
+  @override
+  String get primerTenorWhy =>
+      'Celli und Posaunen nutzen ihn für ihre hohen Töne — so bleiben sie im Notensystem, statt über dem Bassschlüssel Hilfslinien zu stapeln.';
+
+  @override
+  String get primerGrandTitle => 'Zwei Systeme, zwei Hände';
+
+  @override
+  String get primerGrandTop =>
+      'Klavier schreibt man im SYSTEM aus zwei Notenzeilen, verbunden durch eine Klammer. Die obere ist der Violinschlüssel — meist deine rechte Hand.';
+
+  @override
+  String get primerGrandBottom =>
+      'Die untere ist der Bassschlüssel — meist deine linke Hand. Das eingestrichene C liegt in der Lücke dazwischen, auf einer eigenen kleinen Hilfslinie.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override

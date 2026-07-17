@@ -135,6 +135,13 @@ void main() {
       'Same or different?': sameDiffPrimer,
       'How many notes?': countNotesPrimer,
       'Strong and weak beats': strongBeatPrimer, // time-signature Score path
+      'Adding a seventh': seventhPrimer,
+      'Numbering the chords': romanPrimer,
+      'How a phrase ends': cadencePrimer,
+      'Question and answer': phrasePrimer,
+      'Which way the bow goes': bowingPrimer, // bow-articulation Score path
+      'The tenor clef': tenorClefPrimer, // tenor-clef Score path
+      'Two staves, two hands': grandStaffPrimer,
     };
     for (final entry in primers.entries) {
       await pumpGame(

@@ -81,8 +81,13 @@ Score _curvePair(int a, int b, {required bool tie}) => Score(
     );
 
 /// [midis] as quarter notes, each carrying [art] — so the mark is *shown*.
-Score _articulated(List<int> midis, Articulation art) => Score(
-      clef: Clef.treble,
+Score _articulated(
+  List<int> midis,
+  Articulation art, {
+  Clef clef = Clef.treble,
+}) =>
+    Score(
+      clef: clef,
       measures: [
         Measure([
           for (var i = 0; i < midis.length; i++)
@@ -636,6 +641,143 @@ Tutorial enharmonicPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerEnharmonicTwins,
           // The same pitch twice — identical sound, two names.
           play: (a) => a.playSequence(_run([66, 66], ms: 500)),
+        ),
+      ],
+    );
+
+/// Stacking one more third on a triad: the seventh chord and its restlessness.
+/// Game: triad_seventh.
+Tutorial seventhPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerSeventhTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerSeventhTriad,
+          score: _chord([60, 64, 67]), // C E G — root, third, fifth
+          play: (a) => a.playMidiChord([60, 64, 67]),
+        ),
+        TutorialStep(
+          text: l10n.primerSeventhAdd,
+          score: _chord([60, 64, 67, 70]), // + B♭ = a dominant seventh
+          play: (a) => a.playMidiChord([60, 64, 67, 70]),
+        ),
+      ],
+    );
+
+/// Roman numerals: naming a chord by WHICH scale degree it is built on.
+/// Game: roman_numeral.
+Tutorial romanPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerRomanTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerRomanDegree,
+          score: _chord([60, 64, 67]), // C major in C major = I
+          play: (a) => a.playMidiChord([60, 64, 67]),
+        ),
+        TutorialStep(
+          text: l10n.primerRomanCase,
+          score: _chord([62, 65, 69]), // D minor in C major = ii
+          play: (a) => a.playMidiChord([62, 65, 69]),
+        ),
+      ],
+    );
+
+/// Cadences: how a phrase ends — musical punctuation.
+/// Game: cadence_workshop.
+Tutorial cadencePrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerCadenceTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerCadenceFull,
+          // V → I: the full stop.
+          play: (a) => a.playChordSequence(
+            const [
+              [67, 71, 74],
+              [60, 64, 67],
+            ],
+          ),
+        ),
+        TutorialStep(
+          text: l10n.primerCadenceHalf,
+          // I → V: left hanging, a question mark.
+          play: (a) => a.playChordSequence(
+            const [
+              [60, 64, 67],
+              [67, 71, 74],
+            ],
+          ),
+        ),
+      ],
+    );
+
+/// Phrases as sentences: a question that hangs, an answer that comes home.
+/// Games: ending_detective, question_answer.
+Tutorial phrasePrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerPhraseTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerPhraseQuestion,
+          score: _notes([60, 62, 64, 67]), // climbs away, stops in the air
+          play: (a) => a.playPhrase([60, 62, 64, 67], noteMs: 480),
+        ),
+        TutorialStep(
+          text: l10n.primerPhraseAnswer,
+          score: _notes([67, 65, 64, 60]), // comes home to the tonic
+          play: (a) => a.playPhrase([67, 65, 64, 60], noteMs: 480),
+        ),
+      ],
+    );
+
+/// Bow direction: the two ways the bow travels.
+/// Game: bowing.
+Tutorial bowingPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerBowTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerBowDown,
+          score: _articulated([48, 50], Articulation.downBow, clef: Clef.bass),
+          play: (a) => a.playPhrase([48, 50], noteMs: 700),
+        ),
+        TutorialStep(
+          text: l10n.primerBowUp,
+          score: _articulated([48, 50], Articulation.upBow, clef: Clef.bass),
+          play: (a) => a.playPhrase([48, 50], noteMs: 700, gain: 0.5),
+        ),
+      ],
+    );
+
+/// The tenor clef: a movable C-clef that keeps high cello notes off ledger lines.
+/// Game: note_reading_tenor.
+Tutorial tenorClefPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerTenorTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerTenorC,
+          score:
+              _notes([60], clef: Clef.tenor), // middle C, where the sign points
+          play: (a) => a.playPhrase([60], noteMs: 700),
+        ),
+        TutorialStep(
+          text: l10n.primerTenorWhy,
+          score: _notes([65, 67, 69], clef: Clef.tenor),
+          play: (a) => a.playPhrase([65, 67, 69], noteMs: 500),
+        ),
+      ],
+    );
+
+/// The grand staff: two staves braced together, one per hand.
+/// Game: grand_staff_read.
+Tutorial grandStaffPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerGrandTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerGrandTop,
+          score: _notes([67, 72]), // right hand, treble
+          play: (a) => a.playPhrase([67, 72], noteMs: 600),
+        ),
+        TutorialStep(
+          text: l10n.primerGrandBottom,
+          score: _notes([48, 53], clef: Clef.bass), // left hand, bass
+          play: (a) => a.playPhrase([48, 53], noteMs: 600),
         ),
       ],
     );

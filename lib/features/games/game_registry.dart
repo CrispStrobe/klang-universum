@@ -897,6 +897,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTriadSeventh,
       subtitle: (l) => l.gameTriadSeventhSubtitle,
       builder: (_) => const TriadSeventhScreen(),
+      tutorial: seventhPrimer,
     ),
     GameInfo(
       id: 'interval_ladder',
@@ -904,6 +905,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameIntervalLadder,
       subtitle: (l) => l.gameIntervalLadderSubtitle,
       builder: (_) => const IntervalLadderScreen(),
+      tutorial: intervalsPrimer,
     ),
     // Count-the-note-names interval drill, connect-a-line format (reuses the
     // Connect the Notes board with a third mode).
@@ -913,6 +915,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConnectIntervals,
       subtitle: (l) => l.gameConnectIntervalsSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.intervals),
+      tutorial: intervalsPrimer,
     ),
     GameInfo(
       id: 'name_that_chord',
@@ -954,6 +957,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameRomanNumeral,
       subtitle: (l) => l.gameRomanNumeralSubtitle,
       builder: (_) => const RomanNumeralScreen(),
+      tutorial: romanPrimer,
     ),
     GameInfo(
       id: 'cadence_workshop',
@@ -961,6 +965,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCadenceWorkshop,
       subtitle: (l) => l.gameCadenceWorkshopSubtitle,
       builder: (_) => const CadenceWorkshopScreen(),
+      tutorial: cadencePrimer,
     ),
     GameInfo(
       id: 'function_ear',
@@ -986,6 +991,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameEndingDetective,
       subtitle: (l) => l.gameEndingDetectiveSubtitle,
       builder: (_) => const EndingDetectiveScreen(),
+      tutorial: phrasePrimer,
     ),
     GameInfo(
       id: 'question_answer',
@@ -993,6 +999,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameQuestionAnswer,
       subtitle: (l) => l.gameQuestionAnswerSubtitle,
       builder: (_) => const QuestionAnswerScreen(),
+      tutorial: phrasePrimer,
     ),
     GameInfo(
       id: 'my_melody',
@@ -1091,6 +1098,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameBowing,
       subtitle: (l) => l.gameBowingSubtitle,
       builder: (_) => const BowingScreen(),
+      tutorial: bowingPrimer,
     ),
     GameInfo(
       id: 'note_reading_tenor',
@@ -1104,6 +1112,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
           p.starsFor('cello_string_quiz') >= 2 &&
           p.starsFor('cello_finger_quiz') >= 2,
       lockedHint: (l) => l.advancedGameHint,
+      tutorial: tenorClefPrimer,
     ),
   ],
   'guitar': [
@@ -1264,6 +1273,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameGrandStaffRead,
       subtitle: (l) => l.gameGrandStaffReadSubtitle,
       builder: (_) => const GrandStaffReadScreen(),
+      tutorial: grandStaffPrimer,
     ),
     GameInfo(
       id: 'falling_keys',

@@ -130,9 +130,19 @@ and push to origin/main** before/after touching shared files. Format:
   pitch = an echo, same spot on the staff), `countNotesPrimer` (count each new
   sound), `strongBeatPrimer` (strong_beat — beat 1 lands loud then 2-3-4 lighter
   via an async two-call `playPhrase(gain:)`, in 4/4 AND 3/4, so the accent is
-  actually *heard*). Next: chords (7ths + reuse `intervalsPrimer`), harmony
-  (roman, cadences), composition (phrase/Q&A), cello+keyboard (bowing, tenor
-  clef, grand staff).
+  actually *heard*). ✅ **Batch 4 (chords/harmony/composition/cello/keyboard) SHIPPED — 10 games:**
+  `seventhPrimer` (triad vs the restless 7th), `romanPrimer` (scale degrees +
+  CAPITALS=major/small=minor), `cadencePrimer` (V-I full stop vs half-cadence
+  question mark), `phrasePrimer` (ending_detective, question_answer),
+  `bowingPrimer` (⊓ down = heavy/strong beats, ∨ up = light/upbeats, drawn with
+  real bow articulations on bass clef), `tenorClefPrimer` (the C-clef points at
+  middle C; keeps high cello off ledger lines), `grandStaffPrimer` (two braced
+  staves, middle C in the gap). Plus reuse-wiring `intervalsPrimer` →
+  interval_ladder, connect_intervals.
+  🏁 **EFFORT COMPLETE: 21 new concept primers + 11 reuse-wirings → 47 games moved
+  off a generic module intro onto real instruction.** Per-game primers 29 → 61 of
+  130; every remaining fallback game is one the module intro genuinely covers.
+  `tutorial_gate_test` still asserts 100% help coverage.
 
 - **opus (primers-mine)** · ✅ **idle / SHIPPED — per-game tutorial primers for 3
   games** (learnability §1). The games I shipped this session now teach their

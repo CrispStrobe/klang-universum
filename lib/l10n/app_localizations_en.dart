@@ -3221,6 +3221,83 @@ class AppLocalizationsEn extends AppLocalizations {
       'The meter decides which beat is strong. In 3/4 you count 1-2-3, and the 1 is strong again — that\'s the lilt of a waltz.';
 
   @override
+  String get primerSeventhTitle => 'Adding a seventh';
+
+  @override
+  String get primerSeventhTriad =>
+      'A triad is three notes stacked a third apart: root, third, fifth. Here is C major — C E G. It sounds settled.';
+
+  @override
+  String get primerSeventhAdd =>
+      'Stack one MORE third on top and you get a seventh chord: C E G B♭. It sounds restless — as if it wants to move somewhere.';
+
+  @override
+  String get primerRomanTitle => 'Numbering the chords';
+
+  @override
+  String get primerRomanDegree =>
+      'Number the notes of the scale 1 to 7. Build a chord on each step and name it with a Roman numeral. On step 1 of C major sits C E G — chord I.';
+
+  @override
+  String get primerRomanCase =>
+      'CAPITALS mean a major chord (I, IV, V); small letters mean minor (ii, iii, vi). On step 2 of C major sits D F A — chord ii, D minor.';
+
+  @override
+  String get primerCadenceTitle => 'How a phrase ends';
+
+  @override
+  String get primerCadenceFull =>
+      'A cadence is punctuation for music. V then I is a full stop: it lands home and sounds finished.';
+
+  @override
+  String get primerCadenceHalf =>
+      'Stopping on V instead leaves it hanging, like a question mark — your ear expects the music to carry on.';
+
+  @override
+  String get primerPhraseTitle => 'Question and answer';
+
+  @override
+  String get primerPhraseQuestion =>
+      'Music comes in phrases, like sentences. This one climbs away and stops in the air — it sounds like a QUESTION.';
+
+  @override
+  String get primerPhraseAnswer =>
+      'The answering phrase comes back home to the first note of the scale (the tonic). That\'s why it sounds finished.';
+
+  @override
+  String get primerBowTitle => 'Which way the bow goes';
+
+  @override
+  String get primerBowDown =>
+      '⊓ means DOWN-bow: pull the bow from the frog (your hand) toward the tip. It\'s the heavier direction, so it suits strong beats.';
+
+  @override
+  String get primerBowUp =>
+      '∨ means UP-bow: push from the tip back toward the frog. It\'s lighter — good for upbeats and lead-ins.';
+
+  @override
+  String get primerTenorTitle => 'The tenor clef';
+
+  @override
+  String get primerTenorC =>
+      'The tenor clef is a C-clef: the middle of the sign points straight at middle C. Wherever the sign sits, that line IS middle C.';
+
+  @override
+  String get primerTenorWhy =>
+      'Cellos and trombones use it for their higher notes — it keeps them on the staff instead of piling up ledger lines above the bass clef.';
+
+  @override
+  String get primerGrandTitle => 'Two staves, two hands';
+
+  @override
+  String get primerGrandTop =>
+      'The piano writes on a GRAND STAFF: two staves joined by a brace. The top one is treble — usually your right hand.';
+
+  @override
+  String get primerGrandBottom =>
+      'The bottom one is bass — usually your left hand. Middle C sits in the gap between the two staves, on its own little ledger line.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

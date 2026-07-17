@@ -5858,6 +5858,132 @@ abstract class AppLocalizations {
   /// **'The meter decides which beat is strong. In 3/4 you count 1-2-3, and the 1 is strong again — that\'s the lilt of a waltz.'**
   String get primerAccentThree;
 
+  /// No description provided for @primerSeventhTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding a seventh'**
+  String get primerSeventhTitle;
+
+  /// No description provided for @primerSeventhTriad.
+  ///
+  /// In en, this message translates to:
+  /// **'A triad is three notes stacked a third apart: root, third, fifth. Here is C major — C E G. It sounds settled.'**
+  String get primerSeventhTriad;
+
+  /// No description provided for @primerSeventhAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Stack one MORE third on top and you get a seventh chord: C E G B♭. It sounds restless — as if it wants to move somewhere.'**
+  String get primerSeventhAdd;
+
+  /// No description provided for @primerRomanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbering the chords'**
+  String get primerRomanTitle;
+
+  /// No description provided for @primerRomanDegree.
+  ///
+  /// In en, this message translates to:
+  /// **'Number the notes of the scale 1 to 7. Build a chord on each step and name it with a Roman numeral. On step 1 of C major sits C E G — chord I.'**
+  String get primerRomanDegree;
+
+  /// No description provided for @primerRomanCase.
+  ///
+  /// In en, this message translates to:
+  /// **'CAPITALS mean a major chord (I, IV, V); small letters mean minor (ii, iii, vi). On step 2 of C major sits D F A — chord ii, D minor.'**
+  String get primerRomanCase;
+
+  /// No description provided for @primerCadenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How a phrase ends'**
+  String get primerCadenceTitle;
+
+  /// No description provided for @primerCadenceFull.
+  ///
+  /// In en, this message translates to:
+  /// **'A cadence is punctuation for music. V then I is a full stop: it lands home and sounds finished.'**
+  String get primerCadenceFull;
+
+  /// No description provided for @primerCadenceHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping on V instead leaves it hanging, like a question mark — your ear expects the music to carry on.'**
+  String get primerCadenceHalf;
+
+  /// No description provided for @primerPhraseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Question and answer'**
+  String get primerPhraseTitle;
+
+  /// No description provided for @primerPhraseQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Music comes in phrases, like sentences. This one climbs away and stops in the air — it sounds like a QUESTION.'**
+  String get primerPhraseQuestion;
+
+  /// No description provided for @primerPhraseAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The answering phrase comes back home to the first note of the scale (the tonic). That\'s why it sounds finished.'**
+  String get primerPhraseAnswer;
+
+  /// No description provided for @primerBowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which way the bow goes'**
+  String get primerBowTitle;
+
+  /// No description provided for @primerBowDown.
+  ///
+  /// In en, this message translates to:
+  /// **'⊓ means DOWN-bow: pull the bow from the frog (your hand) toward the tip. It\'s the heavier direction, so it suits strong beats.'**
+  String get primerBowDown;
+
+  /// No description provided for @primerBowUp.
+  ///
+  /// In en, this message translates to:
+  /// **'∨ means UP-bow: push from the tip back toward the frog. It\'s lighter — good for upbeats and lead-ins.'**
+  String get primerBowUp;
+
+  /// No description provided for @primerTenorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The tenor clef'**
+  String get primerTenorTitle;
+
+  /// No description provided for @primerTenorC.
+  ///
+  /// In en, this message translates to:
+  /// **'The tenor clef is a C-clef: the middle of the sign points straight at middle C. Wherever the sign sits, that line IS middle C.'**
+  String get primerTenorC;
+
+  /// No description provided for @primerTenorWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cellos and trombones use it for their higher notes — it keeps them on the staff instead of piling up ledger lines above the bass clef.'**
+  String get primerTenorWhy;
+
+  /// No description provided for @primerGrandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two staves, two hands'**
+  String get primerGrandTitle;
+
+  /// No description provided for @primerGrandTop.
+  ///
+  /// In en, this message translates to:
+  /// **'The piano writes on a GRAND STAFF: two staves joined by a brace. The top one is treble — usually your right hand.'**
+  String get primerGrandTop;
+
+  /// No description provided for @primerGrandBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'The bottom one is bass — usually your left hand. Middle C sits in the gap between the two staves, on its own little ledger line.'**
+  String get primerGrandBottom;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:
