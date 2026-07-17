@@ -7382,6 +7382,18 @@ abstract class AppLocalizations {
   /// **'Stopping on the dominant instead sounds unfinished, like a question left hanging — the music still wants to go home.'**
   String get harmonyExampleHalfCaption;
 
+  /// No description provided for @cadenceMarkPerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'comes to rest'**
+  String get cadenceMarkPerfect;
+
+  /// No description provided for @cadenceMarkHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'left open'**
+  String get cadenceMarkHalf;
+
   /// No description provided for @gameAnalysisView.
   ///
   /// In en, this message translates to:

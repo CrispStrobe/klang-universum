@@ -1601,6 +1601,8 @@
   "harmonyExamplePerfectCaption": "Ending on the tonic after the dominant sounds finished and settled — a full stop. Listen how the last chord comes to rest.",
   "harmonyExampleHalf": "Half cadence (… → V)",
   "harmonyExampleHalfCaption": "Stopping on the dominant instead sounds unfinished, like a question left hanging — the music still wants to go home.",
+  "cadenceMarkPerfect": "comes to rest",
+  "cadenceMarkHalf": "left open",
   "gameAnalysisView": "See the Music",
   "gameAnalysisViewSubtitle": "Watch a piece's form and harmony",
   "analysisHubTitle": "See the Music",

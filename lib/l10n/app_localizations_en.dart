@@ -4051,6 +4051,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Stopping on the dominant instead sounds unfinished, like a question left hanging — the music still wants to go home.';
 
   @override
+  String get cadenceMarkPerfect => 'comes to rest';
+
+  @override
+  String get cadenceMarkHalf => 'left open';
+
+  @override
   String get gameAnalysisView => 'See the Music';
 
   @override

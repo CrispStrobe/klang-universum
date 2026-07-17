@@ -4073,6 +4073,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Stattdessen auf der Dominante zu halten klingt unfertig, wie eine offene Frage — die Musik will noch nach Hause.';
 
   @override
+  String get cadenceMarkPerfect => 'kommt zur Ruhe';
+
+  @override
+  String get cadenceMarkHalf => 'bleibt offen';
+
+  @override
   String get gameAnalysisView => 'Die Musik sehen';
 
   @override

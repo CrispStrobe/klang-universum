@@ -192,17 +192,43 @@ class HarmonyChord {
   final List<int> midis;
 }
 
-/// A worked harmony example: a titled, captioned chord progression.
+/// A worked harmony example: a titled, captioned chord progression, optionally
+/// ending with a named cadence marked under its final chord.
 class HarmonyExample {
   const HarmonyExample({
     required this.title,
     required this.caption,
     required this.chords,
+    this.cadence,
   });
 
   final String Function(AppLocalizations) title;
   final String Function(AppLocalizations) caption;
   final List<HarmonyChord> chords;
+
+  /// Short label for the cadence at the end (null → no cadence marker), shown
+  /// as a bracket under the final chord.
+  final String Function(AppLocalizations)? cadence;
+
+  /// An engraved score: one 4/4 bar per chord, each a whole-note chord — the
+  /// real score the function spans sit under.
+  Score scoreOf() {
+    var n = 0;
+    return Score(
+      clef: Clef.treble,
+      timeSignature: const TimeSignature(4, 4),
+      measures: [
+        for (final c in chords)
+          Measure([
+            NoteElement(
+              pitches: [for (final m in c.midis) pitchFromMidi(m)],
+              duration: const NoteDuration(DurationBase.whole),
+              id: 'c${n++}',
+            ),
+          ]),
+      ],
+    );
+  }
 }
 
 // C-major triads used across the examples.
@@ -268,8 +294,26 @@ class _HarmonyAnalysisViewState extends State<HarmonyAnalysisView> {
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
+            // The engraved progression: one whole-note chord per bar, so the
+            // function spans below line up bar-for-bar under each chord.
+            Card(
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: StaffView(
+                    score: widget.example.scoreOf(),
+                    staffSpace: 11,
+                    theme: kidsScoreTheme,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             SizedBox(
-              height: 64,
+              height: 56,
               child: Row(
                 children: [
                   for (var i = 0; i < widget.example.chords.length; i++)
@@ -289,6 +333,34 @@ class _HarmonyAnalysisViewState extends State<HarmonyAnalysisView> {
                 ],
               ),
             ),
+            // Cadence marker: a bracket under the final chord naming the cadence.
+            if (widget.example.cadence != null)
+              Row(
+                children: [
+                  for (var i = 0; i < widget.example.chords.length; i++)
+                    Expanded(
+                      child: i == widget.example.chords.length - 1
+                          ? Column(
+                              children: [
+                                Icon(
+                                  Icons.arrow_drop_up,
+                                  size: 18,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                Text(
+                                  widget.example.cadence!(l10n),
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                ],
+              ),
             const SizedBox(height: 10),
             // Legend: colour → function name.
             Wrap(
@@ -463,6 +535,7 @@ const Map<String, List<HarmonyExample>> kHarmonyExamples = {
     HarmonyExample(
       title: _perfectTitle,
       caption: _perfectCaption,
+      cadence: _perfectMark,
       chords: [
         HarmonyChord('IV', HarmonyFunction.subdominant, _cIV),
         HarmonyChord('V', HarmonyFunction.dominant, _cV),
@@ -472,6 +545,7 @@ const Map<String, List<HarmonyExample>> kHarmonyExamples = {
     HarmonyExample(
       title: _halfTitle,
       caption: _halfCaption,
+      cadence: _halfMark,
       chords: [
         HarmonyChord('I', HarmonyFunction.tonic, _cI),
         HarmonyChord('IV', HarmonyFunction.subdominant, _cIV),
@@ -500,6 +574,8 @@ String _perfectTitle(AppLocalizations l) => l.harmonyExamplePerfect;
 String _perfectCaption(AppLocalizations l) => l.harmonyExamplePerfectCaption;
 String _halfTitle(AppLocalizations l) => l.harmonyExampleHalf;
 String _halfCaption(AppLocalizations l) => l.harmonyExampleHalfCaption;
+String _perfectMark(AppLocalizations l) => l.cadenceMarkPerfect;
+String _halfMark(AppLocalizations l) => l.cadenceMarkHalf;
 
 /// A screen of worked FORM examples for one concept (textbook "See the form").
 class FormAnalysisScreen extends StatelessWidget {

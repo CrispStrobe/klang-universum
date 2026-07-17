@@ -1343,6 +1343,8 @@
   "harmonyExamplePerfectCaption": "Auf der Tonika nach der Dominante zu enden klingt fertig und beruhigt — ein Punkt. Hör, wie der letzte Akkord zur Ruhe kommt.",
   "harmonyExampleHalf": "Halbkadenz (… → V)",
   "harmonyExampleHalfCaption": "Stattdessen auf der Dominante zu halten klingt unfertig, wie eine offene Frage — die Musik will noch nach Hause.",
+  "cadenceMarkPerfect": "kommt zur Ruhe",
+  "cadenceMarkHalf": "bleibt offen",
   "gameAnalysisView": "Die Musik sehen",
   "gameAnalysisViewSubtitle": "Form und Harmonie eines Stücks betrachten",
   "analysisHubTitle": "Die Musik sehen",

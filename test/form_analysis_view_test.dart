@@ -86,6 +86,26 @@ void main() {
         }
       }
     });
+
+    test('the engraved progression is one whole-note chord per bar', () {
+      final ex = kHarmonyExamples['harmonic_function']!.first; // 4 chords
+      final score = ex.scoreOf();
+      expect(score.measures.length, ex.chords.length);
+      for (var i = 0; i < ex.chords.length; i++) {
+        final note = score.measures[i].elements.single as NoteElement;
+        expect(note.pitches.length, 3); // a triad, stacked
+      }
+    });
+
+    test('cadence examples carry a cadence marker, function examples do not',
+        () {
+      for (final ex in kHarmonyExamples['cadences']!) {
+        expect(ex.cadence, isNotNull);
+      }
+      for (final ex in kHarmonyExamples['harmonic_function']!) {
+        expect(ex.cadence, isNull);
+      }
+    });
   });
 
   testWidgets('the analysis screen renders each example and is tappable',
@@ -127,6 +147,9 @@ void main() {
     // The function legend names all three jobs across the two examples.
     expect(find.text(l10n.funcTonic), findsWidgets);
     expect(find.text(l10n.funcDominant), findsWidgets);
+    // The cadence markers show under the final chord of each example.
+    expect(find.text(l10n.cadenceMarkPerfect), findsOneWidget);
+    expect(find.text(l10n.cadenceMarkHalf), findsOneWidget);
     // Chord blocks are tappable without throwing.
     await tester.tap(find.text('V').first);
     await tester.pump();
