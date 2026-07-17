@@ -19,16 +19,6 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (aec-engine-dtd)** · 🚧 **ACTIVE — wire the native DTD into the engine
-  block loop** (remaining-work item 2a). Worktree `../mus-aec-engine-dtd`, branch
-  `feature/aec-engine-dtd`. All in `native/aec/` (out of app CI): add an opt-in
-  `AecDtd` to `struct AecEngine` (`aec_shim.{c,h}`) driving `aec_dsp_set_adapt`
-  in the block loop (`engine_run`), exposed via a new `aec_engine_set_dtd()`
-  toggle (default off — keeps the existing continuous-double-talk engine test
-  green) + FFI binding; a headless double-talk engine test (converge→double-talk
-  through the pump, DTD-on beats DTD-off). Verify `bash native/aec/build.sh`.
-  NOT touching app/Workshop.
-
 - **opus (studio-polish)** · 🚧 **ACTIVE — Workshop Studio polish** (remaining-work
   item 3). Categorized insertion palettes + richer multi-select inspector in
   `lib/features/workshop/screens/composition_workshop_screen.dart` (hot shared
@@ -52,17 +42,17 @@ still free on the board before starting** (search the agent name / feature).
    (Auftakt / anacrusis reading), a **written↔concert toggle** for transposing
    instruments, **SATB chorale reading** / a richer Grand Staff. Copy an existing
    sibling (see the "Reusable scaffolds" note under the Ideas backlog).
-2. **AEC: wire the native DTD into jam mode + port RES to C** — *self-contained,
-   headless-verifiable, no app/Workshop collision.* The double-talk detector is
-   **already ported to the native C engine** (`f7487fd` — `AecDtd` +
-   `aec_dsp_set_adapt()` gate, cross-checked against the Dart core), but it isn't
-   wired into `aec_shim.c`'s real-time callback yet, so jam mode doesn't actually
-   use it. Remaining: (a) call the C DTD from the shim's block loop and gate the
-   NLMS adapt — **CLAIMED by `opus (aec-engine-dtd)`**; (b) port the residual echo
-   suppressor (RES) to C next — still open. Both live in
-   `native/aec/` (out of app CI, analyzer-excluded — no app collision). Verify:
-   `bash native/aec/build.sh` (the 6-test ERLE cross-check runs green). See
-   `docs/AEC_TIER3B.md` § "Native port status".
+2. **AEC: finish the native port (RES to C; app opt-in)** — *self-contained,
+   headless-verifiable, no app/Workshop collision.* Done: DTD ported to the C DSP
+   core (`f7487fd`) **and wired into the engine block loop** (`c11ddc7` —
+   `aec_engine_set_dtd()`, opt-in, headless double-talk test). **Still open:**
+   (b) **port the residual echo suppressor (RES) to C** (a Wiener spectral
+   post-filter reusing the DSP's FFT; the Dart `ResidualEchoSuppressor` in
+   `aec_offline.dart` is the reference); (c) **app opt-in** — call `setDtd(true)`
+   from `NativeAecEngine`/the jam screen with a 1024-block engine (part of
+   milestone (e), needs on-device tuning). All in `native/aec/` (out of app CI).
+   Verify: `bash native/aec/build.sh` (8/8 green). See `docs/AEC_TIER3B.md`
+   § "Native port status".
 3. **Workshop Studio polish** — **CLAIMED by `opus (studio-polish)` (in progress).**
    `composition_workshop_screen.dart` (hot shared file). Open: **categorized
    insertion palettes**, richer multi-select inspector.

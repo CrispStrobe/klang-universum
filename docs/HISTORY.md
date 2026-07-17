@@ -649,6 +649,19 @@ These are the `✅ idle / SHIPPED` entries that accumulated on the top-of-
 here verbatim (2026-07-17) to keep PLAN.md focused on pending work. Newest-ish
 first, as they sat on the board.
 
+- **opus (aec-engine-dtd)** · ✅ **SHIPPED — DTD wired into the native engine
+  block loop** (`c11ddc7`). The DTD was ported to the C DSP core (`f7487fd`) but
+  nothing used it; now `aec_shim.c`'s `engine_run` (the shared core the realtime
+  duplex callback AND the headless pump both run) drives it per block — read
+  `aec_dtd_freeze` → `aec_dsp_set_adapt` → process → `aec_dtd_update`. Opt-in via
+  a new `aec_engine_set_dtd()` (default off — a DTD hurts without a clean
+  convergence window, so this keeps the existing continuous-double-talk engine
+  test green); FFI-bound as `AecEngineFfi.setDtd(bool)`. Headless double-talk
+  test in `test/aec_engine_test.dart` (converge→double-talk through the pump,
+  DTD-on near-end error <0.7× DTD-off). Whole native suite 8/8 via `build.sh`.
+  All in `native/aec/` (out of app CI). Remaining native AEC: port RES to C; app
+  opt-in via `setDtd` (milestone e, needs on-device tuning).
+
 - **opus (aec-res)** · ✅ **idle / SHIPPED — residual echo suppression**
   (`15a6d62`). **The patent-free AEC algorithm roadmap is COMPLETE (DTD + RES).**
   `ResidualEchoSuppressor` (`aec_offline.dart`): a Wiener-style spectral
