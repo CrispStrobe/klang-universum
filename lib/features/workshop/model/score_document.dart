@@ -1653,40 +1653,68 @@ class ScoreDocument {
         _navigation.isEmpty) {
       return bars;
     }
+    // These bar-level changes are voice-independent, but a user can anchor one
+    // to a voice-2 note (the setters run on the active voice). Voice 2 reflows
+    // on the same grid, so a v2 anchor's bar index matches voice 1's; look its
+    // ids up per bar so the change stamps the bar it lands in.
+    final v2ByBar = _v2.isEmpty ? const <int, List<String>>{} : _v2IdsByBar();
     var runningClef = clef;
     var runningKey = keySignature;
     var runningTempo = tempo;
     final out = <Measure>[];
-    for (final m in bars) {
+    for (var bi = 0; bi < bars.length; bi++) {
+      final m = bars[bi];
+      final v2ids = v2ByBar[bi] ?? const <String>[];
       var next = m;
-      final clefHere = _anchoredIn(m, _clefChanges);
+      final clefHere = _anchoredIn(m, _clefChanges, extraIds: v2ids);
       if (clefHere != null && clefHere != runningClef) {
         next = next.copyWith(clefChange: clefHere);
         runningClef = clefHere;
       }
-      final keyHere = _anchoredIn(m, _keyChanges);
+      final keyHere = _anchoredIn(m, _keyChanges, extraIds: v2ids);
       if (keyHere != null && keyHere != runningKey) {
         next = next.copyWith(keyChange: keyHere);
         runningKey = keyHere;
       }
-      final tempoHere = _anchoredIn(m, _tempoChanges);
+      final tempoHere = _anchoredIn(m, _tempoChanges, extraIds: v2ids);
       if (tempoHere != null && tempoHere != runningTempo) {
         next = next.copyWith(tempoChange: tempoHere);
         runningTempo = tempoHere;
       }
-      if (_anchoredInSet(m, _repeatStarts)) {
+      if (_anchoredInSet(m, _repeatStarts, extraIds: v2ids)) {
         next = next.copyWith(startRepeat: true);
       }
-      if (_anchoredInSet(m, _repeatEnds)) {
+      if (_anchoredInSet(m, _repeatEnds, extraIds: v2ids)) {
         next = next.copyWith(endRepeat: true);
       }
-      final voltaHere = _anchoredIn(m, _voltas);
+      final voltaHere = _anchoredIn(m, _voltas, extraIds: v2ids);
       if (voltaHere != null) next = next.copyWith(volta: voltaHere);
-      final navHere = _anchoredIn(m, _navigation);
+      final navHere = _anchoredIn(m, _navigation, extraIds: v2ids);
       if (navHere != null) next = next.copyWith(navigation: navHere);
       out.add(next);
     }
     return out;
+  }
+
+  /// bar index → the voice-2 element ids that reflow into that bar, in reading
+  /// order. Voice 2 packs on the same grid (meter / pickup / time changes /
+  /// tuplet scale) as voice 1, so bar indices align across the two voices.
+  Map<int, List<String>> _v2IdsByBar() {
+    final v2 = reflow(
+      [for (final e in _v2) e.toElement()],
+      timeSignature: timeSignature,
+      pickup: pickup,
+      timeChanges: _timeChanges,
+      durationScale: _tupletScale(),
+      split: _rhythmPolicy == RhythmPolicy.split,
+    );
+    return {
+      for (var b = 0; b < v2.length; b++)
+        b: [
+          for (final el in v2[b].elements)
+            if (el.id != null) el.id!,
+        ],
+    };
   }
 
   /// Stamps mid-*bar* clef changes onto the reflowed [bars].
@@ -1724,9 +1752,15 @@ class ScoreDocument {
     return out;
   }
 
-  /// Whether any element of [m] carries an anchor in [ids].
-  bool _anchoredInSet(Measure m, Set<String> ids) =>
-      m.elements.any((e) => e.id != null && ids.contains(e.id));
+  /// Whether any element of [m] — or any voice-2 id in [extraIds] that landed in
+  /// this bar — carries an anchor in [ids].
+  bool _anchoredInSet(
+    Measure m,
+    Set<String> ids, {
+    List<String> extraIds = const [],
+  }) =>
+      m.elements.any((e) => e.id != null && ids.contains(e.id)) ||
+      extraIds.any(ids.contains);
 
   /// element id → sounding-duration scale, for [reflow] (built from [_tuplets]).
   Map<String, Fraction> _tupletScale() => {
@@ -1796,12 +1830,23 @@ class ScoreDocument {
   }
 
   /// The value anchored to an element within [m] (last anchor in reading order
-  /// wins), or null if none of [m]'s elements carry an anchor in [changes].
-  V? _anchoredIn<V>(Measure m, Map<String, V> changes) {
+  /// wins), or null if none of [m]'s elements carry an anchor in [changes]. A
+  /// voice-1 anchor wins; failing that, voice-2 ids in [extraIds] (this bar's,
+  /// in reading order) are consulted, so a change anchored on a voice-2 note
+  /// still stamps its bar.
+  V? _anchoredIn<V>(
+    Measure m,
+    Map<String, V> changes, {
+    List<String> extraIds = const [],
+  }) {
     V? found;
     for (final el in m.elements) {
       final id = el.id;
       if (id != null && changes.containsKey(id)) found = changes[id];
+    }
+    if (found != null) return found;
+    for (final id in extraIds) {
+      if (changes.containsKey(id)) found = changes[id];
     }
     return found;
   }
