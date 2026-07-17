@@ -281,6 +281,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopArticulations => 'Artikulation & Bindebögen';
 
   @override
+  String get workshopOrnament => 'Verzierung';
+
+  @override
   String get workshopStaccato => 'Staccato';
 
   @override

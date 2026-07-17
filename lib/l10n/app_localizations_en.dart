@@ -281,6 +281,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopArticulations => 'Articulations & ties';
 
   @override
+  String get workshopOrnament => 'Ornament';
+
+  @override
   String get workshopStaccato => 'Staccato';
 
   @override

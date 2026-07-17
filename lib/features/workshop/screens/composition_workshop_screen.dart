@@ -150,6 +150,16 @@ const _dynamicOptions = <DynamicLevel>[
   DynamicLevel.ff,
 ];
 
+// The common ornaments, with their conventional label (musical terms — not
+// translated). The baroque trill±accidental variants are omitted from the menu.
+const _ornamentOptions = <Ornament, String>{
+  Ornament.trill: 'Trill',
+  Ornament.shortTrill: 'Short trill',
+  Ornament.mordent: 'Mordent',
+  Ornament.turn: 'Turn',
+  Ornament.invertedTurn: 'Inverted turn',
+};
+
 // The sweepable piano: C1..~A6, a fixed key width so it scrolls horizontally.
 const _pianoWhiteKeys = 42;
 const _pianoKeyWidth = 46.0;
@@ -1215,6 +1225,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               if (id != null) _doc.toggleRepeatStartAt(id);
             case 'repEnd':
               if (id != null) _doc.toggleRepeatEndAt(id);
+            case 'orn':
+              _doc.setOrnamentOfSelected(a.$2 as Ornament?);
           }
         });
       },
@@ -1244,6 +1256,19 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               value: ('dyn', d),
               checked: n?.dynamic == d,
               child: Text('${l10n.workshopDynamics}: ${d.name}'),
+            ),
+          const PopupMenuDivider(),
+          CheckedPopupMenuItem<(String, Object?)>(
+            value: const ('orn', null),
+            checked: n?.ornament == null,
+            child:
+                Text('${l10n.workshopOrnament}: ${l10n.workshopDynamicNone}'),
+          ),
+          for (final e in _ornamentOptions.entries)
+            CheckedPopupMenuItem<(String, Object?)>(
+              value: ('orn', e.key),
+              checked: n?.ornament == e.key,
+              child: Text('${l10n.workshopOrnament}: ${e.value}'),
             ),
           const PopupMenuDivider(),
           CheckedPopupMenuItem<(String, Object?)>(

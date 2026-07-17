@@ -572,6 +572,12 @@ abstract class AppLocalizations {
   /// **'Articulations & ties'**
   String get workshopArticulations;
 
+  /// No description provided for @workshopOrnament.
+  ///
+  /// In en, this message translates to:
+  /// **'Ornament'**
+  String get workshopOrnament;
+
   /// No description provided for @workshopStaccato.
   ///
   /// In en, this message translates to:
