@@ -19,6 +19,16 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (textbook-p1)** · 🚧 **ACTIVE — Textbook phase 1: concept inventory +
+  coverage gap analysis**. The existing `core/curriculum/curriculum.dart` spine
+  (5 grade bands g12→g910, topics→gameIds) places only 40/130 games. Building a
+  re-expressed **concept inventory** (`core/curriculum/concept_map.dart`, our
+  words — no verbatim curriculum text) tagging each grade-1–10 concept with its
+  band + the games that train it, and a pure **gap analyzer**
+  (`coverage_gaps.dart`) + test that prints untrained/thin concepts, orphan games,
+  and guards against dangling refs. Reveals where coverage is thin. NOT touching
+  games/primers/UI. Worktree `../mus-textbook`, branch `feature/textbook-p1`.
+
 - **opus (primer-quality)** · ✅ **idle / SHIPPED — primers revised to the 9yo bar + textbook-mode spec**. Audit found `cadencePrimer` had NO notation (both steps audio-only) and unexplained "V/I"; `upbeat`/`enharmonic`/`voices` each had an audio-only step; `seventh`/`phrase` used jargon. Fixed: **every step now has an engraved example** (new helpers `_progression` cadences, `_pickup` shows a real anacrusis bar, `_spelled` shows F♯ vs G♭ at their true staff spots), and the jargon ("V then I", "the tonic", "a third apart: root/third/fifth") is now concrete kid language. Also **wrote up the Textbook / read-through curriculum vision** (new section above `## Delivery`) incl. the Bundesländer-licensing constraint, the song-mnemonic examples (Kuckuck = descending minor 3rd), and the gap-analysis method. Analyze clean; tutorial + gate green.
 
 - **opus (bughunt)** · ✅ **idle / SHIPPED — 4 real defects found by an adversarial
