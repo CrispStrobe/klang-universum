@@ -3847,6 +3847,112 @@ class AppLocalizationsDe extends AppLocalizations {
   String get textbookPractise => 'Üben';
 
   @override
+  String get formAnalysisTitle => 'Die Form sehen';
+
+  @override
+  String get formAnalysisPlayWhole => 'Ganzes Stück abspielen';
+
+  @override
+  String get formAnalysisHint =>
+      'Tippe einen Block an, um diesen Teil zu hören.';
+
+  @override
+  String get formExampleTernary => 'Dreiteilige Form (A–B–A)';
+
+  @override
+  String get formExampleTernaryCaption =>
+      'Eine Melodie, eine andere in der Mitte, dann wieder die erste. Zwei der drei Teile sind gleich — darum haben A und A dieselbe Farbe.';
+
+  @override
+  String get formExampleRondo => 'Rondo (A–B–A–C–A)';
+
+  @override
+  String get formExampleRondoCaption =>
+      'Eine Melodie kehrt immer wieder (A), dazwischen jedes Mal eine neue (B, dann C). Wie ein Refrain, zu dem man immer wieder zurückkommt.';
+
+  @override
+  String get formExampleVerseChorus => 'Strophe und Refrain (A–B–A–B)';
+
+  @override
+  String get formExampleVerseChorusCaption =>
+      'A ist die Strophe (der Text ändert sich), B ist der Refrain (er bleibt gleich). Die meisten Popsongs wechseln zwischen beiden.';
+
+  @override
+  String get formExampleAaba => 'Liedform (A–A–B–A)';
+
+  @override
+  String get formExampleAabaCaption =>
+      'Die Hauptmelodie zweimal (A, A), dann ein anderer Mittelteil (B, die „Bridge“), dann noch einmal die Hauptmelodie. Eine sehr häufige Liedform.';
+
+  @override
+  String get proseIntervals =>
+      'Ein Intervall ist der Abstand zwischen zwei Tönen — wie groß der Sprung ist. Kleine Sprünge (eine Sekunde, eine Terz) klingen eng und weich; große Sprünge (eine Sexte, eine Oktave) klingen weit und offen. Jedes erkennst du am Anfang eines bekannten Lieds: eine fallende kleine Terz ist der „Kuck-uck“-Ruf.';
+
+  @override
+  String get proseTriads =>
+      'Ein Dreiklang ist ein Akkord aus drei Tönen, gebaut aus zwei übereinandergestapelten Terzen — ein Grundton, der Ton zwei Schritte höher und noch zwei Schritte höher. Dur-Dreiklänge klingen hell und fröhlich, Moll-Dreiklänge weicher und trauriger. Fast alle Akkorde beginnen als Dreiklang.';
+
+  @override
+  String get proseKeySignatures =>
+      'Die Kreuze oder Bs ganz am Anfang einer Zeile sind die Vorzeichen: Sie sagen dir, welche Töne im ganzen Stück erhöht oder erniedrigt bleiben, damit du nicht jedes Mal ein Vorzeichen schreiben musst. Zähle sie, um die Tonart zu bestimmen.';
+
+  @override
+  String get proseEnharmonics =>
+      'Ein Klang kann zwei Namen haben. Fis und Ges sind genau dieselbe Taste am Klavier, nur je nach Tonart anders geschrieben. Solche Töne nennt man enharmonisch — gleiche Tonhöhe, zwei Schreibweisen.';
+
+  @override
+  String get proseCircleOfFifths =>
+      'Gehe jedes Mal eine Quinte hinauf — C, G, D, A … — und du wanderst um einen Kreis, der durch alle Tonarten führt und wieder nach Hause kommt. Jeder Schritt fügt ein Kreuz hinzu (in die eine Richtung) oder ein B (in die andere) — darum ist er die Landkarte der Vorzeichen.';
+
+  @override
+  String get proseMinorScales =>
+      'Moll-Tonleitern klingen dunkler als Dur. Natürliches Moll benutzt die einfachen Töne seiner Tonart; harmonisches Moll erhöht die 7. Stufe, damit sich die Tonleiter stark zum Grundton zurückzieht. Dieser eine erhöhte Ton gibt harmonischem Moll seinen besonderen, ziehenden Klang.';
+
+  @override
+  String get proseSeventhChords =>
+      'Setze noch eine Terz oben auf einen Dreiklang und du bekommst einen Septakkord — vier Töne statt drei. Der zusätzliche Ton klingt unruhig und will weiter, darum zieht ein Dominantseptakkord (V7) so stark zum Grundakkord zurück.';
+
+  @override
+  String get proseCadences =>
+      'Eine Kadenz ist, wie eine musikalische Phrase endet — ihr Satzzeichen. Eine authentische Kadenz (V→I) klingt wie ein Punkt, fertig und zur Ruhe gekommen. Eine Halbkadenz endet auf der Dominante und klingt wie eine Frage, die noch offen bleibt.';
+
+  @override
+  String get proseHarmonicFunction =>
+      'Akkorde haben Aufgaben. Die Tonika (I) ist Zuhause — ruhig und entspannt. Die Dominante (V) ist Spannung, die nach Hause zieht. Die Subdominante (IV) ist der Schritt weg von zu Hause, bevor die Dominante zurückzieht. Zuhause → weg → Spannung → Zuhause ist die Geschichte hinter fast jeder Musik.';
+
+  @override
+  String get proseRomanNumerals =>
+      'Römische Zahlen benennen einen Akkord nach seiner Stufe in der Tonleiter, nicht nach seinem Buchstaben — so gelten dieselben Zahlen in jeder Tonart. GROSSBUCHSTABEN bedeuten Dur (I, IV, V), kleine Buchstaben Moll (ii, iii, vi). So beschreibt „V–I“ einen Schluss in jeder Tonart auf einmal.';
+
+  @override
+  String get proseModulation =>
+      'Modulation ist, wenn ein Stück mittendrin die Tonart wechselt — es hebt sich zu einem neuen Grundton und bleibt eine Weile dort. Oft macht das die Musik heller oder frischer, wie ein Fenster in einen neuen Raum, bevor sie vielleicht wieder zurückfindet.';
+
+  @override
+  String get proseModes =>
+      'Modi sind Tonleitern, die auf verschiedenen Stufen beginnen, jede mit eigener Farbe. Dur (Ionisch) ist hell, natürliches Moll (Äolisch) ist dunkel, und Dorisch ist Moll mit erhöhter 6. Stufe — Moll, aber mit einem hoffnungsvollen Dreh. Ändere einen Ton und die ganze Farbe ändert sich.';
+
+  @override
+  String get proseSyncopation =>
+      'Normalerweise liegen die betonten Schläge auf der Zählzeit — 1, 2, 3, 4. Synkopen setzen die Betonung stattdessen neben den Schlag, in die Lücken dazwischen. Dieses Ziehen und Schieben lässt Musik tanzen oder swingen, statt zu marschieren.';
+
+  @override
+  String get proseTriplets =>
+      'Eine Triole quetscht drei gleiche Noten in den Platz, wo du sonst zwei spielst. Statt „ta-ta“ zählst du „ta-ta-ta“ in derselben Zeit. Ein Dreier-Gefühl mitten in einem Zweier-Schlag — ein sanftes Wiegen.';
+
+  @override
+  String get proseSongForm =>
+      'Lieder bestehen aus Teilen, die sich wiederholen und abwechseln. Eine Strophe erzählt die Geschichte mit wechselndem Text; ein Refrain kommt jedes Mal gleich wieder als einprägsamer Ohrwurm. Die Teile mit Buchstaben (A, B …) zu benennen zeigt die Form auf einen Blick.';
+
+  @override
+  String get proseMusicalForm =>
+      'Die Form ist der Bauplan eines Stücks — wie seine Teile angeordnet sind. Kehrt eine Melodie wieder, behält sie ihren Buchstaben; eine neue Melodie bekommt einen neuen. A–B–A (dreiteilig) und A–B–A–C–A (Rondo) sind zwei der ältesten, klarsten Formen. Die Buchstaben machen ein langes Stück leicht verständlich.';
+
+  @override
+  String get proseTransposingInstruments =>
+      'Manche Instrumente klingen anders als der Ton, den sie lesen. Eine B-Klarinette klingt ein B, wenn sie ein geschriebenes C spielt. Darum wird dieselbe Melodie für verschiedene Instrumente unterschiedlich notiert, damit sie in der richtigen Tonhöhe klingt — das ist Transposition.';
+
+  @override
   String get gameInstrumentFamily => 'Welche Familie?';
 
   @override

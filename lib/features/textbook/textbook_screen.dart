@@ -13,6 +13,7 @@
 // concepts are grouped by area with a sub-header, so it reads like a book.
 
 import 'package:comet_beat/core/curriculum/concept_map.dart';
+import 'package:comet_beat/features/games/composition/form_analysis_view.dart';
 import 'package:comet_beat/features/games/game_registry.dart';
 import 'package:comet_beat/features/games/tutorial_gate.dart';
 import 'package:comet_beat/features/textbook/textbook_i18n.dart';
@@ -154,6 +155,10 @@ class _ConceptTile extends StatelessWidget {
 
     // The lesson is the first game's primer (its own, or its module's fallback).
     final lesson = helpPrimerFor(games.first);
+    // The textbook's own teaching paragraph (null where not yet authored).
+    final prose = conceptProse(l10n, concept.id);
+    // Worked AnaVis-style form examples, if this concept has any.
+    final formExamples = kFormExamples[concept.id];
 
     return ExpansionTile(
       leading: Icon(
@@ -164,11 +169,29 @@ class _ConceptTile extends StatelessWidget {
       subtitle: Text(l10n.textbookPractise),
       childrenPadding: const EdgeInsets.only(bottom: 8),
       children: [
+        if (prose != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Text(
+              prose,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
         if (lesson != null)
           ListTile(
             leading: const Icon(Icons.auto_stories),
             title: Text(l10n.textbookReadLesson),
             onTap: () => showTutorial(context, lesson(l10n)),
+          ),
+        if (formExamples != null && formExamples.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.view_column),
+            title: Text(l10n.formAnalysisTitle),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => FormAnalysisScreen(examples: formExamples),
+              ),
+            ),
           ),
         for (final g in games)
           ListTile(

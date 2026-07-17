@@ -40,11 +40,17 @@ class FormTimeline extends StatelessWidget {
     required this.sections,
     this.height = 64,
     this.showLabels = true,
+    this.onTapSection,
   });
 
   final List<FormSection> sections;
   final double height;
   final bool showLabels;
+
+  /// When set, each block is tappable (its index is passed back) — used by the
+  /// AnaVis-style analysis view to hear one section. Null (the game's use) keeps
+  /// the blocks inert.
+  final void Function(int index)? onTapSection;
 
   @override
   Widget build(BuildContext context) {
@@ -57,28 +63,59 @@ class FormTimeline extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: formColorFor(sections[i].label, scheme),
-                    borderRadius: BorderRadius.circular(10),
-                    border: sections[i].highlighted
-                        ? Border.all(color: scheme.onSurface, width: 3)
-                        : null,
-                  ),
-                  child: Center(
-                    child: Text(
-                      showLabels ? sections[i].label : '',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 26,
-                      ),
-                    ),
-                  ),
+                child: _Block(
+                  color: formColorFor(sections[i].label, scheme),
+                  outline: sections[i].highlighted ? scheme.onSurface : null,
+                  label: showLabels ? sections[i].label : '',
+                  onTap: onTapSection == null ? null : () => onTapSection!(i),
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _Block extends StatelessWidget {
+  const _Block({
+    required this.color,
+    required this.label,
+    this.outline,
+    this.onTap,
+  });
+
+  final Color color;
+  final String label;
+  final Color? outline;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final block = DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+        border: outline != null ? Border.all(color: outline!, width: 3) : null,
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 26,
+          ),
+        ),
+      ),
+    );
+    if (onTap == null) return block;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: block,
       ),
     );
   }

@@ -6956,6 +6956,174 @@ abstract class AppLocalizations {
   /// **'Practise'**
   String get textbookPractise;
 
+  /// No description provided for @formAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'See the form'**
+  String get formAnalysisTitle;
+
+  /// No description provided for @formAnalysisPlayWhole.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the whole piece'**
+  String get formAnalysisPlayWhole;
+
+  /// No description provided for @formAnalysisHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a block to hear that section.'**
+  String get formAnalysisHint;
+
+  /// No description provided for @formExampleTernary.
+  ///
+  /// In en, this message translates to:
+  /// **'Ternary form (A–B–A)'**
+  String get formExampleTernary;
+
+  /// No description provided for @formExampleTernaryCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'A tune, a different middle tune, then the first tune again. Two of the three parts are the same — so A and A share a colour.'**
+  String get formExampleTernaryCaption;
+
+  /// No description provided for @formExampleRondo.
+  ///
+  /// In en, this message translates to:
+  /// **'Rondo (A–B–A–C–A)'**
+  String get formExampleRondo;
+
+  /// No description provided for @formExampleRondoCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'One tune keeps coming back (A), with a new tune in between each time (B, then C). Like a chorus you return to again and again.'**
+  String get formExampleRondoCaption;
+
+  /// No description provided for @formExampleVerseChorus.
+  ///
+  /// In en, this message translates to:
+  /// **'Verse and chorus (A–B–A–B)'**
+  String get formExampleVerseChorus;
+
+  /// No description provided for @formExampleVerseChorusCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'A is the verse (the words change), B is the chorus (it repeats the same). Most pop songs swap between them.'**
+  String get formExampleVerseChorusCaption;
+
+  /// No description provided for @formExampleAaba.
+  ///
+  /// In en, this message translates to:
+  /// **'Song form (A–A–B–A)'**
+  String get formExampleAaba;
+
+  /// No description provided for @formExampleAabaCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'The main tune twice (A, A), then a contrasting middle (B, the “bridge”), then the main tune once more. A very common shape for songs.'**
+  String get formExampleAabaCaption;
+
+  /// No description provided for @proseIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'An interval is the distance between two notes — how big the jump is. Small jumps (a 2nd, a 3rd) sound smooth and close; big jumps (a 6th, an octave) sound wide and open. You can learn each one by the start of a song you know: a falling minor 3rd is the “cuck-oo” call.'**
+  String get proseIntervals;
+
+  /// No description provided for @proseTriads.
+  ///
+  /// In en, this message translates to:
+  /// **'A triad is a three-note chord built by stacking two thirds — a root, the note two steps up, and two steps up again. Major triads sound bright and cheerful; minor triads sound softer and sadder. Almost all the chords you meet start life as a triad.'**
+  String get proseTriads;
+
+  /// No description provided for @proseKeySignatures.
+  ///
+  /// In en, this message translates to:
+  /// **'The sharps or flats at the very start of a line are the key signature: they tell you which notes stay raised or lowered for the whole piece, so you don’t have to write an accidental every time. Count them to name the key.'**
+  String get proseKeySignatures;
+
+  /// No description provided for @proseEnharmonics.
+  ///
+  /// In en, this message translates to:
+  /// **'One sound can have two names. F♯ and G♭ are the exact same key on a piano, just spelled differently depending on the key you’re in. Notes like these are called enharmonic — same pitch, two spellings (in German: Fis and Ges).'**
+  String get proseEnharmonics;
+
+  /// No description provided for @proseCircleOfFifths.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump up a fifth each time — C, G, D, A… — and you travel around a circle that passes through every key and comes back home. Each step adds one sharp (going one way) or one flat (going the other), which is why it’s the mapmaker of key signatures.'**
+  String get proseCircleOfFifths;
+
+  /// No description provided for @proseMinorScales.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor scales sound darker than major. Natural minor uses the plain notes of its key; harmonic minor raises the 7th step so the scale leans strongly back to its home note. That one raised note gives harmonic minor its exotic, pulling sound.'**
+  String get proseMinorScales;
+
+  /// No description provided for @proseSeventhChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Add one more third on top of a triad and you get a seventh chord — four notes instead of three. The extra note sounds restless and wants to move on, which is why a dominant seventh (V7) pulls so strongly back to the home chord.'**
+  String get proseSeventhChords;
+
+  /// No description provided for @proseCadences.
+  ///
+  /// In en, this message translates to:
+  /// **'A cadence is how a musical phrase ends — its punctuation. A perfect cadence (V→I) sounds like a full stop, finished and settled. A half cadence stops on the dominant and sounds like a question, still hanging, waiting for more.'**
+  String get proseCadences;
+
+  /// No description provided for @proseHarmonicFunction.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords have jobs. The tonic (I) is home — settled and at rest. The dominant (V) is tension that wants to pull back home. The subdominant (IV) is the step that moves away from home before the dominant pulls you back. Home → away → tension → home is the story behind most music.'**
+  String get proseHarmonicFunction;
+
+  /// No description provided for @proseRomanNumerals.
+  ///
+  /// In en, this message translates to:
+  /// **'Roman numerals name a chord by its step in the scale, not its letter — so the same numbers work in every key. CAPITALS mean a major chord (I, IV, V), small letters mean minor (ii, iii, vi). Now “V–I” describes an ending in any key at once.'**
+  String get proseRomanNumerals;
+
+  /// No description provided for @proseModulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Modulation is when a piece changes key partway through — it lifts to a new home note and stays there for a while. It often brightens or freshens the music, like opening a window into a new room, before it may find its way back.'**
+  String get proseModulation;
+
+  /// No description provided for @proseModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Modes are scales that start on different steps, each with its own flavour. Major (Ionian) is bright, natural minor (Aeolian) is dark, and Dorian is minor with a raised 6th — minor, but with a hopeful twist. Change one note and the whole colour of the tune changes.'**
+  String get proseModes;
+
+  /// No description provided for @proseSyncopation.
+  ///
+  /// In en, this message translates to:
+  /// **'Normally the strong beats land on the count — 1, 2, 3, 4. Syncopation puts the accent off the beat instead, in the gaps between counts. That push-and-pull is what makes music feel like it swings or dances instead of marching.'**
+  String get proseSyncopation;
+
+  /// No description provided for @proseTriplets.
+  ///
+  /// In en, this message translates to:
+  /// **'A triplet squeezes three even notes into the space where you’d normally play two. Instead of “ta-ta”, you count “ta-ta-ta” in the same time. It’s a triple feel dropped into a duple beat — a gentle lilt.'**
+  String get proseTriplets;
+
+  /// No description provided for @proseSongForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Songs are built from sections that repeat and contrast. A verse tells the story with changing words; a chorus comes back the same each time as the memorable hook. Labelling the parts with letters (A, B…) shows the shape at a glance.'**
+  String get proseSongForm;
+
+  /// No description provided for @proseMusicalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Form is the overall plan of a piece — how its sections are arranged. When a tune returns it keeps its letter; a new tune gets a new one. A–B–A (ternary) and A–B–A–C–A (rondo) are two of the oldest, clearest shapes. Seeing the letters makes a long piece easy to follow.'**
+  String get proseMusicalForm;
+
+  /// No description provided for @proseTransposingInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'Some instruments sound a different note from the one they read. A B♭ clarinet playing a written C sounds a B♭. So the same tune is written differently for different instruments, so that it sounds at the right pitch — that’s transposition.'**
+  String get proseTransposingInstruments;
+
   /// No description provided for @gameInstrumentFamily.
   ///
   /// In en, this message translates to:

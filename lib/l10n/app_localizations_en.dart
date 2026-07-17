@@ -3826,6 +3826,111 @@ class AppLocalizationsEn extends AppLocalizations {
   String get textbookPractise => 'Practise';
 
   @override
+  String get formAnalysisTitle => 'See the form';
+
+  @override
+  String get formAnalysisPlayWhole => 'Play the whole piece';
+
+  @override
+  String get formAnalysisHint => 'Tap a block to hear that section.';
+
+  @override
+  String get formExampleTernary => 'Ternary form (A–B–A)';
+
+  @override
+  String get formExampleTernaryCaption =>
+      'A tune, a different middle tune, then the first tune again. Two of the three parts are the same — so A and A share a colour.';
+
+  @override
+  String get formExampleRondo => 'Rondo (A–B–A–C–A)';
+
+  @override
+  String get formExampleRondoCaption =>
+      'One tune keeps coming back (A), with a new tune in between each time (B, then C). Like a chorus you return to again and again.';
+
+  @override
+  String get formExampleVerseChorus => 'Verse and chorus (A–B–A–B)';
+
+  @override
+  String get formExampleVerseChorusCaption =>
+      'A is the verse (the words change), B is the chorus (it repeats the same). Most pop songs swap between them.';
+
+  @override
+  String get formExampleAaba => 'Song form (A–A–B–A)';
+
+  @override
+  String get formExampleAabaCaption =>
+      'The main tune twice (A, A), then a contrasting middle (B, the “bridge”), then the main tune once more. A very common shape for songs.';
+
+  @override
+  String get proseIntervals =>
+      'An interval is the distance between two notes — how big the jump is. Small jumps (a 2nd, a 3rd) sound smooth and close; big jumps (a 6th, an octave) sound wide and open. You can learn each one by the start of a song you know: a falling minor 3rd is the “cuck-oo” call.';
+
+  @override
+  String get proseTriads =>
+      'A triad is a three-note chord built by stacking two thirds — a root, the note two steps up, and two steps up again. Major triads sound bright and cheerful; minor triads sound softer and sadder. Almost all the chords you meet start life as a triad.';
+
+  @override
+  String get proseKeySignatures =>
+      'The sharps or flats at the very start of a line are the key signature: they tell you which notes stay raised or lowered for the whole piece, so you don’t have to write an accidental every time. Count them to name the key.';
+
+  @override
+  String get proseEnharmonics =>
+      'One sound can have two names. F♯ and G♭ are the exact same key on a piano, just spelled differently depending on the key you’re in. Notes like these are called enharmonic — same pitch, two spellings (in German: Fis and Ges).';
+
+  @override
+  String get proseCircleOfFifths =>
+      'Jump up a fifth each time — C, G, D, A… — and you travel around a circle that passes through every key and comes back home. Each step adds one sharp (going one way) or one flat (going the other), which is why it’s the mapmaker of key signatures.';
+
+  @override
+  String get proseMinorScales =>
+      'Minor scales sound darker than major. Natural minor uses the plain notes of its key; harmonic minor raises the 7th step so the scale leans strongly back to its home note. That one raised note gives harmonic minor its exotic, pulling sound.';
+
+  @override
+  String get proseSeventhChords =>
+      'Add one more third on top of a triad and you get a seventh chord — four notes instead of three. The extra note sounds restless and wants to move on, which is why a dominant seventh (V7) pulls so strongly back to the home chord.';
+
+  @override
+  String get proseCadences =>
+      'A cadence is how a musical phrase ends — its punctuation. A perfect cadence (V→I) sounds like a full stop, finished and settled. A half cadence stops on the dominant and sounds like a question, still hanging, waiting for more.';
+
+  @override
+  String get proseHarmonicFunction =>
+      'Chords have jobs. The tonic (I) is home — settled and at rest. The dominant (V) is tension that wants to pull back home. The subdominant (IV) is the step that moves away from home before the dominant pulls you back. Home → away → tension → home is the story behind most music.';
+
+  @override
+  String get proseRomanNumerals =>
+      'Roman numerals name a chord by its step in the scale, not its letter — so the same numbers work in every key. CAPITALS mean a major chord (I, IV, V), small letters mean minor (ii, iii, vi). Now “V–I” describes an ending in any key at once.';
+
+  @override
+  String get proseModulation =>
+      'Modulation is when a piece changes key partway through — it lifts to a new home note and stays there for a while. It often brightens or freshens the music, like opening a window into a new room, before it may find its way back.';
+
+  @override
+  String get proseModes =>
+      'Modes are scales that start on different steps, each with its own flavour. Major (Ionian) is bright, natural minor (Aeolian) is dark, and Dorian is minor with a raised 6th — minor, but with a hopeful twist. Change one note and the whole colour of the tune changes.';
+
+  @override
+  String get proseSyncopation =>
+      'Normally the strong beats land on the count — 1, 2, 3, 4. Syncopation puts the accent off the beat instead, in the gaps between counts. That push-and-pull is what makes music feel like it swings or dances instead of marching.';
+
+  @override
+  String get proseTriplets =>
+      'A triplet squeezes three even notes into the space where you’d normally play two. Instead of “ta-ta”, you count “ta-ta-ta” in the same time. It’s a triple feel dropped into a duple beat — a gentle lilt.';
+
+  @override
+  String get proseSongForm =>
+      'Songs are built from sections that repeat and contrast. A verse tells the story with changing words; a chorus comes back the same each time as the memorable hook. Labelling the parts with letters (A, B…) shows the shape at a glance.';
+
+  @override
+  String get proseMusicalForm =>
+      'Form is the overall plan of a piece — how its sections are arranged. When a tune returns it keeps its letter; a new tune gets a new one. A–B–A (ternary) and A–B–A–C–A (rondo) are two of the oldest, clearest shapes. Seeing the letters makes a long piece easy to follow.';
+
+  @override
+  String get proseTransposingInstruments =>
+      'Some instruments sound a different note from the one they read. A B♭ clarinet playing a written C sounds a B♭. So the same tune is written differently for different instruments, so that it sounds at the right pitch — that’s transposition.';
+
+  @override
   String get gameInstrumentFamily => 'Which Family?';
 
   @override

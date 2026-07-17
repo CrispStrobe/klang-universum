@@ -82,6 +82,31 @@ String conceptTitle(AppLocalizations l10n, String id) => switch (id) {
       _ => id,
     };
 
+/// The textbook's OWN teaching paragraph for a concept — richer than the game
+/// primer, in the book's voice, our own words. Returns null where none is
+/// authored yet (the reader then shows no prose block), so coverage grows
+/// concept by concept. Localised (de/en).
+String? conceptProse(AppLocalizations l10n, String id) => switch (id) {
+      'intervals' => l10n.proseIntervals,
+      'triads' => l10n.proseTriads,
+      'key_signatures' => l10n.proseKeySignatures,
+      'enharmonics' => l10n.proseEnharmonics,
+      'circle_of_fifths' => l10n.proseCircleOfFifths,
+      'minor_scales' => l10n.proseMinorScales,
+      'seventh_chords' => l10n.proseSeventhChords,
+      'cadences' => l10n.proseCadences,
+      'harmonic_function' => l10n.proseHarmonicFunction,
+      'roman_numerals' => l10n.proseRomanNumerals,
+      'modulation' => l10n.proseModulation,
+      'modes' => l10n.proseModes,
+      'syncopation' => l10n.proseSyncopation,
+      'triplets' => l10n.proseTriplets,
+      'song_form' => l10n.proseSongForm,
+      'musical_form' => l10n.proseMusicalForm,
+      'transposing_instruments' => l10n.proseTransposingInstruments,
+      _ => null,
+    };
+
 /// Localised name for a concept area (the sub-headers in the reader).
 String areaName(AppLocalizations l10n, ConceptArea area) => switch (area) {
       ConceptArea.pulse => l10n.areaPulse,
