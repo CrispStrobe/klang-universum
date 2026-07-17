@@ -17,11 +17,16 @@ and push to origin/main** before/after touching shared files. Format:
 - **opus (next)** · 🚧 **ACTIVE — Workshop notation batch: tempo marks → grace
   notes → playback** (`docs/WORKSHOP_NEXT_HANDOVER.md`, in order). Worktree
   `../mus-next`, branch `feature/workshop-next`. **Touching the HOT Workshop set:**
-  `lib/features/workshop/model/score_document.dart` (id-anchor `_tempoChanges`
-  side-map + `Tempo?` initial-tempo field) + `screens/
-  composition_workshop_screen.dart` (tempo entry in the ⋮ / change-here dialog) +
-  new `test/tempo_test.dart`. Starting with **tempo marks** (bar-anchored stamp,
-  feeds `Score.tempo`/`Measure.tempoChange` → `TempoMap`).
+  `lib/features/workshop/model/score_document.dart` + `screens/
+  composition_workshop_screen.dart` + tests.
+  ✅ **Tempo marks SHIPPED** — document-level `Tempo? tempo` (→ `Score.tempo`) +
+  id-anchored `_tempoChanges` side-map (→ `Measure.tempoChange`), the clef/key
+  stamp pattern; Tempo row in the change-here dialog + "Initial tempo…" in the ⋮
+  menu; `test/tempo_test.dart` (byte-identity + MusicXML round-trip), de/en, suite
+  green, analyze clean. Feeds `TempoMap` for playback.
+  🚧 **Now: grace notes** — `EditorElement.graceNotes: List<NoteElement>` (a FIELD
+  riding the snapshot) + a small entry UI; zero bar duration so reflow ignores
+  them for packing.
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).
