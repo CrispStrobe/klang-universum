@@ -7,9 +7,11 @@
 //   COMET_CRISPASR_LIB, COMET_KOKORO_MODEL, COMET_KOKORO_VOICE_DE
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tts/crispasr_tts_backend.dart';
+import 'package:comet_beat/core/audio/tts/kokoro_model_store.dart';
 import 'package:crispasr/crispasr.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -85,6 +87,47 @@ void main() {
       final wav = wavBytes(pcm, sampleRate: 24000);
       expect(String.fromCharCodes(wav.sublist(0, 4)), 'RIFF');
       expect(wav.length, 44 + pcm.length * 2);
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  // The full APP path: the real KokoroModelStore (no overrides) resolves the lib
+  // from ~/.cache/crispasr, finds the cached model, and CrispAsrTtsBackend
+  // synthesises + hands a WAV to the play sink — exactly what the running macOS
+  // app does when the HD-voice tile is on. Skips unless the cache is populated
+  // (run tool/bundle_macos_tts.sh first), so it's a dev proof, not a CI test.
+  test(
+    'the real store + backend narrate end-to-end from ~/.cache/crispasr',
+    () async {
+      final store = KokoroModelStore(); // no overrides → CrispASR cache dir
+      if (!await store.isReady()) {
+        // ignore: avoid_print
+        print('SKIP: ~/.cache/crispasr not populated — run '
+            'tool/bundle_macos_tts.sh + fetch the model.');
+        return;
+      }
+      expect(await store.supported(), isTrue);
+
+      Uint8List? played;
+      final backend = CrispAsrTtsBackend(
+        store: store,
+        play: (wav) async => played = wav,
+      );
+      await backend.speak(
+        'Guten Tag! Dies ist die natürliche Stimme von CometBeat.',
+        langCode: 'de-DE',
+      );
+
+      expect(played, isNotNull, reason: 'nothing was synthesised/played');
+      expect(String.fromCharCodes(played!.sublist(0, 4)), 'RIFF');
+      expect(played!.length, greaterThan(44 + 24000 * 2)); // > 1 s of audio
+
+      // Write it out so a human can listen (afplay) — proof it really works.
+      final out = File(
+        '${Directory.systemTemp.path}/cometbeat_tts_realstore.wav',
+      )..writeAsBytesSync(played!);
+      // ignore: avoid_print
+      print('WROTE ${out.path} (${played!.length} bytes)');
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
