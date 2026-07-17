@@ -315,6 +315,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopMutePart => 'Mute';
 
   @override
+  String get workshopPlaybackSpeed => 'Playback speed';
+
+  @override
   String get workshopArticulations => 'Articulations & ties';
 
   @override

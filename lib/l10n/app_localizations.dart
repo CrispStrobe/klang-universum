@@ -638,6 +638,12 @@ abstract class AppLocalizations {
   /// **'Mute'**
   String get workshopMutePart;
 
+  /// No description provided for @workshopPlaybackSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback speed'**
+  String get workshopPlaybackSpeed;
+
   /// No description provided for @workshopArticulations.
   ///
   /// In en, this message translates to:

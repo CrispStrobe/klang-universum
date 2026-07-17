@@ -459,6 +459,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   // part is dropped from both the audio mix and the moving cursor.
   final Set<int> _mutedParts = {};
 
+  // Playback practice speed: 1.0 = the score's own tempo, 0.5 = half speed (for
+  // slow practice). Applied as a wall-clock stretch in [_renderPart]; takes
+  // effect on the next Play (changing it mid-playback doesn't re-render).
+  double _playSpeed = 1;
+  static const List<double> _playSpeeds = [0.5, 0.75, 1.0];
+
   bool get _isPlaying => _playTimer != null;
 
   /// Whether there's anything to play: in multi-part mode any part with content
@@ -1130,6 +1136,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   void _togglePlay() => _isPlaying ? _stopPlayback() : _startPlayback();
 
+  /// A playback-speed multiplier as a compact chip label: `1×`, `0.75×`, `0.5×`.
+  static String _speedLabel(double s) =>
+      '${s == s.roundToDouble() ? s.round() : s}×';
+
   /// One part's playback data: the timed-chord [events] for the audio render and
   /// the seconds [schedule] driving the cursor (ids carry [idPrefix] so the
   /// multi-part canvas's global `p{i}:` ids match). [endSeconds] is when it ends.
@@ -1140,6 +1150,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   }) _renderPart(Score score, String idPrefix) {
     final timeline = playbackTimeline(score);
     final tm = tempoMapOf(score);
+    // Practice speed stretches wall-clock time (0.5× → everything lasts twice as
+    // long) without touching pitch. The SAME factor scales the audio durations
+    // and the cursor schedule, so they stay locked together.
+    final stretch = 1 / _playSpeed;
 
     // Element id → its sounding midis (a chord contributes several).
     final midisOf = <String, List<int>>{};
@@ -1157,7 +1171,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       for (final n in timeline)
         (
           n.isRest ? const <int>[] : (midisOf[n.elementId] ?? const <int>[]),
-          ((tm.secondsAt(n.end) - tm.secondsAt(n.start)) * 1000).round(),
+          ((tm.secondsAt(n.end) - tm.secondsAt(n.start)) * 1000 * stretch)
+              .round(),
         ),
     ];
     // The cursor schedule in seconds (rests carry no highlight).
@@ -1166,12 +1181,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         if (!n.isRest)
           (
             id: '$idPrefix${n.elementId}',
-            start: tm.secondsAt(n.start),
-            end: tm.secondsAt(n.end),
+            start: tm.secondsAt(n.start) * stretch,
+            end: tm.secondsAt(n.end) * stretch,
           ),
     ];
     final endSeconds = timeline.fold<double>(0, (mx, n) {
-      final e = tm.secondsAt(n.end);
+      final e = tm.secondsAt(n.end) * stretch;
       return e > mx ? e : mx;
     });
     return (events: events, schedule: schedule, endSeconds: endSeconds);
@@ -2282,6 +2297,30 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 // if they emptied the document mid-playback.
                 onPressed:
                     (!_hasPlayableContent && !_isPlaying) ? null : _togglePlay,
+              ),
+              // Practice speed — the number reads as a chip; picking a slower
+              // speed makes the next Play stretch (same pitch) for slow practice.
+              PopupMenuButton<double>(
+                tooltip: l10n.workshopPlaybackSpeed,
+                initialValue: _playSpeed,
+                onSelected: (s) => setState(() => _playSpeed = s),
+                itemBuilder: (ctx) => [
+                  for (final s in _playSpeeds)
+                    CheckedPopupMenuItem<double>(
+                      value: s,
+                      checked: _playSpeed == s,
+                      child: Text(_speedLabel(s)),
+                    ),
+                ],
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      _speedLabel(_playSpeed),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.info_outline),

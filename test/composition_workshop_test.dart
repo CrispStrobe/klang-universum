@@ -306,12 +306,13 @@ void main() {
     await tester.tap(_pianoKeyAt(18));
     await tester.pump();
 
-    // Play → the button flips to a stop icon and the cursor timer runs. Avoid
-    // pumpAndSettle here: the periodic playback timer never settles.
+    // Play → the button flips to a stop icon (set synchronously in
+    // _startPlayback). Avoid pumpAndSettle (the periodic timer never settles)
+    // AND a timed pump (playback rides a real Stopwatch, so under load a short
+    // piece could end before the assert).
     expect(find.byIcon(Icons.play_arrow), findsOneWidget);
     await tester.tap(find.byIcon(Icons.play_arrow));
     await tester.pump(); // start
-    await tester.pump(const Duration(milliseconds: 60)); // one cursor tick
     expect(find.byIcon(Icons.stop), findsOneWidget);
     expect(find.byIcon(Icons.play_arrow), findsNothing);
 
@@ -321,6 +322,24 @@ void main() {
     await tester.pump();
     expect(find.byIcon(Icons.play_arrow), findsOneWidget);
     expect(find.byIcon(Icons.stop), findsNothing);
+  });
+
+  testWidgets('the playback speed control switches the shown speed',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKey());
+    await tester.pump();
+
+    // Defaults to 1×; open the speed menu and pick 0.5× (slow practice).
+    expect(find.text('1×'), findsOneWidget);
+    await tester.tap(find.text('1×'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('0.5×').last); // the menu item
+    await tester.pumpAndSettle();
+
+    // The chip now reads 0.5× and 1× is no longer shown.
+    expect(find.text('0.5×'), findsOneWidget);
+    expect(find.text('1×'), findsNothing);
   });
 
   testWidgets('multi-part playback: the transport plays all parts',
@@ -334,10 +353,11 @@ void main() {
     await tester.pump();
     expect(_editor(tester).partCount, 2);
 
-    // Play → stop icon while the mixed transport + cursor run.
+    // Play → the button flips to stop synchronously (set in _startPlayback).
+    // Don't advance the fake clock here: playback timing rides a real Stopwatch,
+    // so a timed pump under load could end this short piece before we assert.
     await tester.tap(find.byIcon(Icons.play_arrow));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 60));
     expect(find.byIcon(Icons.stop), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.stop));
