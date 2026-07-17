@@ -33,25 +33,24 @@ and push to origin/main** before/after touching shared files. Format:
   branch `feature/workshop-parity`. **HOT:** `screens/
   composition_workshop_screen.dart` (a side/bottom panel reflecting the selection;
   reuses existing `_doc` mutators). Additive + behind the existing surface; small
-  commits, rebasing often. ✅ **voice 2 SHIPPED** just now (`bb6b7d0`):
-  `Measure.voice2`, a sibling `_v2` stream sharing the bar grid via the `_elements`
-  active-voice getter (mutation sites untouched); `_withVoice2` reflow+stamp
-  (byte-identity fast path); V1/V2 toolbar toggle; `test/voice2_test.dart` (9) +
-  widget test; MusicXML round-trips (writer backup). crisp_notation engraves
-  voices 1+2 only.
-- **opus (next)** · 🚧 **ACTIVE — playback practice-speed control** (0.5×/0.75×/1×;
-  slow-practice is a core music-ed feature, and it leverages the playback engine
-  just shipped). Worktree `../mus-next`, branch `feature/workshop-next`. **HOT
-  file:** `screens/composition_workshop_screen.dart` **only** — a `_playSpeed`
-  scale applied inside `_renderPart` (both audio ms and the cursor schedule scale
-  together, staying in sync) + a small speed `PopupMenuButton` in the app-bar
-  actions next to the transport. **Staying out of parity's voice-2 regions**
-  (`score_document.dart`/reflow, note-entry/selection, the voice toggle); my edits
-  are confined to the transport methods + app-bar. Maybe a tooltip ARB key. Small,
-  one commit. **Shipped by opus (next) already:** tempo marks, grace notes,
-  playback (bucket F), multi-part playback (mix + full-score cursor + per-part
-  mute) — see [HISTORY.md]. **Remaining Workshop items:** voice 2 (opus-parity),
-  the Studio shell (Causes 2+3, parity next).
+  commits, rebasing often. ✅ **voice 2 SHIPPED** (`bb6b7d0`): `Measure.voice2`, a
+  sibling `_v2` stream sharing the bar grid via the `_elements` active-voice getter
+  (mutation sites untouched); `_withVoice2` reflow+stamp (byte-identity fast path);
+  V1/V2 toolbar toggle; `test/voice2_test.dart` (9) + widget test; MusicXML
+  round-trips (writer backup). crisp_notation engraves voices 1+2 only.
+- **opus (next)** · ✅ **idle / SHIPPED — playback practice-speed control**
+  (0.5×/0.75×/1×). Worktree `../mus-next`, branch `feature/workshop-next`. Suite
+  green (50 widget), analyze clean. A `_playSpeed` wall-clock stretch (1/speed) in
+  `_renderPart` scales the audio ms AND the cursor schedule together (pitch
+  unaffected); a speed chip in the app-bar actions; de/en (`workshopPlaybackSpeed`).
+  Also hardened both transport tests to assert the stop icon *synchronously* after
+  Play (playback rides a real Stopwatch → a timed pump could end a short piece
+  under load). Confined to transport + app-bar — no reflow/note-entry edits.
+  **Shipped by opus (next):** tempo marks · grace notes · playback (bucket F) ·
+  multi-part playback (mix + full-score cursor + per-part mute) · practice speed.
+  ⚠ **Follow-up (unclaimed):** playback ignores **voice 2** — `_renderPart` builds
+  its pitch map from `m.elements` only, so voice-2 notes get a cursor highlight but
+  sound silent; add `m.voice2` to the map (in the transport, no model change).
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).
