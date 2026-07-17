@@ -196,19 +196,28 @@ long-press a note → soft "ghost" note; `_stem` scales each note's sample range
 `TrackerCell.volume` (all instruments honour it). Dynamics are relative within a
 channel (a lone note normalizes back — musically correct).
 
-**🚧 Genuinely-remaining (each its own effort, deliberately NOT rushed):**
-- **`.mod`/`.xm` import** — a large binary parser (31 sample headers + 64-row × 4-
-  channel patterns + embedded 8-bit PCM), and a poor fit for the 8-step Sandbox as-
-  is: it needs **variable-length patterns** (64 rows), **≥4 channels**, sample-slot
-  instruments, and file-picker plumbing first. The natural bridge is small though —
-  a `.mod` embeds PCM samples, which map straight onto `SampleInstrument`; a good
-  first step is "borrow an instrument sound from a classic `.mod`", not full
-  playback. Recommend a dedicated slice; don't bolt it on.
-- **Arp/porta/vibrato effect commands** — per-cell modulation over the rendered
-  channel (unlike the dynamics volume column, these need per-instrument render
-  changes). Studio-shelf depth.
-- **Gapless song swap** — dual-player crossfade at the loop boundary (audio polish;
-  hard to unit-test headlessly).
+**✅ `.mod` codec** (`e0f1683`, `lib/core/audio/mod/`) — `parseMod`/`writeMod`,
+byte-stable, oracle- + real-file-tested. Built by two sub-agents against a
+contract + golden test suite.
+
+**✅ `.mod` in-app import/export** (`ac12747` bridge + `ae484a9` UI) —
+`mod_bridge.dart` (`modToTracker`/`trackerToMod`) + an app-bar Import/Export `.mod`
+menu via `file_selector`.
+
+**✅ Effect commands** (`ac12747` DSP + `28f2f83` wiring) — `tracker_effects.dart`
+`renderNoteWithEffect` (arp/vibrato/slide via phase-continuous additive synthesis);
+`TrackerCell.effect`, honoured by `AdditiveInstrument`; long-press cell menu.
+
+**✅ Maximal Tracker↔Score** (`ac12747` core + `d67cb56` view) —
+`trackerToScoreParts` (a staff per pitched channel) + `scoreToChannels` (chord/voice
+split); the score-view panel now shows all parts stacked.
+
+**✅ Gapless swap** (`df7e644`) — `gapless_loop_player.dart`, a two-player seamless
+loop (start-new-then-stop-old; no timers, so flutter_test-safe).
+
+**🚧 Still deferred:** the **`.xm` (FastTracker 2) codec** — needs a real fixture or
+a hand-authored oracle (packed patterns + delta-encoded samples); a dedicated
+effort. `.mod` is fully done.
 
 ---
 

@@ -66,14 +66,15 @@ and push to origin/main** before/after touching shared files. Format:
   remaining item, the id-anchor-vs-field pattern that built the batch, the
   byte-identity invariant, and the test conventions.
 
-- **opus (tracker)** · 🚧 **ACTIVE — filling the Tracker gaps (multi-agent).**
-  3 pure-core sub-agents against contracts + test suites I write: `mod_bridge.dart`
-  (Tracker↔MOD), `tracker_effects.dart` (arp/vibrato/slide DSP), and
-  `tracker_notation.dart` (maximal Tracker↔Score — multi-channel parts + chord/
-  voice split). Each agent owns ONE file; I integrate the shared-file wiring
-  (engine/screen/player) + gapless swap myself. **`.xm` codec DEFERRED** — needs a
-  real fixture or hand-authored oracle (packed patterns + delta samples); blind
-  modarchive fetches returned only `.mod` files. Its own dedicated effort later.
+- **opus (tracker)** · ✅ **idle / SHIPPED — Tracker gaps filled (multi-agent).**
+  3 pure-core sub-agents (against contracts + test suites I wrote) built
+  `mod_bridge.dart` (Tracker↔MOD), `tracker_effects.dart` (arp/vibrato/slide DSP)
+  and `tracker_notation.dart` (multi-part Tracker↔Score + chord split) — 22 tests,
+  `ac12747`. I then integrated all shared-file wiring: **per-note effects** (cell
+  menu) `28f2f83`, **MOD import/export UI** (file_selector) `ae484a9`, **multi-part
+  score view** `d67cb56`, **gapless two-player swap** `df7e644`. **`.xm` codec
+  DEFERRED** — needs a real fixture/oracle (packed patterns + delta samples); blind
+  modarchive fetches returned only `.mod`. Its own dedicated effort later.
 - **opus (tracker)** · ✅ **idle / SHIPPED — `.mod` import/export codec.** Pure-Dart
   ProTracker codec in `lib/core/audio/mod/` (model+contract `mod_module.dart`,
   `parseMod` reader, `writeMod` writer — implemented by two sub-agents against the
