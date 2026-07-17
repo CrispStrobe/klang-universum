@@ -117,10 +117,14 @@ and push to origin/main** before/after touching shared files. Format:
   `SettingsService.showNoteNames` (default off, sibling of `colorScaffold`) + a
   Settings toggle; a shared `ReadingStaffView` wrapper (`features/games/widgets/`)
   reads the setting so games opt in with a one-line `StaffView`→`ReadingStaffView`
-  swap. Wired into 7 games where the note's NAME is NOT the task (`whole_half`,
+  swap. Wired into 9 games where the note's NAME is NOT the task (`whole_half`,
   `tie_slur`, `articulation_read`, `beam_flag`, `note_value_quiz`, `measure_fill`,
-  `spot_upbeat`) — **deliberately NOT the naming quizzes** (printing the letter
-  reveals the answer). **Per-locale spelling now works** (`252acd6`): added a
+  `spot_upbeat`, `bowing`, `beat_count`) — **deliberately NOT the naming quizzes**
+  (printing the letter reveals the answer) **nor the read-to-produce games**
+  (`perform_it`/`cello_play_it` — the shown note IS what you must sing/play, so the
+  name would reveal it). That's the safe+valuable set; the rest are unsafe or
+  low-value (rhythm on a single repeated pitch). **Per-locale spelling now works**
+  (`252acd6`): added a
   `noteNameStyle` param to `StaffView` in the **public crisp_notation lib**
   (`7b72632`, mirrors `MultiSystemView`; default `letter` → byte-identical for
   existing callers), and `ReadingStaffView` passes `noteNameStyleFor(context)`, so
