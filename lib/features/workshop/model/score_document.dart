@@ -695,6 +695,22 @@ class ScoreDocument {
     selectIndex(hasSelection ? focus - 1 : _elements.length - 1);
   }
 
+  /// Select the next note (after the focus, wrapping around) whose pitch is on
+  /// [step] — jump-to-pitch keyboard navigation for Select mode. Ignores rests
+  /// and any accidental (a "C" jumps to C, C♯ or C♭). No-op if no such note.
+  void selectNextOfStep(Step step) {
+    if (_elements.isEmpty) return;
+    final start = _focusId == null ? -1 : _indexOf(_focusId!);
+    for (var k = 1; k <= _elements.length; k++) {
+      final i = (start + k) % _elements.length;
+      final e = _elements[i];
+      if (!e.isRest && e.pitch!.step == step) {
+        selectIndex(i);
+        return;
+      }
+    }
+  }
+
   /// Grow the selected run outward by one element (the contiguous-extend the
   /// toolbar arrows drive). No shrink — the set model has no single focus end.
   void extendRight() {

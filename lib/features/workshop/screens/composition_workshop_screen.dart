@@ -1165,8 +1165,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
     final step = _letterSteps[key];
     if (step != null) {
-      // Select mode: typing doesn't enter notes (the staff is for navigation).
-      if (_selectMode) return KeyEventResult.ignored;
+      // Select mode: typing navigates instead of entering notes — a letter jumps
+      // to the next note on that pitch (keyboard-first navigation, Cause 2).
+      if (_selectMode) {
+        setState(() {
+          _doc.selectNextOfStep(step);
+          _syncControlsToSelection();
+        });
+        return KeyEventResult.handled;
+      }
       final octave = _doc.selected?.pitch?.octave ?? 4;
       _placePitch(Pitch(step, alter: _alterOf(_accidental), octave: octave));
       return KeyEventResult.handled;
@@ -1247,7 +1254,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final origin = from ?? 0;
     // Entries whose onset falls in the window (all of them when unwindowed).
     bool inWindow(double start) =>
-        (from == null || start >= from - 1e-9) && (to == null || start < to - 1e-9);
+        (from == null || start >= from - 1e-9) &&
+        (to == null || start < to - 1e-9);
 
     // Element id → its sounding midis (a chord contributes several). Every voice
     // is scanned, so voice-2 notes sound too — the playback timeline emits them
@@ -1330,7 +1338,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     _loopMulti = multi;
     _loopStems = stems; // count-in-free: what a loop restart replays
     _loopActive = _loopSelection && from != null;
-    _playSchedule = schedule; // music-relative (count-in offset applied on read)
+    _playSchedule =
+        schedule; // music-relative (count-in offset applied on read)
     _playEndSeconds = end;
     _countInSec = _countIn ? _countInSeconds() : 0;
 
@@ -1397,9 +1406,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     if (_loopMulti) {
       _audio.playMixedTimedChords([
         for (var i = 0; i < _loopStems.length; i++)
-          if (i == 0) [...clicks, ..._loopStems[i]]
+          if (i == 0)
+            [...clicks, ..._loopStems[i]]
           // Silence, so this part's music still starts after the count-in.
-          else [(const <int>[], padMs), ..._loopStems[i]],
+          else
+            [(const <int>[], padMs), ..._loopStems[i]],
       ]);
     } else {
       _audio.playTimedChords([...clicks, ..._loopStems.first]);

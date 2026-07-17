@@ -67,6 +67,31 @@ void main() {
     expect(doc.elements.single.pitch!.step, Step.c);
   });
 
+  test('selectNextOfStep jumps to the next note on that pitch, wrapping', () {
+    final doc = ScoreDocument();
+    final ids = [
+      doc.insertNote(_p(Step.c), _quarter), // 0
+      doc.insertNote(_p(Step.d), _quarter), // 1
+      doc.insertNote(_p(Step.e, alter: 1), _quarter), // 2 — E♯ still "E"
+      doc.insertNote(_p(Step.d), _quarter), // 3
+    ];
+    doc.selectIndex(0); // on the first C
+
+    doc.selectNextOfStep(Step.d);
+    expect(doc.selectedId, ids[1], reason: 'jumps to the first D');
+    doc.selectNextOfStep(Step.d);
+    expect(doc.selectedId, ids[3], reason: 'then the next D');
+    doc.selectNextOfStep(Step.d);
+    expect(doc.selectedId, ids[1], reason: 'wraps around');
+
+    doc.selectNextOfStep(Step.e);
+    expect(doc.selectedId, ids[2], reason: 'accidental ignored (E♯ counts)');
+
+    doc.selectIndex(0);
+    doc.selectNextOfStep(Step.b); // no B present
+    expect(doc.selectedId, ids[0], reason: 'no match → selection unchanged');
+  });
+
   test('a placed note keeps its accidental (alter)', () {
     final doc = ScoreDocument();
     doc.insertNote(_p(Step.f, alter: 1), _quarter); // F#
