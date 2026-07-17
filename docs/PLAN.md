@@ -19,15 +19,15 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (tracker)** · 🚧 **ACTIVE — multi-part MIDI/ABC export in the Workshop.**
-  The Workshop's MIDI + ABC export currently drop to the ACTIVE part only
-  (`kExportFormats` `multiPart: false`; `_generateExport` uses `scoreToMidi`/
-  `scoreToAbc` on one Score). I built `multiPartToMidi` (format-1 SMF) +
-  `multiPartToAbc` (unbounded V: voices) for the module bridge; extracting them to
-  a pure-notation `lib/core/notation/multi_part_export.dart` and wiring the
-  Workshop export so MIDI + ABC write EVERY part. Touching (small, surgical):
-  `composition_workshop_screen.dart` (`_generateExport` + `kExportFormats` flags)
-  + the new notation file + `module_notation.dart` (re-export). Will push shortly.
+- **opus (tracker)** · ✅ **idle / SHIPPED — multi-part MIDI/ABC export in the
+  Workshop** (`4210a62`). MIDI + ABC now write EVERY instrument part, not just the
+  active one. New pure-notation `lib/core/notation/multi_part_export.dart`
+  (`multiPartToMidi` = format-1 SMF one track/part; `multiPartToAbc` = one `V:`
+  voice/part; + split/merge), `module_notation.dart` re-exports it.
+  `composition_workshop_screen._generateExport` routes mid→multiPartToMidi,
+  abc→multiPartToAbc when partCount>1; `kExportFormats` marks MIDI+ABC multiPart;
+  new `debugGenerateExport` seam. MEI/kern/MuseScore/LilyPond stay single-Score
+  (library writers). 63 workshop + 30 notation tests green.
 
 - **opus (modes)** · ✅ **idle / SHIPPED — "Which Mode?" ear game (`mode_ear`, scales module).** 3-way ear game: a scale plays ascending as Major (Ionian) / natural Minor (Aeolian) / **Dorian** (minor with a raised 6th, built from exact semitone steps); child taps which. `modePrimer` teaches the three colours (shown + heard). **Closes the `modes` gap** in concept_map. Scales module; EN/DE; [100,600,900]; analyze clean; mode_ear + tutorial + curriculum_coverage + consistency tests green (14). New: `mode_ear_screen.dart`, `test/mode_ear_test.dart`, `modePrimer`. (Also fixed a stray pre-existing import-order lint in game_registry.)
 
