@@ -203,6 +203,7 @@ class _Snapshot {
     this.tuplets,
     this.tempo,
     this.tempoChanges,
+    this.inlineClefs,
   );
   final List<EditorElement> elements;
   final TimeSignature timeSignature;
@@ -217,6 +218,10 @@ class _Snapshot {
   final Map<String, Clef> clefChanges;
   final Map<String, KeySignature> keyChanges;
   final Map<String, TimeSignature> timeChanges;
+
+  /// Mid-*bar* clef changes (element id → clef): the clef changes right before
+  /// the anchored element, at its onset within its bar. Captured for undo.
+  final Map<String, Clef> inlineClefs;
 
   /// Repeat-barline anchors (element ids), captured for undo.
   final Set<String> repeatStarts;
@@ -308,6 +313,15 @@ class ScoreDocument {
   // time changes (which do affect capacity) will need a reflow tweak too.
   final Map<String, Clef> _clefChanges = {};
   final Map<String, KeySignature> _keyChanges = {};
+
+  // Mid-*bar* clef changes, anchored to an element id: unlike [_clefChanges]
+  // (which draws the new clef at the *start* of the anchor's bar) this draws it
+  // right *before* the anchored element, at that element's onset within its bar
+  // — emitted as a [Measure.inlineClefs] entry whose [InlineClefChange.onset] is
+  // the summed duration of the earlier elements in the same reflowed bar. Still a
+  // pure post-reflow stamp; onset is computed from the reflow output, so it rides
+  // re-barring like every other id-anchor.
+  final Map<String, Clef> _inlineClefs = {};
 
   // Mid-score tempo (metronome) changes, same element-id anchor as clef/key: the
   // change takes effect at the start of the bar its anchor note reflows into.
@@ -480,6 +494,7 @@ class ScoreDocument {
         [for (final t in _tuplets) t.copy()],
         tempo,
         Map.of(_tempoChanges),
+        Map.of(_inlineClefs),
       );
 
   void _snapshot() {
@@ -534,6 +549,9 @@ class ScoreDocument {
     _tempoChanges
       ..clear()
       ..addAll(s.tempoChanges);
+    _inlineClefs
+      ..clear()
+      ..addAll(s.inlineClefs);
     _invalidate();
     // Drop selected ids that the restored document no longer contains.
     _selectedIds.removeWhere((id) => _indexOf(id) < 0);
@@ -1019,6 +1037,7 @@ class ScoreDocument {
     _clefChanges.clear();
     _keyChanges.clear();
     _tempoChanges.clear();
+    _inlineClefs.clear();
     _timeChanges.clear();
     _repeatStarts.clear();
     _repeatEnds.clear();
@@ -1061,6 +1080,7 @@ class ScoreDocument {
     _voltas.clear();
     _navigation.clear();
     _tuplets.clear();
+    _inlineClefs.clear();
     clef = score.clef;
     keySignature = score.keySignature;
     timeSignature = score.timeSignature ?? TimeSignature.fourFour;
@@ -1097,10 +1117,26 @@ class ScoreDocument {
           _elements.add(EditorElement.rest(el.duration, id: id));
         }
       }
+      // Recover mid-bar clef changes: each InlineClefChange sits at an onset
+      // (fraction of a whole note from the bar start); anchor it to the element
+      // whose preceding-duration in the bar equals that onset (the inverse of
+      // the [_withInlineClefs] stamp). Onset 0 would coincide with a bar-start
+      // clef, which the [clefChange] recovery below already owns, so skip it.
+      if (measure.inlineClefs.isNotEmpty) {
+        for (final ic in measure.inlineClefs) {
+          var acc = Fraction(0, 1);
+          for (var i = 0; i < measure.elements.length; i++) {
+            if (acc == ic.onset && acc != Fraction(0, 1)) {
+              _inlineClefs[barNewIds[i]] = ic.clef;
+              break;
+            }
+            acc = acc + measure.elements[i].duration.toFraction();
+          }
+        }
+      }
       // Recover bar-start clef / key changes by anchoring them to the bar's
       // first element, so save → reopen keeps them (the inverse of
-      // [_withMidScoreChanges]). Mid-bar clef changes (inlineClefs) aren't
-      // modelled by the editor yet.
+      // [_withMidScoreChanges]).
       if (firstIdInBar != null) {
         final cc = measure.clefChange;
         if (cc != null) _clefChanges[firstIdInBar] = cc;
@@ -1194,6 +1230,26 @@ class ScoreDocument {
   Map<String, Clef> get clefChanges => Map.unmodifiable(_clefChanges);
   Map<String, KeySignature> get keyChanges => Map.unmodifiable(_keyChanges);
   Map<String, TimeSignature> get timeChanges => Map.unmodifiable(_timeChanges);
+
+  /// The mid-*bar* clef changes as (element id → clef), read-only.
+  Map<String, Clef> get inlineClefs => Map.unmodifiable(_inlineClefs);
+
+  /// Set (or clear, with null) a **mid-bar clef change** that takes effect right
+  /// before element [id], at its onset within its bar (vs [setClefChangeAt],
+  /// which draws at the bar start). Undoable; a no-op for an unknown id or an
+  /// unchanged value. Element-anchored, so it rides re-barring. If [id] is the
+  /// first element of its bar the change draws at the bar start and is better
+  /// expressed via [setClefChangeAt]; here it simply produces no inline mark.
+  void setInlineClefAt(String id, Clef? clef) {
+    if (_indexOf(id) < 0) return;
+    if (_inlineClefs[id] == clef) return;
+    _snapshot();
+    if (clef == null) {
+      _inlineClefs.remove(id);
+    } else {
+      _inlineClefs[id] = clef;
+    }
+  }
 
   /// The mid-score tempo changes as (element id → mark), read-only.
   Map<String, Tempo> get tempoChanges => Map.unmodifiable(_tempoChanges);
@@ -1367,14 +1423,16 @@ class ScoreDocument {
       timeSignature: timeSignature,
       tempo: tempo,
       measures: _withTuplets(
-        _withMidScoreChanges(
-          reflow(
-            [for (final e in _elements) e.toElement()],
-            timeSignature: timeSignature,
-            pickup: pickup,
-            timeChanges: _timeChanges,
-            durationScale: _tupletScale(),
-            split: _rhythmPolicy == RhythmPolicy.split,
+        _withInlineClefs(
+          _withMidScoreChanges(
+            reflow(
+              [for (final e in _elements) e.toElement()],
+              timeSignature: timeSignature,
+              pickup: pickup,
+              timeChanges: _timeChanges,
+              durationScale: _tupletScale(),
+              split: _rhythmPolicy == RhythmPolicy.split,
+            ),
           ),
         ),
       ),
@@ -1487,6 +1545,41 @@ class ScoreDocument {
       final navHere = _anchoredIn(m, _navigation);
       if (navHere != null) next = next.copyWith(navigation: navHere);
       out.add(next);
+    }
+    return out;
+  }
+
+  /// Stamps mid-*bar* clef changes onto the reflowed [bars].
+  ///
+  /// For each bar, walks its elements accumulating the onset (a [Fraction] of a
+  /// whole note from the bar start, using the same tuplet-scaled durations
+  /// [reflow] packed with), and emits an [InlineClefChange] at the onset of any
+  /// element anchored in [_inlineClefs]. crisp_notation draws the new clef right
+  /// before that element and carries it forward.
+  ///
+  /// An anchor at onset 0 (the first element of a bar) is skipped — that is a
+  /// bar-*start* clef change, which [_clefChanges] / [_withMidScoreChanges]
+  /// already owns. The empty-anchor fast path returns [bars] untouched, so a
+  /// document without mid-bar clefs renders byte-for-byte as before.
+  List<Measure> _withInlineClefs(List<Measure> bars) {
+    if (_inlineClefs.isEmpty) return bars;
+    final scale = _tupletScale();
+    final zero = Fraction(0, 1);
+    final out = <Measure>[];
+    for (final m in bars) {
+      final changes = <InlineClefChange>[];
+      var onset = zero;
+      for (final el in m.elements) {
+        final id = el.id;
+        if (id != null && onset != zero && _inlineClefs.containsKey(id)) {
+          changes.add(InlineClefChange(onset, _inlineClefs[id]!));
+        }
+        var dur = el.duration.toFraction();
+        final s = id == null ? null : scale[id];
+        if (s != null) dur = dur * s;
+        onset = onset + dur;
+      }
+      out.add(changes.isEmpty ? m : m.copyWith(inlineClefs: changes));
     }
     return out;
   }
