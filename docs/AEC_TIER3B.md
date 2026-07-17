@@ -177,6 +177,33 @@ half-built native code on `origin/main`.
 3. **On-device (human):** speaker backing during play-along without headphones;
    confirm pitch scoring still tracks the user, not the speaker.
 
+### `bin/aec.dart` — the streaming/pipe AEC harness (headless, no device/FFI)
+
+Test the cancellation algorithm itself (the pure-Dart `EchoCanceller` the native
+core is a cleanroom port of) over files or live pipes, via
+`lib/core/audio/aec_offline.dart`. No plugin build required.
+
+```bash
+# Self-test: synth a "band" + "instrument" + room echo, cancel, prove the
+# instrument survives (reads A4, not the band) and the echo-only ERLE is high.
+dart run bin/aec.dart --selftest --detect        # → PASS (tail ERLE ≈ 48 dB)
+
+# Files: a captured mic recording + the reference that was played.
+dart run bin/aec.dart --mic captured.wav --ref played.wav --out clean.wav --detect
+
+# Live pipe — interleaved STEREO PCM16 in (ch0 = mic, ch1 = reference),
+# cleaned MONO PCM16 out; chain into the detector to see what survived:
+<stereo-pcm16-source> | dart run bin/aec.dart --stdin | dart run bin/listen.dart --stdin
+<stereo-pcm16-source> | dart run bin/aec.dart --stdin --detect     # notes to stdout
+```
+
+Build the stereo `(mic|ref)` stream with `sox -M` (or `ffmpeg`), e.g. mic =
+default device, ref = the groove WAV — the offline analogue of the BlackHole
+rig, and the one you can run in CI. `estimateEchoDelay` aligns files by
+cross-correlation; the streaming path takes a fixed `--delay` (default 0, for a
+pre-aligned full-duplex/loopback capture). `bin/listen.dart --aec` shares the
+same core (whole-file only). Tested: `test/aec_offline_test.dart`.
+
 ## Effort
 
 Days–weeks: most of it is the 5-platform native build + on-device tuning, not
