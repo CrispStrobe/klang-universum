@@ -30,6 +30,7 @@ import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
+import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/songs/song_book.dart';
@@ -1254,6 +1255,15 @@ class _TrackerScreenState extends State<TrackerScreen>
       appBar: GameAppBar(
         title: l10n.gameTracker,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard_customize_outlined),
+            tooltip: l10n.trackerModeToAdvanced,
+            onPressed: () => Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const AdvancedTrackerScreen(),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.playlist_play),
             tooltip: l10n.trackerPlaySong,

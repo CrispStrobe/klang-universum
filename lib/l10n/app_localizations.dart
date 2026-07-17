@@ -2498,6 +2498,72 @@ abstract class AppLocalizations {
   /// **'Fast'**
   String get trackerSpeedFast;
 
+  /// No description provided for @trackerAdvancedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracker · Advanced'**
+  String get trackerAdvancedTitle;
+
+  /// No description provided for @trackerOpenAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Tracker'**
+  String get trackerOpenAdvanced;
+
+  /// No description provided for @trackerModeToAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced mode'**
+  String get trackerModeToAdvanced;
+
+  /// No description provided for @trackerModeToBeginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner mode'**
+  String get trackerModeToBeginner;
+
+  /// No description provided for @trackerLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Length'**
+  String get trackerLength;
+
+  /// No description provided for @trackerAddTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Add track'**
+  String get trackerAddTrack;
+
+  /// No description provided for @trackerRemoveTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this track'**
+  String get trackerRemoveTrack;
+
+  /// No description provided for @trackerPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get trackerPlay;
+
+  /// No description provided for @trackerStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get trackerStop;
+
+  /// No description provided for @trackerPickNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a note'**
+  String get trackerPickNote;
+
+  /// No description provided for @trackerOctave.
+  ///
+  /// In en, this message translates to:
+  /// **'Octave'**
+  String get trackerOctave;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:

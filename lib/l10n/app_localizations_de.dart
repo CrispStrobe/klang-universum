@@ -1296,6 +1296,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerSpeedFast => 'Schnell';
 
   @override
+  String get trackerAdvancedTitle => 'Tracker · Fortgeschritten';
+
+  @override
+  String get trackerOpenAdvanced => 'Tracker (Fortgeschritten)';
+
+  @override
+  String get trackerModeToAdvanced => 'Fortgeschritten-Modus';
+
+  @override
+  String get trackerModeToBeginner => 'Einsteiger-Modus';
+
+  @override
+  String get trackerLength => 'Länge';
+
+  @override
+  String get trackerAddTrack => 'Spur hinzufügen';
+
+  @override
+  String get trackerRemoveTrack => 'Diese Spur entfernen';
+
+  @override
+  String get trackerPlay => 'Abspielen';
+
+  @override
+  String get trackerStop => 'Stopp';
+
+  @override
+  String get trackerPickNote => 'Note wählen';
+
+  @override
+  String get trackerOctave => 'Oktave';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

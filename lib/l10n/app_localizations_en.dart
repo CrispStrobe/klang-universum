@@ -1289,6 +1289,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerSpeedFast => 'Fast';
 
   @override
+  String get trackerAdvancedTitle => 'Tracker · Advanced';
+
+  @override
+  String get trackerOpenAdvanced => 'Advanced Tracker';
+
+  @override
+  String get trackerModeToAdvanced => 'Advanced mode';
+
+  @override
+  String get trackerModeToBeginner => 'Beginner mode';
+
+  @override
+  String get trackerLength => 'Length';
+
+  @override
+  String get trackerAddTrack => 'Add track';
+
+  @override
+  String get trackerRemoveTrack => 'Remove this track';
+
+  @override
+  String get trackerPlay => 'Play';
+
+  @override
+  String get trackerStop => 'Stop';
+
+  @override
+  String get trackerPickNote => 'Pick a note';
+
+  @override
+  String get trackerOctave => 'Octave';
+
+  @override
   String get myMelodyPrompt =>
       'Write your melody — tap the staff or an instrument!';
 

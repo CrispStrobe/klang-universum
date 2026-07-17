@@ -19,6 +19,7 @@ import 'package:comet_beat/core/notation/multi_part_export.dart'
 import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
+import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/workshop/export/score_pdf.dart';
@@ -2845,6 +2846,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       _showExportSheet();
                     case 'clear':
                       setState(_doc.clearAll);
+                    case 'tracker':
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AdvancedTrackerScreen(),
+                        ),
+                      );
                   }
                 },
                 itemBuilder: (ctx) => [
@@ -2888,6 +2895,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     value: 'split',
                     checked: _doc.rhythmPolicy == RhythmPolicy.split,
                     child: Text(l10n.workshopSplitNotes),
+                  ),
+                  const PopupMenuDivider(),
+                  // Open the Advanced Tracker (classic pattern sequencer) — a
+                  // grid-based alternative composing surface to the staff editor.
+                  _menuItem(
+                    'tracker',
+                    Icons.grid_view,
+                    l10n.trackerOpenAdvanced,
+                    true,
                   ),
                   const PopupMenuDivider(),
                   _menuItem(
