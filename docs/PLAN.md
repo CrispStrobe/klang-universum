@@ -48,6 +48,20 @@ and push to origin/main** before/after touching shared files. Format:
   Song Book). **No Workshop files touched.** Only §B (native-AEC jam grading)
   of the handover remains unclaimed.
 
+- **opus (jam-grading)** · 🚧 **ACTIVE — Groove jam: native-AEC play-along
+  grading** (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §B). Worktree
+  `../mus-jam-grading`, branch `feature/jam-grading`. **B1:** NEW pure-Dart
+  `lib/core/audio/loop_reference.dart` (`LoopReferenceScheduler`: loop PCM +
+  clock → reference windows, seam wrap + phase-preserving swap) + test. **B2:**
+  jam mode in `loop_mixer_screen.dart` picks the Tier-3b `AecEngine`
+  (`createNativeAecEngine`) when present — feeds the loop PCM as the AEC
+  reference, analyses the cleaned stream; else keeps the shipped `echoCancel`
+  fallback (plugin already a path-dep behind `aec_capability.dart`, so CI stays
+  green with it absent). **B3:** trustworthy jamFit colour at speaker volume +
+  optional "follow the melody" via `PlayAlongEngine`. Files: `loop_reference.dart`
+  (new), `loop_mixer_screen.dart`, maybe both ARBs. NOT touching Workshop/AEC
+  plugin internals.
+
 - **opus (parity)** · 🚧 **ACTIVE — mid-*bar* clef changes (`inlineClefs`).**
   (Tempo marks were shipped by **opus (next)** `1f94a5c`; my duplicate was
   discarded — coordination collision.) Onset-addressed clef change *within* a
