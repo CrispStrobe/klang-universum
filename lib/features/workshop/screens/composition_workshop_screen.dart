@@ -454,7 +454,17 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   double _playEndSeconds = 0;
   Set<String> _soundingIds = const {};
 
+  // Parts silenced during multi-part playback (indices into [_mpd]). Cleared on
+  // any structural part change (add/remove would shift these indices). A muted
+  // part is dropped from both the audio mix and the moving cursor.
+  final Set<int> _mutedParts = {};
+
   bool get _isPlaying => _playTimer != null;
+
+  /// Whether there's anything to play: in multi-part mode any part with content
+  /// counts (the active part alone may be empty).
+  bool get _hasPlayableContent =>
+      _mpd.partCount > 1 ? _mpd.parts.any((p) => !p.isEmpty) : !_doc.isEmpty;
 
   // The canvas-local pointer position (from a passive Listener), and where a
   // drag began — used to reorder a note by the horizontal drop position.
@@ -713,14 +723,22 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   // ---- G6: instrument parts ----------------------------------------------
 
-  void _addInstrument() => setState(_mpd.addPart);
+  // Add/remove shift part indices, so any mute selection (keyed by index) would
+  // point at the wrong part — clear it. Mute is a transient playback preference.
+  void _addInstrument() => setState(() {
+        _mutedParts.clear();
+        _mpd.addPart();
+      });
 
   void _selectPart(int i) => setState(() {
         _mpd.setActive(i);
         _syncControlsToSelection();
       });
 
-  void _removeInstrument(int i) => setState(() => _mpd.removePart(i));
+  void _removeInstrument(int i) => setState(() {
+        _mutedParts.clear();
+        _mpd.removePart(i);
+      });
 
   void _setPartClef(int i, Clef clef) =>
       setState(() => _mpd.setClefOfPart(i, clef));
@@ -792,44 +810,49 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   Widget _partChip(AppLocalizations l10n, int i) {
     final scheme = Theme.of(context).colorScheme;
     final active = i == _mpd.active;
-    return Container(
-      decoration: BoxDecoration(
-        color:
-            active ? scheme.primaryContainer : scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: active
-            ? Border.all(color: scheme.primary, width: 1.5)
-            : Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            key: ValueKey('workshop-part-$i'),
-            onTap: () => _selectPart(i),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Glyph + name in one Text so it never collides with the
-                  // staff-mode clef dropdown's lone-glyph finders.
-                  Text('${_clefGlyph(_mpd.clefOf(i))}  ${_mpd.nameOf(i)}'),
-                  if (_mpd.transpositionOf(i) != null)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Text(
-                        _transpositionLabel(_mpd.transpositionOf(i)),
-                        style: TextStyle(color: scheme.primary, fontSize: 12),
+    final muted = _mutedParts.contains(i);
+    return Opacity(
+      // A muted part reads as dimmed so its silence is obvious at a glance.
+      opacity: muted ? 0.45 : 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color:
+              active ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: active
+              ? Border.all(color: scheme.primary, width: 1.5)
+              : Border.all(color: scheme.outlineVariant),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              key: ValueKey('workshop-part-$i'),
+              onTap: () => _selectPart(i),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Glyph + name in one Text so it never collides with the
+                    // staff-mode clef dropdown's lone-glyph finders.
+                    Text('${_clefGlyph(_mpd.clefOf(i))}  ${_mpd.nameOf(i)}'),
+                    if (_mpd.transpositionOf(i) != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          _transpositionLabel(_mpd.transpositionOf(i)),
+                          style: TextStyle(color: scheme.primary, fontSize: 12),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          _partMenu(l10n, i),
-        ],
+            _partMenu(l10n, i),
+          ],
+        ),
       ),
     );
   }
@@ -888,6 +911,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               checked: _mpd.hasBarlineBreakAfter(i),
               child: Text(l10n.workshopBreakBarlineBelow),
             ),
+          if (_mpd.partCount > 1) ...[
+            const PopupMenuDivider(),
+            CheckedPopupMenuItem<void Function()>(
+              value: () => setState(() {
+                if (!_mutedParts.remove(i)) _mutedParts.add(i);
+              }),
+              checked: _mutedParts.contains(i),
+              child: Text(l10n.workshopMutePart),
+            ),
+          ],
           if (_mpd.partCount > 1)
             PopupMenuItem<void Function()>(
               value: () => _removeInstrument(i),
@@ -1097,17 +1130,18 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   void _togglePlay() => _isPlaying ? _stopPlayback() : _startPlayback();
 
-  /// Start real transport playback of the active part: render one tempo/rest/
-  /// chord-accurate WAV from the timeline and run a cursor over it. No-op on an
-  /// empty document.
-  void _startPlayback() {
-    if (_doc.isEmpty) return;
-    final score = _doc.buildScore();
+  /// One part's playback data: the timed-chord [events] for the audio render and
+  /// the seconds [schedule] driving the cursor (ids carry [idPrefix] so the
+  /// multi-part canvas's global `p{i}:` ids match). [endSeconds] is when it ends.
+  ({
+    List<(List<int>, int)> events,
+    List<({String id, double start, double end})> schedule,
+    double endSeconds,
+  }) _renderPart(Score score, String idPrefix) {
     final timeline = playbackTimeline(score);
-    if (timeline.isEmpty) return;
     final tm = tempoMapOf(score);
 
-    // Element id → its sounding midis (a chord contributes several), for audio.
+    // Element id → its sounding midis (a chord contributes several).
     final midisOf = <String, List<int>>{};
     for (final m in score.measures) {
       for (final e in m.elements) {
@@ -1117,31 +1151,66 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       }
     }
 
-    // One gap-accurate WAV for the whole timeline: rests become silent segments,
-    // chords sound together, each spans its own tempo-scaled duration.
-    _audio.playTimedChords([
+    // Gap-accurate events: rests are silent segments, chords sound together,
+    // each spans its own tempo-scaled duration.
+    final events = <(List<int>, int)>[
       for (final n in timeline)
         (
           n.isRest ? const <int>[] : (midisOf[n.elementId] ?? const <int>[]),
           ((tm.secondsAt(n.end) - tm.secondsAt(n.start)) * 1000).round(),
         ),
-    ]);
-
+    ];
     // The cursor schedule in seconds (rests carry no highlight).
-    _playSchedule = [
+    final schedule = <({String id, double start, double end})>[
       for (final n in timeline)
         if (!n.isRest)
           (
-            id: n.elementId,
+            id: '$idPrefix${n.elementId}',
             start: tm.secondsAt(n.start),
             end: tm.secondsAt(n.end),
           ),
     ];
-    _playEndSeconds = timeline.fold<double>(0, (mx, n) {
+    final endSeconds = timeline.fold<double>(0, (mx, n) {
       final e = tm.secondsAt(n.end);
       return e > mx ? e : mx;
     });
+    return (events: events, schedule: schedule, endSeconds: endSeconds);
+  }
 
+  /// Start real transport playback and run a moving cursor over it. In multi-part
+  /// mode every non-muted part is mixed into one WAV and the cursor spans the
+  /// full score (global ids); with one part it's the single-part path. No-op with
+  /// nothing to play.
+  void _startPlayback() {
+    final schedule = <({String id, double start, double end})>[];
+    var end = 0.0;
+
+    if (_mpd.partCount > 1) {
+      final partEvents = <List<(List<int>, int)>>[];
+      for (var i = 0; i < _mpd.partCount; i++) {
+        if (_mutedParts.contains(i) || _mpd.parts[i].isEmpty) continue;
+        final p = _renderPart(
+          _mpd.parts[i].buildScore(),
+          MultiPartDocument.prefixFor(i),
+        );
+        partEvents.add(p.events);
+        schedule.addAll(p.schedule);
+        if (p.endSeconds > end) end = p.endSeconds;
+      }
+      if (partEvents.isEmpty) return; // everything muted or empty
+      _audio.playMixedTimedChords(partEvents);
+    } else {
+      if (_doc.isEmpty) return;
+      final p = _renderPart(_doc.buildScore(), '');
+      if (p.events.isEmpty) return;
+      _audio.playTimedChords(p.events);
+      schedule.addAll(p.schedule);
+      end = p.endSeconds;
+    }
+    if (end <= 0) return;
+
+    _playSchedule = schedule;
+    _playEndSeconds = end;
     _playClock
       ..reset()
       ..start();
@@ -2193,7 +2262,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 tooltip: _isPlaying ? l10n.workshopStop : l10n.myMelodyPlay,
                 // Stay enabled while playing so the user can always stop, even
                 // if they emptied the document mid-playback.
-                onPressed: (_doc.isEmpty && !_isPlaying) ? null : _togglePlay,
+                onPressed:
+                    (!_hasPlayableContent && !_isPlaying) ? null : _togglePlay,
               ),
               IconButton(
                 icon: const Icon(Icons.info_outline),
@@ -2315,7 +2385,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                 ghostPart: _hoverPart,
                                 ghostTarget: _hover,
                                 ghostDuration: _ghostDuration,
-                                highlightedIds: _mpd.selectedGlobalIds,
+                                // While playing, the moving cursor (sounding
+                                // global ids) takes over the highlight from the
+                                // selection.
+                                highlightedIds: _isPlaying
+                                    ? _soundingIds
+                                    : _mpd.selectedGlobalIds,
                                 suppressElementIds: _mpSuppressed,
                                 onElementDragStart: _onMpDragStart,
                                 onElementDragUpdate: _onMpDragUpdate,

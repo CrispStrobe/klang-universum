@@ -620,6 +620,12 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get workshopStop;
 
+  /// No description provided for @workshopMutePart.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get workshopMutePart;
+
   /// No description provided for @workshopArticulations.
   ///
   /// In en, this message translates to:

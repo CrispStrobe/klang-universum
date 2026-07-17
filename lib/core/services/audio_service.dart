@@ -123,6 +123,32 @@ class AudioService {
         ]),
       );
 
+  /// Plays several parts **at once** (multi-part score playback). Each part is a
+  /// timed-chord list like [playTimedChords]; every part starts together at t=0
+  /// (its rests are silent segments), so parts of different lengths stay aligned.
+  /// Parts are rendered to raw samples with the current [instrument] voice and
+  /// combined with [mixStems] (per-stem unit-peak × gain → tanh soft-knee), so
+  /// adding or muting a part never pumps the overall level. An empty [parts]
+  /// list, or all-empty parts, is a silent no-op.
+  Future<void> playMixedTimedChords(List<List<(List<int>, int)>> parts) {
+    if (!soundOn) return Future.value(); // rendering is wasted while muted
+    final timbre = timbreFor(instrument);
+    final stems = <MixStem>[];
+    var totalSamples = 0;
+    for (final events in parts) {
+      final segments = <Segment>[
+        for (final (midis, ms) in events)
+          if (ms > 0) (freqs: midis.map(midiToFrequency).toList(), ms: ms),
+      ];
+      if (segments.isEmpty) continue;
+      final samples = renderSegmentsRaw(segments, timbre: timbre);
+      if (samples.length > totalSamples) totalSamples = samples.length;
+      stems.add((samples: samples, gain: 1.0));
+    }
+    if (stems.isEmpty) return Future.value();
+    return _play(wavBytes(mixStems(stems, totalSamples: totalSamples)));
+  }
+
   /// Sequential chords (e.g. a cadence), [ms] each.
   Future<void> playChordSequence(List<List<int>> chords, {int ms = 900}) =>
       _play(

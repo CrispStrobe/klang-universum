@@ -296,6 +296,55 @@ void main() {
     expect(find.byIcon(Icons.stop), findsNothing);
   });
 
+  testWidgets('multi-part playback: the transport plays all parts',
+      (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKeyAt(16)); // a note in part 1
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    await tester.tap(_pianoKeyAt(18)); // a note in part 2 (now active)
+    await tester.pump();
+    expect(_editor(tester).partCount, 2);
+
+    // Play → stop icon while the mixed transport + cursor run.
+    await tester.tap(find.byIcon(Icons.play_arrow));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(find.byIcon(Icons.stop), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.stop));
+    await tester.pump();
+    expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+  });
+
+  testWidgets('a part can be muted from its menu', (tester) async {
+    await pump(tester);
+    await tester.tap(_pianoKeyAt(16));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('workshop-add-instrument')));
+    await tester.pump();
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // Open part 1's menu (its tune icon) and mute it.
+    await tester.tap(find.byIcon(Icons.tune).first);
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.workshopMutePart), findsOneWidget);
+    await tester.tap(find.text(l10n.workshopMutePart));
+    await tester.pumpAndSettle();
+
+    // Reopen: the mute item is now checked.
+    await tester.tap(find.byIcon(Icons.tune).first);
+    await tester.pumpAndSettle();
+    final item = tester.widget<CheckedPopupMenuItem<void Function()>>(
+      find.ancestor(
+        of: find.text(l10n.workshopMutePart),
+        matching: find.byType(CheckedPopupMenuItem<void Function()>),
+      ),
+    );
+    expect(item.checked, isTrue);
+  });
+
   testWidgets('the palette opens the grace-notes editor', (tester) async {
     await pump(tester);
     await tester.tap(_pianoKey()); // place + select a note
