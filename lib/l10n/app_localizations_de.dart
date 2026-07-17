@@ -3249,11 +3249,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get primerSeventhTriad =>
-      'Ein Dreiklang sind drei Töne im Terzabstand: Grundton, Terz, Quinte. Hier C-Dur — C E G. Das klingt in sich ruhend.';
+      'Ein Dreiklang sind drei Töne — nimm einen, überspring einen, nimm den nächsten: C, E, G. Das ist C-Dur und klingt in sich ruhend.';
 
   @override
   String get primerSeventhAdd =>
-      'Stapelst du NOCH eine Terz obendrauf, wird ein Septakkord daraus: C E G B. Der klingt unruhig — als wollte er weiter.';
+      'Nimm auf dieselbe Weise NOCH einen Ton dazu (überspring einen, nimm den nächsten): C E G B. Das ist ein Septakkord — er klingt unruhig, als wollte er weiter.';
 
   @override
   String get primerRomanTitle => 'Akkorde nummerieren';
@@ -3271,11 +3271,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get primerCadenceFull =>
-      'Eine Kadenz ist die Satzzeichen-Setzung der Musik. V dann I ist ein Punkt: es kommt heim und klingt abgeschlossen.';
+      'Eine Kadenz ist, wie eine Phrase endet — wie das Ende eines Satzes. Auf dem HEIMAT-Akkord zu enden klingt fertig, wie ein Punkt. Hör hin: weg, dann heim.';
 
   @override
   String get primerCadenceHalf =>
-      'Bleibst du stattdessen auf V stehen, hängt es in der Luft — wie ein Fragezeichen. Dein Ohr erwartet, dass es weitergeht.';
+      'Endest du auf einem anderen Akkord, hängt es in der Luft — wie ein Fragezeichen. Dein Ohr erwartet, dass mehr kommt. Hör hin: heim, dann weg.';
 
   @override
   String get primerPhraseTitle => 'Frage und Antwort';
@@ -3286,7 +3286,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get primerPhraseAnswer =>
-      'Die antwortende Phrase kehrt zum ersten Ton der Tonleiter zurück (dem Grundton). Darum klingt sie abgeschlossen.';
+      'Die antwortende Phrase kehrt zu dem Ton zurück, mit dem die Melodie begann — ihrem Heimatton. Darum klingt sie abgeschlossen.';
 
   @override
   String get primerBowTitle => 'Wohin der Bogen geht';

@@ -23,9 +23,11 @@ import 'package:crisp_notation/crisp_notation.dart'
         Measure,
         NoteDuration,
         NoteElement,
+        Pitch,
         RestElement,
         Score,
         Slur,
+        Step,
         TimeSignature;
 
 // ---- notation helpers -------------------------------------------------------
@@ -116,6 +118,67 @@ Score _rhythm(
               NoteElement.note(pitchFromMidi(m), NoteDuration(dur), id: 'n$i')
             else
               RestElement(NoteDuration(dur), id: 'r$i'),
+        ]),
+      ],
+    );
+
+/// Chords across measures, one per bar — a short progression, so a cadence's
+/// two steps can be *seen* as well as heard.
+Score _progression(List<List<int>> chords) => Score(
+      clef: Clef.treble,
+      measures: [
+        for (var i = 0; i < chords.length; i++)
+          Measure([
+            NoteElement(
+              pitches: chords[i].map(pitchFromMidi).toList(),
+              duration: const NoteDuration(DurationBase.whole),
+              id: 'c$i',
+            ),
+          ]),
+      ],
+    );
+
+/// A pickup (anacrusis): a short lead-in bar drawn before a full downbeat bar,
+/// so the upbeat itself is visible, not just described.
+Score _pickup(List<int> lead, List<int> bar) => Score(
+      clef: Clef.treble,
+      timeSignature: const TimeSignature(4, 4),
+      measures: [
+        Measure(
+          [
+            for (var i = 0; i < lead.length; i++)
+              NoteElement.note(
+                pitchFromMidi(lead[i]),
+                const NoteDuration(DurationBase.quarter),
+                id: 'p$i',
+              ),
+          ],
+          pickup: true,
+        ),
+        Measure([
+          for (var i = 0; i < bar.length; i++)
+            NoteElement.note(
+              pitchFromMidi(bar[i]),
+              const NoteDuration(DurationBase.quarter),
+              id: 'b$i',
+            ),
+        ]),
+      ],
+    );
+
+/// Explicitly-spelled notes, so enharmonic twins (F♯ vs G♭) can be *shown* at
+/// their different staff positions even though they sound the same.
+Score _spelled(List<(Step, int)> spellings, {int octave = 4}) => Score(
+      clef: Clef.treble,
+      measures: [
+        Measure([
+          for (var i = 0; i < spellings.length; i++)
+            NoteElement.note(
+              Pitch(spellings[i].$1, alter: spellings[i].$2, octave: octave),
+              const NoteDuration(DurationBase.whole),
+              showAccidental: true,
+              id: 's$i',
+            ),
         ]),
       ],
     );
@@ -621,7 +684,8 @@ Tutorial upbeatPrimer(AppLocalizations l10n) => Tutorial(
         ),
         TutorialStep(
           text: l10n.primerUpbeatUpbeat,
-          // A single pickup note leading into the downbeat — hear the lead-in.
+          // The pickup bar (G) drawn before the full downbeat bar (C D E F).
+          score: _pickup(const [67], const [60, 62, 64, 65]),
           play: (a) => a.playSequence(_run([67, 60, 62, 64], ms: 500)),
         ),
       ],
@@ -634,13 +698,15 @@ Tutorial enharmonicPrimer(AppLocalizations l10n) => Tutorial(
       steps: [
         TutorialStep(
           text: l10n.primerEnharmonicSame,
-          score: _notes([66]), // one key — spelled F♯ or G♭
-          play: (a) => a.playSequence(_run([66], ms: 600)),
+          // F♯ and G♭ drawn side by side: different spots, same sound.
+          score: _spelled(const [(Step.f, 1), (Step.g, -1)]),
+          play: (a) => a.playSequence(_run([66, 66], ms: 700)),
         ),
         TutorialStep(
           text: l10n.primerEnharmonicTwins,
-          // The same pitch twice — identical sound, two names.
-          play: (a) => a.playSequence(_run([66, 66], ms: 500)),
+          // Another twin pair shown: C♯ and D♭.
+          score: _spelled(const [(Step.c, 1), (Step.d, -1)]),
+          play: (a) => a.playSequence(_run([61, 61], ms: 700)),
         ),
       ],
     );
@@ -688,7 +754,11 @@ Tutorial cadencePrimer(AppLocalizations l10n) => Tutorial(
       steps: [
         TutorialStep(
           text: l10n.primerCadenceFull,
-          // V → I: the full stop.
+          // Away chord → home chord: the full stop.
+          score: _progression(const [
+            [67, 71, 74],
+            [60, 64, 67],
+          ]),
           play: (a) => a.playChordSequence(
             const [
               [67, 71, 74],
@@ -698,7 +768,11 @@ Tutorial cadencePrimer(AppLocalizations l10n) => Tutorial(
         ),
         TutorialStep(
           text: l10n.primerCadenceHalf,
-          // I → V: left hanging, a question mark.
+          // Home chord → away chord: left hanging, a question mark.
+          score: _progression(const [
+            [60, 64, 67],
+            [67, 71, 74],
+          ]),
           play: (a) => a.playChordSequence(
             const [
               [60, 64, 67],
@@ -983,7 +1057,8 @@ Tutorial voicesPrimer(AppLocalizations l10n) => Tutorial(
         ),
         TutorialStep(
           text: l10n.primerVoicesFollow,
-          // Top voice alone, then the bottom voice alone.
+          // The outer voices only — soprano on top, bass at the bottom.
+          score: _chord([60, 72]),
           play: (a) => a.playPhrase([72, 60], noteMs: 700),
         ),
       ],

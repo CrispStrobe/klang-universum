@@ -5885,13 +5885,13 @@ abstract class AppLocalizations {
   /// No description provided for @primerSeventhTriad.
   ///
   /// In en, this message translates to:
-  /// **'A triad is three notes stacked a third apart: root, third, fifth. Here is C major — C E G. It sounds settled.'**
+  /// **'A triad is three notes — take one, skip one, take the next, skip one: C, E, G. That is C major, and it sounds settled.'**
   String get primerSeventhTriad;
 
   /// No description provided for @primerSeventhAdd.
   ///
   /// In en, this message translates to:
-  /// **'Stack one MORE third on top and you get a seventh chord: C E G B♭. It sounds restless — as if it wants to move somewhere.'**
+  /// **'Add one MORE note the same way (skip one, take the next) and you get a seventh chord: C E G B♭. It sounds restless — as if it wants to move on.'**
   String get primerSeventhAdd;
 
   /// No description provided for @primerRomanTitle.
@@ -5921,13 +5921,13 @@ abstract class AppLocalizations {
   /// No description provided for @primerCadenceFull.
   ///
   /// In en, this message translates to:
-  /// **'A cadence is punctuation for music. V then I is a full stop: it lands home and sounds finished.'**
+  /// **'A cadence is how a phrase ends — like the end of a sentence. Ending on the HOME chord sounds finished, like a full stop. Listen: away, then home.'**
   String get primerCadenceFull;
 
   /// No description provided for @primerCadenceHalf.
   ///
   /// In en, this message translates to:
-  /// **'Stopping on V instead leaves it hanging, like a question mark — your ear expects the music to carry on.'**
+  /// **'Ending on a different chord leaves it hanging, like a question mark — your ear expects more to come. Listen: home, then away.'**
   String get primerCadenceHalf;
 
   /// No description provided for @primerPhraseTitle.
@@ -5945,7 +5945,7 @@ abstract class AppLocalizations {
   /// No description provided for @primerPhraseAnswer.
   ///
   /// In en, this message translates to:
-  /// **'The answering phrase comes back home to the first note of the scale (the tonic). That\'s why it sounds finished.'**
+  /// **'The answering phrase comes back to the note the tune started from — its home note. That is why it sounds finished.'**
   String get primerPhraseAnswer;
 
   /// No description provided for @primerBowTitle.

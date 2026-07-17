@@ -19,15 +19,7 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (primer-quality)** · 🚧 **ACTIVE — revise primers to the 9yo bar + extend**.
-  Audit of the 22 concept primers found real gaps: `cadencePrimer` had **no
-  notation** and used unexplained "V/I"; `upbeat`/`enharmonic`/`voices` each had an
-  audio-only step; `seventhPrimer`/`phrasePrimer` leaned on jargon (root/third/
-  fifth, "the tonic"). Revising for a ~9yo: **every step gets a visual score
-  example** (new helpers: `_progression` for cadences, `_pickup` for the anacrusis,
-  explicitly-spelled `Pitch` for enharmonic twins), plainer words, and richer
-  examples. HOT: `primers.dart` + both ARBs. Worktree `../mus-primer-quality`,
-  branch `feature/primer-quality`.
+- **opus (primer-quality)** · ✅ **idle / SHIPPED — primers revised to the 9yo bar + textbook-mode spec**. Audit found `cadencePrimer` had NO notation (both steps audio-only) and unexplained "V/I"; `upbeat`/`enharmonic`/`voices` each had an audio-only step; `seventh`/`phrase` used jargon. Fixed: **every step now has an engraved example** (new helpers `_progression` cadences, `_pickup` shows a real anacrusis bar, `_spelled` shows F♯ vs G♭ at their true staff spots), and the jargon ("V then I", "the tonic", "a third apart: root/third/fifth") is now concrete kid language. Also **wrote up the Textbook / read-through curriculum vision** (new section above `## Delivery`) incl. the Bundesländer-licensing constraint, the song-mnemonic examples (Kuckuck = descending minor 3rd), and the gap-analysis method. Analyze clean; tutorial + gate green.
 
 - **opus (bughunt)** · ✅ **idle / SHIPPED — 4 real defects found by an adversarial
   audit of the numeric core.** Each verified by running the code before/after,
@@ -863,6 +855,91 @@ stars + `kWinsRequiredForLevelUp`, tuning.dart):
   diminished/augmented.
 - Function Quiz: C/F/G major → all keys → minor keys (with harmonic-minor
   dominant) → hear the function (audio).
+
+## Textbook mode — a read-through curriculum (grade 1–10) — PLANNED
+
+**Vision (maintainer, 2026-07-17).** Beyond the minigame grid, a **"read-through"
+learning path**: a beautifully, didactically arranged music-theory & practice
+**textbook** a learner can start at page one and work through from grade 1 to 10.
+Each lesson *teaches* a concept (words + engraved examples + heard examples +
+real-song examples), then hands off to the **games that train it**, with an
+**ongoing narrative** tying the path together. Two consequences the maintainer
+called out: (a) building top-down from a curriculum **reveals our coverage gaps**
+(concepts a grade needs that no game/lesson yet trains); (b) coverage will be
+**uneven** per concept — that's expected, and the map makes it visible.
+
+### ⚠️ Curriculum source & licensing (READ FIRST — non-negotiable)
+The spine must come from a *proven* curriculum, but **the German Bundesländer
+music curricula are NOT freely licensed** — "free to read, all rights reserved";
+Bayern (ISB) and Baden-Württemberg explicitly forbid redistribution; none carry
+CC / Datenlizenz Deutschland (see the "Curriculum / Lehrplan alignment" notes in
+`CLAUDE.md`). So we **must never** copy verbatim text, tables, exercises,
+graphics or sheet-music excerpts from them. What IS legally reusable:
+- **The topic scope / sequence** — *who-teaches-what-when* — is fact, not
+  expression; we distil it **in our own words**. (This is already how the app's
+  generic Klasse-1–2…9–10 curriculum was built, from re-expressed NRW Grundschule
+  + Schleswig-Holstein Sek I scope.)
+- **Genuinely open sources** for wording/structure inspiration: **Open Music
+  Theory** (CC-BY-SA), Wikipedia/Wikibooks music theory (CC-BY-SA), public-domain
+  treatises. Track each source's licence.
+- **Public-domain & folk songs** for examples (the Song Book is already
+  public-domain children's songs) — freely usable, and the richest teaching hook.
+- **§5 UrhG (amtliches Werk)** for a few states' *normative* text is a grey zone;
+  the maintainer chose not to rely on it. Don't.
+**→ The spine is OUR OWN re-expressed grade-1–10 scope. No verbatim curriculum
+text enters the repo.**
+
+### Architecture (proposed)
+- **`lib/features/textbook/curriculum.dart`** — pure data: `Grade` → ordered
+  `Lesson`s. A `Lesson` = `{ id, gradeBand, title, concept-primer, prose (ARB),
+  worked examples (Score/audio), song examples, gameIds[], nextLessonId }`. Pure
+  Dart, testable, no UI coupling.
+- **Lessons reuse the concept-primer atoms we already built** — the 45 primers in
+  `shared/tutorial/primers.dart` ARE the lesson cores. A Lesson wraps a primer +
+  extra prose + song examples + the game list. So the primer-quality work already
+  done is *directly* the textbook's lesson content.
+- **`textbook_screen.dart`** — a paginated reader: prose + engraved examples +
+  Listen buttons + "train this" buttons that deep-link into the games, + prev/next
+  and a progress spine. Narrative connective text between lessons.
+- **`TextbookProgress`** (SharedPreferences) — furthest lesson reached, so
+  "continue reading" works; the games' SRI mastery feeds a "you've practised this"
+  tick per lesson.
+
+### Song-based examples (start here — highest value, no licensing risk)
+Anchor abstract facts to **melodies kids know**, drawn from / extended in the
+**Song Book** (public domain). Especially **interval mnemonics** — name the leap
+by the tune that starts with it:
+- **descending minor 3rd** → "**Kuckuck**" (the cuckoo call).
+- **major 2nd up** → "Alle meine Entchen" / "Frère Jacques" start.
+- **perfect 4th up** → "Tatütata" (Martinshorn) / "Kommt ein Vogel geflogen".
+- **perfect 5th up** → "Morgen kommt der Weihnachtsmann" / "Twinkle" (C–C–G).
+- **major 6th up** → "My Bonnie".
+- **octave** → "Somewhere over the Rainbow".
+These become: (1) worked examples inside the interval lessons; (2) an
+`intervalSongs` table the **Interval** games cite as a hint/mnemonic; (3) Song
+Book entries we author/extend. Each carries its source + public-domain check.
+
+### Gap analysis (the deliverable that "reveals where we don't cover")
+A pure function + a test mapping **each re-expressed curriculum concept →
+{lesson?, primer?, gameIds[]}** and printing the **uncovered** ones (a concept
+with no game, or a grade band with a thin lesson). Both a planning artefact and a
+coverage guard. Run it first — it orders all the work below.
+
+### Phasing
+1. **Curriculum spine data model + gap analysis** (pure Dart + test). Reveals gaps.
+2. **Song-example layer**: `intervalSongs` (+ other mnemonic tables) wired into
+   the interval primers/games; extend the Song Book where a song is missing.
+   *(No new UI; immediate learner value.)*
+3. **Lesson model** wrapping the existing primers + prose + song examples + game
+   links; author grade-band prose (our words).
+4. **Textbook reader UI** + narrative + progress + game deep-links.
+5. **Fill the gaps** the analysis found (new lessons/games for uncovered concepts).
+
+**Status:** spec written 2026-07-17. Phase 0 (this pass): the 45 concept primers
+were revised to the 9-year-old bar — every step now has an engraved example, and
+jargon ("V/I", "the tonic", "a third apart") was replaced with concrete language —
+so the lesson atoms are textbook-grade. Next: phase 1 (spine + gap analysis),
+then phase 2 (song examples).
 
 ## Delivery
 
