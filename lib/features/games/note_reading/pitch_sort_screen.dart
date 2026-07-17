@@ -206,7 +206,8 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
                                           onDraggableCanceled: (_, __) =>
                                               _onMiss(i),
                                           child: _NoteCard(
-                                              score: _score(_cards[i])),
+                                            score: _score(_cards[i]),
+                                          ),
                                         ),
                                   ],
                                 ),
@@ -220,7 +221,8 @@ class _PitchSortScreenState extends State<PitchSortScreen> with QuizRoundMixin {
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 6),
+                                        horizontal: 6,
+                                      ),
                                       child: DragTarget<int>(
                                         onWillAcceptWithDetails: (d) =>
                                             _high[d.data] == high,
