@@ -29,7 +29,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:klang_universum/core/audio/synth.dart' show kSampleRate;
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 
 // Freeverb comb/allpass tunings at 44.1 kHz (mono set).
 const List<int> _kCombTuning = [1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617];

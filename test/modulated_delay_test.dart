@@ -9,8 +9,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:klang_universum/core/audio/crisp_dsp/modulated_delay.dart';
 
 const _sr = 44100;
 

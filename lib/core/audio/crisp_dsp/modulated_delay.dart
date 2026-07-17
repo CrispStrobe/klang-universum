@@ -18,7 +18,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:klang_universum/core/audio/synth.dart' show kSampleRate;
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 
 /// Linear-interpolated read of [history] at fractional index [pos]. Samples
 /// before the start (pos < 0) or past the end read as 0.

@@ -8,8 +8,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:klang_universum/core/audio/crisp_dsp/reverb.dart';
 
 Float64List _impulse(int n) {
   final b = Float64List(n);
