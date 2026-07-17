@@ -257,7 +257,7 @@ class SampleInstrument implements TrackerInstrument {
       if (midi != null) {
         final startSample = (startStep * timing.stepMs * kSampleRate) ~/ 1000;
         final runSamples = (steps * timing.stepMs * kSampleRate) ~/ 1000;
-        final buf = resampleLinear(sample, midiToFrequency(midi) / baseFreq);
+        final buf = resampleCubic(sample, midiToFrequency(midi) / baseFreq);
         final n = min(min(buf.length, runSamples), out.length - startSample);
         for (var i = 0; i < n; i++) {
           out[startSample + i] = buf[i];

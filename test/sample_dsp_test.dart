@@ -51,6 +51,49 @@ void main() {
     });
   });
 
+  group('resampleCubic', () {
+    test('same length semantics as linear + finite', () {
+      final s = _sine(0.1, 220);
+      expect(resampleCubic(s, 2.0).length, (s.length / 2).floor());
+      expect(resampleCubic(s, 0.5).length, s.length * 2);
+      expect(_finite(resampleCubic(s, 1.5)), isTrue);
+    });
+
+    test('ratio 1 preserves a constant signal', () {
+      final dc = Float64List.fromList(List.filled(100, 0.5));
+      final out = resampleCubic(dc, 1.0);
+      expect(out.length, 100);
+      expect(out.every((v) => (v - 0.5).abs() < 1e-9), isTrue);
+    });
+
+    test('degenerate input is safe', () {
+      expect(resampleCubic(Float64List(0), 2).length, 0);
+      expect(resampleCubic(_sine(0.01, 220), 0).length, 0);
+      expect(resampleCubic(Float64List.fromList([0.7]), 1.0), [0.7]);
+    });
+
+    test('reconstructs a pitched sine more accurately than linear', () {
+      const hz = 3000.0, sr = 44100, ratio = 1.5;
+      final s = _sine(0.05, hz); // _sine defaults to 44100 Hz
+      final lin = resampleLinear(s, ratio);
+      final cub = resampleCubic(s, ratio);
+      expect(cub.length, lin.length);
+      double rms(Float64List b) {
+        var sum = 0.0;
+        for (var i = 2; i < b.length - 2; i++) {
+          final truth = sin(2 * pi * hz * (i * ratio) / sr);
+          final e = b[i] - truth;
+          sum += e * e;
+        }
+        return sqrt(sum / (b.length - 4));
+      }
+
+      final eLin = rms(lin), eCub = rms(cub);
+      // Cubic is clearly closer to the true resampled sine than linear.
+      expect(eCub, lessThan(eLin * 0.5));
+    });
+  });
+
   group('granularPitchShift', () {
     test('zero semitones is identity', () {
       final s = _sine(0.2, 220);

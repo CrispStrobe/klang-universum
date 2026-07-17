@@ -35,7 +35,7 @@ SampleInstrument sampleInstrumentFromDoc(
     return SampleInstrument(id, Float64List(0), baseMidi: baseMidi);
   }
   final c5 = sample.c5speed > 0 ? sample.c5speed : 8363;
-  final atEngineRate = resampleLinear(sample.pcm, c5 / engineRate);
+  final atEngineRate = resampleCubic(sample.pcm, c5 / engineRate);
   return SampleInstrument(id, atEngineRate, baseMidi: baseMidi);
 }
 
