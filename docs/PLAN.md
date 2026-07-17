@@ -23,6 +23,14 @@ and push to origin/main** before/after touching shared files. Format:
   (`loopMixerSaveSongBook*`). NOT touching any Workshop files (Song Book + the
   MusicXML *writer* are the integration points).
 
+- **opus (parity)** · 🚧 **ACTIVE — tempo marks** (id-anchor stamp, feeds
+  playback/MusicXML; NB crisp_notation carries `Score.tempo`/`Measure.tempoChange`
+  through export + `TempoMap` but does **not** draw them on staff). Worktree
+  `../mus-parity`, branch `feature/workshop-parity`. Files: `score_document.dart`
+  (`_tempoChanges` side-map + initial `tempo` field, `_withMidScoreChanges` stamp,
+  `loadScore` recovery), `composition_workshop_screen.dart` (Change-from-here
+  dialog + ⋮ initial-tempo), **both ARBs**, NEW `test/tempo_test.dart`. Lands on
+  `origin/main` in one small commit.
 - **opus (parity)** · ✅ **idle / SHIPPED — note ornaments (trill/mordent/turn)**
   (`194fa66` model + `5459e60` UI, suite **738 green**). Per-note `Ornament?`
   field on `EditorElement` (rides the element snapshot for free), emitted onto
