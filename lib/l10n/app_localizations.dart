@@ -2420,6 +2420,30 @@ abstract class AppLocalizations {
   /// **'Robot'**
   String get trackerVoiceRobot;
 
+  /// No description provided for @trackerVoiceAlien.
+  ///
+  /// In en, this message translates to:
+  /// **'Alien'**
+  String get trackerVoiceAlien;
+
+  /// No description provided for @trackerVoiceCyborg.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyborg'**
+  String get trackerVoiceCyborg;
+
+  /// No description provided for @trackerVoiceRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get trackerVoiceRadio;
+
+  /// No description provided for @trackerVoiceDemon.
+  ///
+  /// In en, this message translates to:
+  /// **'Demon'**
+  String get trackerVoiceDemon;
+
   /// No description provided for @myMelodyPrompt.
   ///
   /// In en, this message translates to:

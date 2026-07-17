@@ -137,7 +137,7 @@ void main() {
     test('every effect yields finite, audible output', () {
       for (final fx in VoiceEffect.values) {
         final out = applyVoiceEffect(raw, fx);
-        expect(out.isNotEmpty, isTrue, reason: '$fx empty');
+        expect(out.length, raw.length, reason: '$fx not length-preserving');
         expect(_finite(out), isTrue, reason: '$fx not finite');
         expect(_peak(out), greaterThan(0.0), reason: '$fx silent');
       }

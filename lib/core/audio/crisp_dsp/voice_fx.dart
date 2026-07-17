@@ -14,11 +14,25 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/formant_shift.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 
-/// The voice-transform palette offered when recording an instrument.
-enum VoiceEffect { normal, chipmunk, monster, deep, robot }
+/// The voice-transform palette offered when recording an instrument. All presets
+/// are pitch- AND length-preserving (timbral only), so a recorded sample stays in
+/// tune as a channel instrument.
+enum VoiceEffect {
+  normal,
+  chipmunk,
+  monster,
+  deep,
+  robot,
+  alien,
+  cyborg,
+  radio,
+  demon,
+}
 
 /// Applies [fx] to [sample], returning a new (pitch/length-preserving) buffer.
 Float64List applyVoiceEffect(
@@ -37,7 +51,58 @@ Float64List applyVoiceEffect(
       return formantShift(sample, -0.3);
     case VoiceEffect.robot:
       return _robot(sample, sampleRate);
+    case VoiceEffect.alien:
+      // Bright, shimmery: formant up + a mid ring-mod carrier.
+      return ringModFx(
+        formantShift(sample, 0.4),
+        carrierHz: 150,
+        mix: 0.6,
+        sampleRate: sampleRate,
+      );
+    case VoiceEffect.cyborg:
+      // Robotic + gritty: low ring-mod, then soft-clip crunch.
+      return distortionFx(
+        ringModFx(sample, carrierHz: 80, mix: 0.5, sampleRate: sampleRate),
+        drive: 3,
+        mix: 0.6,
+      );
+    case VoiceEffect.radio:
+      // Telephone/AM: band-limit, then a touch of grit.
+      return distortionFx(
+        _bandpass(sample, sampleRate, 500, 2500),
+        drive: 2,
+        mix: 0.3,
+      );
+    case VoiceEffect.demon:
+      // Deep + fuzzy growl: formant down, then a fuzz shaper.
+      return distortionFx(
+        formantShift(sample, -0.5),
+        kind: DistortionKind.fuzz,
+        drive: 2,
+        mix: 0.5,
+      );
   }
+}
+
+/// A cheap band-pass ([lowHz]..[highHz]) — a 1-pole high-pass into a 1-pole
+/// low-pass. Length-preserving. Used for the "radio" voice.
+Float64List _bandpass(
+  Float64List s,
+  int sampleRate,
+  double lowHz,
+  double highHz,
+) {
+  final out = Float64List(s.length);
+  final aHp = 1 - exp(-2 * pi * lowHz / sampleRate);
+  final aLp = 1 - exp(-2 * pi * highHz / sampleRate);
+  var hpState = 0.0, lp = 0.0;
+  for (var i = 0; i < s.length; i++) {
+    hpState += aHp * (s[i] - hpState); // low-passed copy…
+    final hp = s[i] - hpState; // …subtracted = high-pass
+    lp += aLp * (hp - lp); // then low-pass → band-pass
+    out[i] = lp;
+  }
+  return out;
 }
 
 /// Robot voice: ring-modulation (a metallic carrier) + bit-crush grit. Both are

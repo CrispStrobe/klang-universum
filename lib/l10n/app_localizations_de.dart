@@ -1257,6 +1257,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerVoiceRobot => 'Roboter';
 
   @override
+  String get trackerVoiceAlien => 'Alien';
+
+  @override
+  String get trackerVoiceCyborg => 'Cyborg';
+
+  @override
+  String get trackerVoiceRadio => 'Radio';
+
+  @override
+  String get trackerVoiceDemon => 'Dämon';
+
+  @override
   String get myMelodyPrompt =>
       'Schreibe deine Melodie — tippe die Linien oder ein Instrument!';
 

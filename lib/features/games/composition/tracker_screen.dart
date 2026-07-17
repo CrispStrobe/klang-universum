@@ -917,6 +917,10 @@ class _TrackerScreenState extends State<TrackerScreen>
     VoiceEffect.monster: Icons.sentiment_very_dissatisfied,
     VoiceEffect.deep: Icons.waves,
     VoiceEffect.robot: Icons.smart_toy,
+    VoiceEffect.alien: Icons.blur_on,
+    VoiceEffect.cyborg: Icons.memory,
+    VoiceEffect.radio: Icons.radio,
+    VoiceEffect.demon: Icons.local_fire_department,
   };
 
   String _voiceEffectLabel(AppLocalizations l10n, VoiceEffect fx) =>
@@ -926,6 +930,10 @@ class _TrackerScreenState extends State<TrackerScreen>
         VoiceEffect.monster => l10n.trackerVoiceMonster,
         VoiceEffect.deep => l10n.trackerVoiceDeep,
         VoiceEffect.robot => l10n.trackerVoiceRobot,
+        VoiceEffect.alien => l10n.trackerVoiceAlien,
+        VoiceEffect.cyborg => l10n.trackerVoiceCyborg,
+        VoiceEffect.radio => l10n.trackerVoiceRadio,
+        VoiceEffect.demon => l10n.trackerVoiceDemon,
       };
 
   String _instrumentLabel(AppLocalizations l10n, String id) => switch (id) {

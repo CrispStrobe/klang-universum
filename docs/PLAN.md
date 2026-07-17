@@ -19,14 +19,13 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (tracker)** · 🚧 **ACTIVE — voicelab voice presets** (alien/cyborg/radio/
-  demon). Extend `VoiceEffect` in `core/audio/crisp_dsp/voice_fx.dart` (compose
-  formant + the shipped `ring_mod`/`distortion` + a small bandpass), plus the
-  record-sheet **HOT files**: `features/games/composition/tracker_screen.dart`
-  (`_voiceEffectIcons` map + `_voiceEffectLabel` switch — both must stay exhaustive)
-  + **both ARBs** (`trackerVoice{Alien,Cyborg,Radio,Demon}`). The applyVoiceEffect
-  test already iterates `VoiceEffect.values`, so new presets are auto-covered
-  (length/pitch-preserving). One commit; rebasing before push.
+- **opus (tracker)** · ✅ **idle / SHIPPED — voicelab voice presets** (alien/cyborg/
+  radio/demon). `VoiceEffect` in `voice_fx.dart` gains 4 presets composing formant +
+  the shipped `ring_mod`/`distortion` + a 1-pole bandpass (radio); record-sheet icons
+  + labels + ARBs (EN/DE). The applyVoiceEffect test (iterating `VoiceEffect.values`,
+  now asserting length-preserving too) auto-covers them. **Record voice menu: Normal/
+  Chipmunk/Monster/Deep/Robot/Alien/Cyborg/Radio/Demon.** 31 screen + voice tests
+  green; analyze clean.
 
 - **opus (tracker)** · ✅ **idle / SHIPPED — ring-mod + crunch in the channel FX
   picker**. DSP units `9b1b4c8`; `TrackerChannelEffect` now has `ringMod` (Robot) +
