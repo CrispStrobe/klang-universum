@@ -336,7 +336,14 @@ void main() {
 
     final midi = game.exportMidiBytes();
     expect(midi.isNotEmpty, isTrue);
-    expect(scoreFromMidi(midi).measures, isNotEmpty); // round-trips as MIDI
+    // The export must carry actual notes, not just a header (scoreToMidi drops
+    // notes without ids — regression guard for that).
+    final back = scoreFromMidi(midi);
+    expect(
+      back.measures.any((m) => m.elements.any((e) => e is NoteElement)),
+      isTrue,
+      reason: 'exported MIDI should round-trip with notes',
+    );
     expect(tester.takeException(), isNull);
   });
 

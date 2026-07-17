@@ -619,7 +619,9 @@ class _TrackerScreenState extends State<TrackerScreen>
       elements.add(
         pitches.isEmpty
             ? RestElement(one)
-            : NoteElement(pitches: pitches, duration: one),
+            // An id is required for scoreToMidi to emit the note (else the
+            // exported MIDI is silent).
+            : NoteElement(pitches: pitches, duration: one, id: 'n$s'),
       );
     }
     final barSteps = _engine.timing.stepsPerBeat * 4;
