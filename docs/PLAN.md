@@ -54,8 +54,16 @@ and push to origin/main** before/after touching shared files. Format:
   (dotted_sort — half vs dotted-half, 2 vs 3 beats, shown + heard),
   `restsPrimer` (connect_rests — note/rest/note/rest with real silent beats).
   Helpers gained `_notes(dots:)` + `_rhythm()` (null = a `RestElement`), so dots
-  and rests can be *shown*. Next: note_reading (ties/slurs, articulations,
-  beams, whole/half, clefs, SATB voices + bass-variant reuse).
+  and rests can be *shown*.
+  ✅ **Batch 2 (note_reading) SHIPPED — 17 games:** `tieSlurPrimer` (tie holds one
+  pitch / slur = legato, drawn via `tieToNext` + `Slur`), `articulationPrimer`
+  (staccato dot vs accent wedge — and warns the dot BESIDE a note means something
+  else), `beamPrimer` (flags when split by a rest vs a beam on one beat),
+  `wholeHalfPrimer` (E–F vs C–D, the black key between), `clefsPrimer` (G-clef vs
+  F-clef and what they curl/dot around), `voicesPrimer` (S/A/T/B → duet,
+  read_voice, which_voice, hear_voice). Plus **reuse-wiring `readingBassPrimer`
+  onto all 8 bass variants**. Helpers gained `_curvePair()` + `_articulated()`.
+  Next: scales (direction, same/different, count-by-ear) + measures (strong beat).
 
 - **opus (primers-mine)** · ✅ **idle / SHIPPED — per-game tutorial primers for 3
   games** (learnability §1). The games I shipped this session now teach their

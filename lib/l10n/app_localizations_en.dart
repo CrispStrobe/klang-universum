@@ -3111,6 +3111,72 @@ class AppLocalizationsEn extends AppLocalizations {
       'Every note value has a matching rest. A half note rings for 2 beats; a half rest is 2 beats of silence.';
 
   @override
+  String get primerCurveTitle => 'Ties and slurs';
+
+  @override
+  String get primerCurveTie =>
+      'A TIE joins two notes of the SAME pitch. Don\'t play the second one — hold the first right through both. C tied to C is one long C.';
+
+  @override
+  String get primerCurveSlur =>
+      'A SLUR curves over DIFFERENT pitches. Play them smoothly, joined with no gap between them — that\'s legato.';
+
+  @override
+  String get primerArticulationTitle => 'How to play the note';
+
+  @override
+  String get primerArticulationStaccato =>
+      'A dot above or below the notehead is staccato: play it short and detached, with air after it. (Careful — a dot BESIDE the note makes it longer instead!)';
+
+  @override
+  String get primerArticulationAccent =>
+      'A wedge > is an accent: give that note an extra push so it stands out from its neighbours.';
+
+  @override
+  String get primerBeamTitle => 'Flags and beams';
+
+  @override
+  String get primerBeamFlag =>
+      'A lone eighth note wears a flag on its stem. Here a rest splits the eighths apart, so each one keeps its own flag.';
+
+  @override
+  String get primerBeamBeam =>
+      'When eighths share a beat they are joined by a BEAM instead of flags — the same sound, just tidier to read.';
+
+  @override
+  String get primerToneTitle => 'Half steps and whole steps';
+
+  @override
+  String get primerToneHalf =>
+      'A half step (semitone) is the smallest step on the keyboard — neighbours with nothing between. E to F is a half step: no black key between them.';
+
+  @override
+  String get primerToneWhole =>
+      'A whole step is two half steps. C to D is a whole step — there IS a black key between them.';
+
+  @override
+  String get primerClefTitle => 'Which clef?';
+
+  @override
+  String get primerClefTreble =>
+      'The treble clef (G-clef) curls around the line that means G. It is used for higher notes — right hand, flute, violin.';
+
+  @override
+  String get primerClefBass =>
+      'The bass clef (F-clef) puts two dots around the line that means F. It is used for lower notes — left hand, cello, bass.';
+
+  @override
+  String get primerVoicesTitle => 'Four voices at once';
+
+  @override
+  String get primerVoicesChord =>
+      'A choir sings four lines together: Soprano (highest), Alto, Tenor, Bass (lowest). Sounded at the same time they make a chord.';
+
+  @override
+  String get primerVoicesFollow =>
+      'To read one voice, follow only its line: the soprano is the top note, the bass the bottom. Listen — top voice, then bottom.';
+
+  @override
   String get colorScaffoldLabel => 'Colour helper for beginners';
 
   @override

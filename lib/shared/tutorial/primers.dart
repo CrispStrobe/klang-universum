@@ -14,6 +14,7 @@ import 'package:comet_beat/shared/midi_pitch.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
+        Articulation,
         ChordSymbol,
         ChordSymbolKind,
         Clef,
@@ -24,6 +25,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         NoteElement,
         RestElement,
         Score,
+        Slur,
         TimeSignature;
 
 // ---- notation helpers -------------------------------------------------------
@@ -50,6 +52,44 @@ Score _notes(
             NoteElement.note(
               pitchFromMidi(midis[i]),
               NoteDuration(dur, dots: dots),
+              id: 'n$i',
+            ),
+        ]),
+      ],
+    );
+
+/// Two half notes joined by a curve: a **tie** when [tie] (same pitch — the
+/// engraver draws it from `tieToNext`), else a **slur** across the two pitches.
+Score _curvePair(int a, int b, {required bool tie}) => Score(
+      clef: Clef.treble,
+      measures: [
+        Measure([
+          NoteElement.note(
+            pitchFromMidi(a),
+            const NoteDuration(DurationBase.half),
+            id: 'a',
+            tieToNext: tie,
+          ),
+          NoteElement.note(
+            pitchFromMidi(b),
+            const NoteDuration(DurationBase.half),
+            id: 'b',
+          ),
+        ]),
+      ],
+      slurs: tie ? const [] : const [Slur('a', 'b')],
+    );
+
+/// [midis] as quarter notes, each carrying [art] — so the mark is *shown*.
+Score _articulated(List<int> midis, Articulation art) => Score(
+      clef: Clef.treble,
+      measures: [
+        Measure([
+          for (var i = 0; i < midis.length; i++)
+            NoteElement.note(
+              pitchFromMidi(midis[i]),
+              const NoteDuration(DurationBase.quarter),
+              articulations: {art},
               id: 'n$i',
             ),
         ]),
@@ -596,6 +636,128 @@ Tutorial enharmonicPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerEnharmonicTwins,
           // The same pitch twice — identical sound, two names.
           play: (a) => a.playSequence(_run([66, 66], ms: 500)),
+        ),
+      ],
+    );
+
+/// The two curves that look alike: a tie holds one pitch, a slur means smooth.
+/// Game: tie_slur.
+Tutorial tieSlurPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerCurveTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerCurveTie,
+          score: _curvePair(60, 60, tie: true), // C tied to C = one long C
+          play: (a) => a.playPhrase([60], noteMs: 1600), // held, not replayed
+        ),
+        TutorialStep(
+          text: l10n.primerCurveSlur,
+          score: _curvePair(60, 64, tie: false), // C slurred to E
+          play: (a) => a.playPhrase([60, 64], noteMs: 800),
+        ),
+      ],
+    );
+
+/// Articulation marks: HOW a note is played (short vs emphasised).
+/// Game: articulation_read.
+Tutorial articulationPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerArticulationTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerArticulationStaccato,
+          score: _articulated([60, 62, 64], Articulation.staccato),
+          // Short and detached: brief notes with air between them.
+          play: (a) => a.playPhrase([60, 62, 64], noteMs: 160),
+        ),
+        TutorialStep(
+          text: l10n.primerArticulationAccent,
+          score: _articulated([60, 62, 64], Articulation.accent),
+          // Emphasised: the same notes, pushed harder.
+          play: (a) => a.playPhrase([60, 62, 64], noteMs: 420),
+        ),
+      ],
+    );
+
+/// The two looks of eighth notes: a flag each, or joined by a beam.
+/// Game: beam_flag.
+Tutorial beamPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerBeamTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerBeamFlag,
+          // Split by eighth rests, so each eighth keeps its own flag.
+          score: _rhythm([60, null, 62, null], dur: DurationBase.eighth),
+          play: (a) => a.playChordSequence(
+            const [
+              [60],
+              [],
+              [62],
+              [],
+            ],
+            ms: 280,
+          ),
+        ),
+        TutorialStep(
+          text: l10n.primerBeamBeam,
+          // Two eighths on one beat — the engraver joins them with a beam.
+          score: _notes([60, 62], dur: DurationBase.eighth),
+          play: (a) => a.playPhrase([60, 62], noteMs: 280),
+        ),
+      ],
+    );
+
+/// The smallest step vs the step that skips a key: semitone vs whole tone.
+/// Game: whole_half.
+Tutorial wholeHalfPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerToneTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerToneHalf,
+          score: _notes([64, 65]), // E–F: neighbours, no key between
+          play: (a) => a.playPhrase([64, 65], noteMs: 650),
+        ),
+        TutorialStep(
+          text: l10n.primerToneWhole,
+          score: _notes([60, 62]), // C–D: a black key sits between
+          play: (a) => a.playPhrase([60, 62], noteMs: 650),
+        ),
+      ],
+    );
+
+/// The clef sign tells you which notes the lines mean.
+/// Game: which_clef.
+Tutorial clefsPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerClefTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerClefTreble,
+          score:
+              _notes([67]), // G above middle C, on the line the clef curls on
+          play: (a) => a.playPhrase([67], noteMs: 700),
+        ),
+        TutorialStep(
+          text: l10n.primerClefBass,
+          score:
+              _notes([53], clef: Clef.bass), // F below middle C, between dots
+          play: (a) => a.playPhrase([53], noteMs: 700),
+        ),
+      ],
+    );
+
+/// Four voices at once: which line is yours?
+/// Games: duet, read_voice, which_voice, hear_voice.
+Tutorial voicesPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerVoicesTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerVoicesChord,
+          score: _chord([60, 64, 67, 72]), // four voices sounding together
+          play: (a) => a.playMidiChord([60, 64, 67, 72]),
+        ),
+        TutorialStep(
+          text: l10n.primerVoicesFollow,
+          // Top voice alone, then the bottom voice alone.
+          play: (a) => a.playPhrase([72, 60], noteMs: 700),
         ),
       ],
     );

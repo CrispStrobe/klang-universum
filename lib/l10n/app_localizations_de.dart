@@ -3124,6 +3124,72 @@ class AppLocalizationsDe extends AppLocalizations {
       'Zu jedem Notenwert gibt es eine passende Pause. Eine halbe Note klingt 2 Schläge; eine halbe Pause ist 2 Schläge Stille.';
 
   @override
+  String get primerCurveTitle => 'Haltebogen und Bindebogen';
+
+  @override
+  String get primerCurveTie =>
+      'Ein HALTEBOGEN verbindet zwei Noten mit DERSELBEN Tonhöhe. Spiel die zweite nicht neu an — halte die erste durch beide hindurch. C mit C verbunden ist ein langes C.';
+
+  @override
+  String get primerCurveSlur =>
+      'Ein BINDEBOGEN spannt sich über VERSCHIEDENE Tonhöhen. Spiel sie weich und ohne Lücke verbunden — das heißt legato.';
+
+  @override
+  String get primerArticulationTitle => 'Wie du die Note spielst';
+
+  @override
+  String get primerArticulationStaccato =>
+      'Ein Punkt über oder unter dem Notenkopf ist Staccato: kurz und abgesetzt spielen, mit Luft danach. (Achtung — ein Punkt NEBEN der Note macht sie stattdessen länger!)';
+
+  @override
+  String get primerArticulationAccent =>
+      'Ein Keil > ist ein Akzent: gib dieser Note einen extra Schubs, damit sie hervorsticht.';
+
+  @override
+  String get primerBeamTitle => 'Fähnchen und Balken';
+
+  @override
+  String get primerBeamFlag =>
+      'Eine einzelne Achtelnote trägt ein Fähnchen am Hals. Hier trennt je eine Pause die Achtel, darum behält jede ihr eigenes Fähnchen.';
+
+  @override
+  String get primerBeamBeam =>
+      'Liegen Achtel auf demselben Schlag, verbindet sie ein BALKEN statt der Fähnchen — derselbe Klang, nur übersichtlicher zu lesen.';
+
+  @override
+  String get primerToneTitle => 'Halbtöne und Ganztöne';
+
+  @override
+  String get primerToneHalf =>
+      'Ein Halbton ist der kleinste Schritt auf der Klaviatur — direkte Nachbarn, nichts dazwischen. E zu F ist ein Halbton: keine schwarze Taste dazwischen.';
+
+  @override
+  String get primerToneWhole =>
+      'Ein Ganzton sind zwei Halbtöne. C zu D ist ein Ganzton — dazwischen LIEGT eine schwarze Taste.';
+
+  @override
+  String get primerClefTitle => 'Welcher Schlüssel?';
+
+  @override
+  String get primerClefTreble =>
+      'Der Violinschlüssel (G-Schlüssel) windet sich um die Linie, die G bedeutet. Er steht für hohe Töne — rechte Hand, Flöte, Geige.';
+
+  @override
+  String get primerClefBass =>
+      'Der Bassschlüssel (F-Schlüssel) setzt zwei Punkte um die Linie, die F bedeutet. Er steht für tiefe Töne — linke Hand, Cello, Bass.';
+
+  @override
+  String get primerVoicesTitle => 'Vier Stimmen gleichzeitig';
+
+  @override
+  String get primerVoicesChord =>
+      'Ein Chor singt vier Linien zusammen: Sopran (am höchsten), Alt, Tenor, Bass (am tiefsten). Gleichzeitig erklingen sie als Akkord.';
+
+  @override
+  String get primerVoicesFollow =>
+      'Um eine Stimme zu lesen, folge nur ihrer Linie: der Sopran ist die oberste Note, der Bass die unterste. Hör hin — erst oben, dann unten.';
+
+  @override
   String get colorScaffoldLabel => 'Farbhilfe für Anfänger';
 
   @override

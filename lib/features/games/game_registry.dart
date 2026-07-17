@@ -388,6 +388,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTieSlur,
       subtitle: (l) => l.gameTieSlurSubtitle,
       builder: (_) => const TieSlurScreen(),
+      tutorial: tieSlurPrimer,
     ),
     // Read the Mark — match a note's articulation glyph (staccato / accent, and
     // tenuto / marcato at 2★) to its name.
@@ -397,6 +398,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameArticulation,
       subtitle: (l) => l.gameArticulationSubtitle,
       builder: (_) => const ArticulationReadScreen(),
+      tutorial: articulationPrimer,
     ),
     // Beam or Flag? — the two looks of eighth notes: joined by a beam vs each
     // keeping its flag. Same rhythm, different engraving.
@@ -406,6 +408,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameBeamFlag,
       subtitle: (l) => l.gameBeamFlagSubtitle,
       builder: (_) => const BeamFlagScreen(),
+      tutorial: beamPrimer,
     ),
     // Enharmonic Twins — same sound spelled two ways (F♯/G♭) or different?
     GameInfo(
@@ -423,6 +426,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameWhichClef,
       subtitle: (l) => l.gameWhichClefSubtitle,
       builder: (_) => const WhichClefScreen(),
+      tutorial: clefsPrimer,
     ),
     // Tone vs semitone — read a 2nd's real size (half steps hide at E–F, B–C).
     GameInfo(
@@ -431,6 +435,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameWholeHalf,
       subtitle: (l) => l.gameWholeHalfSubtitle,
       builder: (_) => const WholeHalfScreen(),
+      tutorial: wholeHalfPrimer,
     ),
     GameInfo(
       id: 'place_note_treble',
@@ -544,6 +549,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDuet,
       subtitle: (l) => l.gameDuetSubtitle,
       builder: (_) => const DuetScreen(),
+      tutorial: voicesPrimer,
     ),
     // Read one voice out of a chord (2 voices → SATB). Advanced: builds on Duet.
     GameInfo(
@@ -554,6 +560,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const ReadVoiceScreen(),
       unlockedWhen: (p) => p.starsFor('duet') >= 2,
       lockedHint: (l) => l.advancedGameHint,
+      tutorial: voicesPrimer,
     ),
     // Inverse of Read the Voice: which voice is the highlighted note?
     GameInfo(
@@ -564,6 +571,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const WhichVoiceScreen(),
       unlockedWhen: (p) => p.starsFor('duet') >= 2,
       lockedHint: (l) => l.advancedGameHint,
+      tutorial: voicesPrimer,
     ),
     // Aural SATB: hear the chord then one voice — which voice was it?
     GameInfo(
@@ -574,6 +582,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const HearVoiceScreen(),
       unlockedWhen: (p) => p.starsFor('duet') >= 2,
       lockedHint: (l) => l.advancedGameHint,
+      tutorial: voicesPrimer,
     ),
     // Read SATB spacing: are the upper voices close or open position?
     GameInfo(
@@ -593,6 +602,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameLineSpace} — ${l.clefBass}',
       subtitle: (l) => l.gameLineSpaceSubtitle,
       builder: (_) => const LineSpaceScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'note_order_bass',
@@ -600,6 +610,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameNoteOrder} — ${l.clefBass}',
       subtitle: (l) => l.gameNoteOrderSubtitle,
       builder: (_) => const NoteOrderScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'falling_notes_bass',
@@ -607,6 +618,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameFallingNotes} — ${l.clefBass}',
       subtitle: (l) => l.gameFallingNotesSubtitle,
       builder: (_) => const FallingNotesScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'connect_line_bass',
@@ -614,6 +626,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameConnectLine} — ${l.clefBass}',
       subtitle: (l) => l.gameConnectLineSubtitle,
       builder: (_) => const ConnectLineScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'odd_one_out_bass',
@@ -621,6 +634,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameOddOneOut} — ${l.clefBass}',
       subtitle: (l) => l.gameOddOneOutSubtitle,
       builder: (_) => const OddOneOutScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'note_whack_bass',
@@ -628,6 +642,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameNoteWhack} — ${l.clefBass}',
       subtitle: (l) => l.gameNoteWhackSubtitle,
       builder: (_) => const NoteWhackScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'staff_runner_bass',
@@ -635,6 +650,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameStaffRunner} — ${l.clefBass}',
       subtitle: (l) => l.gameStaffRunnerSubtitle,
       builder: (_) => const StaffRunnerScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'note_snake_bass',
@@ -642,6 +658,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => '${l.gameNoteSnake} — ${l.clefBass}',
       subtitle: (l) => l.gameNoteSnakeSubtitle,
       builder: (_) => const NoteSnakeScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
   ],
   'measures': [

@@ -5678,6 +5678,114 @@ abstract class AppLocalizations {
   /// **'Every note value has a matching rest. A half note rings for 2 beats; a half rest is 2 beats of silence.'**
   String get primerRestsMatch;
 
+  /// No description provided for @primerCurveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ties and slurs'**
+  String get primerCurveTitle;
+
+  /// No description provided for @primerCurveTie.
+  ///
+  /// In en, this message translates to:
+  /// **'A TIE joins two notes of the SAME pitch. Don\'t play the second one — hold the first right through both. C tied to C is one long C.'**
+  String get primerCurveTie;
+
+  /// No description provided for @primerCurveSlur.
+  ///
+  /// In en, this message translates to:
+  /// **'A SLUR curves over DIFFERENT pitches. Play them smoothly, joined with no gap between them — that\'s legato.'**
+  String get primerCurveSlur;
+
+  /// No description provided for @primerArticulationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How to play the note'**
+  String get primerArticulationTitle;
+
+  /// No description provided for @primerArticulationStaccato.
+  ///
+  /// In en, this message translates to:
+  /// **'A dot above or below the notehead is staccato: play it short and detached, with air after it. (Careful — a dot BESIDE the note makes it longer instead!)'**
+  String get primerArticulationStaccato;
+
+  /// No description provided for @primerArticulationAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'A wedge > is an accent: give that note an extra push so it stands out from its neighbours.'**
+  String get primerArticulationAccent;
+
+  /// No description provided for @primerBeamTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Flags and beams'**
+  String get primerBeamTitle;
+
+  /// No description provided for @primerBeamFlag.
+  ///
+  /// In en, this message translates to:
+  /// **'A lone eighth note wears a flag on its stem. Here a rest splits the eighths apart, so each one keeps its own flag.'**
+  String get primerBeamFlag;
+
+  /// No description provided for @primerBeamBeam.
+  ///
+  /// In en, this message translates to:
+  /// **'When eighths share a beat they are joined by a BEAM instead of flags — the same sound, just tidier to read.'**
+  String get primerBeamBeam;
+
+  /// No description provided for @primerToneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Half steps and whole steps'**
+  String get primerToneTitle;
+
+  /// No description provided for @primerToneHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'A half step (semitone) is the smallest step on the keyboard — neighbours with nothing between. E to F is a half step: no black key between them.'**
+  String get primerToneHalf;
+
+  /// No description provided for @primerToneWhole.
+  ///
+  /// In en, this message translates to:
+  /// **'A whole step is two half steps. C to D is a whole step — there IS a black key between them.'**
+  String get primerToneWhole;
+
+  /// No description provided for @primerClefTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which clef?'**
+  String get primerClefTitle;
+
+  /// No description provided for @primerClefTreble.
+  ///
+  /// In en, this message translates to:
+  /// **'The treble clef (G-clef) curls around the line that means G. It is used for higher notes — right hand, flute, violin.'**
+  String get primerClefTreble;
+
+  /// No description provided for @primerClefBass.
+  ///
+  /// In en, this message translates to:
+  /// **'The bass clef (F-clef) puts two dots around the line that means F. It is used for lower notes — left hand, cello, bass.'**
+  String get primerClefBass;
+
+  /// No description provided for @primerVoicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Four voices at once'**
+  String get primerVoicesTitle;
+
+  /// No description provided for @primerVoicesChord.
+  ///
+  /// In en, this message translates to:
+  /// **'A choir sings four lines together: Soprano (highest), Alto, Tenor, Bass (lowest). Sounded at the same time they make a chord.'**
+  String get primerVoicesChord;
+
+  /// No description provided for @primerVoicesFollow.
+  ///
+  /// In en, this message translates to:
+  /// **'To read one voice, follow only its line: the soprano is the top note, the bass the bottom. Listen — top voice, then bottom.'**
+  String get primerVoicesFollow;
+
   /// No description provided for @colorScaffoldLabel.
   ///
   /// In en, this message translates to:

@@ -125,6 +125,12 @@ void main() {
       'How loud? p and f': dynamicsPrimer,
       'The dot that adds half': dottedNotePrimer, // dotted-duration Score path
       'Silence has length': restsPrimer, // RestElement Score path
+      'Ties and slurs': tieSlurPrimer, // tie + Slur Score path
+      'How to play the note': articulationPrimer, // articulations Score path
+      'Flags and beams': beamPrimer,
+      'Half steps and whole steps': wholeHalfPrimer,
+      'Which clef?': clefsPrimer, // bass-clef Score path
+      'Four voices at once': voicesPrimer,
     };
     for (final entry in primers.entries) {
       await pumpGame(
