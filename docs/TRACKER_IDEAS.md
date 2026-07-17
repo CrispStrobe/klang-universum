@@ -17,8 +17,12 @@ implements one file, maintainer integrates.** Sources: our MIT repos
   specs + gotchas + order (S3M→XM→IT): **`TRACKER_HANDOVER.md` §6**.
 - **Writers** (later): no read-only lib helps — reference MilkyTracker/OpenMPT
   (BSD) save routines or write from spec (as we did for `.mod`).
-- **Format converters** once codecs land: MOD↔XM↔S3M↔IT via model bridges
-  (each is a sample+pattern model). MIDI↔MOD already shipped (Score-bridge hub).
+- ✅ **Format converters** — the full N×N matrix ships: MOD↔XM↔S3M↔IT via the
+  neutral `ModuleDoc` hub. Single entry point `convertModule(bytes, target)` /
+  `convertDocTo(doc, target)` in `module_convert.dart` (bin/modconv.dart funnels
+  through it). All 16 cells covered by a data-driven matrix test that re-parses
+  each output through the hub and asserts title/note(MIDI-space)/sample-peak
+  conservation (`module_convert_test.dart`). MIDI↔MOD also shipped (Score hub).
 
 ## B. Sampling (the "steal/record/shape a sound" toys)
 - ✅ **Cubic-Hermite (Catmull-Rom) interpolation** SHIPPED (`resampleCubic` in

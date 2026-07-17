@@ -613,6 +613,22 @@ ItModule docToIt(ModuleDoc doc) {
 /// Convenience: convert a neutral module straight to `.it` bytes.
 Uint8List convertToIt(ModuleDoc doc) => writeIt(docToIt(doc));
 
+/// Convert a neutral [doc] to any target format — the single dispatch point for
+/// the full N×N converter matrix. `bin/modconv.dart` and the in-app "convert"
+/// path both funnel through here so a new format is wired in exactly one place.
+Uint8List convertDocTo(ModuleDoc doc, ModuleFormat target) => switch (target) {
+      ModuleFormat.mod => convertToMod(doc),
+      ModuleFormat.xm => convertToXm(doc),
+      ModuleFormat.s3m => convertToS3m(doc),
+      ModuleFormat.it => convertToIt(doc),
+    };
+
+/// Convert raw module [bytes] of ANY recognized format straight to [target]
+/// bytes, through the neutral hub — sniff → parse → convert. Throws the same
+/// [FormatException] as [parseAnyModule] on an unrecognized input.
+Uint8List convertModule(Uint8List bytes, ModuleFormat target) =>
+    convertDocTo(parseAnyModule(bytes), target);
+
 // ─── Tuning helpers ──────────────────────────────────────────────────────────
 
 double _log2(num x) => math.log(x) / math.ln2;

@@ -230,6 +230,89 @@ void main() {
     });
   });
 
+  // ── The full N×N matrix ────────────────────────────────────────────────────
+  // Every golden (source) → every format (target), all 16 cells including
+  // identity. The invariant is source-agnostic: re-parse the output through the
+  // hub and compare in MIDI/normalized-PCM space, so no per-format note or
+  // sample encoding is hard-coded here — conservation is what's asserted.
+  group('convertModule — full N×N conversion matrix', () {
+    const goldens = <({String path, ModuleFormat fmt, String title, int note})>[
+      (
+        path: 'test/fixtures/golden.mod',
+        fmt: ModuleFormat.mod,
+        title: 'TESTMOD',
+        note: 60
+      ),
+      (
+        path: 'test/fixtures/golden.s3m',
+        fmt: ModuleFormat.s3m,
+        title: 'GOLDENS3M',
+        note: 72
+      ),
+      (
+        path: 'test/fixtures/golden.xm',
+        fmt: ModuleFormat.xm,
+        title: 'GOLDENXM',
+        note: 60
+      ),
+      (
+        path: 'test/fixtures/golden.it',
+        fmt: ModuleFormat.it,
+        title: 'GOLDENIT',
+        note: 60
+      ),
+    ];
+    const targets = ModuleFormat.values;
+
+    double peak(List<double> pcm) =>
+        pcm.fold(0.0, (m, v) => v.abs() > m ? v.abs() : m);
+
+    for (final src in goldens) {
+      final srcDoc = parseAnyModule(_read(src.path));
+      // Anchor: the source parses to the MIDI note we think it does.
+      test('${src.fmt.name}: source anchors at MIDI ${src.note}', () {
+        expect(srcDoc.patterns.first.rows[0][0].note, src.note);
+      });
+      final srcPeak = peak(srcDoc.samples[0].pcm);
+
+      for (final target in targets) {
+        test('${src.fmt.name} → ${target.name} preserves title/note/sample',
+            () {
+          final out = convertModule(_read(src.path), target);
+
+          // 1. The output is a valid file of the requested format.
+          expect(
+            sniffModuleFormat(out),
+            target,
+            reason: '${target.name} output must sniff as ${target.name}',
+          );
+
+          // 2. Re-parse through the hub and compare in the neutral model.
+          final outDoc = parseAnyModule(out);
+          expect(outDoc.sourceFormat, target);
+          expect(outDoc.title, src.title, reason: 'title survives');
+
+          // 3. First note conserved in MIDI space (all our goldens fit every
+          //    target's pitch range).
+          expect(
+            outDoc.patterns.first.rows[0][0].note,
+            src.note,
+            reason: 'first note survives ${src.fmt.name}→${target.name}',
+          );
+          expect(outDoc.patterns.first.rows[0][0].instrument, 1);
+
+          // 4. First sample's peak magnitude survives the 8-bit round-trip
+          //    (all goldens use 8-bit PCM; 2/128 covers any rounding).
+          expect(
+            peak(outDoc.samples[0].pcm),
+            closeTo(srcPeak, 2 / 128),
+            reason: 'sample peak survives ${src.fmt.name}→${target.name}',
+          );
+        });
+      }
+    }
+  });
+
   group('parseAnyModule — live real modules (skipped if absent)', () {
     for (final entry in const [
       ['test/fixtures/wild_local.s3m', ModuleFormat.s3m],

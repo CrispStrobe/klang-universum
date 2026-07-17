@@ -19,12 +19,13 @@ import 'package:comet_beat/core/audio/mod/module_convert.dart';
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 
-typedef _Encoder = Uint8List Function(ModuleDoc);
-const _encoders = <String, _Encoder>{
-  'mod': convertToMod,
-  'xm': convertToXm,
-  's3m': convertToS3m,
-  'it': convertToIt,
+/// Output file extension → target format. The actual encoding goes through the
+/// shared [convertDocTo] dispatcher so a new format is wired in exactly once.
+const _extToFormat = <String, ModuleFormat>{
+  'mod': ModuleFormat.mod,
+  'xm': ModuleFormat.xm,
+  's3m': ModuleFormat.s3m,
+  'it': ModuleFormat.it,
 };
 
 void main(List<String> args) {
@@ -85,14 +86,14 @@ void main(List<String> args) {
 
   final outPath = positional[1];
   final ext = outPath.split('.').last.toLowerCase();
-  final encode = _encoders[ext];
-  if (encode == null) {
+  final target = _extToFormat[ext];
+  if (target == null) {
     stderr.writeln('modconv: unknown output format ".$ext" '
         '(use .mod/.xm/.s3m/.it)');
     exitCode = 2;
     return;
   }
-  File(outPath).writeAsBytesSync(encode(doc));
+  File(outPath).writeAsBytesSync(convertDocTo(doc, target));
   stdout.writeln('modconv: ${doc.sourceFormat.name} → .$ext  '
       '($inPath → $outPath)');
 }
