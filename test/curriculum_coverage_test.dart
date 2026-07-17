@@ -39,14 +39,13 @@ void main() {
     // ignore: avoid_print
     print(report.report());
     expect(report.concepts, isNotEmpty);
-    // Sanity: known gaps are surfaced, not silently trained.
-    final untrainedIds = report.untrained.map((c) => c.id).toSet();
-    // Still-open gaps (syncopation/triplets/ornaments are now trained).
-    expect(untrainedIds, contains('modes'));
-    expect(untrainedIds, contains('modulation'));
-    // And the ones we just filled are no longer flagged.
-    expect(untrainedIds, isNot(contains('syncopation')));
-    expect(untrainedIds, isNot(contains('triplets')));
-    expect(untrainedIds, isNot(contains('ornaments')));
+    // Structural invariants only — we are actively closing gaps, so DON'T pin
+    // which concepts are still untrained (that would break every time a gap is
+    // filled). A concept marked untrained must genuinely have no games, and
+    // every registered game must be placed.
+    for (final c in report.untrained) {
+      expect(c.gameIds, isEmpty, reason: '${c.id} is not really untrained');
+    }
+    expect(report.orphanGames, isEmpty, reason: 'every game should be placed');
   });
 }
