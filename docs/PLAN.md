@@ -92,17 +92,19 @@ and push to origin/main** before/after touching shared files. Format:
   of the BlackHole rig, runnable in CI. **No app screens / ARBs / Workshop /
   native plugin touched.**
 
-- **opus (parity)** · 🚧 **ACTIVE — PDF export** (bucket G's last open item; the
-  maintainer OK'd the new dep). **No library change needed** — `SystemLayout.
-  layout` *is* a `ScoreLayout`, and `renderLayoutToPng` takes one, so: core's
-  `layoutPages(score, settings, metrics: PageMetrics)` line-breaks + paginates,
-  each `PositionedSystem` renders to a PNG, and the app composes real A4 pages
-  with the `pdf` package (all coords are staff-spaces → points via one spatium).
-  Raster-per-system, because the SVG path embeds `@font-face` text that the pdf
-  package can't parse and Bravura is CFF/OTF (its TTF parser won't embed it).
-  Worktree `../mus-parity`. **Files:** `pubspec.yaml` (+`pdf`), NEW
-  `lib/features/workshop/export/score_pdf.dart`, `composition_workshop_screen.dart`
-  (`kExportFormats` + `_generateExport`), NEW `test/score_pdf_test.dart`.
+- **opus (parity)** · 🚧 **ACTIVE — keyboard-first nav in Select mode** (last
+  small Cause-2 item). ✅ **PDF export SHIPPED** (`e0954bd`, bucket G's last open
+  item). **No library change** — `SystemLayout.layout` *is* a `ScoreLayout` and
+  `renderLayoutToPng` takes one, so `layoutPages(score, settings, metrics:)`
+  line-breaks + paginates, each `PositionedSystem` rasters to a PNG (through the
+  app's painter → correct Bravura glyphs, 3× for print), and the `pdf` package
+  places each at its exact staff-space position on an A4 box (staff-spaces →
+  points via one spatium). Raster-per-system because the SVG path embeds
+  `@font-face` text the pdf pkg can't parse + Bravura is CFF/OTF (TTF-only
+  embedder). `+pdf ^3.11.0`, `lib/features/workshop/export/score_pdf.dart`,
+  "PDF (print)" in `kExportFormats`, `test/score_pdf_test.dart` (valid header +
+  real pagination + size scaling, under `runAsync`). Now: Select-mode letter keys
+  jump the caret instead of no-op'ing.
 - **opus (parity)** · ✅ **SHIPPED — value strip un-dual-purposed**
   (Cause 2's other grievance). The strip stays deliberately dual-purpose on
   **Sandbox** (arm the next note *and* fix the selected one — forgiving, what kids

@@ -139,8 +139,15 @@ items, not architecture:**
 - **Voice-2 v1 gaps (doable now, model-side):** voice 2 carries no dynamics/
   lyrics/slurs, and tuplets/mid-score changes anchored while voice 2 is active
   don't stamp; cross-voice tap-select isn't wired.
-- **Blocked on crisp_notation:** page/print view, PDF export (the library has
-  none), grace-note LIST beyond a single run if ever wanted.
+- ✅ **PDF export SHIPPED** (`e0954bd`) — turned out **not** to need a
+  crisp_notation change: `SystemLayout.layout` is a `ScoreLayout`, so
+  `layoutPages` (pagination) + `renderLayoutToPng` (per-system raster) + the `pdf`
+  package compose a print-ready multi-page A4 file entirely app-side
+  (`lib/features/workshop/export/score_pdf.dart`). Raster-per-system because the
+  SVG path embeds `@font-face` text the pdf pkg can't parse and Bravura is
+  CFF/OTF. This is the reusable recipe if a print *preview* is ever wanted.
+- **Genuinely blocked on crisp_notation:** none of the remaining items are —
+  grace-note LIST beyond a single run is the only "if ever wanted" library ask.
 
 The sections below record HOW each shipped bucket was built (the pattern to reuse
 for the polish items). Full context in `WORKSHOP_PARITY.md` §"Notation-depth
