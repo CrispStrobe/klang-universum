@@ -1207,12 +1207,6 @@ class _TrackerScreenState extends State<TrackerScreen>
             onPressed: _showSongSheet,
           ),
           IconButton(
-            icon: Icon(swingOn ? Icons.waves : Icons.linear_scale),
-            color: swingOn ? Theme.of(context).colorScheme.primary : null,
-            tooltip: l10n.trackerSwing,
-            onPressed: () => setSwing(!swingOn),
-          ),
-          IconButton(
             icon: Icon(_showNotation ? Icons.grid_view : Icons.music_note),
             tooltip: l10n.trackerToggleNotation,
             onPressed: () => setState(() => _showNotation = !_showNotation),
@@ -1230,9 +1224,16 @@ class _TrackerScreenState extends State<TrackerScreen>
                   _exportMidi();
                 case 'borrow':
                   _borrowInstrument();
+                case 'swing':
+                  setSwing(!swingOn);
               }
             },
             itemBuilder: (context) => [
+              CheckedPopupMenuItem(
+                value: 'swing',
+                checked: swingOn,
+                child: Text(l10n.trackerSwing),
+              ),
               PopupMenuItem(
                 value: 'importMod',
                 child: Text(l10n.trackerImportMod),

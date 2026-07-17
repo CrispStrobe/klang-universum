@@ -179,73 +179,92 @@ class _AccidentalSortScreenState extends State<AccidentalSortScreen>
                 score: score,
                 onRestart: restartGame,
               )
-            : Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    RoundHeader(
-                      correct: finished ? true : _lastDropOk,
-                      round: round + 1,
-                      totalRounds: totalRounds,
-                      prompt: l10n.accidentalSortPrompt,
-                    ),
-                    const SizedBox(height: 16),
-                    // Card pool.
-                    SizedBox(
-                      height: 120,
-                      child: Center(
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 16,
+            // Fill the viewport (Spacer bottom-aligns the buckets) on normal
+            // screens, but scroll instead of overflowing on a short one (SE).
+            : LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
                           children: [
-                            for (var i = 0; i < _cards.length; i++)
-                              if (!_placed[i])
-                                Draggable<int>(
-                                  data: i,
-                                  feedback: _NoteCard(
-                                    score: _score(_cards[i]),
-                                    dragging: true,
-                                  ),
-                                  childWhenDragging: const SizedBox(
-                                    width: 84,
-                                    height: 104,
-                                  ),
-                                  onDraggableCanceled: (_, __) => _onMiss(i),
-                                  child: _NoteCard(score: _score(_cards[i])),
+                            RoundHeader(
+                              correct: finished ? true : _lastDropOk,
+                              round: round + 1,
+                              totalRounds: totalRounds,
+                              prompt: l10n.accidentalSortPrompt,
+                            ),
+                            const SizedBox(height: 16),
+                            // Card pool.
+                            SizedBox(
+                              height: 120,
+                              child: Center(
+                                child: Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 16,
+                                  children: [
+                                    for (var i = 0; i < _cards.length; i++)
+                                      if (!_placed[i])
+                                        Draggable<int>(
+                                          data: i,
+                                          feedback: _NoteCard(
+                                            score: _score(_cards[i]),
+                                            dragging: true,
+                                          ),
+                                          childWhenDragging: const SizedBox(
+                                            width: 84,
+                                            height: 104,
+                                          ),
+                                          onDraggableCanceled: (_, __) =>
+                                              _onMiss(i),
+                                          child: _NoteCard(
+                                            score: _score(_cards[i]),
+                                          ),
+                                        ),
+                                  ],
                                 ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                for (final alter in _buckets)
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                      ),
+                                      child: DragTarget<int>(
+                                        onWillAcceptWithDetails: (d) =>
+                                            _alter[d.data] == alter,
+                                        onAcceptWithDetails: (d) =>
+                                            _onAccept(d.data, alter),
+                                        builder: (context, candidate, __) =>
+                                            _Bucket(
+                                          glyph: _signGlyph(alter),
+                                          label: _signLabel(l10n, alter),
+                                          hovering: candidate.isNotEmpty,
+                                          contents: _binned[alter] ?? const [],
+                                          scoreOf: _score,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            FeedbackLine(
+                              correct: finished ? true : _lastDropOk,
+                            ),
                           ],
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        for (final alter in _buckets)
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 6),
-                              child: DragTarget<int>(
-                                onWillAcceptWithDetails: (d) =>
-                                    _alter[d.data] == alter,
-                                onAcceptWithDetails: (d) =>
-                                    _onAccept(d.data, alter),
-                                builder: (context, candidate, __) => _Bucket(
-                                  glyph: _signGlyph(alter),
-                                  label: _signLabel(l10n, alter),
-                                  hovering: candidate.isNotEmpty,
-                                  contents: _binned[alter] ?? const [],
-                                  scoreOf: _score,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    FeedbackLine(correct: finished ? true : _lastDropOk),
-                  ],
+                  ),
                 ),
               ),
       ),
