@@ -19,12 +19,12 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (tracker)** · 🚧 **ACTIVE — add ring-mod + crunch to the channel FX picker**.
-  The DSP units shipped (`crisp_dsp/ring_mod.dart` + `distortion.dart`, `9b1b4c8`);
-  now extend `TrackerChannelEffect` with `ringMod` + `crunch` (distortion) in
-  `core/audio/tracker_engine.dart` (`applyChannelEffect` cases) + labels in
-  `features/games/composition/tracker_screen.dart` + **both ARBs** (`trackerFxRingMod`/
-  `trackerFxCrunch`). The picker + engine test auto-cover new enum values. One commit.
+- **opus (tracker)** · ✅ **idle / SHIPPED — ring-mod + crunch in the channel FX
+  picker**. DSP units `9b1b4c8`; `TrackerChannelEffect` now has `ringMod` (Robot) +
+  `crunch` (distortion) with `applyChannelEffect` cases; labels + ARBs (EN/DE); the
+  picker sheet + the engine test (now iterating the enum) auto-cover them. 50
+  engine+screen tests green; analyze clean. **Channel FX menu: none/Echo/Chorus/
+  Flanger/Reverb/Robot/Crunch.**
 
 - **opus (majmin-sort)** · 🚧 **ACTIVE — "Major or Minor?" triad-sort minigame**
   (backlog §B, an open `[ ]` — the *reading* counterpart to the aural

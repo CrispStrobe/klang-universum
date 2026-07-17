@@ -16,9 +16,11 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/sfxr.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart';
@@ -298,7 +300,15 @@ class PercussionInstrument implements TrackerInstrument {
 }
 
 /// An optional insert effect applied to a channel's stem (before mixStems).
-enum TrackerChannelEffect { none, delay, chorus, flanger, reverb }
+enum TrackerChannelEffect {
+  none,
+  delay,
+  chorus,
+  flanger,
+  reverb,
+  ringMod,
+  crunch,
+}
 
 /// Applies [fx] to a channel [stem] with kid-friendly default params, returning a
 /// SAME-LENGTH buffer (so stems still line up for mixStems). [TrackerChannelEffect.none]
@@ -331,6 +341,13 @@ Float64List applyChannelEffect(
           sampleRate: sampleRate,
         ),
       TrackerChannelEffect.reverb => reverbFx(stem, sampleRate: sampleRate),
+      TrackerChannelEffect.ringMod => ringModFx(
+          stem,
+          carrierHz: 110,
+          mix: 0.6,
+          sampleRate: sampleRate,
+        ),
+      TrackerChannelEffect.crunch => distortionFx(stem, drive: 3, mix: 0.7),
     };
 
 /// One editable column: an [instrument], an authored mix [gain], and [rows]

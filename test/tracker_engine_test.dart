@@ -388,12 +388,8 @@ void main() {
         stem[i] = 0.6 * sin(2 * pi * 220 * i / kSampleRate);
       }
       expect(applyChannelEffect(stem, TrackerChannelEffect.none), same(stem));
-      for (final fx in const [
-        TrackerChannelEffect.delay,
-        TrackerChannelEffect.chorus,
-        TrackerChannelEffect.flanger,
-        TrackerChannelEffect.reverb,
-      ]) {
+      for (final fx in TrackerChannelEffect.values
+          .where((f) => f != TrackerChannelEffect.none)) {
         final out = applyChannelEffect(stem, fx);
         expect(out.length, stem.length);
         var differs = false;

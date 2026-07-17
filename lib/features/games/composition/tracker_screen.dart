@@ -990,6 +990,8 @@ class _TrackerScreenState extends State<TrackerScreen>
         TrackerChannelEffect.chorus => l10n.trackerFxChorus,
         TrackerChannelEffect.flanger => l10n.trackerFxFlanger,
         TrackerChannelEffect.reverb => l10n.trackerFxReverb,
+        TrackerChannelEffect.ringMod => l10n.trackerFxRingMod,
+        TrackerChannelEffect.crunch => l10n.trackerFxCrunch,
       };
 
   /// The per-channel insert-effect picker (none / delay / chorus / flanger /

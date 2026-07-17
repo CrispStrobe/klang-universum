@@ -2324,6 +2324,18 @@ abstract class AppLocalizations {
   /// **'Reverb'**
   String get trackerFxReverb;
 
+  /// No description provided for @trackerFxRingMod.
+  ///
+  /// In en, this message translates to:
+  /// **'Robot'**
+  String get trackerFxRingMod;
+
+  /// No description provided for @trackerFxCrunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Crunch'**
+  String get trackerFxCrunch;
+
   /// No description provided for @trackerSfxrZap.
   ///
   /// In en, this message translates to:

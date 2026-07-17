@@ -1202,6 +1202,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerFxReverb => 'Reverb';
 
   @override
+  String get trackerFxRingMod => 'Robot';
+
+  @override
+  String get trackerFxCrunch => 'Crunch';
+
+  @override
   String get trackerSfxrZap => 'Zap';
 
   @override

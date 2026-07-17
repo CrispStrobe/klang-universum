@@ -405,6 +405,8 @@
   "trackerFxChorus": "Chorus",
   "trackerFxFlanger": "Flanger",
   "trackerFxReverb": "Hall",
+  "trackerFxRingMod": "Roboter",
+  "trackerFxCrunch": "Verzerrung",
   "trackerSfxrZap": "Zap",
   "trackerSfxrBlip": "Blip",
   "trackerSfxrLaser": "Laser",

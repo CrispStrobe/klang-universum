@@ -1208,6 +1208,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerFxReverb => 'Hall';
 
   @override
+  String get trackerFxRingMod => 'Roboter';
+
+  @override
+  String get trackerFxCrunch => 'Verzerrung';
+
+  @override
   String get trackerSfxrZap => 'Zap';
 
   @override
