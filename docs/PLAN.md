@@ -114,40 +114,20 @@ and push to origin/main** before/after touching shared files. Format:
   (byte-identity fast path); V1/V2 toolbar toggle; MusicXML round-trips. ✅ **mid-bar
   clef SHIPPED, fully lossless** (`12404e1`/`854ab25` + crisp_notation writer
   `3c1b8bd`).
-- **opus (next)** · ✅ **idle / SHIPPED — playback practice-speed control**
-  (0.5×/0.75×/1×). Worktree `../mus-next`, branch `feature/workshop-next`. Suite
-  green (50 widget), analyze clean. A `_playSpeed` wall-clock stretch (1/speed) in
-  `_renderPart` scales the audio ms AND the cursor schedule together (pitch
-  unaffected); a speed chip in the app-bar actions; de/en (`workshopPlaybackSpeed`).
-  Also hardened both transport tests to assert the stop icon *synchronously* after
-  Play (playback rides a real Stopwatch → a timed pump could end a short piece
-  under load). Confined to transport + app-bar — no reflow/note-entry edits.
-  **Shipped by opus (next):** tempo marks · grace notes · playback (bucket F) ·
-  multi-part playback (mix + full-score cursor + per-part mute) · practice speed ·
-  ✅ **voice-2 playback** (`_renderPart` now scans elements + voice2/3/4, so the
-  just-shipped voice 2 sounds, not just highlights; transport-only, 51 widget green).
-  **idle.** Remaining Workshop items are parity's (Studio shell / input modes).
-- **opus (next)** · ✅ **idle / SHIPPED — length-scaled sing-along stars** (the
-  flagged follow-up). Worktree `../mus-next`, branch `feature/workshop-next`. Sing-
-  along stars now reflect the *fraction* of a song sung, not a fixed count (a
-  40-note song no longer scored 3★ on 13 hits). Pure `scaledStarScore(hits,total,
-  thresholds)` in `play_along.dart` (≥90%→3★, ≥70%→2★, any hit→1★) + an opt-in
-  `scaleStarsToLength` on `PlayAlongScreen` (default OFF → every built-in chart
-  unchanged; feeds both `recordResult` stars and `GameResultView.starScore`);
-  `song_screen` passes it true. 35 play-along/song tests green, analyze clean.
-- **opus (next)** · ✅ **SHIPPED — Sing along for the Song Book**
-  (`song_play_along.dart` + `song_screen.dart`; 15 song tests green, analyze clean).
-  A child sings any stored song against the moving-score highway (mic-graded),
-  connecting the Song Book + groove-export to the shipped `PlayAlongEngine`. Pure
-  `chartFromScore(Score)→PlayAlongChart` via `playbackTimeline` (melody = top pitch,
-  quarter-beat timing, octave-agnostic); a "Sing along" button on the song viewer
-  launches the existing `PlayAlongScreen` (reused `gameId: 'sing_along'` /
-  `sriPrefix: 'voice.sing_along'` + `gameSingAlong` — no registry/tuning/screen
-  change). ⚠ v1 limit: stars use the fixed `sing_along` bracket, so they don't
-  scale to song length (a follow-up could add a `starThresholds` override to
-  `PlayAlongScreen`). **Shipped by opus (next):** tempo · grace · playback
-  (bucket F) · multi-part playback · practice speed · voice-2 playback · Song-Book
-  sing-along.
+- **opus (next)** · ✅ **idle.** Worktree `../mus-next`, branch
+  `feature/workshop-next`. **Shipped (now recorded in [HISTORY.md]):** Workshop
+  tempo marks · grace notes · playback bucket F (transport + moving cursor) ·
+  multi-part playback (mix + full-score cursor + per-part mute) · voice-2 playback ·
+  practice-speed chip (0.5×/0.75×/1×); Song Book **Sing along** (`chartFromScore` +
+  a song-viewer button reusing `PlayAlongScreen`) with **length-scaled stars**
+  (`scaledStarScore` + opt-in `PlayAlongScreen.scaleStarsToLength`, default off).
+  **Pending & doable next (unclaimed, non-Workshop or model-only so no parity
+  collision):** a Workshop **metronome/count-in** + loop-a-selection for playback;
+  a **"Play along" (instrument, octave-specific)** twin of the Song Book sing-along;
+  **"Melody doodle → hear it back"** sandbox game (freehand contour → quantise →
+  Score → play, feeds the Song Book). Workshop *screen* polish (richer inspector,
+  insertion palettes, keyboard-first select-nav, value-strip un-dual-purpose) is
+  **parity's** turf — coordinate before touching `composition_workshop_screen.dart`.
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).

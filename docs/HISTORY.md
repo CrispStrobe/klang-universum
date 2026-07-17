@@ -71,6 +71,26 @@ sibling of the My Melody sandbox. What it does now:
   file pickers work now (added the `files.user-selected.read-write` sandbox
   entitlement — the app is sandboxed, so without it the dialogs were blocked).
 
+Notation-depth + Studio-shell + playback arc (2026-07, the parity push):
+
+- **Notation depth** — **tempo marks** (initial `Score.tempo` + mid-score
+  `Measure.tempoChange`), **grace notes** (a per-note pitch list, acciaccatura/
+  appoggiatura), **ornaments** (trill/mordent/turn), **tuplets**, **mid-score
+  clef/key/time changes**, **mid-*bar* clef changes** (`inlineClefs`), **repeats +
+  voltas + navigation** (D.C./D.S./coda/segno/fine), and `RhythmPolicy.split` (tie
+  over-long notes across barlines). All built on one id-anchor/field pattern on the
+  flat document, all lossless through the MusicXML save→reopen.
+- **Two voices** — an optional **voice 2** per part (`Measure.voice2`) with a
+  V1/V2 toolbar toggle; the flat doc keeps `_v1`/`_v2` and the active voice drives
+  entry, so the mutation sites are untouched.
+- **Studio shell** — a **Sandbox/Studio shelf** toggle reveals grown-up depth
+  (an **Insert/Select** input-mode toggle and a selection-driven **inspector**
+  panel) together, while the kid Sandbox surface stays simple.
+- **Playback** — a real **transport** with a moving cursor that highlights the
+  sounding notes; **multi-part** playback mixes every part into one WAV with a
+  **per-part mute**; a **practice-speed** control (0.5×/0.75×/1×) slows playback
+  without changing pitch. Reflects repeats/navigation/split via the timeline.
+
 Editing extras that lean on crisp_notation's editor contracts: caret (C2), drag-move
 (C3), grand staff (C5), element hit-regions for marquee + fine reorder
 (**C7** `ElementRegionController`), and one-call `Score→PNG/SVG` export
@@ -89,6 +109,12 @@ plugins beyond capture.
   within a cents window for enough of the note); the screen just drives the
   Ticker clock, feeds it mic readings, and paints. No audible backing on purpose
   (the mic would hear the speaker; a Preview button plays it first).
+- **Sing along with any Song Book song** — the song viewer has a **Sing along**
+  button that derives a target melody from the song's notation
+  (`chartFromScore` — top pitch per note, timed from the playback timeline) and
+  drops it into the same moving-score highway, octave-agnostic. Stars scale to the
+  song's length (`scaledStarScore`), so a long song isn't a free 3★. Turns the
+  Song Book (and the groove→Song Book export) into practice material.
 - **Tuner** (cello corner) — open the mic, detect the note, show cents sharp/
   flat on an intonation meter. The whole chain mic → PCM → detector → meter.
 - **Chord Listener** — fuzzy chord recognition from the live mic: strum/play a

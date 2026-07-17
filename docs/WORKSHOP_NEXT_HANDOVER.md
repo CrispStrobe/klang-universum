@@ -106,20 +106,45 @@ every feature at a fraction of the risk. Don't resurrect the flip.
   FIELD (pattern 1). **NB the handover below was wrong:** `NoteElement.graceNotes`
   is a `List<Pitch>` (drawn as small notes), NOT a `List<NoteElement>`. Zero bar
   duration → packing untouched. "Grace notes…" palette editor. `test/grace_note_test.dart`.
-- ✅ **Playback (bucket F)** — real transport + moving green cursor over
-  `playbackTimeline`/`TempoMap`. `AudioService.playTimedChords` renders one gap-
-  accurate WAV (empty pitch list = rest; chords together; tempo-scaled). A `Timer`
-  drives the cursor over a seconds schedule shared with the audio (no player
-  position stream needed). **Scoped to the active part** — multi-part mixing +
-  per-part mute is unbuilt (needs a `mixStems`-style overlapping renderer; the
-  synth's `renderWav` only sequences segments, so this is a real audio task, not
-  wiring). Multi-part canvas cursor also unbuilt (its `highlightedIds` are global
-  ids, not the active part's local element ids).
+- ✅ **Playback (bucket F) — fully shipped.** Real transport + moving green cursor
+  over `playbackTimeline`/`TempoMap`. `AudioService.playTimedChords` renders one
+  gap-accurate WAV (empty pitch list = rest; chords together; tempo-scaled); a
+  `Timer` drives the cursor over a seconds schedule shared with the audio (no
+  player position stream needed). **Multi-part** shipped too (`7125e80`):
+  `playMixedTimedChords` mixes every non-muted part via `mixStems` into one WAV,
+  the cursor spans the full-score canvas (global `p{i}:` ids), and each part has a
+  **Mute** toggle in its ⚙ menu. `_renderPart` scans all voices, so **voice 2
+  sounds** (`34e223a`). A **practice-speed chip** (0.5×/0.75×/1×, `4638e81`) applies
+  a wall-clock stretch to the audio ms *and* the cursor schedule together (pitch
+  unaffected).
+- ✅ **Song Book sing-along** (`337339d`, not a Workshop file but reuses this
+  engine) — `chartFromScore(Score)→PlayAlongChart` via `playbackTimeline` +
+  a "Sing along" button on the song viewer launching `PlayAlongScreen`; stars scale
+  to song length (`scaledStarScore` + opt-in `PlayAlongScreen.scaleStarsToLength`,
+  `f32a139`).
 
 ## Remaining work, scoped (pick one; each is its own commit + board claim)
 
-Ordered roughly easiest → hardest. Full context in `WORKSHOP_PARITY.md`
-§"Notation-depth roadmap" and §"Suggested order of attack".
+**The Workshop parity arc is substantially complete** (as of 2026-07-17): every
+big bucket — notation depth (tempo, grace, ornaments, tuplets, mid-bar clef,
+voice 2, repeats/voltas/navigation), the Studio shell (input modes, inspector,
+Sandbox/Studio shelf), and playback (transport, cursor, multi-part mix/mute,
+practice speed) — has shipped. **What's left is polish and a few blocked-on-library
+items, not architecture:**
+
+- **Polish (doable now):** richer inspector (multi-select / rests / bar
+  attributes), categorized *insertion* palettes, keyboard-first navigation in
+  select mode, un-dual-purposing the value strip, a metronome/count-in for
+  playback, loop-a-selection.
+- **Voice-2 v1 gaps (doable now, model-side):** voice 2 carries no dynamics/
+  lyrics/slurs, and tuplets/mid-score changes anchored while voice 2 is active
+  don't stamp; cross-voice tap-select isn't wired.
+- **Blocked on crisp_notation:** page/print view, PDF export (the library has
+  none), grace-note LIST beyond a single run if ever wanted.
+
+The sections below record HOW each shipped bucket was built (the pattern to reuse
+for the polish items). Full context in `WORKSHOP_PARITY.md` §"Notation-depth
+roadmap" and §"Suggested order of attack".
 
 ### Small notation follow-ups (the id-anchor / field pattern, low risk)
 
@@ -147,14 +172,15 @@ Ordered roughly easiest → hardest. Full context in `WORKSHOP_PARITY.md`
   cross-voice tap-select isn't wired (entry works, tap-to-select stays in the
   active voice). `buildGrandStaff` shows voice 1 only (unchanged display trick).
 
-### Grace notes (the one remaining "hole" that isn't a one-liner)
+### Grace notes
 
-- `NoteElement.graceNotes` is a **`List<NoteElement>`** (+ `graceStyle`
-  acciaccatura/appoggiatura), so a grace note is a mini-sequence attached to a
-  note, not a single enum. Model: `EditorElement.graceNotes: List<...>` (a FIELD,
-  rides the snapshot); a small entry UI (place notes into the grace slot of the
-  selected note). Grace notes have **zero** bar duration, so `reflow` ignores
-  them for packing — good, no capacity interaction. Medium; the UI is the work.
+- ✅ **SHIPPED** (`5b2df1a`). Per-note `EditorElement.graceNotes: **List<Pitch>**`
+  + `graceStyle` (acciaccatura/appoggiatura) — a FIELD (pattern 1) riding the
+  snapshot/clipboard. **NB `NoteElement.graceNotes` is a `List<Pitch>`, drawn as
+  small notes — NOT a `List<NoteElement>` as an earlier draft of this doc claimed.**
+  Zero bar duration, so `reflow` ignores them for packing (goldens hold). A "Grace
+  notes…" palette editor (tap C–B at a chosen octave, chips remove, acciaccatura/
+  appoggiatura toggle). Round-trips through MusicXML. `test/grace_note_test.dart`.
 
 ### The two big buckets — the Studio shell (Causes 2 + 3)
 
@@ -189,15 +215,13 @@ polish, not architecture:** richer inspector, insertion palettes, keyboard-first
 navigation in select mode, un-dual-purposing the value strip, page/print view, PDF
 export. The capability-parity-with-progressive-disclosure goal is met.
 
-### Playback (bucket F — high user value, mostly wiring)
+### Playback (bucket F)
 
-- `_play` in the screen is a fixed-tempo, rest-less, chord-less, active-part-only
-  beep. The library ships `playbackTimeline(score)` (expands repeats + navigation
-  — which you already emit), `soundingAt()` (the cursor), and `TempoMap`; the app
-  owns audio (`AudioService`, `audioplayers`). Build a real transport + a moving
-  playback cursor (highlight `soundingAt` ids) + per-part mute. `RhythmPolicy.
-  split` / repeats / navigation already expand in the timeline, so playback would
-  reflect them.
+- ✅ **SHIPPED** — see the "Shipped since" list above (real transport + moving
+  cursor + multi-part mix/mute/full-score-cursor + voice-2 audio + practice speed).
+  Reflects repeats/navigation/`RhythmPolicy.split` via `playbackTimeline`. Open
+  polish only: a metronome/count-in click track, loop-a-selection, and page/print
+  (below).
 
 ### Scale (bucket G — only if needed)
 
