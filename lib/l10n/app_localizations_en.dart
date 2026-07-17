@@ -1371,6 +1371,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerKeyHelp => 'Keyboard';
 
   @override
+  String get trackerShowKeys => 'Show key hints';
+
+  @override
+  String get trackerClearCell => 'Clear cell';
+
+  @override
+  String get trackerClearConfirm =>
+      'Erase the whole pattern? This can\'t be undone.';
+
+  @override
   String get trackerCursor => 'Move cursor';
 
   @override

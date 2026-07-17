@@ -1378,6 +1378,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerKeyHelp => 'Tastatur';
 
   @override
+  String get trackerShowKeys => 'Tastenhinweise zeigen';
+
+  @override
+  String get trackerClearCell => 'Zelle löschen';
+
+  @override
+  String get trackerClearConfirm =>
+      'Das ganze Pattern löschen? Das kann nicht rückgängig gemacht werden.';
+
+  @override
   String get trackerCursor => 'Cursor bewegen';
 
   @override

@@ -185,6 +185,12 @@ abstract interface class AdvancedTrackerTester {
   /// device-free path onto the sample editor (the mic is device-only).
   void injectRecording(int channel, Float64List raw, VoiceEffect fx);
 
+  /// Undo / redo of pattern cell edits.
+  bool get canUndo;
+  bool get canRedo;
+  void undo();
+  void redo();
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -263,6 +269,17 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// whether a sharp was typed, awaiting the octave digit. Null = nothing armed.
   int? _pendingSemi;
   bool _pendingSharp = false;
+
+  /// Show the computer-key hints near the on-screen piano.
+  bool _showKeyHints = false;
+
+  /// Undo/redo of pattern CELL edits — each entry is a deep snapshot of the
+  /// current pattern's cells. Structural changes (add/remove track, set length,
+  /// switch pattern, import) clear the history (a snapshot restores cells only
+  /// at a fixed channel/row shape).
+  final _undoStack = <List<List<TrackerCell>>>[];
+  final _redoStack = <List<List<TrackerCell>>>[];
+  static const _maxUndo = 80;
 
   final _vScroll = ScrollController();
   // The on-screen piano sweeps C1..~C7; start scrolled to around C3.
@@ -362,6 +379,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       _setCell(channel, row, TrackerCell.empty);
   @override
   void setRows(int rows) {
+    _clearUndo();
     setState(() {
       _song.setRows(rows);
       if (_cursorRow >= rows) _cursorRow = rows - 1;
@@ -371,12 +389,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   void addTrack() {
+    _clearUndo();
     setState(_song.addChannel);
     _syncPlayback();
   }
 
   @override
   void removeTrack(int channel) {
+    _clearUndo();
     setState(() {
       _song.removeChannel(channel);
       if (_cursorChannel >= _song.channelCount) {
@@ -389,10 +409,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   @override
   void togglePlay() => _togglePlay();
   @override
-  void moveCursor(int channel, int row) => setState(() {
-        _cursorChannel = channel.clamp(0, _song.channelCount - 1);
-        _cursorRow = row.clamp(0, _song.rows - 1);
-      });
+  void moveCursor(int channel, int row) {
+    setState(() {
+      _cursorChannel = channel.clamp(0, _song.channelCount - 1);
+      _cursorRow = row.clamp(0, _song.rows - 1);
+    });
+    _ensureCursorVisible();
+  }
+
   @override
   void typeKey(String character) => _typeKey(character);
   @override
@@ -423,6 +447,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   int get orderLength => _song.order.length;
   @override
   void addPattern({bool clone = false}) {
+    _clearUndo();
     setState(() {
       final i = _song.addPattern(cloneCurrent: clone);
       _song.selectPattern(i);
@@ -433,6 +458,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   void selectPattern(int index) {
+    _clearUndo();
     setState(() {
       _song.selectPattern(index);
       if (_cursorRow >= _song.rows) _cursorRow = _song.rows - 1;
@@ -455,46 +481,137 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   // --- Editing ---
 
   void _setCell(int channel, int row, TrackerCell cell) {
+    _pushUndo();
     setState(() => _song.engine.setCell(channel, row, cell));
     _syncPlayback();
   }
 
   void _clearAll() {
+    _pushUndo();
     setState(_song.engine.clearAll);
     _syncPlayback();
   }
 
+  Future<void> _confirmClearAll() async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.trackerClear),
+        content: Text(l10n.trackerClearConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.trackerCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.trackerClear),
+          ),
+        ],
+      ),
+    );
+    if (ok ?? false) _clearAll();
+  }
+
+  // --- Undo / redo (pattern cell edits) ----------------------------------
+
+  bool get _canUndo => _undoStack.isNotEmpty;
+  bool get _canRedo => _redoStack.isNotEmpty;
+
+  /// Snapshot the current pattern's cells before a cell edit.
+  void _pushUndo() {
+    _undoStack.add(_song.engine.exportCells());
+    if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
+    _redoStack.clear();
+  }
+
+  /// Drop the history — after a structural change a snapshot can't be restored.
+  void _clearUndo() {
+    _undoStack.clear();
+    _redoStack.clear();
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty) return;
+    _redoStack.add(_song.engine.exportCells());
+    final snap = _undoStack.removeLast();
+    setState(() => _song.engine.importCells(snap));
+    _syncPlayback();
+  }
+
+  void _redo() {
+    if (_redoStack.isEmpty) return;
+    _undoStack.add(_song.engine.exportCells());
+    final snap = _redoStack.removeLast();
+    setState(() => _song.engine.importCells(snap));
+    _syncPlayback();
+  }
+
+  /// Scrolls the grid so the edit cursor's row stays on-screen (with a margin)
+  /// — called on every cursor move so typing/arrowing never loses the cursor.
+  void _ensureCursorVisible() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_vScroll.hasClients) return;
+      final pos = _vScroll.position;
+      final rowTop = _cursorRow * _rowHeight;
+      final rowBottom = rowTop + _rowHeight;
+      final viewTop = _vScroll.offset;
+      final viewBottom = viewTop + pos.viewportDimension;
+      const margin = _rowHeight * 2;
+      double? target;
+      if (rowTop < viewTop + margin) {
+        target = rowTop - margin;
+      } else if (rowBottom > viewBottom - margin) {
+        target = rowBottom - pos.viewportDimension + margin;
+      }
+      if (target != null) {
+        _vScroll.jumpTo(target.clamp(0.0, pos.maxScrollExtent));
+      }
+    });
+  }
+
   /// Enters [midi] at the cursor and advances by the edit-step (wrapping).
   void _enterNoteAtCursor(int midi) {
+    _pushUndo();
     _song.engine.setCell(_cursorChannel, _cursorRow, TrackerCell(midi: midi));
     setState(() => _cursorRow = (_cursorRow + _editStep) % _song.rows);
+    _ensureCursorVisible();
     _syncPlayback();
   }
 
   void _clearAtCursorAndAdvance() {
+    _pushUndo();
     _song.engine.clearCell(_cursorChannel, _cursorRow);
     setState(() => _cursorRow = (_cursorRow + _editStep) % _song.rows);
+    _ensureCursorVisible();
     _syncPlayback();
   }
 
   // --- Block / selection editing (classic tracker block ops) -------------
 
   /// Move the cursor and drop any selection (a plain move / click).
-  void _moveCursorClearing(int channel, int row) => setState(() {
-        _cursorChannel = channel.clamp(0, _song.channelCount - 1);
-        _cursorRow = row.clamp(0, _song.rows - 1);
-        _anchorChannel = null;
-        _anchorRow = null;
-      });
+  void _moveCursorClearing(int channel, int row) {
+    setState(() {
+      _cursorChannel = channel.clamp(0, _song.channelCount - 1);
+      _cursorRow = row.clamp(0, _song.rows - 1);
+      _anchorChannel = null;
+      _anchorRow = null;
+    });
+    _ensureCursorVisible();
+  }
 
   /// Extend the selection to (channel,row): arm the anchor at the current cursor
   /// if none, then move the cursor to the new corner.
-  void _extendTo(int channel, int row) => setState(() {
-        _anchorChannel ??= _cursorChannel;
-        _anchorRow ??= _cursorRow;
-        _cursorChannel = channel.clamp(0, _song.channelCount - 1);
-        _cursorRow = row.clamp(0, _song.rows - 1);
-      });
+  void _extendTo(int channel, int row) {
+    setState(() {
+      _anchorChannel ??= _cursorChannel;
+      _anchorRow ??= _cursorRow;
+      _cursorChannel = channel.clamp(0, _song.channelCount - 1);
+      _cursorRow = row.clamp(0, _song.rows - 1);
+    });
+    _ensureCursorVisible();
+  }
 
   void _unmark() => setState(() {
         _anchorChannel = null;
@@ -520,18 +637,24 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     return channel >= s.cLo && channel <= s.cHi && row >= s.rLo && row <= s.rHi;
   }
 
-  void _selectTrack() => setState(() {
-        _anchorChannel = _cursorChannel;
-        _anchorRow = 0;
-        _cursorRow = _song.rows - 1;
-      });
+  void _selectTrack() {
+    setState(() {
+      _anchorChannel = _cursorChannel;
+      _anchorRow = 0;
+      _cursorRow = _song.rows - 1;
+    });
+    _ensureCursorVisible();
+  }
 
-  void _selectPattern() => setState(() {
-        _anchorChannel = 0;
-        _anchorRow = 0;
-        _cursorChannel = _song.channelCount - 1;
-        _cursorRow = _song.rows - 1;
-      });
+  void _selectPattern() {
+    setState(() {
+      _anchorChannel = 0;
+      _anchorRow = 0;
+      _cursorChannel = _song.channelCount - 1;
+      _cursorRow = _song.rows - 1;
+    });
+    _ensureCursorVisible();
+  }
 
   void _copyBlock() {
     final s = _selRect;
@@ -541,12 +664,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void _cutBlock() {
     final s = _selRect;
     _copyBlock();
+    _pushUndo();
     setState(() => _song.clearBlock(s.cLo, s.rLo, s.cHi, s.rHi));
     _syncPlayback();
   }
 
   void _pasteBlock({bool mix = false}) {
     if (_clipboard == null) return;
+    _pushUndo();
     setState(
       () => _song.pasteBlock(_clipboard!, _cursorChannel, _cursorRow, mix: mix),
     );
@@ -555,12 +680,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   void _clearBlock() {
     final s = _selRect;
+    _pushUndo();
     setState(() => _song.clearBlock(s.cLo, s.rLo, s.cHi, s.rHi));
     _syncPlayback();
   }
 
   void _transposeBlock(int semitones) {
     final s = _selRect;
+    _pushUndo();
     setState(() => _song.transposeBlock(s.cLo, s.rLo, s.cHi, s.rHi, semitones));
     _syncPlayback();
   }
@@ -1010,6 +1137,15 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void injectRecording(int channel, Float64List raw, VoiceEffect fx) =>
       _assignSample(channel, _sampleFrom(raw, fx: fx));
 
+  @override
+  bool get canUndo => _canUndo;
+  @override
+  bool get canRedo => _canRedo;
+  @override
+  void undo() => _undo();
+  @override
+  void redo() => _redo();
+
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
     VoiceEffect.chipmunk: Icons.pets,
@@ -1316,6 +1452,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   }
 
   void _setCellCommand(int channel, int row, int cmd, int param) {
+    _pushUndo();
     final cur = _song.engine.cellAt(channel, row);
     setState(
       () => _song.engine.setCell(
@@ -1349,6 +1486,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   void _replaceSong(TrackerSong song) {
     _stop();
+    _clearUndo();
     setState(() {
       _song = song;
       _cursorChannel = 0;
@@ -1380,14 +1518,46 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     }
   }
 
-  /// Writes the current pattern's pitched channels to the Song Book as
-  /// multi-part MusicXML (mirrors the Beginner screen). Returns false when
-  /// nothing pitched is placed.
+  /// The WHOLE SONG's pitched channels as one multi-part score: each channel's
+  /// cells are concatenated across the order list (not just the current pattern
+  /// — that was the "place some notes first" bug when notes lived on another
+  /// pattern). Drums/empty channels are skipped. Null = nothing pitched.
+  ({List<TrackerChannel> channels, TrackerTiming timing})? _songAsChannels() {
+    _song.syncCurrent();
+    final chCount = _song.channelCount;
+    final rows = _song.rows;
+    final totalRows = rows * _song.order.length;
+    if (totalRows == 0) return null;
+    final combined = <List<TrackerCell>>[
+      for (var c = 0; c < chCount; c++) <TrackerCell>[],
+    ];
+    for (final o in _song.order) {
+      final pat = _song.patterns[o];
+      for (var c = 0; c < chCount; c++) {
+        combined[c].addAll(pat.cells[c]);
+      }
+    }
+    final channels = [
+      for (var c = 0; c < chCount; c++)
+        TrackerChannel(
+          id: _song.channels[c].id,
+          instrument: _song.channels[c].instrument,
+          rows: totalRows,
+          cells: combined[c],
+        ),
+    ];
+    return (channels: channels, timing: _song.timing.copyWith(rows: totalRows));
+  }
+
+  /// Writes the whole song's pitched channels to the Song Book as multi-part
+  /// MusicXML. Returns false when nothing pitched is placed anywhere.
   bool _writeToSongBook(UserSongsService songs, String title) {
-    final parts = trackerToScoreParts(_song.engine.channels, _song.timing);
+    final src = _songAsChannels();
+    if (src == null) return false;
+    final parts = trackerToScoreParts(src.channels, src.timing);
     if (parts.isEmpty) return false;
     final names = [
-      for (final c in _song.engine.channels)
+      for (final c in src.channels)
         if (c.hasAnyNote && c.instrument is! PercussionInstrument)
           c.instrument.id,
     ];
@@ -1433,15 +1603,21 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         tutorial: advancedTrackerPrimer,
         actions: [
           IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: l10n.myMelodyUndo,
+            onPressed: _canUndo ? _undo : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            tooltip: l10n.workshopRedo,
+            onPressed: _canRedo ? _redo : null,
+          ),
+          IconButton(
             icon: const Icon(Icons.child_care),
             tooltip: l10n.trackerModeToBeginner,
             onPressed: _toBeginner,
           ),
-          IconButton(
-            icon: const Icon(Icons.playlist_play),
-            tooltip: l10n.trackerPlaySong,
-            onPressed: _playSong,
-          ),
+          // (Play song lives in the transport row next to Play/Stop.)
           IconButton(
             icon: const Icon(Icons.tune),
             tooltip: l10n.trackerMixer,
@@ -1451,7 +1627,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: l10n.trackerClear,
-            onPressed: _clearAll,
+            onPressed: _confirmClearAll,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -2210,10 +2386,19 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   ),
                 ),
               const Spacer(),
-              // Clear-at-cursor (the "===" key on a real tracker).
-              OutlinedButton(
-                onPressed: _clearAtCursorAndAdvance,
-                child: const Text('···'),
+              // Clear-at-cursor + advance (the "===" key on a real tracker).
+              Tooltip(
+                message: l10n.trackerClearCell,
+                child: OutlinedButton(
+                  onPressed: _clearAtCursorAndAdvance,
+                  child: const Text('···'),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.keyboard),
+                color: _showKeyHints ? scheme.primary : null,
+                tooltip: l10n.trackerShowKeys,
+                onPressed: () => setState(() => _showKeyHints = !_showKeyHints),
               ),
               IconButton(
                 icon: const Icon(Icons.info_outline),
@@ -2222,6 +2407,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               ),
             ],
           ),
+          if (_showKeyHints)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 2),
+              child: Text(
+                _entryMode == _NoteEntry.pianoKeys
+                    ? 'Z S X D C V G B H N J M ,  ·  Q 2 W 3 E R 5 T 6 Y 7 U I'
+                    : 'C D E F G A B  +  #  +  0–9   (e.g. F 2 = F2)',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           const SizedBox(height: 2),
           // The sweepable multi-octave piano (same widget as the Workshop). Tap
           // a key to enter that absolute note at the cursor.

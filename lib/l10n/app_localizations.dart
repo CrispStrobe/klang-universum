@@ -2660,6 +2660,24 @@ abstract class AppLocalizations {
   /// **'Keyboard'**
   String get trackerKeyHelp;
 
+  /// No description provided for @trackerShowKeys.
+  ///
+  /// In en, this message translates to:
+  /// **'Show key hints'**
+  String get trackerShowKeys;
+
+  /// No description provided for @trackerClearCell.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cell'**
+  String get trackerClearCell;
+
+  /// No description provided for @trackerClearConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase the whole pattern? This can\'t be undone.'**
+  String get trackerClearConfirm;
+
   /// No description provided for @trackerCursor.
   ///
   /// In en, this message translates to:

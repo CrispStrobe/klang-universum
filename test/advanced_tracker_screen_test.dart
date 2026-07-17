@@ -322,4 +322,41 @@ void main() {
     expect(game.debugSaveToSongBook(songs), isTrue);
     expect(songs.songs, isNotEmpty);
   });
+
+  testWidgets('undo/redo restores and reapplies cell edits', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    expect(game.canUndo, isFalse);
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    expect(game.noteCount, 1);
+    expect(game.canUndo, isTrue);
+
+    game.undo();
+    await tester.pump();
+    expect(game.noteCount, 0); // the note is gone
+    expect(game.canRedo, isTrue);
+
+    game.redo();
+    await tester.pump();
+    expect(game.noteCount, 1); // and back
+  });
+
+  testWidgets('Save to Song Book covers notes on a non-current pattern',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    game.setNote(0, 0, 60); // notes on pattern 0
+    game.addPattern(); // switch to a fresh empty pattern 1
+    await tester.pump();
+    expect(game.currentPattern, 1);
+    expect(game.noteCount, 0); // current pattern is empty...
+
+    // ...but Save still finds the notes on pattern 0 (the whole song).
+    final songs = UserSongsService();
+    expect(game.debugSaveToSongBook(songs), isTrue);
+    expect(songs.songs, isNotEmpty);
+  });
 }
