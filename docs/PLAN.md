@@ -48,14 +48,18 @@ and push to origin/main** before/after touching shared files. Format:
   Song Book). **No Workshop files touched.** Only §B (native-AEC jam grading)
   of the handover remains unclaimed.
 
-- **opus (parity)** · 🚧 **ACTIVE — tempo marks** (id-anchor stamp, feeds
-  playback/MusicXML; NB crisp_notation carries `Score.tempo`/`Measure.tempoChange`
-  through export + `TempoMap` but does **not** draw them on staff). Worktree
-  `../mus-parity`, branch `feature/workshop-parity`. Files: `score_document.dart`
-  (`_tempoChanges` side-map + initial `tempo` field, `_withMidScoreChanges` stamp,
-  `loadScore` recovery), `composition_workshop_screen.dart` (Change-from-here
-  dialog + ⋮ initial-tempo), **both ARBs**, NEW `test/tempo_test.dart`. Lands on
-  `origin/main` in one small commit.
+- **opus (parity)** · 🚧 **ACTIVE — mid-*bar* clef changes (`inlineClefs`).**
+  (Tempo marks were shipped by **opus (next)** `1f94a5c`; my duplicate was
+  discarded — coordination collision.) Onset-addressed clef change *within* a
+  bar (draws right before the anchored note), vs today's bar-*start* `clefChange`.
+  Worktree `../mus-parity`, branch `feature/workshop-parity`. **HOT files shared
+  with opus (next)'s grace-notes work:** `score_document.dart` (NEW additive
+  `_inlineClefs` side-map → `Measure.inlineClefs`; wired through `_Snapshot`/
+  `_capture`/`_restore`/`clearAll`/`loadScore` — append-both spots, mechanical to
+  merge; a stamp pass computing each anchor's `Fraction` onset within its reflowed
+  bar; empty-anchor byte-identity fast path), `composition_workshop_screen.dart`
+  (a "Clef (mid-bar)" row in the change-here dialog), **both ARBs**, NEW
+  `test/inline_clef_test.dart`. Small, additive, one commit; rebasing often.
 - **opus (parity)** · ✅ **idle / SHIPPED — note ornaments (trill/mordent/turn)**
   (`194fa66` model + `5459e60` UI, suite **738 green**). Per-note `Ornament?`
   field on `EditorElement` (rides the element snapshot for free), emitted onto
