@@ -221,6 +221,64 @@ void main() {
     });
   });
 
+  group('block operations', () {
+    TrackerSong seeded() {
+      final song = TrackerSong()..setRows(16);
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      song.engine.setCell(0, 1, const TrackerCell(midi: 62));
+      song.engine.setCell(1, 0, const TrackerCell(midi: 67));
+      return song;
+    }
+
+    test('copy then paste-overwrite reproduces the block elsewhere', () {
+      final song = seeded();
+      final block = song.copyBlock(0, 0, 1, 1); // 2 rows × 2 channels
+      expect(block.length, 2);
+      expect(block[0].length, 2);
+      song.pasteBlock(block, 0, 8); // paste at row 8
+      expect(song.engine.cellAt(0, 8).midi, 60);
+      expect(song.engine.cellAt(0, 9).midi, 62);
+      expect(song.engine.cellAt(1, 8).midi, 67);
+    });
+
+    test('cut = copy then clearBlock empties the source', () {
+      final song = seeded();
+      final block = song.copyBlock(0, 0, 0, 1);
+      song.clearBlock(0, 0, 0, 1);
+      expect(song.engine.cellAt(0, 0).isEmpty, isTrue);
+      expect(song.engine.cellAt(0, 1).isEmpty, isTrue);
+      song.pasteBlock(block, 0, 4);
+      expect(song.engine.cellAt(0, 4).midi, 60);
+    });
+
+    test('paste-mix only fills empty cells', () {
+      final song = seeded();
+      final block = [
+        [const TrackerCell(midi: 72)],
+      ];
+      // Target row 0 ch0 already has 60 -> mix leaves it; row 2 is empty -> fills.
+      song.pasteBlock(block, 0, 0, mix: true);
+      expect(song.engine.cellAt(0, 0).midi, 60); // preserved
+      song.pasteBlock(block, 0, 2, mix: true);
+      expect(song.engine.cellAt(0, 2).midi, 72); // filled
+    });
+
+    test('transposeBlock shifts notes and clamps, leaving rests', () {
+      final song = seeded();
+      song.transposeBlock(0, 0, 0, 1, 12); // up an octave
+      expect(song.engine.cellAt(0, 0).midi, 72);
+      expect(song.engine.cellAt(0, 1).midi, 74);
+      expect(song.engine.cellAt(0, 2).isEmpty, isTrue); // rest untouched
+    });
+
+    test('coordinates auto-order (end before start still works)', () {
+      final song = seeded();
+      final block = song.copyBlock(1, 1, 0, 0); // reversed corners
+      expect(block.length, 2);
+      expect(block[0].length, 2);
+    });
+  });
+
   group('orderIndexAtMs', () {
     test('maps song time to the sounding order position', () {
       final song = TrackerSong(); // 32 rows

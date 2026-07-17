@@ -264,6 +264,78 @@ class TrackerSong {
   void setChannelInstrument(int index, TrackerInstrument instrument) =>
       _engine.setChannelInstrument(index, instrument);
 
+  // --- Block operations (classic tracker copy/cut/paste/transpose) -------
+  //
+  // A block is a rectangle of the CURRENT pattern's cells, returned/consumed as
+  // row-major `block[row][col]`. All operate through the engine so caches
+  // invalidate. Coordinates are auto-ordered (start/end may be swapped).
+
+  (int, int) _order2(int a, int b) => a <= b ? (a, b) : (b, a);
+
+  /// Copies the rectangle [ch0,row0]..[ch1,row1] as row-major cells.
+  List<List<TrackerCell>> copyBlock(int ch0, int row0, int ch1, int row1) {
+    final (cLo, cHi) =
+        _order2(ch0.clamp(0, channelCount - 1), ch1.clamp(0, channelCount - 1));
+    final (rLo, rHi) =
+        _order2(row0.clamp(0, rows - 1), row1.clamp(0, rows - 1));
+    return [
+      for (var r = rLo; r <= rHi; r++)
+        [for (var c = cLo; c <= cHi; c++) _engine.cellAt(c, r)],
+    ];
+  }
+
+  /// Empties every cell in the rectangle.
+  void clearBlock(int ch0, int row0, int ch1, int row1) {
+    final (cLo, cHi) = _order2(ch0, ch1);
+    final (rLo, rHi) = _order2(row0, row1);
+    for (var r = rLo; r <= rHi && r < rows; r++) {
+      for (var c = cLo; c <= cHi && c < channelCount; c++) {
+        _engine.clearCell(c, r);
+      }
+    }
+  }
+
+  /// Pastes [block] with its top-left at [chAt]/[rowAt]. When [mix] is true only
+  /// empty target cells are written (merge), else it overwrites. Out-of-range
+  /// cells are skipped.
+  void pasteBlock(
+    List<List<TrackerCell>> block,
+    int chAt,
+    int rowAt, {
+    bool mix = false,
+  }) {
+    for (var r = 0; r < block.length; r++) {
+      for (var c = 0; c < block[r].length; c++) {
+        final tc = chAt + c, tr = rowAt + r;
+        if (tc < 0 || tc >= channelCount || tr < 0 || tr >= rows) continue;
+        if (mix && !_engine.cellAt(tc, tr).isEmpty) continue;
+        _engine.setCell(tc, tr, block[r][c]);
+      }
+    }
+  }
+
+  /// Shifts every note in the rectangle by [semitones] (clamped 0..127),
+  /// preserving volume/effect. Empty cells are left alone.
+  void transposeBlock(int ch0, int row0, int ch1, int row1, int semitones) {
+    final (cLo, cHi) = _order2(ch0, ch1);
+    final (rLo, rHi) = _order2(row0, row1);
+    for (var r = rLo; r <= rHi && r < rows; r++) {
+      for (var c = cLo; c <= cHi && c < channelCount; c++) {
+        final cur = _engine.cellAt(c, r);
+        if (cur.midi == null) continue;
+        _engine.setCell(
+          c,
+          r,
+          TrackerCell(
+            midi: (cur.midi! + semitones).clamp(0, 127),
+            volume: cur.volume,
+            effect: cur.effect,
+          ),
+        );
+      }
+    }
+  }
+
   // --- Mute / solo -------------------------------------------------------
 
   Set<int> _userMuted = {};

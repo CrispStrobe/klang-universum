@@ -2666,6 +2666,90 @@ abstract class AppLocalizations {
   /// **'Move cursor'**
   String get trackerCursor;
 
+  /// No description provided for @trackerBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get trackerBlock;
+
+  /// No description provided for @trackerBlockMark.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark (tap cells to select)'**
+  String get trackerBlockMark;
+
+  /// No description provided for @trackerBlockTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Select track'**
+  String get trackerBlockTrack;
+
+  /// No description provided for @trackerBlockPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Select pattern'**
+  String get trackerBlockPattern;
+
+  /// No description provided for @trackerBlockCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get trackerBlockCopy;
+
+  /// No description provided for @trackerBlockCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut'**
+  String get trackerBlockCut;
+
+  /// No description provided for @trackerBlockPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste (overwrite)'**
+  String get trackerBlockPaste;
+
+  /// No description provided for @trackerBlockPasteMix.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste-mix (fill gaps)'**
+  String get trackerBlockPasteMix;
+
+  /// No description provided for @trackerBlockTransUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Transpose +1'**
+  String get trackerBlockTransUp;
+
+  /// No description provided for @trackerBlockTransDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Transpose −1'**
+  String get trackerBlockTransDown;
+
+  /// No description provided for @trackerBlockOctUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Transpose +octave'**
+  String get trackerBlockOctUp;
+
+  /// No description provided for @trackerBlockOctDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Transpose −octave'**
+  String get trackerBlockOctDown;
+
+  /// No description provided for @trackerBlockClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear block'**
+  String get trackerBlockClear;
+
+  /// No description provided for @trackerBlockUnmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmark'**
+  String get trackerBlockUnmark;
+
   /// No description provided for @trackerTutGrid.
   ///
   /// In en, this message translates to:

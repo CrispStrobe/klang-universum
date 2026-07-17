@@ -1374,6 +1374,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerCursor => 'Move cursor';
 
   @override
+  String get trackerBlock => 'Block';
+
+  @override
+  String get trackerBlockMark => 'Mark (tap cells to select)';
+
+  @override
+  String get trackerBlockTrack => 'Select track';
+
+  @override
+  String get trackerBlockPattern => 'Select pattern';
+
+  @override
+  String get trackerBlockCopy => 'Copy';
+
+  @override
+  String get trackerBlockCut => 'Cut';
+
+  @override
+  String get trackerBlockPaste => 'Paste (overwrite)';
+
+  @override
+  String get trackerBlockPasteMix => 'Paste-mix (fill gaps)';
+
+  @override
+  String get trackerBlockTransUp => 'Transpose +1';
+
+  @override
+  String get trackerBlockTransDown => 'Transpose −1';
+
+  @override
+  String get trackerBlockOctUp => 'Transpose +octave';
+
+  @override
+  String get trackerBlockOctDown => 'Transpose −octave';
+
+  @override
+  String get trackerBlockClear => 'Clear block';
+
+  @override
+  String get trackerBlockUnmark => 'Unmark';
+
+  @override
   String get trackerTutGrid =>
       'This is a pattern grid: time runs top-to-bottom in rows, and each column is a track. Tap a cell to move the edit cursor, then play a note into it.';
 

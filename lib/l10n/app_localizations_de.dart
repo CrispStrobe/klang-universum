@@ -1381,6 +1381,48 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerCursor => 'Cursor bewegen';
 
   @override
+  String get trackerBlock => 'Block';
+
+  @override
+  String get trackerBlockMark => 'Markieren (Zellen antippen)';
+
+  @override
+  String get trackerBlockTrack => 'Spur auswählen';
+
+  @override
+  String get trackerBlockPattern => 'Pattern auswählen';
+
+  @override
+  String get trackerBlockCopy => 'Kopieren';
+
+  @override
+  String get trackerBlockCut => 'Ausschneiden';
+
+  @override
+  String get trackerBlockPaste => 'Einfügen (überschreiben)';
+
+  @override
+  String get trackerBlockPasteMix => 'Misch-Einfügen (Lücken füllen)';
+
+  @override
+  String get trackerBlockTransUp => 'Transponieren +1';
+
+  @override
+  String get trackerBlockTransDown => 'Transponieren −1';
+
+  @override
+  String get trackerBlockOctUp => 'Transponieren +Oktave';
+
+  @override
+  String get trackerBlockOctDown => 'Transponieren −Oktave';
+
+  @override
+  String get trackerBlockClear => 'Block löschen';
+
+  @override
+  String get trackerBlockUnmark => 'Markierung aufheben';
+
+  @override
   String get trackerTutGrid =>
       'Das ist ein Pattern-Raster: Die Zeit läuft von oben nach unten in Zeilen, jede Spalte ist eine Spur. Tippe eine Zelle an, um den Cursor zu setzen, und spiele dann eine Note hinein.';
 

@@ -236,6 +236,51 @@ void main() {
     expect(game.isSoloed(1), isFalse);
   });
 
+  testWidgets('block: select track, copy, paste elsewhere, transpose',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setRows(16);
+    game.setNote(0, 0, 60);
+    game.setNote(0, 1, 62);
+    await tester.pump();
+    expect(game.noteCount, 2);
+
+    // Select the whole track (channel 0), copy it, move to row 8, paste.
+    game.moveCursor(0, 0);
+    game.selectTrack();
+    await tester.pump();
+    expect(game.hasSelection, isTrue);
+    game.copyBlock();
+    game.unmark();
+    game.moveCursor(0, 8);
+    game.pasteBlock();
+    await tester.pump();
+    // Original two notes + two pasted copies.
+    expect(game.noteCount, 4);
+
+    // Transpose a marked block up an octave.
+    game.moveCursor(0, 8);
+    game.selectTrack();
+    game.transposeBlock(12);
+    await tester.pump();
+    expect(game.noteCount, 4); // still 4 notes, just shifted
+  });
+
+  testWidgets('block: clear a marked selection empties it', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    game.setNote(1, 0, 64);
+    await tester.pump();
+    expect(game.noteCount, 2);
+
+    game.selectWholePattern();
+    game.clearBlock();
+    await tester.pump();
+    expect(game.noteCount, 0);
+  });
+
   testWidgets('imports a real module and can save it to the Song Book',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

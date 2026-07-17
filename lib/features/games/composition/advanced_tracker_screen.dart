@@ -29,8 +29,9 @@
 // Song Book; S5c the keyboard/layout modernization — a 2nd note-entry mode
 // (note names: "F" then "2"), a sweepable multi-octave piano (the Workshop's
 // PianoKeyboard), a keyboard legend (ⓘ), tempo + up-to-256/custom length, and an
-// optional onboarding tutorial (i18n). Next: block/selection editing (copy/cut/
-// paste/paste-mix, select track/pattern, transpose) — the classic block ops.
+// optional onboarding tutorial (i18n). S5d the classic BLOCK ops — mark a
+// rectangle (Shift+arrows / tap-mark / select-track / select-pattern) then copy/
+// cut/paste/paste-mix/transpose/clear, via a Block menu AND keyboard shortcuts.
 
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
@@ -173,6 +174,17 @@ abstract interface class AdvancedTrackerTester {
   /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
   void importModuleBytes(Uint8List bytes);
   bool debugSaveToSongBook(UserSongsService songs);
+
+  /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
+  bool get hasSelection;
+  void selectTrack();
+  void selectWholePattern();
+  void copyBlock();
+  void cutBlock();
+  void pasteBlock({bool mix});
+  void clearBlock();
+  void transposeBlock(int semitones);
+  void unmark();
 }
 
 class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
@@ -214,6 +226,19 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// The edit cursor — keyboard and on-screen piano enter notes here.
   int _cursorChannel = 0;
   int _cursorRow = 0;
+
+  /// Block selection anchor (the other corner is the cursor). Null = no block.
+  int? _anchorChannel;
+  int? _anchorRow;
+
+  /// Touch "mark" mode: while on, tapping a cell EXTENDS the selection rather
+  /// than moving the cursor freely.
+  bool _marking = false;
+
+  /// The copied block (row-major), for paste / paste-mix.
+  List<List<TrackerCell>>? _clipboard;
+
+  bool get _hasSelection => _anchorChannel != null && _anchorRow != null;
 
   /// Keyboard/piano entry state.
   int _octave = 4;
@@ -431,30 +456,178 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _syncPlayback();
   }
 
+  // --- Block / selection editing (classic tracker block ops) -------------
+
+  /// Move the cursor and drop any selection (a plain move / click).
+  void _moveCursorClearing(int channel, int row) => setState(() {
+        _cursorChannel = channel.clamp(0, _song.channelCount - 1);
+        _cursorRow = row.clamp(0, _song.rows - 1);
+        _anchorChannel = null;
+        _anchorRow = null;
+      });
+
+  /// Extend the selection to (channel,row): arm the anchor at the current cursor
+  /// if none, then move the cursor to the new corner.
+  void _extendTo(int channel, int row) => setState(() {
+        _anchorChannel ??= _cursorChannel;
+        _anchorRow ??= _cursorRow;
+        _cursorChannel = channel.clamp(0, _song.channelCount - 1);
+        _cursorRow = row.clamp(0, _song.rows - 1);
+      });
+
+  void _unmark() => setState(() {
+        _anchorChannel = null;
+        _anchorRow = null;
+        _marking = false;
+      });
+
+  /// The selection rectangle, or the single cursor cell when nothing is marked.
+  ({int cLo, int cHi, int rLo, int rHi}) get _selRect {
+    final ac = _anchorChannel ?? _cursorChannel;
+    final ar = _anchorRow ?? _cursorRow;
+    return (
+      cLo: ac < _cursorChannel ? ac : _cursorChannel,
+      cHi: ac > _cursorChannel ? ac : _cursorChannel,
+      rLo: ar < _cursorRow ? ar : _cursorRow,
+      rHi: ar > _cursorRow ? ar : _cursorRow,
+    );
+  }
+
+  bool _inSelection(int channel, int row) {
+    if (!_hasSelection) return false;
+    final s = _selRect;
+    return channel >= s.cLo && channel <= s.cHi && row >= s.rLo && row <= s.rHi;
+  }
+
+  void _selectTrack() => setState(() {
+        _anchorChannel = _cursorChannel;
+        _anchorRow = 0;
+        _cursorRow = _song.rows - 1;
+      });
+
+  void _selectPattern() => setState(() {
+        _anchorChannel = 0;
+        _anchorRow = 0;
+        _cursorChannel = _song.channelCount - 1;
+        _cursorRow = _song.rows - 1;
+      });
+
+  void _copyBlock() {
+    final s = _selRect;
+    _clipboard = _song.copyBlock(s.cLo, s.rLo, s.cHi, s.rHi);
+  }
+
+  void _cutBlock() {
+    final s = _selRect;
+    _copyBlock();
+    setState(() => _song.clearBlock(s.cLo, s.rLo, s.cHi, s.rHi));
+    _syncPlayback();
+  }
+
+  void _pasteBlock({bool mix = false}) {
+    if (_clipboard == null) return;
+    setState(
+      () => _song.pasteBlock(_clipboard!, _cursorChannel, _cursorRow, mix: mix),
+    );
+    _syncPlayback();
+  }
+
+  void _clearBlock() {
+    final s = _selRect;
+    setState(() => _song.clearBlock(s.cLo, s.rLo, s.cHi, s.rHi));
+    _syncPlayback();
+  }
+
+  void _transposeBlock(int semitones) {
+    final s = _selRect;
+    setState(() => _song.transposeBlock(s.cLo, s.rLo, s.cHi, s.rHi, semitones));
+    _syncPlayback();
+  }
+
   // --- Keyboard ---
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
+    final hw = HardwareKeyboard.instance;
+    final ctrl = hw.isControlPressed || hw.isMetaPressed;
+    final shift = hw.isShiftPressed;
+    final alt = hw.isAltPressed;
 
-    // Navigation / editing keys first.
+    // Block ops (Ctrl/⌘ + …). Checked before note entry so Ctrl+C isn't a note.
+    if (ctrl) {
+      if (key == LogicalKeyboardKey.keyC) {
+        _copyBlock();
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyX) {
+        _cutBlock();
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyV) {
+        _pasteBlock();
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyM) {
+        _pasteBlock(mix: true);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.keyA) {
+        // First Ctrl+A = the track column; a second widens to the whole pattern.
+        if (_hasSelection &&
+            _selRect.rLo == 0 &&
+            _selRect.rHi == _song.rows - 1 &&
+            _selRect.cLo == _cursorChannel &&
+            _selRect.cHi == _cursorChannel) {
+          _selectPattern();
+        } else {
+          _selectTrack();
+        }
+        return KeyEventResult.handled;
+      }
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      _unmark();
+      return KeyEventResult.handled;
+    }
+
+    // Alt+Arrows / Alt+PageUp/Down: transpose the block (semitone / octave).
+    if (alt) {
+      if (key == LogicalKeyboardKey.arrowUp) {
+        _transposeBlock(1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowDown) {
+        _transposeBlock(-1);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.pageUp) {
+        _transposeBlock(12);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.pageDown) {
+        _transposeBlock(-12);
+        return KeyEventResult.handled;
+      }
+    }
+
+    // Navigation. Shift+arrow extends the block; a plain arrow drops it.
+    void go(int channel, int row) =>
+        shift ? _extendTo(channel, row) : _moveCursorClearing(channel, row);
     if (key == LogicalKeyboardKey.arrowDown) {
-      moveCursor(_cursorChannel, (_cursorRow + 1) % _song.rows);
+      go(_cursorChannel, (_cursorRow + 1) % _song.rows);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowUp) {
-      moveCursor(
-        _cursorChannel,
-        (_cursorRow - 1 + _song.rows) % _song.rows,
-      );
+      go(_cursorChannel, (_cursorRow - 1 + _song.rows) % _song.rows);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowRight) {
-      moveCursor((_cursorChannel + 1) % _song.channelCount, _cursorRow);
+      go((_cursorChannel + 1) % _song.channelCount, _cursorRow);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowLeft) {
-      moveCursor(
+      go(
         (_cursorChannel - 1 + _song.channelCount) % _song.channelCount,
         _cursorRow,
       );
@@ -462,7 +635,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     }
     if (key == LogicalKeyboardKey.delete ||
         key == LogicalKeyboardKey.backspace) {
-      _clearAtCursorAndAdvance();
+      if (_hasSelection) {
+        _clearBlock();
+      } else {
+        _clearAtCursorAndAdvance();
+      }
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.pageUp) {
@@ -903,6 +1080,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             tooltip: l10n.trackerPlaySong,
             onPressed: _playSong,
           ),
+          _blockMenu(l10n),
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: l10n.trackerClear,
@@ -968,6 +1146,94 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       ),
     );
   }
+
+  /// The classic block-editing menu (touch-friendly; the same ops have keyboard
+  /// shortcuts on desktop — see the ⓘ legend). Mark begin/drag-select, select
+  /// track/pattern, copy/cut/paste/paste-mix, transpose, clear, unmark.
+  Widget _blockMenu(AppLocalizations l10n) => PopupMenuButton<String>(
+        icon: Icon(
+          _marking || _hasSelection ? Icons.select_all : Icons.highlight_alt,
+        ),
+        tooltip: l10n.trackerBlock,
+        onSelected: (v) {
+          switch (v) {
+            case 'mark':
+              setState(() {
+                _marking = !_marking;
+                if (_marking) {
+                  _anchorChannel = _cursorChannel;
+                  _anchorRow = _cursorRow;
+                } else {
+                  _unmark();
+                }
+              });
+            case 'track':
+              _selectTrack();
+            case 'pattern':
+              _selectPattern();
+            case 'copy':
+              _copyBlock();
+            case 'cut':
+              _cutBlock();
+            case 'paste':
+              _pasteBlock();
+            case 'pasteMix':
+              _pasteBlock(mix: true);
+            case 'up':
+              _transposeBlock(1);
+            case 'down':
+              _transposeBlock(-1);
+            case 'octUp':
+              _transposeBlock(12);
+            case 'octDown':
+              _transposeBlock(-12);
+            case 'clear':
+              _clearBlock();
+            case 'unmark':
+              _unmark();
+          }
+        },
+        itemBuilder: (ctx) => [
+          CheckedPopupMenuItem(
+            value: 'mark',
+            checked: _marking,
+            child: Text(l10n.trackerBlockMark),
+          ),
+          PopupMenuItem(value: 'track', child: Text(l10n.trackerBlockTrack)),
+          PopupMenuItem(
+            value: 'pattern',
+            child: Text(l10n.trackerBlockPattern),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem(value: 'copy', child: Text(l10n.trackerBlockCopy)),
+          PopupMenuItem(value: 'cut', child: Text(l10n.trackerBlockCut)),
+          PopupMenuItem(
+            enabled: _clipboard != null,
+            value: 'paste',
+            child: Text(l10n.trackerBlockPaste),
+          ),
+          PopupMenuItem(
+            enabled: _clipboard != null,
+            value: 'pasteMix',
+            child: Text(l10n.trackerBlockPasteMix),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem(value: 'up', child: Text(l10n.trackerBlockTransUp)),
+          PopupMenuItem(value: 'down', child: Text(l10n.trackerBlockTransDown)),
+          PopupMenuItem(value: 'octUp', child: Text(l10n.trackerBlockOctUp)),
+          PopupMenuItem(
+            value: 'octDown',
+            child: Text(l10n.trackerBlockOctDown),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem(value: 'clear', child: Text(l10n.trackerBlockClear)),
+          if (_hasSelection)
+            PopupMenuItem(
+              value: 'unmark',
+              child: Text(l10n.trackerBlockUnmark),
+            ),
+        ],
+      );
 
   /// The classic transport row: Play/Pause · Back · Stop · Forward · Play-song ·
   /// Loop + a position readout — all inline (no floating button over the grid).
@@ -1374,6 +1640,26 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _syncPlayback();
   }
 
+  // Block-editing tester hooks (delegate to the private implementations).
+  @override
+  bool get hasSelection => _hasSelection;
+  @override
+  void selectTrack() => _selectTrack();
+  @override
+  void selectWholePattern() => _selectPattern();
+  @override
+  void copyBlock() => _copyBlock();
+  @override
+  void cutBlock() => _cutBlock();
+  @override
+  void pasteBlock({bool mix = false}) => _pasteBlock(mix: mix);
+  @override
+  void clearBlock() => _clearBlock();
+  @override
+  void transposeBlock(int semitones) => _transposeBlock(semitones);
+  @override
+  void unmark() => _unmark();
+
   Widget _rowWidget(
     int row,
     int activeRow,
@@ -1413,6 +1699,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final cell = _song.engine.cellAt(channel, row);
     final hasNote = cell.midi != null;
     final isCursor = channel == _cursorChannel && row == _cursorRow;
+    final selected = _inSelection(channel, row);
     // note + volume + effect sub-columns (classic tracker cell).
     final note = hasNote ? trackerNoteName(cell.midi!) : '···';
     final vol = hasNote && cell.volume != null && cell.volume != 1.0
@@ -1423,7 +1710,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         : '·';
     return GestureDetector(
       onTap: () {
-        moveCursor(channel, row);
+        if (_marking) {
+          _extendTo(channel, row);
+        } else {
+          _moveCursorClearing(channel, row);
+        }
         _focus.requestFocus();
       },
       onLongPress: () => _cellMenu(channel, row),
@@ -1431,6 +1722,9 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         width: _cellWidth,
         alignment: Alignment.center,
         decoration: BoxDecoration(
+          color: selected
+              ? scheme.secondaryContainer.withValues(alpha: 0.6)
+              : null,
           border: Border.all(
             color: isCursor ? scheme.primary : scheme.outlineVariant,
             width: isCursor ? 2 : 0.5,
@@ -1611,6 +1905,24 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               _helpRow(ctx, l10n.trackerCursor, '↑ ↓ ← →'),
               _helpRow(ctx, l10n.trackerClear, 'Delete / Backspace'),
               _helpRow(ctx, l10n.trackerEditStep, l10n.trackerEditStepHelp),
+              const Divider(height: 20),
+              _helpRow(ctx, l10n.trackerBlock, 'Shift + ↑↓←→'),
+              _helpRow(ctx, l10n.trackerBlockTrack, 'Ctrl/⌘ + A'),
+              _helpRow(
+                ctx,
+                '${l10n.trackerBlockCopy} / ${l10n.trackerBlockCut}',
+                'Ctrl/⌘ + C / X',
+              ),
+              _helpRow(
+                ctx,
+                '${l10n.trackerBlockPaste} / ${l10n.trackerBlockPasteMix}',
+                'Ctrl/⌘ + V / M',
+              ),
+              _helpRow(
+                ctx,
+                l10n.trackerBlockTransUp,
+                'Alt + ↑↓  ·  Alt + PgUp/PgDn',
+              ),
             ],
           ),
         ),
