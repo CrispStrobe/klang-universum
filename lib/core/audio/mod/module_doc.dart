@@ -1,0 +1,104 @@
+// lib/core/audio/mod/module_doc.dart
+//
+// ModuleDoc — a common, format-neutral module model that all four readers map
+// INTO and (eventually) all writers map OUT of. It is the hub for cross-format
+// conversion (MOD/S3M/XM/IT): any A→B is `parseAnyModule` (→ ModuleDoc) then a
+// writer. See module_convert.dart for the adapters, and docs/TRACKER_IDEAS.md §A.
+//
+// Design notes / deliberate lossiness (v1):
+//   • Pitch is carried as MIDI note numbers, so a note keeps its PITCH across
+//     formats even though each format numbers octaves differently.
+//   • Sample PCM is normalized to [-1, 1] (Float64List) — the common currency
+//     (MOD/S3M Int8List /128, XM/IT already normalized).
+//   • Per-cell EFFECTS are dropped on the neutral model for now: command
+//     semantics differ per format (MOD nibble vs S3M/IT letters vs XM), so a
+//     faithful mapping needs a cross-format effect table (a documented follow-up).
+//     Notes + instrument + volume-column + samples + song structure convert
+//     cleanly, which is what "convert & play the tune" needs.
+//   • Instruments are 1-based (matching the tracker cell convention); instrument
+//     k refers to samples[k-1]. Multi-sample XM/IT instruments collapse to their
+//     first sample in v1.
+
+import 'dart:typed_data';
+
+/// The source container format a [ModuleDoc] was read from.
+enum ModuleFormat { mod, s3m, xm, it }
+
+/// A sample in the neutral model. [pcm] is normalized to [-1, 1].
+class DocSample {
+  const DocSample({
+    this.name = '',
+    this.volume = 64,
+    this.loopStart = 0,
+    this.loopLength = 0,
+    this.c5speed = 8363,
+    required this.pcm,
+  });
+
+  factory DocSample.empty() => DocSample(pcm: Float64List(0));
+
+  final String name;
+  final int volume; // 0..64 default volume
+  final int loopStart; // in samples
+  final int loopLength; // in samples (0 = no loop)
+  final int c5speed; // playback rate (Hz) at the C-5 reference
+  final Float64List pcm;
+
+  bool get isEmpty => pcm.isEmpty;
+}
+
+/// One cell in the neutral model. Absent fields use sentinels.
+class DocCell {
+  const DocCell({this.note = -1, this.instrument = 0, this.volume = -1});
+
+  static const empty = DocCell();
+
+  final int note; // -1 = none, else MIDI note 0..127
+  final int instrument; // 0 = none, else 1-based
+  final int volume; // -1 = none, else 0..64 (volume column)
+
+  bool get isEmpty => note == -1 && instrument == 0 && volume == -1;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DocCell &&
+      other.note == note &&
+      other.instrument == instrument &&
+      other.volume == volume;
+
+  @override
+  int get hashCode => Object.hash(note, instrument, volume);
+}
+
+/// A pattern: [numRows] rows × [channelCount] cells.
+class DocPattern {
+  const DocPattern(this.rows, this.channelCount);
+  final List<List<DocCell>> rows;
+  final int channelCount;
+  int get numRows => rows.length;
+}
+
+/// A format-neutral module.
+class ModuleDoc {
+  const ModuleDoc({
+    this.title = '',
+    this.channelCount = 0,
+    this.initialSpeed = 6,
+    this.initialTempo = 125,
+    required this.sourceFormat,
+    required this.order,
+    required this.patterns,
+    required this.samples,
+  });
+
+  final String title;
+  final int channelCount;
+  final int initialSpeed, initialTempo;
+  final ModuleFormat sourceFormat;
+  final List<int> order; // pattern indices
+  final List<DocPattern> patterns;
+  final List<DocSample> samples; // index k-1 for instrument k
+
+  /// Non-empty samples only (convenience for "borrow a sample" pickers).
+  Iterable<DocSample> get usedSamples => samples.where((s) => !s.isEmpty);
+}

@@ -260,7 +260,16 @@ and push to origin/main** before/after touching shared files. Format:
   validated by a Python oracle round-tripped against **libxmp `itsex.c`** (44/44),
   and golden.it embeds validated compressed blocks so the hard path has a byte-exact
   target even though the real file is all-uncompressed. **Module reader set now
-  complete: `.mod` · `.s3m` · `.xm` · `.it`.** 📋 **Full idea backlog —
+  complete: `.mod` · `.s3m` · `.xm` · `.it`.** ✅ **Cross-format converters —
+  slice C1 SHIPPED** (`module_doc.dart` neutral hub model + `module_convert.dart`:
+  `sniffModuleFormat`, `parseAnyModule` = unified importer, `docFrom{Mod,S3m,Xm,It}`
+  adapters, `docToMod`/`convertToMod`). Any format → neutral `ModuleDoc` (pitch as
+  MIDI, PCM normalized ±1, 1-based instruments) → `.mod`. v1 drops per-cell effects
+  (cross-format effect table = follow-up); notes/instruments/volume/samples/
+  structure convert cleanly. Test: 4 goldens through the hub + XM→MOD round-trip +
+  live wild files. **Next: XM writer** (→ mod2xm/s3m2xm/it2xm), then S3M/IT writers;
+  "borrow a sample from a module" (readers already expose PCM); CLI tools (§H).
+  📋 **Full idea backlog —
   codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio
   depth — in [`docs/TRACKER_IDEAS.md`](TRACKER_IDEAS.md); the FX effort in
   [`docs/FX_HANDOVER.md`](FX_HANDOVER.md).**

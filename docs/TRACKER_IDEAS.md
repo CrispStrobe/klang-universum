@@ -70,3 +70,32 @@ interpolation above. Order + contracts/tests plan: `FX_HANDOVER.md`.
   the codec suites. Meanwhile: hand-authored golden oracles (committed) + real wild
   files (gitignored, local) is the working pattern.
 - **CC0 real modules** (OpenGameArt) committed as CI fixtures where licence allows.
+
+## H. CLI tools (headless, pure-Dart — `dart run bin/<x>.dart`)
+Everything in `lib/core/audio/` is **Flutter-free pure Dart** (that's why
+`bin/listen.dart` already runs headless), so most of the audio/codec stack can be
+exposed as CLI tools — great for scripted acceptance tests (the proven
+`render → dart run bin/listen.dart --wav → assert` loop), batch conversion, and CI
+without a device. Candidates, roughly in value order:
+- **`bin/modinfo.dart`** — parse ANY module (`.mod`/`.s3m`/`.xm`/`.it`, sniff by
+  signature) and dump structure: title, channels, order, per-pattern rows, per-
+  sample name/length/loop/bit-depth. The Dart port of the Python inspectors used to
+  build the golden fixtures; doubles as a fixture-verifier. *(Unblocked by the
+  module readers — all shipped.)*
+- **`bin/modconv.dart`** — convert between formats (`--to mod|xm|…`) once the
+  converters (§A) land; also `--extract-samples` a module's PCM to `.wav` files
+  ("steal an instrument", §B, from the shell).
+- **`bin/render.dart`** — render a Tracker song / `GrooveSpec` / imported module to
+  a `.wav` headlessly via the pure-Dart `renderSong`/`mixStems` path (the Loop
+  Mixer/Tracker already synth offline). Pairs with `listen.dart` for round-trip
+  detector acceptance tests.
+- **`bin/notaconv.dart`** — the notation/MIDI hub from the shell: module/Tracker →
+  MIDI (via the shipped Score bridge) and, where crisp_notation is Flutter-free at
+  the needed entrypoints, → MusicXML. Verify which crisp_notation calls are
+  Flutter-free first (that's why `listen.dart` sticks to the core).
+- **`bin/fxproc.dart`** — apply the crisp_dsp effects/voice_fx (§C) to a `.wav`
+  offline (chipmunk/robot/formant a recording without the app). All the DSP is
+  already pure functions.
+- Packaging note: keep each tool a thin `main()` over the library (like
+  `listen.dart`); the heavy logic stays in `lib/` and stays unit-tested. A single
+  `bin/mus.dart` dispatcher (`mus info|conv|render|…`) could wrap them later.
