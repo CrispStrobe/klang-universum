@@ -14,16 +14,19 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
-- **opus (aec-dtd)** · 🚧 **ACTIVE — double-talk detector** (patent-free AEC
-  roadmap item 1). Worktree `../mus-aec-dtd`, branch `feature/aec-dtd`. Additive
-  `EchoCanceller.process(..., {bool adapt})` (default true — CLI/test-only, not
-  in the app runtime; jam uses the native engine) gates the NLMS update; a
-  normalized-correlation DTD in `aec_offline.dart` (freeze adaptation when
-  corr(mic, echo-estimate) drops under double-talk, warmup guard + hangover)
-  wraps `cancelEcho`/streaming. Verify the double-talk SI-SDR gain jumps via the
-  `bin/aec.dart --selftest` harness. Files: `echo_canceller.dart`,
-  `aec_offline.dart`, `bin/aec.dart`, `test/aec_offline_test.dart`,
-  `docs/AEC_TIER3B.md`. NOT touching app screens / Workshop / native plugin.
+- **opus (aec-dtd)** · ✅ **idle / SHIPPED — double-talk detector** (`a10d6bd`,
+  patent-free AEC roadmap item 1). The linear core kept adapting on near-end
+  speech; a DTD freezes it while the near-end is present. **`DoubleTalkDetector`**
+  (`aec_offline.dart`) uses a normalized-correlation statistic
+  `corr(mic, echoEst=W·x)` — ≈1 on far-end single-talk, drops on double-talk —
+  needing no echo-path-gain threshold (unlike Geigel); warmup guard + hangover.
+  Additive **`EchoCanceller.process(..., {bool adapt = true})`** gates the NLMS
+  update (default true ⇒ C port + existing callers untouched; `EchoCanceller` is
+  CLI/test-only, jam uses the native engine). Wired into
+  `cancelEcho(doubleTalkDetect:)`, `StreamingEchoCanceller`, `bin/aec.dart --dtd`.
+  **Result: double-talk SI-SDR 8.8 → 15.9 dB (+7.1 dB vs linear)**, echo-only
+  cancellation unchanged. 20 tests (4 new). No app / Workshop / native plugin
+  touched.
 
 - **opus (aec-metrics)** · ✅ **idle / SHIPPED — AEC quality metrics + thorough
   tests** (`1e0bc8c`). Patent-free metrics in `lib/core/audio/aec_offline.dart`:
@@ -38,15 +41,17 @@ and push to origin/main** before/after touching shared files. Format:
   w/ refDelay, flush padding, empty-input). Docs: patent-free rationale in
   `AEC_TIER3B.md`. No app/Workshop/native-plugin touched.
 
-- **AEC algorithm roadmap (patent-free, unclaimed)** — the linear canceller has
-  no double-talk handling, so its double-talk SI-SDR gain is modest (~few dB; the
-  near-end corrupts adaptation). Two classic, expired-patent upgrades close it,
-  specced in `docs/AEC_TIER3B.md` § "Roadmap — safe algorithm upgrades":
-  (1) a **double-talk detector** (Geigel / normalized-cross-correlation) that
-  freezes adaptation during near-end speech; (2) basic **residual echo
-  suppression** (Wiener-style post-filter). Same patent-free family as SpeexDSP
+- **AEC algorithm roadmap (patent-free)** — item (1) **DTD is DONE** (see the
+  aec-dtd entry above). **Remaining, unclaimed: (2) residual echo suppression**
+  — a light spectral / Wiener-style post-filter on the linear residual (basic
+  short-time gain: decades old, patent-free; don't copy WebRTC AEC3's specific
+  statistical model). Lifts the tail the linear filter leaves. Spec in
+  `docs/AEC_TIER3B.md` § "Algorithm upgrades — safe (patent-free)"; verify with
+  the `bin/aec.dart` SI-SDR/ERLE harness. Same patent-free family as SpeexDSP
   MDF / WebRTC AEC3 (read for technique, don't vendor unless licence + tree stay
-  clean). Verify with the `bin/aec.dart` SI-SDR harness (the gain should jump).
+  clean). **Also open:** porting the DTD to the native C engine (`native/aec`)
+  so the app's jam mode gets double-talk protection too — today only the
+  Dart/CLI path has it.
 
 - **opus (aec-cli)** · ✅ **idle / SHIPPED — AEC streaming CLI** (`dafacb1` D1,
   `afbe4ea` D2). Test echo cancellation over files/pipes headlessly — the
