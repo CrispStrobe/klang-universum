@@ -24,6 +24,7 @@ import 'package:klang_universum/core/services/audio_service.dart';
 import 'package:klang_universum/core/services/settings_service.dart';
 import 'package:klang_universum/features/games/note_reading/note_names.dart';
 import 'package:klang_universum/features/games/songs/user_songs_service.dart';
+import 'package:klang_universum/features/workshop/export/score_pdf.dart';
 import 'package:klang_universum/features/workshop/model/multi_part_document.dart';
 import 'package:klang_universum/features/workshop/model/score_document.dart';
 import 'package:klang_universum/features/workshop/widgets/multi_part_canvas.dart';
@@ -361,6 +362,13 @@ const kExportFormats = <ExportFormat>[
     label: 'PNG (image)',
     ext: 'png',
     mime: 'image/png',
+    binary: true,
+    multiPart: false,
+  ),
+  (
+    label: 'PDF (print)',
+    ext: 'pdf',
+    mime: 'application/pdf',
     binary: true,
     multiPart: false,
   ),
@@ -2227,6 +2235,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 ),
           null,
         );
+      // Print-ready: line-broken + paginated onto real A4 pages, unlike the
+      // single-system PNG/SVG strips. Grand staff isn't paginated, so it falls
+      // back to the single-staff score.
+      case 'pdf':
+        return (await exportScoreToPdf(score, theme: kidsScoreTheme), null);
       default:
         return (null, null);
     }
