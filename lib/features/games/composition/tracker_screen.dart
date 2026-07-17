@@ -22,7 +22,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/mod/mod.dart';
 import 'package:comet_beat/core/audio/mod/mod_bridge.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
-    show sniffModuleFormat;
+    show sniffModuleFormat, parseAnyModule, convertToMod;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:comet_beat/core/audio/mod/module_instrument_bridge.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
@@ -151,6 +151,10 @@ abstract interface class TrackerTester {
 
   /// Loads a parsed MOD module (the mic-less/file-less test path).
   void importModModule(ModModule mod);
+
+  /// Loads ANY module format's tune (.mod/.xm/.s3m/.it) from its raw bytes —
+  /// native MOD keeps its path; the others convert through the hub to MOD first.
+  void importModuleBytes(Uint8List bytes);
 
   /// The current song serialized to MOD bytes.
   Uint8List exportModBytes();
@@ -375,6 +379,16 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   void importModModule(ModModule mod) => _loadMod(mod);
   @override
+  void importModuleBytes(Uint8List bytes) {
+    // Native MOD keeps its exact path; .xm/.s3m/.it come in through the
+    // neutral-hub converter (reusing the whole MOD import + re-voicing).
+    final modBytes = sniffModuleFormat(bytes) == ModuleFormat.mod
+        ? bytes
+        : convertToMod(parseAnyModule(bytes));
+    _loadMod(parseMod(modBytes));
+  }
+
+  @override
   Uint8List exportModBytes() => writeMod(_currentAsMod());
   @override
   void importMidiScore(Score score) => _loadMidi(score);
@@ -500,12 +514,15 @@ class _TrackerScreenState extends State<TrackerScreen>
     try {
       final file = await openFile(
         acceptedTypeGroups: [
-          const XTypeGroup(label: 'MOD', extensions: ['mod']),
+          const XTypeGroup(
+            label: 'Module',
+            extensions: ['mod', 'xm', 's3m', 'it'],
+          ),
         ],
       );
       if (file == null || !mounted) return;
       final bytes = await file.readAsBytes();
-      _loadMod(parseMod(bytes));
+      importModuleBytes(bytes);
     } catch (_) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(failed)));

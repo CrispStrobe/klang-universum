@@ -2,6 +2,7 @@
 // a no-op in the headless binding — the assertions are on the placed notes, the
 // play state and the selected channel).
 
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -308,6 +309,21 @@ void main() {
     // Export re-parses as a valid module (round-trips through the codec).
     final back = parseMod(game.exportModBytes());
     expect(back.channelCount, greaterThanOrEqualTo(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('imports a non-MOD module tune (.it) via importModuleBytes',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+
+    // A real .it golden — reaches the grid through the hub converter, not the
+    // MOD-only path (which the file picker used to be restricted to).
+    final bytes = File('test/fixtures/golden.it').readAsBytesSync();
+    game.importModuleBytes(bytes);
+    await tester.pump();
+
+    expect(game.noteCount, greaterThan(0)); // the .it note landed on the grid
     expect(tester.takeException(), isNull);
   });
 

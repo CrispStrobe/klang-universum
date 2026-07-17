@@ -425,7 +425,7 @@
   "trackerEffectVibrato": "Vibrato",
   "trackerEffectSlideUp": "Slide up",
   "trackerEffectSlideDown": "Slide down",
-  "trackerImportMod": "Import .mod…",
+  "trackerImportMod": "Import tune (MOD/XM/S3M/IT)…",
   "trackerExportMod": "Export .mod…",
   "trackerImportMidi": "Import MIDI…",
   "trackerExportMidi": "Export MIDI…",

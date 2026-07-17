@@ -2261,7 +2261,7 @@ abstract class AppLocalizations {
   /// No description provided for @trackerImportMod.
   ///
   /// In en, this message translates to:
-  /// **'Import .mod…'**
+  /// **'Import tune (MOD/XM/S3M/IT)…'**
   String get trackerImportMod;
 
   /// No description provided for @trackerExportMod.

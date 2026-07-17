@@ -1175,7 +1175,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerEffectSlideDown => 'Runter gleiten';
 
   @override
-  String get trackerImportMod => '.mod importieren…';
+  String get trackerImportMod => 'Melodie importieren (MOD/XM/S3M/IT)…';
 
   @override
   String get trackerExportMod => '.mod exportieren…';
