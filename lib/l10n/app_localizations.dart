@@ -1700,6 +1700,24 @@ abstract class AppLocalizations {
   /// **'Tap the colours to make a tune!'**
   String get gridComposerPrompt;
 
+  /// No description provided for @gameMelodyDoodle.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody doodle'**
+  String get gameMelodyDoodle;
+
+  /// No description provided for @gameMelodyDoodleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw a line and hear it as a tune'**
+  String get gameMelodyDoodleSubtitle;
+
+  /// No description provided for @melodyDoodlePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a line across the box — higher is higher!'**
+  String get melodyDoodlePrompt;
+
   /// No description provided for @gridComposerPlay.
   ///
   /// In en, this message translates to:

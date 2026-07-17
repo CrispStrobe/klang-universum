@@ -29,6 +29,7 @@ import 'package:klang_universum/features/games/composition/ending_detective_scre
 import 'package:klang_universum/features/games/composition/free_sing_screen.dart';
 import 'package:klang_universum/features/games/composition/grid_composer_screen.dart';
 import 'package:klang_universum/features/games/composition/loop_mixer_screen.dart';
+import 'package:klang_universum/features/games/composition/melody_doodle_screen.dart';
 import 'package:klang_universum/features/games/composition/my_melody_screen.dart';
 import 'package:klang_universum/features/games/composition/question_answer_screen.dart';
 import 'package:klang_universum/features/games/composition/tracker_screen.dart';
@@ -923,6 +924,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameGridComposer,
       subtitle: (l) => l.gameGridComposerSubtitle,
       builder: (_) => const GridComposerScreen(),
+    ),
+    // Its gesture twin — draw a contour, it quantises to the same C-pentatonic
+    // beats and renders to a real Score. A sandbox, no stars.
+    GameInfo(
+      id: 'melody_doodle',
+      icon: Icons.gesture,
+      title: (l) => l.gameMelodyDoodle,
+      subtitle: (l) => l.gameMelodyDoodleSubtitle,
+      builder: (_) => const MelodyDoodleScreen(),
     ),
     // Loop-mixer toy — cards layer synced 2-bar loops (drums/bass/chords/
     // melody/sparkle, all C-pentatonic so any combo grooves). A sandbox,

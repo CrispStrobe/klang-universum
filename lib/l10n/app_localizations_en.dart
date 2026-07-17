@@ -879,6 +879,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridComposerPrompt => 'Tap the colours to make a tune!';
 
   @override
+  String get gameMelodyDoodle => 'Melody doodle';
+
+  @override
+  String get gameMelodyDoodleSubtitle => 'Draw a line and hear it as a tune';
+
+  @override
+  String get melodyDoodlePrompt =>
+      'Drag a line across the box — higher is higher!';
+
+  @override
   String get gridComposerPlay => 'Play';
 
   @override
