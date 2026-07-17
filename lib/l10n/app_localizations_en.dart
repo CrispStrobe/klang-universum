@@ -1223,6 +1223,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerSfxrCoin => 'Coin';
 
   @override
+  String get trackerSfxrBell => 'Bell';
+
+  @override
   String get trackerSfxrExplosion => 'Boom';
 
   @override

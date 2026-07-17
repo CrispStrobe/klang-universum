@@ -983,6 +983,7 @@ class _TrackerScreenState extends State<TrackerScreen>
         'blip' => l10n.trackerSfxrBlip,
         'laser' => l10n.trackerSfxrLaser,
         'coin' => l10n.trackerSfxrCoin,
+        'bell' => l10n.trackerSfxrBell,
         _ => l10n.trackerSfxrExplosion,
       };
 

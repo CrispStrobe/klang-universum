@@ -1229,6 +1229,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerSfxrCoin => 'Münze';
 
   @override
+  String get trackerSfxrBell => 'Glocke';
+
+  @override
   String get trackerSfxrExplosion => 'Bumm';
 
   @override

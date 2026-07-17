@@ -2366,6 +2366,12 @@ abstract class AppLocalizations {
   /// **'Coin'**
   String get trackerSfxrCoin;
 
+  /// No description provided for @trackerSfxrBell.
+  ///
+  /// In en, this message translates to:
+  /// **'Bell'**
+  String get trackerSfxrBell;
+
   /// No description provided for @trackerSfxrExplosion.
   ///
   /// In en, this message translates to:

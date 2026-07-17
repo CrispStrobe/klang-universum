@@ -170,6 +170,18 @@ void main() {
       expect(a, equals(b));
     });
 
+    test('the bell (FM/LFO) instrument is in the palette and is audible', () {
+      final bell = kTrackerInstruments.firstWhere((o) => o.id == 'bell');
+      final inst = bell.build();
+      expect(inst.id, 'bell');
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final ch = TrackerChannel(id: 'bell', instrument: inst, rows: timing.rows)
+        ..cells[0] = const TrackerCell(midi: 72);
+      final buf = inst.renderChannel(ch.cells, timing);
+      expect(buf.length, timing.totalSamples);
+      expect(buf.any((v) => v != 0), isTrue);
+    });
+
     test('the default band mixes additive + sfxr without clipping', () {
       final e =
           TrackerEngine(timing: const TrackerTiming(rows: 8, stepsPerBeat: 2));

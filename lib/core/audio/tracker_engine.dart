@@ -529,6 +529,10 @@ final List<InstrumentOption> kTrackerInstruments = [
     'explosion',
     () => SfxrInstrument.preset('explosion', sfxrExplosion, seed: 13),
   ),
+  InstrumentOption(
+    'bell',
+    () => SfxrInstrument.preset('bell', sfxrBell, seed: 17),
+  ),
 ];
 
 /// Holds the pattern (channels × rows) + timing, edits cells, and renders the

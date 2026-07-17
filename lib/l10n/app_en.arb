@@ -443,6 +443,7 @@
   "trackerSfxrBlip": "Blip",
   "trackerSfxrLaser": "Laser",
   "trackerSfxrCoin": "Coin",
+  "trackerSfxrBell": "Bell",
   "trackerSfxrExplosion": "Boom",
   "trackerRecord": "Record",
   "trackerRecording": "Recording…",

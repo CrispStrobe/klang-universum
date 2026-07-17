@@ -412,6 +412,7 @@
   "trackerSfxrBlip": "Blip",
   "trackerSfxrLaser": "Laser",
   "trackerSfxrCoin": "Münze",
+  "trackerSfxrBell": "Glocke",
   "trackerSfxrExplosion": "Bumm",
   "trackerRecord": "Aufnehmen",
   "trackerRecording": "Nimmt auf…",
