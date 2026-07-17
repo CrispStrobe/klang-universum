@@ -74,13 +74,17 @@ and push to origin/main** before/after touching shared files. Format:
   signal); verified to fail on the old code ("shift 0.5 moved the pitch by 608¢").
   84 consumer tests green.
 
-  ⚠ **STILL OPEN (smaller, not fixed):** `siSdrDb` returns **0 dB** for an
-  all-zero estimate (out-ranking a real but noisy one at −1.23 dB; convention is
-  −∞); `LoopSend.delay/reverb` don't wrap the loop seam (echo drops out on every
-  downbeat, 37.8 % deviation — possibly an accepted trade-off, undocumented);
-  swing breaks the sample-integrality invariant at most slider positions (≤8
-  samples ≈ 0.18 ms, inaudible, `mixStems` absorbs it — but the guarding test
-  passes by luck: swing 0.5 is the one reachable value that's integral at 100 bpm).
+  ✅ **FOLLOW-UPS SHIPPED — the three smaller open items are all fixed:**
+  • `siSdrDb` floored a silent estimate to **−120 dB** (was a false 0 dB that
+    out-ranked a noisy-but-real estimate).
+  • `LoopSend.delay/reverb` now **pre-roll one loop** so the render is the
+    periodic steady state (was 36.9 %/5.5 % off; now 0.00 % vs a 3-copy
+    reference) — no more "echo drops out on the downbeat".
+  • Swing **snaps to the 10 ms grid** in `LoopTiming._swingMs`, so every stem is
+    sample-exact at all tempos/swing (was ≤8-sample drift; the guarding test
+    passed by luck). Slider gained `divisions: 12`. The swing test now sweeps the
+    drift-prone tempo×swing grid; a new seam test pins the send steady state.
+  **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
 
 - **opus (aec-tune)** · ✅ **idle / SHIPPED — AEC tuning knobs reachable from the
   CLI / pipe**. The pipe harness existed but only exposed `--delay/--rate/--dtd/
