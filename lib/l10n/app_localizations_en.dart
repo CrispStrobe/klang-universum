@@ -3985,6 +3985,218 @@ class AppLocalizationsEn extends AppLocalizations {
       'Some instruments sound a different note from the one they read. A B♭ clarinet playing a written C sounds a B♭. So the same tune is written differently for different instruments, so that it sounds at the right pitch — that’s transposition.';
 
   @override
+  String get prosePulse =>
+      'Every piece has a heartbeat — a steady pulse you can clap or march to. It doesn’t speed up or slow down; it’s the ticking clock the rest of the music dances on top of.';
+
+  @override
+  String get proseHighLow =>
+      'Some sounds are high and bright like a bird; others are low and deep like a big drum. Hearing which is higher is the very first step to reading notes — high notes sit high on the staff, low ones sit low.';
+
+  @override
+  String get proseMelodyDirection =>
+      'A tune can climb up, step down, or stay level — that shape is its contour. Following whether the melody rises or falls is how your ear traces a tune, long before you can name the notes.';
+
+  @override
+  String get proseSameDifferent =>
+      'Two sounds can be exactly the same, or different. Noticing “that’s the same note again” or “that one changed” trains the careful listening every other music skill is built on.';
+
+  @override
+  String get proseLoudSoft =>
+      'Music can whisper or shout. Loud and soft (in Italian, forte and piano) are among a composer’s strongest tools — the very same tune feels gentle when soft and exciting when loud.';
+
+  @override
+  String get proseFastSlow =>
+      'How quickly the beats come is the tempo. A slow tempo feels calm or sad; a fast one feels busy or happy. Same notes, different speed, a completely different mood.';
+
+  @override
+  String get proseLongShort =>
+      'Some notes are held for a long time, others flick by quickly. These note lengths (durations) are the raw material of rhythm — patterns of long and short sounds.';
+
+  @override
+  String get proseCountSounds =>
+      'Listening carefully enough to count how many notes you heard — two, three, four — sharpens your musical attention. If you can count them, you can start to remember and repeat them.';
+
+  @override
+  String get proseAuralMemory =>
+      'Music lives in your memory. Hearing a short pattern and echoing it back — clapping or singing — builds the aural memory a musician uses every time they learn a tune by ear.';
+
+  @override
+  String get proseLearnSongs =>
+      'The best way into music is real songs you can sing. Learning and recognising familiar melodies gives every abstract idea — beat, pitch, form — a tune you already know to hang it on.';
+
+  @override
+  String get proseTrebleStaff =>
+      'The treble staff is five lines and four spaces where the higher notes live. Each line and space is a letter, and once you know them you can read the melody of most songs.';
+
+  @override
+  String get proseLedgerMiddleC =>
+      'When a note is too high or low for the staff, we give it its own little ledger line. Middle C sits on one just below the treble staff — the doorway between the high and low staves.';
+
+  @override
+  String get proseNoteValues =>
+      'A note’s shape tells you how long to hold it: a whole note lasts longest, then half, quarter and eighth notes, each half as long as the one before. This is how rhythm gets written down.';
+
+  @override
+  String get proseRests =>
+      'Silence is part of music too. A rest is a written pause — every note value has a matching rest of the same length, so the music breathes and the gaps are as exact as the notes.';
+
+  @override
+  String get proseDottedNotes =>
+      'A little dot after a note makes it longer — it adds half the note’s value again. A dotted half note lasts three beats instead of two, because half of two is one, and two plus one is three.';
+
+  @override
+  String get proseBeatsPerBar =>
+      'Music is packed into equal boxes called bars (or measures). The beats inside each bar add up to the same total every time, so the pulse stays organised and easy to count.';
+
+  @override
+  String get proseTimeSignature =>
+      'The two numbers at the start tell you how the bars are counted: the top is how many beats per bar, the bottom which note gets one beat. 4/4 means four quarter-note beats in every bar.';
+
+  @override
+  String get proseStrongWeakBeat =>
+      'Within each bar some beats feel stronger than others — beat one is the strongest. That pattern of strong and weak beats is what makes a waltz feel different from a march.';
+
+  @override
+  String get proseDynamicsMarks =>
+      'Composers write how loud to play with letters: p for piano (soft), f for forte (loud), and gentler steps in between (mp, mf). These dynamic marks shape the feeling of the music.';
+
+  @override
+  String get proseTempoTerms =>
+      'Speed has names, mostly Italian: Largo is very slow, Adagio slow, Andante a walking pace, Allegro quick, Presto very fast. One word at the top sets the whole mood.';
+
+  @override
+  String get proseRhythmEcho =>
+      'Hear a rhythm, then clap or tap it straight back. This call-and-response is how rhythm gets into your body — you feel the pattern of long and short before you ever read it.';
+
+  @override
+  String get proseStepsSkips =>
+      'From one note to the next you can step (to the very next letter) or skip (jumping over one or more). Melodies are mostly gentle steps with the occasional skip for surprise.';
+
+  @override
+  String get proseCMajorScale =>
+      'The C major scale is the white keys from C to C — the plainest, brightest ladder of notes, with no sharps or flats. It’s the home base from which every other scale is measured.';
+
+  @override
+  String get proseMajorMinorEar =>
+      'The same notes can feel happy or sad depending on which few are lowered. Major sounds bright and cheerful, minor darker and more serious — your ear can learn to tell them apart in an instant.';
+
+  @override
+  String get proseReadingFluency =>
+      'Reading music, like reading words, gets faster with practice until you don’t have to work each note out. Fluent reading in both clefs is what lets you play a new piece almost at sight.';
+
+  @override
+  String get proseSingWhatYouHear =>
+      'Singing back a note or a short tune connects your ear to your voice. If you can sing what you hear, you truly understand the pitch — it’s the heart of ear training.';
+
+  @override
+  String get prosePlayKeyboard =>
+      'On a keyboard the notes march left (low) to right (high), with the black keys grouped in twos and threes to guide you. Finding and playing the right keys turns the notes on the page into sound under your fingers.';
+
+  @override
+  String get prosePlayCello =>
+      'The cello is played with a bow across four strings, the left-hand fingers pressing to change the pitch. Learning its strings, finger spots and bow strokes (down-bow and up-bow) is the path to a warm, singing tone.';
+
+  @override
+  String get prosePlayGuitar =>
+      'The guitar has six strings you press behind frets and strum or pluck. Reading its strings and simple tab, and strumming in time, gets you playing chords and tunes surprisingly quickly.';
+
+  @override
+  String get prosePlayPercussion =>
+      'Percussion is rhythm you can hit. Reading and playing a drum pattern — knowing which sound falls on which beat — is pure rhythm, the backbone that keeps a whole band together.';
+
+  @override
+  String get proseCompose =>
+      'Making up your own melody is where all the rules become play. Choosing a few notes, arranging them into a shape you like, and hearing it back is composing — the most fun way to learn how music works.';
+
+  @override
+  String get proseBassClef =>
+      'The bass clef reads the lower notes — the left hand on a piano, the cello, the bass. Its lines and spaces spell different letters from the treble clef, so learning it opens up the whole low half of music.';
+
+  @override
+  String get proseGrandStaff =>
+      'Join the treble and bass staves with a brace and you get the grand staff — two staves read at once, one per hand. Middle C sits in the gap between them, shared by both.';
+
+  @override
+  String get proseClefSigns =>
+      'A clef is the sign at the start that fixes which lines mean which notes. The treble (G) clef curls around the G line; the bass (F) clef’s two dots hug the F line. Same staff, different clef, different notes.';
+
+  @override
+  String get proseAccidentals =>
+      'A sharp (♯) raises a note by a half step, a flat (♭) lowers it, and a natural (♮) cancels either. These accidentals are how we reach the black keys and the notes between the plain letters.';
+
+  @override
+  String get proseWholeHalfStep =>
+      'The smallest step on a keyboard is a half step (right to the very next key). Two of them make a whole step. Scales are just particular ladders of whole and half steps — the pattern is what makes them sound the way they do.';
+
+  @override
+  String get proseMajorScales =>
+      'Every major scale follows the same recipe of whole and half steps, starting from any note. Get the pattern right and C major, G major or any other all share that same bright, familiar sound.';
+
+  @override
+  String get proseTiesSlurs =>
+      'A curved line can mean two things. A tie joins two of the SAME note into one longer sound; a slur over DIFFERENT notes means play them smoothly, joined together. Same curve, opposite jobs.';
+
+  @override
+  String get proseArticulation =>
+      'Articulation is how a note is played — short and detached (staccato, a dot above the note) or leaned on hard (an accent). It’s the difference between speaking each word crisply or smoothly.';
+
+  @override
+  String get proseBeams =>
+      'Short notes can wear separate flags or be joined by a thick beam. Beaming groups the notes within a beat, so a bar of quick notes is far easier to read at a glance than a row of loose flags.';
+
+  @override
+  String get proseAnacrusis =>
+      'Not every tune starts on beat one. An upbeat (anacrusis) is a note or two of pickup before the first full bar — think of the “Hap-” before “Happy Birthday”. The music leans in before it lands.';
+
+  @override
+  String get proseCompoundMeter =>
+      'In compound metre, like 6/8, the beat splits into threes instead of twos, giving a rolling, lilting feel. You count it in two big beats of three — one-and-a, two-and-a — like a boat on gentle waves.';
+
+  @override
+  String get proseArrangeLoops =>
+      'You don’t have to write every note to make music. Layering and arranging ready-made loops — a drum groove, a bass line, a chord pad — teaches how parts fit together into a full, balanced track.';
+
+  @override
+  String get proseChordQualities =>
+      'Beyond major and minor, triads come in two more flavours: diminished (both thirds small, tense and unstable) and augmented (both thirds wide, strange and dreamy). The quality is set by the exact sizes of the thirds stacked inside.';
+
+  @override
+  String get proseChordSymbols =>
+      'Lead sheets name chords with short symbols above the tune — C, Am, G7, Dm. Learn to read them and you can play the harmony of a whole song from a single line of chords, the way a band does.';
+
+  @override
+  String get proseMelodicDictation =>
+      'Hearing a short melody and writing it down is dictation — the ultimate test of the ear. It ties together pitch, rhythm and memory: you decode the tune the way you’d spell a word you just heard.';
+
+  @override
+  String get prosePhrasingQa =>
+      'Melodies often come in pairs, like a conversation. The first phrase asks a question and hangs unresolved; the second answers it and comes to rest. Hearing that question-and-answer shape is how you feel where a tune is going.';
+
+  @override
+  String get proseInversions =>
+      'A chord’s notes can be stacked in different orders. When a note other than the root sits at the bottom, the chord is inverted — same chord, different flavour and a smoother path from one chord to the next.';
+
+  @override
+  String get proseTenorClef =>
+      'The tenor clef is a C-clef that points at middle C partway up the staff. It’s used for the higher notes of instruments like the cello and bassoon, so they don’t need a forest of ledger lines above the bass staff.';
+
+  @override
+  String get proseSatbVoices =>
+      'Choral music is written in four voices — Soprano, Alto, Tenor and Bass, from highest to lowest. Reading all four at once, each with its own line, is how you follow a hymn or a chorale.';
+
+  @override
+  String get proseScoreReading =>
+      'A full score stacks every instrument’s part on the page at once. Following it — keeping your place across several staves as the music moves — is the skill a conductor uses to hear the whole ensemble from paper.';
+
+  @override
+  String get proseOrnaments =>
+      'Ornaments are little decorations added to a note — a trill (rapidly alternating with the note above), a mordent (a quick flick) or a turn (a curl around the note). They add sparkle without changing the tune underneath.';
+
+  @override
+  String get proseInstrumentFamilies =>
+      'The orchestra sorts its instruments into families by how they make sound: strings (bowed or plucked), woodwind, brass, percussion and keyboards. Knowing the families helps you pick out who’s playing what when you listen.';
+
+  @override
   String get gameInstrumentFamily => 'Which Family?';
 
   @override

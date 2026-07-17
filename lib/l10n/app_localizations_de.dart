@@ -4007,6 +4007,218 @@ class AppLocalizationsDe extends AppLocalizations {
       'Manche Instrumente klingen anders als der Ton, den sie lesen. Eine B-Klarinette klingt ein B, wenn sie ein geschriebenes C spielt. Darum wird dieselbe Melodie für verschiedene Instrumente unterschiedlich notiert, damit sie in der richtigen Tonhöhe klingt — das ist Transposition.';
 
   @override
+  String get prosePulse =>
+      'Jedes Stück hat einen Herzschlag — einen gleichmäßigen Puls, zu dem du klatschen oder marschieren kannst. Er wird nicht schneller oder langsamer; er ist die tickende Uhr, über der die übrige Musik tanzt.';
+
+  @override
+  String get proseHighLow =>
+      'Manche Klänge sind hoch und hell wie ein Vogel, andere tief wie eine große Trommel. Zu hören, was höher ist, ist der allererste Schritt zum Notenlesen — hohe Töne stehen oben im System, tiefe unten.';
+
+  @override
+  String get proseMelodyDirection =>
+      'Eine Melodie kann steigen, fallen oder gleich bleiben — diese Linie ist ihr Verlauf. Zu verfolgen, ob die Melodie aufwärts oder abwärts geht, spürt dein Ohr die Melodie nach, lange bevor du die Töne benennen kannst.';
+
+  @override
+  String get proseSameDifferent =>
+      'Zwei Klänge können genau gleich sein oder verschieden. „Das ist wieder derselbe Ton“ oder „der hat sich geändert“ zu bemerken übt das genaue Hören, auf dem alle anderen musikalischen Fähigkeiten aufbauen.';
+
+  @override
+  String get proseLoudSoft =>
+      'Musik kann flüstern oder rufen. Laut und leise (italienisch forte und piano) gehören zu den stärksten Werkzeugen — dieselbe Melodie wirkt leise sanft und laut aufregend.';
+
+  @override
+  String get proseFastSlow =>
+      'Wie schnell die Schläge kommen, ist das Tempo. Ein langsames Tempo wirkt ruhig oder traurig, ein schnelles geschäftig oder fröhlich. Gleiche Töne, anderes Tempo, ganz andere Stimmung.';
+
+  @override
+  String get proseLongShort =>
+      'Manche Töne werden lang gehalten, andere huschen kurz vorbei. Diese Notenlängen (Dauern) sind der Rohstoff des Rhythmus — Muster aus langen und kurzen Klängen.';
+
+  @override
+  String get proseCountSounds =>
+      'Genau genug hinzuhören, um zu zählen, wie viele Töne du gehört hast — zwei, drei, vier — schärft deine musikalische Aufmerksamkeit. Wenn du sie zählen kannst, kannst du sie dir merken und wiederholen.';
+
+  @override
+  String get proseAuralMemory =>
+      'Musik lebt in deinem Gedächtnis. Ein kurzes Muster zu hören und zurückzugeben — klatschen oder singen — baut das Gehörgedächtnis auf, das jeder Musiker beim Lernen nach Gehör benutzt.';
+
+  @override
+  String get proseLearnSongs =>
+      'Der schönste Weg in die Musik sind echte Lieder zum Mitsingen. Bekannte Melodien zu lernen und wiederzuerkennen gibt jeder abstrakten Idee — Puls, Tonhöhe, Form — eine Melodie, die du schon kennst.';
+
+  @override
+  String get proseTrebleStaff =>
+      'Das Violinsystem hat fünf Linien und vier Zwischenräume, in denen die höheren Töne wohnen. Jede Linie und jeder Zwischenraum ist ein Buchstabe, und wenn du sie kennst, kannst du die Melodie der meisten Lieder lesen.';
+
+  @override
+  String get proseLedgerMiddleC =>
+      'Ist ein Ton zu hoch oder zu tief für das System, bekommt er seine eigene kleine Hilfslinie. Das eingestrichene C sitzt auf einer knapp unter dem Violinsystem — die Tür zwischen den hohen und tiefen Noten.';
+
+  @override
+  String get proseNoteValues =>
+      'Die Form einer Note sagt, wie lang du sie hältst: die ganze Note am längsten, dann halbe, Viertel- und Achtelnoten, jede halb so lang wie die davor. So wird Rhythmus aufgeschrieben.';
+
+  @override
+  String get proseRests =>
+      'Auch Stille gehört zur Musik. Eine Pause ist ein geschriebenes Schweigen — zu jeder Notenlänge gibt es eine gleich lange Pause, damit die Musik atmet und die Lücken so genau sind wie die Töne.';
+
+  @override
+  String get proseDottedNotes =>
+      'Ein kleiner Punkt hinter einer Note macht sie länger — er fügt die Hälfte ihres Wertes hinzu. Eine punktierte halbe Note dauert drei Schläge statt zwei, denn die Hälfte von zwei ist eins, und zwei plus eins ist drei.';
+
+  @override
+  String get proseBeatsPerBar =>
+      'Musik wird in gleiche Kästchen gepackt, die Takte heißen. Die Schläge in jedem Takt ergeben immer dieselbe Summe, damit der Puls geordnet und leicht zu zählen bleibt.';
+
+  @override
+  String get proseTimeSignature =>
+      'Die zwei Zahlen am Anfang sagen, wie der Takt gezählt wird: die obere, wie viele Schläge pro Takt, die untere, welche Note einen Schlag bekommt. 4/4 heißt vier Viertelschläge in jedem Takt.';
+
+  @override
+  String get proseStrongWeakBeat =>
+      'In jedem Takt fühlen sich manche Schläge stärker an als andere — der erste ist der stärkste. Dieses Muster aus starken und schwachen Schlägen lässt einen Walzer anders klingen als einen Marsch.';
+
+  @override
+  String get proseDynamicsMarks =>
+      'Komponisten schreiben mit Buchstaben, wie laut zu spielen ist: p für piano (leise), f für forte (laut) und sanftere Stufen dazwischen (mp, mf). Diese Dynamik formt das Gefühl der Musik.';
+
+  @override
+  String get proseTempoTerms =>
+      'Das Tempo hat Namen, meist italienische: Largo sehr langsam, Adagio langsam, Andante Schritttempo, Allegro schnell, Presto sehr schnell. Ein Wort ganz oben setzt die ganze Stimmung.';
+
+  @override
+  String get proseRhythmEcho =>
+      'Höre einen Rhythmus und klatsche ihn gleich zurück. Dieses Ruf-und-Antwort bringt den Rhythmus in deinen Körper — du spürst das Muster aus lang und kurz, bevor du es liest.';
+
+  @override
+  String get proseStepsSkips =>
+      'Von einem Ton zum nächsten kannst du schreiten (zum nächsten Buchstaben) oder springen (über einen oder mehr hinweg). Melodien sind meist sanfte Schritte mit gelegentlichen Sprüngen zur Überraschung.';
+
+  @override
+  String get proseCMajorScale =>
+      'Die C-Dur-Tonleiter sind die weißen Tasten von C bis C — die einfachste, hellste Tonleiter, ohne Kreuze und Bs. Sie ist die Heimat, von der aus jede andere Tonleiter gemessen wird.';
+
+  @override
+  String get proseMajorMinorEar =>
+      'Dieselben Töne können fröhlich oder traurig wirken, je nachdem, welche wenigen erniedrigt sind. Dur klingt hell und heiter, Moll dunkler und ernster — dein Ohr lernt schnell, sie zu unterscheiden.';
+
+  @override
+  String get proseReadingFluency =>
+      'Noten lesen wird wie Wörterlesen mit Übung schneller, bis du nicht mehr jede Note ausrechnen musst. Flüssiges Lesen in beiden Schlüsseln lässt dich ein neues Stück fast vom Blatt spielen.';
+
+  @override
+  String get proseSingWhatYouHear =>
+      'Einen Ton oder eine kurze Melodie zurückzusingen verbindet dein Ohr mit deiner Stimme. Wenn du singen kannst, was du hörst, hast du die Tonhöhe wirklich verstanden — das Herz der Gehörbildung.';
+
+  @override
+  String get prosePlayKeyboard =>
+      'Auf der Tastatur laufen die Töne von links (tief) nach rechts (hoch), die schwarzen Tasten in Zweier- und Dreiergruppen als Wegweiser. Die richtigen Tasten zu finden macht aus den Noten auf dem Papier Klang unter deinen Fingern.';
+
+  @override
+  String get prosePlayCello =>
+      'Das Cello spielt man mit dem Bogen über vier Saiten, die linke Hand drückt, um die Tonhöhe zu ändern. Seine Saiten, Fingerplätze und Bogenstriche (Abstrich und Aufstrich) zu lernen führt zu einem warmen, singenden Ton.';
+
+  @override
+  String get prosePlayGuitar =>
+      'Die Gitarre hat sechs Saiten, die du hinter Bünden drückst und zupfst oder anschlägst. Ihre Saiten und einfache Tabulatur zu lesen und im Takt zu schlagen bringt dich erstaunlich schnell zum Spielen.';
+
+  @override
+  String get prosePlayPercussion =>
+      'Schlagwerk ist Rhythmus zum Schlagen. Ein Trommelmuster zu lesen und zu spielen — zu wissen, welcher Klang auf welchen Schlag fällt — ist purer Rhythmus, das Rückgrat, das eine ganze Band zusammenhält.';
+
+  @override
+  String get proseCompose =>
+      'Eine eigene Melodie zu erfinden ist, wo alle Regeln zum Spiel werden. Ein paar Töne zu wählen, sie zu einer Form zu ordnen, die dir gefällt, und sie zu hören ist Komponieren — der schönste Weg zu verstehen, wie Musik funktioniert.';
+
+  @override
+  String get proseBassClef =>
+      'Der Bassschlüssel liest die tieferen Töne — die linke Hand am Klavier, das Cello, den Bass. Seine Linien und Zwischenräume ergeben andere Buchstaben als der Violinschlüssel, also öffnet er die ganze tiefe Hälfte der Musik.';
+
+  @override
+  String get proseGrandStaff =>
+      'Verbinde Violin- und Bassschlüssel mit einer Klammer und du bekommst das große System — zwei Systeme auf einmal, eins pro Hand. Das eingestrichene C sitzt in der Lücke dazwischen, beiden gemeinsam.';
+
+  @override
+  String get proseClefSigns =>
+      'Ein Schlüssel ist das Zeichen am Anfang, das festlegt, welche Linien welche Töne bedeuten. Der Violinschlüssel (G) umkringelt die G-Linie, die zwei Punkte des Bassschlüssels (F) umschließen die F-Linie. Gleiches System, anderer Schlüssel, andere Töne.';
+
+  @override
+  String get proseAccidentals =>
+      'Ein Kreuz (♯) erhöht einen Ton um einen Halbton, ein B (♭) erniedrigt ihn, ein Auflösungszeichen (♮) hebt beides auf. Mit diesen Vorzeichen erreichen wir die schwarzen Tasten und die Töne zwischen den Buchstaben.';
+
+  @override
+  String get proseWholeHalfStep =>
+      'Der kleinste Schritt auf der Tastatur ist ein Halbton (zur direkt nächsten Taste). Zwei davon ergeben einen Ganzton. Tonleitern sind nur bestimmte Leitern aus Ganz- und Halbtönen — das Muster macht ihren Klang aus.';
+
+  @override
+  String get proseMajorScales =>
+      'Jede Dur-Tonleiter folgt demselben Rezept aus Ganz- und Halbtönen, von jedem beliebigen Ton aus. Stimmt das Muster, klingen C-Dur, G-Dur und alle anderen gleich hell und vertraut.';
+
+  @override
+  String get proseTiesSlurs =>
+      'Ein Bogen kann zweierlei bedeuten. Ein Haltebogen verbindet zwei GLEICHE Töne zu einem längeren Klang; ein Bindebogen über VERSCHIEDENEN Tönen heißt, sie weich verbunden zu spielen. Gleicher Bogen, gegensätzliche Aufgaben.';
+
+  @override
+  String get proseArticulation =>
+      'Artikulation ist, wie eine Note gespielt wird — kurz und abgesetzt (staccato, ein Punkt über der Note) oder betont (ein Akzent). Es ist der Unterschied, jedes Wort knapp oder weich zu sprechen.';
+
+  @override
+  String get proseBeams =>
+      'Kurze Noten tragen einzelne Fähnchen oder werden durch einen dicken Balken verbunden. Balken gruppieren die Noten innerhalb eines Schlags, sodass ein Takt schneller Noten viel leichter zu lesen ist als eine Reihe loser Fähnchen.';
+
+  @override
+  String get proseAnacrusis =>
+      'Nicht jede Melodie beginnt auf Schlag eins. Ein Auftakt ist ein Ton oder zwei vor dem ersten vollen Takt — denk an das „Hap-“ vor „Happy Birthday“. Die Musik lehnt sich hinein, bevor sie landet.';
+
+  @override
+  String get proseCompoundMeter =>
+      'Im zusammengesetzten Takt wie 6/8 teilt sich der Schlag in Dreier statt Zweier und bekommt ein rollendes, wiegendes Gefühl. Man zählt in zwei großen Dreierschlägen — eins-und-a, zwei-und-a — wie ein Boot auf sanften Wellen.';
+
+  @override
+  String get proseArrangeLoops =>
+      'Du musst nicht jede Note schreiben, um Musik zu machen. Fertige Loops zu schichten und anzuordnen — ein Schlagzeug-Groove, eine Basslinie, ein Akkordteppich — lehrt, wie Teile zu einem vollen, ausgewogenen Track zusammenpassen.';
+
+  @override
+  String get proseChordQualities =>
+      'Neben Dur und Moll gibt es zwei weitere Dreiklang-Arten: vermindert (beide Terzen klein, gespannt und unruhig) und übermäßig (beide Terzen weit, seltsam und traumhaft). Die Art bestimmt sich durch die genauen Größen der gestapelten Terzen.';
+
+  @override
+  String get proseChordSymbols =>
+      'Leadsheets benennen Akkorde mit kurzen Symbolen über der Melodie — C, Am, G7, Dm. Lernst du sie zu lesen, kannst du die Harmonie eines ganzen Lieds aus einer einzigen Akkordzeile spielen, so wie eine Band.';
+
+  @override
+  String get proseMelodicDictation =>
+      'Eine kurze Melodie zu hören und aufzuschreiben ist Diktat — die härteste Prüfung fürs Ohr. Es verbindet Tonhöhe, Rhythmus und Gedächtnis: Du entschlüsselst die Melodie, wie du ein eben gehörtes Wort schreibst.';
+
+  @override
+  String get prosePhrasingQa =>
+      'Melodien kommen oft paarweise, wie ein Gespräch. Die erste Phrase stellt eine Frage und bleibt offen, die zweite antwortet und kommt zur Ruhe. Diese Frage-und-Antwort-Form zu hören zeigt dir, wohin eine Melodie will.';
+
+  @override
+  String get proseInversions =>
+      'Die Töne eines Akkords können in verschiedener Reihenfolge gestapelt werden. Sitzt ein anderer Ton als der Grundton unten, ist der Akkord umgekehrt (Umkehrung) — gleicher Akkord, andere Farbe und ein weicherer Weg von Akkord zu Akkord.';
+
+  @override
+  String get proseTenorClef =>
+      'Der Tenorschlüssel ist ein C-Schlüssel, der weiter oben im System auf das eingestrichene C zeigt. Er dient für die höheren Töne von Instrumenten wie Cello und Fagott, damit sie keinen Wald aus Hilfslinien über dem Bass brauchen.';
+
+  @override
+  String get proseSatbVoices =>
+      'Chormusik steht in vier Stimmen — Sopran, Alt, Tenor und Bass, von hoch nach tief. Alle vier zugleich zu lesen, jede mit eigener Linie, ist die Art, einem Choral zu folgen.';
+
+  @override
+  String get proseScoreReading =>
+      'Eine Partitur stapelt jede Instrumentenstimme zugleich auf der Seite. Ihr zu folgen — über mehrere Systeme hinweg die Stelle zu halten, während die Musik läuft — ist die Fähigkeit, mit der ein Dirigent das ganze Ensemble vom Papier hört.';
+
+  @override
+  String get proseOrnaments =>
+      'Verzierungen sind kleine Ausschmückungen an einer Note — ein Triller (schnelles Wechseln mit dem Ton darüber), ein Mordent (ein rascher Schlenker) oder ein Doppelschlag (eine Kringel um die Note). Sie geben Glanz, ohne die Melodie darunter zu ändern.';
+
+  @override
+  String get proseInstrumentFamilies =>
+      'Das Orchester ordnet seine Instrumente nach der Art, wie sie Klang erzeugen, in Familien: Streicher (gestrichen oder gezupft), Holzbläser, Blechbläser, Schlagwerk und Tasten. Die Familien zu kennen hilft dir, beim Hören herauszufinden, wer was spielt.';
+
+  @override
   String get gameInstrumentFamily => 'Welche Familie?';
 
   @override

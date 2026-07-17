@@ -1,6 +1,7 @@
 // The AnaVis-style form-analysis view: worked form examples shown as a coloured,
 // tappable section timeline you can play. Also covers the textbook's per-concept
 // prose lookup (conceptProse).
+import 'package:comet_beat/core/curriculum/concept_map.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/form_analysis_view.dart';
 import 'package:comet_beat/features/games/composition/form_timeline.dart';
@@ -74,12 +75,23 @@ void main() {
   });
 
   group('per-concept prose', () {
-    test('authored concepts return prose; others return null', () async {
-      final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-      // An authored concept has prose; an unauthored one falls back to null.
-      expect(conceptProse(l10n, 'intervals'), isNotNull);
-      expect(conceptProse(l10n, 'musical_form'), isNotNull);
-      expect(conceptProse(l10n, 'pulse'), isNull);
+    test('every concept in the map now has prose (en + de)', () async {
+      final en = await AppLocalizations.delegate.load(const Locale('en'));
+      final de = await AppLocalizations.delegate.load(const Locale('de'));
+      for (final c in kConcepts) {
+        expect(
+          conceptProse(en, c.id),
+          isNotNull,
+          reason: 'missing EN prose for ${c.id}',
+        );
+        expect(
+          conceptProse(de, c.id),
+          isNotNull,
+          reason: 'missing DE prose for ${c.id}',
+        );
+      }
+      // An id with no concept still falls back to null.
+      expect(conceptProse(en, 'not_a_concept'), isNull);
     });
 
     test('prose is localised (de differs from en)', () async {
