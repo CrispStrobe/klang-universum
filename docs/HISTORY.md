@@ -41,6 +41,8 @@ all pitched playback app-wide (retro SFX unchanged).
 
 A read-through learning path over the grade-1–10 concept map (`core/curriculum/concept_map.dart`): the **Textbook** screen (📖 in the home bar) lists each grade band's concepts; a concept expands to its **lesson** (the same zero-knowledge primer the games auto-show — see it, hear it) and **practise** links straight into the games that train it. Concepts with no game yet show "coming soon", so the path stays honest against the coverage gap analysis. Built on the same concept inventory + primers as the gap-analysis tooling.
 
+**Fully localised + narrative (de/en).** `features/textbook/textbook_i18n.dart` (ARB-backed) localises all 70 concept titles, the 19 concept-area sub-headers and the 5 grade-band short labels, and supplies a **narrative intro paragraph per grade band**. Each band's concepts are grouped **by area** (sub-headers in first-appearance order, so the map's teaching sequence is preserved), so the reader reads like a book rather than a flat list.
+
 ## Composition Workshop
 
 A section *outside* the minigames (home-bar piano button) — a full touch- and

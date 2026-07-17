@@ -3912,4 +3912,306 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerFamilyPercKeys =>
       'Percussion is struck — drums, xylophone and triangle. Keyboards like the piano and organ play many notes at once.';
+
+  @override
+  String get conceptPulse => 'A steady beat (pulse)';
+
+  @override
+  String get conceptHighLow => 'Higher and lower sounds';
+
+  @override
+  String get conceptMelodyDirection => 'A tune that climbs or falls';
+
+  @override
+  String get conceptSameDifferent => 'Same sound or different';
+
+  @override
+  String get conceptLoudSoft => 'Loud and soft';
+
+  @override
+  String get conceptFastSlow => 'Fast and slow';
+
+  @override
+  String get conceptLongShort => 'Long and short notes';
+
+  @override
+  String get conceptCountSounds => 'Counting the notes you hear';
+
+  @override
+  String get conceptTrebleStaff => 'Notes on the treble staff';
+
+  @override
+  String get conceptLedgerMiddleC => 'Ledger lines and middle C';
+
+  @override
+  String get conceptNoteValues => 'Whole, half, quarter, eighth notes';
+
+  @override
+  String get conceptRests => 'Rests are silence';
+
+  @override
+  String get conceptDottedNotes => 'The dot adds half again';
+
+  @override
+  String get conceptBeatsPerBar => 'Beats add up to fill a bar';
+
+  @override
+  String get conceptTimeSignature => 'Reading the time signature';
+
+  @override
+  String get conceptStrongWeakBeat => 'Strong and weak beats';
+
+  @override
+  String get conceptDynamicsMarks => 'p and f (piano/forte)';
+
+  @override
+  String get conceptTempoTerms => 'Italian tempo words';
+
+  @override
+  String get conceptRhythmEcho => 'Echo a rhythm you heard';
+
+  @override
+  String get conceptStepsSkips => 'Steps and skips';
+
+  @override
+  String get conceptCMajorScale => 'The C major scale';
+
+  @override
+  String get conceptMajorMinorEar => 'Major sounds bright, minor darker';
+
+  @override
+  String get conceptSongForm => 'Verse and chorus; repeats';
+
+  @override
+  String get conceptBassClef => 'Notes on the bass staff';
+
+  @override
+  String get conceptGrandStaff => 'Two staves, two hands';
+
+  @override
+  String get conceptClefSigns => 'Treble vs bass clef';
+
+  @override
+  String get conceptAccidentals => 'Sharps and flats';
+
+  @override
+  String get conceptEnharmonics => 'One key, two names (F♯ = G♭)';
+
+  @override
+  String get conceptWholeHalfStep => 'Whole steps and half steps';
+
+  @override
+  String get conceptKeySignatures => 'Key signatures';
+
+  @override
+  String get conceptMajorScales => 'Building major scales';
+
+  @override
+  String get conceptIntervals => 'Intervals: distance between notes';
+
+  @override
+  String get conceptTriads => 'Major and minor triads';
+
+  @override
+  String get conceptTiesSlurs => 'Ties and slurs';
+
+  @override
+  String get conceptArticulation => 'Staccato and accents';
+
+  @override
+  String get conceptBeams => 'Beams and flags';
+
+  @override
+  String get conceptAnacrusis => 'The upbeat (anacrusis)';
+
+  @override
+  String get conceptCompoundMeter => 'Compound metre (6/8)';
+
+  @override
+  String get conceptSyncopation => 'Off-beat accents (syncopation)';
+
+  @override
+  String get conceptTriplets => 'Triplets and tuplets';
+
+  @override
+  String get conceptCircleOfFifths => 'The circle of fifths';
+
+  @override
+  String get conceptMinorScales => 'Natural and harmonic minor';
+
+  @override
+  String get conceptChordQualities => 'Diminished and augmented';
+
+  @override
+  String get conceptSeventhChords => 'Seventh chords';
+
+  @override
+  String get conceptChordSymbols => 'Lead-sheet chord symbols';
+
+  @override
+  String get conceptCadences => 'How phrases end';
+
+  @override
+  String get conceptHarmonicFunction => 'Tonic, subdominant, dominant';
+
+  @override
+  String get conceptRomanNumerals => 'Roman numerals';
+
+  @override
+  String get conceptMelodicDictation => 'Write down a melody you hear';
+
+  @override
+  String get conceptPhrasingQa => 'Question-and-answer phrases';
+
+  @override
+  String get conceptMusicalForm => 'Form: ABA, rondo, theme & variations';
+
+  @override
+  String get conceptModulation => 'Changing key (modulation)';
+
+  @override
+  String get conceptInversions => 'Chord inversions';
+
+  @override
+  String get conceptTransposingInstruments => 'Transposing instruments';
+
+  @override
+  String get conceptTenorClef => 'The tenor clef';
+
+  @override
+  String get conceptSatbVoices => 'Reading four-part (SATB) music';
+
+  @override
+  String get conceptScoreReading => 'Following a multi-staff score';
+
+  @override
+  String get conceptOrnaments => 'Ornaments (trill, mordent, turn)';
+
+  @override
+  String get conceptModes => 'Church modes (Dorian, etc.)';
+
+  @override
+  String get conceptInstrumentFamilies => 'Instrument families / the orchestra';
+
+  @override
+  String get conceptReadingFluency => 'Reading notes fluently (both clefs)';
+
+  @override
+  String get conceptAuralMemory => 'Echo and remember what you hear';
+
+  @override
+  String get conceptSingWhatYouHear => 'Sing back a pitch or interval';
+
+  @override
+  String get conceptPlayKeyboard => 'Find and play notes on the keyboard';
+
+  @override
+  String get conceptPlayCello => 'Play the cello: strings, fingers, bowing';
+
+  @override
+  String get conceptPlayGuitar => 'Play the guitar: strings, tab, strumming';
+
+  @override
+  String get conceptPlayPercussion => 'Read and play a drum rhythm';
+
+  @override
+  String get conceptCompose => 'Make up your own melody';
+
+  @override
+  String get conceptArrangeLoops => 'Layer and arrange loops';
+
+  @override
+  String get conceptLearnSongs => 'Learn and recognise real songs';
+
+  @override
+  String get areaPulse => 'Pulse';
+
+  @override
+  String get areaReading => 'Reading';
+
+  @override
+  String get areaDuration => 'Note values';
+
+  @override
+  String get areaMeter => 'Metre';
+
+  @override
+  String get areaDynamics => 'Dynamics';
+
+  @override
+  String get areaTempo => 'Tempo';
+
+  @override
+  String get areaPitch => 'Pitch';
+
+  @override
+  String get areaScales => 'Scales';
+
+  @override
+  String get areaIntervals => 'Intervals';
+
+  @override
+  String get areaChords => 'Chords';
+
+  @override
+  String get areaHarmony => 'Harmony';
+
+  @override
+  String get areaArticulation => 'Articulation';
+
+  @override
+  String get areaTranspose => 'Transposition';
+
+  @override
+  String get areaForm => 'Form';
+
+  @override
+  String get areaTimbre => 'Timbre';
+
+  @override
+  String get areaTechnique => 'Playing';
+
+  @override
+  String get areaAural => 'Ear training';
+
+  @override
+  String get areaCreating => 'Creating';
+
+  @override
+  String get areaRepertoire => 'Repertoire';
+
+  @override
+  String get textbookBandG12 =>
+      'Music starts with your body: feel the steady beat, notice high and low, loud and soft, fast and slow. You don’t read notes yet — you listen and move.';
+
+  @override
+  String get textbookBandG34 =>
+      'Now notes get names and places on the staff. You learn how long each one lasts, how they fill a bar, and how to read a simple tune in C major.';
+
+  @override
+  String get textbookBandG56 =>
+      'Both hands, both clefs. Sharps and flats give notes new colours; you measure the distance between notes (intervals) and stack them into your first chords.';
+
+  @override
+  String get textbookBandG78 =>
+      'Music gets richer: minor keys, the circle of fifths, chords with a special 7th, and how phrases come to rest (cadences). You start to hear WHY chords move.';
+
+  @override
+  String get textbookBandG910 =>
+      'The advanced toolkit: chord inversions, transposing instruments, reading a full score, and the shapes and colours (form, modes) composers use to build whole pieces.';
+
+  @override
+  String get textbookGradesG12 => 'Grades 1–2';
+
+  @override
+  String get textbookGradesG34 => 'Grades 3–4';
+
+  @override
+  String get textbookGradesG56 => 'Grades 5–6';
+
+  @override
+  String get textbookGradesG78 => 'Grades 7–8';
+
+  @override
+  String get textbookGradesG910 => 'Grades 9–10';
 }

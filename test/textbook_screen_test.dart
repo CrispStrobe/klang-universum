@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _app() => MultiProvider(
+Widget _app({Locale locale = const Locale('en')}) => MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(
@@ -24,15 +24,16 @@ Widget _app() => MultiProvider(
         ChangeNotifierProvider(create: (_) => ProgressService()),
         ChangeNotifierProvider(create: (_) => UserSongsService()),
       ],
-      child: const MaterialApp(
-        localizationsDelegates: [
+      child: MaterialApp(
+        locale: locale,
+        localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [Locale('en'), Locale('de')],
-        home: TextbookScreen(),
+        supportedLocales: const [Locale('en'), Locale('de')],
+        home: const TextbookScreen(),
       ),
     );
 
@@ -51,6 +52,20 @@ void main() {
     expect(find.text(l10n.textbookIntro), findsOneWidget);
     expect(find.text(GradeBand.g12.label), findsOneWidget);
     expect(find.text('A steady beat (pulse)'), findsOneWidget);
+  });
+
+  testWidgets('concept titles + band labels are localised (de)',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(600, 3000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_app(locale: const Locale('de')));
+    await tester.pumpAndSettle();
+
+    // German band label, area sub-header and concept title all render.
+    expect(find.text('Klasse 1–2'), findsOneWidget);
+    expect(find.text('Ein gleichmäßiger Puls (Grundschlag)'), findsOneWidget);
+    // The English forms must be absent under a German locale.
+    expect(find.text('A steady beat (pulse)'), findsNothing);
   });
 
   testWidgets('expanding a concept reveals its lesson + game links',

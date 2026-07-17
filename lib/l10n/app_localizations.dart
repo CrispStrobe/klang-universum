@@ -7123,6 +7123,600 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Percussion is struck — drums, xylophone and triangle. Keyboards like the piano and organ play many notes at once.'**
   String get primerFamilyPercKeys;
+
+  /// No description provided for @conceptPulse.
+  ///
+  /// In en, this message translates to:
+  /// **'A steady beat (pulse)'**
+  String get conceptPulse;
+
+  /// No description provided for @conceptHighLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher and lower sounds'**
+  String get conceptHighLow;
+
+  /// No description provided for @conceptMelodyDirection.
+  ///
+  /// In en, this message translates to:
+  /// **'A tune that climbs or falls'**
+  String get conceptMelodyDirection;
+
+  /// No description provided for @conceptSameDifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'Same sound or different'**
+  String get conceptSameDifferent;
+
+  /// No description provided for @conceptLoudSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Loud and soft'**
+  String get conceptLoudSoft;
+
+  /// No description provided for @conceptFastSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast and slow'**
+  String get conceptFastSlow;
+
+  /// No description provided for @conceptLongShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Long and short notes'**
+  String get conceptLongShort;
+
+  /// No description provided for @conceptCountSounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Counting the notes you hear'**
+  String get conceptCountSounds;
+
+  /// No description provided for @conceptTrebleStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes on the treble staff'**
+  String get conceptTrebleStaff;
+
+  /// No description provided for @conceptLedgerMiddleC.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger lines and middle C'**
+  String get conceptLedgerMiddleC;
+
+  /// No description provided for @conceptNoteValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole, half, quarter, eighth notes'**
+  String get conceptNoteValues;
+
+  /// No description provided for @conceptRests.
+  ///
+  /// In en, this message translates to:
+  /// **'Rests are silence'**
+  String get conceptRests;
+
+  /// No description provided for @conceptDottedNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'The dot adds half again'**
+  String get conceptDottedNotes;
+
+  /// No description provided for @conceptBeatsPerBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Beats add up to fill a bar'**
+  String get conceptBeatsPerBar;
+
+  /// No description provided for @conceptTimeSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the time signature'**
+  String get conceptTimeSignature;
+
+  /// No description provided for @conceptStrongWeakBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong and weak beats'**
+  String get conceptStrongWeakBeat;
+
+  /// No description provided for @conceptDynamicsMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'p and f (piano/forte)'**
+  String get conceptDynamicsMarks;
+
+  /// No description provided for @conceptTempoTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Italian tempo words'**
+  String get conceptTempoTerms;
+
+  /// No description provided for @conceptRhythmEcho.
+  ///
+  /// In en, this message translates to:
+  /// **'Echo a rhythm you heard'**
+  String get conceptRhythmEcho;
+
+  /// No description provided for @conceptStepsSkips.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps and skips'**
+  String get conceptStepsSkips;
+
+  /// No description provided for @conceptCMajorScale.
+  ///
+  /// In en, this message translates to:
+  /// **'The C major scale'**
+  String get conceptCMajorScale;
+
+  /// No description provided for @conceptMajorMinorEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Major sounds bright, minor darker'**
+  String get conceptMajorMinorEar;
+
+  /// No description provided for @conceptSongForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Verse and chorus; repeats'**
+  String get conceptSongForm;
+
+  /// No description provided for @conceptBassClef.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes on the bass staff'**
+  String get conceptBassClef;
+
+  /// No description provided for @conceptGrandStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Two staves, two hands'**
+  String get conceptGrandStaff;
+
+  /// No description provided for @conceptClefSigns.
+  ///
+  /// In en, this message translates to:
+  /// **'Treble vs bass clef'**
+  String get conceptClefSigns;
+
+  /// No description provided for @conceptAccidentals.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharps and flats'**
+  String get conceptAccidentals;
+
+  /// No description provided for @conceptEnharmonics.
+  ///
+  /// In en, this message translates to:
+  /// **'One key, two names (F♯ = G♭)'**
+  String get conceptEnharmonics;
+
+  /// No description provided for @conceptWholeHalfStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole steps and half steps'**
+  String get conceptWholeHalfStep;
+
+  /// No description provided for @conceptKeySignatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Key signatures'**
+  String get conceptKeySignatures;
+
+  /// No description provided for @conceptMajorScales.
+  ///
+  /// In en, this message translates to:
+  /// **'Building major scales'**
+  String get conceptMajorScales;
+
+  /// No description provided for @conceptIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals: distance between notes'**
+  String get conceptIntervals;
+
+  /// No description provided for @conceptTriads.
+  ///
+  /// In en, this message translates to:
+  /// **'Major and minor triads'**
+  String get conceptTriads;
+
+  /// No description provided for @conceptTiesSlurs.
+  ///
+  /// In en, this message translates to:
+  /// **'Ties and slurs'**
+  String get conceptTiesSlurs;
+
+  /// No description provided for @conceptArticulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Staccato and accents'**
+  String get conceptArticulation;
+
+  /// No description provided for @conceptBeams.
+  ///
+  /// In en, this message translates to:
+  /// **'Beams and flags'**
+  String get conceptBeams;
+
+  /// No description provided for @conceptAnacrusis.
+  ///
+  /// In en, this message translates to:
+  /// **'The upbeat (anacrusis)'**
+  String get conceptAnacrusis;
+
+  /// No description provided for @conceptCompoundMeter.
+  ///
+  /// In en, this message translates to:
+  /// **'Compound metre (6/8)'**
+  String get conceptCompoundMeter;
+
+  /// No description provided for @conceptSyncopation.
+  ///
+  /// In en, this message translates to:
+  /// **'Off-beat accents (syncopation)'**
+  String get conceptSyncopation;
+
+  /// No description provided for @conceptTriplets.
+  ///
+  /// In en, this message translates to:
+  /// **'Triplets and tuplets'**
+  String get conceptTriplets;
+
+  /// No description provided for @conceptCircleOfFifths.
+  ///
+  /// In en, this message translates to:
+  /// **'The circle of fifths'**
+  String get conceptCircleOfFifths;
+
+  /// No description provided for @conceptMinorScales.
+  ///
+  /// In en, this message translates to:
+  /// **'Natural and harmonic minor'**
+  String get conceptMinorScales;
+
+  /// No description provided for @conceptChordQualities.
+  ///
+  /// In en, this message translates to:
+  /// **'Diminished and augmented'**
+  String get conceptChordQualities;
+
+  /// No description provided for @conceptSeventhChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Seventh chords'**
+  String get conceptSeventhChords;
+
+  /// No description provided for @conceptChordSymbols.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead-sheet chord symbols'**
+  String get conceptChordSymbols;
+
+  /// No description provided for @conceptCadences.
+  ///
+  /// In en, this message translates to:
+  /// **'How phrases end'**
+  String get conceptCadences;
+
+  /// No description provided for @conceptHarmonicFunction.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonic, subdominant, dominant'**
+  String get conceptHarmonicFunction;
+
+  /// No description provided for @conceptRomanNumerals.
+  ///
+  /// In en, this message translates to:
+  /// **'Roman numerals'**
+  String get conceptRomanNumerals;
+
+  /// No description provided for @conceptMelodicDictation.
+  ///
+  /// In en, this message translates to:
+  /// **'Write down a melody you hear'**
+  String get conceptMelodicDictation;
+
+  /// No description provided for @conceptPhrasingQa.
+  ///
+  /// In en, this message translates to:
+  /// **'Question-and-answer phrases'**
+  String get conceptPhrasingQa;
+
+  /// No description provided for @conceptMusicalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Form: ABA, rondo, theme & variations'**
+  String get conceptMusicalForm;
+
+  /// No description provided for @conceptModulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing key (modulation)'**
+  String get conceptModulation;
+
+  /// No description provided for @conceptInversions.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord inversions'**
+  String get conceptInversions;
+
+  /// No description provided for @conceptTransposingInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'Transposing instruments'**
+  String get conceptTransposingInstruments;
+
+  /// No description provided for @conceptTenorClef.
+  ///
+  /// In en, this message translates to:
+  /// **'The tenor clef'**
+  String get conceptTenorClef;
+
+  /// No description provided for @conceptSatbVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading four-part (SATB) music'**
+  String get conceptSatbVoices;
+
+  /// No description provided for @conceptScoreReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Following a multi-staff score'**
+  String get conceptScoreReading;
+
+  /// No description provided for @conceptOrnaments.
+  ///
+  /// In en, this message translates to:
+  /// **'Ornaments (trill, mordent, turn)'**
+  String get conceptOrnaments;
+
+  /// No description provided for @conceptModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Church modes (Dorian, etc.)'**
+  String get conceptModes;
+
+  /// No description provided for @conceptInstrumentFamilies.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument families / the orchestra'**
+  String get conceptInstrumentFamilies;
+
+  /// No description provided for @conceptReadingFluency.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading notes fluently (both clefs)'**
+  String get conceptReadingFluency;
+
+  /// No description provided for @conceptAuralMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Echo and remember what you hear'**
+  String get conceptAuralMemory;
+
+  /// No description provided for @conceptSingWhatYouHear.
+  ///
+  /// In en, this message translates to:
+  /// **'Sing back a pitch or interval'**
+  String get conceptSingWhatYouHear;
+
+  /// No description provided for @conceptPlayKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Find and play notes on the keyboard'**
+  String get conceptPlayKeyboard;
+
+  /// No description provided for @conceptPlayCello.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the cello: strings, fingers, bowing'**
+  String get conceptPlayCello;
+
+  /// No description provided for @conceptPlayGuitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the guitar: strings, tab, strumming'**
+  String get conceptPlayGuitar;
+
+  /// No description provided for @conceptPlayPercussion.
+  ///
+  /// In en, this message translates to:
+  /// **'Read and play a drum rhythm'**
+  String get conceptPlayPercussion;
+
+  /// No description provided for @conceptCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'Make up your own melody'**
+  String get conceptCompose;
+
+  /// No description provided for @conceptArrangeLoops.
+  ///
+  /// In en, this message translates to:
+  /// **'Layer and arrange loops'**
+  String get conceptArrangeLoops;
+
+  /// No description provided for @conceptLearnSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn and recognise real songs'**
+  String get conceptLearnSongs;
+
+  /// No description provided for @areaPulse.
+  ///
+  /// In en, this message translates to:
+  /// **'Pulse'**
+  String get areaPulse;
+
+  /// No description provided for @areaReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get areaReading;
+
+  /// No description provided for @areaDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Note values'**
+  String get areaDuration;
+
+  /// No description provided for @areaMeter.
+  ///
+  /// In en, this message translates to:
+  /// **'Metre'**
+  String get areaMeter;
+
+  /// No description provided for @areaDynamics.
+  ///
+  /// In en, this message translates to:
+  /// **'Dynamics'**
+  String get areaDynamics;
+
+  /// No description provided for @areaTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get areaTempo;
+
+  /// No description provided for @areaPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Pitch'**
+  String get areaPitch;
+
+  /// No description provided for @areaScales.
+  ///
+  /// In en, this message translates to:
+  /// **'Scales'**
+  String get areaScales;
+
+  /// No description provided for @areaIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get areaIntervals;
+
+  /// No description provided for @areaChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get areaChords;
+
+  /// No description provided for @areaHarmony.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmony'**
+  String get areaHarmony;
+
+  /// No description provided for @areaArticulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Articulation'**
+  String get areaArticulation;
+
+  /// No description provided for @areaTranspose.
+  ///
+  /// In en, this message translates to:
+  /// **'Transposition'**
+  String get areaTranspose;
+
+  /// No description provided for @areaForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Form'**
+  String get areaForm;
+
+  /// No description provided for @areaTimbre.
+  ///
+  /// In en, this message translates to:
+  /// **'Timbre'**
+  String get areaTimbre;
+
+  /// No description provided for @areaTechnique.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get areaTechnique;
+
+  /// No description provided for @areaAural.
+  ///
+  /// In en, this message translates to:
+  /// **'Ear training'**
+  String get areaAural;
+
+  /// No description provided for @areaCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating'**
+  String get areaCreating;
+
+  /// No description provided for @areaRepertoire.
+  ///
+  /// In en, this message translates to:
+  /// **'Repertoire'**
+  String get areaRepertoire;
+
+  /// No description provided for @textbookBandG12.
+  ///
+  /// In en, this message translates to:
+  /// **'Music starts with your body: feel the steady beat, notice high and low, loud and soft, fast and slow. You don’t read notes yet — you listen and move.'**
+  String get textbookBandG12;
+
+  /// No description provided for @textbookBandG34.
+  ///
+  /// In en, this message translates to:
+  /// **'Now notes get names and places on the staff. You learn how long each one lasts, how they fill a bar, and how to read a simple tune in C major.'**
+  String get textbookBandG34;
+
+  /// No description provided for @textbookBandG56.
+  ///
+  /// In en, this message translates to:
+  /// **'Both hands, both clefs. Sharps and flats give notes new colours; you measure the distance between notes (intervals) and stack them into your first chords.'**
+  String get textbookBandG56;
+
+  /// No description provided for @textbookBandG78.
+  ///
+  /// In en, this message translates to:
+  /// **'Music gets richer: minor keys, the circle of fifths, chords with a special 7th, and how phrases come to rest (cadences). You start to hear WHY chords move.'**
+  String get textbookBandG78;
+
+  /// No description provided for @textbookBandG910.
+  ///
+  /// In en, this message translates to:
+  /// **'The advanced toolkit: chord inversions, transposing instruments, reading a full score, and the shapes and colours (form, modes) composers use to build whole pieces.'**
+  String get textbookBandG910;
+
+  /// No description provided for @textbookGradesG12.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades 1–2'**
+  String get textbookGradesG12;
+
+  /// No description provided for @textbookGradesG34.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades 3–4'**
+  String get textbookGradesG34;
+
+  /// No description provided for @textbookGradesG56.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades 5–6'**
+  String get textbookGradesG56;
+
+  /// No description provided for @textbookGradesG78.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades 7–8'**
+  String get textbookGradesG78;
+
+  /// No description provided for @textbookGradesG910.
+  ///
+  /// In en, this message translates to:
+  /// **'Grades 9–10'**
+  String get textbookGradesG910;
 }
 
 class _AppLocalizationsDelegate

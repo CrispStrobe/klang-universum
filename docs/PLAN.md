@@ -23,6 +23,8 @@ and push to origin/main** before/after touching shared files. Format:
 
 - **opus (modulation)** · ✅ **idle / SHIPPED — "Key Change?" ear game (`modulation_ear`, scales module).** Binary ear game: a C-major phrase either stays in one key or has its second half lifted a perfect 4th/5th to a new tonic; child taps Same key / Key changed. Correct replays the phrase; own SRI `scales.modulation.<same|changed>`. `modulationPrimer` teaches it by ear (stay vs move). **Closes the `modulation` gap** in concept_map (2 gaps left: modes, instrument families). EN/DE; analyze clean (pre-existing composition import-order info untouched); modulation_ear + tutorial + curriculum_coverage + consistency tests green.
 
+- **opus (textbook-p3)** · ✅ **idle / SHIPPED — Textbook phase 3: narrative + full i18n.** New `features/textbook/textbook_i18n.dart` (ARB-backed, de/en) localises **all 70 concept titles**, the **19 concept-area sub-headers** and **5 grade-band short labels**, plus a **narrative intro paragraph per grade band**. The reader now groups each band's concepts **by area** (sub-headers, first-appearance order) with an italic band intro on top, so it reads like a book. +94 ARB keys ×2 (concept/area/band) +5 label keys ×2, generated from one source of truth. Touched shared ARBs — kept both key sets on rebase. Analyze clean (lib+test); textbook (now incl. a **de-locale** assertion) + curriculum tests green. Also logged the **TTS-narration (CrispASR)** follow-up in PLAN.
+
 - **opus (textbook-ui)** · ✅ **idle / SHIPPED — read-through Textbook reader.** New `features/textbook/textbook_screen.dart` walks the grade-1–10 concept map band by band; each concept expands to its **lesson** (the game's primer via `showTutorial`/`helpPrimerFor`) + **practise** links (`gameRoute`) to its games; untrained concepts show "coming soon", so the reader stays honest as gaps fill. Home app-bar gets a 📖 Textbook button. Reuses the primers as lesson content (phase 0 work). EN/DE chrome; concept titles English for now (l10n a follow-up). New files + home entry + 5 ARB keys; analyze clean; 2 widget tests green. (Textbook phase 4 — the reader UI.)
 
 
@@ -1085,15 +1087,38 @@ coverage guard. Run it first — it orders all the work below.
 4. **Textbook reader UI** + narrative + progress + game deep-links.
 5. **Fill the gaps** the analysis found (new lessons/games for uncovered concepts).
 
-**Status:** Phase 0 done (primers to the 9yo bar). **Phase 1 done (2026-07-17):**
-`core/curriculum/concept_map.dart` (60 concepts, grade 1–10, our words) +
-`coverage_gaps.dart` + `test/curriculum_coverage_test.dart` (prints the gap
-report, guards no dangling refs). **Gap findings — the 8 UNTRAINED concepts (no
-game):** verse/chorus form, **syncopation**, **triplets/tuplets**, ABA/rondo form,
-**modulation**, **ornaments** (reading), **modes**, instrument families/orchestra.
-Plus many *thin* (1-game) concepts and 56 orphan games (variants/creative not
-placed in the path). Games placed: 74/130 (57%). Next: phase 2 (song examples),
-and fill the 8 gaps (§ New minigame targets from the gap report).
+**Status (2026-07-17): phases 0–5 all shipped; the syllabus is fully covered and
+readable end-to-end.**
+- **Phase 0** — primers to the 9yo bar (every step engraved + heard).
+- **Phase 1** — `concept_map.dart` (70 concepts, grade 1–10, our words) +
+  `coverage_gaps.dart` + the gap-report test.
+- **Phase 2** — song mnemonics: `core/curriculum/interval_songs.dart` wired into
+  the **Interval Detective** (Kuckuck = falling minor 3rd, etc.).
+- **Phase 3** — narrative + **full i18n**: `features/textbook/textbook_i18n.dart`
+  (ARB-backed, de/en) localises all 70 concept titles, the 19 concept-area
+  sub-headers and 5 grade-band short labels, plus a **narrative intro paragraph
+  per grade band**. The reader groups each band's concepts by area (sub-headers,
+  first-appearance order) so it reads like a book.
+- **Phase 4** — the read-through reader (`textbook_screen.dart`) + 📖 home button.
+- **Phase 5 — all 8 gaps FILLED:** verse/chorus + ABA/rondo form (`form_read`),
+  syncopation (`sync_read`), triplets (`triplet_read`), ornaments
+  (`ornament_read`), **modulation** (`modulation_ear`), **modes** (`mode_ear`),
+  **instrument families** (`instrument_family`).
+- **Coverage now: 137/137 games placed (100%), 0 untrained concepts, 0 orphans.**
+
+Remaining (optional): richer per-concept lesson prose beyond the primers; the
+bachelor-tier extension (draw facts from the OER registry below); the AnaVis-style
+form view; and **TTS narration** (below).
+
+### TTS narration — read the lessons + instructions aloud (maintainer, 2026-07-17)
+Use **TTS from CrispASR** to read out the text explanations / instructions of the
+minigames and the textbook. High learnability value: a **pre-reader (6–8yo)** can
+*hear* a lesson or a game's how-to-play even before they can read it, and it makes
+the app accessible. Scope: a small `TtsService` (mirrors `AudioService`'s gate +
+the sound toggle) that speaks (a) a `TutorialStep.text` while its example plays in
+the primer/textbook reader, and (b) a game's instruction line on first entry.
+Locale-aware (de/en voices). Gate behind the existing sound/settings toggle;
+offline/on-device if CrispASR supports it. Unclaimed.
 
 ### Extending the syllabus toward bachelor level (2026-07-17)
 The grade-1–10 spine is the floor; the concept map extends **upward toward

@@ -7,13 +7,15 @@
 // map (core/curriculum/concept_map.dart), so it stays in sync with coverage: a
 // concept with no game yet is shown as "coming soon".
 //
-// Concept titles are the map's own-words English labels (dev-facing) for now;
-// the lessons themselves are fully localised via their primers. Localising the
-// concept titles is a follow-up.
+// Everything shown here is localised (de/en): the grade-band labels + narrative
+// intros, the concept-area sub-headers, the concept titles (textbook_i18n.dart,
+// ARB-backed), and the lessons themselves (their primers). Within a band the
+// concepts are grouped by area with a sub-header, so it reads like a book.
 
 import 'package:comet_beat/core/curriculum/concept_map.dart';
 import 'package:comet_beat/features/games/game_registry.dart';
 import 'package:comet_beat/features/games/tutorial_gate.dart';
+import 'package:comet_beat/features/textbook/textbook_i18n.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/tutorial/tutorial_sheet.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +42,16 @@ IconData _areaIcon(ConceptArea a) => switch (a) {
       ConceptArea.repertoire => Icons.library_music,
     };
 
+/// The concept areas present in a band, in the order they first appear in the
+/// concept map (so the reader keeps the map's deliberate teaching sequence).
+List<ConceptArea> _areasInBand(GradeBand band) {
+  final seen = <ConceptArea>[];
+  for (final c in kConcepts.where((c) => c.band == band)) {
+    if (!seen.contains(c.area)) seen.add(c.area);
+  }
+  return seen;
+}
+
 class TextbookScreen extends StatelessWidget {
   const TextbookScreen({super.key});
 
@@ -59,17 +71,53 @@ class TextbookScreen extends StatelessWidget {
           ),
           for (final band in GradeBand.values) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
               child: Text(
-                band.label,
+                bandLabel(l10n, band),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
               ),
             ),
-            for (final c in kConcepts.where((c) => c.band == band))
-              _ConceptTile(concept: c),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                bandIntro(l10n, band),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
+            // Group the band's concepts by area, in first-appearance order, with
+            // a small area sub-header before each run.
+            for (final area in _areasInBand(band)) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+                child: Row(
+                  children: [
+                    Icon(
+                      _areaIcon(area),
+                      size: 16,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      areaName(l10n, area).toUpperCase(),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.6,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              for (final c
+                  in kConcepts.where((c) => c.band == band && c.area == area))
+                _ConceptTile(concept: c),
+            ],
           ],
           const SizedBox(height: 24),
         ],
@@ -98,7 +146,7 @@ class _ConceptTile extends StatelessWidget {
           _areaIcon(concept.area),
           color: Theme.of(context).disabledColor,
         ),
-        title: Text(concept.title),
+        title: Text(conceptTitle(l10n, concept.id)),
         subtitle: Text(l10n.textbookComingSoon),
         enabled: false,
       );
@@ -112,7 +160,7 @@ class _ConceptTile extends StatelessWidget {
         _areaIcon(concept.area),
         color: Theme.of(context).colorScheme.primary,
       ),
-      title: Text(concept.title),
+      title: Text(conceptTitle(l10n, concept.id)),
       subtitle: Text(l10n.textbookPractise),
       childrenPadding: const EdgeInsets.only(bottom: 8),
       children: [

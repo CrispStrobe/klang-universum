@@ -3933,4 +3933,310 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerFamilyPercKeys =>
       'Schlagwerk wird geschlagen — Trommeln, Xylophon und Triangel. Tasteninstrumente wie Klavier und Orgel spielen viele Töne zugleich.';
+
+  @override
+  String get conceptPulse => 'Ein gleichmäßiger Puls (Grundschlag)';
+
+  @override
+  String get conceptHighLow => 'Höher und tiefer';
+
+  @override
+  String get conceptMelodyDirection => 'Eine Melodie steigt oder fällt';
+
+  @override
+  String get conceptSameDifferent => 'Gleich oder verschieden';
+
+  @override
+  String get conceptLoudSoft => 'Laut und leise';
+
+  @override
+  String get conceptFastSlow => 'Schnell und langsam';
+
+  @override
+  String get conceptLongShort => 'Lange und kurze Noten';
+
+  @override
+  String get conceptCountSounds => 'Zähle die Töne, die du hörst';
+
+  @override
+  String get conceptTrebleStaff => 'Noten im Violinschlüssel';
+
+  @override
+  String get conceptLedgerMiddleC => 'Hilfslinien und das eingestrichene C';
+
+  @override
+  String get conceptNoteValues => 'Ganze, halbe, Viertel- und Achtelnoten';
+
+  @override
+  String get conceptRests => 'Pausen sind Stille';
+
+  @override
+  String get conceptDottedNotes => 'Der Punkt gibt die Hälfte dazu';
+
+  @override
+  String get conceptBeatsPerBar => 'Schläge füllen einen Takt';
+
+  @override
+  String get conceptTimeSignature => 'Die Taktangabe lesen';
+
+  @override
+  String get conceptStrongWeakBeat => 'Betonte und unbetonte Schläge';
+
+  @override
+  String get conceptDynamicsMarks => 'p und f (piano/forte)';
+
+  @override
+  String get conceptTempoTerms => 'Italienische Tempo-Wörter';
+
+  @override
+  String get conceptRhythmEcho => 'Einen gehörten Rhythmus nachklatschen';
+
+  @override
+  String get conceptStepsSkips => 'Schritte und Sprünge';
+
+  @override
+  String get conceptCMajorScale => 'Die C-Dur-Tonleiter';
+
+  @override
+  String get conceptMajorMinorEar => 'Dur klingt hell, Moll dunkler';
+
+  @override
+  String get conceptSongForm => 'Strophe und Refrain; Wiederholungen';
+
+  @override
+  String get conceptBassClef => 'Noten im Bassschlüssel';
+
+  @override
+  String get conceptGrandStaff => 'Zwei Systeme, zwei Hände';
+
+  @override
+  String get conceptClefSigns => 'Violin- oder Bassschlüssel';
+
+  @override
+  String get conceptAccidentals => 'Kreuze und Be (Vorzeichen)';
+
+  @override
+  String get conceptEnharmonics => 'Eine Taste, zwei Namen (Fis = Ges)';
+
+  @override
+  String get conceptWholeHalfStep => 'Ganztöne und Halbtöne';
+
+  @override
+  String get conceptKeySignatures => 'Vorzeichen am Anfang (Tonarten)';
+
+  @override
+  String get conceptMajorScales => 'Dur-Tonleitern bauen';
+
+  @override
+  String get conceptIntervals => 'Intervalle: der Abstand zwischen Tönen';
+
+  @override
+  String get conceptTriads => 'Dur- und Moll-Dreiklänge';
+
+  @override
+  String get conceptTiesSlurs => 'Halte- und Bindebögen';
+
+  @override
+  String get conceptArticulation => 'Staccato und Akzente';
+
+  @override
+  String get conceptBeams => 'Balken und Fähnchen';
+
+  @override
+  String get conceptAnacrusis => 'Der Auftakt';
+
+  @override
+  String get conceptCompoundMeter => 'Zusammengesetzter Takt (6/8)';
+
+  @override
+  String get conceptSyncopation => 'Betonungen neben dem Schlag (Synkope)';
+
+  @override
+  String get conceptTriplets => 'Triolen und andere Tuolen';
+
+  @override
+  String get conceptCircleOfFifths => 'Der Quintenzirkel';
+
+  @override
+  String get conceptMinorScales => 'Natürliches und harmonisches Moll';
+
+  @override
+  String get conceptChordQualities => 'Vermindert und übermäßig';
+
+  @override
+  String get conceptSeventhChords => 'Septakkorde';
+
+  @override
+  String get conceptChordSymbols => 'Akkordsymbole (Leadsheet)';
+
+  @override
+  String get conceptCadences => 'Wie Phrasen enden (Kadenzen)';
+
+  @override
+  String get conceptHarmonicFunction => 'Tonika, Subdominante, Dominante';
+
+  @override
+  String get conceptRomanNumerals => 'Römische Stufen (Ziffern)';
+
+  @override
+  String get conceptMelodicDictation => 'Eine gehörte Melodie aufschreiben';
+
+  @override
+  String get conceptPhrasingQa => 'Frage-und-Antwort-Phrasen';
+
+  @override
+  String get conceptMusicalForm => 'Form: ABA, Rondo, Thema mit Variationen';
+
+  @override
+  String get conceptModulation => 'Die Tonart wechseln (Modulation)';
+
+  @override
+  String get conceptInversions => 'Akkord-Umkehrungen';
+
+  @override
+  String get conceptTransposingInstruments => 'Transponierende Instrumente';
+
+  @override
+  String get conceptTenorClef => 'Der Tenorschlüssel';
+
+  @override
+  String get conceptSatbVoices => 'Vierstimmig (SATB) lesen';
+
+  @override
+  String get conceptScoreReading => 'Eine mehrsystemige Partitur lesen';
+
+  @override
+  String get conceptOrnaments =>
+      'Verzierungen (Triller, Mordent, Doppelschlag)';
+
+  @override
+  String get conceptModes => 'Kirchentonarten (Dorisch usw.)';
+
+  @override
+  String get conceptInstrumentFamilies =>
+      'Instrumentenfamilien / das Orchester';
+
+  @override
+  String get conceptReadingFluency => 'Noten flüssig lesen (beide Schlüssel)';
+
+  @override
+  String get conceptAuralMemory => 'Höre und merke dir, was erklingt';
+
+  @override
+  String get conceptSingWhatYouHear =>
+      'Einen Ton oder ein Intervall nachsingen';
+
+  @override
+  String get conceptPlayKeyboard => 'Tasten finden und spielen';
+
+  @override
+  String get conceptPlayCello => 'Cello spielen: Saiten, Finger, Bogen';
+
+  @override
+  String get conceptPlayGuitar =>
+      'Gitarre spielen: Saiten, Tabulatur, Anschlag';
+
+  @override
+  String get conceptPlayPercussion => 'Einen Trommelrhythmus lesen und spielen';
+
+  @override
+  String get conceptCompose => 'Eine eigene Melodie erfinden';
+
+  @override
+  String get conceptArrangeLoops => 'Loops schichten und arrangieren';
+
+  @override
+  String get conceptLearnSongs => 'Echte Lieder lernen und erkennen';
+
+  @override
+  String get areaPulse => 'Puls';
+
+  @override
+  String get areaReading => 'Notenlesen';
+
+  @override
+  String get areaDuration => 'Notenwerte';
+
+  @override
+  String get areaMeter => 'Takt';
+
+  @override
+  String get areaDynamics => 'Dynamik';
+
+  @override
+  String get areaTempo => 'Tempo';
+
+  @override
+  String get areaPitch => 'Tonhöhe';
+
+  @override
+  String get areaScales => 'Tonleitern';
+
+  @override
+  String get areaIntervals => 'Intervalle';
+
+  @override
+  String get areaChords => 'Akkorde';
+
+  @override
+  String get areaHarmony => 'Harmonik';
+
+  @override
+  String get areaArticulation => 'Artikulation';
+
+  @override
+  String get areaTranspose => 'Transposition';
+
+  @override
+  String get areaForm => 'Form';
+
+  @override
+  String get areaTimbre => 'Klangfarbe';
+
+  @override
+  String get areaTechnique => 'Musizieren';
+
+  @override
+  String get areaAural => 'Gehörbildung';
+
+  @override
+  String get areaCreating => 'Gestalten';
+
+  @override
+  String get areaRepertoire => 'Repertoire';
+
+  @override
+  String get textbookBandG12 =>
+      'Musik beginnt mit deinem Körper: den gleichmäßigen Puls spüren, hoch und tief, laut und leise, schnell und langsam hören. Noten liest du noch nicht — du hörst und bewegst dich.';
+
+  @override
+  String get textbookBandG34 =>
+      'Jetzt bekommen Noten Namen und Plätze im System. Du lernst, wie lange jede dauert, wie sie einen Takt füllen und wie man eine einfache Melodie in C-Dur liest.';
+
+  @override
+  String get textbookBandG56 =>
+      'Beide Hände, beide Schlüssel. Kreuze und Be geben den Noten neue Farben; du misst den Abstand zwischen Tönen (Intervalle) und stapelst sie zu deinen ersten Akkorden.';
+
+  @override
+  String get textbookBandG78 =>
+      'Die Musik wird reicher: Moll-Tonarten, der Quintenzirkel, Akkorde mit einer besonderen Septime und wie Phrasen zur Ruhe kommen (Kadenzen). Du beginnst zu hören, WARUM sich Akkorde bewegen.';
+
+  @override
+  String get textbookBandG910 =>
+      'Das fortgeschrittene Werkzeug: Akkord-Umkehrungen, transponierende Instrumente, das Lesen einer ganzen Partitur und die Formen und Farben (Form, Kirchentonarten), mit denen Komponisten ganze Stücke bauen.';
+
+  @override
+  String get textbookGradesG12 => 'Klasse 1–2';
+
+  @override
+  String get textbookGradesG34 => 'Klasse 3–4';
+
+  @override
+  String get textbookGradesG56 => 'Klasse 5–6';
+
+  @override
+  String get textbookGradesG78 => 'Klasse 7–8';
+
+  @override
+  String get textbookGradesG910 => 'Klasse 9–10';
 }
