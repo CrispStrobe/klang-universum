@@ -33,7 +33,12 @@ and push to origin/main** before/after touching shared files. Format:
   (`7455c14`): multi-track MIDI IMPORT** — `multiTrackMidiToMultiPart` (one part
   per MTrk); wired into `notaconv` (a `.mid` with >1 track → all parts →
   module/xml/abc) + the Workshop's `importMultiPart`. MIDI import/export now
-  symmetric. Live: 24-track MIDI → 24 channels/parts/voices.
+  symmetric. Live: 24-track MIDI → 24 channels/parts/voices. **Follow-up
+  (`67655a3`): Tracker → Song Book** — a "Save to Song Book" menu item saves the
+  groove's pitched channels as multi-part MusicXML (`trackerToScoreParts` →
+  `multiPartToMusicXml` → `UserSongsService`), mirroring the Loop Mixer;
+  `debugSaveToSongBook` seam + 3 ARB keys. The Tracker now exports to MOD / MIDI /
+  Song Book.
 
 - **opus (modes)** · ✅ **idle / SHIPPED — "Which Mode?" ear game (`mode_ear`, scales module).** 3-way ear game: a scale plays ascending as Major (Ionian) / natural Minor (Aeolian) / **Dorian** (minor with a raised 6th, built from exact semitone steps); child taps which. `modePrimer` teaches the three colours (shown + heard). **Closes the `modes` gap** in concept_map. Scales module; EN/DE; [100,600,900]; analyze clean; mode_ear + tutorial + curriculum_coverage + consistency tests green (14). New: `mode_ear_screen.dart`, `test/mode_ear_test.dart`, `modePrimer`. (Also fixed a stray pre-existing import-order lint in game_registry.)
 
