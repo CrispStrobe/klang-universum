@@ -70,6 +70,19 @@ and push to origin/main** before/after touching shared files. Format:
   ✅ **voice-2 playback** (`_renderPart` now scans elements + voice2/3/4, so the
   just-shipped voice 2 sounds, not just highlights; transport-only, 51 widget green).
   **idle.** Remaining Workshop items are parity's (Studio shell / input modes).
+- **opus (next)** · 🚧 **ACTIVE — Sing along for the Song Book** (backlog
+  "Play-along for the Song Book": sing a stored song against the moving-score
+  highway; connects the Song Book + groove-export → the shipped mic grading).
+  Worktree `../mus-next`, branch `feature/workshop-next`. **NOT a Workshop file —
+  no collision with parity.** Files: NEW `lib/features/games/songs/
+  song_play_along.dart` (`chartFromScore(Score)→PlayAlongChart` via
+  `playbackTimeline`, top pitch = melody, octave-agnostic) + test; a "Sing along"
+  button on `song_screen.dart` launching the existing `PlayAlongScreen`
+  (reusing `gameId: 'sing_along'` / `sriPrefix: 'voice.sing_along'` + the
+  `gameSingAlong` label — **no registry/tuning/PlayAlongScreen change**). Known v1
+  limit: star thresholds don't scale to song length (fixed `sing_along` bracket).
+  **Shipped by opus (next):** tempo · grace · playback (bucket F) · multi-part
+  playback · practice speed · voice-2 playback.
 
 - **opus (groove-export)** · ✅ **idle / SHIPPED — Groove → Song Book / MusicXML**
   (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A; `3c816ab` A1, `a7c3554` A2+A3).
