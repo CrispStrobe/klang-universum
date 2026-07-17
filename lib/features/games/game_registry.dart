@@ -692,6 +692,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCharades,
       subtitle: (l) => l.gameCharadesSubtitle,
       builder: (_) => const CharadesScreen(),
+      tutorial: expressionPrimer,
     ),
     GameInfo(
       id: 'which_beat',

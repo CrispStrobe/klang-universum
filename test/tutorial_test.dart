@@ -142,6 +142,7 @@ void main() {
       'Which way the bow goes': bowingPrimer, // bow-articulation Score path
       'The tenor clef': tenorClefPrimer, // tenor-clef Score path
       'Two staves, two hands': grandStaffPrimer,
+      'Fast or slow, loud or soft': expressionPrimer,
     };
     for (final entry in primers.entries) {
       await pumpGame(

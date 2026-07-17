@@ -989,6 +989,33 @@ Tutorial voicesPrimer(AppLocalizations l10n) => Tutorial(
       ],
     );
 
+/// Expression = the two things Charades listens for at once: how FAST (tempo)
+/// and how LOUD (dynamics). Each axis is played as its two extremes.
+/// Game: charades.
+Tutorial expressionPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerExpressionTitle,
+      steps: [
+        TutorialStep(
+          text: l10n.primerExpressionTempo,
+          score: _notes([60, 62, 64, 65]),
+          // Slow (Adagio) then fast (Presto) — the same phrase, two speeds.
+          play: (a) async {
+            await a.playPhrase([60, 62, 64, 65], noteMs: 750);
+            await a.playPhrase([60, 62, 64, 65], noteMs: 200);
+          },
+        ),
+        TutorialStep(
+          text: l10n.primerExpressionDynamics,
+          score: _notes([60, 64, 67]),
+          // Soft (piano) then loud (forte) — the same phrase, two volumes.
+          play: (a) async {
+            await a.playPhrase([60, 64, 67], gain: 0.22);
+            await a.playPhrase([60, 64, 67]);
+          },
+        ),
+      ],
+    );
+
 /// Italian tempo words: the speed written at the top of a piece. The SAME phrase
 /// is played slow then fast, so the word maps onto a heard difference.
 /// Games: tempo_duel, connect_tempo.

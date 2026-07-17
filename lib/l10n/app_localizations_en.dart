@@ -3067,6 +3067,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'So F♯ and G♭ sound identical. Other twins: C♯=D♭, D♯=E♭, G♯=A♭, A♯=B♭.';
 
   @override
+  String get primerExpressionTitle => 'Fast or slow, loud or soft';
+
+  @override
+  String get primerExpressionTempo =>
+      'Expression is HOW you play. One part is the speed (tempo): listen to this phrase slow, then fast.';
+
+  @override
+  String get primerExpressionDynamics =>
+      'The other part is how loud (dynamics): the same phrase soft (p), then loud (f). Charades asks you to name what you heard.';
+
+  @override
   String get primerTempoTitle => 'How fast? Tempo words';
 
   @override

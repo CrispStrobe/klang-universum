@@ -3080,6 +3080,17 @@ class AppLocalizationsDe extends AppLocalizations {
       'Fis und Ges klingen also gleich. Weitere Zwillinge: Cis=Des, Dis=Es, Gis=As, Ais=B.';
 
   @override
+  String get primerExpressionTitle => 'Schnell oder langsam, laut oder leise';
+
+  @override
+  String get primerExpressionTempo =>
+      'Ausdruck ist das WIE des Spielens. Ein Teil ist das Tempo: hör diese Phrase erst langsam, dann schnell.';
+
+  @override
+  String get primerExpressionDynamics =>
+      'Der andere Teil ist die Lautstärke (Dynamik): dieselbe Phrase leise (p), dann laut (f). Bei Charade nennst du, was du gehört hast.';
+
+  @override
   String get primerTempoTitle => 'Wie schnell? Tempo-Wörter';
 
   @override

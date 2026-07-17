@@ -5606,6 +5606,24 @@ abstract class AppLocalizations {
   /// **'So F♯ and G♭ sound identical. Other twins: C♯=D♭, D♯=E♭, G♯=A♭, A♯=B♭.'**
   String get primerEnharmonicTwins;
 
+  /// No description provided for @primerExpressionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast or slow, loud or soft'**
+  String get primerExpressionTitle;
+
+  /// No description provided for @primerExpressionTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Expression is HOW you play. One part is the speed (tempo): listen to this phrase slow, then fast.'**
+  String get primerExpressionTempo;
+
+  /// No description provided for @primerExpressionDynamics.
+  ///
+  /// In en, this message translates to:
+  /// **'The other part is how loud (dynamics): the same phrase soft (p), then loud (f). Charades asks you to name what you heard.'**
+  String get primerExpressionDynamics;
+
   /// No description provided for @primerTempoTitle.
   ///
   /// In en, this message translates to:
