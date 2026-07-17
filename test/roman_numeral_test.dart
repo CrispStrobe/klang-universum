@@ -2,6 +2,8 @@
 // the UI: the correct symbol varies per round, so tap whatever the game reports
 // as the target and check it scores + records under harmony.roman.
 
+import 'dart:math';
+
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
@@ -41,22 +43,24 @@ RomanNumeralTester _game(WidgetTester tester) =>
 
 // Same tree but with a ProgressService pre-seeded to a mastery level, so the
 // game runs its widened pool (minor keys + inversions).
-Widget _wrapMastered(SriService sri, ProgressService progress) => MultiProvider(
+Widget _wrapMastered(SriService sri, ProgressService progress,
+        {Random? random}) =>
+    MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider<SriService>.value(value: sri),
         Provider<AudioService>(create: (_) => AudioService()),
         ChangeNotifierProvider<ProgressService>.value(value: progress),
       ],
-      child: const MaterialApp(
-        localizationsDelegates: [
+      child: MaterialApp(
+        localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [Locale('en'), Locale('de')],
-        home: RomanNumeralScreen(),
+        supportedLocales: const [Locale('en'), Locale('de')],
+        home: RomanNumeralScreen(random: random),
       ),
     );
 
@@ -85,6 +89,34 @@ void main() {
       await tester.pump(const Duration(milliseconds: 900));
     }
     expect(_game(tester).isFinished, isTrue);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('at mastery, seventh-chord rounds appear and are answerable',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final progress = ProgressService();
+    progress.recordResult('roman_numeral', score: 900, stars: 3);
+    await useGameSurface(tester);
+    // Seeded RNG → a deterministic round sequence that includes sevenths.
+    await tester.pumpWidget(_wrapMastered(sri, progress, random: Random(7)));
+    await tester.pump();
+
+    var sawSeventh = false;
+    for (var i = 0; i < 10 && !_game(tester).isFinished; i++) {
+      final g = _game(tester);
+      if (g.isSeventhRound) {
+        sawSeventh = true;
+        // A seventh numeral carries a 7 figure (V7, ii7, viiø7…).
+        expect(g.targetSymbol, contains('7'), reason: g.targetSymbol);
+      }
+      // Whatever the target is, its button clears the round.
+      await tester.tap(
+        find.widgetWithText(FilledButton, g.targetSymbol).first,
+      );
+      await tester.pump(const Duration(milliseconds: 900));
+    }
+    expect(sawSeventh, isTrue, reason: 'mastery mixes in seventh chords');
     await tester.pump(const Duration(seconds: 1));
   });
 

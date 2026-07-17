@@ -3,8 +3,10 @@
 // "Roman Numerals" (Stufen-Quiz) — read/hear a diatonic triad in a key and name
 // its Roman numeral (I, ii, iii, IV, V, vi, vii°). Built on crisp_notation_core's
 // new harmonic analysis: the chord is built with `Triad`, then read back with
-// `romanNumeralOf(pitches, key)` so the *library* names the numeral — the same
-// engine will later carry sevenths, inversions and minor keys.
+// `romanNumeralOf(pitches, key)` so the *library* names the numeral. Inversions
+// and minor keys arrive at mastery, and at 2★ a share of rounds are diatonic
+// SEVENTH chords (built with `SeventhChord`, major keys, root position) — name
+// the V7 / ii7 / viiø7.
 //
 // A step up from the Function Quiz (which only names T/S/D): here every diatonic
 // degree is in play. SRI: 'harmony.roman.<symbol>'.
@@ -26,7 +28,10 @@ import 'package:flutter/material.dart' hide Interval, Key, Step;
 import 'package:provider/provider.dart';
 
 class RomanNumeralScreen extends StatefulWidget {
-  const RomanNumeralScreen({super.key});
+  const RomanNumeralScreen({super.key, @visibleForTesting this.random});
+
+  /// Injectable RNG so tests get a deterministic round sequence.
+  final Random? random;
 
   @override
   State<RomanNumeralScreen> createState() => _RomanNumeralScreenState();
@@ -38,6 +43,9 @@ class RomanNumeralScreen extends StatefulWidget {
 abstract interface class RomanNumeralTester {
   String get targetSymbol;
   bool get isFinished;
+
+  /// Whether this round is a seventh chord (a mastery-tier variant).
+  bool get isSeventhRound;
 }
 
 class _RomanNumeralScreenState extends State<RomanNumeralScreen>
@@ -47,8 +55,10 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
   String get targetSymbol => _target.symbol;
   @override
   bool get isFinished => finished;
+  @override
+  bool get isSeventhRound => _seventh;
 
-  final _random = Random();
+  late final Random _random = widget.random ?? Random();
 
   // Widen with mastery, like the other quizzes.
   static const _easyKeys = [Key.major(Pitch(Step.c))];
@@ -95,12 +105,27 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
     7: (Interval.majorSeventh, ChordQuality.diminished),
   };
 
+  // The diatonic seventh-chord quality per degree in a MAJOR key (the 7th tier
+  // stays in major, so these are unambiguous): Imaj7 · ii7 · iii7 · IVmaj7 ·
+  // V7 · vi7 · viiø7.
+  static const _majorSeventhSpec = <int, ChordType>{
+    1: ChordType.majorSeventh,
+    2: ChordType.minorSeventh,
+    3: ChordType.minorSeventh,
+    4: ChordType.majorSeventh,
+    5: ChordType.dominantSeventh,
+    6: ChordType.minorSeventh,
+    7: ChordType.halfDiminishedSeventh,
+  };
+
   int _stars = 0;
 
   late Key _key;
   late int _degree;
   int _inversion = 0;
   late Triad _triad;
+  bool _seventh = false; // this round is a seventh chord
+  late List<Pitch> _chordPitches; // the voiced pitches (triad or seventh)
   late RomanNumeral _target;
   late List<String> _options; // Roman-numeral choices for this round
   String? _tapped;
@@ -157,25 +182,53 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
         RomanNumeral(degree, ChordType.major, 0).symbol;
   }
 
+  /// The root pitch of the diatonic chord on [degree] of a major [key].
+  Pitch _majorRoot(Key key, int degree) {
+    final interval = _majorSpec[degree]!.$1;
+    return interval == null ? key.tonic : key.tonic.transposeBy(interval);
+  }
+
+  /// The seventh chord's numeral symbol on [degree] of a major [key] — the 7th
+  /// counterpart to [_symbolFor], used for seventh-round distractors.
+  String _symbolForSeventh(Key key, int degree) {
+    final type = _majorSeventhSpec[degree]!;
+    final chord = SeventhChord(_majorRoot(key, degree), type);
+    return romanNumeralOf(chord.pitches, key)?.symbol ??
+        RomanNumeral(degree, type, 0).symbol;
+  }
+
   @override
   void prepareRound() {
     _key = _keyPool[_random.nextInt(_keyPool.length)];
     _degree = _degreePool[_random.nextInt(_degreePool.length)];
-    // At mastery, ~40% of chords are inverted (first or second), so the numeral
-    // carries a figured-bass figure (e.g. V6, ii6/4).
-    _inversion =
-        (_stars >= 2 && _random.nextInt(10) < 4) ? 1 + _random.nextInt(2) : 0;
-    _triad = _diatonicTriad(_key, _degree, inversion: _inversion);
-    _target = romanNumeralOf(_triad.pitches, _key) ??
-        RomanNumeral(_degree, _chordType(_triad.quality), _inversion);
+    // At mastery, ~35% of rounds (major keys) are diatonic seventh chords in
+    // root position — name the V7 / ii7 / viiø7.
+    _seventh = _stars >= 2 && _key.isMajor && _random.nextInt(20) < 7;
+    if (_seventh) {
+      _inversion = 0;
+      final type = _majorSeventhSpec[_degree]!;
+      _chordPitches = SeventhChord(_majorRoot(_key, _degree), type).pitches;
+      _target =
+          romanNumeralOf(_chordPitches, _key) ?? RomanNumeral(_degree, type, 0);
+    } else {
+      // At mastery, ~40% of triads are inverted (first or second), so the
+      // numeral carries a figured-bass figure (e.g. V6, ii6/4).
+      _inversion =
+          (_stars >= 2 && _random.nextInt(10) < 4) ? 1 + _random.nextInt(2) : 0;
+      _triad = _diatonicTriad(_key, _degree, inversion: _inversion);
+      _chordPitches = _triad.pitches;
+      _target = romanNumeralOf(_chordPitches, _key) ??
+          RomanNumeral(_degree, _chordType(_triad.quality), _inversion);
+    }
 
-    // Options: the answer plus distractors drawn from the other diatonic
-    // degrees of this key (unique symbols), four buttons total.
+    // Options: the answer plus distractors drawn from the other diatonic degrees
+    // of this key, in the SAME family (seventh vs triad) so the figure alone
+    // isn't a giveaway. Four buttons total.
     final pool = <String>{_target.symbol};
     final others = [..._allDegrees]..shuffle(_random);
     for (final d in others) {
       if (pool.length >= 4) break;
-      pool.add(_symbolFor(_key, d));
+      pool.add(_seventh ? _symbolForSeventh(_key, d) : _symbolFor(_key, d));
     }
     _options = pool.toList()..shuffle(_random);
 
@@ -185,7 +238,7 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
 
   void _playChord() => context
       .read<AudioService>()
-      .playArpeggioThenChord(_triad.pitches.map((p) => p.midiNumber).toList());
+      .playArpeggioThenChord(_chordPitches.map((p) => p.midiNumber).toList());
 
   void _onAnswer(String symbol) {
     if (_lastAnswer == true) return; // round already won
@@ -200,7 +253,7 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
 
     final audio = context.read<AudioService>();
     if (correct) {
-      audio.playMidiChord(_triad.pitches.map((p) => p.midiNumber).toList());
+      audio.playMidiChord(_chordPitches.map((p) => p.midiNumber).toList());
     } else {
       audio.playWrong();
     }
@@ -224,7 +277,7 @@ class _RomanNumeralScreenState extends State<RomanNumeralScreen>
         measures: [
           Measure([
             NoteElement(
-              pitches: _triad.pitches,
+              pitches: _chordPitches,
               duration: const NoteDuration(DurationBase.whole),
               id: 'chord',
             ),
