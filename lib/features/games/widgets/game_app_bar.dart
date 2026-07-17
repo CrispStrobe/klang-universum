@@ -39,7 +39,9 @@ class GameAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title),
+      // Ellipsize so a long title yields to the actions instead of overflowing
+      // the app-bar row on a narrow phone (e.g. the Tracker on an iPhone SE).
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       actions: [
         ...actions,
         const SoundToggle(),

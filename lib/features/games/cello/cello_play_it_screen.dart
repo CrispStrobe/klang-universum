@@ -327,15 +327,18 @@ class _CelloPlayItScreenState extends State<CelloPlayItScreen>
                         ),
                       ),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    // Wrap so the two labeled buttons stack instead of
+                    // overflowing on a narrow phone (localized labels vary).
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
                         OutlinedButton.icon(
                           onPressed: _playTarget,
                           icon: const Icon(Icons.volume_up),
                           label: Text(l10n.singBackListen),
                         ),
-                        const SizedBox(width: 12),
                         OutlinedButton.icon(
                           onPressed: _skip,
                           icon: const Icon(Icons.skip_next),
