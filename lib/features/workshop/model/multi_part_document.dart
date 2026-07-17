@@ -242,7 +242,14 @@ class MultiPartDocument extends ChangeNotifier {
   ) {
     final measures = <Measure>[
       for (final m in s.measures)
-        m.copyWith(elements: [for (final e in m.elements) _reid(e, prefix)]),
+        m.copyWith(
+          elements: [for (final e in m.elements) _reid(e, prefix)],
+          // copyWith defaults voice2 to the ORIGINAL, so without this the
+          // voice-2 element ids stay unprefixed while their markings (dynamics/
+          // lyrics/slurs, prefixed below) get rewritten — detaching them — and
+          // the raw ids collide across parts.
+          voice2: [for (final e in m.voice2) _reid(e, prefix)],
+        ),
     ];
     while (measures.length < targetMeasures) {
       measures.add(_padBar);
@@ -278,13 +285,22 @@ class MultiPartDocument extends ChangeNotifier {
     final id = e.id;
     if (id == null) return e;
     if (e is NoteElement) {
+      // A straight clone with a prefixed id — preserve EVERY field, or
+      // ornaments/grace notes/fingerings/arpeggio/tremolo are silently dropped
+      // from every note on the full-score render and export.
       return NoteElement(
         pitches: e.pitches,
         duration: e.duration,
         id: '$prefix$id',
-        articulations: e.articulations,
-        tieToNext: e.tieToNext,
         showAccidental: e.showAccidental,
+        tieToNext: e.tieToNext,
+        articulations: e.articulations,
+        graceNotes: e.graceNotes,
+        graceStyle: e.graceStyle,
+        ornament: e.ornament,
+        fingerings: e.fingerings,
+        arpeggio: e.arpeggio,
+        tremolo: e.tremolo,
         notehead: e.notehead,
       );
     }

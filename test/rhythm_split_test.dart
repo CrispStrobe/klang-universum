@@ -135,5 +135,36 @@ void main() {
       d.rhythmPolicy = RhythmPolicy.spill;
       expect(d.buildScore().measures[0].elements, hasLength(1)); // short-fill
     });
+
+    // Regression: _splitPiece rebuilt each tied piece with only pitches/
+    // duration/id/articulations/tie, DROPPING ornament, grace notes, accidental,
+    // fingerings, etc. — from EVERY piece including piece 0. So an ornament or
+    // grace flourish on a note that happened to overflow the bar vanished from
+    // the render, every export, and the reopened file. The articulation test
+    // above passed because articulations WERE (partially) preserved.
+    test('a split note keeps its ornament and grace on the first piece only',
+        () {
+      final d = studio()
+        ..insertNote(_p(Step.c), _half)
+        ..insertNote(_p(Step.d), _dottedHalf); // overflows → splits
+      d.selectIndex(1);
+      d.setOrnamentOfSelected(Ornament.trill);
+      d.setGraceNotesOfSelected([_p(Step.e)]);
+
+      final bars = d.buildScore().measures;
+      expect(bars[0].elements, hasLength(2)); // it did split
+      final first = _n(bars[0], 1); // the D, first tied piece
+      final cont = _n(bars[1], 0); // the continuation
+
+      expect(first.ornament, Ornament.trill, reason: 'ornament dropped');
+      expect(
+        first.graceNotes.map((p) => p.step),
+        [Step.e],
+        reason: 'grace notes dropped',
+      );
+      // Continuations must NOT repeat the onset ornament/grace.
+      expect(cont.ornament, isNull);
+      expect(cont.graceNotes, isEmpty);
+    });
   });
 }

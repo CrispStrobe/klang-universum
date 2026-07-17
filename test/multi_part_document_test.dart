@@ -412,4 +412,78 @@ void main() {
       expect(again.parts.first.measures.first.elements, isNotEmpty);
     });
   });
+
+  group('assembly preserves note attributes and voice-2 anchors', () {
+    // Regression: _reid rebuilt each note with only pitches/duration/id/
+    // articulations/tie/accidental/notehead, DROPPING ornament, grace notes,
+    // fingerings, arpeggio and tremolo from every note in the assembled score —
+    // so the full-score render and multi-part MusicXML export lost them.
+    test('ornaments and grace notes survive buildMultiPart', () {
+      final doc = MultiPartDocument()..addPart(); // 2 parts
+      final part = doc.parts.first..insertNote(_p(Step.c), _quarter);
+      part.selectIndex(0);
+      part.setOrnamentOfSelected(Ornament.trill);
+      part.setGraceNotesOfSelected([_p(Step.d)]);
+
+      final note = doc
+          .buildMultiPart()
+          .parts
+          .first
+          .measures
+          .expand((m) => m.elements)
+          .whereType<NoteElement>()
+          .first;
+      expect(note.ornament, Ornament.trill, reason: 'ornament dropped');
+      expect(
+        note.graceNotes.map((p) => p.step),
+        [Step.d],
+        reason: 'grace notes dropped',
+      );
+    });
+
+    // Regression: _reindex namespaced voice-1 ids and every marking, but rebuilt
+    // the measure with `copyWith(elements: …)`, which defaults voice2 to the
+    // ORIGINAL — so voice-2 element ids stayed unprefixed while a dynamic/lyric
+    // on a voice-2 note got prefixed, detaching it (and colliding across parts).
+    test('voice-2 element ids are namespaced so their markings stay anchored',
+        () {
+      final doc = MultiPartDocument()..addPart();
+      final part = doc.parts.first..insertNote(_p(Step.c), _quarter); // voice 1
+      part.setActiveVoice(1);
+      part.insertNote(_p(Step.e), _quarter); // voice 2
+      part.selectIndex(0); // the voice-2 note
+      part.setDynamicOfSelected(DynamicLevel.mf);
+
+      final score = doc.buildMultiPart().parts.first;
+      final ids = {
+        for (final m in score.measures) ...[
+          for (final e in m.elements) e.id,
+          for (final e in m.voice2) e.id,
+        ],
+      }..remove(null);
+
+      expect(
+        score.dynamics,
+        isNotEmpty,
+        reason: 'the voice-2 dynamic recorded',
+      );
+      for (final d in score.dynamics) {
+        expect(
+          ids,
+          contains(d.elementId),
+          reason: 'dynamic ${d.elementId} anchors to no element (detached)',
+        );
+      }
+      final v2ids = {
+        for (final m in score.measures)
+          for (final e in m.voice2)
+            if (e.id != null) e.id,
+      };
+      expect(
+        v2ids.every((id) => id!.startsWith('p0:')),
+        isTrue,
+        reason: 'voice-2 ids not prefixed (cross-part collision risk)',
+      );
+    });
+  });
 }

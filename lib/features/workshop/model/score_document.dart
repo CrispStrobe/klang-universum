@@ -2154,10 +2154,12 @@ List<Measure> reflow(
   return bars;
 }
 
-/// One tied piece of a split note/rest: piece 0 keeps [src]'s id + articulations
-/// (a slur/staccato belongs on the first of a tie); continuations get a derived
-/// id (`<id>s2`, `<id>s3`) and no articulations. [tie] carries the sustain to
-/// the next piece.
+/// One tied piece of a split note/rest: piece 0 keeps [src]'s id and every
+/// ONSET attribute (articulations, ornament, grace notes, accidental,
+/// fingerings, arpeggio, tremolo — they belong on the first of a tie);
+/// continuations get a derived id (`<id>s2`, `<id>s3`) and none of those, but do
+/// keep the notehead shape so a tied harmonic/diamond note stays visually
+/// consistent. [tie] carries the sustain to the next piece.
 MusicElement _splitPiece(
   MusicElement src,
   NoteDuration nd,
@@ -2168,11 +2170,23 @@ MusicElement _splitPiece(
   final id =
       index == 0 ? baseId : (baseId == null ? null : '${baseId}s${index + 1}');
   if (src is NoteElement) {
+    final first = index == 0;
     return NoteElement(
       pitches: src.pitches,
       duration: nd,
       id: id,
-      articulations: index == 0 ? src.articulations : const {},
+      // Onset-attached attributes: first piece only (repeating an ornament or
+      // grace flourish on each tied continuation would be wrong).
+      showAccidental: first ? src.showAccidental : null,
+      articulations: first ? src.articulations : const {},
+      graceNotes: first ? src.graceNotes : const [],
+      graceStyle: src.graceStyle,
+      ornament: first ? src.ornament : null,
+      fingerings: first ? src.fingerings : const [],
+      arpeggio: first ? src.arpeggio : null,
+      tremolo: first ? src.tremolo : null,
+      // Visual note appearance: consistent across the whole tie.
+      notehead: src.notehead,
       tieToNext: tie,
     );
   }
