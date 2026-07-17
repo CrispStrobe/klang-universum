@@ -14,6 +14,15 @@ Live board so parallel agents don't collide. **Update this at every checkpoint
 and push to origin/main** before/after touching shared files. Format:
 `agent · task · files touched · status`.
 
+- **opus (groove-export)** · 🚧 **ACTIVE — Groove → Song Book / MusicXML**
+  (`docs/LOOP_MIXER_FOLLOWUPS_HANDOVER.md` §A). Worktree `../mus-groove-export`,
+  branch `feature/groove-export`. Files: NEW `grooveParts()` in
+  `groove_notation.dart` (multi-part) + tests; `loop_mixer_screen.dart`
+  share-sheet "Save to Song Book" (+ optional Export MusicXML) via
+  `multiPartToMusicXml` → `UserSongsService.addSong`; **both ARBs**
+  (`loopMixerSaveSongBook*`). NOT touching any Workshop files (Song Book + the
+  MusicXML *writer* are the integration points).
+
 - **opus (parity)** · ✅ **idle / SHIPPED — note ornaments (trill/mordent/turn)**
   (`194fa66` model + `5459e60` UI, suite **738 green**). Per-note `Ornament?`
   field on `EditorElement` (rides the element snapshot for free), emitted onto
