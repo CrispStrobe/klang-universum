@@ -141,33 +141,31 @@ List<(int?, int)> _runsFromEvents(List<int> events) {
   return runs;
 }
 
-/// `(midi?, steps)` runs → a single-staff [Score] on [clef]. Held runs decompose
-/// to tied notes; runs split at 4/4 barlines. Notes carry ids so scoreToMidi
-/// emits them.
-Score runsToScore(
+/// `(midi?, steps)` runs → per-bar element lists (4/4). Held runs decompose to
+/// tied notes; runs split at barlines. [idPrefix] namespaces note ids so merged
+/// voices in one [Score] don't collide. Trailing rests are dropped so a module →
+/// notation → module → notation cycle is a clean fixed point from the first pass
+/// (leading/internal rests are kept — they position notes).
+List<List<MusicElement>> _runsToBars(
   List<(int?, int)> runs,
   int stepsPerBeat, {
-  Clef clef = Clef.treble,
+  String idPrefix = 'n',
 }) {
   final ladder = _durationLadder(stepsPerBeat);
   final barSteps = stepsPerBeat * 4;
-  final measures = <Measure>[];
-  var current = <MusicElement>[];
-  var posInBar = 0;
-  var idCounter = 0;
-
-  // Trailing rests carry no musical content and would print as empty bars (e.g.
-  // ABC "z8 |") — the note-off terminator the module side adds becomes one. Drop
-  // them so a module → notation → module → notation cycle is a clean fixed point
-  // from the first pass. (Leading/internal rests are kept — they position notes.)
   var end = runs.length;
   while (end > 0 && runs[end - 1].$1 == null) {
     end--;
   }
   final trimmed = end == runs.length ? runs : runs.sublist(0, end);
 
+  final bars = <List<MusicElement>>[];
+  var current = <MusicElement>[];
+  var posInBar = 0;
+  var idCounter = 0;
+
   void closeBar() {
-    measures.add(Measure(current));
+    bars.add(current);
     current = [];
     posInBar = 0;
   }
@@ -188,7 +186,7 @@ Score runsToScore(
               pitchFromMidi(midi),
               pieces[i],
               tieToNext: !lastOfRun,
-              id: 'n${idCounter++}',
+              id: '$idPrefix${idCounter++}',
             ),
           );
         }
@@ -199,8 +197,21 @@ Score runsToScore(
     }
   }
   if (current.isNotEmpty) closeBar();
-  return Score(clef: clef, measures: measures);
+  return bars;
 }
+
+/// `(midi?, steps)` runs → a single-staff [Score] on [clef].
+Score runsToScore(
+  List<(int?, int)> runs,
+  int stepsPerBeat, {
+  Clef clef = Clef.treble,
+}) =>
+    Score(
+      clef: clef,
+      measures: [
+        for (final bar in _runsToBars(runs, stepsPerBeat)) Measure(bar),
+      ],
+    );
 
 /// The index of the busiest channel (most note triggers) in [doc]; 0 if none.
 int busiestChannel(ModuleDoc doc) {
@@ -260,6 +271,75 @@ Score moduleChannelToScore(
     names.add(nameOf?.call(c) ?? 'Channel ${c + 1}');
   }
   return (score: MultiPartScore(parts), partNames: names);
+}
+
+/// The channel indices that actually sound, ordered busiest → quietest.
+List<int> _soundingChannelsByBusyness(ModuleDoc doc) {
+  final sounding = <(int, int)>[];
+  for (var c = 0; c < doc.channelCount; c++) {
+    final n = _flattenChannel(doc, c).where((e) => e >= 0).length;
+    if (n > 0) sounding.add((c, n));
+  }
+  sounding.sort((a, b) => b.$2.compareTo(a.$2));
+  return [for (final s in sounding) s.$1];
+}
+
+/// The module as ONE [Score] carrying up to [maxVoices] voices — the busiest
+/// channel is voice 1, the next busiest voices 2–4 (a [Measure] holds 4 voices
+/// max). This is for the single-Score writers that render OVERLAY voices — ABC
+/// and MuseScore keep all of them; MEI/kern render voice 1 only. For UNBOUNDED
+/// parts (every channel, one staff each) use [moduleToMultiPart] → MusicXML.
+///
+/// A module with more than [maxVoices] sounding channels keeps only the busiest;
+/// [droppedChannels] reports how many were left out so a caller can warn.
+Score moduleToVoicedScore(
+  ModuleDoc doc, {
+  int maxVoices = 4,
+  int stepsPerBeat = 4,
+}) {
+  final all = _soundingChannelsByBusyness(doc);
+  final voices = all.take(maxVoices).toList();
+  if (voices.isEmpty) return const Score(clef: Clef.treble, measures: []);
+
+  final barsPerVoice = [
+    for (var v = 0; v < voices.length; v++)
+      _runsToBars(
+        _runsFromEvents(_flattenChannel(doc, voices[v])),
+        stepsPerBeat,
+        idPrefix: 'v${v}n',
+      ),
+  ];
+  final maxBars = barsPerVoice.map((b) => b.length).fold(0, math.max);
+  final mean = _meanPitch(_flattenChannel(doc, voices.first));
+  final clef = (mean != null && mean < 55) ? Clef.bass : Clef.treble;
+
+  // A missing bar is a whole-bar rest for voice 1 (keeps the measure full) and
+  // simply absent for the overlay voices 2–4.
+  List<MusicElement> barOf(int v, int i) => i < barsPerVoice[v].length
+      ? barsPerVoice[v][i]
+      : (v == 0
+          ? const [RestElement(NoteDuration(DurationBase.whole))]
+          : const []);
+
+  return Score(
+    clef: clef,
+    measures: [
+      for (var i = 0; i < maxBars; i++)
+        Measure(
+          barOf(0, i),
+          voice2: voices.length > 1 ? barOf(1, i) : const [],
+          voice3: voices.length > 2 ? barOf(2, i) : const [],
+          voice4: voices.length > 3 ? barOf(3, i) : const [],
+        ),
+    ],
+  );
+}
+
+/// How many sounding channels [moduleToVoicedScore] would drop (channels beyond
+/// [maxVoices]) — for a caller to warn "kept the 4 busiest of N".
+int voicedDroppedChannels(ModuleDoc doc, {int maxVoices = 4}) {
+  final n = _soundingChannelsByBusyness(doc).length;
+  return n > maxVoices ? n - maxVoices : 0;
 }
 
 // ─── Notation → module ───────────────────────────────────────────────────────
@@ -547,14 +627,14 @@ Uint8List scoreToMscz(Score score) => writeMsczFromMscx(scoreToMscx(score));
 /// `.mscz` bytes → Score (unzips the `.mscx`, then parses it).
 Score scoreFromMscz(Uint8List bytes) => scoreFromMscx(readMscxFromMscz(bytes));
 
-/// One channel of [doc] → `.mscz` bytes (busiest channel unless [channel]).
+/// [doc] → `.mscz` bytes. With no [channel], up to 4 channels become overlay
+/// voices ([moduleToVoicedScore], which MuseScore renders); a specific [channel]
+/// forces that one line.
 Uint8List moduleToMscz(ModuleDoc doc, {int? channel, int stepsPerBeat = 4}) =>
     scoreToMscz(
-      moduleChannelToScore(
-        doc,
-        channel ?? busiestChannel(doc),
-        stepsPerBeat: stepsPerBeat,
-      ),
+      channel != null
+          ? moduleChannelToScore(doc, channel, stepsPerBeat: stepsPerBeat)
+          : moduleToVoicedScore(doc, stepsPerBeat: stepsPerBeat),
     );
 
 /// `.mscz` bytes → a playable single-channel [ModuleDoc].
@@ -600,9 +680,11 @@ Score? textNotationToScore(String text, TextNotation fmt) => switch (fmt) {
       TextNotation.lilypond => null, // write-only in the library
     };
 
-/// One channel of [doc] serialized to [fmt] text (the busiest channel unless
-/// [channel] is given). These library writers take a single Score, so this is a
-/// per-channel melody dump — use [moduleToMusicXml] for the full multi-part score.
+/// [doc] serialized to [fmt] text. With no [channel], up to 4 channels are kept
+/// as overlay voices ([moduleToVoicedScore]) — ABC and MuseScore render all of
+/// them; MEI/kern show voice 1 only (their writers are single-voice). A specific
+/// [channel] forces that one line. For EVERY channel on its own staff use
+/// [moduleToMusicXml].
 String moduleToTextNotation(
   ModuleDoc doc,
   TextNotation fmt, {
@@ -610,11 +692,9 @@ String moduleToTextNotation(
   int stepsPerBeat = 4,
 }) =>
     scoreToTextNotation(
-      moduleChannelToScore(
-        doc,
-        channel ?? busiestChannel(doc),
-        stepsPerBeat: stepsPerBeat,
-      ),
+      channel != null
+          ? moduleChannelToScore(doc, channel, stepsPerBeat: stepsPerBeat)
+          : moduleToVoicedScore(doc, stepsPerBeat: stepsPerBeat),
       fmt,
     );
 

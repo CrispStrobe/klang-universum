@@ -188,16 +188,28 @@ void _fromModule(
     _ok(doc, outPath, '${xml.length} bytes MusicXML');
   } else if (_extToText[outExt] != null) {
     final fmt = _extToText[outExt]!;
-    final ch = channel ?? busiestChannel(doc);
-    final txt =
-        moduleToTextNotation(doc, fmt, channel: ch, stepsPerBeat: stepsPerBeat);
+    final txt = moduleToTextNotation(
+      doc,
+      fmt,
+      channel: channel,
+      stepsPerBeat: stepsPerBeat,
+    );
     File(outPath).writeAsStringSync(txt);
-    _ok(doc, outPath, 'channel $ch, ${txt.length} bytes ${fmt.name}');
+    _ok(
+      doc,
+      outPath,
+      '${_voiceDetail(doc, channel, fmt)}, ${txt.length} bytes ${fmt.name}',
+    );
   } else if (_isMscz(outExt)) {
-    final ch = channel ?? busiestChannel(doc);
-    final data = moduleToMscz(doc, channel: ch, stepsPerBeat: stepsPerBeat);
+    final data =
+        moduleToMscz(doc, channel: channel, stepsPerBeat: stepsPerBeat);
     File(outPath).writeAsBytesSync(data);
-    _ok(doc, outPath, 'channel $ch, ${data.length} bytes mscz');
+    _ok(
+      doc,
+      outPath,
+      '${_voiceDetail(doc, channel, TextNotation.musescore)}, '
+      '${data.length} bytes mscz',
+    );
   } else {
     stderr.writeln('notaconv: module → .$outExt not supported (use .mid/.xml/'
         '.abc/.krn/.mei/.mscx/.mscz/.ly; module→module = modconv)');
@@ -259,6 +271,19 @@ void _fromMultiPart(
     stderr.writeln('notaconv: MusicXML → .$outExt not supported');
     exitCode = 2;
   }
+}
+
+/// Describes how many voices a module→text export kept, for the status line.
+String _voiceDetail(ModuleDoc doc, int? channel, TextNotation fmt) {
+  if (channel != null) return 'channel $channel';
+  // MEI/kern writers are single-voice; ABC/MuseScore render up to 4 overlays.
+  if (fmt == TextNotation.mei || fmt == TextNotation.kern) {
+    return 'voice 1 (single-voice format)';
+  }
+  final dropped = voicedDroppedChannels(doc);
+  return dropped > 0
+      ? 'up to 4 voices (+$dropped channels dropped)'
+      : 'up to 4 voices';
 }
 
 void _ok(ModuleDoc doc, String outPath, String detail) {

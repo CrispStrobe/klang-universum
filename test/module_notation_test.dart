@@ -285,6 +285,65 @@ void main() {
     });
   });
 
+  group('multi-voice: up to 4 channels become overlay voices', () {
+    test('four channels → four populated voices in one Score', () {
+      final doc4 = _pack([
+        [_n(72), _e, _n(74), _e],
+        [_n(67), _e, _n(69), _e],
+        [_n(60), _e, _n(62), _e],
+        [_n(48), _e, _n(50), _e],
+      ]);
+      final m = moduleToVoicedScore(doc4).measures.first;
+      expect(m.elements, isNotEmpty); // voice 1
+      expect(m.voice2, isNotEmpty);
+      expect(m.voice3, isNotEmpty);
+      expect(m.voice4, isNotEmpty);
+    });
+
+    test('two channels → voice 1 + voice 2 only', () {
+      final doc2 = _pack([
+        [_n(72), _e],
+        [_n(48), _e],
+      ]);
+      final m = moduleToVoicedScore(doc2).measures.first;
+      expect(m.elements, isNotEmpty);
+      expect(m.voice2, isNotEmpty);
+      expect(m.voice3, isEmpty);
+      expect(m.voice4, isEmpty);
+    });
+
+    test('ABC output carries overlay voices (& markers)', () {
+      final doc3 = _pack([
+        [_n(72), _e],
+        [_n(60), _e],
+        [_n(48), _e],
+      ]);
+      expect(moduleToTextNotation(doc3, TextNotation.abc), contains('&'));
+    });
+
+    test('more than 4 channels: keep the busiest 4, report the rest', () {
+      final doc6 = _pack([
+        for (var c = 0; c < 6; c++) [_n(55 + c), _e],
+      ]);
+      expect(voicedDroppedChannels(doc6), 2);
+      final m = moduleToVoicedScore(doc6).measures.first;
+      expect(
+        [m.elements, m.voice2, m.voice3, m.voice4].every((v) => v.isNotEmpty),
+        isTrue,
+      );
+    });
+
+    test('the busiest channel becomes voice 1', () {
+      // Channel 1 has 2 notes, channel 0 has 1 → channel 1 is voice 1.
+      final doc = _pack([
+        [_n(60), _e, _e, _e],
+        [_n(72), _e, _n(74), _e],
+      ]);
+      final v1 = moduleToVoicedScore(doc).measures.first.elements.first;
+      expect((v1 as NoteElement).pitches.first.midiNumber, 72);
+    });
+  });
+
   group('.mscz (zipped MuseScore) round-trip', () {
     final doc = _pack([
       [_n(60), _e, _e, _e, _n(64), _e, _e, _e, _n(67), _e, _e, _e],
