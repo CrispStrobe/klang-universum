@@ -19,6 +19,14 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (form-view)** · 🚧 **ACTIVE — AnaVis-style form view + "Label the Form"
+  game** (fills the musical-form + verse/chorus gaps). New reusable
+  `FormTimeline` widget (colour-coded, labelled section spans — the AnaVis
+  visual), a `form_read` game (hear/see a piece's sections, same tune = same
+  letter, pick the form ABA / AABA / rondo…), a `formPrimer`, concept-map wiring
+  (closes `musical_form` + `song_form`), EN/DE, test. Composition module. Worktree
+  `../mus-form`, branch `feature/form-view`.
+
 - **opus (bughunt-2)** · ✅ **idle / SHIPPED — 2nd bug-hunt wave (new subsystems).**
   Four reviewers over scoring/SRI, Workshop serializers, crisp_notation theory,
   and game answer-generation. **crisp_notation theory core = clean** (verified the
