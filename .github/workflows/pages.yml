@@ -1,0 +1,88 @@
+name: Pages
+
+# Publishes the web build to GitHub Pages (https://crispstrobe.github.io/cometbeat/)
+# after CI passes on main — the sibling of deploy.yml, which ships the same build
+# to Vercel. Runs only when the "CI" workflow completes successfully (so we never
+# publish a red commit) and can be triggered by hand. It pushes the built site to
+# the `gh-pages` branch, which is the repo's Pages source.
+#
+# The project is served under /cometbeat/, so the web build sets that base href.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: true
+
+permissions:
+  contents: write # push the build to the gh-pages branch
+
+jobs:
+  pages:
+    # Manual runs always deploy; automatic runs only on a green CI.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cometbeat
+        uses: actions/checkout@v5
+        with:
+          path: cometbeat
+          # For an automatic run, deploy the exact commit CI validated.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      # crisp_notation + crisp_notation_core resolve via ../crisp_notation/... path deps.
+      - name: Checkout crisp_notation (sibling path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: CrispStrobe/crisp_notation
+          ref: main
+          path: crisp_notation
+
+      # onnx_runtime_dart is a dev_dependency (headless AECMOS eval in bin/); pub
+      # get resolves dev deps, so the sibling must be present even for a web build.
+      - name: Checkout onnx_runtime_dart (sibling dev path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: CrispStrobe/onnx_runtime_dart
+          ref: main
+          path: onnx_runtime_dart
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.4
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: cometbeat
+        run: flutter pub get
+
+      # Project Pages serve at /cometbeat/, so the base href must match (an empty
+      # or "/" base href would 404 every asset and blank the page).
+      - name: Build web
+        working-directory: cometbeat
+        run: flutter build web --release --base-href /cometbeat/
+
+      # Drop the debug symbolication maps the runtime never fetches (~8 MB), same
+      # as the Vercel flow — keeps the gh-pages branch lean.
+      - name: Stage site
+        working-directory: cometbeat
+        run: |
+          rm -rf pages_site
+          mkdir -p pages_site
+          rsync -a --exclude='*.symbols' build/web/ pages_site/
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: cometbeat/pages_site
+          publish_branch: gh-pages
+          # A Flutter web build has no Jekyll; .nojekyll is added by default.
+          commit_message: "Deploy web build to Pages (${{ github.event.workflow_run.head_sha || github.sha }})"
