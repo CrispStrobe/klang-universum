@@ -236,10 +236,13 @@ Wired as a dev-only harness so it never reaches the app / web bundle:
 - The scorer + mel front-end (`bin/aecmos/`) are copied from the runtime's
   `example/aecmos/`; a model-free smoke test (`test/aecmos_smoke_test.dart`) guards
   the mus-side wiring (the DSP is exhaustively tested upstream).
-- The **model is user-provided, never bundled** — a Microsoft AEC-Challenge
-  artifact (run id `1663915512` / `1663829550` @ 16 kHz, `1668423760` @ 48 kHz)
-  dropped into `~/.cache/onnx_runtime_dart_models/`. Full scoring therefore can't
-  run in CI (same skip convention as upstream); it's a local/dev tool.
+- The **model is not bundled** — a Microsoft AEC-Challenge artifact (run id
+  `1663915512` / `1663829550` @ 16 kHz, `1668423760` @ 48 kHz) dropped into
+  `~/.cache/onnx_runtime_dart_models/aecmos_<run-id>.onnx`. The 16 kHz + 48 kHz
+  models are mirrored (MIT) at <https://huggingface.co/cstr/aecmos-onnx>:
+  `hf download cstr/aecmos-onnx aecmos_1663915512.onnx --local-dir
+  ~/.cache/onnx_runtime_dart_models`. Full scoring can't run in CI (same skip
+  convention as upstream); it's a local/dev tool.
 
 The objective metrics (ERLE / convergence / SI-SDR) still need nothing.
 

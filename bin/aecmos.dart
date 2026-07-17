@@ -6,9 +6,12 @@
 //
 //   dart run bin/aecmos.dart <model|run-id> <lpb.raw> <mic.raw> <enh.raw> <st|nst|dt>
 //
-// The AECMOS model is a user-provided **Microsoft AEC-Challenge** artifact (MIT),
-// NOT bundled: pass a full path, or a bare run-id (1663915512 | 1663829550 |
-// 1668423760) which resolves to ~/.cache/onnx_runtime_dart_models/<run-id>.onnx.
+// The AECMOS model is a **Microsoft AEC-Challenge** artifact (MIT), NOT bundled:
+// pass a full path, or a bare run-id (1663915512 | 1663829550 | 1668423760)
+// resolved from ~/.cache/onnx_runtime_dart_models/aecmos_<run-id>.onnx. The 16 kHz
+// + 48 kHz models are mirrored at https://huggingface.co/cstr/aecmos-onnx:
+//   hf download cstr/aecmos-onnx aecmos_1663915512.onnx \
+//     --local-dir ~/.cache/onnx_runtime_dart_models
 // The .raw files are headerless PCM16 mono little-endian at the model's rate
 // (16 kHz for 1663915512/1663829550, 48 kHz for 1668423760); talk type is
 // st (single-talk) / nst (near-end single-talk) / dt (double-talk).
@@ -20,11 +23,17 @@ import 'aecmos/aecmos_scorer.dart';
 const _knownRunIds = ['1663915512', '1663829550', '1668423760'];
 
 /// A bare run-id resolves to the shared model cache; anything else is a path.
+/// The cache convention (and the cstr/aecmos-onnx HF mirror) names the files
+/// `aecmos_<run-id>.onnx`, but a bare `<run-id>.onnx` is accepted too.
 String _resolveModel(String arg) {
   if (File(arg).existsSync()) return arg;
   if (_knownRunIds.contains(arg)) {
     final home = Platform.environment['HOME'] ?? '';
-    return '$home/.cache/onnx_runtime_dart_models/$arg.onnx';
+    final dir = '$home/.cache/onnx_runtime_dart_models';
+    for (final name in ['aecmos_$arg.onnx', '$arg.onnx']) {
+      if (File('$dir/$name').existsSync()) return '$dir/$name';
+    }
+    return '$dir/aecmos_$arg.onnx'; // canonical name for the not-found message
   }
   return arg; // fall through: the not-found / run-id checks report clearly
 }
@@ -57,8 +66,10 @@ void main(List<String> args) {
   if (!File(modelPath).existsSync()) {
     stderr.writeln(
       'AECMOS model not found: $modelPath\n'
-      'Download a Microsoft AEC-Challenge model (run id '
-      '${_knownRunIds.join(" / ")}) into ~/.cache/onnx_runtime_dart_models/, '
+      'Get one (run id ${_knownRunIds.join(" / ")}) into '
+      '~/.cache/onnx_runtime_dart_models/, e.g.\n'
+      '  hf download cstr/aecmos-onnx aecmos_1663915512.onnx '
+      '--local-dir ~/.cache/onnx_runtime_dart_models\n'
       'or pass a full path as the first argument.',
     );
     exitCode = 66;

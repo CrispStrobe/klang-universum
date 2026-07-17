@@ -50,9 +50,11 @@ and push to origin/main** before/after touching shared files. Format:
   as a sibling (every `pub get` resolves dev deps). `AEC_TIER3B.md` corrected.
   Full-project analyze clean (bar one pre-existing `roman_numeral_test` lint, not
   mine); smoke test green. NOT touching the app / native plugin / game registry.
-  ⚠ **Follow-up (maintainer):** publishing the MIT AECMOS model to a HuggingFace
-  repo (with a README + the cache-dir path) would make the CLI turnkey; today it's
-  a manual Microsoft-download step.
+  ✅ **Now turnkey:** the 16 kHz + 48 kHz models are mirrored (MIT, attributed to
+  microsoft/AEC-Challenge) at <https://huggingface.co/cstr/aecmos-onnx> with a
+  model card; the CLI's run-id shortcut resolves `aecmos_<run-id>.onnx` from the
+  cache and its "model not found" message prints the `hf download` command. (Run
+  id `1663829550` not mirrored — available upstream.)
 
 - **opus (tracker)** · 🚧 **ACTIVE — FX remainder (FX_HANDOVER §1/§4/§5)**: tempo
   **swing** (SHIPPED), **sfxr FM/LFO** (extend `crisp_dsp/sfxr.dart`), and
