@@ -689,6 +689,15 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   }
 
   void _onElementTap(String id) => setState(() {
+        // Tapping a note in the OTHER voice follows the caret to it: mutations
+        // target the active voice, so a cross-voice edit needs the voice to
+        // switch. setActiveVoice clears the old (per-voice) selection, then the
+        // tapped note is selected in its now-active voice. Single-voice
+        // documents always tap within the active voice, so this is a no-op there.
+        final voice = _doc.voiceOfId(id);
+        if (voice != null && voice != _doc.activeVoice) {
+          _doc.setActiveVoice(voice);
+        }
         _doc.toggleSelected(id);
         _syncControlsToSelection();
       });

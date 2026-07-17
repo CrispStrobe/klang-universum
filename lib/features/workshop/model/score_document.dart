@@ -402,6 +402,14 @@ class ScoreDocument {
   /// Whether the document has any voice-2 content (drives showing the voice UI).
   bool get hasVoice2 => _v2.isNotEmpty;
 
+  /// Which voice owns [id] — 0 (voice 1), 1 (voice 2), or null if neither. Lets
+  /// the editor follow a cross-voice tap to the tapped note's voice.
+  int? voiceOfId(String id) {
+    if (_v1.any((e) => e.id == id)) return 0;
+    if (_v2.any((e) => e.id == id)) return 1;
+    return null;
+  }
+
   /// Switch the voice that entry/selection commands target. Clears the selection
   /// (ids are per-voice) and is a no-op for an out-of-range or unchanged value.
   /// Not itself undoable — it changes the edit target, not the document.

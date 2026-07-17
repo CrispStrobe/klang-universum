@@ -299,6 +299,42 @@ void main() {
     expect(find.text(l10n.workshopInsertMode), findsOneWidget);
   });
 
+  testWidgets('tapping a voice-2 note follows the caret to voice 2',
+      (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await _enterStudio(tester);
+
+    int selectedVoice() => tester
+        .widget<SegmentedButton<int>>(find.byType(SegmentedButton<int>))
+        .selected
+        .first;
+
+    // A voice-1 note, then switch to voice 2, add one there, and switch back.
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.pump();
+    await tester.tap(find.text(l10n.workshopVoice2));
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyE);
+    await tester.pump();
+    await tester.tap(find.text(l10n.workshopVoice1));
+    await tester.pump();
+    expect(selectedVoice(), 0);
+
+    // crisp_notation reports voice-2 ids on tap; drive the real onElementTap
+    // callback with the rendered voice-2 note's id.
+    final view = tester.widget<MultiSystemView>(find.byType(MultiSystemView));
+    final v2id = view.score.measures
+        .expand((m) => m.voice2)
+        .firstWhere((e) => e.id != null)
+        .id!;
+    view.onElementTap!(v2id);
+    await tester.pump();
+
+    // The editor followed the tap: the active voice is now voice 2.
+    expect(selectedVoice(), 1);
+  });
+
   testWidgets('copy then paste duplicates the selection', (tester) async {
     await pump(tester);
     final editor = _editor(tester);
