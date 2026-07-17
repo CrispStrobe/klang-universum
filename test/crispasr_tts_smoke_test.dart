@@ -5,10 +5,12 @@
 //
 // Point it at your build with env overrides if the defaults don't match:
 //   COMET_CRISPASR_LIB, COMET_KOKORO_MODEL, COMET_KOKORO_VOICE_DE
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tts/crispasr_tts_backend.dart';
+import 'package:crispasr/crispasr.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 String _env(String k, String fallback) =>
@@ -31,6 +33,23 @@ void main() {
   );
 
   final present = File(lib).existsSync() && File(model).existsSync();
+
+  test('the kokoro registry resolves to the published download URL', () {
+    if (!File(lib).existsSync()) {
+      // ignore: avoid_print
+      print('SKIP: libcrispasr not on this machine — dev-only smoke.');
+      return;
+    }
+    final dylib = DynamicLibrary.open(lib);
+    final entry = registryLookup('kokoro', lib: dylib);
+    expect(entry, isNotNull, reason: 'kokoro missing from the registry');
+    expect(entry!.filename, 'kokoro-82m-q8_0.gguf');
+    expect(entry.url, contains('huggingface.co/cstr'));
+    // The en voice resolves; the de voice URL derives from the same repo.
+    final af =
+        registryLookupByFilename('kokoro-voice-af_heart.gguf', lib: dylib);
+    expect(af?.url, contains('kokoro-voices-GGUF'));
+  });
 
   test(
     'kokoro synthesises real German audio through the FFI backend',

@@ -2,25 +2,23 @@
 //
 // The NEURAL text-to-speech backend: CrispASR's ggml Kokoro model (82 M params,
 // Apache-2.0, multilingual incl. de+en) via the pure-Dart `crispasr` FFI package
-// over `libcrispasr`. It plugs into the TtsBackend seam (tts_service.dart) behind
-// the platform `flutter_tts` fallback.
+// over `libcrispasr`. Plugs into the TtsBackend seam (tts_service.dart) behind the
+// platform `flutter_tts` fallback.
 //
-// Availability is conditional and safe: the native lib is `DynamicLibrary.open`ed
-// and the Kokoro model is read ONLY when [isAvailable] passes (dylib loads + model
-// file cached). Where they're absent — the common case until the model is
-// downloaded and the lib is bundled per platform — [isAvailable] is false and
-// TtsService uses the platform voice instead. Nothing here runs during
-// pub-get / analyze / test (the FFI calls are reached only from [speak]).
+// Model files come from CrispASR's own registry + downloader (KokoroModelStore) —
+// the same `-m auto` mechanism the CLI and CrisperWeaver use; nothing is bundled.
+// Downloading is CONSENT-GATED: playback ([speak]) never downloads (it uses the
+// model only if already cached, else stays silent so TtsService falls back);
+// [download] is the explicit opt-in (a settings action, mirroring CrisperWeaver's
+// model manager).
 //
-// Synthesis (`session.synthesize` — a ~3 s blocking C call returning 24 kHz mono
-// float32 PCM) runs in a background isolate so the UI never freezes; the PCM is
-// wrapped as a WAV (synth.dart `wavBytes`) and handed to the injected [play]
-// callback (AudioService in the app, a fake in tests).
-//
-// Model delivery is download-on-first-use + cache (see KokoroModelStore) — never
-// bundled, keeping the app small. macOS is the first platform to bundle
-// libcrispasr; other platforms fall back to flutter_tts until their lib ships.
+// Everything that touches the native lib runs in a background isolate ([_run]) so
+// the UI never blocks on the ~3 s synthesis or a first-time model download. The
+// PCM (24 kHz float32) is wrapped as a WAV (synth.dart `wavBytes`) and handed to
+// the injected [play] sink (AudioService in the app, a fake in tests).
 
+import 'dart:ffi';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -29,7 +27,110 @@ import 'package:comet_beat/core/audio/tts/kokoro_model_store.dart';
 import 'package:comet_beat/core/services/tts_service.dart';
 import 'package:crispasr/crispasr.dart';
 
-/// A self-contained synthesis request, shipped into the background isolate.
+/// A self-contained job shipped into the worker isolate: resolve (and optionally
+/// download) the Kokoro model + [lang] voice, then — if [text] is non-null —
+/// synthesise it. Plain fields only, so it's sendable.
+class KokoroJob {
+  const KokoroJob({
+    required this.libPath,
+    required this.lang,
+    this.cacheDirOverride,
+    this.text,
+    this.download = false,
+  });
+
+  final String libPath;
+  final String lang;
+  final String? cacheDirOverride;
+  final String? text;
+
+  /// When false, missing files are NOT fetched — the job resolves only what's
+  /// already cached (so playback never triggers a surprise download).
+  final bool download;
+}
+
+/// Resolve a registry file to a local path — cached if present, downloaded via
+/// CrispASR's own C downloader when [download] is set, else null.
+String? _ensureFile(
+  DynamicLibrary lib,
+  String dir,
+  String filename,
+  String url,
+  String? cacheDirOverride,
+  bool download,
+) {
+  final path = '$dir/$filename';
+  final f = File(path);
+  if (f.existsSync() && f.lengthSync() > 0) return path;
+  if (!download || url.isEmpty) return null;
+  return cacheEnsureFile(
+    filename,
+    url,
+    quiet: true,
+    cacheDirOverride: cacheDirOverride,
+    lib: lib,
+  );
+}
+
+/// The published URL for a voice pack: the registry if it has it, else derived
+/// from the af_heart entry (all voices share the cstr/kokoro-voices-GGUF repo).
+String _voiceUrl(DynamicLibrary lib, String voiceFile) {
+  final direct = registryLookupByFilename(voiceFile, lib: lib);
+  if (direct != null) return direct.url;
+  final af = registryLookupByFilename('kokoro-voice-af_heart.gguf', lib: lib);
+  if (af != null) {
+    return af.url.replaceFirst('kokoro-voice-af_heart.gguf', voiceFile);
+  }
+  return '';
+}
+
+/// Worker-isolate entry: resolve/download + synthesise. Returns PCM16 mono @
+/// 24 kHz, an empty list for a download-only warmup, or null on any failure.
+Int16List? runKokoroJob(KokoroJob job) {
+  try {
+    final lib = DynamicLibrary.open(job.libPath);
+    final dir = cacheDir(override: job.cacheDirOverride, lib: lib);
+    if (dir == null) return null;
+
+    final model = registryLookup(KokoroModelStore.kokoroBackend, lib: lib);
+    if (model == null) return null;
+    final modelPath = _ensureFile(
+      lib,
+      dir,
+      model.filename,
+      model.url,
+      job.cacheDirOverride,
+      job.download,
+    );
+    if (modelPath == null) return null;
+
+    // Download-only warmup: model is present, we're done.
+    if (job.text == null || job.text!.trim().isEmpty) return Int16List(0);
+
+    final voiceFile = KokoroModelStore.voiceFileFor(job.lang);
+    final voicePath = _ensureFile(
+      lib,
+      dir,
+      voiceFile,
+      _voiceUrl(lib, voiceFile),
+      job.cacheDirOverride,
+      job.download,
+    );
+
+    return synthesizeKokoroPcm16(
+      KokoroSynthRequest(
+        libPath: job.libPath,
+        modelPath: modelPath,
+        voicePath: voicePath,
+        text: job.text!,
+      ),
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+/// A resolved-paths synthesis request (no registry/download — explicit paths).
 class KokoroSynthRequest {
   const KokoroSynthRequest({
     required this.libPath,
@@ -44,10 +145,8 @@ class KokoroSynthRequest {
   final String? voicePath;
 }
 
-/// Synthesise [req.text] to PCM16 mono @ 24 kHz. Top-level + pure so `Isolate.run`
-/// can ship it; opens its own dylib + session in the worker isolate. Returns null
-/// on any failure (missing symbol, bad model, empty audio) so the caller can fall
-/// back silently rather than surface an error to a child.
+/// Low-level synthesis from explicit paths → PCM16 mono @ 24 kHz. Pure + top-level
+/// so it runs in the worker isolate; null on failure or a NaN/empty decode.
 Int16List? synthesizeKokoroPcm16(KokoroSynthRequest req) {
   try {
     final session = CrispasrSession.open(
@@ -63,7 +162,7 @@ Int16List? synthesizeKokoroPcm16(KokoroSynthRequest req) {
       final out = Int16List(pcm.length);
       for (var i = 0; i < pcm.length; i++) {
         final v = pcm[i];
-        if (v.isNaN) return null; // a bad decode — bail to the fallback voice
+        if (v.isNaN) return null; // bad decode — bail to the fallback voice
         out[i] = (v * 32767.0).round().clamp(-32768, 32767);
       }
       return out;
@@ -75,51 +174,61 @@ Int16List? synthesizeKokoroPcm16(KokoroSynthRequest req) {
   }
 }
 
-/// Neural TtsBackend over CrispASR/Kokoro. Construct with a [store] (resolves the
-/// dylib + cached model + per-locale voice) and a [play] sink for the finished
-/// WAV; optionally a [stopPlayback] to interrupt it.
+/// Neural TtsBackend over CrispASR/Kokoro.
 class CrispAsrTtsBackend implements TtsBackend {
   CrispAsrTtsBackend({
     required this.store,
     required this.play,
     this.stopPlayback,
-    Future<Int16List?> Function(KokoroSynthRequest)? runSynthesis,
-  }) : _runSynthesis = runSynthesis ??
-            ((req) => Isolate.run(() => synthesizeKokoroPcm16(req)));
+    Future<Int16List?> Function(KokoroJob)? runJob,
+  }) : _run = runJob ?? ((j) => Isolate.run(() => runKokoroJob(j)));
 
   final KokoroModelStore store;
 
-  /// Plays the finished WAV (AudioService.playWavBytes in the app). Honouring the
-  /// master sound switch is the sink's job (AudioService already gates on it).
+  /// Plays the finished WAV (AudioService.playWavBytes). The sink honours the
+  /// master sound switch.
   final Future<void> Function(Uint8List wav) play;
 
-  /// Interrupts current playback (AudioService.stop) when narration is cancelled.
+  /// Interrupts current playback when narration is cancelled.
   final Future<void> Function()? stopPlayback;
 
-  /// Seam for tests: run synthesis without a real isolate/native lib.
-  final Future<Int16List?> Function(KokoroSynthRequest) _runSynthesis;
+  final Future<Int16List?> Function(KokoroJob) _run;
 
-  /// True iff libcrispasr can be loaded AND the Kokoro model is cached — i.e.
-  /// synthesis can actually run on this device right now.
+  /// True iff synthesis can run right now (native lib loadable + model cached).
   Future<bool> isAvailable() => store.isReady();
+
+  static String _lang(String langCode) =>
+      langCode.toLowerCase().split(RegExp('[-_]')).first;
 
   @override
   Future<void> speak(String text, {required String langCode}) async {
     if (text.trim().isEmpty) return;
-    final resolved = await store.resolve(langCode);
-    if (resolved == null) {
-      return; // not ready — TtsService will have fallen back
-    }
-    final pcm = await _runSynthesis(
-      KokoroSynthRequest(
-        libPath: resolved.libPath,
-        modelPath: resolved.modelPath,
-        voicePath: resolved.voicePath,
+    // download defaults to false: playback never fetches — TtsService only routes
+    // here when the model is already cached (isAvailable).
+    final pcm = await _run(
+      KokoroJob(
+        libPath: store.libPath(),
+        cacheDirOverride: store.cacheDirOverride,
+        lang: _lang(langCode),
         text: text,
       ),
     );
     if (pcm == null || pcm.isEmpty) return;
     await play(wavBytes(pcm, sampleRate: 24000));
+  }
+
+  /// Explicit opt-in download of the model + [langCode] voice (a settings
+  /// action, mirroring CrisperWeaver's model manager). Returns true once ready.
+  Future<bool> download(String langCode) async {
+    await _run(
+      KokoroJob(
+        libPath: store.libPath(),
+        cacheDirOverride: store.cacheDirOverride,
+        lang: _lang(langCode),
+        download: true,
+      ),
+    );
+    return store.isReady();
   }
 
   @override
