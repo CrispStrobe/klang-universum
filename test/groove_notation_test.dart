@@ -68,4 +68,73 @@ void main() {
     // Drums are unpitched — nothing to engrave.
     expect(engine.cellsFor('drums'), isNull);
   });
+
+  group('grooveParts (multi-part export)', () {
+    String upper(String id) => id.toUpperCase();
+
+    test('no pitched track enabled → null', () {
+      final engine = LoopEngine();
+      expect(grooveParts(engine, nameOf: upper), isNull);
+      // Drums are unpitched: enabling them still engraves nothing.
+      engine.toggle('drums');
+      expect(grooveParts(engine, nameOf: upper), isNull);
+    });
+
+    test('enabled pitched tracks become ordered parts (vamp = 2 bars each)',
+        () {
+      final engine = LoopEngine();
+      // Enable out of priority order; the export must reorder to
+      // voice · melody · chords · sparkle · bass.
+      engine.toggle('bass');
+      engine.toggle('melody');
+      engine.toggle('drums'); // unpitched — skipped
+
+      final result = grooveParts(engine, nameOf: upper)!;
+      expect(result.partNames, ['MELODY', 'BASS']);
+      expect(result.score.parts.length, 2);
+
+      final melody = result.score.parts[0];
+      final bass = result.score.parts[1];
+      expect(melody.clef, Clef.treble);
+      expect(bass.clef, Clef.bass);
+      // A free vamp engraves 2 bars per part.
+      expect(melody.measures.length, 2);
+      expect(bass.measures.length, 2);
+    });
+
+    test('a 4-bar progression engraves 4 bars in every part', () {
+      final engine = LoopEngine();
+      engine.toggle('melody');
+      engine.toggle('bass');
+      engine.progression = kProgressions.first;
+
+      final result = grooveParts(engine, nameOf: upper)!;
+      expect(result.score.parts.length, 2);
+      for (final part in result.score.parts) {
+        expect(
+          part.measures.length,
+          4,
+          reason: 'progression resolves every part to 4 bars',
+        );
+      }
+    });
+
+    test('the parts round-trip through the multi-part MusicXML writer', () {
+      final engine = LoopEngine();
+      engine.toggle('melody');
+      engine.toggle('chords');
+
+      final result = grooveParts(engine, nameOf: upper)!;
+      final xml = multiPartToMusicXml(
+        result.score,
+        partNames: result.partNames,
+      );
+      expect(xml, contains('<score-partwise'));
+      // Both parts survive as named parts.
+      expect(xml, contains('MELODY'));
+      expect(xml, contains('CHORDS'));
+      // Re-reading the first part yields an engravable score.
+      expect(scoreFromMusicXml(xml).measures, isNotEmpty);
+    });
+  });
 }
