@@ -182,19 +182,24 @@ class _InstrumentFamilyScreenState extends State<InstrumentFamilyScreen>
                 score: score,
                 onRestart: restartGame,
               )
-            : Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    RoundHeader(
-                      correct: _lastAnswer,
-                      round: round + 1,
-                      totalRounds: totalRounds,
-                      prompt: l10n.instrumentFamilyPrompt,
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: Center(
+            // Content-sized and scrollable, so it never overflows on a short
+            // screen (the default 800×600 test viewport, or an iPhone SE with
+            // longer German labels). AnswerGrid is a GridView, so the fill-the-
+            // viewport IntrinsicHeight pattern can't be used here — a viewport
+            // has no intrinsic height.
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      RoundHeader(
+                        correct: _lastAnswer,
+                        round: round + 1,
+                        totalRounds: totalRounds,
+                        prompt: l10n.instrumentFamilyPrompt,
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
                         child: Card(
                           elevation: 4,
                           child: Padding(
@@ -224,34 +229,35 @@ class _InstrumentFamilyScreenState extends State<InstrumentFamilyScreen>
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    FeedbackLine(correct: _lastAnswer),
-                    const SizedBox(height: 16),
-                    AnswerGrid(
-                      children: [
-                        for (final f in _options)
-                          FilledButton(
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                              backgroundColor: _tapped == null
-                                  ? null
-                                  : f == _instrument.family
-                                      ? Colors.green
-                                      : f == _tapped
-                                          ? Colors.redAccent
-                                          : null,
-                              textStyle: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                      const SizedBox(height: 16),
+                      FeedbackLine(correct: _lastAnswer),
+                      const SizedBox(height: 16),
+                      AnswerGrid(
+                        children: [
+                          for (final f in _options)
+                            FilledButton(
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                backgroundColor: _tapped == null
+                                    ? null
+                                    : f == _instrument.family
+                                        ? Colors.green
+                                        : f == _tapped
+                                            ? Colors.redAccent
+                                            : null,
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () => _onAnswer(f),
+                              child: Text(_familyLabel(l10n, f)),
                             ),
-                            onPressed: () => _onAnswer(f),
-                            child: Text(_familyLabel(l10n, f)),
-                          ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
       ),
