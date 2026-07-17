@@ -141,10 +141,13 @@ and push to origin/main** before/after touching shared files. Format:
   menu) `28f2f83`, **MOD import/export UI** (file_selector) `ae484a9`, **multi-part
   score view** `d67cb56`, **gapless two-player swap** `df7e644`, and **MIDI
   import/export = the MIDI↔MOD hub** (via crisp_notation `scoreFromMidi`/
-  `scoreToMidi`, no external converter) `8a80421`. **`.xm`/`.s3m`/`.it` codecs
-  DEFERRED with a research brief** in handover §6: port **libxmp-lite (MIT)**
-  loaders (read-only), order S3M→XM→IT; each needs a real fixture/oracle. Its own
-  effort.
+  `scoreToMidi`, no external converter) `8a80421`. ✅ **`.s3m` reader SHIPPED**
+  `2860ce2` (golden oracle + real "Illustrious Fields"; agent-built against my
+  contract+tests). 🚧 **`.xm` then `.it` readers next** (same pattern; port
+  **libxmp-lite MIT** loaders, libopenmpt-BSD oracle; §6). 📋 **Full idea backlog —
+  codecs, FX (crispaudio/CrispFXR/voicelab + OpenMPT), sampling, notation, Studio
+  depth — in [`docs/TRACKER_IDEAS.md`](TRACKER_IDEAS.md); the FX effort in
+  [`docs/FX_HANDOVER.md`](FX_HANDOVER.md).**
 - **opus (tracker)** · ✅ **idle / SHIPPED — `.mod` import/export codec.** Pure-Dart
   ProTracker codec in `lib/core/audio/mod/` (model+contract `mod_module.dart`,
   `parseMod` reader, `writeMod` writer — implemented by two sub-agents against the
