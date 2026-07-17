@@ -154,7 +154,9 @@ and push to origin/main** before/after touching shared files. Format:
   🏁 **EFFORT COMPLETE: 21 new concept primers + 11 reuse-wirings → 47 games moved
   off a generic module intro onto real instruction.** Per-game primers 29 → 61 of
   130; every remaining fallback game is one the module intro genuinely covers.
-  `tutorial_gate_test` still asserts 100% help coverage.
+  `tutorial_gate_test` still asserts 100% help coverage. (Follow-up: `charades` — the one
+  expression game mis-served by its measures-module fallback — getting a combined
+  `expressionPrimer`.)
 
 - **opus (primers-mine)** · ✅ **idle / SHIPPED — per-game tutorial primers for 3
   games** (learnability §1). The games I shipped this session now teach their
