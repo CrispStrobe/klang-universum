@@ -415,6 +415,14 @@ Games built on crisp_notation capabilities the app didn't use before.
   counts** — root position or an inversion, in any octave. The interactive
   counterpart to Name That Chord; major/minor for beginners, dim/aug at 2★. SRI
   `chords.build.<root>_<quality>`.
+- **Major or Minor?** (chords) — a drag-and-drop sort on triad **quality** read
+  off the staff: each card shows a triad; drag it into the Major or Minor basket
+  (the third is what decides it). The reading twin of the aural Dur-oder-Moll? and
+  the sort-into-buckets sibling of Sharp or Flat?, on the `accidental_sort`
+  scaffold; built with crisp_notation `Triad(root, ChordQuality)`, the chord
+  sounds on a correct drop. At 2★ a third basket — Diminished — joins (the lowered
+  fifth), mirroring how Sharp or Flat? grows a Natural basket. SRI
+  `chords.quality.<major|minor|diminished>`.
 - **ABC import** (Song Book) — the importer takes pasted **ABC notation**
   (`scoreFromAbc`) alongside MusicXML / ChordPro / MIDI, stored as MusicXML like
   the rest. Opens the large public-domain ABC folk-tune libraries; the tune's

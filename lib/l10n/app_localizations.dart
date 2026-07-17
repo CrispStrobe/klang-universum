@@ -3200,6 +3200,24 @@ abstract class AppLocalizations {
   /// **'Augmented'**
   String get augmentedLabel;
 
+  /// No description provided for @gameMajorMinorSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Major or Minor?'**
+  String get gameMajorMinorSort;
+
+  /// No description provided for @gameMajorMinorSortSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read each triad and sort it by quality'**
+  String get gameMajorMinorSortSubtitle;
+
+  /// No description provided for @majorMinorSortPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag each chord into its basket'**
+  String get majorMinorSortPrompt;
+
   /// No description provided for @listenChordQualityPrompt.
   ///
   /// In en, this message translates to:

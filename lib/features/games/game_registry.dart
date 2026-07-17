@@ -19,6 +19,7 @@ import 'package:comet_beat/features/games/chords/chord_progression_screen.dart';
 import 'package:comet_beat/features/games/chords/chord_quiz_screen.dart';
 import 'package:comet_beat/features/games/chords/interval_ear_screen.dart';
 import 'package:comet_beat/features/games/chords/interval_ladder_screen.dart';
+import 'package:comet_beat/features/games/chords/major_minor_sort_screen.dart';
 import 'package:comet_beat/features/games/chords/name_that_chord_screen.dart';
 import 'package:comet_beat/features/games/chords/sing_interval_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_builder_screen.dart';
@@ -807,6 +808,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameChordQuiz,
       subtitle: (l) => l.gameChordQuizSubtitle,
       builder: (_) => const ChordQuizScreen(),
+    ),
+    // Major or Minor? — read the triad's quality and sort it into a basket
+    // (Diminished joins at 2★). The reading twin of the aural Dur oder Moll?.
+    GameInfo(
+      id: 'major_minor_sort',
+      icon: Icons.sort,
+      title: (l) => l.gameMajorMinorSort,
+      subtitle: (l) => l.gameMajorMinorSortSubtitle,
+      builder: (_) => const MajorMinorSortScreen(),
     ),
     GameInfo(
       id: 'triad_builder',

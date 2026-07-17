@@ -113,6 +113,8 @@ const Map<String, List<int>> kStarThresholds = {
   'chord_chart': [100, 600, 900],
   // Chord Builder: 8 rounds x 100, max 800.
   'chord_builder': [100, 500, 800],
+  // Major or Minor? (triad-quality sort): 6 rounds x 100.
+  'major_minor_sort': [100, 400, 550],
   // Concert Pitch (transposing instruments): 10 rounds x 100.
   'concert_pitch': [100, 600, 900],
   // Write It for the Instrument (inverse: concert → written): 10 rounds x 100.

@@ -1705,6 +1705,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get augmentedLabel => 'Übermäßig';
 
   @override
+  String get gameMajorMinorSort => 'Dur oder Moll?';
+
+  @override
+  String get gameMajorMinorSortSubtitle =>
+      'Lies jeden Dreiklang und sortiere ihn nach Geschlecht';
+
+  @override
+  String get majorMinorSortPrompt => 'Ziehe jeden Akkord in seinen Korb';
+
+  @override
   String get listenChordQualityPrompt => 'Hör zu! Welche Akkordart ist das?';
 
   @override

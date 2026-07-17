@@ -26,17 +26,18 @@ and push to origin/main** before/after touching shared files. Format:
   engine+screen tests green; analyze clean. **Channel FX menu: none/Echo/Chorus/
   Flanger/Reverb/Robot/Crunch.**
 
-- **opus (majmin-sort)** · 🚧 **ACTIVE — "Major or Minor?" triad-sort minigame**
-  (backlog §B, an open `[ ]` — the *reading* counterpart to the aural
+- **opus (majmin-sort)** · ✅ **idle / SHIPPED — "Major or Minor?" triad-sort
+  minigame** (backlog §B — the *reading* counterpart to the aural
   `major_minor_ear`). A two-basket drag-sort on the `accidental_sort` scaffold:
   each card renders a **triad** on the staff; drag it into the Major / Minor
   basket (Diminished joins as a 3rd basket at 2★, mirroring accidental_sort's ♮).
-  Built with crisp_notation `Triad(root, ChordQuality)`. New
-  `features/games/chords/major_minor_sort_screen.dart` + `GameInfo` +
-  `kStarThresholds` + EN/DE ARBs + a `pumpGame` test. SRI
-  `chords.quality.<major|minor|diminished>`. Worktree `../mus-majmin`, branch
-  `feature/majmin-sort`. Touching hot shared files (registry, tuning, ARBs) —
-  rebasing often.
+  Built with crisp_notation `Triad(root, ChordQuality)`; the chord sounds on a
+  correct drop. New `features/games/chords/major_minor_sort_screen.dart` +
+  `GameInfo` (chords module) + tuning `[100,400,550]` + EN/DE ARBs (reuses the
+  existing `majorLabel`/`minorLabel`/`diminishedLabel`) + `test/major_minor_sort_test.dart`
+  (real drag gestures + the 2★ three-basket widen). SRI
+  `chords.quality.<major|minor|diminished>`. Analyze clean; consistency + star
+  suites green.
 
 - **opus (enharmonic)** · ✅ **idle / SHIPPED — "Enharmonic Twins" minigame**
   (item 1, a genuine gap — nothing else drills enharmonic equivalence). A binary
@@ -767,10 +768,10 @@ Sub-variant sweep **mostly done** (Jul 2026 batch): shipped **Longest First**
 **Connect the Steps** (interval↔number, a 3rd Connect-the-Notes mode). Details in
 [HISTORY.md](HISTORY.md#gamified-formats--shipped). Still open from this survey:
 
-- [ ] **Major/minor sort** — drag written triads into Major / Minor baskets by
-  reading their quality on the staff. *Note: this reads quality visually (harder,
-  ~9+); `major_minor_ear` already covers the aural version. Lower priority — a
-  niche tile for the top of the age range.*
+- [x] **Major/minor sort** — **shipped** (`major_minor_sort`, chords): drag written
+  triads into Major / Minor baskets by reading their quality on the staff
+  (Diminished joins at 2★); the chord sounds on a correct drop. The reading twin of
+  the aural `major_minor_ear`. SRI `chords.quality.<major|minor|diminished>`.
 - [ ] **Falling-notes "catch the longest"** — a note-*values* mode of the arcade.
   *Caveat: `falling_notes_screen.dart` is ~930 lines of ticker/combo logic and
   its tests lean on the animation clock — a real lift, and less tap-robust than

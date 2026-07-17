@@ -1695,6 +1695,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get augmentedLabel => 'Augmented';
 
   @override
+  String get gameMajorMinorSort => 'Major or Minor?';
+
+  @override
+  String get gameMajorMinorSortSubtitle =>
+      'Read each triad and sort it by quality';
+
+  @override
+  String get majorMinorSortPrompt => 'Drag each chord into its basket';
+
+  @override
   String get listenChordQualityPrompt => 'Listen! Which chord quality is it?';
 
   @override
