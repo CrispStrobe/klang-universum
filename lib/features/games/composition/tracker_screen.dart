@@ -1034,23 +1034,42 @@ class _TrackerScreenState extends State<TrackerScreen>
                   ],
                 ),
               ),
-              // The "score view": the selected channel's pattern as notation.
+              // The "score view": ALL pitched channels as stacked staves (the
+              // full multi-part notation), or a rest bar when nothing's placed.
               if (_showNotation) ...[
                 const SizedBox(height: 8),
-                SizedBox(
-                  height: 92,
-                  child: Card(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: StaffView(
-                          score: _selectedScore,
-                          staffSpace: 8,
-                          theme: kidsScoreTheme,
+                Builder(
+                  builder: (context) {
+                    final parts = trackerToScoreParts(
+                      _engine.channels,
+                      _engine.timing,
+                    );
+                    final scores = parts.isEmpty ? [_selectedScore] : parts;
+                    return SizedBox(
+                      height: scores.length > 1 ? 140 : 92,
+                      child: Card(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final s in scores)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
+                                  ),
+                                  child: StaffView(
+                                    score: s,
+                                    staffSpace: 7,
+                                    theme: kidsScoreTheme,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
               const SizedBox(height: 10),

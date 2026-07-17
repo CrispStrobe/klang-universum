@@ -5,6 +5,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:klang_universum/core/audio/crisp_dsp/voice_fx.dart';
@@ -125,6 +126,21 @@ void main() {
 
     expect(game.notationVisible, isTrue);
     expect(tester.takeException(), isNull); // StaffView built cleanly
+  });
+
+  testWidgets('the score view shows a staff per pitched channel',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    game.tapCell(0, 0); // melody
+    game.selectChannel(game.channelIds.indexOf('bass'));
+    game.tapCell(0, 0); // bass
+    game.toggleNotation();
+    await tester.pump();
+
+    // One staff for melody, one for bass — the multi-part view.
+    expect(find.byType(StaffView), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('loading the demo tune fills the melody channel', (tester) async {
