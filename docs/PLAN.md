@@ -47,6 +47,8 @@ and push to origin/main** before/after touching shared files. Format:
   Grand total across both waves: **13 real defects found, fixed, and pinned;
   theory core + most game/scoring paths verified clean.**
 
+- **opus (instrfam-game)** · 🚧 **ACTIVE — new "Which Family?" game (`instrument_family`, songs module) to close the `instrument_families` gap.** Reading/knowledge MC quiz: name an instrument → tap its family (Strings/Woodwind/Brass/Percussion/Keyboard); no timbre-ID audio. Touching shared files: `game_registry.dart`, `tuning.dart`, `concept_map.dart`, both ARBs, `primers.dart`, `tutorial_test.dart`, `PLAN.md`, `HISTORY.md`. Worktree `../mus-instrfam`, branch `feature/instrfam-game`. (Coordinating with gap-games, which lists instrument families as remaining — this game claims it.)
+
 - **opus (gap-games)** · 🚧 **ACTIVE — filling the 8 untrained-concept gaps**. ✅ **Batch A SHIPPED (3 gaps closed):** `sync_read` (On the Beat or Off? — straight vs syncopated, heard via displaced note lengths), `triplet_read` (Even or Triplet? — a real `TupletSpan`, 2-vs-3 split heard), `ornament_read` (Which Ornament? — trill/mordent/turn read + a flourish played). Each with a 9yo-bar primer (`syncopationPrimer`/`tripletPrimer`/`ornamentPrimer`, shown + heard) and wired into `concept_map` (coverage: those 3 concepts now trained). 20 tests green; analyze clean. **Remaining 5 gaps:** musical form (→ AnaVis-style view + label-the-form), verse/chorus form, modulation, modes, instrument families. Worktree `../mus-gaps`, branch `feature/gap-games`.
 
 - **opus (textbook-p2)** · ✅ **idle / SHIPPED — song mnemonics + orphan-game
