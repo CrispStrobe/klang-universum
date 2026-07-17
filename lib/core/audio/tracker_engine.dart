@@ -305,7 +305,18 @@ class SampleInstrument implements TrackerInstrument {
         final startSample = timing.stepStartSample(startStep);
         final runSamples =
             timing.stepStartSample(startStep + steps) - startSample;
-        final buf = resampleCubic(sample, midiToFrequency(midi) / baseFreq);
+        final baseRatio = midiToFrequency(midi) / baseFreq;
+        final maxOut = min(runSamples, out.length - startSample);
+        // A pitch envelope glides the resample ratio; else a fixed-ratio pitch.
+        final buf = envelope.pitchStart != 0 && maxOut > 0
+            ? resampleGlide(
+                sample,
+                ratioStart: baseRatio * pow(2, envelope.pitchStart / 12),
+                ratioEnd: baseRatio,
+                glideSamples: (envelope.pitchTime * kSampleRate).round(),
+                outLen: maxOut,
+              )
+            : resampleCubic(sample, baseRatio);
         final n = min(min(buf.length, runSamples), out.length - startSample);
         if (n > 0) {
           // Envelope only the played portion, so the release fades at the note's

@@ -18,6 +18,8 @@ class Envelope {
     this.decay = 0.0,
     this.sustain = 1.0,
     this.release = 0.012,
+    this.pitchStart = 0.0,
+    this.pitchTime = 0.04,
   });
 
   /// No shaping — a flat gain of 1 (identity).
@@ -29,6 +31,13 @@ class Envelope {
 
   final double attack, decay, sustain, release;
 
+  /// A pitch envelope for sampled instruments: the note starts [pitchStart]
+  /// semitones off (a scoop/fall — positive = starts sharp then falls, negative
+  /// = starts flat then rises) and glides to true pitch over [pitchTime] seconds.
+  /// 0 = no pitch glide. Handled by the instrument's resampler, not [applyEnvelope].
+  final double pitchStart, pitchTime;
+
+  /// True when the VOLUME envelope is flat (a gain of 1); [applyEnvelope] skips it.
   bool get isIdentity =>
       attack <= 0 && decay <= 0 && release <= 0 && sustain >= 1;
 }

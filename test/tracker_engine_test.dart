@@ -6,6 +6,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/envelope.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/sfxr.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart';
@@ -375,6 +376,32 @@ void main() {
       final startSample = (4 * timing.stepMs * kSampleRate) ~/ 1000;
       expect(buf.sublist(0, startSample).every((v) => v == 0), isTrue);
       expect(buf.sublist(startSample).any((v) => v != 0), isTrue);
+    });
+
+    test('a pitch-envelope note glides (differs from a flat-pitch note)', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final s = sine(0.4, 261.63);
+      final flat = SampleInstrument('v', s);
+      final glided = SampleInstrument(
+        'v',
+        s,
+        envelope: const Envelope(pitchStart: 4), // starts 4 semitones sharp
+      );
+      final cells = List<TrackerCell>.filled(timing.rows, TrackerCell.empty)
+        ..[0] = const TrackerCell(midi: 60);
+      final a = flat.renderChannel(cells, timing);
+      final b = glided.renderChannel(cells, timing);
+      expect(a.length, b.length);
+      // The glide reshapes the note's early portion.
+      var differs = false;
+      for (var i = 0; i < 4000; i++) {
+        if ((a[i] - b[i]).abs() > 1e-6) {
+          differs = true;
+          break;
+        }
+      }
+      expect(differs, isTrue);
+      expect(b.any((v) => v != 0), isTrue);
     });
 
     test('the recorded factory applies a voice effect', () {

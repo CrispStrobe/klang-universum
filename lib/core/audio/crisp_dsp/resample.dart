@@ -59,3 +59,53 @@ Float64List resampleCubic(Float64List src, double ratio) {
   }
   return out;
 }
+
+/// Cubic (Catmull-Rom) read of [src] at fractional position [pos], with the
+/// neighbour taps clamped to the sample bounds. Shared by the glide resampler.
+double _cubicAt(Float64List src, double pos) {
+  final n = src.length;
+  final f = pos.floor();
+  final t = pos - f;
+  final p0 = src[max(f - 1, 0)];
+  final p1 = src[f.clamp(0, n - 1)];
+  final p2 = src[min(f + 1, n - 1)];
+  final p3 = src[min(f + 2, n - 1)];
+  final t2 = t * t;
+  final t3 = t2 * t;
+  return 0.5 *
+      (2 * p1 +
+          (-p0 + p2) * t +
+          (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+          (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+}
+
+/// Resamples [src] with a playback ratio that GLIDES linearly from [ratioStart]
+/// to [ratioEnd] over the first [glideSamples] output samples, then holds at
+/// [ratioEnd] — a pitch envelope (scoop/fall). Produces up to [outLen] samples,
+/// stopping early if the read position runs off the end of [src]. Cubic-
+/// interpolated, same semantics as [resampleCubic] when ratioStart == ratioEnd.
+Float64List resampleGlide(
+  Float64List src, {
+  required double ratioStart,
+  required double ratioEnd,
+  required int glideSamples,
+  required int outLen,
+}) {
+  if (src.isEmpty || outLen <= 0 || ratioStart <= 0 || ratioEnd <= 0) {
+    return Float64List(0);
+  }
+  if (src.length == 1) return Float64List.fromList([src[0]]);
+  final out = Float64List(outLen);
+  var pos = 0.0;
+  var produced = 0;
+  for (var i = 0; i < outLen; i++) {
+    if (pos >= src.length - 1) break;
+    final ratio = (glideSamples > 0 && i < glideSamples)
+        ? ratioStart + (ratioEnd - ratioStart) * (i / glideSamples)
+        : ratioEnd;
+    out[i] = _cubicAt(src, pos);
+    pos += ratio;
+    produced = i + 1;
+  }
+  return produced == outLen ? out : Float64List.sublistView(out, 0, produced);
+}

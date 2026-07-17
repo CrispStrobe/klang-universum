@@ -94,6 +94,59 @@ void main() {
     });
   });
 
+  group('resampleGlide (pitch envelope)', () {
+    test('a constant ratio matches resampleCubic', () {
+      final s = _sine(0.02, 300);
+      final outLen = (s.length / 1.5).floor();
+      final glide = resampleGlide(
+        s,
+        ratioStart: 1.5,
+        ratioEnd: 1.5,
+        glideSamples: 100,
+        outLen: outLen,
+      );
+      final fixed = resampleCubic(s, 1.5);
+      final n = min(glide.length, fixed.length);
+      for (var i = 2; i < n - 2; i++) {
+        expect(glide[i], closeTo(fixed[i], 1e-6));
+      }
+    });
+
+    test('a glide differs from a fixed ratio; finite + bounded', () {
+      final s = _sine(0.1, 300);
+      final glide = resampleGlide(
+        s,
+        ratioStart: 2.0,
+        ratioEnd: 1.0,
+        glideSamples: 1000,
+        outLen: s.length,
+      );
+      final fixed = resampleCubic(s, 1.0);
+      expect(glide.sublist(0, 500), isNot(equals(fixed.sublist(0, 500))));
+      expect(_finite(glide), isTrue);
+      expect(_peak(glide), lessThanOrEqualTo(1.01));
+    });
+
+    test('degenerate inputs are safe', () {
+      final empty = resampleGlide(
+        Float64List(0),
+        ratioStart: 1,
+        ratioEnd: 1,
+        glideSamples: 10,
+        outLen: 100,
+      );
+      expect(empty.length, 0);
+      final zeroOut = resampleGlide(
+        _sine(0.01, 220),
+        ratioStart: 1,
+        ratioEnd: 1,
+        glideSamples: 10,
+        outLen: 0,
+      );
+      expect(zeroOut.length, 0);
+    });
+  });
+
   group('granularPitchShift', () {
     test('zero semitones is identity', () {
       final s = _sine(0.2, 220);
