@@ -5,9 +5,10 @@ import 'package:comet_beat/core/curriculum/concept_map.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/form_analysis_view.dart';
 import 'package:comet_beat/features/games/composition/form_timeline.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/features/textbook/textbook_i18n.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:crisp_notation/crisp_notation.dart' show NoteElement;
+import 'package:crisp_notation/crisp_notation.dart' show NoteElement, StaffView;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -105,6 +106,56 @@ void main() {
       for (final ex in kHarmonyExamples['harmonic_function']!) {
         expect(ex.cadence, isNull);
       }
+    });
+  });
+
+  group('playback highlight schedule', () {
+    test('a form schedule lines up one step per engraved note id', () {
+      final ex = kFormExamples['musical_form']!.last; // A-B-A-C-A
+      final ids = ex.wholeSteps().expand((s) => s.ids).toList();
+      // ids run n0, n1, … in engraving order (matching scoreOf()).
+      expect(ids, [for (var i = 0; i < ids.length; i++) 'n$i']);
+      // Section 1 (the B) starts right after section 0's four notes.
+      expect(ex.sectionSteps(1).first.ids, {'n4'});
+    });
+
+    test('a harmony schedule lights one chord id at a time', () {
+      final ex = kHarmonyExamples['harmonic_function']!.first; // 4 chords
+      expect(
+        ex.wholeChordSteps().map((s) => s.ids).toList(),
+        [
+          {'c0'},
+          {'c1'},
+          {'c2'},
+          {'c3'},
+        ],
+      );
+      expect(ex.chordSteps(2).single.ids, {'c2'});
+    });
+
+    testWidgets('PlayingStaffView lights the scheduled ids as time advances',
+        (tester) async {
+      final pb = ScorePlayback();
+      addTearDown(pb.dispose);
+      final score = kFormExamples['musical_form']!.first.scoreOf();
+      final widget = MaterialApp(
+        home: Scaffold(body: PlayingStaffView(score: score, controller: pb)),
+      );
+      await tester.pumpWidget(widget);
+      StaffView staff() => tester.widget<StaffView>(find.byType(StaffView));
+      expect(staff().highlightedIds, isEmpty);
+
+      pb.play([
+        (ids: {'n0'}, ms: 100),
+        (ids: {'n1'}, ms: 100),
+      ]);
+      await tester.pump(); // controller change → ticker starts
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(staff().highlightedIds, {'n0'});
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(staff().highlightedIds, {'n1'});
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(staff().highlightedIds, isEmpty); // finished → cleared
     });
   });
 

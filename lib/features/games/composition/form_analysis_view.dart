@@ -18,6 +18,7 @@
 
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/form_timeline.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/midi_pitch.dart';
 import 'package:comet_beat/shared/score_theme.dart';
@@ -63,6 +64,29 @@ class FormExample {
   List<(int, int)> get wholePhrase =>
       [for (var i = 0; i < pattern.length; i++) ...sectionPhrase(i)];
 
+  /// The score note id of the [k]-th note of section [i] (matches [scoreOf]'s
+  /// running 'n0', 'n1', … numbering).
+  int _startOf(int i) {
+    var s = 0;
+    for (var k = 0; k < i; k++) {
+      s += _motifs[pattern[k]]!.length;
+    }
+    return s;
+  }
+
+  /// Highlight schedule (one step per note) for section [i].
+  List<PlayStep> sectionSteps(int i) {
+    final start = _startOf(i);
+    return [
+      for (var k = 0; k < _motifs[pattern[i]]!.length; k++)
+        (ids: {'n${start + k}'}, ms: _noteMs),
+    ];
+  }
+
+  /// Highlight schedule for the whole piece.
+  List<PlayStep> wholeSteps() =>
+      [for (var i = 0; i < pattern.length; i++) ...sectionSteps(i)];
+
   /// An engraved score: one 4/4 bar per section, its motif as four quarters.
   Score scoreOf() {
     var n = 0;
@@ -96,15 +120,25 @@ class FormAnalysisView extends StatefulWidget {
 
 class _FormAnalysisViewState extends State<FormAnalysisView> {
   int? _playing; // index of the section highlighted right now
+  final _pb = ScorePlayback();
+  late final Score _score = widget.example.scoreOf();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   void _playSection(int i) {
     setState(() => _playing = i);
     context.read<AudioService>().playSequence(widget.example.sectionPhrase(i));
+    _pb.play(widget.example.sectionSteps(i)); // notes light up in time
   }
 
   void _playWhole() {
     setState(() => _playing = null);
     context.read<AudioService>().playSequence(widget.example.wholePhrase);
+    _pb.play(widget.example.wholeSteps());
   }
 
   @override
@@ -144,9 +178,9 @@ class _FormAnalysisViewState extends State<FormAnalysisView> {
                 padding: const EdgeInsets.all(12),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: StaffView(
-                    score: widget.example.scoreOf(),
-                    staffSpace: 11,
+                  child: PlayingStaffView(
+                    score: _score,
+                    controller: _pb,
                     theme: kidsScoreTheme,
                   ),
                 ),
@@ -229,7 +263,20 @@ class HarmonyExample {
       ],
     );
   }
+
+  /// Highlight schedule for playing chord [i] alone.
+  List<PlayStep> chordSteps(int i) => [
+        (ids: {'c$i'}, ms: _chordMs),
+      ];
+
+  /// Highlight schedule for the whole progression.
+  List<PlayStep> wholeChordSteps() => [
+        for (var i = 0; i < chords.length; i++) (ids: {'c$i'}, ms: _chordMs),
+      ];
 }
+
+/// Per-chord duration (matches AudioService.playChordSequence's default ms).
+const _chordMs = 900;
 
 // C-major triads used across the examples.
 const _cI = [60, 64, 67]; // C  E  G
@@ -250,12 +297,21 @@ class HarmonyAnalysisView extends StatefulWidget {
 
 class _HarmonyAnalysisViewState extends State<HarmonyAnalysisView> {
   int? _playing;
+  final _pb = ScorePlayback();
+  late final Score _score = widget.example.scoreOf();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   void _playChord(int i) {
     setState(() => _playing = i);
     context
         .read<AudioService>()
         .playChordSequence([widget.example.chords[i].midis]);
+    _pb.play(widget.example.chordSteps(i));
   }
 
   void _playWhole() {
@@ -263,6 +319,7 @@ class _HarmonyAnalysisViewState extends State<HarmonyAnalysisView> {
     context.read<AudioService>().playChordSequence(
       [for (final c in widget.example.chords) c.midis],
     );
+    _pb.play(widget.example.wholeChordSteps());
   }
 
   @override
@@ -303,9 +360,9 @@ class _HarmonyAnalysisViewState extends State<HarmonyAnalysisView> {
                 padding: const EdgeInsets.all(12),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: StaffView(
-                    score: widget.example.scoreOf(),
-                    staffSpace: 11,
+                  child: PlayingStaffView(
+                    score: _score,
+                    controller: _pb,
                     theme: kidsScoreTheme,
                   ),
                 ),
