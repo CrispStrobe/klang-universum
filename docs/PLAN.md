@@ -78,8 +78,10 @@ and push to origin/main** before/after touching shared files. Format:
     drift-prone tempo×swing grid; a new seam test pins the send steady state.
   **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
 
-- **opus (aec-rate)** · 🚧 **ACTIVE — self-tuning AEC: Valin closed-loop learning
-  rate** (the "how do we tune automatically" answer). Instead of hand-picking
+- **opus (aec-rate)** · ✅ **idle / SHIPPED (layer 1 of 4) — self-tuning AEC:
+  Valin closed-loop learning rate** (the "how do we tune automatically" answer).
+  Arc continues: (2) C port, (3) real corpus, (4) CMA-ES sweep — see tail of
+  this entry. Layer 1 detail: Instead of hand-picking
   `mu`, the filter derives its own step per bin per block from its live leakage
   estimate — Valin, "On Adjusting the Learning Rate in Frequency Domain Echo
   Cancellation With Double-Talk" (IEEE TASLP 2007, arXiv:1602.08044), written
