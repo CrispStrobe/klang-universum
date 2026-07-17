@@ -374,6 +374,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the swing toggle turns the groove swing on and off',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    expect(game.swingOn, isFalse);
+    game.setSwing(true);
+    await tester.pump();
+    expect(game.swingOn, isTrue);
+    game.setSwing(false);
+    await tester.pump();
+    expect(game.swingOn, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('the voice speed control time-stretches a recorded clip',
       (tester) async {
     await pumpGame(tester, const TrackerScreen());

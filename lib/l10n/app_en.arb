@@ -411,6 +411,7 @@
   "trackerChannelVoice": "Voice",
   "trackerToggleNotation": "Show notation",
   "trackerImportTune": "Load a tune",
+  "trackerSwing": "Swing",
   "trackerDemoTune": "Simple tune (C D E G)",
   "trackerChangeInstrument": "Change instrument",
   "trackerPattern": "Pattern",

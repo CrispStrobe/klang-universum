@@ -107,6 +107,10 @@ abstract interface class TrackerTester {
   bool get notationVisible;
   void toggleNotation();
 
+  /// Whether the groove swings (off-beats delayed), and a toggle.
+  bool get swingOn;
+  void setSwing(bool on);
+
   /// Imports the built-in demo tune into the melody channel (Score → Tracker).
   void importDemo();
 
@@ -299,6 +303,17 @@ class _TrackerScreenState extends State<TrackerScreen>
   bool get notationVisible => _showNotation;
   @override
   void toggleNotation() => setState(() => _showNotation = !_showNotation);
+
+  @override
+  bool get swingOn => _engine.timing.swing > 0;
+  @override
+  void setSwing(bool on) {
+    setState(
+      () => _engine.timing = _engine.timing.copyWith(swing: on ? 0.6 : 0.0),
+    );
+    _syncPlayback();
+  }
+
   @override
   void importDemo() => _importScore(kTrackerDemoTune);
   @override
@@ -1165,6 +1180,12 @@ class _TrackerScreenState extends State<TrackerScreen>
             icon: const Icon(Icons.library_music),
             tooltip: l10n.trackerImportTune,
             onPressed: _showSongSheet,
+          ),
+          IconButton(
+            icon: Icon(swingOn ? Icons.waves : Icons.linear_scale),
+            color: swingOn ? Theme.of(context).colorScheme.primary : null,
+            tooltip: l10n.trackerSwing,
+            onPressed: () => setSwing(!swingOn),
           ),
           IconButton(
             icon: Icon(_showNotation ? Icons.grid_view : Icons.music_note),

@@ -2174,6 +2174,12 @@ abstract class AppLocalizations {
   /// **'Load a tune'**
   String get trackerImportTune;
 
+  /// No description provided for @trackerSwing.
+  ///
+  /// In en, this message translates to:
+  /// **'Swing'**
+  String get trackerSwing;
+
   /// No description provided for @trackerDemoTune.
   ///
   /// In en, this message translates to:

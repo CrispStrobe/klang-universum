@@ -380,6 +380,31 @@ void main() {
     });
   });
 
+  group('swing', () {
+    test('stepOnsetMs delays off-beats only; loop length unchanged', () {
+      const straight = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final swung = straight.copyWith(swing: 0.5);
+      expect(swung.stepOnsetMs(0), straight.stepOnsetMs(0)); // downbeat
+      expect(swung.stepOnsetMs(2), straight.stepOnsetMs(2)); // even step
+      expect(swung.stepOnsetMs(1), greaterThan(straight.stepOnsetMs(1)));
+      expect(swung.stepOnsetMs(1), closeTo(straight.stepMs * 1.5, 1e-9));
+      expect(swung.totalSamples, straight.totalSamples); // total unchanged
+    });
+
+    test('a swung render differs from straight for an off-beat note', () {
+      final straight =
+          TrackerEngine(timing: const TrackerTiming(rows: 8, stepsPerBeat: 2))
+            ..setCell(0, 1, const TrackerCell(midi: 60)); // off-beat step
+      final dry = straight.renderLoop();
+      final swung = TrackerEngine(
+        timing: const TrackerTiming(rows: 8, stepsPerBeat: 2, swing: 0.5),
+      )..setCell(0, 1, const TrackerCell(midi: 60));
+      final swungWav = swung.renderLoop();
+      expect(swungWav, isNot(equals(dry)));
+      expect(swungWav.length, dry.length); // total loop length preserved
+    });
+  });
+
   group('per-channel effect', () {
     test('applyChannelEffect: none is identity; each effect changes the stem',
         () {

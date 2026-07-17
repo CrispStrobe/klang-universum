@@ -39,13 +39,20 @@ class TrackerTiming {
     this.tempoBpm = 120,
     this.rows = 16,
     this.stepsPerBeat = 4,
+    this.swing = 0.0,
   })  : assert(tempoBpm > 0),
         assert(rows > 0),
-        assert(stepsPerBeat > 0);
+        assert(stepsPerBeat > 0),
+        assert(swing >= 0 && swing < 1);
 
   final int tempoBpm;
   final int rows;
   final int stepsPerBeat;
+
+  /// Swing: 0 = straight. Delays each off-beat (odd) step's onset by
+  /// `swing * stepMs` (≈0.66 = a triplet shuffle) — the even step rings longer,
+  /// the odd one shorter. The loop's total length is unchanged.
+  final double swing;
 
   int get beatMs => 60000 ~/ tempoBpm;
   int get stepMs => beatMs ~/ stepsPerBeat;
@@ -53,11 +60,25 @@ class TrackerTiming {
   int get totalSamples => (totalMs * kSampleRate) ~/ 1000;
   Duration get loopLength => Duration(milliseconds: totalMs);
 
-  TrackerTiming copyWith({int? tempoBpm, int? rows, int? stepsPerBeat}) =>
+  /// The onset time (ms) of [step], swing-aware (off-beats delayed).
+  double stepOnsetMs(int step) =>
+      step * stepMs + (step.isOdd ? swing * stepMs : 0.0);
+
+  /// The onset sample of [step], swing-aware.
+  int stepStartSample(int step) =>
+      (stepOnsetMs(step) * kSampleRate / 1000).round();
+
+  TrackerTiming copyWith({
+    int? tempoBpm,
+    int? rows,
+    int? stepsPerBeat,
+    double? swing,
+  }) =>
       TrackerTiming(
         tempoBpm: tempoBpm ?? this.tempoBpm,
         rows: rows ?? this.rows,
         stepsPerBeat: stepsPerBeat ?? this.stepsPerBeat,
+        swing: swing ?? this.swing,
       );
 }
 
@@ -117,14 +138,22 @@ List<(int?, int)> cellRuns(List<TrackerCell> cells) {
 }
 
 /// The runs of [cells] as back-to-back [Segment]s (for the additive voices).
-List<Segment> cellsToSegments(List<TrackerCell> cells, TrackerTiming timing) =>
-    [
-      for (final (midi, steps) in cellRuns(cells))
-        (
-          freqs: midi == null ? const <double>[] : [midiToFrequency(midi)],
-          ms: steps * timing.stepMs,
-        ),
-    ];
+/// Segment durations follow the swing grid, so the concatenation swings.
+List<Segment> cellsToSegments(List<TrackerCell> cells, TrackerTiming timing) {
+  final segs = <Segment>[];
+  var step = 0;
+  for (final (midi, steps) in cellRuns(cells)) {
+    final ms = timing.stepOnsetMs(step + steps) - timing.stepOnsetMs(step);
+    segs.add(
+      (
+        freqs: midi == null ? const <double>[] : [midiToFrequency(midi)],
+        ms: ms.round(),
+      ),
+    );
+    step += steps;
+  }
+  return segs;
+}
 
 /// How a channel's cells become an un-normalized sample buffer. The seam for
 /// non-additive instruments (sfxr, recorded samples) added in later slices.
@@ -160,8 +189,10 @@ class AdditiveInstrument implements TrackerInstrument {
     var startStep = 0;
     for (final (midi, steps) in cellRuns(cells)) {
       if (midi != null) {
-        final start = (startStep * timing.stepMs * kSampleRate) ~/ 1000;
-        final ms = steps * timing.stepMs;
+        final start = timing.stepStartSample(startStep);
+        final ms = (timing.stepOnsetMs(startStep + steps) -
+                timing.stepOnsetMs(startStep))
+            .round();
         final effect = cells[startStep].effect;
         final buf = effect == TrackerEffect.none
             ? renderSegmentsRaw(
@@ -205,10 +236,12 @@ class SfxrInstrument implements TrackerInstrument {
     var startStep = 0;
     for (final (midi, steps) in cellRuns(cells)) {
       if (midi != null) {
-        final startSample = (startStep * timing.stepMs * kSampleRate) ~/ 1000;
+        final startSample = timing.stepStartSample(startStep);
+        final ms = timing.stepOnsetMs(startStep + steps) -
+            timing.stepOnsetMs(startStep);
         final buf = sfxrGenerate(
           params.copyWith(baseFreq: midiToFrequency(midi) / 440),
-          durationSec: steps * timing.stepMs / 1000,
+          durationSec: ms / 1000,
           rng: rng,
         );
         final n = min(buf.length, out.length - startSample);
@@ -258,8 +291,9 @@ class SampleInstrument implements TrackerInstrument {
     var startStep = 0;
     for (final (midi, steps) in cellRuns(cells)) {
       if (midi != null) {
-        final startSample = (startStep * timing.stepMs * kSampleRate) ~/ 1000;
-        final runSamples = (steps * timing.stepMs * kSampleRate) ~/ 1000;
+        final startSample = timing.stepStartSample(startStep);
+        final runSamples =
+            timing.stepStartSample(startStep + steps) - startSample;
         final buf = resampleCubic(sample, midiToFrequency(midi) / baseFreq);
         final n = min(min(buf.length, runSamples), out.length - startSample);
         for (var i = 0; i < n; i++) {
@@ -292,7 +326,7 @@ class PercussionInstrument implements TrackerInstrument {
       final midi = cells[step].midi;
       if (midi != null) {
         final idx = midi.clamp(0, Drum.values.length - 1);
-        hits.add((step * timing.stepMs, Drum.values[idx]));
+        hits.add((timing.stepOnsetMs(step).round(), Drum.values[idx]));
       }
     }
     return renderDrumPattern(hits, totalMs: timing.totalMs);
@@ -617,9 +651,8 @@ class TrackerEngine {
     for (final (midi, steps) in cellRuns(ch.cells)) {
       final vol = midi != null ? ch.cells[startStep].volume : null;
       if (vol != null && vol != 1.0) {
-        final start = (startStep * _timing.stepMs * kSampleRate) ~/ 1000;
-        final end =
-            ((startStep + steps) * _timing.stepMs * kSampleRate) ~/ 1000;
+        final start = _timing.stepStartSample(startStep);
+        final end = _timing.stepStartSample(startStep + steps);
         for (var i = start; i < end && i < buf.length; i++) {
           buf[i] *= vol;
         }

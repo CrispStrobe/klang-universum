@@ -380,6 +380,7 @@
   "trackerChannelVoice": "Stimme",
   "trackerToggleNotation": "Noten zeigen",
   "trackerImportTune": "Melodie laden",
+  "trackerSwing": "Swing",
   "trackerDemoTune": "Kurze Melodie (C D E G)",
   "trackerChangeInstrument": "Instrument wechseln",
   "trackerPattern": "Muster",
