@@ -14,8 +14,8 @@ import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/note_values/symbol_catalog.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -165,11 +165,7 @@ class _NoteValueQuizScreenState extends State<NoteValueQuizScreen>
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: StaffView(
-                              score: _symbolScore,
-                              staffSpace: 18,
-                              theme: kidsScoreTheme,
-                            ),
+                            child: ReadingStaffView(score: _symbolScore),
                           ),
                         ),
                       ),

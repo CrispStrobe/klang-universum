@@ -13,8 +13,8 @@ import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:comet_beat/shared/score_theme.dart';
 import 'package:comet_beat/shared/widgets/music_glyph.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart' hide Step;
@@ -164,10 +164,9 @@ class _MeasureFillScreenState extends State<MeasureFillScreen>
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: StaffView(
+                            child: ReadingStaffView(
                               score: _renderedScore,
                               staffSpace: 12,
-                              theme: kidsScoreTheme,
                             ),
                           ),
                         ),
