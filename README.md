@@ -30,7 +30,9 @@ SRI review runners: note-value symbols + note reading (per clef); the home
 review button routes to the biggest due bucket. Audio is synthesized in
 pure Dart (no assets). Web deep links: `?game=<id>`.
 Later: more ear training, unlock gating, Kompositionstechnik (see plan).
-Live web build: https://mus-theta.vercel.app
+Live web build: https://crispstrobe.github.io/cometbeat/ (GitHub Pages, via
+`.github/workflows/pages.yml`) and https://mus-theta.vercel.app (Vercel, via
+`deploy.yml`) — both auto-deploy the same web build on every green `main`.
 
 ## Architecture notes
 
