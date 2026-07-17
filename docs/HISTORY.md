@@ -491,6 +491,25 @@ Games built on crisp_notation capabilities the app didn't use before.
   editable order-list + a song-length playhead), and **per-note dynamics**
   (long-press → soft "ghost" notes). Sandbox, no stars. (Mic capture is
   device-only; the DSP + assign→play path are unit-tested headlessly.)
+- **Module formats & cross-format converters** (Tracker, `core/audio/mod/`) — the
+  Tracker speaks the classic tracker file formats, all in **pure Dart** (web-safe,
+  no native deps). **Readers** for ProTracker `.mod`, Scream Tracker 3 `.s3m`,
+  FastTracker 2 `.xm` and Impulse Tracker `.it` — the hardest part, IT's IT214/215
+  variable-bit-width sample **decompression**, was pinned by an oracle round-tripped
+  **44/44 against libxmp's `itsex.c`** before a line of Dart was written.
+  **Writers** for all four. A format-neutral **`ModuleDoc` hub** (pitch as MIDI so
+  notes keep their pitch across formats, PCM normalized to ±1) turns the readers and
+  writers into a **complete N×N converter matrix — any of {mod,s3m,xm,it} → any of
+  {mod,xm,s3m,it}** (`parseAnyModule` sniffs by signature; conversion carries notes/
+  instruments/volume/samples/structure, dropping per-cell effects in v1). Every
+  codec was built the same disciplined way — a hand-authored, self-verified golden
+  fixture (committed, license-clean) + a skip-if-absent live test over a real
+  module, with one sub-agent implementing one file against a written contract. Also
+  exposed as **headless CLIs** (`bin/modinfo.dart` dumps any module; `bin/modconv.dart`
+  converts between formats and extracts samples to WAV — "steal an instrument" from
+  the shell), Flutter-free like `bin/listen.dart`. In the app: MOD + MIDI
+  import/export via a `file_selector` menu (the MIDI↔MOD hub reuses crisp_notation's
+  Score bridge — no external converter).
 - **Loop Mixer — beatbox + jam along** (composition, ladder slice 10) — the
   mic closes the circle twice more. **Beatbox a beat:** count-in, 2 bars of
   "boom-ts-pss" into the mic, and it comes back as a teal drum card — onset
