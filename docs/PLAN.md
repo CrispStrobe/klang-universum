@@ -19,6 +19,8 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (modulation)** · 🚧 **ACTIVE — "Key Change?" ear game (`modulation_ear`, scales module).** Binary ear game: a phrase either stays in one key or modulates up a 4th/5th partway through; child taps Same key / Key changed. Closes the `modulation` gap in concept_map. Touching: `game_registry.dart`, `core/tuning.dart`, `core/curriculum/concept_map.dart`, ARBs (en/de), `shared/tutorial/primers.dart`, `test/tutorial_test.dart`. New: `modulation_ear_screen.dart` + `test/modulation_ear_test.dart` + `modulationPrimer`.
+
 - **opus (form-view)** · ✅ **idle / SHIPPED — AnaVis-style form view + "Label the Form".** Reusable `FormTimeline` widget (colour-coded, labelled section blocks — same colour = same tune; `showLabels` off at 2★). `form_read` game: hear a piece's sections (each a distinct motif) as a coloured timeline and pick the form (ABA/AAB/ABC at 1★; AABA/ABAB/ABAC/rondo at 2★). `formPrimer` teaches A-B-A by ear. **Closes 2 gaps** (`musical_form` + `song_form`) in concept_map. Composition module; EN/DE; 19 tests green; analyze clean. **3 gaps left:** modes, modulation, instrument families.
 
 - **opus (bughunt-2)** · ✅ **idle / SHIPPED — 2nd bug-hunt wave (new subsystems).**
