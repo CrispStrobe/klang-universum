@@ -1014,6 +1014,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Infinite mode — every loop a little different';
 
   @override
+  String get loopMixerSend => 'Space effect (reverb / echo)';
+
+  @override
   String get loopMixerSing => 'Sing a track!';
 
   @override

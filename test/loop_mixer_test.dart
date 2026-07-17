@@ -445,4 +445,17 @@ void main() {
     await tester.pump();
     expect(game.loopIteration, 6);
   });
+
+  testWidgets('the master send effect can be set and cleared', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.send, LoopSend.none);
+    game.setSend(LoopSend.reverb);
+    await tester.pump();
+    expect(game.send, LoopSend.reverb);
+    game.setSend(LoopSend.none);
+    await tester.pump();
+    expect(game.send, LoopSend.none);
+    expect(tester.takeException(), isNull);
+  });
 }

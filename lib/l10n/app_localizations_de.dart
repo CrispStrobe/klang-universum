@@ -1020,6 +1020,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Endlos-Modus — jeder Loop ein bisschen anders';
 
   @override
+  String get loopMixerSend => 'Raum-Effekt (Hall / Echo)';
+
+  @override
   String get loopMixerSing => 'Sing eine Spur!';
 
   @override

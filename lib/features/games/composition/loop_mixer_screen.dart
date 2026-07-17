@@ -86,6 +86,10 @@ abstract interface class LoopMixerTester {
   void setSwing(double value);
   void setTempo(int bpm);
   void setProgression(String? id);
+
+  /// The master send effect on the whole mix, and a setter.
+  LoopSend get send;
+  void setSend(LoopSend value);
   void stopAll();
   bool get scoreVisible;
   void toggleScorePanel();
@@ -215,6 +219,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void setTrackLevel(String id, double level) => _setLevel(id, level);
   @override
   void setSwing(double value) => _setSwing(value);
+  @override
+  LoopSend get send => _engine.send;
+  @override
+  void setSend(LoopSend value) => _setSend(value);
   @override
   void setTempo(int bpm) => _setTempo(bpm);
   @override
@@ -928,6 +936,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _syncPlayback();
   }
 
+  void _setSend(LoopSend value) {
+    if (value == _engine.send) return;
+    setState(() => _engine.send = value);
+    _syncPlayback();
+  }
+
   void _setTempo(int bpm) {
     if (bpm == _engine.tempoBpm) return;
     setState(() => _engine.tempoBpm = bpm);
@@ -1081,6 +1095,21 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                     isSelected: _infinite,
                     tooltip: l10n.loopMixerInfinite,
                     onPressed: toggleInfinite,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.surround_sound,
+                      color: send != LoopSend.none
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    isSelected: send != LoopSend.none,
+                    tooltip: l10n.loopMixerSend,
+                    onPressed: () => setSend(
+                      LoopSend
+                          .values[(send.index + 1) % LoopSend.values.length],
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(

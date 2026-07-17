@@ -1958,6 +1958,12 @@ abstract class AppLocalizations {
   /// **'Infinite mode — every loop a little different'**
   String get loopMixerInfinite;
 
+  /// No description provided for @loopMixerSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Space effect (reverb / echo)'**
+  String get loopMixerSend;
+
   /// No description provided for @loopMixerSing.
   ///
   /// In en, this message translates to:

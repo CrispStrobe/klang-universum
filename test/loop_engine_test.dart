@@ -348,4 +348,22 @@ void main() {
     // The padded tail stays silent.
     expect(mixed.sublist(5000).any((s) => s != 0), isFalse);
   });
+
+  test('a master send effect changes the mix; none restores it', () {
+    final e = LoopEngine()
+      ..toggle('drums')
+      ..toggle('bass');
+    final dry = e.renderLoop();
+
+    e.send = LoopSend.reverb;
+    final wet = e.renderLoop();
+    expect(wet, isNot(equals(dry)));
+    expect(wet.length, dry.length); // same loop length
+
+    e.send = LoopSend.delay;
+    expect(e.renderLoop(), isNot(equals(wet))); // a different send
+
+    e.send = LoopSend.none;
+    expect(e.renderLoop(), equals(dry)); // send is in the cache key
+  });
 }

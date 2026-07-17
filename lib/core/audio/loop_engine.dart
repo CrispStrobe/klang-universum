@@ -21,7 +21,12 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
 import 'package:comet_beat/core/audio/synth.dart';
+
+/// An optional master send effect on the whole Loop Mixer output.
+enum LoopSend { none, reverb, delay }
 
 /// The musical clock the patterns render against: [bars] bars of 4/4 on an
 /// eighth-note step grid (2 bars for the free vamp, 4 with a progression).
@@ -890,6 +895,29 @@ class LoopEngine {
     _wavCache.clear();
   }
 
+  /// A master send effect on the whole mix (a live control; not persisted in the
+  /// spec/share token). Different sends cache to different WAV keys.
+  LoopSend send = LoopSend.none;
+
+  /// Applies the [send] effect to a mixed [pcm] via a Float64 round-trip.
+  Int16List _applySend(Int16List pcm) {
+    if (send == LoopSend.none) return pcm;
+    final f = Float64List(pcm.length);
+    for (var i = 0; i < pcm.length; i++) {
+      f[i] = pcm[i] / 32768.0;
+    }
+    final wet = switch (send) {
+      LoopSend.reverb => reverbFx(f, mix: 0.28),
+      LoopSend.delay => delayFx(f, delayMs: 300, feedback: 0.3, mix: 0.28),
+      LoopSend.none => f,
+    };
+    final out = Int16List(pcm.length);
+    for (var i = 0; i < wet.length && i < out.length; i++) {
+      out[i] = (wet[i] * 32768).round().clamp(-32768, 32767);
+    }
+    return out;
+  }
+
   LoopTrack _track(String id) => tracks.firstWhere((t) => t.id == id);
 
   /// Toggles [id]; returns true if the track is now enabled.
@@ -985,20 +1013,23 @@ class LoopEngine {
   /// scheduler uses this every 4th loop.
   Uint8List renderLoop({bool fill = false}) {
     final filling = fill && enabled.contains('drums');
-    final key = '${spec.cacheKey}${filling ? '#fill' : ''}';
+    final sendKey = send == LoopSend.none ? '' : '#send:${send.name}';
+    final key = '${spec.cacheKey}${filling ? '#fill' : ''}$sendKey';
     return _wavCache[key] ??= wavBytes(
-      mixStems(
-        [
-          for (final track in tracks)
-            if (enabled.contains(track.id))
-              (
-                samples: filling && track.id == 'drums'
-                    ? _fillStemFor(track)
-                    : _stemFor(track),
-                gain: track.gain * (levels[track.id] ?? 1.0).clamp(0.0, 1.0),
-              ),
-        ],
-        totalSamples: timing.totalSamples,
+      _applySend(
+        mixStems(
+          [
+            for (final track in tracks)
+              if (enabled.contains(track.id))
+                (
+                  samples: filling && track.id == 'drums'
+                      ? _fillStemFor(track)
+                      : _stemFor(track),
+                  gain: track.gain * (levels[track.id] ?? 1.0).clamp(0.0, 1.0),
+                ),
+          ],
+          totalSamples: timing.totalSamples,
+        ),
       ),
     );
   }
@@ -1038,21 +1069,24 @@ class LoopEngine {
     final rng = Random(spec.cacheKey.hashCode ^ (iteration * 2654435761));
     final filling = fill && enabled.contains('drums');
     return wavBytes(
-      mixStems(
-        [
-          for (final track in tracks)
-            if (enabled.contains(track.id))
-              (
-                samples: switch (track.id) {
-                  'drums' =>
-                    filling ? _fillStemFor(track) : _variedDrumStem(track, rng),
-                  'melody' => _variedMelodyStem(track, rng),
-                  _ => _stemFor(track),
-                },
-                gain: track.gain * (levels[track.id] ?? 1.0).clamp(0.0, 1.0),
-              ),
-        ],
-        totalSamples: timing.totalSamples,
+      _applySend(
+        mixStems(
+          [
+            for (final track in tracks)
+              if (enabled.contains(track.id))
+                (
+                  samples: switch (track.id) {
+                    'drums' => filling
+                        ? _fillStemFor(track)
+                        : _variedDrumStem(track, rng),
+                    'melody' => _variedMelodyStem(track, rng),
+                    _ => _stemFor(track),
+                  },
+                  gain: track.gain * (levels[track.id] ?? 1.0).clamp(0.0, 1.0),
+                ),
+          ],
+          totalSamples: timing.totalSamples,
+        ),
       ),
     );
   }

@@ -339,6 +339,7 @@
   "loopMixerSaveFailed": "Audio speichern geht hier nicht",
   "loopMixerLoad": "Laden",
   "loopMixerInfinite": "Endlos-Modus — jeder Loop ein bisschen anders",
+  "loopMixerSend": "Raum-Effekt (Hall / Echo)",
   "loopMixerSing": "Sing eine Spur!",
   "loopMixerSingAgain": "Sing deine Spur neu",
   "loopMixerSingNow": "Jetzt singen!",
