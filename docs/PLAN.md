@@ -28,6 +28,18 @@ and push to origin/main** before/after touching shared files. Format:
   `../mus-upbeat`, branch `feature/spot-upbeat`. Touching the hot shared files
   (registry / tuning / ARBs) — small additive diffs.
 
+- **opus (workshop-inspector)** · 🚧 **ACTIVE — voice-2 tuplets** (next voice-2 v1
+  gap). MODEL-only, `lib/features/workshop/model/score_document.dart` (no screen
+  overlap). Today a tuplet made while voice 2 is active is doubly broken:
+  `_withVoice2`'s reflow omits `durationScale` (v2 triplet members mis-pack /
+  overflow the bar) and `_withTuplets` positions only voice-1 members (no bracket).
+  Fix: v2 reflow passes `durationScale: _tupletScale()`; factor the span-emitter to
+  `_tupletSpansByBar(voiceBars, voice:)` and emit `voice:1` spans from `_withVoice2`
+  (crisp_notation draws inner-voice tuplets — `layout_tuplets.dart:33`); `loadScore`
+  recovers `span.voice==1` via a per-bar v2-id list. Empty-v2 fast path unchanged →
+  goldens hold. Test: `test/voice2_tuplet_test.dart` (packs, emits a voice-1 span,
+  Score round-trips). Worktree `../mus-workshop-inspector`.
+
 - **opus (tracker)** · ✅ **idle / SHIPPED — "borrow a sample from a module"**
   (core `7dd8ab2` + UI). A "Borrow instrument…" item in the Tracker app-bar menu:
   pick a `.mod/.s3m/.xm/.it`, choose one of its samples from a dialog, and it
