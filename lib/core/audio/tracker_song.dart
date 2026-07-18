@@ -225,7 +225,9 @@ class TrackerSong {
   /// a STEREO WAV ([mixStemsStereo]/[wavBytesStereo]); when false it stays MONO
   /// and byte-identical, so a non-panned song pays nothing.
   bool get usesPan =>
-      channels.any((c) => c.pan != 0) ||
+      channels.any(
+        (c) => c.pan != 0 || (c.panEnvelope != null && !c.panEnvelope!.isEmpty),
+      ) ||
       patterns.any(
         (p) => p.cells.any((col) => col.any((c) => c.fxCmd == kFxSetPan)),
       );

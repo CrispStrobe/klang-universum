@@ -693,6 +693,44 @@ void main() {
     });
   });
 
+  group('pan envelope', () {
+    test('panAt interpolates and holds the ends', () {
+      const e = PanEnvelope([(ms: 0, pan: -1.0), (ms: 100, pan: 1.0)]);
+      expect(e.panAt(-5), -1.0);
+      expect(e.panAt(50), closeTo(0.0, 1e-9)); // centre halfway
+      expect(e.panAt(500), 1.0); // held
+    });
+
+    test('a pan envelope sweeps a note left → right in the stereo render', () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60)); // rings ~1000 ms
+      song.engine.setChannelPanEnvelope(
+        0,
+        const PanEnvelope([(ms: 0, pan: -1.0), (ms: 1000, pan: 1.0)]),
+      );
+      expect(song.usesPan, isTrue);
+
+      final wav = song.renderSongWav();
+      expect(wav[22] | (wav[23] << 8), 2); // stereo
+      final data = ByteData.sublistView(wav);
+      final frames = (wav.length - 44) ~/ 4;
+      ({double l, double r}) energy(int fromFrame, int toFrame) {
+        var l = 0.0, r = 0.0;
+        for (var f = fromFrame; f < toFrame; f++) {
+          final o = 44 + f * 4;
+          l += data.getInt16(o, Endian.little).abs();
+          r += data.getInt16(o + 2, Endian.little).abs();
+        }
+        return (l: l, r: r);
+      }
+
+      final first = energy(0, frames ~/ 4); // 0..250 ms → panned left
+      final last = energy(3 * frames ~/ 4, frames); // 750..1000 ms → right
+      expect(first.l, greaterThan(first.r)); // starts left
+      expect(last.r, greaterThan(last.l)); // ends right
+    });
+  });
+
   group('audit fixes', () {
     test('6xy continues vibrato with its own memory (does not corrupt it)', () {
       // 4-1-8 arms vibrato (speed 1, depth 8 ⇒ ±1 st). 6-0-4 must NOT reparse

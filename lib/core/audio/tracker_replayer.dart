@@ -756,6 +756,36 @@ void _renderChannelIntoStereo(
   final total = timing.totalSamples;
   final mono = Float64List(total);
   _renderChannelInto(mono, channel, cells, timing, ticksPerRow, 0, pool: pool);
+
+  // A pan ENVELOPE auto-pans each note over time (base pan + the envelope offset,
+  // clamped) — a per-note, per-sample sweep. It takes precedence over 8xx (which
+  // it would otherwise fight); 8xx-only channels use the region path below.
+  final penv = channel.panEnvelope;
+  if (penv != null && !penv.isEmpty) {
+    final rows = cells.length;
+    var startStep = 0;
+    for (final (midi, steps) in cellRuns(cells)) {
+      if (midi != null) {
+        final s = timing.stepStartSample(startStep);
+        final e = startStep + steps < rows
+            ? timing.stepStartSample(startStep + steps)
+            : total;
+        final end = min(e, total);
+        for (var i = s; i < end; i++) {
+          final o = sampleOffset + i;
+          if (o >= left.length) break;
+          final pan = (channel.pan + penv.panAt((i - s) / kSampleRate * 1000))
+              .clamp(-1.0, 1.0);
+          final theta = (pan + 1) / 2 * (pi / 2);
+          left[o] += mono[i] * cos(theta);
+          right[o] += mono[i] * sin(theta);
+        }
+      }
+      startStep += steps;
+    }
+    return;
+  }
+
   for (final reg in _panRegions(channel.pan, cells, timing, total)) {
     final theta = (reg.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
     final lGain = cos(theta);

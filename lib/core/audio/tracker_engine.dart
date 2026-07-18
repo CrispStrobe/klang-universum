@@ -498,6 +498,35 @@ class VolumeEnvelope {
   }
 }
 
+/// A per-channel PAN envelope: pan (−1 left … +1 right) over a note's lifetime
+/// (ms), added to the channel's base pan and clamped. Same breakpoint shape as
+/// [VolumeEnvelope] (linear interp, holds the ends). Honoured by the replayer's
+/// stereo render (uniform-timing path); null/empty = no auto-pan.
+class PanEnvelope {
+  const PanEnvelope(this.points);
+
+  /// `(ms, pan −1..1)` breakpoints, ascending in ms.
+  final List<({int ms, double pan})> points;
+
+  bool get isEmpty => points.isEmpty;
+
+  /// The pan offset at [ms] — linear interpolation, held at the ends.
+  double panAt(double ms) {
+    if (points.isEmpty) return 0.0;
+    if (ms <= points.first.ms) return points.first.pan;
+    for (var i = 1; i < points.length; i++) {
+      final b = points[i];
+      if (ms <= b.ms) {
+        final a = points[i - 1];
+        final span = b.ms - a.ms;
+        if (span <= 0) return b.pan;
+        return a.pan + (b.pan - a.pan) * ((ms - a.ms) / span);
+      }
+    }
+    return points.last.pan;
+  }
+}
+
 class TrackerChannel {
   TrackerChannel({
     required this.id,
@@ -506,6 +535,7 @@ class TrackerChannel {
     this.gain = 0.6,
     this.pan = 0.0,
     this.volumeEnvelope,
+    this.panEnvelope,
     List<TrackerChannelEffect>? effects,
     List<TrackerCell>? cells,
   })  : effects = effects != null
@@ -545,6 +575,12 @@ class TrackerChannel {
   /// voice; set via [TrackerEngine.setChannelVolumeEnvelope] so the WAV
   /// invalidates. A song with any envelope routes through the replayer.
   VolumeEnvelope? volumeEnvelope;
+
+  /// An optional per-channel [PanEnvelope] auto-panning each note over time
+  /// (added to [pan], clamped). Null = none. Honoured by the replayer's stereo
+  /// render; set via [TrackerEngine.setChannelPanEnvelope]. A song with any pan
+  /// envelope [usesPan] → renders in stereo.
+  PanEnvelope? panEnvelope;
 
   /// The channel's insert-effect CHAIN, applied to its stem in order (before
   /// mixStems). Empty = dry. Mutate via [TrackerEngine.setChannelEffects] so
@@ -728,6 +764,12 @@ class TrackerEngine {
   /// WAV. The envelope is honoured by the replayer's additive voice.
   void setChannelVolumeEnvelope(int channel, VolumeEnvelope? envelope) {
     channels[channel].volumeEnvelope = envelope;
+    _wav = null;
+  }
+
+  /// Sets a channel's [PanEnvelope] (null = none) and invalidates the mixed WAV.
+  void setChannelPanEnvelope(int channel, PanEnvelope? envelope) {
+    channels[channel].panEnvelope = envelope;
     _wav = null;
   }
 
