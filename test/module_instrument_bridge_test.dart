@@ -95,7 +95,7 @@ void main() {
       );
       expect(
         () => sampleInstrumentFromModule('x', Uint8List(16), 0),
-        throwsArgumentError, // parseAnyModule rejects unknown format
+        throwsFormatException, // parseAnyModule rejects unknown format
       );
     });
   });

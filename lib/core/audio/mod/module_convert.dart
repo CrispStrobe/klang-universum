@@ -114,6 +114,11 @@ bool _isModTag(String tag) {
 }
 
 /// Sniffs [bytes], parses with the right reader, and adapts to a [ModuleDoc].
+///
+/// Throws a [FormatException] on unrecognized input — a data error for the
+/// untrusted file bytes, consistent with the per-format readers (which throw
+/// their own *FormatException on malformed-but-recognized input) rather than an
+/// ArgumentError, which would signal a caller/programming mistake.
 ModuleDoc parseAnyModule(Uint8List bytes) {
   final fmt = sniffModuleFormat(bytes);
   switch (fmt) {
@@ -126,7 +131,7 @@ ModuleDoc parseAnyModule(Uint8List bytes) {
     case ModuleFormat.it:
       return docFromIt(parseIt(bytes));
     case null:
-      throw ArgumentError('Unrecognized module format');
+      throw const FormatException('Unrecognized module format');
   }
 }
 

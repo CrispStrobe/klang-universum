@@ -9,10 +9,12 @@ import 'package:comet_beat/core/audio/mod/module_convert.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('parseAnyModule throws on an unrecognized format', () {
+  test('parseAnyModule throws FormatException on an unrecognized format', () {
     // 64 zero bytes: no MOD/XM/S3M/IT signature → sniff returns null.
+    // Unrecognized untrusted bytes are a data error (FormatException), not an
+    // ArgumentError — matches the per-format readers and convertModule's doc.
     final garbage = Uint8List(64);
     expect(sniffModuleFormat(garbage), isNull);
-    expect(() => parseAnyModule(garbage), throwsA(isA<ArgumentError>()));
+    expect(() => parseAnyModule(garbage), throwsFormatException);
   });
 }
