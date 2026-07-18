@@ -1127,6 +1127,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopModeTab => 'Gitarren-Tabulatur';
 
   @override
+  String get workshopModeLoop => 'Loop-Mixer';
+
+  @override
   String get tabWorkshopTitle => 'Gitarren-Tabulatur';
 
   @override

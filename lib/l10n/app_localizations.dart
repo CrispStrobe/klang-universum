@@ -2162,6 +2162,12 @@ abstract class AppLocalizations {
   /// **'Guitar Tab'**
   String get workshopModeTab;
 
+  /// No description provided for @workshopModeLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop Mixer'**
+  String get workshopModeLoop;
+
   /// No description provided for @tabWorkshopTitle.
   ///
   /// In en, this message translates to:

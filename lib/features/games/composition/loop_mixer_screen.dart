@@ -53,7 +53,12 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 class LoopMixerScreen extends StatefulWidget {
-  const LoopMixerScreen({super.key, this.aecFactory});
+  const LoopMixerScreen({super.key, this.aecFactory, this.initialSpec});
+
+  /// An optional groove to open with — lets another Workshop mode hand a
+  /// [GrooveSpec] over (e.g. a tracker pattern → a groove). Null = the default
+  /// starter groove.
+  final GrooveSpec? initialSpec;
 
   /// Builds the native Tier-3b [AecEngine] for graded jam mode, or returns null
   /// when the platform has no full-duplex plugin (web / not built) — then jam
@@ -168,6 +173,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.initialSpec != null) _engine.applySpec(widget.initialSpec!);
     _ticker = createTicker((_) {
       if (!_clock.isRunning) {
         _step.value = -1;
