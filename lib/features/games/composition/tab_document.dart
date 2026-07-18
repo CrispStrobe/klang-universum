@@ -9,22 +9,31 @@
 
 import 'package:crisp_notation/crisp_notation.dart';
 
+/// A playing technique attached to a tab note. Rendered by the tab engine via
+/// the matching `Score` lists (bends / slides / note marks / legato slurs).
+enum TabTechnique { hammer, slide, bend, dead, ghost, harmonic }
+
 /// One time-step in a [TabDocument]: a map of string index → fret (a chord when
-/// more than one), plus the played [duration]. String index 0 = the top tab
-/// line (highest-sounding string), matching [Tuning].
+/// more than one), the played [duration], and any [techniques]. String index
+/// 0 = the top tab line (highest-sounding string), matching [Tuning].
 class TabColumn {
   final Map<int, int> frets;
   final NoteDuration duration;
+  final Set<TabTechnique> techniques;
 
   const TabColumn({
     this.frets = const {},
     this.duration = NoteDuration.quarter,
+    this.techniques = const {},
   });
 
   bool get isEmpty => frets.isEmpty;
 
-  TabColumn withFret(int string, int fret) =>
-      TabColumn(frets: {...frets, string: fret}, duration: duration);
+  TabColumn withFret(int string, int fret) => TabColumn(
+        frets: {...frets, string: fret},
+        duration: duration,
+        techniques: techniques,
+      );
 
   TabColumn withoutString(int string) => TabColumn(
         frets: {
@@ -32,10 +41,20 @@ class TabColumn {
             if (e.key != string) e.key: e.value,
         },
         duration: duration,
+        techniques: techniques,
       );
 
   TabColumn withDuration(NoteDuration d) =>
-      TabColumn(frets: frets, duration: d);
+      TabColumn(frets: frets, duration: d, techniques: techniques);
+
+  /// Adds [t] if absent, else removes it.
+  TabColumn toggleTechnique(TabTechnique t) => TabColumn(
+        frets: frets,
+        duration: duration,
+        techniques: techniques.contains(t)
+            ? ({...techniques}..remove(t))
+            : {...techniques, t},
+      );
 }
 
 /// The selectable note durations, each with its length in eighth-note steps
@@ -118,6 +137,12 @@ class TabDocument {
     columns[col] = columns[col].withDuration(duration);
   }
 
+  /// Toggles technique [t] on the column at [col].
+  void toggleTechnique(int col, TabTechnique t) {
+    _ensure(col);
+    columns[col] = columns[col].toggleTechnique(t);
+  }
+
   /// Inserts an empty column at [col].
   void insertColumn(int col) =>
       columns.insert(col.clamp(0, columns.length), const TabColumn());
@@ -135,8 +160,20 @@ class TabDocument {
   Score toScore() {
     final measures = <Measure>[];
     final voicings = <TabVoicing>[];
+    final bends = <Bend>[];
+    final marks = <TabNoteMark>[];
+    final slides = <TabSlide>[];
+    final slurs = <Slur>[];
     var bar = <MusicElement>[];
     var barSteps = 0;
+
+    // Next noteful column after each index — the legato slur target for hammer.
+    int? nextNoteful(int from) {
+      for (var i = from + 1; i < columns.length; i++) {
+        if (!columns[i].isEmpty) return i;
+      }
+      return null;
+    }
 
     for (var c = 0; c < columns.length; c++) {
       final col = columns[c];
@@ -158,6 +195,23 @@ class TabDocument {
         final id = 't$c';
         bar.add(NoteElement(pitches: pitches, duration: col.duration, id: id));
         voicings.add(TabVoicing(id, [for (final e in entries) e.key]));
+        for (final t in col.techniques) {
+          switch (t) {
+            case TabTechnique.bend:
+              bends.add(Bend(id));
+            case TabTechnique.slide:
+              slides.add(TabSlide(id, SlideInOut.outUpward));
+            case TabTechnique.dead:
+              marks.add(TabNoteMark(id, TabNoteStyle.dead));
+            case TabTechnique.ghost:
+              marks.add(TabNoteMark(id, TabNoteStyle.ghost));
+            case TabTechnique.harmonic:
+              marks.add(TabNoteMark(id, TabNoteStyle.harmonic));
+            case TabTechnique.hammer:
+              final n = nextNoteful(c);
+              if (n != null) slurs.add(Slur(id, 't$n'));
+          }
+        }
       }
       barSteps += steps;
     }
@@ -169,6 +223,10 @@ class TabDocument {
       clef: Clef.treble,
       measures: measures,
       tabVoicings: voicings,
+      bends: bends,
+      tabNoteMarks: marks,
+      slideInOuts: slides,
+      slurs: slurs,
     );
   }
 

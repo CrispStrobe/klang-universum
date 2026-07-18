@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_workshop_screen.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
@@ -141,6 +142,23 @@ void main() {
     await tester.tap(find.widgetWithText(OutlinedButton, '7'));
     await tester.pump();
     expect(tab.fretAt(1, 2), 7);
+  });
+
+  testWidgets('toggling a technique chip marks the selected note',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+    tab.selectCell(0, 0);
+    tab.enterFret(5);
+    await tester.pump();
+
+    tab.toggleTechnique(TabTechnique.bend);
+    await tester.pump();
+    expect(tab.techniquesAt(0), contains(TabTechnique.bend));
+
+    tab.toggleTechnique(TabTechnique.bend);
+    await tester.pump();
+    expect(tab.techniquesAt(0), isEmpty);
   });
 
   testWidgets('play lights the sounding column, then stops', (tester) async {

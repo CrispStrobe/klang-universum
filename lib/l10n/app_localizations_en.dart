@@ -1147,6 +1147,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabRemoveColumn => 'Remove step';
 
   @override
+  String get tabTechnique => 'Technique';
+
+  @override
+  String get tabTechHammer => 'H/P';
+
+  @override
+  String get tabTechSlide => 'Slide';
+
+  @override
+  String get tabTechBend => 'Bend';
+
+  @override
+  String get tabTechDead => 'Dead ✕';
+
+  @override
+  String get tabTechGhost => 'Ghost';
+
+  @override
+  String get tabTechHarmonic => 'Harmonic';
+
+  @override
   String get tabExport => 'Export';
 
   @override

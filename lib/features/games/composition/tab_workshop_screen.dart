@@ -89,6 +89,8 @@ abstract class TabWorkshopTester {
   void play();
   bool get isPlaying;
   Set<String> get highlightedIds;
+  void toggleTechnique(TabTechnique t);
+  Set<TabTechnique> techniquesAt(int col);
 }
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
@@ -186,6 +188,12 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   bool get isPlaying => _playing;
   @override
   Set<String> get highlightedIds => _highlightedIds;
+  @override
+  void toggleTechnique(TabTechnique t) =>
+      setState(() => _doc.toggleTechnique(_selCol, t));
+  @override
+  Set<TabTechnique> techniquesAt(int col) =>
+      col < _doc.columns.length ? _doc.columns[col].techniques : const {};
 
   // ── Actions ──────────────────────────────────────────────────────────────
   @override
@@ -635,10 +643,34 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
               ),
             ],
           ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(l10n.tabTechnique),
+              for (final t in TabTechnique.values)
+                FilterChip(
+                  label: Text(_techLabel(l10n, t)),
+                  selected: _selCol < _doc.columns.length &&
+                      _doc.columns[_selCol].techniques.contains(t),
+                  onSelected: (_) => toggleTechnique(t),
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
+
+  String _techLabel(AppLocalizations l10n, TabTechnique t) => switch (t) {
+        TabTechnique.hammer => l10n.tabTechHammer,
+        TabTechnique.slide => l10n.tabTechSlide,
+        TabTechnique.bend => l10n.tabTechBend,
+        TabTechnique.dead => l10n.tabTechDead,
+        TabTechnique.ghost => l10n.tabTechGhost,
+        TabTechnique.harmonic => l10n.tabTechHarmonic,
+      };
 
   String _durLabel(int steps) => switch (steps) {
         8 => '𝅝',

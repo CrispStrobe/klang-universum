@@ -95,6 +95,33 @@ void main() {
     expect(notes, hasLength(2));
   });
 
+  test('techniques emit the matching noteId-keyed Score lists', () {
+    final doc = TabDocument.blank(guitar, initialColumns: 3)
+      ..setFret(0, 0, 5)
+      ..setFret(2, 0, 7)
+      ..toggleTechnique(0, TabTechnique.bend)
+      ..toggleTechnique(0, TabTechnique.harmonic)
+      ..toggleTechnique(0, TabTechnique.hammer) // slur t0 -> next noteful (t2)
+      ..toggleTechnique(2, TabTechnique.slide);
+    final s = doc.toScore();
+    expect(s.bends.map((b) => b.noteId), contains('t0'));
+    expect(
+      s.tabNoteMarks
+          .any((m) => m.noteId == 't0' && m.style == TabNoteStyle.harmonic),
+      isTrue,
+    );
+    expect(s.slideInOuts.any((sl) => sl.noteId == 't2'), isTrue);
+    expect(s.slurs.any((x) => x.startId == 't0' && x.endId == 't2'), isTrue);
+  });
+
+  test('toggleTechnique adds then removes', () {
+    final doc = TabDocument.blank(guitar, initialColumns: 1)..setFret(0, 0, 0);
+    doc.toggleTechnique(0, TabTechnique.bend);
+    expect(doc.columns[0].techniques, contains(TabTechnique.bend));
+    doc.toggleTechnique(0, TabTechnique.bend);
+    expect(doc.columns[0].techniques, isEmpty);
+  });
+
   test('clearCell removes only that string from a chord', () {
     final doc = TabDocument.blank(guitar, initialColumns: 1)
       ..setFret(0, 0, 5)

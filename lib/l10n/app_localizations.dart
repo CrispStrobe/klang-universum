@@ -2216,6 +2216,48 @@ abstract class AppLocalizations {
   /// **'Remove step'**
   String get tabRemoveColumn;
 
+  /// No description provided for @tabTechnique.
+  ///
+  /// In en, this message translates to:
+  /// **'Technique'**
+  String get tabTechnique;
+
+  /// No description provided for @tabTechHammer.
+  ///
+  /// In en, this message translates to:
+  /// **'H/P'**
+  String get tabTechHammer;
+
+  /// No description provided for @tabTechSlide.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide'**
+  String get tabTechSlide;
+
+  /// No description provided for @tabTechBend.
+  ///
+  /// In en, this message translates to:
+  /// **'Bend'**
+  String get tabTechBend;
+
+  /// No description provided for @tabTechDead.
+  ///
+  /// In en, this message translates to:
+  /// **'Dead ✕'**
+  String get tabTechDead;
+
+  /// No description provided for @tabTechGhost.
+  ///
+  /// In en, this message translates to:
+  /// **'Ghost'**
+  String get tabTechGhost;
+
+  /// No description provided for @tabTechHarmonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmonic'**
+  String get tabTechHarmonic;
+
   /// No description provided for @tabExport.
   ///
   /// In en, this message translates to:
