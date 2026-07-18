@@ -1195,6 +1195,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabOpenWorkshop => 'Open in Score Workshop';
 
   @override
+  String get soundLabTitle => 'Sound Lab';
+
+  @override
+  String get soundLabPlay => 'Play';
+
+  @override
+  String get soundLabExport => 'Export WAV';
+
+  @override
+  String get soundLabShare => 'Copy share code';
+
+  @override
+  String get soundLabRandomize => 'Randomize';
+
+  @override
+  String get soundLabMutate => 'Mutate';
+
+  @override
+  String get soundLabSetA => 'Snapshot A';
+
+  @override
+  String get soundLabSetB => 'Snapshot B';
+
+  @override
+  String get soundLabMorphHint =>
+      'Snapshot two sounds into A and B to blend between them.';
+
+  @override
+  String get soundLabCopied => 'Share code copied';
+
+  @override
+  String get soundLabExportFailed => 'Export failed';
+
+  @override
+  String soundLabSavedTo(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
+  String get soundLabSquare => 'Square';
+
+  @override
+  String get soundLabSaw => 'Saw';
+
+  @override
+  String get soundLabSine => 'Sine';
+
+  @override
+  String get soundLabNoise => 'Noise';
+
+  @override
+  String get soundLabPitch => 'Pitch';
+
+  @override
+  String get soundLabSlide => 'Slide';
+
+  @override
+  String get soundLabAttack => 'Attack';
+
+  @override
+  String get soundLabHold => 'Hold';
+
+  @override
+  String get soundLabFade => 'Fade';
+
+  @override
+  String get soundLabPunch => 'Punch';
+
+  @override
+  String get soundLabBuzz => 'Buzz';
+
+  @override
+  String get soundLabWobble => 'Wobble';
+
+  @override
+  String get soundLabBright => 'Bright';
+
+  @override
+  String get soundLabCrunch => 'Crunch';
+
+  @override
+  String get soundLabEcho => 'Echo';
+
+  @override
   String get tabPasteAscii => 'Paste ASCII tab';
 
   @override

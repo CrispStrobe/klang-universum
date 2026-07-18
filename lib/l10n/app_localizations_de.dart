@@ -1202,6 +1202,90 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabOpenWorkshop => 'In Noten-Werkstatt öffnen';
 
   @override
+  String get soundLabTitle => 'Klanglabor';
+
+  @override
+  String get soundLabPlay => 'Abspielen';
+
+  @override
+  String get soundLabExport => 'WAV exportieren';
+
+  @override
+  String get soundLabShare => 'Teilen-Code kopieren';
+
+  @override
+  String get soundLabRandomize => 'Zufall';
+
+  @override
+  String get soundLabMutate => 'Verändern';
+
+  @override
+  String get soundLabSetA => 'Schnappschuss A';
+
+  @override
+  String get soundLabSetB => 'Schnappschuss B';
+
+  @override
+  String get soundLabMorphHint =>
+      'Zwei Klänge in A und B ablegen, dann dazwischen überblenden.';
+
+  @override
+  String get soundLabCopied => 'Teilen-Code kopiert';
+
+  @override
+  String get soundLabExportFailed => 'Export fehlgeschlagen';
+
+  @override
+  String soundLabSavedTo(String path) {
+    return 'Gespeichert unter $path';
+  }
+
+  @override
+  String get soundLabSquare => 'Rechteck';
+
+  @override
+  String get soundLabSaw => 'Säge';
+
+  @override
+  String get soundLabSine => 'Sinus';
+
+  @override
+  String get soundLabNoise => 'Rauschen';
+
+  @override
+  String get soundLabPitch => 'Tonhöhe';
+
+  @override
+  String get soundLabSlide => 'Gleiten';
+
+  @override
+  String get soundLabAttack => 'Anschlag';
+
+  @override
+  String get soundLabHold => 'Halten';
+
+  @override
+  String get soundLabFade => 'Ausklang';
+
+  @override
+  String get soundLabPunch => 'Wucht';
+
+  @override
+  String get soundLabBuzz => 'Schnarren';
+
+  @override
+  String get soundLabWobble => 'Wobbeln';
+
+  @override
+  String get soundLabBright => 'Hell';
+
+  @override
+  String get soundLabCrunch => 'Verzerrung';
+
+  @override
+  String get soundLabEcho => 'Echo';
+
+  @override
   String get tabPasteAscii => 'ASCII-Tab einfügen';
 
   @override

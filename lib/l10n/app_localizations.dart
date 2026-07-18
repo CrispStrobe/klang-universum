@@ -2312,6 +2312,168 @@ abstract class AppLocalizations {
   /// **'Open in Score Workshop'**
   String get tabOpenWorkshop;
 
+  /// No description provided for @soundLabTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound Lab'**
+  String get soundLabTitle;
+
+  /// No description provided for @soundLabPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get soundLabPlay;
+
+  /// No description provided for @soundLabExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export WAV'**
+  String get soundLabExport;
+
+  /// No description provided for @soundLabShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy share code'**
+  String get soundLabShare;
+
+  /// No description provided for @soundLabRandomize.
+  ///
+  /// In en, this message translates to:
+  /// **'Randomize'**
+  String get soundLabRandomize;
+
+  /// No description provided for @soundLabMutate.
+  ///
+  /// In en, this message translates to:
+  /// **'Mutate'**
+  String get soundLabMutate;
+
+  /// No description provided for @soundLabSetA.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot A'**
+  String get soundLabSetA;
+
+  /// No description provided for @soundLabSetB.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot B'**
+  String get soundLabSetB;
+
+  /// No description provided for @soundLabMorphHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot two sounds into A and B to blend between them.'**
+  String get soundLabMorphHint;
+
+  /// No description provided for @soundLabCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Share code copied'**
+  String get soundLabCopied;
+
+  /// No description provided for @soundLabExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get soundLabExportFailed;
+
+  /// No description provided for @soundLabSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {path}'**
+  String soundLabSavedTo(String path);
+
+  /// No description provided for @soundLabSquare.
+  ///
+  /// In en, this message translates to:
+  /// **'Square'**
+  String get soundLabSquare;
+
+  /// No description provided for @soundLabSaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Saw'**
+  String get soundLabSaw;
+
+  /// No description provided for @soundLabSine.
+  ///
+  /// In en, this message translates to:
+  /// **'Sine'**
+  String get soundLabSine;
+
+  /// No description provided for @soundLabNoise.
+  ///
+  /// In en, this message translates to:
+  /// **'Noise'**
+  String get soundLabNoise;
+
+  /// No description provided for @soundLabPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Pitch'**
+  String get soundLabPitch;
+
+  /// No description provided for @soundLabSlide.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide'**
+  String get soundLabSlide;
+
+  /// No description provided for @soundLabAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Attack'**
+  String get soundLabAttack;
+
+  /// No description provided for @soundLabHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold'**
+  String get soundLabHold;
+
+  /// No description provided for @soundLabFade.
+  ///
+  /// In en, this message translates to:
+  /// **'Fade'**
+  String get soundLabFade;
+
+  /// No description provided for @soundLabPunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Punch'**
+  String get soundLabPunch;
+
+  /// No description provided for @soundLabBuzz.
+  ///
+  /// In en, this message translates to:
+  /// **'Buzz'**
+  String get soundLabBuzz;
+
+  /// No description provided for @soundLabWobble.
+  ///
+  /// In en, this message translates to:
+  /// **'Wobble'**
+  String get soundLabWobble;
+
+  /// No description provided for @soundLabBright.
+  ///
+  /// In en, this message translates to:
+  /// **'Bright'**
+  String get soundLabBright;
+
+  /// No description provided for @soundLabCrunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Crunch'**
+  String get soundLabCrunch;
+
+  /// No description provided for @soundLabEcho.
+  ///
+  /// In en, this message translates to:
+  /// **'Echo'**
+  String get soundLabEcho;
+
   /// No description provided for @tabPasteAscii.
   ///
   /// In en, this message translates to:
