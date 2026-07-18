@@ -115,3 +115,23 @@ Our raw SNR now exceeds glint's; NMR (perceptual) trails because our region
 optimizer spends more bits (leaving less for shaping) — the remaining quality
 follow-up. `test/mp3_decode_roundtrip_test.dart` is the ffmpeg-gated regression
 (a sweep crossing every subband) that would have caught this.
+
+## Huffman region optimizer (closing the NMR gap)
+Ported glint's `huffman_select_and_count`: `region0/1_count` from the `max_band`
+formula, and per-region + count1 table chosen by ACTUAL bit cost (LUT-driven,
+`_kPairCostLut`) instead of a max-value heuristic. `Mp3HuffRegions.bits` carries
+the total so the gain search reads it instead of re-emitting. Speech 128k mono:
+
+| metric      | pre-optimizer | glint  | with optimizer |
+|-------------|---------------|--------|----------------|
+| SNR dB      | 35.2          | 32.1   | 36.2           |
+| NMR mean dB | −5.8          | −11.4  | −6.7           |
+| NMR>0 %     | 10.3          | 0.0    | 7.7            |
+
+Fewer Huffman bits free budget for shaping, but most of it currently goes to a
+finer global_gain (raising SNR) rather than more aggressive shaping. The
+remaining NMR gap to glint is the **bit reservoir** — glint borrows bits across
+granules to shape hard granules harder; our frames are self-contained
+(`main_data_begin = 0`). That's the next quality lever (a larger feature).
+Speed: the optimizer's per-candidate search runs inside the gain loop; the LUT
+keeps it at ~1.6× realtime (JIT) for the -q best broadband path.
