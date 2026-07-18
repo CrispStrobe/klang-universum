@@ -2625,7 +2625,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       case 'krn':
         return (null, scoreToKern(score));
       case 'mscx':
-        return (null, scoreToMscx(score));
+        // MuseScore keeps every part (one <Staff> per part) when multi-part.
+        return (
+          null,
+          _mpd.partCount > 1
+              ? multiPartToMscx(_mpd.buildMultiPart(), partNames: _mpd.names)
+              : scoreToMscx(score),
+        );
       case 'ly':
         return (null, scoreToLilyPond(score));
       case 'brf':

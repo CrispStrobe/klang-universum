@@ -4,8 +4,8 @@
 // holds a MultiPartScore (Song Book, trackers, Loop Mixer, …) can offer the
 // whole library's writers from one place instead of copy-pasting per screen.
 //
-// Multi-part formats (MusicXML/.mxl/ABC/MEI/MIDI/module) keep every voice; the
-// remaining single-Score engrave formats (kern/LilyPond/Braille/MuseScore/PDF)
+// Multi-part formats (MusicXML/.mxl/ABC/MEI/MuseScore/MIDI/module) keep every
+// voice; the remaining single-Score engrave formats (kern/LilyPond/Braille/PDF)
 // export the first part (mirrors the Score Workshop's "active part" behaviour) —
 // the library has no multi-part writer for those yet.
 
@@ -87,7 +87,7 @@ final List<_ExportFormat> _kFormats = [
   _ExportFormat(
     'MuseScore',
     'mscx',
-    (mp, names) => _utf8(scoreToMscx(_first(mp))),
+    (mp, names) => _utf8(multiPartToMscx(mp, partNames: names)),
   ),
   _ExportFormat('PDF', 'pdf', (mp, names) => exportScoreToPdf(_first(mp))),
 ];
