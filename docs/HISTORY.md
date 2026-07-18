@@ -592,6 +592,16 @@ Games built on crisp_notation capabilities the app didn't use before.
   the shell), Flutter-free like `bin/listen.dart`. In the app: MOD + MIDI
   import/export via a `file_selector` menu (the MIDI↔MOD hub reuses crisp_notation's
   Score bridge — no external converter).
+- **Rhythm "Relevanzschwelle" engine** (audio core) — the beginner rhythm-
+  quantisation front-end (roadmap step 2). Pure `lib/core/audio/rhythm_quantize.dart`:
+  `detectOnsets` (energy trace → onsets, generic version of `beat_capture`'s rule)
+  → `chooseResolution` auto-picks the **coarsest metric grid the player can
+  actually feel** (finest needed within tolerance, no colliding onsets, never
+  finer than a skill `cap` of quarter/eighth/triplet/sixteenth — so loose eighth
+  playing isn't over-quantised to sixteenths, and a beginner cap collapses stray
+  16th flams) → `quantizeRhythm` drops sub-strength noise, snaps, and collapses
+  same-step hits. The shared front-end before conversion to Tracker/GrooveSpec/
+  Score/MIDI. 15 headless tests.
 - **Loop Mixer — beatbox + jam along** (composition, ladder slice 10) — the
   mic closes the circle twice more. **Beatbox a beat:** count-in, 2 bars of
   "boom-ts-pss" into the mic, and it comes back as a teal drum card — onset
