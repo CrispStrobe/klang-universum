@@ -115,3 +115,26 @@ was found before shipping a mapping that silently wouldn't play.
 - **S3M** command→`fxCmd`/`fxParam` table: implemented in
   `module_convert._s3mEffectToFx` (core commands, structural test + oracle-
   verified). **IT** (`_itEffectToFx`) is DONE too — oracle-verified: an IT porta reads NEARLY IDENTICALLY to openmpt123 (A2 C3 G3 C4 F#4 C5 F5 C6 F6 B6 in both). All four import formats (MOD/XM/S3M/IT) now carry + SOUND their effects.
+
+## `.sf3` SoundFont pipeline — `bin/sf3_oracle.dart`
+
+The same oracle idea for compressed `.sf3` soundfonts. `Sf2SoundFont.parse` takes
+a `VorbisDecode` seam; `bin/sf3_oracle.dart` plugs a **reference Vorbis decoder
+(ffmpeg)** into it, decodes a real `.sf3`, builds `Sf2Instrument`s for melodic GM
+presets, and reports each one's pitch accuracy via the app's MPM detector:
+
+```
+dart run bin/sf3_oracle.dart FluidR3Mono_GM.sf3 [--limit N] [--ffmpeg <path>]
+```
+
+**Verified on the real FluidR3Mono_GM.sf3** (each `smpl[start,end)` byte range is
+a self-contained Ogg-Vorbis stream — all 1186 begin `OggS`): decoded via ffmpeg,
+**Synth Strings 2 reads a 2.9¢ mean pitch error** — the full extract → decode →
+key-split `Sf2Instrument` → render pipeline plays IN TUNE, matching the
+uncompressed-`.sf2` bar (Reed Organ 2.6¢). Dev tool (needs ffmpeg), not CI.
+
+**This is the acceptance gate for glint's Vorbis decoder**
+(docs/GLINT_VORBIS_HANDOVER.md): once glint ships `glint_vorbis_decode`, plug it
+in as the `VorbisDecode` (native FFI / web wasm) and re-run — the pitch numbers
+must match ffmpeg's, and each stream's glint-vs-ffmpeg PCM should agree at high
+SNR. Then the app drops the `.sf3` rejection for the real decoder.
