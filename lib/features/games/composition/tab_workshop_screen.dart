@@ -1,13 +1,16 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 /// A small built-in ASCII-tab riff so the screen is never empty. Parsed with
-/// [asciiTabToScore] on open.
+/// [asciiTabToScore], then made editable via [TabDocument.fromScore].
 const _demoTab = '''
 e|---0-------3-----0-------|
 B|-----1-------1-------1---|
@@ -33,8 +36,8 @@ final List<Tuning> tabTuningPresets = <Tuning>[
 ];
 
 /// Extensions the tab reader accepts. Guitar Pro (`.gp`/`.gpx`) carry real
-/// tab/fret data; the rest are read as pitches and laid out on the fretboard by
-/// the tab engine (lowest-fret placement).
+/// tab/fret data; the rest are read as pitches and placed on the fretboard by
+/// lowest-fret when converted to a [TabDocument].
 const List<String> tabImportExtensions = <String>[
   'gp',
   'gpx',
@@ -65,24 +68,32 @@ Score parseTabFile(String fileName, Uint8List bytes) {
   };
 }
 
-/// Test seam onto [TabWorkshopScreen]'s state — lets a widget test drive
-/// file-open (with injected bytes) and read what's shown without touching the
-/// platform picker.
+/// Test seam onto [TabWorkshopScreen]'s state — drives editing + file-open with
+/// injected bytes, and reads back what's shown, without the platform picker.
 abstract class TabWorkshopTester {
   Future<void> openScoreFile({String? pickedName, Uint8List? pickedBytes});
   String? get sourceName;
   Tuning get tuning;
   int get capo;
+  int get columnCount;
+
+  /// The fret on [string] at [col], or null if empty.
+  int? fretAt(int col, int string);
+  void selectCell(int col, int string);
+  void enterFret(int fret);
+  void deleteCell();
+  void addColumn();
+  void removeColumnAtCursor();
 }
 
-/// Read-only guitar/bass **tablature** viewer — the first slice of the Tab
-/// Workshop. Renders any [Score] as tab (with a synced standard staff) for a
-/// chosen [Tuning] + capo, and opens Guitar Pro / MusicXML / MIDI / ABC files.
-/// Editing (fret entry, techniques, export) lands in later slices; the model is
-/// the same [Score] the Score Workshop and Tracker use, so it bridges both.
+/// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
+/// string×step grid (tap a cell, type a fret) for any [Tuning] + capo, hear it,
+/// and open Guitar Pro / MusicXML / MIDI / ABC files as editable tab. The
+/// engraved staff (with a synced standard staff) previews the [TabDocument];
+/// the same model round-trips to the Score Workshop and Tracker.
 class TabWorkshopScreen extends StatefulWidget {
-  /// Optional score to open (e.g. handed over from the Workshop). When null a
-  /// built-in demo riff is shown.
+  /// Optional score to open as editable tab (e.g. from the Workshop). When null
+  /// a built-in demo riff is shown.
   final Score? initialScore;
 
   const TabWorkshopScreen({super.key, this.initialScore});
@@ -93,27 +104,68 @@ class TabWorkshopScreen extends StatefulWidget {
 
 class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     implements TabWorkshopTester {
-  late Score _score;
-  Tuning _tuning = Tuning.standardGuitar;
+  late TabDocument _doc;
   int _capo = 0;
   bool _showStandard = true;
+  NoteDuration _dur = NoteDuration.quarter;
+  int _selCol = 0;
+  int _selString = 0;
   String? _sourceName;
-
-  @override
-  String? get sourceName => _sourceName;
-  @override
-  Tuning get tuning => _tuning;
-  @override
-  int get capo => _capo;
+  final _focus = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _score = widget.initialScore ?? asciiTabToScore(_demoTab);
+    final score = widget.initialScore ?? asciiTabToScore(_demoTab);
+    _doc = TabDocument.fromScore(score, Tuning.standardGuitar);
   }
 
-  /// Opens a file and, on success, shows it as tab. Injects [pickedName]/
-  /// [pickedBytes] in tests instead of touching the platform picker.
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  // ── Tester seam ──────────────────────────────────────────────────────────
+  @override
+  String? get sourceName => _sourceName;
+  @override
+  Tuning get tuning => _doc.tuning;
+  @override
+  int get capo => _capo;
+  @override
+  int get columnCount => _doc.columns.length;
+  @override
+  int? fretAt(int col, int string) =>
+      col < _doc.columns.length ? _doc.columns[col].frets[string] : null;
+  @override
+  void selectCell(int col, int string) => setState(() {
+        _selCol = col.clamp(0, _doc.columns.length - 1);
+        _selString = string.clamp(0, _doc.stringCount - 1);
+      });
+
+  @override
+  void enterFret(int fret) => setState(() {
+        _doc.setDuration(_selCol, _dur);
+        _doc.setFret(_selCol, _selString, fret);
+      });
+
+  @override
+  void deleteCell() => setState(() => _doc.clearCell(_selCol, _selString));
+
+  @override
+  void addColumn() => setState(() {
+        _doc.insertColumn(_selCol + 1);
+        _selCol = (_selCol + 1).clamp(0, _doc.columns.length - 1);
+      });
+
+  @override
+  void removeColumnAtCursor() => setState(() {
+        _doc.removeColumn(_selCol);
+        _selCol = _selCol.clamp(0, _doc.columns.length - 1);
+      });
+
+  // ── Actions ──────────────────────────────────────────────────────────────
   @override
   Future<void> openScoreFile({
     String? pickedName,
@@ -138,38 +190,81 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       final score = parseTabFile(name, bytes);
       if (!mounted) return;
       setState(() {
-        _score = score;
+        _doc = TabDocument.fromScore(score, _doc.tuning);
         _sourceName = name;
+        _selCol = 0;
+        _selString = 0;
       });
     } catch (_) {
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.tabImportFailed)));
+      _snack(AppLocalizations.of(context)!.tabImportFailed);
     }
   }
 
   void _loadDemo() => setState(() {
-        _score = asciiTabToScore(_demoTab);
+        _doc = TabDocument.fromScore(asciiTabToScore(_demoTab), _doc.tuning);
         _sourceName = null;
+        _selCol = 0;
+        _selString = 0;
       });
+
+  void _clearAll() => setState(() {
+        _doc = TabDocument.blank(_doc.tuning);
+        _sourceName = null;
+        _selCol = 0;
+        _selString = 0;
+      });
+
+  void _play() {
+    final events = _doc.toPlaybackEvents();
+    context.read<AudioService>().playTimedChords(events);
+  }
+
+  void _snack(String msg) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(msg)));
 
   String _tuningLabel(Tuning t) => t.name ?? '${t.stringCount}-string';
 
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final k = event.logicalKey;
+    if (k == LogicalKeyboardKey.arrowLeft) {
+      selectCell(_selCol - 1, _selString);
+    } else if (k == LogicalKeyboardKey.arrowRight) {
+      selectCell(_selCol + 1, _selString);
+    } else if (k == LogicalKeyboardKey.arrowUp) {
+      selectCell(_selCol, _selString - 1);
+    } else if (k == LogicalKeyboardKey.arrowDown) {
+      selectCell(_selCol, _selString + 1);
+    } else if (k == LogicalKeyboardKey.backspace ||
+        k == LogicalKeyboardKey.delete) {
+      deleteCell();
+    } else {
+      final digit = int.tryParse(event.character ?? '');
+      if (digit != null) {
+        enterFret(digit);
+      } else {
+        return KeyEventResult.ignored;
+      }
+    }
+    return KeyEventResult.handled;
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final view = _showStandard
         ? NotationTabView(
-            score: _score,
-            tuning: _tuning,
+            score: _doc.toScore(),
+            tuning: _doc.tuning,
             capo: _capo,
             showTuning: true,
           )
         : TabStaffView(
-            score: _score,
-            tuning: _tuning,
+            score: _doc.toScore(),
+            tuning: _doc.tuning,
             capo: _capo,
             showTuning: true,
           );
@@ -178,6 +273,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       appBar: AppBar(
         title: Text(_sourceName ?? l10n.tabWorkshopTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.play_arrow),
+            tooltip: l10n.tabPlay,
+            onPressed: _play,
+          ),
           IconButton(
             icon: const Icon(Icons.folder_open),
             tooltip: l10n.tabImport,
@@ -188,24 +288,43 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             tooltip: l10n.tabDemo,
             onPressed: _loadDemo,
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _controls(l10n),
-          const Divider(height: 1),
-          Expanded(
-            child: InteractiveViewer(
-              constrained: false,
-              minScale: 0.5,
-              maxScale: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: view,
-              ),
-            ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: l10n.tabClear,
+            onPressed: _clearAll,
           ),
         ],
+      ),
+      body: Focus(
+        focusNode: _focus,
+        autofocus: true,
+        onKeyEvent: _onKey,
+        child: Column(
+          children: [
+            _controls(l10n),
+            const Divider(height: 1),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: view,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _grid(),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            _editorPanel(l10n),
+          ],
+        ),
       ),
     );
   }
@@ -219,8 +338,13 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
           Text(l10n.tabTuning),
           const SizedBox(width: 8),
           DropdownButton<Tuning>(
-            value: _tuning,
-            onChanged: (t) => setState(() => _tuning = t ?? _tuning),
+            value: _doc.tuning,
+            onChanged: (t) => setState(() {
+              if (t != null) {
+                _doc.tuning = t;
+                _selString = _selString.clamp(0, t.stringCount - 1);
+              }
+            }),
             items: [
               for (final t in tabTuningPresets)
                 DropdownMenuItem(value: t, child: Text(_tuningLabel(t))),
@@ -249,4 +373,140 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       ),
     );
   }
+
+  /// The editable string×step grid.
+  Widget _grid() {
+    final n = _doc.stringCount;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int s = 0; s < n; s++)
+            Row(
+              children: [
+                SizedBox(
+                  width: 40,
+                  child: Text(
+                    _doc.tuning.strings[s].toString().toUpperCase(),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                for (int c = 0; c < _doc.columns.length; c++) _cell(c, s),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cell(int col, int string) {
+    final fret = _doc.columns[col].frets[string];
+    final selected = col == _selCol && string == _selString;
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: () => selectCell(col, string),
+      child: Container(
+        width: 32,
+        height: 30,
+        margin: const EdgeInsets.all(1),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected
+              ? scheme.primaryContainer
+              : scheme.surfaceContainerHighest,
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          fret?.toString() ?? '·',
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.bold,
+            color: fret == null ? scheme.onSurfaceVariant : scheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Duration palette + fret keypad + column add/remove.
+  Widget _editorPanel(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Wrap(
+            spacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(l10n.tabDuration),
+              for (final (dur, steps) in kTabDurations)
+                ChoiceChip(
+                  label: Text(_durLabel(steps)),
+                  selected: _dur == dur,
+                  onSelected: (_) => setState(() {
+                    _dur = dur;
+                    _doc.setDuration(_selCol, dur);
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (int f = 0; f <= 12; f++)
+                SizedBox(
+                  width: 40,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(40, 36),
+                    ),
+                    onPressed: () => enterFret(f),
+                    child: Text('$f'),
+                  ),
+                ),
+              IconButton(
+                icon: const Icon(Icons.backspace_outlined),
+                tooltip: l10n.tabClearCell,
+                onPressed: deleteCell,
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.playlist_add),
+                tooltip: l10n.tabAddColumn,
+                onPressed: addColumn,
+              ),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.playlist_remove),
+                tooltip: l10n.tabRemoveColumn,
+                onPressed: removeColumnAtCursor,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _durLabel(int steps) => switch (steps) {
+        8 => '𝅝',
+        6 => '𝅗𝅥.',
+        4 => '𝅗𝅥',
+        3 => '♩.',
+        2 => '♩',
+        _ => '♪',
+      };
 }

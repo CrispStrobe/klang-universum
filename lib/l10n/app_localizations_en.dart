@@ -1126,6 +1126,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabShowStandard => 'Standard notation';
 
   @override
+  String get tabPlay => 'Play';
+
+  @override
+  String get tabClear => 'Clear';
+
+  @override
+  String get tabDuration => 'Note length';
+
+  @override
+  String get tabClearCell => 'Clear';
+
+  @override
+  String get tabAddColumn => 'Add step';
+
+  @override
+  String get tabRemoveColumn => 'Remove step';
+
+  @override
   String get tabImportFailed => 'Couldn\'t open that file';
 
   @override

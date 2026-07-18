@@ -2174,6 +2174,42 @@ abstract class AppLocalizations {
   /// **'Standard notation'**
   String get tabShowStandard;
 
+  /// No description provided for @tabPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get tabPlay;
+
+  /// No description provided for @tabClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get tabClear;
+
+  /// No description provided for @tabDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Note length'**
+  String get tabDuration;
+
+  /// No description provided for @tabClearCell.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get tabClearCell;
+
+  /// No description provided for @tabAddColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Add step'**
+  String get tabAddColumn;
+
+  /// No description provided for @tabRemoveColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove step'**
+  String get tabRemoveColumn;
+
   /// No description provided for @tabImportFailed.
   ///
   /// In en, this message translates to:

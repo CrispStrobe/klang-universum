@@ -100,4 +100,46 @@ void main() {
     expect(tab.sourceName, isNull); // unchanged — still the demo
     expect(find.byType(SnackBar), findsOneWidget);
   });
+
+  testWidgets('select a cell and enter a fret updates the grid',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    tab.selectCell(0, 0);
+    await tester.pump();
+    tab.enterFret(5);
+    await tester.pump();
+    expect(tab.fretAt(0, 0), 5);
+
+    tab.deleteCell();
+    await tester.pump();
+    expect(tab.fretAt(0, 0), isNull);
+  });
+
+  testWidgets('add and remove a column changes the count', (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    final before = tab.columnCount;
+    tab.addColumn();
+    await tester.pump();
+    expect(tab.columnCount, before + 1);
+
+    tab.removeColumnAtCursor();
+    await tester.pump();
+    expect(tab.columnCount, before);
+  });
+
+  testWidgets('tapping a fret keypad button writes to the selected cell',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+    tab.selectCell(1, 2);
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '7'));
+    await tester.pump();
+    expect(tab.fretAt(1, 2), 7);
+  });
 }

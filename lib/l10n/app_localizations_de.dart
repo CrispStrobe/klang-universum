@@ -1133,6 +1133,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabShowStandard => 'Notenschrift';
 
   @override
+  String get tabPlay => 'Abspielen';
+
+  @override
+  String get tabClear => 'Leeren';
+
+  @override
+  String get tabDuration => 'Notenlänge';
+
+  @override
+  String get tabClearCell => 'Löschen';
+
+  @override
+  String get tabAddColumn => 'Schritt hinzufügen';
+
+  @override
+  String get tabRemoveColumn => 'Schritt entfernen';
+
+  @override
   String get tabImportFailed => 'Datei konnte nicht geöffnet werden';
 
   @override
