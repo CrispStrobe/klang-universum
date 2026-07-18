@@ -208,6 +208,37 @@ void main() {
     });
   });
 
+  test('a two-track band exports a multi-track .gp both parts survive', () {
+    final guitarDoc = TabDocument.blank(guitar, initialColumns: 2)
+      ..setFret(0, 0, 3)
+      ..setFret(1, 1, 5);
+    final bassDoc = TabDocument.blank(Tuning.standardBass, initialColumns: 2)
+      ..setFret(0, 3, 3) // low string on the bass
+      ..setFret(1, 3, 5);
+
+    final gpif = multiPartToGpif(
+      MultiPartScore([guitarDoc.toScore(), bassDoc.toScore()]),
+      tunings: [guitar, Tuning.standardBass],
+      names: const ['Guitar', 'Bass'],
+    );
+    final bytes = writeGpFromGpif(gpif);
+    expect(bytes.sublist(0, 2), [0x50, 0x4B]); // a real .gp zip
+
+    // Two tracks, carrying their own tunings.
+    expect('<Track '.allMatches(gpif).length, 2);
+    expect(gpif, contains('Bass'));
+    expect(
+      gpif,
+      contains(guitar.strings.map((p) => p.midiNumber).join(' ')),
+    );
+    expect(
+      gpif,
+      contains(
+        Tuning.standardBass.strings.map((p) => p.midiNumber).join(' '),
+      ),
+    );
+  });
+
   test('clearCell removes only that string from a chord', () {
     final doc = TabDocument.blank(guitar, initialColumns: 1)
       ..setFret(0, 0, 5)

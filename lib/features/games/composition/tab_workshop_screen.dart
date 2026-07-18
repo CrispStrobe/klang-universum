@@ -455,8 +455,17 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     final base = (_sourceName ?? 'tab').replaceAll(RegExp(r'\.[^.]*$'), '');
     switch (format) {
       case 'gp':
+        // A band exports one GP Track per tab track (each with its own
+        // tuning); techniques ride along as GPIF note properties.
+        final gpif = _tracks.length > 1
+            ? multiPartToGpif(
+                MultiPartScore([for (final t in _tracks) t.doc.toScore()]),
+                tunings: [for (final t in _tracks) t.doc.tuning],
+                names: [for (final t in _tracks) t.name],
+              )
+            : scoreToGpif(score, tuning: _doc.tuning);
         await _saveBytes(
-          writeGpFromGpif(scoreToGpif(score, tuning: _doc.tuning)),
+          writeGpFromGpif(gpif),
           '$base.gp',
           'Guitar Pro',
           const ['gp'],
