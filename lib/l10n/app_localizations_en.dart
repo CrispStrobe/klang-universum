@@ -1152,6 +1152,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopModeDrums => 'Drum Kit';
 
   @override
+  String get dawTitle => 'Multitrack';
+
+  @override
+  String get dawAddBeat => 'Add beat';
+
+  @override
+  String get dawAddTune => 'Add tune';
+
+  @override
+  String get dawEmpty =>
+      'Add a beat or a tune, then press play — they layer together.';
+
+  @override
   String get drumkitTitle => 'Drum Kit';
 
   @override

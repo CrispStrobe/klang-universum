@@ -1159,6 +1159,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopModeDrums => 'Schlagzeug';
 
   @override
+  String get dawTitle => 'Mehrspur';
+
+  @override
+  String get dawAddBeat => 'Beat hinzufügen';
+
+  @override
+  String get dawAddTune => 'Melodie hinzufügen';
+
+  @override
+  String get dawEmpty =>
+      'Füge einen Beat oder eine Melodie hinzu und drücke Play — sie überlagern sich.';
+
+  @override
   String get drumkitTitle => 'Schlagzeug';
 
   @override

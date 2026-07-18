@@ -2222,6 +2222,30 @@ abstract class AppLocalizations {
   /// **'Drum Kit'**
   String get workshopModeDrums;
 
+  /// No description provided for @dawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Multitrack'**
+  String get dawTitle;
+
+  /// No description provided for @dawAddBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Add beat'**
+  String get dawAddBeat;
+
+  /// No description provided for @dawAddTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Add tune'**
+  String get dawAddTune;
+
+  /// No description provided for @dawEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a beat or a tune, then press play — they layer together.'**
+  String get dawEmpty;
+
   /// No description provided for @drumkitTitle.
   ///
   /// In en, this message translates to:
