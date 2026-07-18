@@ -36,12 +36,14 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
+import 'package:comet_beat/features/games/composition/score_analysis_view.dart'
+    show harmonicFunctionColor;
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show Clef, StaffView, multiPartToMusicXml;
+    show Clef, HarmonicFunction, StaffView, multiPartToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -948,6 +950,43 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _restartGroove();
   }
 
+  // The harmonic function of a groove chord degree (all in C major).
+  HarmonicFunction _degreeFunction(ChordDegree d) => switch (d) {
+        ChordDegree.i => HarmonicFunction.tonic,
+        ChordDegree.iv => HarmonicFunction.subdominant,
+        ChordDegree.v => HarmonicFunction.dominant,
+        ChordDegree.vi => HarmonicFunction.tonic,
+      };
+
+  /// A strip of the selected progression's chords, coloured by function.
+  Widget _progressionFunctionStrip(Progression p) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          children: [
+            for (final d in p.degrees)
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  height: 22,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: harmonicFunctionColor(_degreeFunction(d)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    d.label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+
   void _setProgression(Progression? progression) {
     if (progression?.id == _engine.progression?.id) return;
     setState(() => _engine.progression = progression);
@@ -1338,6 +1377,9 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                   ),
                 ],
               ),
+              // AnaVis: the selected progression, coloured by harmonic function.
+              if (_engine.progression != null)
+                _progressionFunctionStrip(_engine.progression!),
               Row(
                 children: [
                   Text(

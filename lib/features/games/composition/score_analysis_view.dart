@@ -83,7 +83,10 @@ enum AnalysisDepth {
   expert,
 }
 
-Color _functionColor(HarmonicFunction f) => switch (f) {
+/// The AnaVis colour for a harmonic function: tonic=green (home),
+/// subdominant=blue (away), dominant=orange (tension). Shared across the
+/// analysis surfaces (view, Workshop, Loop Mixer).
+Color harmonicFunctionColor(HarmonicFunction f) => switch (f) {
       HarmonicFunction.tonic => const Color(0xFF59A14F), // green — home
       HarmonicFunction.subdominant => const Color(0xFF4E79A7), // blue — away
       HarmonicFunction.dominant => const Color(0xFFF28E2B), // orange — tension
@@ -325,7 +328,7 @@ class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
                 width: 14,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: _functionColor(f),
+                  color: harmonicFunctionColor(f),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -474,7 +477,7 @@ class _SegmentBlock extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final f = segment.function;
     final color =
-        f == null ? scheme.surfaceContainerHighest : _functionColor(f);
+        f == null ? scheme.surfaceContainerHighest : harmonicFunctionColor(f);
     final onColor = f == null ? scheme.onSurfaceVariant : Colors.white;
 
     final label =
