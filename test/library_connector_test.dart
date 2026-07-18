@@ -6,6 +6,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/notation/multi_part_export.dart'
+    show multiPartToMidi;
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/attribution_screen.dart';
 import 'package:comet_beat/features/library/content_source.dart';
@@ -289,6 +291,25 @@ void main() {
       expect(
         scoreFromMusicXml(bytesToMusicXml('midi', midi)).measures,
         isNotEmpty,
+      );
+    });
+
+    test('a multi-part mscx / multi-track midi import keeps EVERY part', () {
+      // A two-part score (reuse the parsed sample for both instruments).
+      final part = scoreFromMusicXml(xml);
+      final mp = MultiPartScore([part, part]);
+      final mscx = Uint8List.fromList(utf8.encode(multiPartToMscx(mp)));
+      final midi = multiPartToMidi(mp);
+      // Both parts survive the import (previously only the first did).
+      expect(
+        multiPartScoreFromMusicXml(bytesToMusicXml('mscx', mscx)).parts,
+        hasLength(2),
+        reason: 'multi-staff mscx import kept both parts',
+      );
+      expect(
+        multiPartScoreFromMusicXml(bytesToMusicXml('midi', midi)).parts,
+        hasLength(2),
+        reason: 'multi-track midi import kept both parts',
       );
     });
 
