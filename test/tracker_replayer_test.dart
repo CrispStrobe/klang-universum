@@ -767,6 +767,48 @@ void main() {
     });
   });
 
+  group('sample tick voice (per-tick effects on sample channels)', () {
+    test('a porta-up on a SAMPLE channel raises the pitch (rising)', () {
+      // A long low sine sample so a gentle porta stays within it + is measurable
+      // via zero-crossings.
+      final sample = Float64List.fromList([
+        for (var i = 0; i < 120000; i++) sin(2 * pi * 110 * i / kSampleRate),
+      ]);
+      final cells = List<TrackerCell>.filled(8, TrackerCell.empty);
+      cells[0] = const TrackerCell(midi: 48); // note at base
+      for (var r = 1; r < 8; r++) {
+        cells[r] = fx(kFxPortaUp, 0x04); // gentle porta up (rings + rises)
+      }
+      final ch = TrackerChannel(
+        id: 's',
+        instrument: SampleInstrument('s', sample, baseMidi: 48),
+        gain: 0.9,
+        rows: 8,
+      );
+      final song = TrackerSong.fromParts(
+        channels: [ch],
+        timing: const TrackerTiming(rows: 8),
+        patterns: [
+          TrackerPattern(name: '00', cells: [cells]),
+        ],
+        order: [0],
+      );
+      final pcm = replaySong(song).pcm;
+      final n = pcm.length;
+      int crossings(int lo, int hi) {
+        var c = 0;
+        for (var i = lo + 1; i < hi; i++) {
+          if ((pcm[i - 1] < 0) != (pcm[i] < 0)) c++;
+        }
+        return c;
+      }
+
+      expect(pcm.fold<int>(0, (m, v) => max(m, v.abs())), greaterThan(1000));
+      // A rising pitch crosses zero more often later than earlier.
+      expect(crossings(n ~/ 2, n), greaterThan(crossings(0, n ~/ 2)));
+    });
+  });
+
   group('audit fixes', () {
     test('6xy continues vibrato with its own memory (does not corrupt it)', () {
       // 4-1-8 arms vibrato (speed 1, depth 8 ⇒ ±1 st). 6-0-4 must NOT reparse

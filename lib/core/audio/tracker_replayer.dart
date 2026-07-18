@@ -548,6 +548,120 @@ Float64List renderChannelPerNote(
   return stem;
 }
 
+/// Whether [cells] carry any PER-TICK pitch/volume effect (porta/tone-porta/
+/// vibrato/tremolo/vol-slide/set-volume/arpeggio/extended) — the ones that need
+/// the tick voice to sound. Flow (Bxx/Dxx/E6x) and 9xx are handled elsewhere and
+/// don't count here.
+bool _hasPerTickEffect(List<TrackerCell> cells) {
+  for (final c in cells) {
+    final cmd = c.fxCmd;
+    if (cmd == kFxPortaUp ||
+        cmd == kFxPortaDown ||
+        cmd == kFxTonePorta ||
+        cmd == kFxVibrato ||
+        cmd == kFxTonePortaVolSlide ||
+        cmd == kFxVibratoVolSlide ||
+        cmd == kFxTremolo ||
+        cmd == kFxVolumeSlide ||
+        cmd == kFxSetVolume ||
+        cmd == kFxExtended) {
+      return true;
+    }
+    if (cmd == kFxArpeggio && c.fxParam != 0) return true;
+  }
+  return false;
+}
+
+/// Renders a SAMPLE channel through a per-tick voice: a fractional resampling
+/// read-pointer whose advance follows the tick voice's instantaneous PITCH
+/// (porta/vibrato/arpeggio) and whose amplitude follows its VOLUME (tremolo/Cxx/
+/// Axy) — the sample-instrument analogue of the additive tick voice. So an
+/// imported module's pitch/volume effects actually sound on its sampled channels.
+/// Per-cell instrument switches the sample; 9xx sets the start offset; a note is
+/// one-shot (no loop, matching [SampleInstrument.renderChannel]); a short attack
+/// declick + the channel [VolumeEnvelope] shape it. Unit-peak × gain like the
+/// other non-additive paths.
+void _renderSampleChannelInto(
+  Float64List mix,
+  TrackerChannel channel,
+  List<TrackerCell> cells,
+  TrackerTiming timing,
+  int ticksPerRow,
+  int sampleOffset, {
+  List<TrackerInstrument>? pool,
+}) {
+  final env = channel.volumeEnvelope;
+  final hasEnv = env != null && !env.isEmpty;
+  const declickSec = 0.003;
+  final stem = Float64List(timing.totalSamples);
+  final rows = cells.length;
+  var cur = channel.instrument is SampleInstrument ? channel.instrument : null;
+  final voice = ReplayVoice();
+  var readPos = 0.0; // fractional index into the current sample
+  var noteStartSample = 0;
+
+  for (var r = 0; r < rows; r++) {
+    final cellInst = cells[r].instrument;
+    if (cellInst > 0 &&
+        pool != null &&
+        cellInst - 1 < pool.length &&
+        pool[cellInst - 1] is SampleInstrument) {
+      cur = pool[cellInst - 1];
+    }
+    voice.armRow(cells[r]);
+    if (voice.retriggeredThisRow) {
+      final c = cells[r];
+      readPos = c.fxCmd == kFxSampleOffset ? (c.fxParam * 256).toDouble() : 0.0;
+      noteStartSample = timing.stepStartSample(r);
+    }
+    if ((!voice.active && !voice.hasPendingNote) ||
+        cur is! SampleInstrument ||
+        cur.sample.isEmpty) {
+      continue;
+    }
+
+    final baseMidi = cur.baseMidi;
+    final s = cur.sample;
+    final rowStart = timing.stepStartSample(r);
+    final rowEnd =
+        r + 1 < rows ? timing.stepStartSample(r + 1) : timing.totalSamples;
+    for (var k = 0; k < ticksPerRow; k++) {
+      final ts = rowStart + ((rowEnd - rowStart) * k) ~/ ticksPerRow;
+      final te = rowStart + ((rowEnd - rowStart) * (k + 1)) ~/ ticksPerRow;
+      final state = voice.tick(k, ticksPerRow);
+      if (state.retrigger) {
+        readPos = 0.0;
+        noteStartSample = ts;
+      }
+      if (!voice.active) continue;
+      final ratio = pow(2.0, (state.pitch - baseMidi) / 12.0).toDouble();
+      final vol = (state.volume / kMaxVolume) * voice.noteVolume;
+      for (var i = ts; i < te && i < stem.length; i++) {
+        final idx = readPos.floor();
+        if (idx >= s.length - 1) break; // one-shot: sample exhausted
+        final frac = readPos - idx;
+        final sampleVal = s[idx] * (1 - frac) + s[idx + 1] * frac;
+        final t = (i - noteStartSample) / kSampleRate;
+        final attack = t < declickSec ? t / declickSec : 1.0;
+        final el = hasEnv ? env.levelAt(t * 1000) : 1.0;
+        stem[i] += sampleVal * vol * attack * el;
+        readPos += ratio;
+      }
+    }
+  }
+
+  var peak = 0.0;
+  for (final v in stem) {
+    if (v.abs() > peak) peak = v.abs();
+  }
+  if (peak == 0) return;
+  final scale = channel.gain / peak;
+  final n = min(stem.length, mix.length - sampleOffset);
+  for (var i = 0; i < n; i++) {
+    mix[sampleOffset + i] += stem[i] * scale;
+  }
+}
+
 /// The synthesis parameters of an additive [inst] (harmonics + envelope + the
 /// L1 harmonic norm used to keep the voice's peak ≤ 1). Recomputed whenever a
 /// per-cell instrument switches the additive timbre.
@@ -582,6 +696,23 @@ void _renderChannelInto(
 
   final inst = _additiveOf(channel.instrument);
   if (inst == null) {
+    // A SAMPLE channel that carries per-tick pitch/volume effects (porta/
+    // vibrato/tremolo/Cxx/Axy/arp/extended) renders through the sample TICK
+    // voice so those effects actually SOUND (the whole-channel render can't do
+    // per-tick modulation). Effect-free sample channels — and sfxr/percussion —
+    // keep the unchanged non-additive render below (byte-identical).
+    if (channel.instrument is SampleInstrument && _hasPerTickEffect(cells)) {
+      _renderSampleChannelInto(
+        mix,
+        channel,
+        cells,
+        timing,
+        ticksPerRow,
+        sampleOffset,
+        pool: pool,
+      );
+      return;
+    }
     // Non-additive: build the channel stem, unit-peak × gain, sum at true
     // amplitude. With no per-cell instrument this is the unchanged whole-channel
     // render; with per-cell instruments it's a per-note render (each note played

@@ -67,7 +67,17 @@ was found before shipping a mapping that silently wouldn't play.
 
 ## Status
 
-- S3M command→`fxCmd`/`fxParam` table: implemented in `module_convert._s3mEffectToFx`
-  (core commands, verified to carry through). IT (`_itEffectToFx`) is the same
-  shape — pending.
-- Per-tick sample voice: the gate for audible imported effects — scoped, not built.
+- **Per-tick SAMPLE voice: BUILT** (`_renderSampleChannelInto` in
+  `tracker_replayer.dart`). A sample channel that carries per-tick effects now
+  renders through a resampling read-pointer with per-tick pitch/volume, so
+  porta/vibrato/tremolo/`Cxx`/`Axy`/arp SOUND on sampled channels.
+  **Oracle-verified:** the porta S3M now reads as a rising glide in ours
+  (A3→C4→G4→C5) matching openmpt123's rise (A3→B3→F4→C5) — both reach C5; the
+  intermediate rate differs by our documented musical-approximation porta rate.
+  Effect-free sample channels keep the byte-identical whole-channel render (gated
+  by `_hasPerTickEffect`). Follow-ups: the variable-timing sample path
+  (`_renderNonAdditiveVariable`) is still one-shot-per-note (no per-tick yet);
+  sample LOOP points are dropped on import (one-shot notes).
+- **S3M** command→`fxCmd`/`fxParam` table: implemented in
+  `module_convert._s3mEffectToFx` (core commands, structural test + oracle-
+  verified). **IT** (`_itEffectToFx`) is the same shape — pending.
