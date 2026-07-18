@@ -155,3 +155,14 @@ floor) is the win. The `gainFloor` param stays threaded through the quantizer
 for VBR's constant-quality target. The remaining gap to glint's −11.4 is its
 tuned adaptive rate control (rc_anchor EMA + tonal-mask offsets at low rate) —
 high effort for diminishing returns.
+
+## Stereo + VBR
+- **Stereo** (`mp3EncodeStereo`): channel-general core, each channel its own
+  subband+MDCT, 32-byte stereo side info, even bit split across 2 granules × 2
+  channels. Verified: ffmpeg decodes to two distinct channels.
+- **VBR** (`mp3EncodeMonoVbr`/`mp3EncodeStereoVbr`, quality 0–9): self-contained
+  frames (no reservoir), quantized to `vbr_target_gain[quality]`, each frame at
+  the smallest bitrate that fits (`_vbrPickFrameSize`); shaping budget capped at
+  unshaped×1.25 so a big ceiling can't balloon a frame. Quiet passages shrink.
+  Follow-up: a Xing/Info header so players report exact VBR duration/seek (the
+  audio is correct now; only the estimated duration is approximate without it).
