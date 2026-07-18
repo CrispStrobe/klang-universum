@@ -21,6 +21,10 @@ class PianoKeyboard extends StatelessWidget {
   /// Per-key highlight fills, by MIDI number.
   final Map<int, Color> keyColors;
 
+  /// Optional small hint drawn on a key (by MIDI number) — e.g. the computer
+  /// keyboard letter that plays it in the Tracker. Empty = none.
+  final Map<int, String> keyHints;
+
   /// Letter labels on the white keys (localized; German B = H).
   final bool showLabels;
 
@@ -34,9 +38,21 @@ class PianoKeyboard extends StatelessWidget {
     this.whiteKeyCount = 12,
     this.onKeyTap,
     this.keyColors = const {},
+    this.keyHints = const {},
     this.showLabels = false,
     this.showOctaveNumbers = false,
   }) : assert(startMidi % 12 == 0, 'startMidi must be a C');
+
+  /// A small hint caption (the computer-key letter) drawn on a key.
+  static Widget _hintChip(String text, Color color) => Text(
+        text,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          height: 1,
+        ),
+      );
 
   static const _whiteOffsets = [0, 2, 4, 5, 7, 9, 11];
   static const _whiteSteps = [
@@ -107,9 +123,29 @@ class PianoKeyboard extends StatelessWidget {
                             bottom: Radius.circular(6),
                           ),
                         ),
-                        alignment: Alignment.bottomCenter,
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: showLabels ? _label(context, i) : null,
+                        child: Stack(
+                          children: [
+                            if (keyHints[whiteMidi(i)] != null)
+                              Align(
+                                alignment: Alignment.topCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: _hintChip(
+                                    keyHints[whiteMidi(i)]!,
+                                    Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            if (showLabels)
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: _label(context, i),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -133,6 +169,14 @@ class PianoKeyboard extends StatelessWidget {
                           bottom: Radius.circular(4),
                         ),
                       ),
+                      alignment: Alignment.topCenter,
+                      padding: const EdgeInsets.only(top: 3),
+                      child: keyHints[whiteMidi(i) + 1] != null
+                          ? _hintChip(
+                              keyHints[whiteMidi(i) + 1]!,
+                              Colors.white70,
+                            )
+                          : null,
                     ),
                   ),
                 ),

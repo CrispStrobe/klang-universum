@@ -498,6 +498,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   static const _pianoStartMidi = 24; // C1
   static const _pianoWhiteKeys = 42; // C1..~A6
   static const _pianoKeyWidth = 40.0;
+
+  /// Zoom for the on-screen piano key WIDTH (independent of the grid zoom).
+  double _pianoZoom = 1.0;
+  double get _pianoKW => _pianoKeyWidth * _pianoZoom;
+
   final _pianoScroll =
       ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
   int _lastFollowedRow = -1;
@@ -1316,11 +1321,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.pageUp) {
-      setState(() => _octave = (_octave + 1).clamp(0, 8));
+      _setOctave(_octave + 1);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.pageDown) {
-      setState(() => _octave = (_octave - 1).clamp(0, 8));
+      _setOctave(_octave - 1);
       return KeyEventResult.handled;
     }
 
@@ -1527,6 +1532,37 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   Map<int, Color> _soundingKeys() {
     final color = Theme.of(context).colorScheme.primary;
     return {for (final m in _soundingMidisAt(_row.value)) m: color};
+  }
+
+  /// The computer-key hint for each piano key at the current base octave — so
+  /// the FT2 key map shows ON the keys (D1c), and moves with the octave.
+  Map<int, String> _pianoKeyHints() {
+    if (!_showKeyHints || _entryMode != _NoteEntry.pianoKeys) return const {};
+    final base = (_octave + 1) * 12;
+    final out = <int, String>{};
+    for (final e in _kKeyToSemitone.entries) {
+      final midi = base + e.value;
+      out[midi] ??= e.key.toUpperCase(); // first (lower-row) key wins
+    }
+    return out;
+  }
+
+  /// Change the base octave and slide the piano so that octave is in view (D1d).
+  void _setOctave(int octave) {
+    setState(() => _octave = octave.clamp(0, 8));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _centerPianoOnOctave());
+  }
+
+  void _centerPianoOnOctave() {
+    if (!_pianoScroll.hasClients) return;
+    final cMidi = (_octave + 1) * 12; // C of the base octave
+    final whiteIndex = ((cMidi - _pianoStartMidi) ~/ 12) * 7; // 7 whites/octave
+    final target = whiteIndex * _pianoKW - 80; // a little context to the left
+    _pianoScroll.animateTo(
+      target.clamp(0.0, _pianoScroll.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
   }
 
   void _updateLevels(int posInPatternMs) {
@@ -3849,19 +3885,32 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 }),
               ),
               const SizedBox(width: 8),
-              // Base octave for the computer keyboard.
+              // Base octave for the computer keyboard (also slides the piano).
               IconButton(
                 icon: const Icon(Icons.remove),
                 tooltip: '${l10n.trackerOctave} −',
-                onPressed: () =>
-                    setState(() => _octave = (_octave - 1).clamp(0, 8)),
+                onPressed: () => _setOctave(_octave - 1),
               ),
               Text('${l10n.trackerOctave} $_octave'),
               IconButton(
                 icon: const Icon(Icons.add),
                 tooltip: '${l10n.trackerOctave} +',
-                onPressed: () =>
-                    setState(() => _octave = (_octave + 1).clamp(0, 8)),
+                onPressed: () => _setOctave(_octave + 1),
+              ),
+              // Piano key-size zoom.
+              IconButton(
+                icon: const Icon(Icons.zoom_out, size: 20),
+                tooltip: l10n.trackerZoomOut,
+                onPressed: () => setState(
+                  () => _pianoZoom = (_pianoZoom - 0.2).clamp(0.6, 2.2),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.zoom_in, size: 20),
+                tooltip: l10n.trackerZoomIn,
+                onPressed: () => setState(
+                  () => _pianoZoom = (_pianoZoom + 0.2).clamp(0.6, 2.2),
+                ),
               ),
               if (_pendingLabel.isNotEmpty)
                 Padding(
@@ -3939,7 +3988,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 controller: _pianoScroll,
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
-                  width: _pianoWhiteKeys * _pianoKeyWidth,
+                  width: _pianoWhiteKeys * _pianoKW,
                   // Rebuild only the keyboard as the playhead crosses rows, so
                   // the keys of the sounding notes light up in time.
                   child: ValueListenableBuilder<int>(
@@ -3950,6 +3999,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                       showLabels: true,
                       showOctaveNumbers: true,
                       keyColors: _soundingKeys(),
+                      keyHints: _pianoKeyHints(),
                       onKeyTap: (midi) {
                         _enterNoteAtCursor(midi);
                         _focus.requestFocus();
