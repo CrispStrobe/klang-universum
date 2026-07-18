@@ -470,6 +470,24 @@ abstract class AppLocalizations {
   /// **'Saved: {path}'**
   String workshopSavedTo(String path);
 
+  /// No description provided for @musicExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as…'**
+  String get musicExportTitle;
+
+  /// No description provided for @musicExportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to export yet'**
+  String get musicExportEmpty;
+
+  /// No description provided for @musicExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get musicExportFailed;
+
   /// No description provided for @workshopExportXml.
   ///
   /// In en, this message translates to:

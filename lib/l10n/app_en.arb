@@ -112,6 +112,9 @@
       }
     }
   },
+  "musicExportTitle": "Export as…",
+  "musicExportEmpty": "Nothing to export yet",
+  "musicExportFailed": "Export failed",
   "workshopExportXml": "Export MusicXML",
   "workshopExportSvg": "Export SVG (print)",
   "workshopExportImage": "Export image (PNG)",

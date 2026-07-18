@@ -19,9 +19,10 @@ import 'package:comet_beat/features/games/songs/song_play_along.dart';
 import 'package:comet_beat/features/games/songs/songbook_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/music_export.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show MultiSystemView, NoteElement, Score;
+    show MultiSystemView, NoteElement, Score, multiPartScoreFromMusicXml;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -232,6 +233,15 @@ class _SongScreenState extends State<SongScreen> {
   }
 }
 
+/// A filename-safe version of a song title (letters/digits/-/_; spaces → _).
+String _safeName(String title) {
+  final cleaned = title
+      .trim()
+      .replaceAll(RegExp(r'\s+'), '_')
+      .replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '');
+  return cleaned.isEmpty ? 'song' : cleaned;
+}
+
 class SongListScreen extends StatelessWidget {
   const SongListScreen({super.key});
 
@@ -322,10 +332,28 @@ class SongListScreen extends StatelessWidget {
                   ),
                   leading: const CircleAvatar(child: Icon(Icons.file_download)),
                   title: Text(song.title),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () =>
-                        context.read<UserSongsService>().removeSong(song.id),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.ios_share),
+                        tooltip: l10n.musicExportTitle,
+                        // The stored MusicXML keeps every voice, so export is
+                        // multi-part (not just the flattened single Score).
+                        onPressed: () => showMusicExportSheet(
+                          context,
+                          multiPart: multiPartScoreFromMusicXml(song.musicXml),
+                          partNames: const [],
+                          baseName: _safeName(song.title),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => context
+                            .read<UserSongsService>()
+                            .removeSong(song.id),
+                      ),
+                    ],
                   ),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(

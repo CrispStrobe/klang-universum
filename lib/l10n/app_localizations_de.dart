@@ -222,6 +222,15 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get musicExportTitle => 'Exportieren als…';
+
+  @override
+  String get musicExportEmpty => 'Noch nichts zu exportieren';
+
+  @override
+  String get musicExportFailed => 'Export fehlgeschlagen';
+
+  @override
   String get workshopExportXml => 'MusicXML exportieren';
 
   @override
