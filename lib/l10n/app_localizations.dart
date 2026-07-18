@@ -2246,6 +2246,18 @@ abstract class AppLocalizations {
   /// **'Add a beat or a tune, then press play — they layer together.'**
   String get dawEmpty;
 
+  /// No description provided for @dawSend.
+  ///
+  /// In en, this message translates to:
+  /// **'To Multitrack'**
+  String get dawSend;
+
+  /// No description provided for @dawSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to the Multitrack'**
+  String get dawSent;
+
   /// No description provided for @drumkitTitle.
   ///
   /// In en, this message translates to:

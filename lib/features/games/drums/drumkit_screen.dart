@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/beat_capture.dart'
     show BeatFrame, beatboxToTaps;
+import 'package:comet_beat/core/audio/daw_sources.dart' show DrumSource;
 import 'package:comet_beat/core/audio/loop_engine.dart'
     show DrumRowsPattern, LoopTiming, kPatternSteps;
 import 'package:comet_beat/core/audio/microphone_pitch_service.dart';
@@ -21,6 +22,7 @@ import 'package:comet_beat/core/audio/rhythm_quantize.dart'
 import 'package:comet_beat/core/audio/synth.dart'
     show Drum, renderDrum, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart'
     show drumParts;
@@ -84,6 +86,9 @@ abstract interface class DrumkitTester {
   /// seams: persist into [songs] and read back the MusicXML (null when empty).
   String? debugSaveToSongBook(UserSongsService songs);
   String? debugMusicXml();
+
+  /// Send the current beat to the Multitrack (DAW) as a clip.
+  void sendToDaw();
 }
 
 class DrumkitScreen extends StatefulWidget {
@@ -531,6 +536,19 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   String? debugMusicXml() => _beatMusicXml(AppLocalizations.of(context)!);
 
   @override
+  void sendToDaw() {
+    if (hitCount == 0) return;
+    // A SNAPSHOT (deep-copied rows) so later DrumKit edits don't change the
+    // sent clip; the timing carries the current tempo + swing.
+    context.read<DawService>().addClip(
+          DrumSource(DrumRowsPattern(_snapshot()), _timing),
+        );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.dawSent)),
+    );
+  }
+
+  @override
   int get tempo => _tempo;
 
   @override
@@ -736,6 +754,11 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                     label: Text(l10n.drumkitSwing),
                     selected: _swing > 0,
                     onSelected: (_) => setSwing(0.4),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: hitCount == 0 ? null : sendToDaw,
+                    icon: const Icon(Icons.library_add),
+                    label: Text(l10n.dawSend),
                   ),
                   OutlinedButton.icon(
                     onPressed: hitCount == 0 ? null : clear,

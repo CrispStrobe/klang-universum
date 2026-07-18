@@ -3,6 +3,7 @@
 
 import 'package:comet_beat/core/audio/beat_capture.dart' show BeatFrame;
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/drums/drumkit_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:flutter/widgets.dart';
@@ -168,6 +169,28 @@ void main() {
     expect(kit.cellAt(Drum.hat, 6), isTrue);
     expect(kit.hitCount, 3);
     expect(kit.isListening, isFalse);
+  });
+
+  testWidgets('Send to Multitrack adds the beat as a DAW clip', (tester) async {
+    final daw = DawService();
+    await pumpGame(
+      tester,
+      const DrumkitScreen(),
+      extraProviders: [ChangeNotifierProvider<DawService>.value(value: daw)],
+    );
+    final kit = _kit(tester);
+
+    // Empty grid → nothing sent.
+    kit.sendToDaw();
+    expect(daw.clipCount, 0);
+
+    kit.toggle(Drum.kick, 0);
+    kit.toggle(Drum.snare, 4);
+    await tester.pump();
+    kit.sendToDaw();
+    expect(daw.clipCount, 1);
+    // The sent clip renders to real audio (a DrumSource over the beat).
+    expect(daw.bake(), isNotEmpty);
   });
 
   testWidgets('the beat saves to the Song Book as a rhythm-line score',

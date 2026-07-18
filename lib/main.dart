@@ -1,5 +1,6 @@
 import 'package:comet_beat/core/audio/tts/tts_neural.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
@@ -54,6 +55,9 @@ class CometBeatApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DebugService()..load(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DawService(),
         ),
         ChangeNotifierProvider(
           create: (context) {

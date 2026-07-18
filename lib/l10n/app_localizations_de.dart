@@ -1172,6 +1172,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Füge einen Beat oder eine Melodie hinzu und drücke Play — sie überlagern sich.';
 
   @override
+  String get dawSend => 'Zur Mehrspur';
+
+  @override
+  String get dawSent => 'Zur Mehrspur hinzugefügt';
+
+  @override
   String get drumkitTitle => 'Schlagzeug';
 
   @override

@@ -1165,6 +1165,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add a beat or a tune, then press play — they layer together.';
 
   @override
+  String get dawSend => 'To Multitrack';
+
+  @override
+  String get dawSent => 'Added to the Multitrack';
+
+  @override
   String get drumkitTitle => 'Drum Kit';
 
   @override

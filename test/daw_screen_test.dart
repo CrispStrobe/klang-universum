@@ -2,9 +2,11 @@
 // arrangement, mute tracks. Audio is a no-op in the headless binding; assertions
 // are on the arrangement + the bake.
 
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/daw_screen.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/game_test_support.dart';
@@ -12,11 +14,17 @@ import 'support/game_test_support.dart';
 DawTester _daw(WidgetTester tester) =>
     tester.state<State<DawScreen>>(find.byType(DawScreen)) as DawTester;
 
+Future<void> _pumpDaw(WidgetTester tester) => pumpGame(
+      tester,
+      const DawScreen(),
+      extraProviders: [ChangeNotifierProvider(create: (_) => DawService())],
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets('starts empty with two tracks', (tester) async {
-    await pumpGame(tester, const DawScreen());
+    await _pumpDaw(tester);
     final daw = _daw(tester);
     expect(daw.trackCount, 2);
     expect(daw.clipCount, 0);
@@ -25,7 +33,7 @@ void main() {
 
   testWidgets('adding clips from modules bakes real, layered audio',
       (tester) async {
-    await pumpGame(tester, const DawScreen());
+    await _pumpDaw(tester);
     final daw = _daw(tester);
 
     daw.addDemoBeat(); // a DrumSource on track A
@@ -40,7 +48,7 @@ void main() {
   });
 
   testWidgets('muting a track shortens/changes the bake', (tester) async {
-    await pumpGame(tester, const DawScreen());
+    await _pumpDaw(tester);
     final daw = _daw(tester);
     daw.addDemoBeat(); // track A at 0
     await tester.pump();
@@ -54,7 +62,7 @@ void main() {
   });
 
   testWidgets('clear empties every track', (tester) async {
-    await pumpGame(tester, const DawScreen());
+    await _pumpDaw(tester);
     final daw = _daw(tester);
     daw.addDemoBeat();
     daw.addDemoTune();

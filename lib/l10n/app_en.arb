@@ -430,6 +430,8 @@
   "dawAddBeat": "Add beat",
   "dawAddTune": "Add tune",
   "dawEmpty": "Add a beat or a tune, then press play — they layer together.",
+  "dawSend": "To Multitrack",
+  "dawSent": "Added to the Multitrack",
   "drumkitTitle": "Drum Kit",
   "drumkitRecord": "Record",
   "drumkitStopRecording": "Stop recording",

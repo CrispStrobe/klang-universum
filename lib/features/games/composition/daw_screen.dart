@@ -17,6 +17,7 @@ import 'package:comet_beat/core/audio/loop_engine.dart'
     show DrumRowsPattern, LoopTiming, kPatternSteps;
 import 'package:comet_beat/core/audio/synth.dart' show Drum, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart'
@@ -58,37 +59,28 @@ class DawScreen extends StatefulWidget {
 }
 
 class _DawScreenState extends State<DawScreen> implements DawTester {
-  // Two named lanes to start with.
-  final DawTimeline _timeline = DawTimeline(
-    tracks: [DawTrack(name: 'A'), DawTrack(name: 'B')],
-  );
-  final Map<Object, Float64List> _cache = {};
   bool _playing = false;
 
-  // Where the next added clip lands, so demo clips lay out along the timeline.
-  double _nextStartMs = 0;
-
   AudioService get _audio => context.read<AudioService>();
+  DawService get _daw => context.read<DawService>();
 
   // --- DawTester -------------------------------------------------------------
 
   @override
-  int get trackCount => _timeline.tracks.length;
+  int get trackCount => _daw.timeline.tracks.length;
 
   @override
-  int get clipCount => _timeline.tracks.fold(0, (n, t) => n + t.clips.length);
+  int get clipCount => _daw.clipCount;
 
   @override
   bool get isPlaying => _playing;
 
   @override
-  bool isTrackMuted(int track) => _timeline.tracks[track].muted;
+  bool isTrackMuted(int track) => _daw.timeline.tracks[track].muted;
 
   @override
   void toggleTrackMute(int track) {
-    setState(
-      () => _timeline.tracks[track].muted = !_timeline.tracks[track].muted,
-    );
+    _daw.toggleTrackMute(track);
     if (_playing) play(); // re-bake with the change
   }
 
@@ -124,43 +116,17 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   }
 
   @override
-  void addDemoBeat() {
-    setState(() {
-      _timeline.tracks[0].clips.add(
-        Clip(
-          source: DrumSource(_demoBeat(), const LoopTiming(tempoBpm: 100)),
-          startMs: _nextStartMs,
-        ),
+  void addDemoBeat() => _daw.addClip(
+        DrumSource(_demoBeat(), const LoopTiming(tempoBpm: 100)),
       );
-      _nextStartMs += 2000;
-    });
-  }
 
   @override
-  void addDemoTune() {
-    setState(() {
-      _timeline.tracks[1].clips.add(
-        Clip(
-          source: ScoreSource.single(_demoTune()),
-          startMs: _nextStartMs,
-        ),
-      );
-      _nextStartMs += 2000;
-    });
-  }
+  void addDemoTune() => _daw.addClip(ScoreSource.single(_demoTune()), track: 1);
 
   @override
-  void clear() {
-    setState(() {
-      for (final t in _timeline.tracks) {
-        t.clips.clear();
-      }
-      _nextStartMs = 0;
-    });
-    _cache.clear();
-  }
+  void clear() => _daw.clear();
 
-  Float64List _bake() => renderTimeline(_timeline, cache: _cache);
+  Float64List _bake() => _daw.bake();
 
   Int16List _toPcm16(Float64List pcm) {
     final out = Int16List(pcm.length);
@@ -208,6 +174,7 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
+    final daw = context.watch<DawService>(); // rebuild as clips are sent
 
     return Scaffold(
       appBar: GameAppBar(
@@ -221,7 +188,7 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: l10n.trackerClear,
-            onPressed: clipCount == 0 ? null : clear,
+            onPressed: daw.clipCount == 0 ? null : clear,
           ),
         ],
       ),
@@ -229,7 +196,7 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
         child: Column(
           children: [
             Expanded(
-              child: clipCount == 0
+              child: daw.clipCount == 0
                   ? Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -243,8 +210,8 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                   : ListView(
                       padding: const EdgeInsets.all(12),
                       children: [
-                        for (var i = 0; i < _timeline.tracks.length; i++)
-                          _trackRow(i, scheme),
+                        for (var i = 0; i < daw.timeline.tracks.length; i++)
+                          _trackRow(daw, i, scheme),
                       ],
                     ),
             ),
@@ -275,8 +242,8 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
     );
   }
 
-  Widget _trackRow(int i, ColorScheme scheme) {
-    final track = _timeline.tracks[i];
+  Widget _trackRow(DawService daw, int i, ColorScheme scheme) {
+    final track = daw.timeline.tracks[i];
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
