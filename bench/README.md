@@ -135,3 +135,23 @@ granules to shape hard granules harder; our frames are self-contained
 (`main_data_begin = 0`). That's the next quality lever (a larger feature).
 Speed: the optimizer's per-candidate search runs inside the gain loop; the LUT
 keeps it at ~1.6× realtime (JIT) for the -q best broadband path.
+
+## Bit reservoir
+Ported glint's ReservoirStream (`mp3_reservoir.dart`): main data spills across
+frame slots via the 9-bit `main_data_begin` back-pointer, so a hard granule can
+spend more than its slot (finer noise shaping) while easy granules bank the
+surplus. Speech 128k mono:
+
+| metric      | region-opt | +reservoir | glint  |
+|-------------|------------|------------|--------|
+| NMR mean dB | −6.7       | **−7.1**   | −11.4  |
+| NMR>0 %     | 7.7        | **6.5**    | 0.0    |
+| SNR dB      | 36.2       | 36.7       | 32.1   |
+
+A CBR gain-floor *anchor* (glint's rc_anchor) was tried and measured WORSE
+(−4.9 dB) — forcing easy granules coarser added noise faster than shaping
+recovered it. Letting hard granules borrow the *naturally*-banked surplus (no
+floor) is the win. The `gainFloor` param stays threaded through the quantizer
+for VBR's constant-quality target. The remaining gap to glint's −11.4 is its
+tuned adaptive rate control (rc_anchor EMA + tonal-mask offsets at low rate) —
+high effort for diminishing returns.
