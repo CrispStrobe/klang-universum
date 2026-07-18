@@ -729,6 +729,42 @@ void main() {
       expect(first.l, greaterThan(first.r)); // starts left
       expect(last.r, greaterThan(last.l)); // ends right
     });
+
+    test('pan envelope is honoured on the variable-timing stereo path', () {
+      // A mid-song tempo change (→ variable timing) + a hard-left pan envelope.
+      final s = TrackerSong(
+        timing: const TrackerTiming(rows: 8),
+        patternCount: 2,
+      );
+      s.selectPattern(0);
+      s.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      s.selectPattern(1);
+      s.engine.setCell(
+        1,
+        0,
+        const TrackerCell(fxCmd: kFxSetSpeed, fxParam: 0x3C), // tempo 60
+      );
+      s.engine.setCell(0, 0, const TrackerCell(midi: 62));
+      s.order
+        ..clear()
+        ..addAll([0, 1]);
+      s.engine.setChannelPanEnvelope(
+        0,
+        const PanEnvelope([(ms: 0, pan: -1.0), (ms: 5000, pan: -1.0)]),
+      );
+      s.syncCurrent();
+      expect(s.usesPan && songUsesVariableTiming(s), isTrue);
+
+      final wav = s.renderSongWav();
+      expect(wav[22] | (wav[23] << 8), 2); // stereo
+      final data = ByteData.sublistView(wav);
+      var l = 0.0, r = 0.0;
+      for (var o = 44; o + 3 < wav.length; o += 4) {
+        l += data.getInt16(o, Endian.little).abs();
+        r += data.getInt16(o + 2, Endian.little).abs();
+      }
+      expect(l, greaterThan(r * 4)); // hard-left throughout the variable render
+    });
   });
 
   group('audit fixes', () {

@@ -1641,15 +1641,36 @@ ReplayResult _replayVariableStereo(TrackerSong song) {
       spb,
       pool: song.instruments,
     );
-    for (final reg
-        in _panRegionsVariable(channels[c].pan, flatCells, rowStart)) {
-      final theta = (reg.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
-      final lGain = cos(theta);
-      final rGain = sin(theta);
-      final end = min(reg.end, acc);
-      for (var i = reg.start; i < end; i++) {
-        left[i] += mono[i] * lGain;
-        right[i] += mono[i] * rGain;
+    final penv = channels[c].panEnvelope;
+    if (penv != null && !penv.isEmpty) {
+      // Per-note auto-pan over the variable spans (onset = rowStart[startStep]).
+      final basePan = channels[c].pan;
+      var startStep = 0;
+      for (final (midi, steps) in cellRuns(flatCells)) {
+        if (midi != null) {
+          final s = rowStart[startStep];
+          final e = min(rowStart[startStep + steps], acc);
+          for (var i = s; i < e; i++) {
+            final pan = (basePan + penv.panAt((i - s) / kSampleRate * 1000))
+                .clamp(-1.0, 1.0);
+            final theta = (pan + 1) / 2 * (pi / 2);
+            left[i] += mono[i] * cos(theta);
+            right[i] += mono[i] * sin(theta);
+          }
+        }
+        startStep += steps;
+      }
+    } else {
+      for (final reg
+          in _panRegionsVariable(channels[c].pan, flatCells, rowStart)) {
+        final theta = (reg.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
+        final lGain = cos(theta);
+        final rGain = sin(theta);
+        final end = min(reg.end, acc);
+        for (var i = reg.start; i < end; i++) {
+          left[i] += mono[i] * lGain;
+          right[i] += mono[i] * rGain;
+        }
       }
     }
   }
