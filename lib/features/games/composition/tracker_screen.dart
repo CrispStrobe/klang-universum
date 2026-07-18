@@ -24,7 +24,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/mod/mod.dart';
 import 'package:comet_beat/core/audio/mod/mod_bridge.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
-    show sniffModuleFormat, parseAnyModule, convertToMod;
+    show sniffModuleFormat, parseAnyModule, convertToMod, convertModule;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:comet_beat/core/audio/mod/module_instrument_bridge.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
@@ -162,6 +162,10 @@ abstract interface class TrackerTester {
 
   /// The current song serialized to MOD bytes.
   Uint8List exportModBytes();
+
+  /// The current song serialized to a module of [format] ('mod'/'xm'/'s3m'/'it'),
+  /// sample-preserving (MOD bytes converted). The MIDI/MOD/notation hub, widened.
+  Uint8List exportModuleBytes(String format);
 
   /// Loads a Score (as if from a MIDI file) into the channels.
   void importMidiScore(Score score);
@@ -402,6 +406,13 @@ class _TrackerScreenState extends State<TrackerScreen>
 
   @override
   Uint8List exportModBytes() => writeMod(_currentAsMod());
+  @override
+  Uint8List exportModuleBytes(String format) {
+    final mod = writeMod(_currentAsMod());
+    final fmt = ModuleFormat.values.byName(format);
+    return fmt == ModuleFormat.mod ? mod : convertModule(mod, fmt);
+  }
+
   @override
   void importMidiScore(Score score) => _loadMidi(score);
   @override
@@ -652,19 +663,24 @@ class _TrackerScreenState extends State<TrackerScreen>
     return '${index + 1}. $title  (${s.pcm.length})';
   }
 
-  Future<void> _exportMod() async {
+  /// Export the groove as a tracker module in [fmt]. MOD is written directly
+  /// (it carries the recorded voice sample); the other formats convert from
+  /// those same MOD bytes, so the sampled PCM survives across all four.
+  Future<void> _exportModule(ModuleFormat fmt) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final bytes = writeMod(_currentAsMod());
+      final mod = writeMod(_currentAsMod());
+      final bytes = fmt == ModuleFormat.mod ? mod : convertModule(mod, fmt);
+      final name = 'tracker.${fmt.name}';
       final location = await getSaveLocation(
-        suggestedName: 'tracker.mod',
+        suggestedName: name,
         acceptedTypeGroups: [
-          const XTypeGroup(label: 'MOD', extensions: ['mod']),
+          XTypeGroup(label: fmt.name.toUpperCase(), extensions: [fmt.name]),
         ],
       );
       if (location == null || !mounted) return;
-      await XFile.fromData(bytes, name: 'tracker.mod').saveTo(location.path);
+      await XFile.fromData(bytes, name: name).saveTo(location.path);
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
       );
@@ -672,6 +688,42 @@ class _TrackerScreenState extends State<TrackerScreen>
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(l10n.trackerModFailed)));
     }
+  }
+
+  Future<void> _pickModuleFormat() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.trackerExportModule,
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final f in ModuleFormat.values)
+                    ActionChip(
+                      label: Text('.${f.name}'),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _exportModule(f);
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // ── MIDI import / export (via the Score bridge) ────────────────────────────
@@ -1349,7 +1401,7 @@ class _TrackerScreenState extends State<TrackerScreen>
                 case 'importMod':
                   _importMod();
                 case 'exportMod':
-                  _exportMod();
+                  _pickModuleFormat();
                 case 'importMid':
                   _importMidi();
                 case 'exportMid':
@@ -1378,7 +1430,7 @@ class _TrackerScreenState extends State<TrackerScreen>
               ),
               PopupMenuItem(
                 value: 'exportMod',
-                child: Text(l10n.trackerExportMod),
+                child: Text(l10n.trackerExportModule),
               ),
               PopupMenuItem(
                 value: 'importMid',

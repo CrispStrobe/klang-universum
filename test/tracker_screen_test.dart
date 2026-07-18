@@ -8,6 +8,8 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/mod/mod.dart';
+import 'package:comet_beat/core/audio/mod/module_convert.dart'
+    show parseAnyModule;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerChannelEffect, TrackerEffect;
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
@@ -310,6 +312,24 @@ void main() {
     // Export re-parses as a valid module (round-trips through the codec).
     final back = parseMod(game.exportModBytes());
     expect(back.channelCount, greaterThanOrEqualTo(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('exports the groove to all four module formats (sample-kept)',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    game.selectChannel(0);
+    game.tapCell(0, 0); // place a note so there's something to export
+    await tester.pump();
+
+    for (final fmt in ['mod', 'xm', 's3m', 'it']) {
+      final bytes = game.exportModuleBytes(fmt);
+      expect(bytes.isNotEmpty, isTrue, reason: '$fmt export produced bytes');
+      // It re-parses through the module hub and keeps at least one sample.
+      final doc = parseAnyModule(bytes);
+      expect(doc.samples, isNotEmpty, reason: '$fmt kept a sample');
+    }
     expect(tester.takeException(), isNull);
   });
 
