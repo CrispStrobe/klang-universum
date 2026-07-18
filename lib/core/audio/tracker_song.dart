@@ -175,11 +175,14 @@ class TrackerSong {
 
   /// Total song length in ms. Normally one pattern's [TrackerTiming.totalMs] per
   /// order entry; when the song has flow commands (Bxx/Dxx/E6x) it is the
-  /// resolved length of the actually-played row sequence ([walkFlow]). An `Fxx`
-  /// set-tempo is applied uniformly ([effectiveTiming]) so this matches the
-  /// rendered WAV and the transport loops/stops at the right time. The
-  /// common flow-free, tempo-free case short-circuits with no allocation.
+  /// resolved length of the actually-played row sequence ([walkFlow]). A MID-SONG
+  /// tempo/speed change ([songUsesVariableTiming]) sums the per-row durations so
+  /// the non-uniform length matches the rendered WAV; otherwise an `Fxx`
+  /// set-tempo is applied uniformly ([effectiveTiming]). Either way this matches
+  /// the rendered WAV and the transport loops/stops at the right time. The common
+  /// flow-free, tempo-free case short-circuits with no allocation.
   int get songTotalMs {
+    if (songUsesVariableTiming(this)) return variableSongTotalMs(this);
     final t = effectiveTiming(this);
     // Uniform tempo throughout (Feature B changes row COUNT, not tempo), so the
     // length is stepMs × the number of played rows. Flow OR variable-length

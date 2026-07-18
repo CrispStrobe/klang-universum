@@ -24,11 +24,15 @@
 // (orderIndex, patternIndex, row) so the playhead can follow the non-linear
 // sequence. Implemented too: Exy extended — E1x/E2x fine porta, E9x retrigger,
 // EAx/EBx fine volume, ECx note cut, EDx note delay (per-tick, in ReplayVoice) +
-// E6x pattern loop (a row-level flow, in walkFlow). Fxx SET-SPEED (first Fxx
-// param <0x20 → ticks/row, [songInitialSpeed]) AND SET-TEMPO (first Fxx param
-// ≥0x20 → BPM, [songInitialTempo]/[effectiveTiming]) too: both are applied
-// UNIFORMLY to the whole render (the value a module sets at the top), so timing
-// stays uniform and songTotalMs matches.
+// E6x pattern loop (a row-level flow, in walkFlow). Fxx SET-SPEED (param <0x20 →
+// ticks/row) AND SET-TEMPO (param ≥0x20 → BPM): [walkFlow] annotates every played
+// row with the speed/tempo IN EFFECT for that row. A song with a single (or no)
+// value renders UNIFORMLY (the top-of-module value, [songInitialSpeed]/
+// [songInitialTempo]/[effectiveTiming]) — byte-identical to before. A MID-SONG
+// change ([songUsesVariableTiming]) routes through [_replayVariable]: each row's
+// duration follows its own tempo (laid back-to-back at accumulated sample
+// offsets), so a tempo drop lengthens the song and songTotalMs/resolveTimingMap
+// track the summed per-row durations.
 //
 // PER-CELL INSTRUMENT ([TrackerCell.instrument], 1-based into
 // [TrackerSong.instruments]): a note can switch the additive voice's timbre,
@@ -38,9 +42,9 @@
 //
 // 9xx sample-offset works on SAMPLE voices — [SampleInstrument.renderChannel]
 // starts the note at param×256 (it already receives the cells that carry the
-// effect column). Still TODO: MID-SONG speed/tempo CHANGES (need per-row
-// row-duration timing) and per-cell instrument on SAMPLE voices — both want a
-// per-note non-additive render (the shared next step).
+// effect column). MID-SONG speed/tempo CHANGES are now handled by the variable
+// render (see the Fxx note above). Still TODO: per-cell instrument on SAMPLE
+// voices — wants a per-note non-additive render (the shared next step).
 //
 // Mixing (see Trap A in docs/TRACKER_REPLAYER_HANDOVER.md): the replayer sums
 // voices at a FIXED-normalized amplitude (each additive voice divided by its
@@ -811,12 +815,29 @@ ReplayResult replayPatternStereo(
 // --- Flow (phase 3): Bxx position jump + Dxx pattern break -------------------
 
 /// One row actually played, in playback order — the output of [walkFlow].
+/// [ticksPerRow] (speed) and [tempoBpm] carry the Fxx state IN EFFECT for this
+/// row, so a mid-song tempo/speed change gives each row its own duration and
+/// effect granularity. Added as positional-optional with defaults so existing
+/// callers/tests stay source-compatible; `tempoBpm == 0` means "song default".
 class PlayedRow {
-  const PlayedRow(this.orderIndex, this.patternIndex, this.row);
+  const PlayedRow(
+    this.orderIndex,
+    this.patternIndex,
+    this.row, [
+    this.ticksPerRow = kDefaultTicksPerRow,
+    this.tempoBpm = 0,
+  ]);
 
   final int orderIndex;
   final int patternIndex;
   final int row;
+
+  /// The speed (ticks/row) in effect for THIS row (Fxx `param < 0x20`).
+  final int ticksPerRow;
+
+  /// The tempo (BPM) in effect for THIS row (Fxx `param >= 0x20`); 0 = the
+  /// song's own [TrackerTiming.tempoBpm].
+  final int tempoBpm;
 
   @override
   String toString() => 'PlayedRow(order $orderIndex, pat $patternIndex, '
@@ -858,6 +879,67 @@ bool songHasUniformPatternLengths(TrackerSong song) {
 bool songNeedsWalkRender(TrackerSong song) =>
     songUsesFlow(song) || !songHasUniformPatternLengths(song);
 
+/// Whether any cell in [song] carries an `Fxx` speed/tempo command at all — a
+/// cheap pre-filter so the common command-free/single-tempo song never pays for
+/// the [walkFlow] scan in [songUsesVariableTiming].
+bool _songHasFxx(TrackerSong song) => song.patterns.any(
+      (p) => p.cells.any((col) => col.any((c) => c.fxCmd == kFxSetSpeed)),
+    );
+
+/// Whether [song] has a MID-SONG tempo/speed change — i.e. its played rows do
+/// NOT all share one tempo AND one speed (more than one distinct `Fxx` value in
+/// play order, OR a value that first takes effect after play-position 0, e.g. a
+/// later order entry changing tempo while the first plays at the song default).
+/// When true, [replaySong] routes through the per-row-duration variable render;
+/// a song with a single (or no) value returns false → the uniform/flow path is
+/// used unchanged (byte-identical). The caller is expected to have synced the
+/// live pattern (like [songUsesFlow]).
+bool songUsesVariableTiming(TrackerSong song) {
+  if (!_songHasFxx(song)) return false;
+  final played = walkFlow(song);
+  if (played.length < 2) return false;
+  final tempo0 = played.first.tempoBpm;
+  final speed0 = played.first.ticksPerRow;
+  for (final p in played) {
+    if (p.tempoBpm != tempo0 || p.ticksPerRow != speed0) return true;
+  }
+  return false;
+}
+
+/// The step (row) duration in ms at [tempoBpm], matching [TrackerTiming.stepMs]
+/// for the same tempo — the per-row timebase of the variable render.
+int _stepMsForTempo(int tempoBpm, int stepsPerBeat) =>
+    (60000 / tempoBpm) ~/ stepsPerBeat;
+
+/// The accumulated onset (ms) of each played row, honouring per-row tempo. Entry
+/// `i` is the ms offset where played row `i` begins; the sum of all step
+/// durations is the song length ([variableSongTotalMs]).
+List<int> _variableRowStartMs(TrackerSong song, List<PlayedRow> played) {
+  final spb = song.timing.stepsPerBeat;
+  final def = song.timing.tempoBpm;
+  final starts = List<int>.filled(played.length, 0);
+  var acc = 0;
+  for (var i = 0; i < played.length; i++) {
+    starts[i] = acc;
+    acc +=
+        _stepMsForTempo(played[i].tempoBpm > 0 ? played[i].tempoBpm : def, spb);
+  }
+  return starts;
+}
+
+/// The total song length (ms) as the SUM of per-row durations under a mid-song
+/// tempo change — used by [TrackerSong.songTotalMs] when [songUsesVariableTiming].
+int variableSongTotalMs(TrackerSong song) {
+  final played = walkFlow(song);
+  final spb = song.timing.stepsPerBeat;
+  final def = song.timing.tempoBpm;
+  var ms = 0;
+  for (final p in played) {
+    ms += _stepMsForTempo(p.tempoBpm > 0 ? p.tempoBpm : def, spb);
+  }
+  return ms;
+}
+
 /// Expands [song]'s order/pattern/row walk under the flow rules (Bxx jump, Dxx
 /// break, E6x pattern loop) into the flat sequence of rows actually played. Bxx
 /// wins the order, Dxx sets the landing row; both on one row ⇒ jump order + break
@@ -871,6 +953,10 @@ List<PlayedRow> walkFlow(TrackerSong song, {int maxRows = 4096}) {
   var row = 0;
   var loopStartRow = 0; // E6x pattern-loop start (defaults to row 0)
   var loopCount = 0; // remaining E6x repeats
+  // Fxx state carried across rows: speed (ticks/row) + tempo (BPM). A value takes
+  // effect ON its own row and persists until the next Fxx of that kind.
+  var curSpeed = kDefaultTicksPerRow;
+  var curTempo = song.timing.tempoBpm;
   while (oi >= 0 && oi < order.length && played.length < maxRows) {
     final patternIndex = order[oi];
     final cells = song.patterns[patternIndex].cells;
@@ -882,7 +968,20 @@ List<PlayedRow> walkFlow(TrackerSong song, {int maxRows = 4096}) {
     } else if (row >= rows) {
       row = rows - 1;
     }
-    played.add(PlayedRow(oi, patternIndex, row));
+
+    // Apply any Fxx on this row BEFORE recording it (effect is on its own row):
+    // param < 0x20 → speed (min 1); param >= 0x20 → tempo (BPM). (Feature A)
+    for (final col in cells) {
+      final c = col[row];
+      if (c.fxCmd == kFxSetSpeed) {
+        if (c.fxParam >= 0x20) {
+          curTempo = c.fxParam;
+        } else if (c.fxParam > 0) {
+          curSpeed = c.fxParam; // already >= 1
+        }
+      }
+    }
+    played.add(PlayedRow(oi, patternIndex, row, curSpeed, curTempo));
 
     // Scan the row across channels for flow commands (first of each wins).
     int? jumpToOrder;
@@ -1006,6 +1105,20 @@ TrackerTiming effectiveTiming(TrackerSong song) {
 /// highlight follows Bxx/Dxx/E6x jumps instead of assuming fixed pattern lengths.
 List<RowTiming> resolveTimingMap(TrackerSong song) {
   song.syncCurrent();
+  // Mid-song tempo change: non-uniform per-row onsets (match [_replayVariable]).
+  if (songUsesVariableTiming(song)) {
+    final played = walkFlow(song);
+    final starts = _variableRowStartMs(song, played);
+    return [
+      for (var i = 0; i < played.length; i++)
+        RowTiming(
+          starts[i],
+          played[i].orderIndex,
+          played[i].patternIndex,
+          played[i].row,
+        ),
+    ];
+  }
   final timing = effectiveTiming(song); // match the render's Fxx set-tempo
   // Flow OR variable-length patterns both resolve via the flattened walk.
   if (songNeedsWalkRender(song)) {
@@ -1067,6 +1180,9 @@ ReplayResult replaySong(
   int ticksPerRow = kDefaultTicksPerRow,
 }) {
   song.syncCurrent();
+  // A MID-SONG tempo/speed change needs per-row durations — render that first
+  // (it also expands flow via [walkFlow], so it subsumes flow+variable songs).
+  if (songUsesVariableTiming(song)) return _replayVariable(song);
   // An Fxx set-speed command overrides the default ticks/row (effect
   // granularity); timing-safe (speed subdivides the row, not its duration).
   final ticks = songInitialSpeed(song, fallback: ticksPerRow);
@@ -1115,7 +1231,9 @@ ReplayResult replaySongStereo(
 }) {
   song.syncCurrent();
   final ticks = songInitialSpeed(song, fallback: ticksPerRow);
-  // Match the mono replaySong gate: flatten flow AND variable-length patterns.
+  // Mirror the mono replaySong routing: mid-song tempo/speed → the per-row
+  // stereo render; flow OR variable-length → the flattened stereo render.
+  if (songUsesVariableTiming(song)) return _replayVariableStereo(song);
   if (songNeedsWalkRender(song)) return _replayFlowStereo(song, ticks);
 
   final timing = effectiveTiming(song);
@@ -1202,7 +1320,6 @@ ReplayResult _replayFlowStereo(TrackerSong song, int ticksPerRow) {
   final flatTiming = base.copyWith(rows: flatRows);
   final left = Float64List(flatTiming.totalSamples);
   final right = Float64List(flatTiming.totalSamples);
-
   for (var c = 0; c < channels.length; c++) {
     final flatCells = [
       for (final pr in played) song.patterns[pr.patternIndex].cells[c][pr.row],
@@ -1218,7 +1335,6 @@ ReplayResult _replayFlowStereo(TrackerSong song, int ticksPerRow) {
       pool: song.instruments,
     );
   }
-
   final timingMap = [
     for (var i = 0; i < played.length; i++)
       RowTiming(
@@ -1229,4 +1345,301 @@ ReplayResult _replayFlowStereo(TrackerSong song, int ticksPerRow) {
       ),
   ];
   return ReplayResult(_interleaveToPcm(left, right), timingMap);
+}
+
+// --- Variable-timing render (mid-song tempo/speed changes) -------------------
+
+/// The mid-song-timing render: expand the order via [walkFlow] (which annotates
+/// every played row with the tempo/speed in effect), lay the rows back-to-back
+/// at accumulated sample offsets whose lengths follow each row's OWN tempo, and
+/// render each channel across those variable boundaries. Additive voices use each
+/// row's [PlayedRow.ticksPerRow] for tick granularity; non-additive voices are
+/// placed per note over their run's summed duration. The row-timing map + length
+/// use the ms-summed onsets so [TrackerSong.songTotalMs] and the transport agree.
+ReplayResult _replayVariable(TrackerSong song) {
+  final played = walkFlow(song);
+  final channels = song.channels;
+  final spb = song.timing.stepsPerBeat;
+  final def = song.timing.tempoBpm;
+  final n = played.length;
+
+  // Per-row sample boundaries: rowStart[i]..rowStart[i+1] is played row i.
+  final rowStart = List<int>.filled(n + 1, 0);
+  final ticks = List<int>.filled(n, kDefaultTicksPerRow);
+  var acc = 0;
+  for (var i = 0; i < n; i++) {
+    rowStart[i] = acc;
+    ticks[i] = played[i].ticksPerRow;
+    final tempo = played[i].tempoBpm > 0 ? played[i].tempoBpm : def;
+    final stepMs = _stepMsForTempo(tempo, spb);
+    acc += (stepMs * kSampleRate / 1000).round();
+  }
+  rowStart[n] = acc;
+
+  final mix = Float64List(acc);
+  for (var c = 0; c < channels.length; c++) {
+    final flatCells = [
+      for (final pr in played) song.patterns[pr.patternIndex].cells[c][pr.row],
+    ];
+    _renderChannelIntoVariable(
+      mix,
+      channels[c],
+      flatCells,
+      rowStart,
+      ticks,
+      spb,
+      pool: song.instruments,
+    );
+  }
+
+  final starts = _variableRowStartMs(song, played);
+  final timingMap = [
+    for (var i = 0; i < n; i++)
+      RowTiming(
+        starts[i],
+        played[i].orderIndex,
+        played[i].patternIndex,
+        played[i].row,
+      ),
+  ];
+  return ReplayResult(_mixToPcm(mix), timingMap);
+}
+
+/// The run length in SECONDS of the note (re)triggered at row [from] under
+/// VARIABLE per-row durations — from its row start to the next trigger (or the
+/// end), read from the [rowStart] sample boundaries. The variable sibling of
+/// [_runSeconds].
+double _runSecondsVariable(
+  List<TrackerCell> cells,
+  int from,
+  int rows,
+  List<int> rowStart,
+) {
+  final runEnd = _nextTriggerRow(cells, from);
+  final endSample = runEnd < rows ? rowStart[runEnd] : rowStart[rows];
+  final runSamples = endSample - rowStart[from];
+  return runSamples > 0 ? runSamples / kSampleRate : 0.001;
+}
+
+/// Renders one channel's flattened [cells] into [mix] across VARIABLE row
+/// boundaries [rowStart] (length `cells.length + 1`), each row using its own
+/// [ticksPerRow]. The variable-timing sibling of [_renderChannelInto]: additive
+/// voices synthesize per tick (honouring commands + per-cell timbre); other
+/// instruments fall back to a per-note render over the variable spans.
+void _renderChannelIntoVariable(
+  Float64List mix,
+  TrackerChannel channel,
+  List<TrackerCell> cells,
+  List<int> rowStart,
+  List<int> ticksPerRow,
+  int stepsPerBeat, {
+  List<TrackerInstrument>? pool,
+}) {
+  if (channel.muted || !cells.any((c) => !c.isEmpty)) return;
+  final rows = cells.length;
+
+  final inst = _additiveOf(channel.instrument);
+  if (inst == null) {
+    _renderNonAdditiveVariable(mix, channel, cells, rowStart, pool);
+    return;
+  }
+
+  var tp = _timbreParamsOf(inst);
+  final gain = channel.gain;
+  final voice = ReplayVoice();
+  for (var r = 0; r < rows; r++) {
+    final cellInst = cells[r].instrument;
+    if (cellInst > 0 && pool != null && cellInst - 1 < pool.length) {
+      final pi = _additiveOf(pool[cellInst - 1]);
+      if (pi != null) tp = _timbreParamsOf(pi);
+    }
+    voice.armRow(cells[r]);
+    if (voice.retriggeredThisRow) {
+      voice.oscPhase = 0;
+      voice.noteStartSample = rowStart[r];
+      voice.noteSeconds = _runSecondsVariable(cells, r, rows, rowStart);
+    }
+    if (!voice.active && !voice.hasPendingNote) continue;
+
+    final rowS = rowStart[r];
+    final rowE = rowStart[r + 1];
+    final tpr = ticksPerRow[r] < 1 ? 1 : ticksPerRow[r];
+    for (var k = 0; k < tpr; k++) {
+      final ts = rowS + ((rowE - rowS) * k) ~/ tpr;
+      final te = rowS + ((rowE - rowS) * (k + 1)) ~/ tpr;
+      final state = voice.tick(k, tpr);
+      if (state.retrigger) {
+        voice.oscPhase = 0;
+        voice.noteStartSample = ts;
+        voice.noteSeconds = _runSecondsVariable(cells, r, rows, rowStart);
+      }
+      if (!voice.active) continue;
+      final freq = _freqOfMidi(state.pitch);
+      final volScale = (state.volume / kMaxVolume) * voice.noteVolume * gain;
+      final phaseInc = 2 * pi * freq / kSampleRate;
+      for (var i = ts; i < te && i < mix.length; i++) {
+        final t = (i - voice.noteStartSample) / kSampleRate;
+        if (t < 0) continue;
+        final attack = t < tp.attackSec ? t / tp.attackSec : 1.0;
+        final env = attack * exp(-tp.decay * t / voice.noteSeconds);
+        var sample = 0.0;
+        for (var h = 0; h < tp.harmonics.length; h++) {
+          sample += tp.harmonics[h] * sin(voice.oscPhase * (h + 1));
+        }
+        mix[i] += (sample / tp.harmNorm) * env * volScale;
+        voice.oscPhase += phaseInc;
+      }
+    }
+  }
+}
+
+/// Renders a NON-additive channel across VARIABLE row spans: each note run is
+/// rendered by its effective instrument over its OWN duration (the summed span of
+/// its rows), then placed at the accumulated sample offset, unit-peaked × gain
+/// like the uniform non-additive path. So a sample note that triggers after a
+/// tempo change still lands at the correct offset.
+void _renderNonAdditiveVariable(
+  Float64List mix,
+  TrackerChannel channel,
+  List<TrackerCell> cells,
+  List<int> rowStart,
+  List<TrackerInstrument>? pool,
+) {
+  final rows = cells.length;
+  final stem = Float64List(rowStart[rows]);
+  var curInst = channel.instrument;
+  var startStep = 0;
+  for (final (midi, steps) in cellRuns(cells)) {
+    final trigger = cells[startStep];
+    if (trigger.instrument > 0 &&
+        pool != null &&
+        trigger.instrument - 1 < pool.length) {
+      curInst = pool[trigger.instrument - 1];
+    }
+    if (midi != null) {
+      final s = rowStart[startStep];
+      final e = rowStart[startStep + steps];
+      final runSamples = e - s;
+      if (runSamples > 0) {
+        // A one-run timing sized to this note's actual span, so the instrument
+        // renders the note over exactly runSamples (± a rounding sample).
+        final runMs = (runSamples * 1000 / kSampleRate).round();
+        final tempo =
+            (runMs <= 0 ? 240 : (60000 / runMs).round()).clamp(1, 1 << 20);
+        final noteTiming =
+            TrackerTiming(tempoBpm: tempo, rows: 1, stepsPerBeat: 1);
+        final buf = curInst.renderChannel([trigger], noteTiming);
+        final lim = min(runSamples, min(buf.length, stem.length - s));
+        for (var i = 0; i < lim; i++) {
+          stem[s + i] += buf[i];
+        }
+      }
+    }
+    startStep += steps;
+  }
+
+  var peak = 0.0;
+  for (final v in stem) {
+    if (v.abs() > peak) peak = v.abs();
+  }
+  if (peak == 0) return;
+  final scale = channel.gain / peak;
+  final n = min(stem.length, mix.length);
+  for (var i = 0; i < n; i++) {
+    mix[i] += stem[i] * scale;
+  }
+}
+
+/// The stereo sibling of [_replayVariable]: the mid-song per-row-duration render,
+/// each channel panned (base pan + 8xx) into an interleaved mix — so a PANNED
+/// song with a mid-song tempo/speed change stays in sync (length matches
+/// [variableSongTotalMs]). Each channel is rendered mono over the variable
+/// boundaries then split L/R, exactly like [_renderChannelIntoStereo] does for
+/// the uniform case.
+ReplayResult _replayVariableStereo(TrackerSong song) {
+  final played = walkFlow(song);
+  final channels = song.channels;
+  final spb = song.timing.stepsPerBeat;
+  final def = song.timing.tempoBpm;
+  final n = played.length;
+
+  final rowStart = List<int>.filled(n + 1, 0);
+  final ticks = List<int>.filled(n, kDefaultTicksPerRow);
+  var acc = 0;
+  for (var i = 0; i < n; i++) {
+    rowStart[i] = acc;
+    ticks[i] = played[i].ticksPerRow;
+    final tempo = played[i].tempoBpm > 0 ? played[i].tempoBpm : def;
+    acc += (_stepMsForTempo(tempo, spb) * kSampleRate / 1000).round();
+  }
+  rowStart[n] = acc;
+
+  final left = Float64List(acc);
+  final right = Float64List(acc);
+  for (var c = 0; c < channels.length; c++) {
+    final flatCells = [
+      for (final pr in played) song.patterns[pr.patternIndex].cells[c][pr.row],
+    ];
+    final mono = Float64List(acc);
+    _renderChannelIntoVariable(
+      mono,
+      channels[c],
+      flatCells,
+      rowStart,
+      ticks,
+      spb,
+      pool: song.instruments,
+    );
+    for (final reg in _panRegionsVariable(channels[c].pan, flatCells, rowStart)) {
+      final theta = (reg.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
+      final lGain = cos(theta);
+      final rGain = sin(theta);
+      final end = min(reg.end, acc);
+      for (var i = reg.start; i < end; i++) {
+        left[i] += mono[i] * lGain;
+        right[i] += mono[i] * rGain;
+      }
+    }
+  }
+
+  final starts = _variableRowStartMs(song, played);
+  final timingMap = [
+    for (var i = 0; i < n; i++)
+      RowTiming(
+        starts[i],
+        played[i].orderIndex,
+        played[i].patternIndex,
+        played[i].row,
+      ),
+  ];
+  return ReplayResult(_interleaveToPcm(left, right), timingMap);
+}
+
+/// Variable-timing pan regions: like [_panRegions] but 8xx boundaries come from
+/// the per-row sample offsets [rowStart] (the flattened length is `rowStart.last`).
+List<({int start, int end, double pan})> _panRegionsVariable(
+  double basePan,
+  List<TrackerCell> cells,
+  List<int> rowStart,
+) {
+  final total = rowStart.last;
+  final regions = <({int start, int end, double pan})>[];
+  var pan = basePan;
+  var regionStart = 0;
+  for (var r = 0; r < cells.length && r < rowStart.length - 1; r++) {
+    final c = cells[r];
+    if (c.fxCmd == kFxSetPan) {
+      final newPan = _panFromParam(c.fxParam);
+      if (newPan != pan) {
+        final s = rowStart[r];
+        if (s > regionStart) {
+          regions.add((start: regionStart, end: s, pan: pan));
+        }
+        regionStart = s;
+        pan = newPan;
+      }
+    }
+  }
+  regions.add((start: regionStart, end: total, pan: pan));
+  return regions;
 }
