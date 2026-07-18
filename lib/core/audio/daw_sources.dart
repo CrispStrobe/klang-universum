@@ -12,6 +12,7 @@ import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
 import 'package:comet_beat/core/audio/synth.dart'
     show Drum, Segment, midiToFrequency, renderSegmentsRaw;
+import 'package:comet_beat/core/audio/tracker_song.dart' show TrackerSong;
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
@@ -148,8 +149,7 @@ String _scoreCacheKey(MultiPartScore mp, int quarterMs) {
 /// synth. Pass an explicit [key] (e.g. a song id + version) for a cheap cache
 /// identity; otherwise a structural key is derived from the notes.
 class ScoreSource implements ClipSource {
-  ScoreSource(this.score, {this.quarterMs = 500, Object? key})
-      : cacheKey = key ?? _scoreCacheKey(score, quarterMs);
+  ScoreSource(this.score, {this.quarterMs = 500, Object? key}) : _key = key;
 
   /// Wrap a single-part [score] as a source.
   factory ScoreSource.single(Score score, {int quarterMs = 500, Object? key}) =>
@@ -157,11 +157,64 @@ class ScoreSource implements ClipSource {
 
   final MultiPartScore score;
   final int quarterMs;
+  final Object? _key;
 
+  // A getter so an edit to [score] invalidates the timeline cache (vector, not
+  // bitmap); an explicit [_key] short-circuits the structural walk.
   @override
-  final Object cacheKey;
+  Object get cacheKey => _key ?? _scoreCacheKey(score, quarterMs);
 
   @override
   Float64List render(int sampleRate) =>
       renderMultiPartScore(score, quarterMs: quarterMs);
+}
+
+// --- Tracker song -----------------------------------------------------------
+
+/// Structural cache identity for a [TrackerSong]: timing + order + instrument
+/// ids + the LIVE current-pattern cells ([TrackerEngine.exportCells], what
+/// `renderSongWav` syncs in) + every pattern's cells (all value-hashed). NB two
+/// DIFFERENT recorded samples sharing one instrument id would collide — pass an
+/// explicit key (a change counter) if a song's instrument SAMPLES are edited in
+/// place.
+String trackerCacheKey(TrackerSong s) {
+  final b =
+      StringBuffer('trk@${s.timing.tempoBpm}r${s.rows};o${s.order.join(',')};');
+  for (final inst in s.instruments) {
+    b.write('i${inst.id};');
+  }
+  for (final chan in s.engine.exportCells()) {
+    for (final c in chan) {
+      b.write('${c.hashCode},');
+    }
+  }
+  b.write('#');
+  for (final p in s.patterns) {
+    for (final chan in p.cells) {
+      for (final c in chan) {
+        b.write('${c.hashCode},');
+      }
+    }
+    b.write('|');
+  }
+  return b.toString();
+}
+
+/// A Tracker song ([TrackerSong]) as a clip source: rendered offline by its own
+/// `renderSongWav` and decoded to mono PCM. [cacheKey] defaults to a structural
+/// hash (see [trackerCacheKey]); pass an explicit [key] for a song whose
+/// instrument samples change in place.
+class TrackerSource implements ClipSource {
+  TrackerSource(this.song, {Object? key}) : _key = key;
+
+  final TrackerSong song;
+  final Object? _key;
+
+  // A getter so a live edit to [song] invalidates the timeline cache.
+  @override
+  Object get cacheKey => _key ?? trackerCacheKey(song);
+
+  @override
+  Float64List render(int sampleRate) =>
+      wavToMonoFloat(readWavPcm16(song.renderSongWav()));
 }

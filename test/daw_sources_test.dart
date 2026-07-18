@@ -6,6 +6,8 @@ import 'package:comet_beat/core/audio/daw_sources.dart';
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
+import 'package:comet_beat/core/audio/tracker_engine.dart' show TrackerCell;
+import 'package:comet_beat/core/audio/tracker_song.dart' show TrackerSong;
 import 'package:crisp_notation/crisp_notation.dart'
     show
         Clef,
@@ -145,6 +147,28 @@ void main() {
       final mix = renderTimeline(t);
       expect(mix, isNotEmpty);
       expect(_silent(mix), isFalse);
+    });
+  });
+
+  group('TrackerSource', () {
+    test('renders a song to real audio; cacheKey tracks live edits', () {
+      final song = TrackerSong()
+        ..engine.setCell(0, 0, const TrackerCell(midi: 60));
+      final src = TrackerSource(song);
+
+      final pcm = src.render(kDawSampleRate);
+      expect(pcm, isNotEmpty);
+      expect(_silent(pcm), isFalse);
+
+      // The cacheKey is a getter over the live song, so an edit invalidates it
+      // (vector, not bitmap).
+      final before = src.cacheKey;
+      song.engine.setCell(0, 4, const TrackerCell(midi: 64));
+      expect(src.cacheKey, isNot(before));
+    });
+
+    test('an explicit key overrides the structural one', () {
+      expect(TrackerSource(TrackerSong(), key: 'v1').cacheKey, 'v1');
     });
   });
 }
