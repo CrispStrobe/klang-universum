@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/crisp_dsp/envelope.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/sfxr.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:comet_beat/core/audio/pitch_analysis.dart' show PitchDetector;
 import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -309,6 +310,72 @@ void main() {
           isTrue,
         );
       }
+    });
+  });
+
+  group('procedural melodic voices (FM + subtractive)', () {
+    // Detect the note with the app's own MPM/NSDF pitch detector (built to lock
+    // the FUNDAMENTAL of a rich/sustained tone, not a 2× multiple).
+    final detector = PitchDetector();
+    int detectedMidi(Float64List b) {
+      final w = detector.windowSize;
+      const start = 3000; // past the attack
+      return detector
+          .analyze(Float64List.sublistView(b, start, start + w))
+          .nearestMidi;
+    }
+
+    List<TrackerCell> oneNote(int midi, int rows) => [
+          TrackerCell(midi: midi),
+          ...List<TrackerCell>.filled(rows - 1, TrackerCell.empty),
+        ];
+
+    // Voices whose fundamental sits AT the note frequency. (fmBell/fmBass are
+    // deliberately inharmonic / sub-octave — a bell's ambiguous pitch and an
+    // FM bass an octave down — so they're audible/deterministic but not
+    // pitch-asserted here.)
+    const pitchAccurate = {'ePiano', 'pad', 'lead', 'synthBass'};
+
+    for (final o in kTrackerInstruments.where(
+      (o) => {'ePiano', 'fmBell', 'fmBass', 'pad', 'lead', 'synthBass'}
+          .contains(o.id),
+    )) {
+      test(
+          '${o.id}: audible + deterministic'
+          '${pitchAccurate.contains(o.id) ? ' + pitched at the note' : ''}',
+          () {
+        const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+        final inst = o.build();
+        final empty = List<TrackerCell>.filled(timing.rows, TrackerCell.empty);
+        expect(
+          inst.renderChannel(empty, timing).every((v) => v == 0),
+          isTrue,
+        );
+
+        final cells = oneNote(60, timing.rows); // C4 = 261.63 Hz
+        final a = inst.renderChannel(cells, timing);
+        final b = inst.renderChannel(cells, timing);
+        expect(a.any((v) => v != 0), isTrue);
+        expect(a, equals(b)); // stable stem for the cache
+        if (pitchAccurate.contains(o.id)) {
+          // The detector reads C4 (midi 60), within a semitone.
+          expect((detectedMidi(a) - 60).abs(), lessThanOrEqualTo(1));
+        }
+      });
+    }
+
+    test('FM + subtractive presets are all in the sound library', () {
+      final ids = kTrackerInstruments.map((o) => o.id).toSet();
+      expect(
+        ids.containsAll(
+          {'ePiano', 'fmBell', 'fmBass', 'pad', 'lead', 'synthBass'},
+        ),
+        isTrue,
+      );
+      // They classify as tonal (grouped with the additive melodic voices).
+      final byCat = soundLibraryByCategory();
+      final tonalIds = byCat[SoundCategory.tonal]!.map((o) => o.id).toSet();
+      expect(tonalIds.containsAll({'ePiano', 'pad'}), isTrue);
     });
   });
 

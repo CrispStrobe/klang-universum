@@ -18,12 +18,14 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/envelope.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/fm.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/karplus.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/sfxr.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/subtractive.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/tracker_effects.dart';
@@ -330,6 +332,93 @@ class KarplusInstrument implements TrackerInstrument {
     }
     return out;
   }
+}
+
+/// A two-operator FM instrument (electric piano / bell / tine / FM bass) — a
+/// [FmPreset] synthesized fresh at each note's frequency. Struck-and-mellowing
+/// timbres the additive/sfxr voices can't make, with no sample assets. Pure/
+/// deterministic → stable stem cache.
+class FmInstrument implements TrackerInstrument {
+  const FmInstrument(this.id, this.preset);
+
+  /// Builds from a named [kFmPresets] entry.
+  factory FmInstrument.preset(String id, FmPreset preset) =>
+      FmInstrument(id, preset);
+
+  @override
+  final String id;
+  final FmPreset preset;
+
+  @override
+  Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) =>
+      _renderPerNote(
+        cells,
+        timing,
+        (freq, samples) => fmVoice(
+          freq: freq,
+          samples: samples,
+          ratio: preset.ratio,
+          index: preset.index,
+          indexDecay: preset.indexDecay,
+          ampDecay: preset.ampDecay,
+        ),
+      );
+}
+
+/// A subtractive instrument (pad / lead / synth bass) — a saw/square oscillator
+/// through an envelope-swept lowpass, synthesized per note from a [SubPreset].
+/// The sustained/analog side of the melodic palette. Pure → stable stem cache.
+class SubtractiveInstrument implements TrackerInstrument {
+  const SubtractiveInstrument(this.id, this.preset);
+
+  /// Builds from a named [kSubPresets] entry.
+  factory SubtractiveInstrument.preset(String id, SubPreset preset) =>
+      SubtractiveInstrument(id, preset);
+
+  @override
+  final String id;
+  final SubPreset preset;
+
+  @override
+  Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) =>
+      _renderPerNote(
+        cells,
+        timing,
+        (freq, samples) => subtractiveVoice(
+          freq: freq,
+          samples: samples,
+          wave: preset.wave,
+          cutoffStart: preset.cutoffStart,
+          cutoffEnd: preset.cutoffEnd,
+          cutoffDecay: preset.cutoffDecay,
+          ampDecay: preset.ampDecay,
+        ),
+      );
+}
+
+/// Shared per-note render for the procedural voices ([FmInstrument],
+/// [SubtractiveInstrument]): each note run is synthesized by [voice] at its
+/// frequency over its exact sample span and placed on the timeline.
+Float64List _renderPerNote(
+  List<TrackerCell> cells,
+  TrackerTiming timing,
+  Float64List Function(double freq, int samples) voice,
+) {
+  final out = Float64List(timing.totalSamples);
+  var startStep = 0;
+  for (final (midi, steps) in cellRuns(cells)) {
+    if (midi != null) {
+      final start = timing.stepStartSample(startStep);
+      final end = timing.stepStartSample(startStep + steps);
+      final buf = voice(midiToFrequency(midi), end - start);
+      final n = min(buf.length, out.length - start);
+      for (var i = 0; i < n; i++) {
+        out[start + i] = buf[i];
+      }
+    }
+    startStep += steps;
+  }
+  return out;
 }
 
 /// A sampled instrument: a recorded (optionally voice-effected) buffer played at
@@ -768,7 +857,8 @@ Map<SoundCategory, List<InstrumentOption>> soundLibraryByCategory() {
 }
 
 /// The picker palette / built-in sound library: four additive voices, seven
-/// chiptune (sfxr) presets, and three Karplus-Strong plucked strings.
+/// chiptune (sfxr) presets, three Karplus-Strong plucked strings, three 2-op FM
+/// voices, and three subtractive voices — all sample-free / zero-license.
 final List<InstrumentOption> kTrackerInstruments = [
   InstrumentOption(
     'piano',
@@ -817,6 +907,12 @@ final List<InstrumentOption> kTrackerInstruments = [
     'pluckBass',
     () => const KarplusInstrument('pluckBass', damping: 0.992),
   ),
+  // Two-op FM — electric piano, bell, FM bass (struck-and-mellowing).
+  for (final e in kFmPresets.entries)
+    InstrumentOption(e.key, () => FmInstrument.preset(e.key, e.value)),
+  // Subtractive — pad, lead, synth bass (the sustained analog side).
+  for (final e in kSubPresets.entries)
+    InstrumentOption(e.key, () => SubtractiveInstrument.preset(e.key, e.value)),
 ];
 
 /// Holds the pattern (channels × rows) + timing, edits cells, and renders the
