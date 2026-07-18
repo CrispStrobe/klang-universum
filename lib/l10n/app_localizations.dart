@@ -2180,6 +2180,36 @@ abstract class AppLocalizations {
   /// **'Loop Mixer'**
   String get workshopModeLoop;
 
+  /// No description provided for @workshopModeDrums.
+  ///
+  /// In en, this message translates to:
+  /// **'Drum Kit'**
+  String get workshopModeDrums;
+
+  /// No description provided for @drumkitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drum Kit'**
+  String get drumkitTitle;
+
+  /// No description provided for @drumkitKick.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick'**
+  String get drumkitKick;
+
+  /// No description provided for @drumkitSnare.
+  ///
+  /// In en, this message translates to:
+  /// **'Snare'**
+  String get drumkitSnare;
+
+  /// No description provided for @drumkitHat.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi-hat'**
+  String get drumkitHat;
+
   /// No description provided for @tabWorkshopTitle.
   ///
   /// In en, this message translates to:

@@ -1136,6 +1136,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopModeLoop => 'Loop-Mixer';
 
   @override
+  String get workshopModeDrums => 'Schlagzeug';
+
+  @override
+  String get drumkitTitle => 'Schlagzeug';
+
+  @override
+  String get drumkitKick => 'Bass';
+
+  @override
+  String get drumkitSnare => 'Snare';
+
+  @override
+  String get drumkitHat => 'Hi-Hat';
+
+  @override
   String get tabWorkshopTitle => 'Gitarren-Tabulatur';
 
   @override

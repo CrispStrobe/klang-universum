@@ -1129,6 +1129,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopModeLoop => 'Loop Mixer';
 
   @override
+  String get workshopModeDrums => 'Drum Kit';
+
+  @override
+  String get drumkitTitle => 'Drum Kit';
+
+  @override
+  String get drumkitKick => 'Kick';
+
+  @override
+  String get drumkitSnare => 'Snare';
+
+  @override
+  String get drumkitHat => 'Hi-hat';
+
+  @override
   String get tabWorkshopTitle => 'Guitar Tab';
 
   @override
