@@ -434,6 +434,16 @@ Games built on crisp_notation capabilities the app didn't use before.
   `TimeSignature.beatStrength(position)`, not hard-coded — correct for 4/4 (1 & 3
   strong), 3/4 (only 1) and 6/8 (1 & 4). A metric click accents the strong beats.
   Widens 4/4 → +3/4, 2/4 → +6/8. SRI `measures.accent.<ts>_<beat>`.
+- **Spot the Parallels** (Harmonik — top of the ladder) — the app's first
+  part-writing drill. A two-chord SATB progression is engraved on a grand staff
+  (soprano+alto on the treble, tenor+bass on the bass); the child decides whether
+  the voice-leading is **Clean** or slips into forbidden **parallel fifths /
+  octaves**. Graded by crisp_notation_core's `checkVoiceLeading` — the library is
+  ground truth, so the 9 authored chord-pair templates (4 clean + 5 parallel-only,
+  verified crisp in the test) can never be mislabelled; they're transposed for
+  variety (parallels are interval-invariant, so the label survives). A correct
+  answer plays the pair so you HEAR the motion. New g9-10 `voice_leading`
+  curriculum concept. SRI `harmony.parallels.<template>`.
 - **Roman Numerals** (Harmonik) — read *and* hear a diatonic triad in a key and
   pick its Roman numeral (I, ii, iii, IV, V, vi, vii°). The chord is built with
   `Triad(root, quality)` and named by crisp_notation-public's new
