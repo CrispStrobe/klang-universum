@@ -21,10 +21,15 @@ class TabColumn {
   final NoteDuration duration;
   final Set<TabTechnique> techniques;
 
+  /// An optional chord diagram shown above this column (display-only — it does
+  /// not affect [TabDocument.toScore]).
+  final ChordDiagram? chord;
+
   const TabColumn({
     this.frets = const {},
     this.duration = NoteDuration.quarter,
     this.techniques = const {},
+    this.chord,
   });
 
   bool get isEmpty => frets.isEmpty;
@@ -33,6 +38,7 @@ class TabColumn {
         frets: {...frets, string: fret},
         duration: duration,
         techniques: techniques,
+        chord: chord,
       );
 
   TabColumn withoutString(int string) => TabColumn(
@@ -42,10 +48,15 @@ class TabColumn {
         },
         duration: duration,
         techniques: techniques,
+        chord: chord,
       );
 
-  TabColumn withDuration(NoteDuration d) =>
-      TabColumn(frets: frets, duration: d, techniques: techniques);
+  TabColumn withDuration(NoteDuration d) => TabColumn(
+        frets: frets,
+        duration: d,
+        techniques: techniques,
+        chord: chord,
+      );
 
   /// Adds [t] if absent, else removes it.
   TabColumn toggleTechnique(TabTechnique t) => TabColumn(
@@ -54,6 +65,15 @@ class TabColumn {
         techniques: techniques.contains(t)
             ? ({...techniques}..remove(t))
             : {...techniques, t},
+        chord: chord,
+      );
+
+  /// Sets (or clears, when null) this column's chord diagram.
+  TabColumn withChord(ChordDiagram? c) => TabColumn(
+        frets: frets,
+        duration: duration,
+        techniques: techniques,
+        chord: c,
       );
 }
 
@@ -141,6 +161,12 @@ class TabDocument {
   void toggleTechnique(int col, TabTechnique t) {
     _ensure(col);
     columns[col] = columns[col].toggleTechnique(t);
+  }
+
+  /// Sets (or clears, when null) the chord diagram on the column at [col].
+  void setChord(int col, ChordDiagram? chord) {
+    _ensure(col);
+    columns[col] = columns[col].withChord(chord);
   }
 
   /// Inserts an empty column at [col].

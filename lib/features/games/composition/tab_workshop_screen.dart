@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -91,6 +92,8 @@ abstract class TabWorkshopTester {
   Set<String> get highlightedIds;
   void toggleTechnique(TabTechnique t);
   Set<TabTechnique> techniquesAt(int col);
+  void setChordByName(String? name);
+  String? chordNameAt(int col);
 }
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
@@ -194,6 +197,13 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   @override
   Set<TabTechnique> techniquesAt(int col) =>
       col < _doc.columns.length ? _doc.columns[col].techniques : const {};
+  @override
+  void setChordByName(String? name) => setState(
+        () => _doc.setChord(_selCol, name == null ? null : kGuitarChords[name]),
+      );
+  @override
+  String? chordNameAt(int col) =>
+      col < _doc.columns.length ? _doc.columns[col].chord?.name : null;
 
   // ── Actions ──────────────────────────────────────────────────────────────
   @override
@@ -530,6 +540,24 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Chord-name header aligned above the columns.
+          Row(
+            children: [
+              const SizedBox(width: 40),
+              for (int c = 0; c < _doc.columns.length; c++)
+                SizedBox(
+                  width: 34,
+                  child: Text(
+                    _doc.columns[c].chord?.name ?? '',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           for (int s = 0; s < n; s++)
             Row(
               children: [
@@ -641,6 +669,12 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                 tooltip: l10n.tabRemoveColumn,
                 onPressed: removeColumnAtCursor,
               ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.grid_goldenratio, size: 18),
+                label: Text(l10n.tabChord),
+                onPressed: _pickChord,
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -661,6 +695,50 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         ],
       ),
     );
+  }
+
+  /// A bottom-sheet grid of guitar chord diagrams; picking one attaches it to
+  /// the selected column (or clears it).
+  Future<void> _pickChord() async {
+    final l10n = AppLocalizations.of(context)!;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.tabChordPick,
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final entry in kGuitarChords.entries)
+                    InkWell(
+                      onTap: () => Navigator.of(ctx).pop(entry.key),
+                      child: ChordDiagramView(entry.value),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                icon: const Icon(Icons.clear),
+                label: Text(l10n.tabChordNone),
+                onPressed: () => Navigator.of(ctx).pop(''),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked == null) return;
+    setChordByName(picked.isEmpty ? null : picked);
   }
 
   String _techLabel(AppLocalizations l10n, TabTechnique t) => switch (t) {

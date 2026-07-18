@@ -2258,6 +2258,24 @@ abstract class AppLocalizations {
   /// **'Harmonic'**
   String get tabTechHarmonic;
 
+  /// No description provided for @tabChord.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord'**
+  String get tabChord;
+
+  /// No description provided for @tabChordPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a chord'**
+  String get tabChordPick;
+
+  /// No description provided for @tabChordNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No chord'**
+  String get tabChordNone;
+
   /// No description provided for @tabExport.
   ///
   /// In en, this message translates to:

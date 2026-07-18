@@ -1175,6 +1175,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabTechHarmonic => 'Flageolett';
 
   @override
+  String get tabChord => 'Akkord';
+
+  @override
+  String get tabChordPick => 'Akkord wählen';
+
+  @override
+  String get tabChordNone => 'Kein Akkord';
+
+  @override
   String get tabExport => 'Exportieren';
 
   @override

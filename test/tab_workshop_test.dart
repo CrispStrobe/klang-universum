@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_workshop_screen.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -159,6 +160,29 @@ void main() {
     tab.toggleTechnique(TabTechnique.bend);
     await tester.pump();
     expect(tab.techniquesAt(0), isEmpty);
+  });
+
+  testWidgets('attaching a chord shows its name above the column',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+    tab.selectCell(2, 0);
+    await tester.pump();
+
+    tab.setChordByName('G');
+    await tester.pump();
+    expect(tab.chordNameAt(2), 'G');
+
+    tab.setChordByName(null);
+    await tester.pump();
+    expect(tab.chordNameAt(2), isNull);
+  });
+
+  testWidgets('ChordDiagramView paints a preset', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: Scaffold(body: ChordDiagramView(kGuitarChords['C']!))),
+    );
+    expect(find.byType(ChordDiagramView), findsOneWidget);
   });
 
   testWidgets('play lights the sounding column, then stops', (tester) async {

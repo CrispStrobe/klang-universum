@@ -1,6 +1,7 @@
 // TabDocument (B1) — the editable tablature model: fret placement, string
 // pinning into the engraved Score, playback timing, and Score→doc import.
 
+import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,6 +113,32 @@ void main() {
     );
     expect(s.slideInOuts.any((sl) => sl.noteId == 't2'), isTrue);
     expect(s.slurs.any((x) => x.startId == 't0' && x.endId == 't2'), isTrue);
+  });
+
+  test('guitar chord presets are 6-string and self-named', () {
+    expect(kGuitarChords, isNotEmpty);
+    for (final e in kGuitarChords.entries) {
+      expect(e.value.frets, hasLength(6), reason: e.key);
+      expect(e.value.name, e.key);
+    }
+  });
+
+  test('setChord attaches then clears, and survives edits + insert', () {
+    final doc = TabDocument.blank(guitar, initialColumns: 2)
+      ..setChord(1, kGuitarChords['G']);
+    expect(doc.columns[1].chord?.name, 'G');
+    // Editing the column keeps its chord.
+    doc
+      ..setFret(1, 0, 3)
+      ..setDuration(1, NoteDuration.eighth);
+    expect(doc.columns[1].chord?.name, 'G');
+    // Inserting before shifts the chord with its column.
+    doc.insertColumn(0);
+    expect(doc.columns[2].chord?.name, 'G');
+    // The chord is display-only — toScore ignores it.
+    expect(doc.toScore().measures, isNotEmpty);
+    doc.setChord(2, null);
+    expect(doc.columns[2].chord, isNull);
   });
 
   test('toggleTechnique adds then removes', () {

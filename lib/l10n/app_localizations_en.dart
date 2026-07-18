@@ -1168,6 +1168,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabTechHarmonic => 'Harmonic';
 
   @override
+  String get tabChord => 'Chord';
+
+  @override
+  String get tabChordPick => 'Pick a chord';
+
+  @override
+  String get tabChordNone => 'No chord';
+
+  @override
   String get tabExport => 'Export';
 
   @override
