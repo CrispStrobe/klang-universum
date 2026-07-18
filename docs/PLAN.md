@@ -1161,12 +1161,7 @@ staff-tap-to-place, hover ghost, cross-part select, drag repitch). See
   (`onElementDragUpdate` moves it under the pointer) — same visual as single-part
   `dragPreviewOpacity`. A dedicated multi-part `dragPreviewOpacity` (real-glyph
   translation) is an optional future nicety, not required.
-- ⏸️ **C11b — multi-part MEI/ABC writers** — **deliberately deferred.** MusicXML
-  (`multiPartToMusicXml`, done) is the universal multi-part interchange format;
-  adding `multiPartToMei`/`multiPartToAbc` means refactoring the oracle-hardened
-  single-part writers for low marginal value + real regression risk. Multi-part
-  export stays MusicXML/`.mxl`; other formats export the active part. Revisit
-  only if a concrete MEI/ABC multi-part need appears.
+- ✅ **C11b — multi-part MEI/kern/MuseScore writers** — **SHIPPED (un-deferred 2026-07-19, `opus (multipart-*)`).** The deferral premise (that it needs refactoring the oracle-hardened single-part writers, for low value + regression risk) turned out wrong: the app's export sheet + Workshop were **dropping all-but-the-first part** on MEI/kern/MuseScore export — a concrete data-loss — and each writer was added as a **NEW** function with the single-part path untouched (zero regression). Shipped: `multiPartToMei` (`crisp_notation@f613c9f`), `multiPartToMscx` (`ac68a08`), `multiPartToKern` (columnar N-way time-merge, `af10bcb`) + a `multiPartScoreFromMscx` reader (`516dcd2`); wired into `music_export.dart` + Workshop + fixed the online-library import. `multiPartToAbc` already exists app-side (`multi_part_export.dart`). **⇒ every multi-capable format keeps every part on import AND export.** LilyPond/Braille/PDF remain single-Score by nature.
 
 **Non-G6 parity polish — assessed & (partly) shipped 2026-07-15:**
 - ✅ **Measure numbers in the editor** — crisp_notation `MultiSystemView` gained
