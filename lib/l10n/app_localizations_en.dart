@@ -1392,6 +1392,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerField => 'Column (note / vol / fx)';
 
   @override
+  String get trackerPlayFromCursor => 'Play from cursor';
+
+  @override
   String get trackerClearCell => 'Clear cell';
 
   @override

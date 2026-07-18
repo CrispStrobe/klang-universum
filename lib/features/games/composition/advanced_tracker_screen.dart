@@ -209,6 +209,9 @@ abstract interface class AdvancedTrackerTester {
   void toggleRecord();
   void interpolateBlock();
 
+  /// Play the current pattern from the cursor row (FT2 F7).
+  void playFromCursor();
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -837,6 +840,25 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final shift = hw.isShiftPressed;
     final alt = hw.isAltPressed;
 
+    // FT2 function-key transport: F5 song · F6 pattern · F7 pattern-from-cursor ·
+    // F8 stop.
+    if (key == LogicalKeyboardKey.f5) {
+      _playSong();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f6) {
+      _playPattern();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f7) {
+      _playPattern(fromRow: _cursorRow);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f8) {
+      _stop();
+      return KeyEventResult.handled;
+    }
+
     // Block ops (Ctrl/⌘ + …). Checked before note entry so Ctrl+C isn't a note.
     if (ctrl) {
       if (key == LogicalKeyboardKey.keyC) {
@@ -1051,11 +1073,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     setState(() => _songMode = false);
   }
 
-  /// Loop the current pattern.
-  void _playPattern() {
+  /// Loop the current pattern, starting at row [fromRow] (FT2's play-from-cursor
+  /// = F7; 0 = from the top = F6).
+  void _playPattern({int fromRow = 0}) {
     _songMode = false;
     _paused = false;
-    _baseMs = 0;
+    _baseMs = fromRow > 0 ? fromRow * _song.timing.stepMs : 0;
     _clock
       ..reset()
       ..start();
@@ -1302,6 +1325,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void toggleRecord() => setState(() => _recording = !_recording);
   @override
   void interpolateBlock() => _interpolateBlock();
+  @override
+  void playFromCursor() => _playPattern(fromRow: _cursorRow);
 
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
@@ -2879,6 +2904,15 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               _helpRow(ctx, l10n.trackerCursor, '↑ ↓ ← →'),
               _helpRow(ctx, l10n.trackerClear, 'Delete / Backspace'),
               _helpRow(ctx, l10n.trackerEditStep, l10n.trackerEditStepHelp),
+              _helpRow(ctx, l10n.trackerField, 'Tab / Shift+Tab'),
+              const Divider(height: 20),
+              _helpRow(ctx, l10n.trackerPlay, 'F5 song · F6 pattern'),
+              _helpRow(
+                ctx,
+                l10n.trackerPlayFromCursor,
+                'F7  ·  F8 ${l10n.trackerStop}',
+              ),
+              _helpRow(ctx, l10n.trackerInterpolate, 'Ctrl/⌘ + I'),
               const Divider(height: 20),
               _helpRow(ctx, l10n.trackerBlock, 'Shift + ↑↓←→'),
               _helpRow(ctx, l10n.trackerBlockTrack, 'Ctrl/⌘ + A'),

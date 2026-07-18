@@ -2702,6 +2702,12 @@ abstract class AppLocalizations {
   /// **'Column (note / vol / fx)'**
   String get trackerField;
 
+  /// No description provided for @trackerPlayFromCursor.
+  ///
+  /// In en, this message translates to:
+  /// **'Play from cursor'**
+  String get trackerPlayFromCursor;
+
   /// No description provided for @trackerClearCell.
   ///
   /// In en, this message translates to:

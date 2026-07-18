@@ -1399,6 +1399,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerField => 'Spalte (Note / Lautst. / FX)';
 
   @override
+  String get trackerPlayFromCursor => 'Ab Cursor abspielen';
+
+  @override
   String get trackerClearCell => 'Zelle löschen';
 
   @override

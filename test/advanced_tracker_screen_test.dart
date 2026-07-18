@@ -382,6 +382,21 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('play-from-cursor starts the pattern playing', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 8, 60);
+    game.moveCursor(0, 8);
+    await tester.pump();
+
+    game.playFromCursor();
+    await tester.pump();
+    expect(game.isPlaying, isTrue);
+    expect(game.isSongPlaying, isFalse); // pattern, not song
+    game.stop();
+    await tester.pump();
+  });
+
   testWidgets('interpolate ramps volumes across a selection', (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
     final game = _game(tester);

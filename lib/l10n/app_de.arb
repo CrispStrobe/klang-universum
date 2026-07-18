@@ -469,6 +469,7 @@
   "trackerRecordLive": "Live-Aufnahme (ins Pattern jammen)",
   "trackerInterpolate": "Lautstärken interpolieren",
   "trackerField": "Spalte (Note / Lautst. / FX)",
+  "trackerPlayFromCursor": "Ab Cursor abspielen",
   "trackerClearCell": "Zelle löschen",
   "trackerClearConfirm": "Das ganze Pattern löschen? Das kann nicht rückgängig gemacht werden.",
   "trackerCursor": "Cursor bewegen",
