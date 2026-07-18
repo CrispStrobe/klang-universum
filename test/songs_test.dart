@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
@@ -118,7 +119,12 @@ const _xml = '''
 <note><pitch><step>C</step><octave>4</octave></pitch><duration>4</duration>
 <type>whole</type></note></measure></part></score-partwise>''';
 
-Widget _wrap(Widget child, SriService sri, {UserSongsService? songs}) {
+Widget _wrap(
+  Widget child,
+  SriService sri, {
+  UserSongsService? songs,
+  DawService? daw,
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => SettingsService()),
@@ -128,6 +134,7 @@ Widget _wrap(Widget child, SriService sri, {UserSongsService? songs}) {
       ChangeNotifierProvider<UserSongsService>.value(
         value: songs ?? UserSongsService(),
       ),
+      ChangeNotifierProvider<DawService>.value(value: daw ?? DawService()),
     ],
     child: MaterialApp(
       localizationsDelegates: const [
@@ -222,6 +229,23 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Play'), findsOneWidget); // finished, reset to Play
+  });
+
+  testWidgets('song screen: To Multitrack sends the song as a DAW clip',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final daw = DawService();
+    const song =
+        Song(id: 't', title: 'Test', dsl: 'c4:q d4:q', lyrics: 'la la');
+    await tester.pumpWidget(_wrap(SongScreen(song: song), sri, daw: daw));
+    await tester.pump();
+
+    expect(daw.clipCount, 0);
+    await tester.tap(find.byIcon(Icons.library_add));
+    await tester.pump();
+
+    expect(daw.clipCount, 1);
+    expect(daw.bake(), isNotEmpty); // the song renders to real audio as a clip
   });
 
   testWidgets('song screen: Analyse opens the computed harmony view',

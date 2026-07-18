@@ -7,6 +7,7 @@
 
 import 'dart:async';
 
+import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
 import 'package:comet_beat/core/audio/play_along.dart' show PlayAlongChart;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
@@ -20,6 +21,7 @@ import 'package:comet_beat/features/games/songs/song_play_along.dart';
 import 'package:comet_beat/features/games/songs/songbook_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/daw/send_to_daw.dart';
 import 'package:comet_beat/shared/music_io/music_export.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart'
@@ -218,6 +220,12 @@ class _SongScreenState extends State<SongScreen> {
                 ),
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.library_add),
+            tooltip: l10n.dawSend,
+            onPressed: () =>
+                sendToMultitrack(context, ScoreSource.single(widget.score)),
           ),
         ],
       ),
