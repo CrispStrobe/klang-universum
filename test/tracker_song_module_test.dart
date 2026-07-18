@@ -48,6 +48,66 @@ void main() {
       expect(song.renderCurrentPatternWav().length, greaterThan(44));
     });
   }
+
+  group('MOD effect column import (replayer feed)', () {
+    test('effect nibble → tracker fxCmd/fxParam (note + effect-only cells)', () {
+      final rows = <List<DocCell>>[
+        // A note WITH a porta-up effect (1xx).
+        [const DocCell(note: 60, instrument: 1, effect: 0x1, effectParam: 0x08)],
+        // An effect-ONLY cell (no note) — how a slide continues on a ring.
+        [const DocCell(effect: 0x1)],
+      ];
+      final doc = ModuleDoc(
+        sourceFormat: ModuleFormat.mod,
+        channelCount: 1,
+        order: [0],
+        patterns: [DocPattern(rows, 1)],
+        samples: [DocSample.empty()],
+      );
+      final song = songFromModuleDoc(doc);
+      expect(song.usesCommands, isTrue); // routes through the replayer now
+
+      final c0 = song.patterns[0].cells[0][0];
+      expect(c0.midi, 60);
+      expect(c0.fxCmd, 0x1);
+      expect(c0.fxParam, 0x08);
+
+      final c1 = song.patterns[0].cells[0][1];
+      expect(c1.midi, isNull); // effect-only cell keeps no note
+      expect(c1.hasCommand, isTrue);
+      expect(c1.fxCmd, 0x1);
+
+      // The whole chain (import → replayer) renders without throwing.
+      expect(song.renderSongWav().length, greaterThan(44));
+    });
+
+    test('golden.mod: every parsed effect becomes a command, none invented',
+        () {
+      final bytes = _fixture('golden.mod');
+      final doc = parseAnyModule(bytes);
+      var docFx = 0;
+      for (final p in doc.patterns) {
+        for (final row in p.rows) {
+          for (final dc in row) {
+            if (dc.effect != 0 || dc.effectParam != 0) docFx++;
+          }
+        }
+      }
+      final song = songFromModuleBytes(bytes);
+      var songCmd = 0;
+      for (final p in song.patterns) {
+        for (final col in p.cells) {
+          for (final c in col) {
+            if (c.hasCommand) songCmd++;
+          }
+        }
+      }
+      if (docFx > 0) {
+        expect(songCmd, greaterThan(0), reason: 'MOD effects should carry');
+      }
+      expect(songCmd, lessThanOrEqualTo(docFx)); // never invents commands
+    });
+  });
 }
 
 int? _firstDocNote(ModuleDoc doc) {

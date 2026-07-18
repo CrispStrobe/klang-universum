@@ -137,12 +137,18 @@ TrackerPattern _patternFromDoc(
     final row = dp.rows[r];
     for (var c = 0; c < channelCount && c < row.length; c++) {
       final dc = row[c];
-      if (dc.note >= 0) {
+      final hasFx = dc.effect != 0 || dc.effectParam != 0;
+      if (dc.note >= 0 || hasFx) {
         cells[c][r] = TrackerCell(
-          midi: dc.note,
-          volume: dc.volume >= 0 && dc.volume < 64
+          midi: dc.note >= 0 ? dc.note : null,
+          volume: dc.note >= 0 && dc.volume >= 0 && dc.volume < 64
               ? (dc.volume / 64).clamp(0.0, 1.0)
               : null,
+          // MOD effect column → the replayer's classic effect column. An
+          // effect-only cell (no note) is how porta/vibrato continue on a
+          // ringing note.
+          fxCmd: dc.effect,
+          fxParam: dc.effectParam,
         );
       }
       // noteOff cells stop a ring in real trackers; our model rings until the

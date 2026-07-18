@@ -54,6 +54,8 @@ class DocCell {
     this.instrument = 0,
     this.volume = -1,
     this.noteOff = false,
+    this.effect = 0,
+    this.effectParam = 0,
   });
 
   /// A key-off cell: stops the ringing note (the formats' note-off / note-cut).
@@ -64,7 +66,9 @@ class DocCell {
       : note = -1,
         instrument = 0,
         volume = -1,
-        noteOff = true;
+        noteOff = true,
+        effect = 0,
+        effectParam = 0;
 
   static const empty = DocCell();
 
@@ -73,7 +77,21 @@ class DocCell {
   final int volume; // -1 = none, else 0..64 (volume column)
   final bool noteOff; // true = key-off (stop the ringing note)
 
-  bool get isEmpty => note == -1 && instrument == 0 && volume == -1 && !noteOff;
+  /// The effect column, in the ORIGINAL format's encoding. For MOD this is the
+  /// 4-bit command nibble (0..15) + the 8-bit param, which map 1:1 onto the
+  /// tracker replayer's `fxCmd`/`fxParam`. Only MOD import populates these so
+  /// far; S3M/XM/IT use different command numbering and stay 0 until a
+  /// cross-format effect table lands (see the module_doc header notes).
+  final int effect; // 0 = none (0/0), else the format's effect command
+  final int effectParam; // 0..255
+
+  bool get isEmpty =>
+      note == -1 &&
+      instrument == 0 &&
+      volume == -1 &&
+      !noteOff &&
+      effect == 0 &&
+      effectParam == 0;
 
   @override
   bool operator ==(Object other) =>
@@ -81,10 +99,13 @@ class DocCell {
       other.note == note &&
       other.instrument == instrument &&
       other.volume == volume &&
-      other.noteOff == noteOff;
+      other.noteOff == noteOff &&
+      other.effect == effect &&
+      other.effectParam == effectParam;
 
   @override
-  int get hashCode => Object.hash(note, instrument, volume, noteOff);
+  int get hashCode =>
+      Object.hash(note, instrument, volume, noteOff, effect, effectParam);
 }
 
 /// A pattern: [numRows] rows × [channelCount] cells.

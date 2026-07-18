@@ -165,7 +165,13 @@ ModuleDoc docFromMod(ModModule m) {
       final cells = <DocCell>[];
       for (final c in row) {
         cells.add(
-          DocCell(note: periodToMidi(c.period), instrument: c.sample),
+          DocCell(
+            note: periodToMidi(c.period),
+            instrument: c.sample,
+            // MOD's effect nibble maps 1:1 onto the replayer's fxCmd/fxParam.
+            effect: c.effect,
+            effectParam: c.effectParam,
+          ),
         );
       }
       rows.add(cells);
