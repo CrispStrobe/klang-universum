@@ -484,4 +484,47 @@ void main() {
       );
     });
   });
+
+  group('playhead map (resolveTimingMap / rowIndexAtMs)', () {
+    test('resolveTimingMap matches replaySong().timing (uniform + flow)', () {
+      // Uniform (no flow).
+      final plain = TrackerSong(timing: const TrackerTiming(rows: 8));
+      plain.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      plain.addToOrder(0);
+      expect(
+        resolveTimingMap(plain).map((r) => r.toString()).toList(),
+        replaySong(plain).timing.map((r) => r.toString()).toList(),
+      );
+
+      // Flow (Dxx break).
+      final flow = TrackerSong(
+        timing: const TrackerTiming(rows: 8),
+        patternCount: 2,
+      );
+      flow.selectPattern(0);
+      flow.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      flow.engine.setCell(0, 2, fx(kFxPatternBreak, 0x00));
+      flow.order
+        ..clear()
+        ..addAll([0, 1]);
+      flow.syncCurrent();
+      expect(
+        resolveTimingMap(flow).map((r) => r.toString()).toList(),
+        replaySong(flow).timing.map((r) => r.toString()).toList(),
+      );
+    });
+
+    test('rowIndexAtMs finds the row playing at a given time', () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      final map = resolveTimingMap(song);
+      expect(rowIndexAtMs(map, -5), 0); // before the start → first row
+      // A time just past row 3's onset resolves to row 3.
+      final r3 = map[3].startMs;
+      expect(map[rowIndexAtMs(map, r3 + 1)].row, 3);
+      // Exactly on row 5's onset resolves to row 5.
+      expect(map[rowIndexAtMs(map, map[5].startMs)].row, 5);
+      expect(rowIndexAtMs(const [], 0), -1); // empty map
+    });
+  });
 }

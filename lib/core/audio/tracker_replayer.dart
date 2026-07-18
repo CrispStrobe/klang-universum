@@ -702,12 +702,69 @@ int songInitialSpeed(TrackerSong song, {int fallback = kDefaultTicksPerRow}) {
   return fallback;
 }
 
+/// The row-timing map WITHOUT rendering any audio — the same
+/// `(startMs, orderIndex, patternIndex, row)` sequence [replaySong] emits, built
+/// cheaply from [walkFlow] (flow songs) or the uniform order walk. This is what
+/// the Advanced playhead consumes: resolve it once when playback starts, then use
+/// [rowIndexAtMs] per frame to map elapsed ms → the currently-playing row, so the
+/// highlight follows Bxx/Dxx/E6x jumps instead of assuming fixed pattern lengths.
+List<RowTiming> resolveTimingMap(TrackerSong song) {
+  song.syncCurrent();
+  final timing = song.timing;
+  if (songUsesFlow(song)) {
+    final played = walkFlow(song);
+    final flatTiming =
+        timing.copyWith(rows: played.isEmpty ? 1 : played.length);
+    return [
+      for (var i = 0; i < played.length; i++)
+        RowTiming(
+          flatTiming.stepOnsetMs(i).round(),
+          played[i].orderIndex,
+          played[i].patternIndex,
+          played[i].row,
+        ),
+    ];
+  }
+  final map = <RowTiming>[];
+  for (var o = 0; o < song.order.length; o++) {
+    final baseMs = timing.totalMs * o;
+    for (var r = 0; r < timing.rows; r++) {
+      map.add(
+        RowTiming(baseMs + timing.stepOnsetMs(r).round(), o, song.order[o], r),
+      );
+    }
+  }
+  return map;
+}
+
+/// The index into [map] of the row playing at song-time [ms] — the last entry
+/// whose `startMs <= ms` (binary search; [map] is ascending in startMs). Returns
+/// -1 for an empty map, 0 for a time before the first row. Feed it
+/// `elapsedMs % songTotalMs` for a looping transport.
+int rowIndexAtMs(List<RowTiming> map, int ms) {
+  if (map.isEmpty) return -1;
+  var lo = 0;
+  var hi = map.length - 1;
+  var ans = 0;
+  while (lo <= hi) {
+    final mid = (lo + hi) >> 1;
+    if (map[mid].startMs <= ms) {
+      ans = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return ans;
+}
+
 /// Replays the whole [song] (its order list) into one mixed PCM16 + a row-timing
 /// map. Command-free / flow-free songs render one [TrackerTiming.totalMs] per
 /// order entry (uniform); when the song [songUsesFlow] the order is expanded by
 /// [walkFlow] into the exact played sequence and rendered as one flattened
-/// pattern, so the map is non-linear but the timing per row stays uniform (Fxx
-/// tempo/speed is a later phase). Side-effect-free.
+/// pattern. [resolveTimingMap] gives the same map without the audio. The Fxx
+/// set-speed value is applied to the render but not to row durations (speed is
+/// timing-neutral in our model). Side-effect-free.
 ReplayResult replaySong(
   TrackerSong song, {
   int ticksPerRow = kDefaultTicksPerRow,
