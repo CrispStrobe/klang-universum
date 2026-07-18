@@ -1,18 +1,25 @@
 name: Deploy
 
-# Auto-redeploy the web build to Vercel after CI passes on main. Runs only when
-# the "CI" workflow completes successfully (so we never publish a red commit),
-# and can also be triggered by hand. Mirrors ci.yml's sibling layout so the
+# Redeploy the web build (current main) to Vercel on a fixed hourly schedule,
+# plus on demand via the Run button. Mirrors ci.yml's sibling layout so the
 # ../crisp_notation path dependency resolves, then builds web and ships it.
+#
+# WHY A SCHEDULE, not deploy-on-every-green-CI: Vercel's free tier caps
+# production deploys at 100/day. During heavy multi-agent development main gets
+# far more than 100 settled commits/day, so deploying on every green CI blew the
+# quota ("Resource is limited … api-deployments-free-per-day", exit 1). An hourly
+# schedule is ≤24 deploys/day (4× under the cap) and keeps the preview fresh
+# within the hour; bump/lower the cron if you need fresher/cheaper. A manual
+# dispatch is always available for an on-demand publish. (Trade-off: a scheduled
+# run publishes the current main tip regardless of its CI status — main is
+# normally green, and any transient red is superseded by the next hour's run.)
 #
 # Requires one repository secret: VERCEL_TOKEN (Account Settings → Tokens).
 # The org/project IDs are not secret and are set below.
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main]
+  schedule:
+    - cron: '0 * * * *' # hourly, on the hour (UTC)
   workflow_dispatch:
 
 concurrency:
@@ -25,16 +32,14 @@ env:
 
 jobs:
   deploy:
-    # Manual runs always deploy; automatic runs only on a green CI.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout cometbeat
         uses: actions/checkout@v5
         with:
           path: cometbeat
-          # For an automatic run, deploy the exact commit CI validated.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # Deploy the current main tip (schedule / manual dispatch).
+          ref: ${{ github.sha }}
 
       # crisp_notation + crisp_notation_core are resolved via ../crisp_notation/... path deps.
       - name: Checkout crisp_notation (sibling path dependency)
