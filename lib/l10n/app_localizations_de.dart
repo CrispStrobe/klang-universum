@@ -1136,6 +1136,49 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabImportFailed => 'Datei konnte nicht geöffnet werden';
 
   @override
+  String get libraryTitle => 'Freie Musik-Bibliotheken';
+
+  @override
+  String get librarySearchHint => 'Nach Titel oder Komponist suchen';
+
+  @override
+  String get libraryImport => 'Importieren';
+
+  @override
+  String libraryImported(String title) {
+    return '„$title“ importiert';
+  }
+
+  @override
+  String get libraryAlreadyImported => 'Schon in deinem Liederbuch';
+
+  @override
+  String get libraryLicenseBlocked =>
+      'Dieses Werk ist nicht frei lizenziert – übersprungen';
+
+  @override
+  String get libraryImportFailed => 'Import fehlgeschlagen';
+
+  @override
+  String get libraryLoadFailed => 'Bibliothek konnte nicht geladen werden';
+
+  @override
+  String get libraryRetry => 'Erneut versuchen';
+
+  @override
+  String get libraryNoResults => 'Keine Treffer';
+
+  @override
+  String get librarySourcesCredits => 'Quellen & Nachweise';
+
+  @override
+  String get libraryNoCredits => 'Noch nichts aus einer Bibliothek importiert';
+
+  @override
+  String get libraryCreditsIntro =>
+      'Aus freien Musik-Bibliotheken importierte Werke mit ihren Lizenzen.';
+
+  @override
   String get trackerPrompt => 'Wähle ein Instrument und tippe deinen Loop!';
 
   @override

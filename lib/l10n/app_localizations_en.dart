@@ -1129,6 +1129,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabImportFailed => 'Couldn\'t open that file';
 
   @override
+  String get libraryTitle => 'Free music libraries';
+
+  @override
+  String get librarySearchHint => 'Search by title or composer';
+
+  @override
+  String get libraryImport => 'Import';
+
+  @override
+  String libraryImported(String title) {
+    return 'Imported “$title”';
+  }
+
+  @override
+  String get libraryAlreadyImported => 'Already in your Song Book';
+
+  @override
+  String get libraryLicenseBlocked =>
+      'That work isn\'t openly licensed — skipped';
+
+  @override
+  String get libraryImportFailed => 'Import failed';
+
+  @override
+  String get libraryLoadFailed => 'Couldn\'t load the library';
+
+  @override
+  String get libraryRetry => 'Retry';
+
+  @override
+  String get libraryNoResults => 'No matches';
+
+  @override
+  String get librarySourcesCredits => 'Sources & credits';
+
+  @override
+  String get libraryNoCredits => 'Nothing imported from a library yet';
+
+  @override
+  String get libraryCreditsIntro =>
+      'Works imported from open music libraries, with their licenses.';
+
+  @override
   String get trackerPrompt =>
       'Pick an instrument, then tap to build your loop!';
 

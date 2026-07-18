@@ -2180,6 +2180,84 @@ abstract class AppLocalizations {
   /// **'Couldn\'t open that file'**
   String get tabImportFailed;
 
+  /// No description provided for @libraryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free music libraries'**
+  String get libraryTitle;
+
+  /// No description provided for @librarySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by title or composer'**
+  String get librarySearchHint;
+
+  /// No description provided for @libraryImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get libraryImport;
+
+  /// No description provided for @libraryImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported “{title}”'**
+  String libraryImported(String title);
+
+  /// No description provided for @libraryAlreadyImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in your Song Book'**
+  String get libraryAlreadyImported;
+
+  /// No description provided for @libraryLicenseBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'That work isn\'t openly licensed — skipped'**
+  String get libraryLicenseBlocked;
+
+  /// No description provided for @libraryImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed'**
+  String get libraryImportFailed;
+
+  /// No description provided for @libraryLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the library'**
+  String get libraryLoadFailed;
+
+  /// No description provided for @libraryRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get libraryRetry;
+
+  /// No description provided for @libraryNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get libraryNoResults;
+
+  /// No description provided for @librarySourcesCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Sources & credits'**
+  String get librarySourcesCredits;
+
+  /// No description provided for @libraryNoCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing imported from a library yet'**
+  String get libraryNoCredits;
+
+  /// No description provided for @libraryCreditsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Works imported from open music libraries, with their licenses.'**
+  String get libraryCreditsIntro;
+
   /// No description provided for @trackerPrompt.
   ///
   /// In en, this message translates to:

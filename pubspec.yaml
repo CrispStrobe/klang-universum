@@ -37,6 +37,7 @@ dependencies:
   equatable: ^2.0.5
   package_info_plus: ^8.0.0
   url_launcher: ^6.3.0
+  http: ^1.2.0
 
   # Notation rendering — path dep on the local library workspace, which tracks
   # main ahead of the pub.dev releases (see ../crisp_notation/docs/CONTRACT.md).

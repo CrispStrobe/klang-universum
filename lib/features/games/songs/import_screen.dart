@@ -7,6 +7,7 @@
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
 import 'package:comet_beat/features/games/songs/import/midi_import.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/library/library_browser_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show scoreFromAbc, scoreFromMusicXml, scoreToMusicXml;
@@ -185,7 +186,18 @@ class _ImportScreenState extends State<ImportScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.importTitle)),
+      appBar: AppBar(
+        title: Text(l10n.importTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.public),
+            tooltip: l10n.libraryTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LibraryBrowserScreen()),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

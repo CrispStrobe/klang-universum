@@ -16,20 +16,38 @@ class ImportedSong {
   final String title;
   final String musicXml;
 
+  /// Provenance/credit line for a work imported from an external open-music
+  /// library (null for songs the user typed/imported themselves). Shown on the
+  /// "Sources & credits" screen so attribution travels with the song.
+  final String? attribution;
+
+  /// Canonical URL of the source work, or null.
+  final String? sourceUrl;
+
   const ImportedSong({
     required this.id,
     required this.title,
     required this.musicXml,
+    this.attribution,
+    this.sourceUrl,
   });
 
   Score get score => scoreFromMusicXml(musicXml);
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'xml': musicXml};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'xml': musicXml,
+        if (attribution != null) 'attribution': attribution,
+        if (sourceUrl != null) 'sourceUrl': sourceUrl,
+      };
 
   factory ImportedSong.fromJson(Map<String, dynamic> json) => ImportedSong(
         id: json['id'] as String,
         title: json['title'] as String,
         musicXml: json['xml'] as String,
+        attribution: json['attribution'] as String?,
+        sourceUrl: json['sourceUrl'] as String?,
       );
 }
 
