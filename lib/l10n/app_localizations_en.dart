@@ -1410,6 +1410,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerFollow => 'Follow the playhead';
 
   @override
+  String get trackerZoomIn => 'Zoom in';
+
+  @override
+  String get trackerZoomOut => 'Zoom out';
+
+  @override
+  String get trackerClassicSkin => 'Classic tracker look';
+
+  @override
   String get trackerInsertRow => 'Insert row (at cursor)';
 
   @override

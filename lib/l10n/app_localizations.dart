@@ -2738,6 +2738,24 @@ abstract class AppLocalizations {
   /// **'Follow the playhead'**
   String get trackerFollow;
 
+  /// No description provided for @trackerZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get trackerZoomIn;
+
+  /// No description provided for @trackerZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get trackerZoomOut;
+
+  /// No description provided for @trackerClassicSkin.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic tracker look'**
+  String get trackerClassicSkin;
+
   /// No description provided for @trackerInsertRow.
   ///
   /// In en, this message translates to:

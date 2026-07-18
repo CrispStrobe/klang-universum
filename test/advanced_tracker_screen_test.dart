@@ -441,6 +441,19 @@ void main() {
     expect(game.effectAt(0, 0), (0xC, 0x20));
   });
 
+  testWidgets('classic skin + zoom render without error', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 61);
+    game.setNote(1, 2, 67);
+    await tester.pump();
+    game.toggleClassic();
+    game.setZoom(1.45);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(game.noteCount, 2);
+  });
+
   testWidgets('insert/delete row shifts the column', (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
     final game = _game(tester);

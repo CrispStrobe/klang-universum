@@ -224,6 +224,10 @@ abstract interface class AdvancedTrackerTester {
   void insertRow();
   void deleteRow();
 
+  /// Look: classic skin + grid zoom.
+  void toggleClassic();
+  void setZoom(double z);
+
   /// Order-list editing.
   List<int> get orderList;
   void selectOrderSlot(int i);
@@ -373,9 +377,15 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
   int _lastFollowedRow = -1;
 
-  static const _rowNumWidth = 44.0;
-  static const _cellWidth = 74.0;
-  static const _rowHeight = 30.0;
+  /// Grid zoom (0.75–1.6) — scales the row height, cell width and fonts.
+  double _zoom = 1.0;
+
+  /// The classic-tracker skin (dark, monospace, colour-coded notes).
+  bool _classic = false;
+
+  double get _rowNumWidth => 44.0 * _zoom;
+  double get _cellWidth => 74.0 * _zoom;
+  double get _rowHeight => 30.0 * _zoom;
 
   @override
   void initState() {
@@ -688,7 +698,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       final rowBottom = rowTop + _rowHeight;
       final viewTop = _vScroll.offset;
       final viewBottom = viewTop + pos.viewportDimension;
-      const margin = _rowHeight * 2;
+      final margin = _rowHeight * 2;
       double? target;
       if (rowTop < viewTop + margin) {
         target = rowTop - margin;
@@ -1527,6 +1537,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void insertRow() => _insertRow();
   @override
   void deleteRow() => _deleteRow();
+  @override
+  void toggleClassic() => setState(() => _classic = !_classic);
+  @override
+  void setZoom(double z) => setState(() => _zoom = z.clamp(0.75, 1.6));
   @override
   List<int> get orderList => List.unmodifiable(_song.order);
   @override
@@ -2764,6 +2778,26 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 ],
               ),
             ),
+            const SizedBox(width: 12),
+            // Zoom + classic skin.
+            IconButton(
+              icon: const Icon(Icons.zoom_out, size: 20),
+              tooltip: l10n.trackerZoomOut,
+              onPressed: () =>
+                  setState(() => _zoom = (_zoom - 0.15).clamp(0.75, 1.6)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.zoom_in, size: 20),
+              tooltip: l10n.trackerZoomIn,
+              onPressed: () =>
+                  setState(() => _zoom = (_zoom + 0.15).clamp(0.75, 1.6)),
+            ),
+            IconButton(
+              icon: Icon(_classic ? Icons.dark_mode : Icons.dark_mode_outlined),
+              tooltip: l10n.trackerClassicSkin,
+              color: _classic ? Theme.of(context).colorScheme.primary : null,
+              onPressed: () => setState(() => _classic = !_classic),
+            ),
           ],
         ),
       ),
@@ -2804,28 +2838,31 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final stepsPerBeat = _song.timing.stepsPerBeat;
     final gridWidth = _rowNumWidth + _song.channelCount * _cellWidth;
 
-    return Scrollbar(
-      controller: _vScroll,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: gridWidth,
-          child: Column(
-            children: [
-              _headerRow(scheme),
-              Expanded(
-                child: ValueListenableBuilder<int>(
-                  valueListenable: _row,
-                  builder: (context, activeRow, _) => ListView.builder(
-                    controller: _vScroll,
-                    itemExtent: _rowHeight,
-                    itemCount: _song.rows,
-                    itemBuilder: (context, row) =>
-                        _rowWidget(row, activeRow, stepsPerBeat, scheme),
+    return ColoredBox(
+      color: _classic ? const Color(0xFF0A130A) : Colors.transparent,
+      child: Scrollbar(
+        controller: _vScroll,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: gridWidth,
+            child: Column(
+              children: [
+                _headerRow(scheme),
+                Expanded(
+                  child: ValueListenableBuilder<int>(
+                    valueListenable: _row,
+                    builder: (context, activeRow, _) => ListView.builder(
+                      controller: _vScroll,
+                      itemExtent: _rowHeight,
+                      itemCount: _song.rows,
+                      itemBuilder: (context, row) =>
+                          _rowWidget(row, activeRow, stepsPerBeat, scheme),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -2840,7 +2877,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       color: scheme.surfaceContainerHigh,
       child: Row(
         children: [
-          const SizedBox(width: _rowNumWidth),
+          SizedBox(width: _rowNumWidth),
           for (var c = 0; c < _song.channelCount; c++)
             _channelHeader(c, scheme),
         ],
@@ -2962,11 +2999,23 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final hl = _highlightEvery ?? stepsPerBeat;
     final isBeat = row % hl == 0;
     final isMeasure = row % (hl * 4) == 0;
-    final rowBg = isActive
-        ? scheme.primaryContainer
-        : isMeasure
-            ? scheme.surfaceContainerHigh
-            : (isBeat ? scheme.surfaceContainerHighest : null);
+    final Color? rowBg;
+    if (_classic) {
+      rowBg = isActive
+          ? const Color(0xFF224A2C)
+          : isMeasure
+              ? const Color(0xFF12240F)
+              : (isBeat ? const Color(0xFF0E1B0C) : const Color(0xFF0A130A));
+    } else {
+      rowBg = isActive
+          ? scheme.primaryContainer
+          : isMeasure
+              ? scheme.surfaceContainerHigh
+              : (isBeat ? scheme.surfaceContainerHighest : null);
+    }
+    final rowNumColor = _classic
+        ? (isBeat ? const Color(0xFFE3B341) : const Color(0xFF3C6B44))
+        : (isBeat ? scheme.primary : scheme.onSurfaceVariant);
     return Container(
       height: _rowHeight,
       color: rowBg,
@@ -2979,8 +3028,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFeatures: const [FontFeature.tabularFigures()],
-                fontSize: 12,
-                color: isBeat ? scheme.primary : scheme.onSurfaceVariant,
+                fontSize: 12 * _zoom,
+                color: rowNumColor,
                 fontWeight: isBeat ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
@@ -3027,10 +3076,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected
-              ? scheme.secondaryContainer.withValues(alpha: 0.6)
+              ? (_classic
+                  ? const Color(0x553B5BDB)
+                  : scheme.secondaryContainer.withValues(alpha: 0.6))
               : null,
           border: Border.all(
-            color: isCursor ? scheme.primary : scheme.outlineVariant,
+            color: isCursor
+                ? (_classic ? const Color(0xFFE3B341) : scheme.primary)
+                : (_classic ? const Color(0xFF17301A) : scheme.outlineVariant),
             width: isCursor ? 2 : 0.5,
           ),
         ),
@@ -3043,15 +3096,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 note,
                 style: TextStyle(
                   fontFeatures: const [FontFeature.tabularFigures()],
-                  fontSize: 14,
+                  fontSize: 14 * _zoom,
                   color: hasNote
-                      ? scheme.onSurface
-                      : scheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      ? (_classic
+                          ? _classicNoteColor(cell.midi!)
+                          : scheme.onSurface)
+                      : (_classic
+                          ? const Color(0xFF2C4A32)
+                          : scheme.onSurfaceVariant.withValues(alpha: 0.4)),
                   fontWeight: hasNote ? FontWeight.w600 : FontWeight.w400,
                   decoration: isCursor && _field == _CellField.note
                       ? TextDecoration.underline
                       : null,
-                  decorationColor: scheme.primary,
+                  decorationColor:
+                      _classic ? const Color(0xFFE3B341) : scheme.primary,
                   decorationThickness: 2,
                 ),
               ),
@@ -3082,12 +3140,18 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   TextStyle _subColStyle(ColorScheme scheme, bool active) => TextStyle(
         fontFeatures: const [FontFeature.tabularFigures()],
-        fontSize: 10,
-        color: scheme.onSurfaceVariant.withValues(alpha: 0.75),
+        fontSize: 10 * _zoom,
+        color: _classic
+            ? const Color(0xFF79A8FF)
+            : scheme.onSurfaceVariant.withValues(alpha: 0.75),
         decoration: active ? TextDecoration.underline : null,
-        decorationColor: scheme.primary,
+        decorationColor: _classic ? const Color(0xFFE3B341) : scheme.primary,
         decorationThickness: 2,
       );
+
+  /// A per-pitch-class hue for classic-skin note text (readable, colour-coded).
+  static Color _classicNoteColor(int midi) =>
+      HSVColor.fromAHSV(1, (midi % 12) / 12 * 360, 0.55, 0.95).toColor();
 
   /// The effect column as a 3-char hex code (command nibble + param byte).
   static String _commandHex(TrackerCell c) {
