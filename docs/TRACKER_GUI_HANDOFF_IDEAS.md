@@ -283,3 +283,125 @@ text only).
   done here.
 - Shared new glue files (`MusicIoMenu`, `grooveSpecToTrackerSong`) are mine to
   create under `lib/features/...`/`lib/core/audio/` app-side.
+
+---
+
+# D. Workshop as a mini-DAW — modes, keyboard, sample library, drumkit, interconnection
+
+New arc (user, 2026-07-18): keyboard UX fixes; "change instrument" → a real
+**samples library** + a **DAW module** (beginner + advanced) to change every
+sample/fx; **Loop Mixer as a Workshop MODE** (not just a Compose tile) with
+maximum interconnection; a **Drumkit/BoomBox** mode + a GarageBand-style virtual
+drumkit and its interconnection. Grounded in two read-only surveys (keyboard
+widgets · modes/loop-mixer/drums/instruments, 2026-07-18).
+
+## D0. The through-line — Workshop = a shell of MODES over shared documents
+The home "Workshop" button is a `PopupMenuButton<int>` (`home_screen.dart:186`)
+switching Score(default) / Advanced-Tracker(1) / Tab(2). Make it the app's DAW
+shell: add **Loop Mixer(3)** and **Drumkit(4)**, and let every mode exchange
+content through interchange types that ALREADY EXIST — `MultiPartScore`
+(notation; every mode now imports/exports via the shared `MusicIoMenu`),
+`TrackerSong` (grids), `GrooveSpec` (grooves), `DrumRowsPattern` = `Map<Drum,
+List<bool>>` (beats) — plus a future serializable **Sound Library**. "Open in
+<mode>" everywhere, converting through these types. The only missing glue is 2
+converters + 1 store + a few `initialX` constructor params; everything else
+composes.
+
+## D1. Keyboard UX (Score + Tracker) — [screen] + additive [shared widget]
+Both screens use the shared `PianoKeyboard` (`lib/shared/widgets/
+piano_keyboard.dart`), which sizes via `LayoutBuilder` (keyWidth =
+maxWidth/whiteKeyCount); the caller fixes width with `SizedBox(width: whiteKeys *
+_pianoKeyWidth)`. Score: 42 keys × **46px** const, height 140, scrolls (NO
+scrollbar), pre-scroll ~C3; zoom (`_zoom`) only scales the STAFF. Tracker: 42 ×
+**40px** const, height 72, scrolls WITH scrollbar; `_zoom` only scales the GRID;
+`_octave` is the computer-keyboard base only and does NOT move the piano; key
+hints are a **separate legend strip** (`_showKeyHints`), not on the keys.
+Fixes:
+- **(a) Zoom/size** [screen] — make `_pianoKeyWidth` a state var × a `_pianoZoom`
+  (~0.7–2.0) with +/- buttons; rebuild the `SizedBox`. (Score caches
+  `_pianoKeyboard` as a `late final` — must key it off zoom or un-cache.)
+- **(b) Scroll** — both already scroll; add a `Scrollbar` to the Score piano for
+  parity.
+- **(c) Key hints ON the keys** [shared widget, additive] — add `Map<int,String>
+  keyHints` to `PianoKeyboard` and render a small caption on each white/black
+  key. Tracker builds the map from its computer-key→midi table at the current
+  `_octave`, so hints move with the octave. (Its label API today is note-name
+  only — `keyColors` is the sole per-key hook.)
+- **(d) Octave centers the keyboard** [screen] — on `_octave` change,
+  `_pianoScroll.animateTo(offsetForOctave)` (offset from `startMidi`,
+  `_pianoKeyWidth`, 7 white/oct, minus half the viewport). No widget change.
+
+## D2. Sample library + DAW instrument editor — [screen]/[glue] + [needs-engine]
+"Change instrument → a samples library; change every sample; a DAW module,
+beginner+advanced." Extends §B2. **Finding:** the in-song instrument taxonomy is
+rich (additive/sfxr/sample/multi-sample/percussion) but instruments are
+**ephemeral — embedded in the in-memory `TrackerSong`; there is NO persistent
+sample library across sessions** (the only prefs store is `UserSongsService` =
+MusicXML songs). `MultiSampleInstrument` is defined but **used in no UI**.
+- **D2a. `SoundLibraryService` (persistent store)** [glue] — save/load named
+  sounds across sessions (SharedPreferences/files), mirroring `UserSongsService`.
+  Needs instrument serialization → **[needs-engine]** `toJson`/`fromJson` for
+  `SampleInstrument` (base64 PCM + baseMidi/env/loop), `SfxrInstrument`
+  (`SfxrParams` is all numbers), `MultiSampleInstrument` (zones) in
+  `tracker_engine.dart`/`multi_sample_instrument.dart` — file a contract for
+  @tracker-replayer (this is §B2c).
+- **D2b. DAW instrument editor** [screen] — ONE editor for any instrument.
+  **Beginner** = a few presets + big sliders (voice fx chipmunk/robot/…, sample
+  trim/normalize/reverse/stretch, sfxr dice, the volume/pan-envelope presets I
+  shipped). **Advanced** = the full parameter set — every sfxr field + the
+  `crisp_dsp` fx chain from `docs/FX_HANDOVER.md` (filter/reverb/delay/
+  distortion/pitch/formant) + envelope breakpoints. Reuses the record sheet +
+  `_SampleWaveform` trim + `_kEnvelopePresets`.
+- **D2c. "Change instrument" → the library** [screen] — replace the flat
+  `kTrackerInstruments` picker with: pick a saved sound · new from
+  mic/WAV/sfxr/additive · edit (D2b) · save to library. Surface
+  `MultiSampleInstrument` ("build a keymap from N samples", §B2d).
+
+## D3. Loop Mixer as a Workshop mode + interconnection — [screen] + [glue]
+Loop Mixer is a working sandbox reached as a **composition game tile**
+(`game_registry.dart:1105`), with `KU1.` token round-trip (`grooveToken` /
+`loadGrooveToken`) but **`const LoopMixerScreen({aecFactory})` has no
+`initialSpec`**, and **NO GrooveSpec↔TrackerSong converter exists**.
+- **D3a. Mode** [screen] — add "Loop Mixer"(3) to the home dropdown; keep the
+  tile (or point it at the mode).
+- **D3b. Seed from another mode** [screen] — `LoopMixerScreen({GrooveSpec?
+  initialSpec})`.
+- **D3c. Groove ⇄ Tracker** [glue] — `grooveSpecToTrackerSong` (`userCells`→a
+  melodic channel, `beatRows`→a `PercussionInstrument` channel,
+  `userInstrument`→an `AdditiveInstrument`) + the reverse for the shared subset.
+  "Open groove in Tracker" · "Send tracker pattern to Loop Mixer."
+- **D3d. Groove ⇄ Score/Song Book** — export already works (shared sheet, just
+  shipped). Add "Open groove in Score Workshop" (`grooveParts`→`MultiPartScore`→
+  `CompositionWorkshopScreen(initialScore:)`).
+
+## D4. Drumkit / BoomBox mode + virtual drumkit — [screen] + [needs-engine]
+**Finding:** `Drum` = {kick, snare, hat} (only 3), `renderDrum`/
+`renderDrumPattern` (`synth.dart`), `DrumRowsPattern` = `Map<Drum,List<bool>>`
+(the beat model shared by the Loop Mixer beat track AND the tracker's
+`PercussionInstrument`), beatbox→`DrumRowsPattern` via `beat_capture.dart`. There
+is a **single-pad** tap game (`drum_read_screen.dart`) but NO multi-pad kit / no
+step-grid drum editor.
+- **D4a. New `DrumkitScreen`** [screen], home dropdown(4). Two faces like the
+  tracker: **BoomBox (beginner)** = a GarageBand-style **tappable pad grid**
+  (plays `renderDrum` on tap) + a simple **step beat-grid** editing a
+  `DrumRowsPattern`; **Advanced** = more steps, per-step velocity, swing.
+- **D4b. More drum voices** [needs-engine] — the enum has only 3; toms/clap/
+  cymbal/ride need `synth.dart renderDrum` + `Drum` — file for @tracker-replayer;
+  the UI adapts to whatever `Drum.values` exist.
+- **D4c. Interconnection** — the Drumkit edits a `DrumRowsPattern`, the SAME type
+  the Loop Mixer beat track and the tracker percussion channel use. So
+  Drumkit→Loop Mixer (`setUserBeatTrack`), Drumkit→Tracker (percussion channel),
+  beatbox→Drumkit — one beat model, many editors.
+
+## D5. Ownership + execution order (code step by step)
+- **[screen] mine:** D1 keyboard, D3a/b/d Loop-Mixer-mode + Open-in-X, D4a
+  DrumkitScreen, D2b/c DAW editor + library picker UI.
+- **[glue] mine (new files):** `grooveSpecToTrackerSong` (D3c),
+  `SoundLibraryService` (D2a).
+- **[needs-engine] → @tracker-replayer contracts:** instrument `toJson`/
+  `fromJson` (D2a), more `Drum` voices (D4b).
+- **Order:** **(1) D1 keyboard fixes** (concrete, high value, mostly mine) →
+  **(2) D3a+b Loop Mixer as a mode** (small) → **(3) D3c groove↔tracker converter
+  + Open-in-X** → **(4) D4a Drumkit/BoomBox** (pad + step grid over
+  `DrumRowsPattern`) → **(5) D2 sound library + DAW editor** (biggest; editor UI
+  first over existing instruments, then the store once serialization lands).
