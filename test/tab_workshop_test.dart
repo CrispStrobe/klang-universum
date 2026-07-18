@@ -9,9 +9,11 @@ import 'dart:typed_data';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_workshop_screen.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/game_test_support.dart';
@@ -176,6 +178,30 @@ void main() {
     tab.setChordByName(null);
     await tester.pump();
     expect(tab.chordNameAt(2), isNull);
+  });
+
+  testWidgets('Save to Song Book stores the tab as a song', (tester) async {
+    final svc = UserSongsService();
+    await pumpGame(
+      tester,
+      const TabWorkshopScreen(),
+      extraProviders: [
+        ChangeNotifierProvider<UserSongsService>.value(value: svc),
+      ],
+    );
+    final tab = _tab(tester);
+
+    expect(svc.songs, isEmpty);
+    tab.saveToSongBook('My Riff');
+    await tester.pump();
+    expect(svc.songs, hasLength(1));
+    expect(svc.songs.single.title, 'My Riff');
+    expect(svc.songs.single.musicXml, contains('<score-partwise'));
+  });
+
+  testWidgets('tempo control starts at 120', (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    expect(_tab(tester).bpm, 120);
   });
 
   testWidgets('ChordDiagramView paints a preset', (tester) async {

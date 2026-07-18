@@ -412,6 +412,12 @@
   "tabTuning": "Tuning",
   "tabCapo": "Capo",
   "tabShowStandard": "Standard notation",
+  "tabTempo": "Tempo",
+  "tabSaveSongBook": "Save to Song Book",
+  "tabSaved": "Saved “{title}”",
+  "@tabSaved": {
+    "placeholders": { "title": { "type": "String" } }
+  },
   "tabPlay": "Play",
   "tabClear": "Clear",
   "tabDuration": "Note length",

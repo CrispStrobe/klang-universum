@@ -1136,6 +1136,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabShowStandard => 'Notenschrift';
 
   @override
+  String get tabTempo => 'Tempo';
+
+  @override
+  String get tabSaveSongBook => 'Ins Liederbuch speichern';
+
+  @override
+  String tabSaved(String title) {
+    return '„$title“ gespeichert';
+  }
+
+  @override
   String get tabPlay => 'Abspielen';
 
   @override

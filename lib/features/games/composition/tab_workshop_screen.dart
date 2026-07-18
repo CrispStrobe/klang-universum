@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:file_selector/file_selector.dart';
@@ -94,6 +95,8 @@ abstract class TabWorkshopTester {
   Set<TabTechnique> techniquesAt(int col);
   void setChordByName(String? name);
   String? chordNameAt(int col);
+  void saveToSongBook(String title);
+  int get bpm;
 }
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
@@ -121,6 +124,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   NoteDuration _dur = NoteDuration.quarter;
   int _selCol = 0;
   int _selString = 0;
+  int _bpm = 120;
   String? _sourceName;
   final _focus = FocusNode();
 
@@ -204,6 +208,21 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   @override
   String? chordNameAt(int col) =>
       col < _doc.columns.length ? _doc.columns[col].chord?.name : null;
+  @override
+  int get bpm => _bpm;
+  @override
+  void saveToSongBook(String title) {
+    final name = title.trim().isEmpty ? 'Tab' : title.trim();
+    final xml = scoreToMusicXml(_doc.toScore());
+    context.read<UserSongsService>().addSong(
+          ImportedSong(
+            id: 'tab_${name}_${_doc.columns.length}',
+            title: name,
+            musicXml: xml,
+          ),
+        );
+    _snack(AppLocalizations.of(context)!.tabSaved(name));
+  }
 
   // ── Actions ──────────────────────────────────────────────────────────────
   @override
@@ -260,7 +279,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       _stopPlayback();
       return;
     }
-    final events = _doc.toPlaybackEvents();
+    final events = _doc.toPlaybackEvents(bpm: _bpm);
     context.read<AudioService>().playTimedChords(events);
     // Build the highlight timeline in lockstep with the audio events.
     final schedule = <({int col, int start, int end, bool note})>[];
@@ -427,6 +446,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             tooltip: l10n.tabImport,
             onPressed: openScoreFile,
           ),
+          IconButton(
+            icon: const Icon(Icons.bookmark_add_outlined),
+            tooltip: l10n.tabSaveSongBook,
+            onPressed: _promptSave,
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.ios_share),
             tooltip: l10n.tabExport,
@@ -521,6 +545,19 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             onPressed: _capo < 12 ? () => setState(() => _capo++) : null,
           ),
           const SizedBox(width: 20),
+          Text(l10n.tabTempo),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            tooltip: l10n.tabTempo,
+            onPressed: _bpm > 40 ? () => setState(() => _bpm -= 10) : null,
+          ),
+          Text('$_bpm'),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: l10n.tabTempo,
+            onPressed: _bpm < 240 ? () => setState(() => _bpm += 10) : null,
+          ),
+          const SizedBox(width: 20),
           Text(l10n.tabShowStandard),
           Switch(
             value: _showStandard,
@@ -529,6 +566,35 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _promptSave() async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: _sourceName ?? 'My Tab');
+    final title = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.tabSaveSongBook),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(MaterialLocalizations.of(ctx).okButtonLabel),
+          ),
+        ],
+      ),
+    );
+    if (title == null || !mounted) return;
+    saveToSongBook(title);
   }
 
   /// The editable string×step grid.

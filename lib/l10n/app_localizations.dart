@@ -2180,6 +2180,24 @@ abstract class AppLocalizations {
   /// **'Standard notation'**
   String get tabShowStandard;
 
+  /// No description provided for @tabTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get tabTempo;
+
+  /// No description provided for @tabSaveSongBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Song Book'**
+  String get tabSaveSongBook;
+
+  /// No description provided for @tabSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved “{title}”'**
+  String tabSaved(String title);
+
   /// No description provided for @tabPlay.
   ///
   /// In en, this message translates to:

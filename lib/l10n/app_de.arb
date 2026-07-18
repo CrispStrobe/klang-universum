@@ -381,6 +381,12 @@
   "tabTuning": "Stimmung",
   "tabCapo": "Kapodaster",
   "tabShowStandard": "Notenschrift",
+  "tabTempo": "Tempo",
+  "tabSaveSongBook": "Ins Liederbuch speichern",
+  "tabSaved": "„{title}“ gespeichert",
+  "@tabSaved": {
+    "placeholders": { "title": { "type": "String" } }
+  },
   "tabPlay": "Abspielen",
   "tabClear": "Leeren",
   "tabDuration": "Notenlänge",
