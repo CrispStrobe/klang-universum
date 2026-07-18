@@ -308,6 +308,24 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('a volume-envelope preset shapes a channel', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    expect(game.hasEnvelope(0), isFalse);
+    expect(game.songUsesEnvelopes, isFalse);
+
+    game.setEnvelopePreset(0, 'pluck');
+    await tester.pump();
+    expect(game.hasEnvelope(0), isTrue);
+    expect(game.songUsesEnvelopes, isTrue); // routes through the replayer
+
+    game.setEnvelopePreset(0, 'flat'); // back to no shape
+    await tester.pump();
+    expect(game.hasEnvelope(0), isFalse);
+  });
+
   testWidgets('patterns can have independent lengths (per-pattern)',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

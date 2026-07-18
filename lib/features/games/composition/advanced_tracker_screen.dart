@@ -110,6 +110,22 @@ const _kLengthOptions = [16, 32, 48, 64, 96, 128, 192, 200, 256];
 /// Common tempos (BPM) offered in the toolbar.
 const _kTempoOptions = [80, 100, 110, 120, 128, 140, 150, 160, 175, 200];
 
+/// Per-channel volume-envelope shapes offered in the mixer — the friendly form
+/// of the FT2/IT envelope editor. `null` = flat (no envelope). Breakpoints are
+/// `(ms, level 0..1)`; the replayer holds the last level after the final point,
+/// so a "fade out over 400 ms" also silences anything longer.
+const _kEnvelopePresets = <String, VolumeEnvelope?>{
+  'flat': null,
+  'fadeIn': VolumeEnvelope([(ms: 0, level: 0.0), (ms: 300, level: 1.0)]),
+  'fadeOut': VolumeEnvelope([(ms: 0, level: 1.0), (ms: 400, level: 0.0)]),
+  'pluck': VolumeEnvelope([
+    (ms: 0, level: 1.0),
+    (ms: 120, level: 0.3),
+    (ms: 600, level: 0.0),
+  ]),
+  'swell': VolumeEnvelope([(ms: 0, level: 0.2), (ms: 500, level: 1.0)]),
+};
+
 /// Note letter -> semitone within an octave (for the "note-name" entry mode:
 /// type a letter then an octave digit, e.g. F then 2 -> F2).
 const _kLetterSemitone = <String, int>{
@@ -210,6 +226,13 @@ abstract interface class AdvancedTrackerTester {
   double panOf(int channel);
   void setPan(int channel, double pan);
   bool get songUsesPan;
+
+  /// Per-channel volume envelope by preset key ('flat'/'fadeIn'/'fadeOut'/
+  /// 'pluck'/'swell'); whether the channel currently has an envelope; and whether
+  /// the song carries any envelope (routes it through the replayer).
+  void setEnvelopePreset(int channel, String key);
+  bool hasEnvelope(int channel);
+  bool get songUsesEnvelopes;
 
   /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
   void importModuleBytes(Uint8List bytes);
@@ -1664,6 +1687,23 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             toggleSolo(c);
             setSheet(() {});
           }),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.show_chart, size: 20),
+            tooltip: l10n.trackerEnvelope,
+            itemBuilder: (_) => [
+              for (final key in _kEnvelopePresets.keys)
+                CheckedPopupMenuItem(
+                  value: key,
+                  checked: identical(ch.volumeEnvelope, _kEnvelopePresets[key]),
+                  child: Text(_envelopeLabel(l10n, key)),
+                ),
+            ],
+            onSelected: (key) {
+              _song.engine.setChannelVolumeEnvelope(c, _kEnvelopePresets[key]);
+              _syncPlayback();
+              setSheet(() {});
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.mic, size: 20),
             tooltip: l10n.trackerRecordSample,
@@ -2148,6 +2188,15 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       ),
     );
   }
+
+  String _envelopeLabel(AppLocalizations l10n, String key) => switch (key) {
+        'flat' => l10n.trackerEnvFlat,
+        'fadeIn' => l10n.trackerEnvFadeIn,
+        'fadeOut' => l10n.trackerEnvFadeOut,
+        'pluck' => l10n.trackerEnvPluck,
+        'swell' => l10n.trackerEnvSwell,
+        _ => key,
+      };
 
   String _instrumentLabel(String id) => switch (id) {
         'piano' => 'Piano',
@@ -3452,6 +3501,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   bool get songUsesPan => _song.usesPan;
+  @override
+  void setEnvelopePreset(int channel, String key) {
+    setState(
+      () => _song.engine
+          .setChannelVolumeEnvelope(channel, _kEnvelopePresets[key]),
+    );
+    _syncPlayback();
+  }
+
+  @override
+  bool hasEnvelope(int channel) =>
+      _song.channels[channel].volumeEnvelope != null;
+  @override
+  bool get songUsesEnvelopes => _song.usesEnvelopes;
 
   @override
   void toggleMute(int channel) {

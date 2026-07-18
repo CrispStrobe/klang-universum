@@ -1644,6 +1644,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerPan => 'Panorama (links ↔ rechts)';
 
   @override
+  String get trackerEnvelope => 'Lautstärkeverlauf (Hüllkurve)';
+
+  @override
+  String get trackerEnvFlat => 'Gleichbleibend';
+
+  @override
+  String get trackerEnvFadeIn => 'Einblenden';
+
+  @override
+  String get trackerEnvFadeOut => 'Ausblenden';
+
+  @override
+  String get trackerEnvPluck => 'Zupfen (schnell abklingend)';
+
+  @override
+  String get trackerEnvSwell => 'Anschwellen';
+
+  @override
   String get trackerInstruments => 'Instrument für neue Noten';
 
   @override

@@ -1635,6 +1635,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerPan => 'Pan (left ↔ right)';
 
   @override
+  String get trackerEnvelope => 'Volume shape (envelope)';
+
+  @override
+  String get trackerEnvFlat => 'Flat (no shape)';
+
+  @override
+  String get trackerEnvFadeIn => 'Fade in';
+
+  @override
+  String get trackerEnvFadeOut => 'Fade out';
+
+  @override
+  String get trackerEnvPluck => 'Pluck (quick decay)';
+
+  @override
+  String get trackerEnvSwell => 'Swell';
+
+  @override
   String get trackerInstruments => 'Instrument for new notes';
 
   @override

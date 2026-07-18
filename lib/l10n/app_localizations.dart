@@ -3170,6 +3170,42 @@ abstract class AppLocalizations {
   /// **'Pan (left ↔ right)'**
   String get trackerPan;
 
+  /// No description provided for @trackerEnvelope.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume shape (envelope)'**
+  String get trackerEnvelope;
+
+  /// No description provided for @trackerEnvFlat.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat (no shape)'**
+  String get trackerEnvFlat;
+
+  /// No description provided for @trackerEnvFadeIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Fade in'**
+  String get trackerEnvFadeIn;
+
+  /// No description provided for @trackerEnvFadeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Fade out'**
+  String get trackerEnvFadeOut;
+
+  /// No description provided for @trackerEnvPluck.
+  ///
+  /// In en, this message translates to:
+  /// **'Pluck (quick decay)'**
+  String get trackerEnvPluck;
+
+  /// No description provided for @trackerEnvSwell.
+  ///
+  /// In en, this message translates to:
+  /// **'Swell'**
+  String get trackerEnvSwell;
+
   /// No description provided for @trackerInstruments.
   ///
   /// In en, this message translates to:
