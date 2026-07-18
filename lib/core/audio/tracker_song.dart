@@ -397,6 +397,9 @@ class TrackerSong {
             midi: (cur.midi! + semitones).clamp(0, 127),
             volume: cur.volume,
             effect: cur.effect,
+            fxCmd: cur.fxCmd,
+            fxParam: cur.fxParam,
+            instrument: cur.instrument,
           ),
         );
       }

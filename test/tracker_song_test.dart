@@ -344,4 +344,44 @@ void main() {
       expect(song.orderIndexAtMs(99 * patMs), 2);
     });
   });
+
+  group('cell edits preserve the fx + instrument columns', () {
+    test('setCellVolume / setCellEffect keep fxCmd/fxParam/instrument', () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 4));
+      song.engine.setCell(
+        0,
+        0,
+        const TrackerCell(midi: 60, fxCmd: 0x1, fxParam: 0x08, instrument: 2),
+      );
+
+      song.engine.setCellVolume(0, 0, 0.5);
+      var c = song.engine.cellAt(0, 0);
+      expect(c.volume, 0.5);
+      expect(c.fxCmd, 0x1);
+      expect(c.fxParam, 0x08);
+      expect(c.instrument, 2);
+
+      song.engine.setCellEffect(0, 0, TrackerEffect.vibrato);
+      c = song.engine.cellAt(0, 0);
+      expect(c.effect, TrackerEffect.vibrato);
+      expect(c.fxCmd, 0x1);
+      expect(c.instrument, 2);
+    });
+
+    test('transposeBlock keeps fxCmd/fxParam/instrument (only shifts pitch)',
+        () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 4));
+      song.engine.setCell(
+        0,
+        0,
+        const TrackerCell(midi: 60, fxCmd: 0x1, fxParam: 0x08, instrument: 3),
+      );
+      song.transposeBlock(0, 0, 0, 0, 2);
+      final c = song.engine.cellAt(0, 0);
+      expect(c.midi, 62); // pitch shifted
+      expect(c.fxCmd, 0x1);
+      expect(c.fxParam, 0x08);
+      expect(c.instrument, 3);
+    });
+  });
 }
