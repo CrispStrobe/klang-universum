@@ -7,7 +7,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/library/attribution_screen.dart';
 import 'package:comet_beat/features/library/content_source.dart';
+import 'package:comet_beat/features/library/donation.dart';
 import 'package:comet_beat/features/library/library_browser_screen.dart';
 import 'package:comet_beat/features/library/library_import.dart';
 import 'package:comet_beat/features/library/license_policy.dart';
@@ -143,9 +145,10 @@ void main() {
   });
 
   group('OpenScoreSource path parsing', () {
-    final src = OpenScoreSource((_) async => Uint8List(0));
+    final lieder = OpenScoreSource.lieder((_) async => Uint8List(0));
+    final quartets = OpenScoreSource.stringQuartets((_) async => Uint8List(0));
 
-    test('parseTreePaths keeps only scores/*.mxl', () {
+    test('parseTreePaths keeps only scores files of the given extension', () {
       const tree = '''
       {"tree": [
         {"path": "data/corpus_conversion.json"},
@@ -153,13 +156,12 @@ void main() {
         {"path": "scores/Arne,_Thomas/_/Rule,_Britannia!/lc29233346.mxl"},
         {"path": "scores/Abbott,_Jane/Set_One/A_Song/lc1.mxl"}
       ]}''';
-      final paths = OpenScoreSource.parseTreePaths(tree);
-      expect(paths, hasLength(2));
-      expect(paths.every((p) => p.endsWith('.mxl')), isTrue);
+      expect(OpenScoreSource.parseTreePaths(tree, 'mxl'), hasLength(2));
+      expect(OpenScoreSource.parseTreePaths(tree, 'mscx'), hasLength(1));
     });
 
-    test('itemForPath humanizes composer/title + builds a raw URL', () {
-      final item = src.itemForPath(
+    test('Lieder: itemForPath humanizes composer/title + builds a raw URL', () {
+      final item = lieder.itemForPath(
         'scores/Arne,_Thomas/_/Rule,_Britannia!/lc29233346.mxl',
       )!;
       expect(item.composer, 'Thomas Arne');
@@ -172,18 +174,58 @@ void main() {
       expect(item.downloadUrl.path, contains('lc29233346.mxl'));
     });
 
+    test('Quartets: shallower path + .mscx format parse', () {
+      final item = quartets.itemForPath(
+        'scores/Beach,_Amy/String_Quartet,_Op._89/sq14387632.mscx',
+      )!;
+      expect(item.composer, 'Amy Beach');
+      expect(item.title, 'String Quartet, Op. 89');
+      expect(item.id, 'sq14387632');
+      expect(item.format, 'mscx');
+      expect(item.downloadUrl.path, contains('OpenScore/StringQuartets/main'));
+    });
+
     test('browse filters by query against a faked tree', () async {
       const tree = '''
       {"tree": [
         {"path": "scores/Arne,_Thomas/_/Rule,_Britannia!/lc1.mxl"},
         {"path": "scores/Schubert,_Franz/_/Ave_Maria/lc2.mxl"}
       ]}''';
-      final s = OpenScoreSource((_) async => utf8.encode(tree));
+      final s = OpenScoreSource.lieder((_) async => utf8.encode(tree));
       final all = await s.browse();
       expect(all, hasLength(2));
       final schubert = await s.browse(query: 'schubert');
       expect(schubert, hasLength(1));
       expect(schubert.single.composer, 'Franz Schubert');
+    });
+  });
+
+  group('pipeline decodes multiple formats + donation config', () {
+    final xml = _validMusicXml();
+
+    test('bytesToMusicXml handles mscx and midi', () {
+      final score = scoreFromMusicXml(xml);
+      final mscx = Uint8List.fromList(utf8.encode(scoreToMscx(score)));
+      final midi = scoreToMidi(score);
+      // Each decodes back to a parseable MusicXML.
+      expect(
+        scoreFromMusicXml(bytesToMusicXml('mscx', mscx)).measures,
+        isNotEmpty,
+      );
+      expect(
+        scoreFromMusicXml(bytesToMusicXml('midi', midi)).measures,
+        isNotEmpty,
+      );
+    });
+
+    test('DonationConfig is off by default and needs a URL', () {
+      expect(const DonationConfig().isActive, isFalse);
+      expect(const DonationConfig(enabled: true).isActive, isFalse);
+      expect(
+        const DonationConfig(enabled: true, url: 'https://ko-fi.com/x')
+            .isActive,
+        isTrue,
+      );
     });
   });
 
@@ -212,6 +254,26 @@ void main() {
       );
       expect(src.fetchCount, 0); // gate ran before fetch
     });
+  });
+
+  testWidgets('donation tile hidden by default, shown when enabled',
+      (tester) async {
+    final svc = UserSongsService();
+
+    await tester.pumpWidget(_wrap(const AttributionScreen(), svc));
+    await tester.pump();
+    expect(find.byIcon(Icons.local_cafe), findsNothing);
+
+    await tester.pumpWidget(
+      _wrap(
+        const AttributionScreen(
+          donation: DonationConfig(enabled: true, url: 'https://ko-fi.com/x'),
+        ),
+        svc,
+      ),
+    );
+    await tester.pump();
+    expect(find.byIcon(Icons.local_cafe), findsOneWidget);
   });
 
   testWidgets('browser lists items and imports one into the Song Book',

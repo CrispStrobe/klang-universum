@@ -4,13 +4,18 @@
 // docs/LIBRARIES_AND_TAB_SCOPING.md §1.7.
 
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/library/donation.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AttributionScreen extends StatelessWidget {
-  const AttributionScreen({super.key});
+  /// Donation config for the optional "Support the developer" tile (off by
+  /// default). Injectable for tests.
+  final DonationConfig donation;
+
+  const AttributionScreen({super.key, this.donation = kDonation});
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +25,19 @@ class AttributionScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.librarySourcesCredits)),
+      bottomNavigationBar: donation.isActive
+          ? SafeArea(
+              child: ListTile(
+                leading: const Icon(Icons.local_cafe),
+                title: Text(l10n.librarySupportDev),
+                trailing: const Icon(Icons.open_in_new, size: 18),
+                onTap: () => launchUrl(
+                  Uri.parse(donation.url),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+            )
+          : null,
       body: credited.isEmpty
           ? Center(
               child: Padding(

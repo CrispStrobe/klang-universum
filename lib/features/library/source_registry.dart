@@ -33,5 +33,6 @@ Future<Uint8List> defaultHttpGet(Uri url) async {
 /// Builds the list of connected sources, using [http] for all I/O (defaults to
 /// the real network; tests pass a fake).
 List<ContentSource> buildSources({HttpGet http = defaultHttpGet}) => [
-      OpenScoreSource(http),
+      OpenScoreSource.lieder(http),
+      OpenScoreSource.stringQuartets(http),
     ];

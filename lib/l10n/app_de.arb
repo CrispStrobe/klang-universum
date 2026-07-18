@@ -420,6 +420,7 @@
   "librarySourcesCredits": "Quellen & Nachweise",
   "libraryNoCredits": "Noch nichts aus einer Bibliothek importiert",
   "libraryCreditsIntro": "Aus freien Musik-Bibliotheken importierte Werke mit ihren Lizenzen.",
+  "librarySupportDev": "Entwickler unterstützen",
   "trackerPrompt": "Wähle ein Instrument und tippe deinen Loop!",
   "trackerClear": "Leeren",
   "trackerChannelMelody": "Melodie",

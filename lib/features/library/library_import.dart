@@ -10,13 +10,20 @@ import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/library/license_policy.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show readMusicXmlFromMxl, scoreFromMusicXml;
+    show
+        readMusicXmlFromMxl,
+        scoreFromMidi,
+        scoreFromMscx,
+        scoreFromMusicXml,
+        scoreToMusicXml;
 
 /// Decodes fetched [bytes] of the given [format] into a MusicXML string. Throws
 /// [FormatException] for a format this pipeline can't turn into MusicXML.
 String bytesToMusicXml(String format, Uint8List bytes) => switch (format) {
       'mxl' => readMusicXmlFromMxl(bytes),
       'musicxml' || 'xml' => utf8.decode(bytes),
+      'mscx' => scoreToMusicXml(scoreFromMscx(utf8.decode(bytes))),
+      'midi' || 'mid' => scoreToMusicXml(scoreFromMidi(bytes)),
       _ => throw FormatException('Cannot import format: $format'),
     };
 

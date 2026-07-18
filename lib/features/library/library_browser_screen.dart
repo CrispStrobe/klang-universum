@@ -29,7 +29,7 @@ class LibraryBrowserScreen extends StatefulWidget {
 
 class _LibraryBrowserScreenState extends State<LibraryBrowserScreen> {
   late final List<ContentSource> _sources = widget.sources ?? buildSources();
-  late final ContentSource _source = _sources.first;
+  late ContentSource _source = _sources.first;
 
   final _search = TextEditingController();
   List<LibraryItem> _items = [];
@@ -120,12 +120,35 @@ class _LibraryBrowserScreenState extends State<LibraryBrowserScreen> {
               children: [
                 const Icon(Icons.public, size: 20),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${_source.name} · ${_source.licenseSummary}',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                if (_sources.length > 1)
+                  Expanded(
+                    child: DropdownButton<ContentSource>(
+                      value: _source,
+                      isExpanded: true,
+                      onChanged: (s) {
+                        if (s == null || s == _source) return;
+                        setState(() => _source = s);
+                        _reload();
+                      },
+                      items: [
+                        for (final s in _sources)
+                          DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                              '${s.name} · ${s.licenseSummary}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Text(
+                      '${_source.name} · ${_source.licenseSummary}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

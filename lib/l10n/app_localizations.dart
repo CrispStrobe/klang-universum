@@ -2378,6 +2378,12 @@ abstract class AppLocalizations {
   /// **'Works imported from open music libraries, with their licenses.'**
   String get libraryCreditsIntro;
 
+  /// No description provided for @librarySupportDev.
+  ///
+  /// In en, this message translates to:
+  /// **'Support the developer'**
+  String get librarySupportDev;
+
   /// No description provided for @trackerPrompt.
   ///
   /// In en, this message translates to:

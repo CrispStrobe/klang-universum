@@ -451,6 +451,7 @@
   "librarySourcesCredits": "Sources & credits",
   "libraryNoCredits": "Nothing imported from a library yet",
   "libraryCreditsIntro": "Works imported from open music libraries, with their licenses.",
+  "librarySupportDev": "Support the developer",
   "trackerPrompt": "Pick an instrument, then tap to build your loop!",
   "trackerClear": "Clear",
   "trackerChannelMelody": "Melody",

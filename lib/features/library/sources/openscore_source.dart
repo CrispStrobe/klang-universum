@@ -1,44 +1,81 @@
-// OpenScore Lieder — the connect-first source. ~1,300 19th-century art songs,
-// volunteer-transcribed, released under **CC0** (public domain dedication). We
-// pull from the GitHub mirror (OpenScore/Lieder), NOT musescore.com, so we never
-// touch that site's ToS/paywall. See docs/LIBRARIES_AND_TAB_SCOPING.md §1.1.
+// OpenScore corpora — the connect-first sources. Volunteer-transcribed,
+// released under **CC0** (public domain dedication). We pull from the GitHub
+// mirrors, NOT musescore.com, so we never touch that site's ToS/paywall. See
+// docs/LIBRARIES_AND_TAB_SCOPING.md §1.1.
 //
-// Layout on the mirror:
-//   scores/<Composer>/<Set or _>/<Song_Title>/lc<id>.mxl   (compressed MusicXML)
-// Browse = read the git tree once, filter the .mxl files, parse composer/title
-// from the path. Download = the raw.githubusercontent.com URL for that path.
+// One config-driven adapter serves every OpenScore repo:
+//   Lieder          scores/<Composer>/<Set or _>/<Title>/lc<id>.mxl
+//   String Quartets scores/<Composer>/<Piece>/sq<id>.mscx
+// Browse = read the git tree once, filter the score files, parse composer/title
+// from the path (variable depth). Download = the raw.githubusercontent.com URL.
 
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:comet_beat/features/library/content_source.dart';
 
-/// CC0 art-song corpus, browsed from the OpenScore/Lieder GitHub mirror.
+/// A CC0 OpenScore corpus browsed from its GitHub mirror.
 class OpenScoreSource implements ContentSource {
   final HttpGet _http;
 
-  /// Cached file paths (`scores/…/lc….mxl`) from the git tree, fetched lazily.
+  @override
+  final String id;
+  @override
+  final String name;
+
+  /// `owner/repo` on GitHub (e.g. `OpenScore/Lieder`).
+  final String repo;
+  final String branch;
+
+  /// The score file extension in this repo (`mxl` or `mscx`).
+  final String fileExt;
+
+  /// The [LibraryItem.format] to tag downloads with (matches the pipeline's
+  /// decoder — `mxl` or `mscx`).
+  final String format;
+
   List<String>? _paths;
 
-  OpenScoreSource(this._http);
+  OpenScoreSource(
+    this._http, {
+    required this.id,
+    required this.name,
+    required this.repo,
+    required this.fileExt,
+    required this.format,
+    this.branch = 'main',
+  });
+
+  /// ~1,300 CC0 art songs (compressed MusicXML).
+  factory OpenScoreSource.lieder(HttpGet http) => OpenScoreSource(
+        http,
+        id: 'openscore_lieder',
+        name: 'OpenScore Lieder',
+        repo: 'OpenScore/Lieder',
+        fileExt: 'mxl',
+        format: 'mxl',
+      );
+
+  /// CC0 string-quartet movements (MuseScore `.mscx`).
+  factory OpenScoreSource.stringQuartets(HttpGet http) => OpenScoreSource(
+        http,
+        id: 'openscore_quartets',
+        name: 'OpenScore String Quartets',
+        repo: 'OpenScore/StringQuartets',
+        fileExt: 'mscx',
+        format: 'mscx',
+      );
 
   @override
-  String get id => 'openscore_lieder';
-
-  @override
-  String get name => 'OpenScore Lieder';
-
-  @override
-  String get homepage => 'https://github.com/OpenScore/Lieder';
+  String get homepage => 'https://github.com/$repo';
 
   @override
   String get licenseSummary => 'CC0 — public domain';
 
-  static final Uri _treeUrl = Uri.parse(
-    'https://api.github.com/repos/OpenScore/Lieder/git/trees/main?recursive=1',
-  );
+  Uri get _treeUrl => Uri.parse(
+        'https://api.github.com/repos/$repo/git/trees/$branch?recursive=1',
+      );
 
-  /// The declared license every OpenScore item carries.
   static const declaredLicense = 'CC0';
   static const _licenseUrl =
       'https://creativecommons.org/publicdomain/zero/1.0/';
@@ -47,20 +84,21 @@ class OpenScoreSource implements ContentSource {
     final cached = _paths;
     if (cached != null) return cached;
     final bytes = await _http(_treeUrl);
-    final paths = parseTreePaths(utf8.decode(bytes));
+    final paths = parseTreePaths(utf8.decode(bytes), fileExt);
     _paths = paths;
     return paths;
   }
 
-  /// Extracts the `.mxl` score paths from a GitHub git-tree JSON body. Static +
-  /// pure so it is unit-testable against a captured fixture.
-  static List<String> parseTreePaths(String treeJson) {
+  /// Extracts the `scores/…` score paths (of extension [fileExt]) from a GitHub
+  /// git-tree JSON body. Static + pure so it is unit-testable against a fixture.
+  static List<String> parseTreePaths(String treeJson, String fileExt) {
     final root = json.decode(treeJson) as Map<String, dynamic>;
     final tree = root['tree'] as List? ?? [];
+    final suffix = '.$fileExt';
     final out = <String>[];
     for (final e in tree) {
       final path = (e as Map<String, dynamic>)['path'] as String?;
-      if (path != null && path.startsWith('scores/') && path.endsWith('.mxl')) {
+      if (path != null && path.startsWith('scores/') && path.endsWith(suffix)) {
         out.add(path);
       }
     }
@@ -68,16 +106,21 @@ class OpenScoreSource implements ContentSource {
     return out;
   }
 
-  /// Builds a [LibraryItem] from a `scores/<composer>/<set>/<title>/lc<id>.mxl`
-  /// path. Static + pure. Returns null for a path that doesn't match.
+  /// Builds a [LibraryItem] from a `scores/<composer>/…/<title>/<file>` path
+  /// (variable depth). Returns null for a path that doesn't match.
   LibraryItem? itemForPath(String path) {
     final segs = path.split('/');
-    if (segs.length < 5 || segs.first != 'scores') return null;
-    final composer = _humanize(segs[1]);
-    final collection = segs[2] == '_' ? '' : _humanize(segs[2]);
-    final title = _humanize(segs[3]);
+    if (segs.length < 4 || segs.first != 'scores') return null;
+    final composer = _humanize(segs[1], flipName: true);
+    final title = _humanize(segs[segs.length - 2]);
+    // Anything between composer and title (a set/opus) → a collection label.
+    final collection = segs
+        .sublist(2, segs.length - 2)
+        .where((s) => s != '_')
+        .map(_humanize)
+        .join(' · ');
     final file = segs.last;
-    final scoreId = file.substring(0, file.length - '.mxl'.length);
+    final scoreId = file.substring(0, file.length - fileExt.length - 1);
     return LibraryItem(
       sourceId: id,
       sourceName: name,
@@ -87,26 +130,26 @@ class OpenScoreSource implements ContentSource {
       collection: collection,
       declaredLicense: declaredLicense,
       licenseUrl: _licenseUrl,
-      sourceUrl:
-          'https://github.com/OpenScore/Lieder/tree/main/${segs.sublist(0, 4).join('/')}',
+      sourceUrl: 'https://github.com/$repo/tree/$branch/'
+          '${segs.sublist(0, segs.length - 1).join('/')}',
       downloadUrl: Uri(
         scheme: 'https',
         host: 'raw.githubusercontent.com',
-        pathSegments: ['OpenScore', 'Lieder', 'main', ...segs],
+        pathSegments: [...repo.split('/'), branch, ...segs],
       ),
-      format: 'mxl',
+      format: format,
     );
   }
 
-  /// "Arne,_Thomas" → "Thomas Arne"; "Rule,_Britannia!" → "Rule, Britannia!".
-  static String _humanize(String seg) {
+  /// "Arne,_Thomas" → "Thomas Arne" (composer, [flipName]); "Rule,_Britannia!" →
+  /// "Rule, Britannia!" (a title keeps its comma, no flip).
+  static String _humanize(String seg, {bool flipName = false}) {
     final s = seg.replaceAll('_', ' ').trim();
-    // "Surname, Given" → "Given Surname" for a composer folder.
+    if (!flipName) return s;
     final comma = s.indexOf(', ');
     if (comma > 0 && !s.contains('!') && !s.contains('?')) {
       final surname = s.substring(0, comma);
       final given = s.substring(comma + 2);
-      // Only flip when it looks like a name (no long phrase after the comma).
       if (!given.contains(' ') || given.split(' ').length <= 3) {
         return '$given $surname';
       }

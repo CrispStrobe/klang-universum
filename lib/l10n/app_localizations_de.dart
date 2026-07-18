@@ -1241,6 +1241,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Aus freien Musik-Bibliotheken importierte Werke mit ihren Lizenzen.';
 
   @override
+  String get librarySupportDev => 'Entwickler unterstützen';
+
+  @override
   String get trackerPrompt => 'Wähle ein Instrument und tippe deinen Loop!';
 
   @override
