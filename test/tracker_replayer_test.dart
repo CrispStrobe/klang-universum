@@ -559,4 +559,41 @@ void main() {
       expect(rowIndexAtMs(const [], 0), -1); // empty map
     });
   });
+
+  group('per-cell instrument column', () {
+    test('the default pool has the four additive voices', () {
+      expect(TrackerSong().instruments.length, 4);
+    });
+
+    test('a cell instrument switches the additive timbre (pool index)', () {
+      // Channel 0 is 'piano' (pool[0]); pool[2] is 'flute'.
+      TrackerSong twoNotes(int secondInstrument) {
+        final s = TrackerSong(timing: const TrackerTiming(rows: 8));
+        s.engine.setCell(0, 0, const TrackerCell(midi: 60, instrument: 1));
+        s.engine.setCell(
+          0,
+          4,
+          TrackerCell(midi: 60, instrument: secondInstrument),
+        );
+        s.syncCurrent(); // so usesInstruments sees the live edits
+        return s;
+      }
+
+      expect(twoNotes(1).usesInstruments, isTrue); // routes via the replayer
+      final piano = replaySong(twoNotes(1)).pcm; // note 2 stays piano
+      final flute = replaySong(twoNotes(3)).pcm; // note 2 → flute
+      expect(piano.length, flute.length);
+
+      final s4 = const TrackerTiming(rows: 8).stepStartSample(4);
+      bool sameRange(int lo, int hi) {
+        for (var i = lo; i < hi; i++) {
+          if (piano[i] != flute[i]) return false;
+        }
+        return true;
+      }
+
+      expect(sameRange(0, s4), isTrue); // note 1 (both piano) is identical
+      expect(sameRange(s4, piano.length), isFalse); // note 2 differs (flute)
+    });
+  });
 }

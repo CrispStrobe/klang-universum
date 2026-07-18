@@ -28,8 +28,17 @@
 // param <0x20 → ticks/row, [songInitialSpeed]) AND SET-TEMPO (first Fxx param
 // ≥0x20 → BPM, [songInitialTempo]/[effectiveTiming]) too: both are applied
 // UNIFORMLY to the whole render (the value a module sets at the top), so timing
-// stays uniform and songTotalMs matches. Still TODO: MID-SONG speed/tempo
-// CHANGES (need per-row row-duration timing), 9xx sample-offset.
+// stays uniform and songTotalMs matches.
+//
+// PER-CELL INSTRUMENT ([TrackerCell.instrument], 1-based into
+// [TrackerSong.instruments]): a note can switch the additive voice's timbre,
+// persisting per channel — so one channel can play piano then flute. Honoured on
+// ADDITIVE channels only for now (a non-additive/sample channel, or a per-cell
+// reference to a non-additive pool instrument, keeps the channel's own voice).
+//
+// Still TODO: MID-SONG speed/tempo CHANGES (need per-row row-duration timing),
+// 9xx sample-offset, and per-cell instrument on SAMPLE voices — all of which
+// want a per-note non-additive render (the shared next step).
 //
 // Mixing (see Trap A in docs/TRACKER_REPLAYER_HANDOVER.md): the replayer sums
 // voices at a FIXED-normalized amplitude (each additive voice divided by its
@@ -455,6 +464,24 @@ int _nextTriggerRow(List<TrackerCell> cells, int from) {
 Instrument? _additiveOf(TrackerInstrument instrument) =>
     instrument is AdditiveInstrument ? instrument.instrument : null;
 
+/// The synthesis parameters of an additive [inst] (harmonics + envelope + the
+/// L1 harmonic norm used to keep the voice's peak ≤ 1). Recomputed whenever a
+/// per-cell instrument switches the additive timbre.
+({List<double> harmonics, double attackSec, double decay, double harmNorm})
+    _timbreParamsOf(Instrument inst) {
+  final t = timbreFor(inst);
+  var norm = 0.0;
+  for (final h in t.harmonics) {
+    norm += h.abs();
+  }
+  return (
+    harmonics: t.harmonics,
+    attackSec: t.attackMs / 1000,
+    decay: t.decay,
+    harmNorm: norm == 0 ? 1 : norm,
+  );
+}
+
 /// Renders one channel's [cells] into [mix] starting at [sampleOffset]. Additive
 /// voices synthesize per tick (honouring commands); other instruments fall back
 /// to the offline whole-channel render (unit-peak × gain), so they still sound.
@@ -464,13 +491,15 @@ void _renderChannelInto(
   List<TrackerCell> cells,
   TrackerTiming timing,
   int ticksPerRow,
-  int sampleOffset,
-) {
+  int sampleOffset, {
+  List<TrackerInstrument>? pool,
+}) {
   if (channel.muted || !cells.any((c) => !c.isEmpty)) return;
 
   final inst = _additiveOf(channel.instrument);
   if (inst == null) {
     // Non-additive: offline render, unit-peak, × gain, summed at true amplitude.
+    // (Per-cell instrument is not honoured on non-additive channels yet.)
     final stem = channel.instrument.renderChannel(cells, timing);
     var peak = 0.0;
     for (final v in stem) {
@@ -485,20 +514,21 @@ void _renderChannelInto(
     return;
   }
 
-  final timbre = timbreFor(inst);
-  final harmonics = timbre.harmonics;
-  final attackSec = timbre.attackMs / 1000;
-  final decay = timbre.decay;
-  var harmNorm = 0.0;
-  for (final h in harmonics) {
-    harmNorm += h.abs();
-  }
-  if (harmNorm == 0) harmNorm = 1;
+  // The current additive timbre — the channel's by default, swapped when a cell
+  // names an additive pool instrument (persists per channel, tracker-style).
+  var tp = _timbreParamsOf(inst);
   final gain = channel.gain;
 
   final voice = ReplayVoice();
   final rows = cells.length;
   for (var r = 0; r < rows; r++) {
+    // Per-cell instrument: switch the additive timbre if the cell names an
+    // additive pool instrument (a non-additive reference is ignored here).
+    final cellInst = cells[r].instrument;
+    if (cellInst > 0 && pool != null && cellInst - 1 < pool.length) {
+      final pi = _additiveOf(pool[cellInst - 1]);
+      if (pi != null) tp = _timbreParamsOf(pi);
+    }
     voice.armRow(cells[r]);
     if (voice.startsNoteThisRow) {
       if (voice.retriggeredThisRow) voice.oscPhase = 0;
@@ -531,13 +561,13 @@ void _renderChannelInto(
       for (var i = ts; i < te && i < mix.length; i++) {
         final t = (i - voice.noteStartSample) / kSampleRate;
         if (t < 0) continue;
-        final attack = t < attackSec ? t / attackSec : 1.0;
-        final env = attack * exp(-decay * t / voice.noteSeconds);
+        final attack = t < tp.attackSec ? t / tp.attackSec : 1.0;
+        final env = attack * exp(-tp.decay * t / voice.noteSeconds);
         var sample = 0.0;
-        for (var h = 0; h < harmonics.length; h++) {
-          sample += harmonics[h] * sin(voice.oscPhase * (h + 1));
+        for (var h = 0; h < tp.harmonics.length; h++) {
+          sample += tp.harmonics[h] * sin(voice.oscPhase * (h + 1));
         }
-        mix[i] += (sample / harmNorm) * env * volScale;
+        mix[i] += (sample / tp.harmNorm) * env * volScale;
         voice.oscPhase += phaseInc;
       }
     }
@@ -560,12 +590,21 @@ ReplayResult replayPattern(
   List<List<TrackerCell>> cells,
   TrackerTiming timing, {
   int ticksPerRow = kDefaultTicksPerRow,
+  List<TrackerInstrument>? pool,
 }) {
   final speed = _firstFxx(cells, timing.rows, wantTempo: false);
   final ticks = speed > 0 ? speed : ticksPerRow;
   final mix = Float64List(timing.totalSamples);
   for (var c = 0; c < channels.length && c < cells.length; c++) {
-    _renderChannelInto(mix, channels[c], cells[c], timing, ticks, 0);
+    _renderChannelInto(
+      mix,
+      channels[c],
+      cells[c],
+      timing,
+      ticks,
+      0,
+      pool: pool,
+    );
   }
   return ReplayResult(_mixToPcm(mix), const [RowTiming(0, 0, 0, 0)]);
 }
@@ -832,6 +871,7 @@ ReplayResult replaySong(
         timing,
         ticks,
         sampleOffset,
+        pool: song.instruments,
       );
     }
   }
@@ -855,7 +895,15 @@ ReplayResult _replayFlow(TrackerSong song, int ticksPerRow) {
     final flatCells = [
       for (final pr in played) song.patterns[pr.patternIndex].cells[c][pr.row],
     ];
-    _renderChannelInto(mix, channels[c], flatCells, flatTiming, ticksPerRow, 0);
+    _renderChannelInto(
+      mix,
+      channels[c],
+      flatCells,
+      flatTiming,
+      ticksPerRow,
+      0,
+      pool: song.instruments,
+    );
   }
 
   final timingMap = [

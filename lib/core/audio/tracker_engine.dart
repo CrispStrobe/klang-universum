@@ -95,10 +95,19 @@ class TrackerCell {
     this.effect = TrackerEffect.none,
     this.fxCmd = 0,
     this.fxParam = 0,
+    this.instrument = 0,
   });
 
   final int? midi;
   final double? volume;
+
+  /// The per-cell INSTRUMENT number (the classic tracker sample/instrument
+  /// column): 0 = none (the note keeps the channel's current instrument), else a
+  /// 1-based index into [TrackerSong.instruments]. Honoured by the replayer's
+  /// additive voices (a note can switch timbre); a reference to a non-additive
+  /// pool instrument is ignored for now (documented follow-up). Added additively
+  /// — 0 everywhere leaves every existing render unchanged.
+  final int instrument;
 
   /// A per-note effect command (arp/vibrato/slide). Honoured by additive voices
   /// (see [AdditiveInstrument]); other instruments ignore it. This is the simple
@@ -127,10 +136,12 @@ class TrackerCell {
       other.volume == volume &&
       other.effect == effect &&
       other.fxCmd == fxCmd &&
-      other.fxParam == fxParam;
+      other.fxParam == fxParam &&
+      other.instrument == instrument;
 
   @override
-  int get hashCode => Object.hash(midi, volume, effect, fxCmd, fxParam);
+  int get hashCode =>
+      Object.hash(midi, volume, effect, fxCmd, fxParam, instrument);
 }
 
 /// Collapses a channel's cells into runs using the classic tracker rule: a

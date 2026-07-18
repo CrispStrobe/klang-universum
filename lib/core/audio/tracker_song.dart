@@ -26,7 +26,8 @@
 
 import 'dart:typed_data';
 
-import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
+import 'package:comet_beat/core/audio/synth.dart'
+    show Instrument, kSampleRate, wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart';
 
@@ -65,8 +66,25 @@ class TrackerPattern {
 
 /// The Advanced Tracker document. Owns a [TrackerEngine] (the band + the live
 /// pattern being edited), the list of [patterns], and the [order] list.
+/// The default shared instrument pool ([TrackerSong.instruments]): the four
+/// built-in additive voices, so an authored song can reference an instrument
+/// number 1..4 out of the box. Module import replaces this with the module's
+/// own instruments.
+List<TrackerInstrument> defaultInstrumentPool() => const [
+      AdditiveInstrument('piano', Instrument.piano),
+      AdditiveInstrument('cello', Instrument.cello),
+      AdditiveInstrument('flute', Instrument.flute),
+      AdditiveInstrument('musicBox', Instrument.musicBox),
+    ];
+
 class TrackerSong {
-  TrackerSong._(this._engine, this.patterns, this.order, this._current);
+  TrackerSong._(
+    this._engine,
+    this.patterns,
+    this.order,
+    this._current,
+    this.instruments,
+  );
 
   /// A new song with the default band ([defaultTrackerChannels]) and one empty
   /// pattern of [rows] steps at [timing].
@@ -74,6 +92,7 @@ class TrackerSong {
     List<TrackerChannel>? channels,
     TrackerTiming? timing,
     int patternCount = 1,
+    List<TrackerInstrument>? instruments,
   }) {
     final t = timing ?? const TrackerTiming(rows: 32);
     final band = channels ?? defaultTrackerChannels(rows: t.rows);
@@ -87,7 +106,13 @@ class TrackerSong {
         ),
     ];
     engine.importCells(patterns.first.cells);
-    return TrackerSong._(engine, patterns, [0], 0);
+    return TrackerSong._(
+      engine,
+      patterns,
+      [0],
+      0,
+      instruments ?? defaultInstrumentPool(),
+    );
   }
 
   /// Builds a song directly from prepared [channels] + [patterns] + [order] —
@@ -99,6 +124,7 @@ class TrackerSong {
     required TrackerTiming timing,
     required List<TrackerPattern> patterns,
     required List<int> order,
+    List<TrackerInstrument>? instruments,
   }) {
     final engine = TrackerEngine(channels: channels, timing: timing);
     final pats = patterns.isEmpty
@@ -112,7 +138,13 @@ class TrackerSong {
         : patterns;
     engine.importCells(pats.first.cells);
     final ord = order.isEmpty ? [0] : List<int>.of(order);
-    return TrackerSong._(engine, pats, ord, 0);
+    return TrackerSong._(
+      engine,
+      pats,
+      ord,
+      0,
+      instruments ?? defaultInstrumentPool(),
+    );
   }
 
   TrackerEngine _engine;
@@ -123,6 +155,12 @@ class TrackerSong {
 
   /// The order list: indices into [patterns], in play order (>= 1). May repeat.
   final List<int> order;
+
+  /// The shared INSTRUMENT POOL a cell's [TrackerCell.instrument] indexes
+  /// (1-based). Defaults to [defaultInstrumentPool]; module import supplies the
+  /// module's instruments. The channel's own instrument is the fallback for a
+  /// cell with instrument 0.
+  final List<TrackerInstrument> instruments;
 
   int _current;
 
@@ -168,6 +206,12 @@ class TrackerSong {
   /// the render methods [syncCurrent] first so live edits are seen.
   bool get usesCommands =>
       patterns.any((p) => p.cells.any((col) => col.any((c) => c.hasCommand)));
+
+  /// Whether any cell names a per-cell instrument ([TrackerCell.instrument]) — a
+  /// second reason to route rendering through the replayer (which honours it).
+  bool get usesInstruments => patterns.any(
+        (p) => p.cells.any((col) => col.any((c) => c.instrument != 0)),
+      );
 
   // --- Pattern editing (delegates to the engine on the current pattern) ---
 
@@ -425,8 +469,13 @@ class TrackerSong {
   /// cached offline mix.
   Uint8List renderCurrentPatternWav() {
     syncCurrent();
-    if (current.cells.any((col) => col.any((c) => c.hasCommand))) {
-      return wavBytes(replayPattern(channels, current.cells, timing).pcm);
+    final needsReplayer = current.cells.any(
+      (col) => col.any((c) => c.hasCommand || c.instrument != 0),
+    );
+    if (needsReplayer) {
+      return wavBytes(
+        replayPattern(channels, current.cells, timing, pool: instruments).pcm,
+      );
     }
     return _engine.renderLoop();
   }
@@ -436,7 +485,9 @@ class TrackerSong {
   /// through the tick [replaySong] when any pattern [usesCommands].
   Uint8List renderSongWav() {
     syncCurrent();
-    if (usesCommands) return wavBytes(replaySong(this).pcm);
+    if (usesCommands || usesInstruments) {
+      return wavBytes(replaySong(this).pcm);
+    }
     return renderSong(_engine, [for (final i in order) patterns[i].cells]);
   }
 
