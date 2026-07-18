@@ -116,84 +116,92 @@ String _functionText(AppLocalizations l, HarmonicFunction f) => switch (f) {
 
 /// Show [info] as a small bottom sheet.
 Future<void> showInspect(BuildContext context, InspectInfo info) {
-  final l10n = AppLocalizations.of(context)!;
-  final theme = Theme.of(context);
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
     builder: (_) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.search, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  info.noteNames,
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (info.degree != null)
-              Text(info.degree!, style: theme.textTheme.bodyMedium),
-            // The chord row shows whenever a chord is known — the function
-            // colour swatch appears only when a key gave it a T/S/D role (the
-            // Tracker has no key, so it shows a bare chord name).
-            if (info.chordSymbol != null || info.function != null) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  if (info.function != null) ...[
-                    Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: harmonicFunctionColor(info.function!),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  Expanded(
-                    child: Text(
-                      [
-                        if (info.chordSymbol != null) info.chordSymbol,
-                        if (info.roman != null) info.roman,
-                        if (info.function != null)
-                          _functionText(l10n, info.function!),
-                      ].join(' · '),
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (info.detail != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                info.detail!,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-            if (info.isNonChordTone) ...[
-              const SizedBox(height: 6),
-              Text(
-                l10n.analysisNonChordTones,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ],
-        ),
+        child: inspectBody(context, info),
       ),
     ),
+  );
+}
+
+/// The inspector card's contents (title + degree + chord row + detail + NCT),
+/// shared by the tap [showInspect] bottom sheet and the desktop hover overlay.
+Widget inspectBody(BuildContext context, InspectInfo info) {
+  final l10n = AppLocalizations.of(context)!;
+  final theme = Theme.of(context);
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.search, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            info.noteNames,
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      if (info.degree != null)
+        Text(info.degree!, style: theme.textTheme.bodyMedium),
+      // The chord row shows whenever a chord is known — the function colour
+      // swatch appears only when a key gave it a T/S/D role (the Tracker has no
+      // key, so it shows a bare chord name).
+      if (info.chordSymbol != null || info.function != null) ...[
+        const SizedBox(height: 6),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (info.function != null) ...[
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: harmonicFunctionColor(info.function!),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                [
+                  if (info.chordSymbol != null) info.chordSymbol,
+                  if (info.roman != null) info.roman,
+                  if (info.function != null)
+                    _functionText(l10n, info.function!),
+                ].join(' · '),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ],
+      if (info.detail != null) ...[
+        const SizedBox(height: 6),
+        Text(
+          info.detail!,
+          style: theme.textTheme.bodyMedium
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ],
+      if (info.isNonChordTone) ...[
+        const SizedBox(height: 6),
+        Text(
+          l10n.analysisNonChordTones,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ],
+    ],
   );
 }

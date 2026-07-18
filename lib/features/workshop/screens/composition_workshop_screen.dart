@@ -464,6 +464,13 @@ abstract interface class CompositionWorkshopTester {
   /// Test seam: begin a drag on [id] and report whether it took. In Inspect
   /// mode a drag is suppressed (read-only), so this returns false.
   bool debugTryDragStart(String id);
+
+  /// Test seam: whether the 🔍 desktop hover card is currently showing a note.
+  bool get debugHoverCardShown;
+
+  /// Test seam: drive the hover-inspect path for element [id] as if the mouse
+  /// were over it (bypasses pixel→region hit-testing). Pass null to clear.
+  void debugHoverElement(String? id);
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
@@ -589,6 +596,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   Offset? _pointerLocal;
   Offset? _dragStartLocal;
 
+  // 🔍 Desktop hover-inspect: the info + canvas position of the note under the
+  // mouse while Inspect mode is on (a "looking glass" you sweep over the music).
+  // Touch has no hover, so this stays null there; tap still opens the full sheet.
+  InspectInfo? _hoverInfo;
+  Offset? _hoverAt;
+  String? _hoverId; // dedupe: only re-analyse when the hovered element changes
+
   // Start the sweepable piano scrolled to around C3 (24 = C1, 7 white/octave).
   final _pianoScroll =
       ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
@@ -697,6 +711,23 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     return took;
   }
 
+  @override
+  bool get debugHoverCardShown => _inspect && _hoverInfo != null;
+
+  @override
+  void debugHoverElement(String? id) {
+    if (id == null || !_inspect) {
+      _clearHoverInspect();
+      return;
+    }
+    final score = _doc.buildScore();
+    setState(() {
+      _hoverId = id;
+      _hoverInfo = inspectElement(score, id, analyze(score));
+      _hoverAt = const Offset(20, 20);
+    });
+  }
+
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
 
@@ -775,6 +806,77 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     }
     final info = inspectElement(score, localId, analyze(score));
     if (info != null) showInspect(context, info);
+  }
+
+  /// 🔍 Desktop hover in Inspect mode: resolve the note under the cursor
+  /// ([localPos] is in the canvas/region-controller space) and show a small
+  /// floating card. Only re-runs analyze() when the hovered element changes, so
+  /// a pixel-by-pixel sweep is cheap. Clears when off a note or Inspect is off.
+  void _onCanvasHover(Offset localPos) {
+    if (!_inspect) {
+      if (_hoverInfo != null) {
+        setState(() {
+          _hoverInfo = null;
+          _hoverId = null;
+        });
+      }
+      return;
+    }
+    final ids = _regions.elementIdsIn(
+      Rect.fromCenter(center: localPos, width: 6, height: 6),
+    );
+    final id = ids.isEmpty ? null : ids.first;
+    if (id == _hoverId) {
+      if (id != null && _hoverAt != localPos) {
+        setState(() => _hoverAt = localPos); // move the card with the cursor
+      }
+      return;
+    }
+    if (id == null) {
+      setState(() {
+        _hoverInfo = null;
+        _hoverId = null;
+      });
+      return;
+    }
+    final score = _doc.buildScore();
+    setState(() {
+      _hoverId = id;
+      _hoverInfo = inspectElement(score, id, analyze(score));
+      _hoverAt = localPos;
+    });
+  }
+
+  void _clearHoverInspect() {
+    if (_hoverInfo != null || _hoverId != null) {
+      setState(() {
+        _hoverInfo = null;
+        _hoverId = null;
+      });
+    }
+  }
+
+  /// The floating hover card, positioned just off the cursor. `IgnorePointer`
+  /// keeps it from stealing the hover (which would flicker onExit/onHover).
+  Widget _hoverInspectCard() {
+    final at = _hoverAt!;
+    return Positioned(
+      left: at.dx + 14,
+      top: at.dy + 14,
+      child: IgnorePointer(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 260),
+          child: Card(
+            elevation: 4,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: inspectBody(context, _hoverInfo!),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _onElementTap(String id) {
@@ -3198,78 +3300,91 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                           .clamp(0.0, 4000.0),
                                       // Passively track the canvas-local pointer so a drag's
                                       // drop position can reorder a note (fine, C7 regions).
-                                      child: Listener(
-                                        onPointerDown: (e) =>
-                                            _pointerLocal = e.localPosition,
-                                        onPointerMove: (e) =>
-                                            _pointerLocal = e.localPosition,
-                                        child: Stack(
-                                          children: [
-                                            _grand
-                                                ? InteractiveGrandStaffView(
-                                                    grandStaff:
-                                                        _doc.buildGrandStaff(),
-                                                    theme: theme,
-                                                    staffSpace: _zoom,
-                                                    showMeasureNumbers:
-                                                        _barNumbers,
-                                                    showNoteNames: _noteNames,
-                                                    noteNameStyle:
-                                                        _noteNameStyle,
-                                                    controller: _regions,
-                                                    elementColors:
-                                                        elementColors,
-                                                    dragPreviewOpacity:
-                                                        _kDragPreviewOpacity,
-                                                    onElementTap: _onElementTap,
-                                                    onStaffTap: _onStaffTap,
-                                                    onHover: _onHover,
-                                                    ghostTarget: _hover,
-                                                    ghostDuration:
-                                                        _ghostDuration,
-                                                    caret: caret,
-                                                    onElementDragStart:
-                                                        _onElementDragStart,
-                                                    onElementDragUpdate:
-                                                        _onElementDragUpdate,
-                                                    onElementDragEnd:
-                                                        _onElementDragEnd,
-                                                  )
-                                                : MultiSystemView(
-                                                    score: _doc.buildScore(),
-                                                    theme: theme,
-                                                    staffSpace: _zoom,
-                                                    showMeasureNumbers:
-                                                        _barNumbers,
-                                                    showNoteNames: _noteNames,
-                                                    noteNameStyle:
-                                                        _noteNameStyle,
-                                                    controller: _regions,
-                                                    elementColors:
-                                                        elementColors,
-                                                    dragPreviewOpacity:
-                                                        _kDragPreviewOpacity,
-                                                    onElementTap: _onElementTap,
-                                                    onStaffTap: _onStaffTap,
-                                                    onHover: _onHover,
-                                                    ghostTarget: _hover,
-                                                    ghostDuration:
-                                                        _ghostDuration,
-                                                    caret: caret,
-                                                    onElementDragStart:
-                                                        _onElementDragStart,
-                                                    onElementDragUpdate:
-                                                        _onElementDragUpdate,
-                                                    onElementDragEnd:
-                                                        _onElementDragEnd,
+                                      // The MouseRegion adds the desktop 🔍 hover
+                                      // sweep (no-op on touch).
+                                      child: MouseRegion(
+                                        onHover: (e) =>
+                                            _onCanvasHover(e.localPosition),
+                                        onExit: (_) => _clearHoverInspect(),
+                                        child: Listener(
+                                          onPointerDown: (e) =>
+                                              _pointerLocal = e.localPosition,
+                                          onPointerMove: (e) =>
+                                              _pointerLocal = e.localPosition,
+                                          child: Stack(
+                                            children: [
+                                              _grand
+                                                  ? InteractiveGrandStaffView(
+                                                      grandStaff: _doc
+                                                          .buildGrandStaff(),
+                                                      theme: theme,
+                                                      staffSpace: _zoom,
+                                                      showMeasureNumbers:
+                                                          _barNumbers,
+                                                      showNoteNames: _noteNames,
+                                                      noteNameStyle:
+                                                          _noteNameStyle,
+                                                      controller: _regions,
+                                                      elementColors:
+                                                          elementColors,
+                                                      dragPreviewOpacity:
+                                                          _kDragPreviewOpacity,
+                                                      onElementTap:
+                                                          _onElementTap,
+                                                      onStaffTap: _onStaffTap,
+                                                      onHover: _onHover,
+                                                      ghostTarget: _hover,
+                                                      ghostDuration:
+                                                          _ghostDuration,
+                                                      caret: caret,
+                                                      onElementDragStart:
+                                                          _onElementDragStart,
+                                                      onElementDragUpdate:
+                                                          _onElementDragUpdate,
+                                                      onElementDragEnd:
+                                                          _onElementDragEnd,
+                                                    )
+                                                  : MultiSystemView(
+                                                      score: _doc.buildScore(),
+                                                      theme: theme,
+                                                      staffSpace: _zoom,
+                                                      showMeasureNumbers:
+                                                          _barNumbers,
+                                                      showNoteNames: _noteNames,
+                                                      noteNameStyle:
+                                                          _noteNameStyle,
+                                                      controller: _regions,
+                                                      elementColors:
+                                                          elementColors,
+                                                      dragPreviewOpacity:
+                                                          _kDragPreviewOpacity,
+                                                      onElementTap:
+                                                          _onElementTap,
+                                                      onStaffTap: _onStaffTap,
+                                                      onHover: _onHover,
+                                                      ghostTarget: _hover,
+                                                      ghostDuration:
+                                                          _ghostDuration,
+                                                      caret: caret,
+                                                      onElementDragStart:
+                                                          _onElementDragStart,
+                                                      onElementDragUpdate:
+                                                          _onElementDragUpdate,
+                                                      onElementDragEnd:
+                                                          _onElementDragEnd,
+                                                    ),
+                                              if (_marquee)
+                                                Positioned.fill(
+                                                  child: _MarqueeOverlay(
+                                                    onSelect: _applyMarquee,
                                                   ),
-                                            if (_marquee)
-                                              Positioned.fill(
-                                                child: _MarqueeOverlay(
-                                                  onSelect: _applyMarquee,
                                                 ),
-                                              ),
-                                          ],
+                                              if (_inspect &&
+                                                  _hoverInfo != null &&
+                                                  _hoverAt != null)
+                                                _hoverInspectCard(),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),

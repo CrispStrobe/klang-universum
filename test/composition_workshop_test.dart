@@ -139,6 +139,40 @@ void main() {
     expect(find.textContaining('major'), findsOneWidget); // "… of C major"
   });
 
+  testWidgets('🔍 Inspect mode: desktop hover shows a floating note card',
+      (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final editor = _editor(tester);
+
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    final id = editor.debugFirstNoteId;
+    expect(id, isNotNull);
+
+    // Hover does nothing until Inspect mode is on.
+    editor.debugHoverElement(id);
+    await tester.pump();
+    expect(editor.debugHoverCardShown, isFalse);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.inspectMode));
+    await tester.pumpAndSettle();
+
+    // Now hovering the note raises the floating card…
+    editor.debugHoverElement(id);
+    await tester.pump();
+    expect(editor.debugHoverCardShown, isTrue);
+    expect(find.byType(Card), findsWidgets);
+    expect(find.textContaining('major'), findsOneWidget); // "… of C major"
+
+    // …and leaving the note clears it.
+    editor.debugHoverElement(null);
+    await tester.pump();
+    expect(editor.debugHoverCardShown, isFalse);
+  });
+
   testWidgets('the rest button adds a rest; bars fill per the meter',
       (tester) async {
     await pump(tester);
