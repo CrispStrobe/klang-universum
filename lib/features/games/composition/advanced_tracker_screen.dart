@@ -601,11 +601,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     });
   }
 
+  /// Plays a short one-shot of [midi] so you HEAR a note as you place it (FT2
+  /// preview). Skipped while playing — the loop already sounds the pattern.
+  void _preview(int midi) {
+    if (_clock.isRunning) return;
+    final audio = context.read<AudioService>();
+    if (audio.soundOn) audio.playMidiNote(midi, ms: 350);
+  }
+
   /// Enters [midi] at the cursor and advances by the edit-step (wrapping). In
   /// live-record mode (playing) it lands at the SOUNDING row instead, preserving
   /// any existing volume/effect on that cell, and doesn't move the edit cursor —
   /// jam straight into the pattern.
   void _enterNoteAtCursor(int midi) {
+    _preview(midi);
     _pushUndo();
     if (_recording && _clock.isRunning && _row.value >= 0) {
       final row = _row.value;
