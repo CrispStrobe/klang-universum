@@ -720,10 +720,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       _clearHoverInspect();
       return;
     }
-    final score = _doc.buildScore();
     setState(() {
       _hoverId = id;
-      _hoverInfo = inspectElement(score, id, analyze(score));
+      _hoverInfo = _inspectInfoForId(id);
       _hoverAt = const Offset(20, 20);
     });
   }
@@ -790,10 +789,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     _placePitch(pitch);
   }
 
-  /// 🔍 Looking Glass: describe the tapped note (name + degree + chord/roman/
-  /// function) instead of editing it. Works in single-part (local id) and
-  /// full-score (global `p<part>:<rawId>`) modes by resolving the owning score.
-  void _inspectTapped(String id) {
+  /// 🔍 Resolve a note [id] to its inspector card. Works in single-part (local
+  /// id) and full-score (global `p<part>:<rawId>`) modes by picking the owning
+  /// score. Null if the id isn't a note.
+  InspectInfo? _inspectInfoForId(String id) {
     final Score score;
     final String localId;
     final part = MultiPartDocument.partIndexOf(id);
@@ -804,7 +803,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       score = _doc.buildScore();
       localId = id;
     }
-    final info = inspectElement(score, localId, analyze(score));
+    return inspectElement(score, localId, analyze(score));
+  }
+
+  /// 🔍 Looking Glass: describe the tapped note instead of editing it.
+  void _inspectTapped(String id) {
+    final info = _inspectInfoForId(id);
     if (info != null) showInspect(context, info);
   }
 
@@ -839,10 +843,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       });
       return;
     }
-    final score = _doc.buildScore();
     setState(() {
       _hoverId = id;
-      _hoverInfo = inspectElement(score, id, analyze(score));
+      _hoverInfo = _inspectInfoForId(id);
       _hoverAt = localPos;
     });
   }
@@ -856,26 +859,46 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     }
   }
 
-  /// The floating hover card, positioned just off the cursor. `IgnorePointer`
-  /// keeps it from stealing the hover (which would flicker onExit/onHover).
+  /// 🔍 Hover-inspect on the multi-part full-score canvas. The canvas resolves
+  /// the global id inside its own (scrolling) space; we just look up the card.
+  /// [_hoverAt] stays null here so the card pins to a fixed corner (the canvas
+  /// scrolls, so a cursor-anchored card would drift).
+  void _onMpElementHover(String? globalId) {
+    if (!_inspect || globalId == null) {
+      if (_hoverId != null) _clearHoverInspect();
+      return;
+    }
+    if (globalId == _hoverId) return;
+    setState(() {
+      _hoverId = globalId;
+      _hoverInfo = _inspectInfoForId(globalId);
+      _hoverAt = null; // fixed-corner card on the multi-part canvas
+    });
+  }
+
+  /// The floating hover card. Anchored just off the cursor ([_hoverAt] set, the
+  /// single-part canvas) or pinned to the top-left corner ([_hoverAt] null, the
+  /// scrolling multi-part canvas). `IgnorePointer` keeps it from stealing the
+  /// hover (which would flicker onExit/onHover).
   Widget _hoverInspectCard() {
-    final at = _hoverAt!;
-    return Positioned(
-      left: at.dx + 14,
-      top: at.dy + 14,
-      child: IgnorePointer(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 260),
-          child: Card(
-            elevation: 4,
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: inspectBody(context, _hoverInfo!),
-            ),
+    final at = _hoverAt;
+    final card = IgnorePointer(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 260),
+        child: Card(
+          elevation: 4,
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: inspectBody(context, _hoverInfo!),
           ),
         ),
       ),
+    );
+    return Positioned(
+      left: (at?.dx ?? 0) + 14,
+      top: (at?.dy ?? 0) + 14,
+      child: card,
     );
   }
 
@@ -3262,6 +3285,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                       onElementTap: _onGlobalElementTap,
                                       onStaffTap: _onMpStaffTap,
                                       onHover: _onMpHover,
+                                      onElementHover:
+                                          _inspect ? _onMpElementHover : null,
                                       ghostPart: _hoverPart,
                                       ghostTarget: _hover,
                                       ghostDuration: _ghostDuration,
@@ -3287,6 +3312,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                                           onSelect: _applyMpMarquee,
                                         ),
                                       ),
+                                    if (_inspect && _hoverInfo != null)
+                                      _hoverInspectCard(),
                                   ],
                                 )
                               // Bind the engraving width to the visible viewport so
