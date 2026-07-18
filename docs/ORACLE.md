@@ -75,9 +75,18 @@ was found before shipping a mapping that silently wouldn't play.
   (A3→C4→G4→C5) matching openmpt123's rise (A3→B3→F4→C5) — both reach C5; the
   intermediate rate differs by our documented musical-approximation porta rate.
   Effect-free sample channels keep the byte-identical whole-channel render (gated
-  by `_hasPerTickEffect`). Follow-ups: the variable-timing sample path
-  (`_renderNonAdditiveVariable`) is still one-shot-per-note (no per-tick yet);
-  sample LOOP points are dropped on import (one-shot notes).
+  by `_hasPerTickEffect`).
+- **Sample LOOP points: DONE + oracle-verified.** `SampleInstrument` carries
+  `loopStart`/`loopLength` (scaled to the engine rate in `sampleInstrumentFromDoc`);
+  looping notes render through a wrapping read-pointer (`_resampleLooping` in the
+  whole-channel path, and an inline wrap in the per-tick sample voice). A
+  looping-sample S3M (a short sine, loop over the whole sample, one note held ~16
+  rows) reads as a **flat sustain across the whole note in BOTH** openmpt123 and
+  ours (per-0.2s RMS ≈ constant), whereas the same sample with the loop flag OFF
+  decays to silence after ~one sample length in both — exactly the loop/one-shot
+  distinction. Non-looping samples keep the byte-identical one-shot resample path.
+  Follow-up remaining: the variable-timing sample path
+  (`_renderNonAdditiveVariable`) is still one-shot-per-note (no per-tick yet).
 - **S3M** command→`fxCmd`/`fxParam` table: implemented in
   `module_convert._s3mEffectToFx` (core commands, structural test + oracle-
   verified). **IT** (`_itEffectToFx`) is DONE too — oracle-verified: an IT porta reads NEARLY IDENTICALLY to openmpt123 (A2 C3 G3 C4 F#4 C5 F5 C6 F6 B6 in both). All four import formats (MOD/XM/S3M/IT) now carry + SOUND their effects.

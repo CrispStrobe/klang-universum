@@ -622,6 +622,10 @@ void _renderSampleChannelInto(
 
     final baseMidi = cur.baseMidi;
     final s = cur.sample;
+    final loops = cur.loops;
+    final loopStart = cur.loopStart;
+    final loopLen = cur.loopLength;
+    final loopEnd = loopStart + loopLen;
     final rowStart = timing.stepStartSample(r);
     final rowEnd =
         r + 1 < rows ? timing.stepStartSample(r + 1) : timing.totalSamples;
@@ -637,10 +641,15 @@ void _renderSampleChannelInto(
       final ratio = pow(2.0, (state.pitch - baseMidi) / 12.0).toDouble();
       final vol = (state.volume / kMaxVolume) * voice.noteVolume;
       for (var i = ts; i < te && i < stem.length; i++) {
+        if (loops && readPos >= loopEnd) {
+          readPos = loopStart + ((readPos - loopStart) % loopLen);
+        }
         final idx = readPos.floor();
-        if (idx >= s.length - 1) break; // one-shot: sample exhausted
+        if (idx >= s.length - 1 && !loops) break; // one-shot: sample exhausted
         final frac = readPos - idx;
-        final sampleVal = s[idx] * (1 - frac) + s[idx + 1] * frac;
+        final next =
+            idx + 1 < s.length ? s[idx + 1] : (loops ? s[loopStart] : 0.0);
+        final sampleVal = s[idx] * (1 - frac) + next * frac;
         final t = (i - noteStartSample) / kSampleRate;
         final attack = t < declickSec ? t / declickSec : 1.0;
         final el = hasEnv ? env.levelAt(t * 1000) : 1.0;

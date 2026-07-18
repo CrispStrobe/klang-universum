@@ -296,6 +296,8 @@ class SampleInstrument implements TrackerInstrument {
     this.sample, {
     this.baseMidi = 60,
     this.envelope = Envelope.declick,
+    this.loopStart = 0,
+    this.loopLength = 0,
   });
 
   /// Records-once: applies [fx] to [raw] and keeps the result as the sample.
@@ -322,6 +324,18 @@ class SampleInstrument implements TrackerInstrument {
   /// A per-note volume envelope (default a gentle declick attack/release).
   final Envelope envelope;
 
+  /// Loop points (in samples of [sample], at the engine rate). [loopLength] `0`
+  /// = no loop (a one-shot note, the default — byte-identical to before). When
+  /// set, a note rings by repeating `[loopStart, loopStart+loopLength)` after the
+  /// one-shot lead-in, so a sustained note doesn't cut off at the sample's end.
+  final int loopStart;
+  final int loopLength;
+
+  bool get loops =>
+      loopLength > 0 &&
+      loopStart >= 0 &&
+      loopStart + loopLength <= sample.length;
+
   @override
   Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) {
     final out = Float64List(timing.totalSamples);
@@ -341,16 +355,20 @@ class SampleInstrument implements TrackerInstrument {
             timing.stepStartSample(startStep + steps) - startSample;
         final baseRatio = midiToFrequency(midi) / baseFreq;
         final maxOut = min(runSamples, out.length - startSample);
-        // A pitch envelope glides the resample ratio; else a fixed-ratio pitch.
-        final buf = envelope.pitchStart != 0 && maxOut > 0
-            ? resampleGlide(
-                src,
-                ratioStart: baseRatio * pow(2, envelope.pitchStart / 12),
-                ratioEnd: baseRatio,
-                glideSamples: (envelope.pitchTime * kSampleRate).round(),
-                outLen: maxOut,
-              )
-            : resampleCubic(src, baseRatio);
+        // Looping sample → a wrapping read-pointer fills the whole run (so a
+        // sustained note doesn't cut off). Else the existing one-shot resample
+        // (byte-identical): a pitch-envelope glide, or a fixed-ratio cubic.
+        final buf = loops && maxOut > 0
+            ? _resampleLooping(baseRatio, maxOut, offset)
+            : envelope.pitchStart != 0 && maxOut > 0
+                ? resampleGlide(
+                    src,
+                    ratioStart: baseRatio * pow(2, envelope.pitchStart / 12),
+                    ratioEnd: baseRatio,
+                    glideSamples: (envelope.pitchTime * kSampleRate).round(),
+                    outLen: maxOut,
+                  )
+                : resampleCubic(src, baseRatio);
         final n = min(min(buf.length, runSamples), out.length - startSample);
         if (n > 0) {
           // Envelope only the played portion, so the release fades at the note's
@@ -365,6 +383,29 @@ class SampleInstrument implements TrackerInstrument {
         }
       }
       startStep += steps;
+    }
+    return out;
+  }
+
+  /// A [outLen]-sample render of a LOOPING sample at [ratio] (linear interp),
+  /// starting at sample [startPos]. The lead-in `[0, loopStart+loopLength)` plays
+  /// once, then `[loopStart, loopStart+loopLength)` repeats — so a note longer
+  /// than the sample sustains instead of falling silent.
+  Float64List _resampleLooping(double ratio, int outLen, int startPos) {
+    final out = Float64List(outLen);
+    final loopEnd = loopStart + loopLength;
+    var pos = startPos.toDouble();
+    for (var i = 0; i < outLen; i++) {
+      var p = pos;
+      if (p >= loopEnd) p = loopStart + ((p - loopStart) % loopLength);
+      final idx = p.floor();
+      if (idx >= sample.length - 1) {
+        out[i] = idx < sample.length ? sample[idx] : 0.0;
+      } else {
+        final frac = p - idx;
+        out[i] = sample[idx] * (1 - frac) + sample[idx + 1] * frac;
+      }
+      pos += ratio;
     }
     return out;
   }

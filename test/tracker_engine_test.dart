@@ -444,6 +444,36 @@ void main() {
       final buf = inst.renderChannel(ch.cells, timing);
       expect(buf.any((v) => v != 0), isTrue);
     });
+
+    test('a looping sample sustains past its one-shot length', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final short = sine(0.02, 261.63); // ~882 samples, well under the note
+      final oneShot = SampleInstrument('v', short); // default loopLength 0
+      final looped = SampleInstrument('v', short, loopLength: short.length);
+      final cells = List<TrackerCell>.filled(timing.rows, TrackerCell.empty)
+        ..[0] = const TrackerCell(midi: 60); // baseMidi 60 → ratio 1
+      final a = oneShot.renderChannel(cells, timing);
+      final b = looped.renderChannel(cells, timing);
+      // Well past the sample's one-shot length: the one-shot has fallen silent…
+      final probe = short.length + 20000;
+      expect(
+        a.sublist(probe, probe + 500).every((v) => v.abs() < 1e-9),
+        isTrue,
+      );
+      // …but the loop is still sounding.
+      expect(b.sublist(probe, probe + 500).any((v) => v.abs() > 1e-3), isTrue);
+    });
+
+    test('a non-looping sample keeps the one-shot resample path', () {
+      // loopLength 0 = no loop → byte-identical to the pre-loop-support render.
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      final noLoop = SampleInstrument('v', sine(0.4, 261.63));
+      final cells = List<TrackerCell>.filled(timing.rows, TrackerCell.empty)
+        ..[0] = const TrackerCell(midi: 60);
+      final buf = noLoop.renderChannel(cells, timing);
+      expect(noLoop.loops, isFalse);
+      expect(buf.any((v) => v != 0), isTrue);
+    });
   });
 
   group('swing', () {

@@ -35,8 +35,19 @@ SampleInstrument sampleInstrumentFromDoc(
     return SampleInstrument(id, Float64List(0), baseMidi: baseMidi);
   }
   final c5 = sample.c5speed > 0 ? sample.c5speed : 8363;
-  final atEngineRate = resampleCubic(sample.pcm, c5 / engineRate);
-  return SampleInstrument(id, atEngineRate, baseMidi: baseMidi);
+  final ratio = c5 / engineRate;
+  final atEngineRate = resampleCubic(sample.pcm, ratio);
+  // Loop points are in ORIGINAL-sample units → scale to the engine rate (output
+  // index = original / ratio). loopLength 0 = no loop.
+  final loopStart = (sample.loopStart / ratio).round();
+  final loopLength = (sample.loopLength / ratio).round();
+  return SampleInstrument(
+    id,
+    atEngineRate,
+    baseMidi: baseMidi,
+    loopStart: loopStart,
+    loopLength: loopLength,
+  );
 }
 
 /// Borrows sample [index] from a module's raw [bytes] as a [SampleInstrument].
