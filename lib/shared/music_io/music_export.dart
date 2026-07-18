@@ -4,10 +4,10 @@
 // holds a MultiPartScore (Song Book, trackers, Loop Mixer, …) can offer the
 // whole library's writers from one place instead of copy-pasting per screen.
 //
-// Multi-part formats (MusicXML/.mxl/ABC/MEI/MuseScore/kern/MIDI/module) keep
-// every voice; the remaining single-Score engrave formats (LilyPond/Braille/PDF)
-// export the first part (mirrors the Score Workshop's "active part" behaviour) —
-// the library has no multi-part writer for those yet.
+// Multi-part formats keep every voice (MusicXML/.mxl/ABC/MEI/MuseScore/kern/
+// LilyPond/MIDI/module); only Braille and PDF export the first part (a
+// single-Score engrave that mirrors the Score Workshop's "active part") — the
+// library has no multi-part writer for those yet.
 
 import 'dart:async';
 import 'dart:convert';
@@ -77,7 +77,7 @@ final List<_ExportFormat> _kFormats = [
   _ExportFormat(
     'LilyPond',
     'ly',
-    (mp, names) => _utf8(scoreToLilyPond(_first(mp))),
+    (mp, names) => _utf8(multiPartToLilyPond(mp, partNames: names)),
   ),
   _ExportFormat(
     'Braille',

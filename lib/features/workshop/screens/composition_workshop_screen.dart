@@ -2639,7 +2639,16 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               : scoreToMscx(score),
         );
       case 'ly':
-        return (null, scoreToLilyPond(score));
+        // LilyPond typesets every part (a StaffGroup) when multi-part.
+        return (
+          null,
+          _mpd.partCount > 1
+              ? multiPartToLilyPond(
+                  _mpd.buildMultiPart(),
+                  partNames: _mpd.names,
+                )
+              : scoreToLilyPond(score),
+        );
       case 'brf':
         return (null, scoreToBraille(score));
       case 'svg':
