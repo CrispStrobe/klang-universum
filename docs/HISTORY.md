@@ -628,6 +628,15 @@ Games built on crisp_notation capabilities the app didn't use before.
   bars → seamless loop lengths), `snapPunch` (snap a record window to bar
   boundaries → quantised punch-in/out), and a generic `LoopStack<T>` overdub
   layer stack (undo/redo + per-layer mute). 9 headless tests.
+- **DAW timeline core** (audio core) — the "vector, not bitmap" foundation for a
+  multi-track DAW Workshop tool: a clip references its source MODEL and the mix
+  rasterises on demand + caches per source, so editing a source updates its clip
+  (fits because every module renders offline+purely to PCM). `daw_timeline.dart`
+  (`ClipSource`/`Clip`/`DawTrack`/`DawTimeline`/`renderTimeline` with per-source
+  cache, sample-accurate placement, gain, tanh soft-limit) + `daw_sources.dart`
+  adapters (`DrumSource` a DrumKit beat, `GrooveSource` a Loop Mixer groove).
+  Offline render-then-play (no realtime graph). 11 headless tests; design in
+  `docs/DAW_SCOPING.md`.
 - **DrumKit undo/redo** — a snapshot history (deep-copied pattern before each
   mutation) backs app-bar Undo/Redo across grid edits, whole record takes, and
   clear; a fresh edit drops the redo branch. Fills the gap left by the new
