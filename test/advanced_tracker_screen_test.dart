@@ -308,6 +308,24 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('copy instrument reuses a recorded sample on another track',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    final clip = Float64List(4410);
+    for (var i = 0; i < clip.length; i++) {
+      clip[i] = 0.5 * sin(2 * pi * 220 * i / 44100);
+    }
+    game.injectRecording(0, clip, VoiceEffect.normal); // ch 0 -> 'rec' sample
+    final srcId = game.debugInstrumentId(0);
+    expect(game.debugInstrumentId(1), isNot(srcId)); // ch 1 differs to start
+
+    game.copyInstrument(0, 1);
+    await tester.pump();
+    expect(game.debugInstrumentId(1), srcId); // now shares the sample
+  });
+
   testWidgets('imports a real module and can save it to the Song Book',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

@@ -3128,6 +3128,24 @@ abstract class AppLocalizations {
   /// **'Use for this track'**
   String get trackerAssignSample;
 
+  /// No description provided for @trackerLoadWav.
+  ///
+  /// In en, this message translates to:
+  /// **'Load WAV file…'**
+  String get trackerLoadWav;
+
+  /// No description provided for @trackerPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get trackerPreview;
+
+  /// No description provided for @trackerCopyInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy instrument to…'**
+  String get trackerCopyInstrument;
+
   /// No description provided for @trackerBlock.
   ///
   /// In en, this message translates to:

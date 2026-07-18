@@ -1614,6 +1614,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerAssignSample => 'Use for this track';
 
   @override
+  String get trackerLoadWav => 'Load WAV file…';
+
+  @override
+  String get trackerPreview => 'Preview';
+
+  @override
+  String get trackerCopyInstrument => 'Copy instrument to…';
+
+  @override
   String get trackerBlock => 'Block';
 
   @override

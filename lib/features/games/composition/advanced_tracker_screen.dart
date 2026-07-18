@@ -44,12 +44,15 @@ import 'package:comet_beat/core/audio/mod/module_convert.dart'
 import 'package:comet_beat/core/audio/mod/module_doc.dart' show ModuleFormat;
 import 'package:comet_beat/core/audio/mod/module_notation.dart'
     show multiPartToModuleDoc;
+import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart'
     show RowTiming, resolveTimingMap, rowIndexAtMs;
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
+import 'package:comet_beat/core/audio/wav_io.dart'
+    show readWavPcm16, wavToMonoFloat;
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/services/audio_service.dart';
@@ -223,6 +226,13 @@ abstract interface class AdvancedTrackerTester {
   /// device-free path onto the sample editor (the mic is device-only).
   void injectRecording(int channel, Float64List raw, VoiceEffect fx);
 
+  /// Copy [from]'s instrument (a recorded sample, sfxr, or additive voice) onto
+  /// channel [to] — reuse a sound across tracks without re-recording.
+  void copyInstrument(int from, int to);
+
+  /// The id of [channel]'s current instrument (for asserting a copy landed).
+  String debugInstrumentId(int channel);
+
   /// Undo / redo of pattern cell edits.
   bool get canUndo;
   bool get canRedo;
@@ -293,6 +303,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   // Non-final so a module import can swap in a whole new document.
   late TrackerSong _song = widget.initialSong ?? TrackerSong();
   final _loop = GaplessLoopPlayer();
+  final _samplePreview = GaplessLoopPlayer(); // sample auditions (record sheet)
   final _recorder = VoiceClipRecorder();
   final _focus = FocusNode();
 
@@ -497,6 +508,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _pianoScroll.dispose();
     _focus.dispose();
     _loop.dispose();
+    _samplePreview.dispose();
     _recorder.dispose();
     super.dispose();
   }
@@ -1530,6 +1542,26 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             },
           ),
           if (_song.channelCount > 1)
+            PopupMenuButton<int>(
+              icon: const Icon(Icons.copy_all_outlined, size: 20),
+              tooltip: l10n.trackerCopyInstrument,
+              itemBuilder: (_) => [
+                for (var t = 0; t < _song.channelCount; t++)
+                  if (t != c)
+                    PopupMenuItem(
+                      value: t,
+                      child: Text(
+                        '${t + 1}  ${_instrumentLabel(_song.channels[t].instrument.id)}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+              ],
+              onSelected: (t) {
+                copyInstrument(c, t);
+                setSheet(() {});
+              },
+            ),
+          if (_song.channelCount > 1)
             IconButton(
               icon: const Icon(Icons.delete_outline, size: 20),
               onPressed: () {
@@ -1571,9 +1603,49 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _syncPlayback();
   }
 
+  /// Audition an edited sample before assigning it — plays its PCM (voice fx +
+  /// trim/stretch already baked into `inst.sample`) once on the preview player.
+  void _playPreview(SampleInstrument inst) {
+    final pcm = inst.sample;
+    if (pcm.isEmpty) return;
+    final i16 = Int16List(pcm.length);
+    for (var i = 0; i < pcm.length; i++) {
+      i16[i] = (pcm[i].clamp(-1.0, 1.0) * 32767).round();
+    }
+    _samplePreview.playLoop(wavBytes(i16));
+  }
+
+  /// Read a WAV file into the sample editor (the file path onto the same edit
+  /// pipeline as a mic recording). Returns the mono PCM, or null on failure.
+  Future<Float64List?> _loadWavClip() async {
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'WAV', extensions: ['wav']),
+        ],
+      );
+      if (file == null) return null;
+      return wavToMonoFloat(readWavPcm16(await file.readAsBytes()));
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void injectRecording(int channel, Float64List raw, VoiceEffect fx) =>
       _assignSample(channel, _sampleFrom(raw, fx: fx));
+
+  @override
+  void copyInstrument(int from, int to) {
+    setState(
+      () => _song.setChannelInstrument(to, _song.channels[from].instrument),
+    );
+    _syncPlayback();
+  }
+
+  @override
+  String debugInstrumentId(int channel) =>
+      _song.channels[channel].instrument.id;
 
   @override
   bool get canUndo => _canUndo;
@@ -1732,6 +1804,27 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                           }
                         },
                 ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.audio_file_outlined),
+                  label: Text(l10n.trackerLoadWav),
+                  onPressed: recording
+                      ? null
+                      : () async {
+                          final loaded = await _loadWavClip();
+                          if (!ctx.mounted) return;
+                          if (loaded == null || loaded.isEmpty) {
+                            setSheet(() => error = l10n.trackerRecordFailed);
+                            return;
+                          }
+                          setSheet(() {
+                            clip = loaded;
+                            sampStart = 0.0;
+                            sampEnd = 1.0;
+                            error = null;
+                          });
+                        },
+                ),
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -1804,12 +1897,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton(
-                      onPressed: () {
-                        _assignSample(
-                          channel,
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.play_arrow),
+                        label: Text(l10n.trackerPreview),
+                        onPressed: () => _playPreview(
                           _sampleFrom(
                             clip!,
                             fx: fx,
@@ -1820,11 +1913,29 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                             start: sampStart,
                             end: sampEnd,
                           ),
-                        );
-                        Navigator.of(ctx).pop();
-                      },
-                      child: Text(l10n.trackerAssignSample),
-                    ),
+                        ),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () {
+                          _assignSample(
+                            channel,
+                            _sampleFrom(
+                              clip!,
+                              fx: fx,
+                              stretch: stretch,
+                              trim: trim,
+                              normalize: normalize,
+                              reverse: reverse,
+                              start: sampStart,
+                              end: sampEnd,
+                            ),
+                          );
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Text(l10n.trackerAssignSample),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -1833,6 +1944,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         ),
       ),
     );
+    await _samplePreview.stop(); // stop any audition when the sheet closes
   }
 
   String _voiceLabel(AppLocalizations l10n, VoiceEffect v) => switch (v) {

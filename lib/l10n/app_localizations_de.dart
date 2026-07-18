@@ -1623,6 +1623,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerAssignSample => 'Für diese Spur verwenden';
 
   @override
+  String get trackerLoadWav => 'WAV-Datei laden…';
+
+  @override
+  String get trackerPreview => 'Vorhören';
+
+  @override
+  String get trackerCopyInstrument => 'Instrument kopieren nach…';
+
+  @override
   String get trackerBlock => 'Block';
 
   @override
