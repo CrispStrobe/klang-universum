@@ -36,9 +36,11 @@
 // ADDITIVE channels only for now (a non-additive/sample channel, or a per-cell
 // reference to a non-additive pool instrument, keeps the channel's own voice).
 //
-// Still TODO: MID-SONG speed/tempo CHANGES (need per-row row-duration timing),
-// 9xx sample-offset, and per-cell instrument on SAMPLE voices — all of which
-// want a per-note non-additive render (the shared next step).
+// 9xx sample-offset works on SAMPLE voices — [SampleInstrument.renderChannel]
+// starts the note at param×256 (it already receives the cells that carry the
+// effect column). Still TODO: MID-SONG speed/tempo CHANGES (need per-row
+// row-duration timing) and per-cell instrument on SAMPLE voices — both want a
+// per-note non-additive render (the shared next step).
 //
 // Mixing (see Trap A in docs/TRACKER_REPLAYER_HANDOVER.md): the replayer sums
 // voices at a FIXED-normalized amplitude (each additive voice divided by its
@@ -75,6 +77,8 @@ const int kFxVibrato = 0x4; // 4xy
 const int kFxTonePortaVolSlide = 0x5; // 5xy = 3xx (memory) + Axy
 const int kFxVibratoVolSlide = 0x6; // 6xy = 4xy (continue) + Axy
 const int kFxTremolo = 0x7; // 7xy
+const int kFxSampleOffset =
+    0x9; // 9xx — start a sample at xx×256 (sample voices)
 const int kFxPositionJump = 0xB; // Bxx — continue at order xx, row 0
 const int kFxPatternBreak = 0xD; // Dxx — next order entry, row = decimal(xx)
 const int kFxSetSpeed = 0xF; // Fxx — <0x20 set speed (ticks/row); ≥0x20 tempo

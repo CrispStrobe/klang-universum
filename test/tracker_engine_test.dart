@@ -378,6 +378,33 @@ void main() {
       expect(buf.sublist(startSample).any((v) => v != 0), isTrue);
     });
 
+    test('9xx sample offset starts the sample at param×256', () {
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      // A rising ramp so the read START position is directly observable.
+      final ramp = Float64List(8192);
+      for (var i = 0; i < ramp.length; i++) {
+        ramp[i] = i / ramp.length;
+      }
+      final inst = SampleInstrument('r', ramp); // baseMidi 60 → note 60 ratio 1
+
+      List<TrackerCell> col(TrackerCell first) => [
+            first,
+            ...List<TrackerCell>.filled(timing.rows - 1, TrackerCell.empty),
+          ];
+
+      final plain =
+          inst.renderChannel(col(const TrackerCell(midi: 60)), timing);
+      final offset = inst.renderChannel(
+        // 9x08 → offset 8×256 = 2048 samples into the ramp.
+        col(const TrackerCell(midi: 60, fxCmd: 0x9, fxParam: 0x08)),
+        timing,
+      );
+      // Well past the declick attack, the offset read sits higher up the ramp.
+      final probe = timing.stepStartSample(0) + 1000;
+      expect(plain[probe], greaterThan(0));
+      expect(offset[probe], greaterThan(plain[probe]));
+    });
+
     test('a pitch-envelope note glides (differs from a flat-pitch note)', () {
       const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
       final s = sine(0.4, 261.63);

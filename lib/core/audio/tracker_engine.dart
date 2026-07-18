@@ -329,7 +329,13 @@ class SampleInstrument implements TrackerInstrument {
     final baseFreq = midiToFrequency(baseMidi);
     var startStep = 0;
     for (final (midi, steps) in cellRuns(cells)) {
-      if (midi != null) {
+      // 9xx sample offset (classic MOD): start the sample at param×256. Read from
+      // the triggering cell's effect column; the cells already carry it here.
+      final trigger = cells[startStep];
+      final offset = trigger.fxCmd == 0x9 ? trigger.fxParam * 256 : 0;
+      if (midi != null && offset < sample.length) {
+        final src =
+            offset > 0 ? Float64List.sublistView(sample, offset) : sample;
         final startSample = timing.stepStartSample(startStep);
         final runSamples =
             timing.stepStartSample(startStep + steps) - startSample;
@@ -338,13 +344,13 @@ class SampleInstrument implements TrackerInstrument {
         // A pitch envelope glides the resample ratio; else a fixed-ratio pitch.
         final buf = envelope.pitchStart != 0 && maxOut > 0
             ? resampleGlide(
-                sample,
+                src,
                 ratioStart: baseRatio * pow(2, envelope.pitchStart / 12),
                 ratioEnd: baseRatio,
                 glideSamples: (envelope.pitchTime * kSampleRate).round(),
                 outLen: maxOut,
               )
-            : resampleCubic(sample, baseRatio);
+            : resampleCubic(src, baseRatio);
         final n = min(min(buf.length, runSamples), out.length - startSample);
         if (n > 0) {
           // Envelope only the played portion, so the release fades at the note's
