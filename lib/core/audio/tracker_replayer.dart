@@ -1200,18 +1200,36 @@ bool songUsesVariableTiming(TrackerSong song) {
 int _stepMsForTempo(int tempoBpm, int stepsPerBeat) =>
     (60000 / tempoBpm) ~/ stepsPerBeat;
 
+/// The wall-clock duration (ms) of a played row, honouring BOTH its tempo and
+/// its SPEED (ticks/row). In a real tracker a row lasts `speed × tickDuration`;
+/// our musical grid pins the INITIAL speed [speed0] to the tempo-derived step,
+/// so a later speed change scales the row proportionally (`ticks/speed0`) —
+/// matching openmpt's relative behaviour. Speed == speed0 ⇒ the plain tempo step
+/// (byte-identical to before for tempo-only changes).
+int _rowMsFor(int tempoBpm, int stepsPerBeat, int ticks, int speed0) {
+  final base = _stepMsForTempo(tempoBpm, stepsPerBeat);
+  if (speed0 <= 0 || ticks <= 0 || ticks == speed0) return base;
+  return (base * ticks / speed0).round();
+}
+
 /// The accumulated onset (ms) of each played row, honouring per-row tempo. Entry
 /// `i` is the ms offset where played row `i` begins; the sum of all step
 /// durations is the song length ([variableSongTotalMs]).
 List<int> _variableRowStartMs(TrackerSong song, List<PlayedRow> played) {
   final spb = song.timing.stepsPerBeat;
   final def = song.timing.tempoBpm;
+  final speed0 =
+      played.isEmpty ? kDefaultTicksPerRow : played.first.ticksPerRow;
   final starts = List<int>.filled(played.length, 0);
   var acc = 0;
   for (var i = 0; i < played.length; i++) {
     starts[i] = acc;
-    acc +=
-        _stepMsForTempo(played[i].tempoBpm > 0 ? played[i].tempoBpm : def, spb);
+    acc += _rowMsFor(
+      played[i].tempoBpm > 0 ? played[i].tempoBpm : def,
+      spb,
+      played[i].ticksPerRow,
+      speed0,
+    );
   }
   return starts;
 }
@@ -1222,9 +1240,16 @@ int variableSongTotalMs(TrackerSong song) {
   final played = walkFlow(song);
   final spb = song.timing.stepsPerBeat;
   final def = song.timing.tempoBpm;
+  final speed0 =
+      played.isEmpty ? kDefaultTicksPerRow : played.first.ticksPerRow;
   var ms = 0;
   for (final p in played) {
-    ms += _stepMsForTempo(p.tempoBpm > 0 ? p.tempoBpm : def, spb);
+    ms += _rowMsFor(
+      p.tempoBpm > 0 ? p.tempoBpm : def,
+      spb,
+      p.ticksPerRow,
+      speed0,
+    );
   }
   return ms;
 }
@@ -1351,8 +1376,10 @@ int _firstFxx(
 /// The speed ([TrackerTiming]-independent ticks/row) a song should replay at: the
 /// first `Fxx` set-speed command in play order, else [fallback]. Applied by
 /// [replaySong] so an imported/authored module's authored speed sets the effect
-/// granularity. (Speed subdivides the row — it does NOT change row duration in
-/// our musical-timing model, so it never affects the song length.)
+/// granularity. The INITIAL speed subdivides the row (effect granularity) and is
+/// pinned to the tempo-derived grid step, so it alone doesn't change the song
+/// length. A MID-SONG speed CHANGE, however, scales that row's duration relative
+/// to the initial speed (see [_rowMsFor]) — matching real trackers/openmpt.
 int songInitialSpeed(TrackerSong song, {int fallback = kDefaultTicksPerRow}) {
   for (final oi in song.order) {
     if (oi < 0 || oi >= song.patterns.length) continue;
@@ -1653,6 +1680,8 @@ ReplayResult _replayVariable(TrackerSong song) {
   final n = played.length;
 
   // Per-row sample boundaries: rowStart[i]..rowStart[i+1] is played row i.
+  final speed0 =
+      played.isEmpty ? kDefaultTicksPerRow : played.first.ticksPerRow;
   final rowStart = List<int>.filled(n + 1, 0);
   final ticks = List<int>.filled(n, kDefaultTicksPerRow);
   var acc = 0;
@@ -1660,7 +1689,7 @@ ReplayResult _replayVariable(TrackerSong song) {
     rowStart[i] = acc;
     ticks[i] = played[i].ticksPerRow;
     final tempo = played[i].tempoBpm > 0 ? played[i].tempoBpm : def;
-    final stepMs = _stepMsForTempo(tempo, spb);
+    final stepMs = _rowMsFor(tempo, spb, played[i].ticksPerRow, speed0);
     acc += (stepMs * kSampleRate / 1000).round();
   }
   rowStart[n] = acc;
@@ -1870,6 +1899,8 @@ ReplayResult _replayVariableStereo(TrackerSong song) {
   final def = song.timing.tempoBpm;
   final n = played.length;
 
+  final speed0 =
+      played.isEmpty ? kDefaultTicksPerRow : played.first.ticksPerRow;
   final rowStart = List<int>.filled(n + 1, 0);
   final ticks = List<int>.filled(n, kDefaultTicksPerRow);
   var acc = 0;
@@ -1877,7 +1908,10 @@ ReplayResult _replayVariableStereo(TrackerSong song) {
     rowStart[i] = acc;
     ticks[i] = played[i].ticksPerRow;
     final tempo = played[i].tempoBpm > 0 ? played[i].tempoBpm : def;
-    acc += (_stepMsForTempo(tempo, spb) * kSampleRate / 1000).round();
+    acc += (_rowMsFor(tempo, spb, played[i].ticksPerRow, speed0) *
+            kSampleRate /
+            1000)
+        .round();
   }
   rowStart[n] = acc;
 

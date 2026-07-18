@@ -993,4 +993,39 @@ void main() {
       expect(secondHalfDiffers, isTrue); // note 2 (b vs a) differs
     });
   });
+
+  group('mid-song set-speed changes row duration (BUG2)', () {
+    test('a speed doubling halves… er, doubles the row length of the 2nd half',
+        () {
+      // 16 rows; a set-SPEED (Fxx param <0x20) of 12 at row 8 with the default
+      // speed 6 ⇒ rows 8–15 last twice as long (matches openmpt's ~×1.86).
+      final ch = TrackerChannel(
+        id: 'a',
+        instrument: const AdditiveInstrument('p', Instrument.piano),
+        rows: 16,
+      )..cells[0] = const TrackerCell(midi: 60);
+      ch.cells[8] = fx(kFxSetSpeed, 0x0C); // speed 12 (<0x20 → ticks/row)
+      final song = TrackerSong.fromParts(
+        channels: [ch],
+        timing: const TrackerTiming(), // default 16 rows, 4 steps/beat
+        patterns: [
+          TrackerPattern(name: '00', cells: [ch.cells]),
+        ],
+        order: [0],
+      );
+      expect(songUsesVariableTiming(song), isTrue);
+
+      final map = resolveTimingMap(song);
+      final firstHalf = map[8].startMs; // rows 0–7 at speed 6
+      final secondHalf = song.songTotalMs - firstHalf; // rows 8–15 at speed 12
+      // Before the fix, speed was timing-neutral → ratio ~1. Now ~2.
+      expect(secondHalf / firstHalf, closeTo(2.0, 0.1));
+      // The rendered audio agrees with the map length (transport stays in sync).
+      final samples = replaySong(song).pcm.length; // mono sample values
+      expect(
+        samples,
+        closeTo(song.songTotalMs * kSampleRate ~/ 1000, kSampleRate ~/ 10),
+      );
+    });
+  });
 }
