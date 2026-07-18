@@ -24,6 +24,7 @@ import 'package:comet_beat/features/games/chords/name_that_chord_screen.dart';
 import 'package:comet_beat/features/games/chords/sing_interval_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_builder_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_seventh_screen.dart';
+import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/ending_detective_screen.dart';
 import 'package:comet_beat/features/games/composition/form_analysis_view.dart';
 import 'package:comet_beat/features/games/composition/form_read_screen.dart';
@@ -1119,6 +1120,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTracker,
       subtitle: (l) => l.gameTrackerSubtitle,
       builder: (_) => const TrackerScreen(),
+    ),
+    // The full FastTracker-2-style pattern editor — direct entry (also reachable
+    // from the Beginner tracker's switch and the Score Workshop menu).
+    GameInfo(
+      id: 'tracker_advanced',
+      icon: Icons.dashboard_customize_outlined,
+      title: (l) => l.gameTrackerAdvanced,
+      subtitle: (l) => l.gameTrackerAdvancedSubtitle,
+      builder: (_) => const AdvancedTrackerScreen(),
     ),
   ],
   'cello': [

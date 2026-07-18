@@ -402,6 +402,8 @@
   "loopMixerTrackSparkle": "Sparkle",
   "gameTracker": "Tracker",
   "gameTrackerSubtitle": "Build a looping beat, track by track",
+  "gameTrackerAdvanced": "Advanced Tracker",
+  "gameTrackerAdvancedSubtitle": "Full pattern editor — endless tracks, effects, samples",
   "trackerPrompt": "Pick an instrument, then tap to build your loop!",
   "trackerClear": "Clear",
   "trackerChannelMelody": "Melody",

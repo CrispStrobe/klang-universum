@@ -1106,6 +1106,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameTrackerSubtitle => 'Bau dir einen Loop — Spur für Spur';
 
   @override
+  String get gameTrackerAdvanced => 'Profi-Tracker';
+
+  @override
+  String get gameTrackerAdvancedSubtitle =>
+      'Voller Pattern-Editor — endlose Spuren, Effekte, Samples';
+
+  @override
   String get trackerPrompt => 'Wähle ein Instrument und tippe deinen Loop!';
 
   @override

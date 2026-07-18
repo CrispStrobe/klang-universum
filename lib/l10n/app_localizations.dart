@@ -2120,6 +2120,18 @@ abstract class AppLocalizations {
   /// **'Build a looping beat, track by track'**
   String get gameTrackerSubtitle;
 
+  /// No description provided for @gameTrackerAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced Tracker'**
+  String get gameTrackerAdvanced;
+
+  /// No description provided for @gameTrackerAdvancedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full pattern editor — endless tracks, effects, samples'**
+  String get gameTrackerAdvancedSubtitle;
+
   /// No description provided for @trackerPrompt.
   ///
   /// In en, this message translates to:

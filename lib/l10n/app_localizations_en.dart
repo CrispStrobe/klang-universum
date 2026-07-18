@@ -1099,6 +1099,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameTrackerSubtitle => 'Build a looping beat, track by track';
 
   @override
+  String get gameTrackerAdvanced => 'Advanced Tracker';
+
+  @override
+  String get gameTrackerAdvancedSubtitle =>
+      'Full pattern editor — endless tracks, effects, samples';
+
+  @override
   String get trackerPrompt =>
       'Pick an instrument, then tap to build your loop!';
 

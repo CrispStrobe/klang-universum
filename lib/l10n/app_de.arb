@@ -371,6 +371,8 @@
   "loopMixerTrackSparkle": "Glitzer",
   "gameTracker": "Tracker",
   "gameTrackerSubtitle": "Bau dir einen Loop — Spur für Spur",
+  "gameTrackerAdvanced": "Profi-Tracker",
+  "gameTrackerAdvancedSubtitle": "Voller Pattern-Editor — endlose Spuren, Effekte, Samples",
   "trackerPrompt": "Wähle ein Instrument und tippe deinen Loop!",
   "trackerClear": "Leeren",
   "trackerChannelMelody": "Melodie",
