@@ -1,6 +1,7 @@
 #include "subband.hpp"
 #include "mdct.hpp"
 #include "tables.hpp"
+#include "quantize.hpp"
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
@@ -36,6 +37,41 @@ int main(int argc, char** argv) {
   FILE* f = fopen(out, "w");
   for (int b=0;b<32;b++) for (int n=0;n<18;n++) fprintf(f, "%.17g\n", subband[b][n]);
   for (int b=0;b<32;b++) for (int n=0;n<18;n++) fprintf(f, "%.17g\n", mdctout[b][n]);
+
+  // --- Stage A/B: feed the SAME mdct_flat[576] (band-major, = &mdct_out[0][0]
+  // for long blocks, encoder.cpp:1547) to glint's psycho + quantizer, dump the
+  // full GranuleInfo so the Dart port can be compared field-by-field. ---
+  double mdct_flat[576];
+  for (int b=0;b<32;b++) for (int n=0;n<18;n++) mdct_flat[b*18+n] = mdctout[b][n];
+  // NB: glint's REAL masking model lives inside quantize.cpp (compute_src_band
+  // -> get_mask_model -> compute_band_masks); PsychoModel in psycho.cpp is dead
+  // code. Those are file-static, so we observe the loop at its public output
+  // boundary: the full GranuleInfo from quantize_granule (below).
+
+  // Quantize a long block at a fixed per-granule budget, quality=best(2).
+  const int kGrBits = argc > 3 ? atoi(argv[3]) : 1584;
+  GranuleInfo gi = quantize_granule(mdct_flat, kGrBits, /*sr_index=*/0,
+                                    /*quality_mode=*/2, /*block_type=*/0,
+                                    /*gain_floor=*/0, /*allow_psy=*/true,
+                                    false, false);
+  fprintf(f, "GRBITS %d\n", kGrBits);
+  fprintf(f, "global_gain %d\n", gi.global_gain);
+  fprintf(f, "rc_gain %d\n", gi.rc_gain);
+  fprintf(f, "scalefac_compress %d\n", gi.scalefac_compress);
+  fprintf(f, "scalefac_scale %d\n", gi.scalefac_scale);
+  fprintf(f, "preflag %d\n", gi.preflag);
+  fprintf(f, "part2_3_length %d\n", gi.part2_3_length);
+  fprintf(f, "part2_length %d\n", gi.part2_length);
+  fprintf(f, "block_type %d\n", gi.block_type);
+  fprintf(f, "big_values %d\n", gi.regions.big_values);
+  fprintf(f, "region0_count %d\n", gi.regions.region0_count);
+  fprintf(f, "region1_count %d\n", gi.regions.region1_count);
+  fprintf(f, "table0 %d\n", gi.regions.table_select[0]);
+  fprintf(f, "table1 %d\n", gi.regions.table_select[1]);
+  fprintf(f, "table2 %d\n", gi.regions.table_select[2]);
+  fprintf(f, "count1table %d\n", gi.regions.count1table);
+  for (int i=0;i<21;i++) fprintf(f, "sf%d %d\n", i, gi.scalefac[i]);
+  for (int i=0;i<576;i++) fprintf(f, "%d\n", (int)gi.ix[i]);
   fclose(f);
 
   sb.reset(); mdct.reset(); g_s=0x12345u;

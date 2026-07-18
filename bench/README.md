@@ -86,3 +86,32 @@ bits go unused). glint's noise is fully masked (NMR ≤ 0); ours is audible in
 66 % of Bark bands. => **scalefactors + bit reservoir + a distortion-driven
 (psychoacoustic) rate loop is THE quality follow-up**, and it's now quantified.
 The current output is correct and standards-compliant, just not yet transparent.
+
+## The frequency-inversion bug (why the port measured 8 dB before)
+The first shaped encoder still measured SNR 8 dB end-to-end while every stage
+checked out: our streaming MDCT matched glint's to 4.6e-16 even at granule 20,
+our quantizer produced byte-identical `ix` to glint (0/576 diff on speech), the
+Huffman bitstream round-tripped (≤2 `ix`/granule), and the MDCT-domain
+reconstruction was 34.7 dB. Yet a standard decoder (ffmpeg AND glint's own
+decoder, in agreement) returned 8 dB, 2.1× too loud, with excess HF — and the
+damage was band-selective (a 200→3000 Hz sweep decoded at 1.8 dB; a chord at
+47 dB).
+
+Root cause: the golden test pinned `MDCT::process`, but glint's ENCODER calls
+`MDCT::process_strided`, which folds in MPEG **frequency inversion** — negate
+odd subbands at odd time slots — that `process()` omits. Without it the decoder
+synthesis reconstructs every odd subband spectrally flipped; band 0 (even) is
+untouched, so pure low tones survived and masked the bug. Fix: pre-invert the
+subband samples before `Mp3Mdct.process` (mp3_encoder.dart). Result:
+
+| metric        | broken | glint  | dart (fixed) |
+|---------------|--------|--------|--------------|
+| SNR dB        | 8.0    | 32.1   | **35.2**     |
+| bandSNR 0-1k  | 11.1   | 36.3   | **40.6**     |
+| NMR mean dB   | +10.4  | −11.4  | −5.8         |
+| sweep SNR dB  | 1.8    | —      | **78.4**     |
+
+Our raw SNR now exceeds glint's; NMR (perceptual) trails because our region
+optimizer spends more bits (leaving less for shaping) — the remaining quality
+follow-up. `test/mp3_decode_roundtrip_test.dart` is the ffmpeg-gated regression
+(a sweep crossing every subband) that would have caught this.

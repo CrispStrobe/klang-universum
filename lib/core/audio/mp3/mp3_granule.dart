@@ -187,6 +187,14 @@ void mp3EncodeGranule(
   }
 }
 
+/// Count the Huffman bits [ix]+[r] emit for one granule (main-data part3),
+/// without materializing the bytes — the rate loop's budget probe.
+int mp3GranuleBits(List<int> ix, Mp3HuffRegions r, int srIndex) {
+  final w = Mp3BitWriter();
+  mp3EncodeGranule(w, ix, r, srIndex);
+  return w.bitCount;
+}
+
 /// A valid (not yet rate-optimal) region split for [ix] (576 lines) at
 /// [srIndex]: count1 = trailing quads of 0/±1, big_values = the rest, split
 /// into thirds by scalefactor band with per-region table selection.

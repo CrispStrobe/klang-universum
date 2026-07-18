@@ -14,7 +14,7 @@ import 'package:comet_beat/core/audio/mp3/mp3_bitstream.dart';
 import 'package:comet_beat/core/audio/mp3/mp3_frame.dart';
 import 'package:comet_beat/core/audio/mp3/mp3_granule.dart';
 import 'package:comet_beat/core/audio/mp3/mp3_mdct.dart';
-import 'package:comet_beat/core/audio/mp3/mp3_quantize.dart';
+import 'package:comet_beat/core/audio/mp3/mp3_shape.dart';
 import 'package:comet_beat/core/audio/mp3/mp3_subband.dart';
 
 /// Mono side-info size for MPEG-1 Layer III: 17 bytes.
@@ -59,11 +59,7 @@ Uint8List mp3EncodeMono(
     final availTotal = (frameSize - 4 - _kMonoSideInfoBytes) * 8;
     final availPer = availTotal ~/ 2;
 
-    final grIx = <Int16List>[];
-    final grRegions = <Mp3HuffRegions>[];
-    final grGain = <int>[];
-    final grBits = <int>[];
-
+    final gr = <Mp3GranuleInfo>[];
     for (var g = 0; g < 2; g++) {
       for (var ts = 0; ts < 18; ts++) {
         for (var i = 0; i < 32; i++) {
@@ -72,16 +68,22 @@ Uint8List mp3EncodeMono(
         }
         sb.processSlot(slot, so);
         for (var b = 0; b < 32; b++) {
-          subband[b * 18 + ts] = so[b];
+          // MPEG frequency inversion: negate odd subbands at odd time slots.
+          // glint's encoder MDCT (process_strided) folds this in; our
+          // Mp3Mdct.process (== glint's plain process()) does not, so we must
+          // pre-invert here or the decoder's synthesis reconstructs the odd
+          // subbands spectrally flipped (broadband audio scrambles; band-0
+          // tones are unaffected — the symptom that localized this).
+          final v = so[b];
+          subband[b * 18 + ts] = ((b & 1) != 0 && (ts & 1) != 0) ? -v : v;
         }
       }
       mdct.process(subband, mdctBuf);
       mdct.aliasReduce(mdctBuf);
-      final fit = _fitGain(mdctBuf, srIndex, availPer);
-      grIx.add(fit.ix);
-      grRegions.add(fit.regions);
-      grGain.add(fit.gain);
-      grBits.add(fit.bits);
+      // The rate/distortion + psychoacoustic shaping loop (mp3_shape.dart):
+      // picks global_gain + per-sfb scalefactors so quantization noise sits
+      // under the masking threshold, not flat across the spectrum.
+      gr.add(mp3QuantizeGranule(mdctBuf, availPer, srIndex));
     }
 
     final frame = Mp3BitWriter();
@@ -89,13 +91,14 @@ Uint8List mp3EncodeMono(
     // Side info (mono): main_data_begin + private + scfsi + 2 granules.
     frame.writeBits(0, 9); // main_data_begin (no reservoir)
     frame.writeBits(0, 5); // private bits (mono)
-    frame.writeBits(0, 4); // scfsi
+    frame.writeBits(0, 4); // scfsi (0 = no scalefactor sharing across granules)
     for (var g = 0; g < 2; g++) {
-      _writeGranuleSideInfo(frame, grRegions[g], grGain[g], grBits[g]);
+      _writeGranuleSideInfo(frame, gr[g]);
     }
-    // Main data: 2 granules of Huffman (scalefactors are all zero → no bits).
+    // Main data per granule: scalefactors (part2) then Huffman (part3).
     for (var g = 0; g < 2; g++) {
-      mp3EncodeGranule(frame, grIx[g], grRegions[g], srIndex);
+      _writeScalefactors(frame, gr[g]);
+      mp3EncodeGranule(frame, gr[g].ix, gr[g].regions, srIndex);
     }
     frame.byteAlign();
     final bytes = frame.takeBytes();
@@ -108,46 +111,28 @@ Uint8List mp3EncodeMono(
   return out.toBytes();
 }
 
-class _Fit {
-  _Fit(this.gain, this.ix, this.regions, this.bits);
-  final int gain;
-  final Int16List ix;
-  final Mp3HuffRegions regions;
-  final int bits;
-}
+/// glint's 4-bit scalefac_compress → (slen1, slen2) — bit widths of the two
+/// scalefactor groups (bands 0–10 and 11–20) transmitted in the main data.
+const List<List<int>> _kSlenTable = [
+  [0, 0], [0, 1], [0, 2], [0, 3], [3, 0], [1, 1], [1, 2], [1, 3], //
+  [2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3], [4, 2], [4, 3],
+];
 
-int _granuleBits(Int16List ix, Mp3HuffRegions r, int srIndex) {
-  final w = Mp3BitWriter();
-  mp3EncodeGranule(w, ix, r, srIndex);
-  return w.bitCount;
-}
-
-/// Binary-search the SMALLEST global_gain (finest quantization) whose Huffman
-/// data fits [avail] bits — best quality within budget.
-_Fit _fitGain(Float64List mdct, int srIndex, int avail) {
-  var lo = 0, hi = 255, ansGain = 255;
-  Int16List? ansIx;
-  Mp3HuffRegions? ansReg;
-  var ansBits = 0;
-  while (lo <= hi) {
-    final mid = (lo + hi) >> 1;
-    final ix = mp3QuantizeUniform(mdct, mid);
-    final regions = mp3ComputeRegions(ix, srIndex);
-    final bits = _granuleBits(ix, regions, srIndex);
-    if (bits <= avail) {
-      ansGain = mid;
-      ansIx = ix;
-      ansReg = regions;
-      ansBits = bits;
-      hi = mid - 1; // try finer
-    } else {
-      lo = mid + 1; // coarser
+/// Emit one granule's scalefactors (part2), MPEG-1 long block: slen1 bits for
+/// bands 0–10, slen2 bits for bands 11–20 (widths from scalefac_compress).
+void _writeScalefactors(Mp3BitWriter w, Mp3GranuleInfo gi) {
+  final slen1 = _kSlenTable[gi.scalefacCompress][0];
+  final slen2 = _kSlenTable[gi.scalefacCompress][1];
+  if (slen1 > 0) {
+    for (var b = 0; b < 11; b++) {
+      w.writeBits(gi.scalefac[b], slen1);
     }
   }
-  ansIx ??= mp3QuantizeUniform(mdct, 255);
-  ansReg ??= mp3ComputeRegions(ansIx, srIndex);
-  ansBits = _granuleBits(ansIx, ansReg, srIndex);
-  return _Fit(ansGain, ansIx, ansReg, ansBits);
+  if (slen2 > 0) {
+    for (var b = 11; b < 21; b++) {
+      w.writeBits(gi.scalefac[b], slen2);
+    }
+  }
 }
 
 void _writeHeader(Mp3BitWriter w, int bitrate, int sampleRate, bool pad) {
@@ -167,25 +152,22 @@ void _writeHeader(Mp3BitWriter w, int bitrate, int sampleRate, bool pad) {
     ..writeBits(0, 2); // emphasis
 }
 
-/// glint's `write_granule_side_info`, block_type 0 (long), zero scalefactors.
-void _writeGranuleSideInfo(
-  Mp3BitWriter w,
-  Mp3HuffRegions r,
-  int globalGain,
-  int part23Length,
-) {
+/// glint's `write_granule_side_info`, block_type 0 (long): now carries the
+/// real scalefac_compress / preflag / scalefac_scale from the shaping loop.
+void _writeGranuleSideInfo(Mp3BitWriter w, Mp3GranuleInfo gi) {
+  final r = gi.regions;
   w
-    ..writeBits(part23Length, 12)
+    ..writeBits(gi.part23Length, 12)
     ..writeBits(r.bigValues, 9)
-    ..writeBits(globalGain, 8)
-    ..writeBits(0, 4) // scalefac_compress = 0 (slen1=slen2=0 → no sf bits)
+    ..writeBits(gi.globalGain, 8)
+    ..writeBits(gi.scalefacCompress, 4)
     ..writeBits(0, 1) // window_switching_flag = 0
     ..writeBits(r.tableSelect[0], 5)
     ..writeBits(r.tableSelect[1], 5)
     ..writeBits(r.tableSelect[2], 5)
     ..writeBits(r.region0Count, 4)
     ..writeBits(r.region1Count, 3)
-    ..writeBits(0, 1) // preflag
-    ..writeBits(0, 1) // scalefac_scale
+    ..writeBits(gi.preflag, 1)
+    ..writeBits(gi.scalefacScale, 1)
     ..writeBits(r.count1Table, 1);
 }

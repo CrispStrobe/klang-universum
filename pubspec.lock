@@ -168,7 +168,7 @@ packages:
     source: path
     version: "0.4.4"
   crisp_notation_core:
-    dependency: "direct overridden"
+    dependency: "direct dev"
     description:
       path: "../crisp_notation/packages/crisp_notation_core"
       relative: true

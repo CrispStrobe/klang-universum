@@ -90,6 +90,7 @@ dev_dependencies:
   onnx_runtime_dart:
     path: ../onnx_runtime_dart
 
+  crisp_notation_core: any
 flutter_launcher_icons:
   android: true
   ios: true
