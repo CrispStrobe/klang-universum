@@ -99,41 +99,49 @@ void main() {
 
   group('LicensePolicy.classify', () {
     const p = LicensePolicy();
-    test('permissive families', () {
+    test('classifies each family', () {
       expect(p.classify('CC0'), LicenseKind.cc0);
       expect(p.classify('Public Domain'), LicenseKind.publicDomain);
       expect(p.classify('CC BY 4.0'), LicenseKind.ccBy);
       expect(p.classify('CC BY-SA 4.0'), LicenseKind.ccBySa);
-      for (final k in [
-        LicenseKind.cc0,
-        LicenseKind.publicDomain,
-        LicenseKind.ccBy,
-        LicenseKind.ccBySa,
-      ]) {
-        expect(k.isPermissive, isTrue, reason: '$k');
-      }
-    });
-
-    test('restrictive families are NOT read as permissive', () {
       expect(p.classify('CC BY-NC 4.0'), LicenseKind.ccByNc);
       expect(p.classify('CC BY-NC-SA'), LicenseKind.ccByNc);
       expect(p.classify('CC BY-ND'), LicenseKind.ccByNd);
       expect(p.classify('All Rights Reserved'), LicenseKind.allRightsReserved);
       expect(p.classify(''), LicenseKind.unknown);
       expect(p.classify('some weird thing'), LicenseKind.unknown);
-      for (final s in ['CC BY-NC 4.0', 'CC BY-ND', 'All Rights Reserved', '']) {
-        expect(p.classify(s).isPermissive, isFalse, reason: s);
-      }
+    });
+
+    test('only CC0/PD are unconditional; CC BY/BY-SA need attribution', () {
+      expect(LicenseKind.cc0.isUnconditional, isTrue);
+      expect(LicenseKind.publicDomain.isUnconditional, isTrue);
+      expect(LicenseKind.ccBy.isUnconditional, isFalse);
+      expect(LicenseKind.ccBy.needsAttribution, isTrue);
+      expect(LicenseKind.ccBySa.needsAttribution, isTrue);
+      expect(LicenseKind.ccByNc.needsAttribution, isFalse);
     });
   });
 
-  test('gate() allows permissive, blocks the rest', () {
-    const p = LicensePolicy();
-    expect(p.gate(_item()), LicenseKind.cc0);
-    expect(
-      () => p.gate(_item(license: 'CC BY-NC 4.0')),
-      throwsA(isA<LicenseBlocked>()),
-    );
+  test('default policy = TOTALLY FREE only (CC0/PD); everything else blocked',
+      () {
+    const p = LicensePolicy(); // default
+    expect(p.gate(_item()), LicenseKind.cc0); // CC0 ok
+    expect(p.isAllowed(_item(license: 'Public Domain')), isTrue);
+    for (final lic in ['CC BY 4.0', 'CC BY-SA 4.0', 'CC BY-NC 4.0', '']) {
+      expect(
+        () => p.gate(_item(license: lic)),
+        throwsA(isA<LicenseBlocked>()),
+        reason: lic,
+      );
+    }
+  });
+
+  test('opting into attribution licenses admits CC BY / CC BY-SA, not NC', () {
+    const p = LicensePolicy(allowAttributionLicenses: true);
+    expect(p.isAllowed(_item(license: 'CC BY 4.0')), isTrue);
+    expect(p.isAllowed(_item(license: 'CC BY-SA 4.0')), isTrue);
+    expect(p.isAllowed(_item(license: 'CC BY-NC 4.0')), isFalse);
+    expect(p.isAllowed(_item(license: 'CC BY-ND')), isFalse);
   });
 
   test('attributionFor names the work, composer and license', () {
@@ -221,13 +229,23 @@ void main() {
       expect(free.sourceUrl, contains('commons.wikimedia.org/wiki/'));
     });
 
-    test('browse drops non-permissive (NC) files via the gate', () async {
+    test('default browse surfaces ONLY totally-free (CC0/PD) files', () async {
       final src = CommonsSource((_) async => utf8.encode(commonsJson));
       final items = await src.browse();
-      final licenses = items.map((i) => i.declaredLicense).toList();
+      // Default policy: only the CC0 file; CC BY-SA and NC both dropped.
+      expect(items.map((i) => i.declaredLicense).toList(), ['CC0']);
+    });
+
+    test('opting into attribution licenses also admits CC BY-SA, never NC',
+        () async {
+      final src = CommonsSource(
+        (_) async => utf8.encode(commonsJson),
+        policy: const LicensePolicy(allowAttributionLicenses: true),
+      );
+      final licenses = (await src.browse()).map((i) => i.declaredLicense);
       expect(licenses, contains('CC0'));
       expect(licenses, contains('CC BY-SA 4.0'));
-      expect(licenses.any((l) => l.contains('NC')), isFalse); // filtered
+      expect(licenses.any((l) => l.contains('NC')), isFalse); // still filtered
     });
   });
 

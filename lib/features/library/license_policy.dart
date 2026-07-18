@@ -3,10 +3,14 @@
 // string is classified, non-permissive licenses are blocked, and a human
 // attribution line is produced for the ones we keep.
 //
-// Permissive allowlist for *bundling/redistribution* in a store-distributed
-// app: Public Domain, CC0, CC BY, CC BY-SA. Everything else — NC, ND,
-// all-rights-reserved, unknown/absent — is blocked. (Rationale + sources in
-// docs/LIBRARIES_AND_TAB_SCOPING.md §1.5.)
+// **Default policy: TOTALLY FREE assets only** — Public Domain / CC0, i.e.
+// licenses with NO conditions at all. Attribution licenses (CC BY, CC BY-SA)
+// are permissive too, but they carry obligations (credit, and share-alike on
+// derivatives), so they are OFF by default and must be opted into explicitly
+// via `LicensePolicy(allowAttributionLicenses: true)`.
+//
+// Everything else — NC, ND, all-rights-reserved, unknown/absent — is always
+// blocked. (Rationale + sources in docs/LIBRARIES_AND_TAB_SCOPING.md §1.5.)
 
 import 'package:comet_beat/features/library/content_source.dart';
 
@@ -21,9 +25,13 @@ enum LicenseKind {
   allRightsReserved,
   unknown;
 
-  /// May we bundle/redistribute this in the app? Only PD/CC0/BY/BY-SA.
-  bool get isPermissive =>
-      this == publicDomain || this == cc0 || this == ccBy || this == ccBySa;
+  /// "Totally free": no conditions at all (public domain / CC0). This is what
+  /// the default policy allows.
+  bool get isUnconditional => this == publicDomain || this == cc0;
+
+  /// Permissive, but only if its conditions are honoured — credit for CC BY,
+  /// credit + share-alike on derivatives for CC BY-SA.
+  bool get needsAttribution => this == ccBy || this == ccBySa;
 
   /// A short label for the UI.
   String get label => switch (this) {
@@ -53,7 +61,17 @@ class LicenseBlocked implements Exception {
 /// Classifies declared-license text and gates imports. Pure + stateless, so it
 /// is the highest-value unit test in the connector.
 class LicensePolicy {
-  const LicensePolicy();
+  /// Opt in to CC BY / CC BY-SA. Off by default: we start with **totally free**
+  /// (Public Domain / CC0) assets only, so nothing we import carries a credit
+  /// or share-alike obligation.
+  final bool allowAttributionLicenses;
+
+  const LicensePolicy({this.allowAttributionLicenses = false});
+
+  /// Whether [kind] may be imported under this policy.
+  bool allows(LicenseKind kind) =>
+      kind.isUnconditional ||
+      (allowAttributionLicenses && kind.needsAttribution);
 
   /// Classifies a free-text declared license into a [LicenseKind]. Conservative:
   /// anything it can't confidently read as permissive falls through to
@@ -97,15 +115,14 @@ class LicensePolicy {
     return LicenseKind.unknown;
   }
 
-  /// True if [item] may be imported/bundled.
-  bool isAllowed(LibraryItem item) =>
-      classify(item.declaredLicense).isPermissive;
+  /// True if [item] may be imported under this policy.
+  bool isAllowed(LibraryItem item) => allows(classify(item.declaredLicense));
 
-  /// Throws [LicenseBlocked] if [item] is not permissively licensed; otherwise
+  /// Throws [LicenseBlocked] if [item] is not allowed by this policy; otherwise
   /// returns the classified kind. Call this before any fetch/store.
   LicenseKind gate(LibraryItem item) {
     final kind = classify(item.declaredLicense);
-    if (!kind.isPermissive) throw LicenseBlocked(item, kind);
+    if (!allows(kind)) throw LicenseBlocked(item, kind);
     return kind;
   }
 

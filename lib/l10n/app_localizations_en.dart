@@ -1197,6 +1197,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabTechBend => 'Bend';
 
   @override
+  String get tabTechVibrato => 'Vibrato';
+
+  @override
   String get tabTechDead => 'Dead ✕';
 
   @override

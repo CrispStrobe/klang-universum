@@ -1204,6 +1204,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabTechBend => 'Bending';
 
   @override
+  String get tabTechVibrato => 'Vibrato';
+
+  @override
   String get tabTechDead => 'Dead ✕';
 
   @override

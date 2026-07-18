@@ -985,6 +985,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         TabTechnique.hammer => l10n.tabTechHammer,
         TabTechnique.slide => l10n.tabTechSlide,
         TabTechnique.bend => l10n.tabTechBend,
+        TabTechnique.vibrato => l10n.tabTechVibrato,
         TabTechnique.dead => l10n.tabTechDead,
         TabTechnique.ghost => l10n.tabTechGhost,
         TabTechnique.harmonic => l10n.tabTechHarmonic,

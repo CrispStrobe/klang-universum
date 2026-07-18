@@ -70,6 +70,53 @@ archive.org MIDI dumps, unlicensed KernScores. **Avoid for a donation-funded app
 > path for tab content: **author our own from PD works and license it CC0/CC-BY.**
 > This directly links Feature A → Feature B (the tab editor makes that content).
 
+#### Tracker modules (.mod/.xm/.s3m/.it) — audited 2026, verdict: DO NOT CONNECT any archive
+
+A dedicated audit (cited, in the branch's commit history) reached a **structural**
+conclusion: **there is no large body of tracker modules under CC0/CC-BY with
+documented, key-free programmatic access.** Every archive with *volume* has *no
+per-item license field*; every source with *license metadata* has *tiny volume*
+or *no API*. Specifically:
+
+- **Modland, Aminet, files.scene.org, modules.pl, OpenMPT song packs** — no
+  per-file license field; access grants are "free of charge" (pre-CC custom), not
+  a redistribution/derivative grant. `Aminet`'s `Distribution:` field is a
+  *restriction*, not a license. **DO NOT connect.**
+- **The Mod Archive** — has a license taxonomy (~950 permissive), but its own FAQ
+  says the grant *"does not cover inclusion in a packed/bundled application"*, its
+  "PD" tier rests on a CC instrument retired in 2010, and non-artists can upload
+  the tags. **BYOK-only** (see below), never bundled.
+- **"Big Mod Music Pack"** — sourced *from* The Mod Archive → inherits the same
+  bundling exclusion. **DO NOT bundle.**
+- **archive.org** — key-free API but `licenseurl` is uploader-asserted and <10% is
+  permissive (plurality is CC BY-NC-**ND**); the named "big" collections 404.
+  CONDITIONAL at best, low hundreds of items, manual review.
+- **Wikimedia Commons** — **rejects tracker formats at the MediaWiki layer**
+  (24-extension allowlist; modules aren't on it) — so 0 modules, *by policy*. (Its
+  MIDI, already our A1b source, stays fine.)
+- **United Trackers** (dead — domain now serves gambling), **keygenmusic**
+  (warez provenance) — **permanent exclusion**, purge from any config.
+
+**Conclusion honouring "totally free (CC0) only":** the only clean module paths
+are (1) a **one-time manual harvest of CC0-tagged assets from OpenGameArt**
+(explicit per-asset license field, no NC/ND; but zipped, no API, ~tens of
+modules — vendor with a checked-in manifest, do not auto-crawl), or (2)
+**author our own modules from CC0 samples** (e.g. Freesound CC0) via the Tracker
+we already have — zero provenance risk, full title. A `ModArchiveSource` remains
+possible **only as BYOK** (§1.2b) and only CC0-filtered, but a child won't request
+a key, so it's a maintainer/power-user unlock, not a mainstream browse source.
+
+#### §1.2b — BYOK (bring-your-own-key) sources
+
+Some sources (The Mod Archive) issue an API key **per application** and require it
+stay **confidential**. A key shipped inside a Flutter binary is trivially
+extractable → embedding one **breaches the confidentiality term on day one**.
+Therefore any keyed source is **BYOK**: no key ships; the source stays hidden
+until the user enters a key **they requested themselves** (disclosing their use);
+the `LicensePolicy` CC0/PD gate still hard-filters; imports go into the user's own
+local library (we never redistribute). This keeps a keyed source legally clean but
+maintainer-facing — build only if/when wanted.
+
 ### 1.3 What already exists (so we don't rebuild it)
 
 - **Readers for every safe format** live in `crisp_notation_core`:
@@ -125,10 +172,21 @@ lib/features/library/
 
 A single pure function every import passes through. Behaviour:
 
-- **Allowlist** for *bundling/redistribution*: `PD`, `CC0`, `CC-BY`, `CC-BY-SA`.
-- **Hard-reject**: `CC-*-NC`, `CC-*-ND`, all-rights-reserved, unknown/absent
-  license → import blocked with a clear "can't import — license not permissive"
-  message (offer "open in browser" via `url_launcher` instead).
+- **DEFAULT = TOTALLY FREE only (`PD` / `CC0`)** — licenses with *no conditions
+  at all* (maintainer directive). Nothing imported by default carries a credit or
+  share-alike obligation. Implemented as `LicensePolicy()` where
+  `allowAttributionLicenses = false`.
+- **`CC-BY` / `CC-BY-SA` are OFF by default**, opted into with
+  `LicensePolicy(allowAttributionLicenses: true)` — they are permissive but carry
+  obligations (credit; share-alike on *derivatives*). ⚠ Because our Tracker/Tab
+  editor lets a child *edit* a work, an edited CC-BY-SA pattern is a derivative
+  that must itself ship CC-BY-SA — so CC-BY-SA in an *editor* is riskier than in a
+  *player*. Keep the default (CC0/PD) unless a specific source is deliberately
+  opted in. **Never** admit GPL content (copyleft **and** it conflicts with
+  App-Store distribution terms).
+- **Hard-reject (always)**: `CC-*-NC`, `CC-*-ND`, all-rights-reserved,
+  unknown/absent license → import blocked with a clear message (offer "open in
+  browser" via `url_launcher` instead).
 - **Country gate for PD**: default to the conservative EU rule (author d. +70y)
   for IMSLP/CPDL "public domain"; a settings toggle for the user's jurisdiction.
   Conservative default = don't auto-import a PD-in-US-only work for a DE audience.

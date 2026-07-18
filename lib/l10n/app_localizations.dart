@@ -2312,6 +2312,12 @@ abstract class AppLocalizations {
   /// **'Bend'**
   String get tabTechBend;
 
+  /// No description provided for @tabTechVibrato.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrato'**
+  String get tabTechVibrato;
+
   /// No description provided for @tabTechDead.
   ///
   /// In en, this message translates to:

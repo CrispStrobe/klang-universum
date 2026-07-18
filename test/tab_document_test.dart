@@ -97,22 +97,50 @@ void main() {
   });
 
   test('techniques emit the matching noteId-keyed Score lists', () {
-    final doc = TabDocument.blank(guitar, initialColumns: 3)
+    // 4 quarter notes = one 4/4 bar, ids t0..t3.
+    final doc = TabDocument.blank(guitar, initialColumns: 4)
       ..setFret(0, 0, 5)
+      ..setFret(1, 0, 5)
       ..setFret(2, 0, 7)
-      ..toggleTechnique(0, TabTechnique.bend)
-      ..toggleTechnique(0, TabTechnique.harmonic)
-      ..toggleTechnique(0, TabTechnique.hammer) // slur t0 -> next noteful (t2)
-      ..toggleTechnique(2, TabTechnique.slide);
+      ..setFret(3, 0, 7)
+      ..toggleTechnique(0, TabTechnique.hammer) // slur t0 -> t1
+      ..toggleTechnique(1, TabTechnique.bend)
+      ..toggleTechnique(1, TabTechnique.vibrato)
+      ..toggleTechnique(2, TabTechnique.slide) // glissando t2 -> t3
+      ..toggleTechnique(3, TabTechnique.harmonic);
     final s = doc.toScore();
-    expect(s.bends.map((b) => b.noteId), contains('t0'));
+    expect(s.slurs.any((x) => x.startId == 't0' && x.endId == 't1'), isTrue);
+    expect(s.bends.map((b) => b.noteId), contains('t1'));
+    expect(s.vibratos.map((v) => v.noteId), contains('t1'));
+    // slide -> glissando (renders AND survives GP export), not slideInOuts.
     expect(
-      s.tabNoteMarks
-          .any((m) => m.noteId == 't0' && m.style == TabNoteStyle.harmonic),
+      s.glissandos.any((g) => g.startId == 't2' && g.endId == 't3'),
       isTrue,
     );
-    expect(s.slideInOuts.any((sl) => sl.noteId == 't2'), isTrue);
-    expect(s.slurs.any((x) => x.startId == 't0' && x.endId == 't2'), isTrue);
+    expect(s.slideInOuts, isEmpty);
+    expect(
+      s.tabNoteMarks
+          .any((m) => m.noteId == 't3' && m.style == TabNoteStyle.harmonic),
+      isTrue,
+    );
+  });
+
+  test('techniques ride a Guitar Pro export (glissando/bend/vibrato survive)',
+      () {
+    final doc = TabDocument.blank(guitar, initialColumns: 2)
+      ..setFret(0, 0, 5)
+      ..setFret(1, 0, 7)
+      ..toggleTechnique(0, TabTechnique.slide) // gliss t0 -> t1
+      ..toggleTechnique(1, TabTechnique.bend);
+    final gpif = scoreToGpif(doc.toScore(), tuning: guitar);
+    // The GPIF writer reads glissandos + bends; a re-read recovers the notes.
+    final back = scoreFromGpif(readGpifFromGp(writeGpFromGpif(gpif)));
+    expect(
+      back.measures.expand((m) => m.elements).whereType<NoteElement>(),
+      hasLength(2),
+    );
+    expect(gpif.toLowerCase(), contains('slide'));
+    expect(gpif.toLowerCase(), contains('bend'));
   });
 
   test('guitar chord presets are 6-string and self-named', () {

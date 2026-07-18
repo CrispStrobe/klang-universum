@@ -9,9 +9,18 @@
 
 import 'package:crisp_notation/crisp_notation.dart';
 
-/// A playing technique attached to a tab note. Rendered by the tab engine via
-/// the matching `Score` lists (bends / slides / note marks / legato slurs).
-enum TabTechnique { hammer, slide, bend, dead, ghost, harmonic }
+/// A playing technique attached to a tab note. Each maps to the `Score` list
+/// the tab engine renders from — and, where the GPIF writer reads the same
+/// list, it survives a Guitar Pro export too:
+///
+/// | technique | Score list | renders | exports to `.gp` |
+/// |---|---|---|---|
+/// | hammer | `slurs` (to the next note) | ✓ | ✓ |
+/// | slide | `glissandos` (to the next note) | ✓ | ✓ |
+/// | bend | `bends` | ✓ | ✓ |
+/// | vibrato | `vibratos` | ✓ | ✓ |
+/// | dead / ghost / harmonic | `tabNoteMarks` | ✓ | ✓ |
+enum TabTechnique { hammer, slide, bend, vibrato, dead, ghost, harmonic }
 
 /// One time-step in a [TabDocument]: a map of string index → fret (a chord when
 /// more than one), the played [duration], and any [techniques]. String index
@@ -240,8 +249,9 @@ class TabDocument {
     final voicings = <TabVoicing>[];
     final bends = <Bend>[];
     final marks = <TabNoteMark>[];
-    final slides = <TabSlide>[];
     final slurs = <Slur>[];
+    final glissandos = <Glissando>[];
+    final vibratos = <Vibrato>[];
     var bar = <MusicElement>[];
     var barSteps = 0;
 
@@ -278,7 +288,12 @@ class TabDocument {
             case TabTechnique.bend:
               bends.add(Bend(id));
             case TabTechnique.slide:
-              slides.add(TabSlide(id, SlideInOut.outUpward));
+              // A slide goes TO the next sounding note — `glissandos` is both
+              // what the tab engine draws and what the GPIF writer exports.
+              final n = nextNoteful(c);
+              if (n != null) glissandos.add(Glissando(id, 't$n'));
+            case TabTechnique.vibrato:
+              vibratos.add(Vibrato(id));
             case TabTechnique.dead:
               marks.add(TabNoteMark(id, TabNoteStyle.dead));
             case TabTechnique.ghost:
@@ -303,8 +318,9 @@ class TabDocument {
       tabVoicings: voicings,
       bends: bends,
       tabNoteMarks: marks,
-      slideInOuts: slides,
       slurs: slurs,
+      glissandos: glissandos,
+      vibratos: vibratos,
     );
   }
 
