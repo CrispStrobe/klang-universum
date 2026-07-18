@@ -414,6 +414,8 @@
   "workshopModeLoop": "Loop Mixer",
   "workshopModeDrums": "Drum Kit",
   "drumkitTitle": "Drum Kit",
+  "drumkitRecord": "Record",
+  "drumkitStopRecording": "Stop recording",
   "drumkitKick": "Kick",
   "drumkitSnare": "Snare",
   "drumkitHat": "Hi-hat",

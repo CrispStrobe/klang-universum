@@ -383,6 +383,8 @@
   "workshopModeLoop": "Loop-Mixer",
   "workshopModeDrums": "Schlagzeug",
   "drumkitTitle": "Schlagzeug",
+  "drumkitRecord": "Aufnehmen",
+  "drumkitStopRecording": "Aufnahme stoppen",
   "drumkitKick": "Bass",
   "drumkitSnare": "Snare",
   "drumkitHat": "Hi-Hat",

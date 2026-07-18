@@ -1135,6 +1135,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drumkitTitle => 'Drum Kit';
 
   @override
+  String get drumkitRecord => 'Record';
+
+  @override
+  String get drumkitStopRecording => 'Stop recording';
+
+  @override
   String get drumkitKick => 'Kick';
 
   @override

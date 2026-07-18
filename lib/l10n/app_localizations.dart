@@ -2192,6 +2192,18 @@ abstract class AppLocalizations {
   /// **'Drum Kit'**
   String get drumkitTitle;
 
+  /// No description provided for @drumkitRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get drumkitRecord;
+
+  /// No description provided for @drumkitStopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get drumkitStopRecording;
+
   /// No description provided for @drumkitKick.
   ///
   /// In en, this message translates to:

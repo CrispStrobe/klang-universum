@@ -10,6 +10,9 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/loop_engine.dart'
     show DrumRowsPattern, LoopTiming, kPatternSteps;
+import 'package:comet_beat/core/audio/rhythm_convert.dart' show toDrumPattern;
+import 'package:comet_beat/core/audio/rhythm_quantize.dart'
+    show RhythmOnset, RhythmResolution, quantizeToResolution;
 import 'package:comet_beat/core/audio/synth.dart'
     show Drum, renderDrum, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
@@ -34,6 +37,15 @@ abstract interface class DrumkitTester {
   void tapPad(Drum drum);
   int get tempo;
   void setTempo(int bpm);
+
+  /// Tap-to-record: while on, pad taps are captured and, on stop, quantised
+  /// onto the step grid (overdubbed into the pattern).
+  bool get isRecording;
+  void toggleRecord();
+
+  /// Test seam: quantise a list of `(drum, loop-ms)` taps into the grid exactly
+  /// as a live recording would, without real-time tapping.
+  void debugRecordTaps(List<({Drum drum, double ms})> taps);
 }
 
 class DrumkitScreen extends StatefulWidget {
@@ -58,6 +70,11 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   late final Ticker _ticker;
   final _step = ValueNotifier<int>(-1);
   int _tempo = 100;
+
+  // Tap-to-record: capture (drum, loop-relative ms) while recording, then
+  // quantise onto the step grid on stop.
+  bool _recording = false;
+  final List<({Drum drum, double ms})> _taps = [];
 
   LoopTiming get _timing => LoopTiming(tempoBpm: _tempo); // 2 bars (default)
 
@@ -143,6 +160,11 @@ class _DrumkitScreenState extends State<DrumkitScreen>
 
   @override
   void stop() {
+    // Stopping while recording commits the take first.
+    if (_recording) {
+      _quantizeTapsIntoRows(_taps, _timing.beatMs.toDouble());
+      _recording = false;
+    }
     _clock
       ..stop()
       ..reset();
@@ -163,10 +185,83 @@ class _DrumkitScreenState extends State<DrumkitScreen>
 
   @override
   void tapPad(Drum drum) {
+    // While recording, capture the tap at its loop position (so it quantises
+    // against the running beat).
+    if (_recording && _clock.isRunning) {
+      _taps.add(
+        (
+          drum: drum,
+          ms: (_clock.elapsedMilliseconds % _timing.totalMs).toDouble(),
+        ),
+      );
+    }
     context
         .read<AudioService>()
         .playWavBytes(wavBytes(_toPcm16(renderDrum(drum))));
   }
+
+  @override
+  bool get isRecording => _recording;
+
+  @override
+  void toggleRecord() {
+    if (_recording) {
+      _finishRecording();
+      return;
+    }
+    if (!context.read<AudioService>().soundOn) return;
+    // Roll the loop so taps land against a beat (an empty pattern = a metronome-
+    // free count, still on the grid via the loop clock).
+    if (!_clock.isRunning) {
+      _clock
+        ..reset()
+        ..start();
+      _loop.playLoop(_renderWav());
+    }
+    setState(() {
+      _taps.clear();
+      _recording = true;
+    });
+  }
+
+  void _finishRecording() {
+    _quantizeTapsIntoRows(_taps, _timing.beatMs.toDouble());
+    setState(() => _recording = false);
+    _syncPlayback();
+  }
+
+  /// Quantise recorded [taps] onto the fixed eighth grid (the DrumKit's grid;
+  /// beginners can't out-run it) and OR them into the pattern (overdub). Each
+  /// drum snaps independently so a kick and a snare can share a step; the
+  /// relevance threshold collapses double-taps and (via [quantizeToResolution])
+  /// keeps loose timing on clean eighths.
+  void _quantizeTapsIntoRows(
+    List<({Drum drum, double ms})> taps,
+    double beatMs,
+  ) {
+    setState(() {
+      for (final drum in Drum.values) {
+        final onsets = <RhythmOnset>[
+          for (final t in taps)
+            if (t.drum == drum) (ms: t.ms, strength: 1.0),
+        ];
+        if (onsets.isEmpty) continue;
+        final q = quantizeToResolution(
+          onsets,
+          beatMs: beatMs,
+          resolution: RhythmResolution.eighth,
+        );
+        final pattern = toDrumPattern(q, drumOf: (_) => drum);
+        for (var s = 0; s < kPatternSteps; s++) {
+          if (pattern.rows[drum]![s]) _rows[drum]![s] = true;
+        }
+      }
+    });
+  }
+
+  @override
+  void debugRecordTaps(List<({Drum drum, double ms})> taps) =>
+      _quantizeTapsIntoRows(taps, _timing.beatMs.toDouble());
 
   @override
   int get tempo => _tempo;
@@ -293,6 +388,20 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                     onPressed: togglePlay,
                     icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
                     label: Text(isPlaying ? l10n.songStop : l10n.myMelodyPlay),
+                  ),
+                  FilledButton.icon(
+                    onPressed: toggleRecord,
+                    style: _recording
+                        ? FilledButton.styleFrom(backgroundColor: scheme.error)
+                        : null,
+                    icon: Icon(
+                      _recording ? Icons.stop : Icons.fiber_manual_record,
+                    ),
+                    label: Text(
+                      _recording
+                          ? l10n.drumkitStopRecording
+                          : l10n.drumkitRecord,
+                    ),
                   ),
                   for (final bpm in DrumkitScreen.tempos)
                     ChoiceChip(

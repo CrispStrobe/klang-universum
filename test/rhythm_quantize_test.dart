@@ -143,6 +143,30 @@ void main() {
     });
   });
 
+  group('quantizeToResolution (fixed grid — e.g. a step drum machine)', () {
+    test('snaps to the given grid without auto-coarsening sparse hits', () {
+      // A lone hit near the "and of 1" must land on the eighth, not the beat.
+      final q = quantizeToResolution(
+        [_on(255)],
+        beatMs: _beatMs,
+        resolution: RhythmResolution.eighth,
+      );
+      expect(q.resolution, RhythmResolution.eighth);
+      expect(q.hits.single.step, 1); // 255 → 250 ms, not 500
+    });
+
+    test('still collapses same-step hits and drops sub-strength', () {
+      final q = quantizeToResolution(
+        [_on(0), _on(120, 0.4), _on(250, 0.05)],
+        beatMs: _beatMs,
+        resolution: RhythmResolution.eighth,
+        minStrength: 0.2,
+      );
+      // 0 and 120 collapse to step 0; the 0.05 hit is dropped.
+      expect(q.hits.map((h) => h.step).toList(), [0]);
+    });
+  });
+
   group('detectOnsets', () {
     test('finds one onset per energy bump, with a refractory window', () {
       // Three loud bumps over a dense, mostly-quiet trace (each hit is preceded

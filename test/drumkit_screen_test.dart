@@ -58,4 +58,29 @@ void main() {
     expect(kit.hitCount, 0);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('tap-to-record quantises loose taps onto the eighth grid',
+      (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    kit.setTempo(120); // beatMs 500 → an eighth step is 250 ms
+    await tester.pump();
+
+    // Loose taps: kick on beats 1 & 2 (with a stray near-duplicate), snare on
+    // the "and of 1". Loop-relative ms.
+    kit.debugRecordTaps([
+      (drum: Drum.kick, ms: 12), // → step 0
+      (drum: Drum.kick, ms: 28), // near-dup → collapses onto step 0
+      (drum: Drum.snare, ms: 258), // → step 1 (not over-quantised to the beat)
+      (drum: Drum.kick, ms: 505), // → step 2
+    ]);
+    await tester.pump();
+
+    expect(kit.cellAt(Drum.kick, 0), isTrue);
+    expect(kit.cellAt(Drum.kick, 2), isTrue);
+    expect(kit.cellAt(Drum.snare, 1), isTrue);
+    // The stray double-kick collapsed → kick has just two hits.
+    expect(kit.hitCount, 3);
+    expect(kit.isRecording, isFalse);
+  });
 }

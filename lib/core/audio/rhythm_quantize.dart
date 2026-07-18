@@ -211,34 +211,14 @@ List<RhythmOnset> detectOnsets(
   return onsets;
 }
 
-/// Quantise captured [onsets] to the grid the player can feel. Applies the
-/// relevance threshold: onsets below [minStrength] are dropped as noise, the
-/// subdivision is auto-chosen (≤ [cap], the skill tier), each onset snaps to
-/// that grid, and hits landing on the same step collapse to one (the strongest
-/// kept). Hits come back in step order. An empty/degenerate input yields an
-/// empty quarter-grid result.
-RhythmQuantization quantizeRhythm(
-  List<RhythmOnset> onsets, {
-  required double beatMs,
-  RhythmResolution cap = RhythmResolution.eighth,
-  double minStrength = 0.0,
-  double tolerance = 0.2,
-}) {
-  final kept = [
-    for (final o in onsets)
-      if (o.strength >= minStrength) o,
-  ]..sort((a, b) => a.ms.compareTo(b.ms));
-  if (kept.isEmpty || beatMs <= 0) {
-    return const RhythmQuantization(RhythmResolution.quarter, []);
-  }
-  final resolution = chooseResolution(
-    [for (final o in kept) o.ms],
-    beatMs: beatMs,
-    cap: cap,
-    tolerance: tolerance,
-  );
+/// Snaps [kept] (already strength-filtered, time-sorted) onto [resolution]'s
+/// grid and collapses same-step hits, keeping the strongest.
+RhythmQuantization _snap(
+  List<RhythmOnset> kept,
+  RhythmResolution resolution,
+  double beatMs,
+) {
   final stepMs = beatMs / resolution.stepsPerBeat;
-  // Snap, then collapse same-step hits keeping the strongest.
   final byStep = <int, QuantizedHit>{};
   for (final o in kept) {
     final step = (o.ms / stepMs).round();
@@ -254,4 +234,53 @@ RhythmQuantization quantizeRhythm(
   }
   final hits = byStep.values.toList()..sort((a, b) => a.step.compareTo(b.step));
   return RhythmQuantization(resolution, hits);
+}
+
+List<RhythmOnset> _filtered(List<RhythmOnset> onsets, double minStrength) => [
+      for (final o in onsets)
+        if (o.strength >= minStrength) o,
+    ]..sort((a, b) => a.ms.compareTo(b.ms));
+
+/// Quantise captured [onsets] to the grid the player can feel. Applies the
+/// relevance threshold: onsets below [minStrength] are dropped as noise, the
+/// subdivision is auto-chosen (≤ [cap], the skill tier), each onset snaps to
+/// that grid, and hits landing on the same step collapse to one (the strongest
+/// kept). Hits come back in step order. An empty/degenerate input yields an
+/// empty quarter-grid result.
+RhythmQuantization quantizeRhythm(
+  List<RhythmOnset> onsets, {
+  required double beatMs,
+  RhythmResolution cap = RhythmResolution.eighth,
+  double minStrength = 0.0,
+  double tolerance = 0.2,
+}) {
+  final kept = _filtered(onsets, minStrength);
+  if (kept.isEmpty || beatMs <= 0) {
+    return const RhythmQuantization(RhythmResolution.quarter, []);
+  }
+  final resolution = chooseResolution(
+    [for (final o in kept) o.ms],
+    beatMs: beatMs,
+    cap: cap,
+    tolerance: tolerance,
+  );
+  return _snap(kept, resolution, beatMs);
+}
+
+/// Quantise [onsets] to a FIXED [resolution] grid (no auto-pick) — for a target
+/// with a set grid, like a step drum-machine's eighth grid, where every onset
+/// should snap to the grid rather than settle on a coarser feel. Still applies
+/// the relevance threshold (drop < [minStrength]; collapse same-step, strongest
+/// kept).
+RhythmQuantization quantizeToResolution(
+  List<RhythmOnset> onsets, {
+  required double beatMs,
+  required RhythmResolution resolution,
+  double minStrength = 0.0,
+}) {
+  final kept = _filtered(onsets, minStrength);
+  if (kept.isEmpty || beatMs <= 0) {
+    return RhythmQuantization(resolution, const []);
+  }
+  return _snap(kept, resolution, beatMs);
 }
