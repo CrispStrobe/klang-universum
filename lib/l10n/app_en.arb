@@ -529,6 +529,7 @@
   "trackerMixer": "Tracks & mixer",
   "trackerRecordSample": "Record sample",
   "trackerSampleTrim": "Trim silence",
+  "trackerSampleTrimDrag": "Drag the handles to trim the sample",
   "trackerSampleNormalize": "Normalize",
   "trackerSampleReverse": "Reverse",
   "trackerAssignSample": "Use for this track",

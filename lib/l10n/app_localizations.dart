@@ -2876,6 +2876,12 @@ abstract class AppLocalizations {
   /// **'Trim silence'**
   String get trackerSampleTrim;
 
+  /// No description provided for @trackerSampleTrimDrag.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the handles to trim the sample'**
+  String get trackerSampleTrimDrag;
+
   /// No description provided for @trackerSampleNormalize.
   ///
   /// In en, this message translates to:

@@ -1481,6 +1481,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerSampleTrim => 'Trim silence';
 
   @override
+  String get trackerSampleTrimDrag => 'Drag the handles to trim the sample';
+
+  @override
   String get trackerSampleNormalize => 'Normalize';
 
   @override

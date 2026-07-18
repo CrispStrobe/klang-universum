@@ -597,4 +597,29 @@ void main() {
     await tester.pump();
     expect(game.showScope, isFalse);
   });
+
+  group('sliceFraction (sample trim handles)', () {
+    final buf = Float64List.fromList(List.generate(100, (i) => i / 100));
+
+    test('full range returns the same buffer', () {
+      expect(identical(sliceFraction(buf, 0.0, 1.0), buf), isTrue);
+    });
+
+    test('crops to the dragged region', () {
+      final s = sliceFraction(buf, 0.25, 0.75);
+      expect(s.length, 50);
+      expect(s.first, closeTo(0.25, 1e-9)); // first kept frame
+      expect(s.last, closeTo(0.74, 1e-9)); // last kept frame
+    });
+
+    test('clamps and never mutates the source', () {
+      final s = sliceFraction(buf, 0.9, 2.0); // end past the buffer
+      expect(s.length, 10);
+      expect(buf.length, 100); // source untouched
+    });
+
+    test('empty stays empty', () {
+      expect(sliceFraction(Float64List(0), 0.2, 0.8), isEmpty);
+    });
+  });
 }

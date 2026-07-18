@@ -1490,6 +1490,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerSampleTrim => 'Stille kürzen';
 
   @override
+  String get trackerSampleTrimDrag => 'Zum Kürzen die Griffe ziehen';
+
+  @override
   String get trackerSampleNormalize => 'Normalisieren';
 
   @override

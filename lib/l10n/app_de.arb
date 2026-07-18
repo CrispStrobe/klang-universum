@@ -498,6 +498,7 @@
   "trackerMixer": "Spuren & Mixer",
   "trackerRecordSample": "Sample aufnehmen",
   "trackerSampleTrim": "Stille kürzen",
+  "trackerSampleTrimDrag": "Zum Kürzen die Griffe ziehen",
   "trackerSampleNormalize": "Normalisieren",
   "trackerSampleReverse": "Umkehren",
   "trackerAssignSample": "Für diese Spur verwenden",
