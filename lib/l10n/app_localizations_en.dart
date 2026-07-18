@@ -1778,6 +1778,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerStarterBeat => 'Add a starter beat';
 
   @override
+  String get trackerModArchive => 'Browse The Mod Archive…';
+
+  @override
+  String get modArchiveTitle => 'The Mod Archive';
+
+  @override
+  String get modArchiveKeyPrompt =>
+      'This browses only the CC0 / Public-Domain modules and needs your own free API key from modarchive.org.';
+
+  @override
+  String get modArchiveKeyLabel => 'API key';
+
+  @override
+  String get modArchiveGetKey => 'Get a key';
+
+  @override
+  String get modArchiveSaveKey => 'Save';
+
+  @override
   String get trackerPreview => 'Preview';
 
   @override

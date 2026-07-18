@@ -3452,6 +3452,42 @@ abstract class AppLocalizations {
   /// **'Add a starter beat'**
   String get trackerStarterBeat;
 
+  /// No description provided for @trackerModArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse The Mod Archive…'**
+  String get trackerModArchive;
+
+  /// No description provided for @modArchiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Mod Archive'**
+  String get modArchiveTitle;
+
+  /// No description provided for @modArchiveKeyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'This browses only the CC0 / Public-Domain modules and needs your own free API key from modarchive.org.'**
+  String get modArchiveKeyPrompt;
+
+  /// No description provided for @modArchiveKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get modArchiveKeyLabel;
+
+  /// No description provided for @modArchiveGetKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a key'**
+  String get modArchiveGetKey;
+
+  /// No description provided for @modArchiveSaveKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get modArchiveSaveKey;
+
   /// No description provided for @trackerPreview.
   ///
   /// In en, this message translates to:

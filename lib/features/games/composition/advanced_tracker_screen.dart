@@ -63,6 +63,7 @@ import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
+import 'package:comet_beat/features/library/modarchive_sheet.dart';
 import 'package:comet_beat/features/library/sample_library_sheet.dart';
 import 'package:comet_beat/features/library/starter_pattern.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart'
@@ -2568,6 +2569,21 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void importModuleBytes(Uint8List bytes) =>
       _replaceSong(songFromModuleBytes(bytes));
 
+  /// BYOK browse of The Mod Archive's CC0/Public-Domain modules → import the
+  /// picked one via the same [importModuleBytes] seam as file/module import.
+  Future<void> _browseModArchive() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = AppLocalizations.of(context)!.trackerModFailed;
+    try {
+      final bytes = await showModArchiveSheet(context);
+      if (bytes == null || !mounted) return;
+      importModuleBytes(bytes);
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
+  }
+
   Future<void> _importModule() async {
     final messenger = ScaffoldMessenger.of(context);
     final failed = AppLocalizations.of(context)!.trackerModFailed;
@@ -3010,6 +3026,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               switch (v) {
                 case 'import':
                   _importModule();
+                case 'modArchive':
+                  _browseModArchive();
                 case 'importScore':
                   _importScore();
                 case 'demo':
@@ -3032,6 +3050,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             },
             itemBuilder: (ctx) => [
               _menuRow('import', Icons.library_music, l10n.trackerImportMod),
+              _menuRow(
+                'modArchive',
+                Icons.travel_explore,
+                l10n.trackerModArchive,
+              ),
               _menuRow(
                 'importScore',
                 Icons.file_open_outlined,
