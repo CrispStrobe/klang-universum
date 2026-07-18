@@ -1410,6 +1410,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerFollow => 'Follow the playhead';
 
   @override
+  String get trackerScope => 'Toggle the oscilloscope';
+
+  @override
+  String get trackerLoadDemo => 'Load a demo song';
+
+  @override
   String get trackerZoomIn => 'Zoom in';
 
   @override

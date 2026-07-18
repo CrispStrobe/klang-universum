@@ -1417,6 +1417,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerFollow => 'Abspielposition folgen';
 
   @override
+  String get trackerScope => 'Oszilloskop ein/aus';
+
+  @override
+  String get trackerLoadDemo => 'Demo-Song laden';
+
+  @override
   String get trackerZoomIn => 'Vergrößern';
 
   @override

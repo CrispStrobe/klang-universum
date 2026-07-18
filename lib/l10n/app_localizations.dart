@@ -2738,6 +2738,18 @@ abstract class AppLocalizations {
   /// **'Follow the playhead'**
   String get trackerFollow;
 
+  /// No description provided for @trackerScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle the oscilloscope'**
+  String get trackerScope;
+
+  /// No description provided for @trackerLoadDemo.
+  ///
+  /// In en, this message translates to:
+  /// **'Load a demo song'**
+  String get trackerLoadDemo;
+
   /// No description provided for @trackerZoomIn.
   ///
   /// In en, this message translates to:

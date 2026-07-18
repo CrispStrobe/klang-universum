@@ -475,6 +475,8 @@
   "trackerPlayFromCursor": "Ab Cursor abspielen",
   "trackerMetronome": "Metronom",
   "trackerFollow": "Abspielposition folgen",
+  "trackerScope": "Oszilloskop ein/aus",
+  "trackerLoadDemo": "Demo-Song laden",
   "trackerZoomIn": "Vergrößern",
   "trackerZoomOut": "Verkleinern",
   "trackerClassicSkin": "Klassischer Tracker-Look",

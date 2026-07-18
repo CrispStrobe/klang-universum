@@ -564,4 +564,37 @@ void main() {
     expect(game.debugSaveToSongBook(songs), isTrue);
     expect(songs.songs, isNotEmpty);
   });
+
+  testWidgets('demo song loads a playable two-pattern tune', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    expect(game.noteCount, 0);
+
+    game.loadDemo();
+    await tester.pump();
+
+    expect(game.patternCount, 2); // 00 + a variation
+    expect(game.orderLength, 2); // order: 00 · 01
+    expect(game.noteAt(0, 0), 72); // melody starts on C5
+    expect(game.currentPattern, 0);
+    expect(game.noteCount, greaterThan(0));
+  });
+
+  testWidgets('scope toggle renders the loop waveform without error',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.loadDemo();
+    await tester.pump();
+
+    expect(game.showScope, isFalse);
+    game.toggleScope();
+    await tester.pump();
+    expect(game.showScope, isTrue);
+    expect(tester.takeException(), isNull);
+
+    game.toggleScope();
+    await tester.pump();
+    expect(game.showScope, isFalse);
+  });
 }

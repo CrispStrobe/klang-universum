@@ -228,6 +228,11 @@ abstract interface class AdvancedTrackerTester {
   void toggleClassic();
   void setZoom(double z);
 
+  /// Master oscilloscope strip + a built-in demo song.
+  bool get showScope;
+  void toggleScope();
+  void loadDemo();
+
   /// Order-list editing.
   List<int> get orderList;
   void selectOrderSlot(int i);
@@ -341,6 +346,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   /// Whether the grid auto-scrolls to follow the playhead during playback.
   bool _followPlay = true;
+
+  /// Master oscilloscope: a waveform strip of the current pattern's mix.
+  bool _showScope = false;
+  Int16List? _scopePcm;
+  bool _scopeDirty = true;
 
   /// Two-digit hex volume entry (FT2's 00–40 volume column): the accumulator and
   /// how many digits have been typed in the current cell (resets on a move).
@@ -1321,6 +1331,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// song in song mode), keeping the musical phase so an edit never resets the
   /// beat.
   void _syncPlayback() {
+    _scopeDirty = true; // the mix changed → the scope waveform is stale
     if (!_clock.isRunning) return;
     final anyNote = _song.engine.channels.any((c) => c.hasAnyNote) ||
         _song.patterns.any((p) => p.hasAnyNote);
@@ -1541,6 +1552,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void toggleClassic() => setState(() => _classic = !_classic);
   @override
   void setZoom(double z) => setState(() => _zoom = z.clamp(0.75, 1.6));
+  @override
+  bool get showScope => _showScope;
+  @override
+  void toggleScope() => setState(() => _showScope = !_showScope);
+  @override
+  void loadDemo() => _loadDemo();
   @override
   List<int> get orderList => List.unmodifiable(_song.order);
   @override
@@ -1923,6 +1940,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       _song = song;
       _cursorChannel = 0;
       _cursorRow = 0;
+      _scopeDirty = true;
     });
   }
 
@@ -2262,6 +2280,28 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
+  /// A built-in two-pattern demo groove so newcomers instantly see + hear a full
+  /// tune (melody + sparkle + bass on the default band; pattern 01 lifts the
+  /// melody a third for a call/response).
+  void _loadDemo() {
+    final song = TrackerSong(); // default band, 32 rows @ 4 steps/beat
+    void put(int ch, int row, int midi) =>
+        song.engine.setCell(ch, row, TrackerCell(midi: midi));
+    const mel = [72, 76, 79, 76, 74, 77, 79, 74]; // C E G E · D F G D
+    const bass = [48, 48, 43, 43, 41, 41, 43, 43]; // C C G G F F G G
+    for (var i = 0; i < 8; i++) {
+      put(0, i * 4, mel[i]); // melody (piano)
+      put(3, i * 4, bass[i]); // bass (cello)
+      put(1, i * 4 + 2, mel[i] + 12); // sparkle (music box), offbeat, +8ve
+    }
+    final p1 = song.addPattern(cloneCurrent: true); // pattern 01 = a variation
+    song.selectPattern(p1);
+    song.transposeBlock(0, 0, 0, song.rows - 1, 3); // lift the melody a third
+    song.selectPattern(0);
+    song.addToOrder(p1); // order: 00 · 01
+    _replaceSong(song);
+  }
+
   // --- Build ---
 
   @override
@@ -2307,6 +2347,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _importModule();
                 case 'importScore':
                   _importScore();
+                case 'demo':
+                  _loadDemo();
                 case 'saveSong':
                   _saveToSongBook();
                 case 'exportMidi':
@@ -2326,6 +2368,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 Icons.file_open_outlined,
                 l10n.trackerImportScore,
               ),
+              _menuRow('demo', Icons.auto_awesome, l10n.trackerLoadDemo),
               const PopupMenuDivider(),
               _menuRow(
                 'saveSong',
@@ -2361,6 +2404,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 const Divider(height: 1),
                 Expanded(child: _grid(context)),
                 const Divider(height: 1),
+                if (_showScope) _scopeStrip(context),
                 _transportBar(l10n),
                 _pianoBar(l10n),
               ],
@@ -2483,6 +2527,35 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   /// The classic transport row: Play/Pause · Back · Stop · Forward · Play-song ·
   /// Loop + a position readout — all inline (no floating button over the grid).
+  /// The master oscilloscope strip — the current pattern's mixed waveform with a
+  /// red playhead sweeping across it during playback.
+  Widget _scopeStrip(BuildContext context) {
+    if (_scopeDirty || _scopePcm == null) {
+      _scopePcm = _song.engine.renderLoopPcm();
+      _scopeDirty = false;
+    }
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 44,
+      child: RepaintBoundary(
+        child: ValueListenableBuilder<int>(
+          valueListenable: _row,
+          builder: (context, row, _) => CustomPaint(
+            size: Size.infinite,
+            painter: _ScopePainter(
+              pcm: _scopePcm!,
+              progress: row < 0 ? -1.0 : row / _song.rows,
+              wave: _classic ? const Color(0xFF6EE787) : scheme.primary,
+              bg: _classic
+                  ? const Color(0xFF08120A)
+                  : scheme.surfaceContainerLowest,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _transportBar(AppLocalizations l10n) {
     final scheme = Theme.of(context).colorScheme;
     final playing = _clock.isRunning && !_paused;
@@ -2550,6 +2623,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               tooltip: l10n.trackerFollow,
               color: _followPlay ? scheme.primary : null,
               onPressed: () => setState(() => _followPlay = !_followPlay),
+            ),
+            IconButton(
+              icon: Icon(_showScope ? Icons.graphic_eq : Icons.show_chart),
+              tooltip: l10n.trackerScope,
+              color: _showScope ? scheme.primary : null,
+              onPressed: () => setState(() => _showScope = !_showScope),
             ),
             const SizedBox(width: 16),
             AnimatedBuilder(
@@ -3554,4 +3633,59 @@ class _CommandEditorState extends State<_CommandEditor> {
       ],
     );
   }
+}
+
+/// Draws a pattern's mixed PCM as a vertical-bar waveform with a playhead line.
+class _ScopePainter extends CustomPainter {
+  _ScopePainter({
+    required this.pcm,
+    required this.progress,
+    required this.wave,
+    required this.bg,
+  });
+
+  final Int16List pcm;
+  final double progress; // 0..1, or <0 when stopped
+  final Color wave;
+  final Color bg;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = bg);
+    if (pcm.isEmpty) return;
+    final mid = size.height / 2;
+    final p = Paint()
+      ..color = wave
+      ..strokeWidth = 1;
+    final cols = size.width.round().clamp(1, 4000);
+    final n = pcm.length;
+    for (var x = 0; x < cols; x++) {
+      final i0 = (x * n / cols).floor();
+      final i1 = ((x + 1) * n / cols).floor().clamp(i0 + 1, n);
+      var peak = 0;
+      for (var i = i0; i < i1; i++) {
+        final a = pcm[i].abs();
+        if (a > peak) peak = a;
+      }
+      final h = (peak / 32768) * mid;
+      final xx = x * size.width / cols;
+      canvas.drawLine(Offset(xx, mid - h), Offset(xx, mid + h), p);
+    }
+    if (progress >= 0) {
+      canvas.drawLine(
+        Offset(progress * size.width, 0),
+        Offset(progress * size.width, size.height),
+        Paint()
+          ..color = const Color(0xFFFF5252)
+          ..strokeWidth = 1.5,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ScopePainter old) =>
+      old.progress != progress ||
+      !identical(old.pcm, pcm) ||
+      old.bg != bg ||
+      old.wave != wave;
 }

@@ -506,6 +506,8 @@
   "trackerPlayFromCursor": "Play from cursor",
   "trackerMetronome": "Metronome",
   "trackerFollow": "Follow the playhead",
+  "trackerScope": "Toggle the oscilloscope",
+  "trackerLoadDemo": "Load a demo song",
   "trackerZoomIn": "Zoom in",
   "trackerZoomOut": "Zoom out",
   "trackerClassicSkin": "Classic tracker look",
