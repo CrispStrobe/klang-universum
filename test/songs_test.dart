@@ -362,10 +362,12 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    // All four import affordances are present.
+    // The paste + the universal file-import affordances are present.
     expect(find.text('Import as MusicXML'), findsOneWidget);
-    expect(find.text('Pick a MusicXML file…'), findsOneWidget);
-    expect(find.text('Pick a MIDI file…'), findsOneWidget);
+    expect(
+      find.text('Import a file (MusicXML/MXL/ABC/MEI/kern/MIDI)…'),
+      findsOneWidget,
+    );
 
     // Paste valid MusicXML and import it.
     await tester.enterText(find.byType(TextField).last, _xml);
@@ -391,11 +393,12 @@ void main() {
         .pumpWidget(_wrap(_launcher(const ImportScreen()), sri, songs: songs));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Pick a MusicXML file…'));
+    await tester
+        .tap(find.text('Import a file (MusicXML/MXL/ABC/MEI/kern/MIDI)…'));
     await tester.pumpAndSettle();
 
     expect(songs.songs, hasLength(1));
-    // No title typed and no work-title in the XML -> filename is the fallback.
+    // No title typed -> filename is the fallback.
     expect(songs.songs.single.title, 'my_tune');
   });
 
@@ -410,10 +413,11 @@ void main() {
         .pumpWidget(_wrap(_launcher(const ImportScreen()), sri, songs: songs));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Pick a MIDI file…'));
+    await tester
+        .tap(find.text('Import a file (MusicXML/MXL/ABC/MEI/kern/MIDI)…'));
     await tester.pumpAndSettle();
 
-    // Parsed + quantized + persisted as MusicXML under the filename.
+    // Parsed + persisted as MusicXML under the filename.
     expect(songs.songs, hasLength(1));
     expect(songs.songs.single.title, 'ditty');
   });

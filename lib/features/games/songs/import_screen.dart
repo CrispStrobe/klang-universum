@@ -4,13 +4,25 @@
 // with [C] chords) into the text field, or pick a simple MIDI file.
 // Imported songs live in the Song Book (persisted via UserSongsService).
 
+import 'dart:convert';
+
+import 'package:comet_beat/core/notation/multi_part_export.dart'
+    show multiTrackMidiToMultiPart;
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
-import 'package:comet_beat/features/games/songs/import/midi_import.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/library_browser_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show scoreFromAbc, scoreFromMusicXml, scoreToMusicXml;
+    show
+        multiPartScoreFromAbc,
+        multiPartScoreFromKern,
+        multiPartScoreFromMei,
+        multiPartScoreFromMusicXml,
+        multiPartToMusicXml,
+        readMusicXmlFromMxl,
+        scoreFromAbc,
+        scoreFromMusicXml,
+        scoreToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -75,24 +87,47 @@ class _ImportScreenState extends State<ImportScreen> {
     }
   }
 
-  Future<void> _importMusicXmlFile() async {
+  /// One picker for every notation FILE format — MusicXML/.mxl/ABC/MEI/kern/
+  /// MIDI — each via its multi-part reader, stored as MusicXML like the rest of
+  /// the Song Book. The Song Book's universal front door.
+  Future<void> _importMusicFile() async {
     try {
       final file = await openFile(
         acceptedTypeGroups: [
-          const XTypeGroup(label: 'MusicXML', extensions: ['musicxml', 'xml']),
+          const XTypeGroup(
+            label: 'Music',
+            extensions: [
+              'musicxml',
+              'xml',
+              'mxl',
+              'abc',
+              'mei',
+              'krn',
+              'mid',
+              'midi',
+            ],
+          ),
         ],
       );
       if (file == null || !mounted) return;
-      final xml = await file.readAsString();
+      final bytes = await file.readAsBytes();
       if (!mounted) return;
-      scoreFromMusicXml(xml); // validate before storing
-      final base = file.name
-          .replaceAll(RegExp(r'\.(musicxml|xml)$', caseSensitive: false), '');
+      final ext = file.name.split('.').last.toLowerCase();
+      final mp = switch (ext) {
+        'mid' || 'midi' => multiTrackMidiToMultiPart(bytes),
+        'abc' => multiPartScoreFromAbc(utf8.decode(bytes)),
+        'mei' => multiPartScoreFromMei(utf8.decode(bytes)),
+        'krn' => multiPartScoreFromKern(utf8.decode(bytes)),
+        'mxl' => multiPartScoreFromMusicXml(readMusicXmlFromMxl(bytes)),
+        _ => multiPartScoreFromMusicXml(utf8.decode(bytes)),
+      };
+      final base = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+      final typed = _title.text.trim();
       context.read<UserSongsService>().addSong(
             ImportedSong(
               id: _newId(),
-              title: _musicXmlTitle(xml, fallback: base),
-              musicXml: xml,
+              title: typed.isNotEmpty ? typed : base,
+              musicXml: multiPartToMusicXml(mp),
             ),
           );
       _done();
@@ -143,34 +178,6 @@ class _ImportScreenState extends State<ImportScreen> {
       _done();
     } catch (e) {
       _fail(e);
-    }
-  }
-
-  Future<void> _importMidi() async {
-    try {
-      final file = await openFile(
-        acceptedTypeGroups: [
-          const XTypeGroup(label: 'MIDI', extensions: ['mid', 'midi']),
-        ],
-      );
-      if (file == null || !mounted) return;
-      final bytes = await file.readAsBytes();
-      if (!mounted) return;
-      final score = scoreFromMidi(bytes); // validates + quantizes
-      final title = _title.text.trim().isNotEmpty
-          ? _title.text.trim()
-          : file.name.replaceAll(RegExp(r'\.(mid|midi)$'), '');
-      // Persist as MusicXML so it reloads without re-parsing MIDI.
-      context.read<UserSongsService>().addSong(
-            ImportedSong(
-              id: _newId(),
-              title: title,
-              musicXml: scoreToMusicXml(score, partName: title),
-            ),
-          );
-      _done();
-    } catch (e) {
-      if (mounted) _fail(e);
     }
   }
 
@@ -249,14 +256,9 @@ class _ImportScreenState extends State<ImportScreen> {
                     label: Text(l10n.importAsChordPro),
                   ),
                   OutlinedButton.icon(
-                    onPressed: _importMusicXmlFile,
+                    onPressed: _importMusicFile,
                     icon: const Icon(Icons.file_open),
-                    label: Text(l10n.importMusicXmlFile),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: _importMidi,
-                    icon: const Icon(Icons.piano),
-                    label: Text(l10n.importMidiFile),
+                    label: Text(l10n.importMusicFile),
                   ),
                 ],
               ),

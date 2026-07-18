@@ -3650,6 +3650,12 @@ abstract class AppLocalizations {
   /// **'Pick a MusicXML file…'**
   String get importMusicXmlFile;
 
+  /// No description provided for @importMusicFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a file (MusicXML/MXL/ABC/MEI/kern/MIDI)…'**
+  String get importMusicFile;
+
   /// No description provided for @importDone.
   ///
   /// In en, this message translates to:

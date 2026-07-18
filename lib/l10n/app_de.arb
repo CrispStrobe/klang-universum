@@ -636,6 +636,7 @@
   "importAsChordPro": "Als ChordPro importieren",
   "importMidiFile": "MIDI-Datei wählen…",
   "importMusicXmlFile": "MusicXML-Datei wählen…",
+  "importMusicFile": "Datei importieren (MusicXML/MXL/ABC/MEI/kern/MIDI)…",
   "importDone": "Importiert!",
   "importFailed": "Import fehlgeschlagen: {error}",
   "importedSongs": "Meine importierten Lieder",
