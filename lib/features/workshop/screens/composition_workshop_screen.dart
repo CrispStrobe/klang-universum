@@ -2615,7 +2615,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               : scoreToAbc(score),
         );
       case 'mei':
-        return (null, scoreToMei(score));
+        // MEI keeps every part (one <staff> per part) when multi-part.
+        return (
+          null,
+          _mpd.partCount > 1
+              ? multiPartToMei(_mpd.buildMultiPart(), partNames: _mpd.names)
+              : scoreToMei(score),
+        );
       case 'krn':
         return (null, scoreToKern(score));
       case 'mscx':
