@@ -512,3 +512,25 @@ only for EXPORT. This touches every playback callsite (`GaplessLoopPlayer`, the
 tracker/loop-mixer/drumkit transports) — a multi-day core swap with real
 web/latency verification. Do it only when the DAW (D2) genuinely needs live
 mixing; E1 (isolate render) removes most of the jank pain until then.
+
+## E2 REVISED — "must work on ALL platforms" ⇒ pure-Dart MP3 (glint FFI can't do web)
+The user's hard rule "it must work on all platforms" **rules out the glint FFI
+path**: `DynamicLibrary.open` doesn't exist on Flutter web. glint ships a
+`bindings/wasm/glint.wasm`, so a native-FFI + web-wasm DUAL integration is
+possible, but it means per-platform native bundling (Android .so/iOS framework/
+desktop libs) PLUS a Flutter-web wasm loader — two integrations + heavy
+per-platform verification.
+**Chosen architecture: a PURE-DART MP3 encoder** — matches the app's proven
+pattern (the whole `mod/` codec suite + `crisp_dsp/` are pure Dart), runs
+identically on native + web, needs NO native lib, NO CI change, NO platform
+packaging. glint's clean-room **MIT** MP3 encoder (`~/code/glint/src/`:
+`encoder.cpp` 1693 · `quantize.cpp` 1696 · `huffman.cpp` 729 · `mdct.cpp` 629 ·
+`subband.cpp` 237 · `psycho.cpp` 135 · `reservoir.cpp`) is the reference.
+**This is a multi-slice PORT (~5k lines of DSP), staged like the mod codecs** —
+each component pure + unit-tested. Slices: (1) bit writer + MP3 frame header +
+the CBR side-info + Huffman/quantization TABLES [data + I/O, fully testable];
+(2) polyphase subband analysis filter; (3) MDCT + windowing; (4) quantize +
+scalefactors (uniform first, psychoacoustics later); (5) Huffman coding + bit
+reservoir + frame packing; (6) wire `mp3Encode(pcm) → bytes` into the shared
+`music_export.dart` sheet (works everywhere). Optional later: AAC/Opus (glint
+also has clean-room encoders) and glint's Kaiser resampler port.
