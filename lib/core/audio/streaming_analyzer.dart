@@ -40,7 +40,19 @@ class StreamingAudioAnalyzer {
     required this.detector,
     this.chordDetector,
     int? hop,
-  }) : hop = hop ?? _defaultHop(detector, chordDetector);
+  }) : hop = hop ?? _defaultHop(detector, chordDetector) {
+    // addSamples advances the ring buffer by `hop` per completed window; a hop
+    // of 0 (or negative) never drains it, so the while-loop spins forever on
+    // the first full window. The default is windowSize ~/ 2 (>= 512), so this
+    // only bites an explicit bad argument — fail fast instead of hanging.
+    if (this.hop <= 0) {
+      throw ArgumentError.value(
+        hop,
+        'hop',
+        'must be a positive sample count',
+      );
+    }
+  }
 
   final PitchDetector detector;
   final ChordDetector? chordDetector;

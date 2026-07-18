@@ -87,4 +87,21 @@ void main() {
   test('reader rejects non-PCM / malformed input', () {
     expect(() => readWavPcm16(Uint8List(10)), throwsFormatException);
   });
+
+  test('a non-positive hop is rejected at construction, not hung on', () {
+    // addSamples advances the buffer by `hop` per window; hop <= 0 never drains
+    // it and the while-loop would spin forever on the first full window. The
+    // constructor must reject it up front.
+    expect(
+      () => StreamingAudioAnalyzer(detector: PitchDetector(), hop: 0),
+      throwsArgumentError,
+    );
+    expect(
+      () => StreamingAudioAnalyzer(detector: PitchDetector(), hop: -1),
+      throwsArgumentError,
+    );
+    // The default hop (windowSize ~/ 2) is always positive and still works.
+    final ok = StreamingAudioAnalyzer(detector: PitchDetector());
+    expect(ok.hop, greaterThan(0));
+  });
 }
