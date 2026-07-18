@@ -2126,11 +2126,11 @@ abstract class AppLocalizations {
   /// **'Advanced Tracker'**
   String get gameTrackerAdvanced;
 
-  /// No description provided for @gameTrackerAdvancedSubtitle.
+  /// No description provided for @workshopModeScore.
   ///
   /// In en, this message translates to:
-  /// **'Full pattern editor — endless tracks, effects, samples'**
-  String get gameTrackerAdvancedSubtitle;
+  /// **'Score Workshop'**
+  String get workshopModeScore;
 
   /// No description provided for @trackerPrompt.
   ///

@@ -1102,8 +1102,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameTrackerAdvanced => 'Advanced Tracker';
 
   @override
-  String get gameTrackerAdvancedSubtitle =>
-      'Full pattern editor — endless tracks, effects, samples';
+  String get workshopModeScore => 'Score Workshop';
 
   @override
   String get trackerPrompt =>

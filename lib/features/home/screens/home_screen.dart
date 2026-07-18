@@ -13,6 +13,7 @@ import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/core/tuning.dart';
 import 'package:comet_beat/features/curriculum/screens/curriculum_screen.dart';
 import 'package:comet_beat/features/games/chords/chord_quiz_screen.dart';
+import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/harmony/function_ear_screen.dart';
 import 'package:comet_beat/features/games/harmony/harmony_quiz_screen.dart';
 import 'package:comet_beat/features/games/note_reading/note_reading_quiz_screen.dart';
@@ -178,14 +179,40 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
+          // Workshop: tap opens the Score editor (default mode); the dropdown
+          // also offers the Advanced Tracker (the pattern-editor mode).
+          PopupMenuButton<int>(
             icon: const Icon(Icons.piano),
             tooltip: l10n.workshopTitle,
-            onPressed: () => Navigator.of(context).push(
+            onSelected: (v) => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => const CompositionWorkshopScreen(),
+                builder: (_) => v == 1
+                    ? const AdvancedTrackerScreen()
+                    : const CompositionWorkshopScreen(),
               ),
             ),
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: 0,
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_note, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.workshopModeScore),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 1,
+                child: Row(
+                  children: [
+                    const Icon(Icons.grid_view, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.gameTrackerAdvanced),
+                  ],
+                ),
+              ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.bar_chart),
