@@ -1178,6 +1178,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabOpenSongBook => 'Aus Liederbuch öffnen';
 
   @override
+  String get tabPasteAscii => 'ASCII-Tab einfügen';
+
+  @override
+  String get tabPasteAsciiHint => 'e|--0--3--|\nB|--1-----|\n...';
+
+  @override
   String get tabSongBookEmpty => 'Dein Liederbuch ist leer';
 
   @override

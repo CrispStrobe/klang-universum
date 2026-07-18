@@ -128,7 +128,16 @@ Pitch pitchFromMidi(int midi) {
 class TabTrack {
   String name;
   TabDocument doc;
-  TabTrack(this.name, this.doc);
+  bool muted;
+  bool soloed;
+  TabTrack(this.name, this.doc, {this.muted = false, this.soloed = false});
+}
+
+/// The tracks that should SOUND: if any track is soloed, only the soloed ones;
+/// otherwise every non-muted track.
+Iterable<TabTrack> audibleTracks(List<TabTrack> tracks) {
+  final anySolo = tracks.any((t) => t.soloed);
+  return tracks.where((t) => anySolo ? t.soloed : !t.muted);
 }
 
 /// Merges several tracks' `(midis, ms)` timelines into one sequential timeline

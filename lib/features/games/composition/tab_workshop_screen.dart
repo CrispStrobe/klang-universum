@@ -107,9 +107,16 @@ abstract class TabWorkshopTester {
   void selectTrack(int index);
   void addTrack();
   void removeTrack();
+  void toggleMute();
+  void toggleSolo();
+  bool isMuted(int track);
+  bool isSoloed(int track);
 
   /// Loads a Song-Book song (by MusicXML) into the active track as editable tab.
   void openSongMusicXml(String title, String musicXml);
+
+  /// Replaces the active track with tab parsed from ASCII-tab [text].
+  void pasteAsciiTab(String text);
   bool get isListening;
 
   /// Feeds a reading straight into the mic-capture path, bypassing the plugin,
@@ -384,6 +391,17 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _selString = _selString.clamp(0, _doc.stringCount - 1);
       });
 
+  @override
+  void toggleMute() =>
+      setState(() => _tracks[_active].muted = !_tracks[_active].muted);
+  @override
+  void toggleSolo() =>
+      setState(() => _tracks[_active].soloed = !_tracks[_active].soloed);
+  @override
+  bool isMuted(int track) => _tracks[track].muted;
+  @override
+  bool isSoloed(int track) => _tracks[track].soloed;
+
   /// MusicXML for the whole band — multi-part when there is more than one
   /// track, else the single active track.
   String _bandMusicXml() => _tracks.length > 1
@@ -457,6 +475,54 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     }
   }
 
+  @override
+  void pasteAsciiTab(String text) {
+    if (text.trim().isEmpty) return;
+    try {
+      final score = asciiTabToScore(text, tuning: _doc.tuning);
+      setState(() {
+        _tracks[_active].doc = TabDocument.fromScore(score, _doc.tuning);
+        _selCol = 0;
+        _selString = 0;
+      });
+    } catch (_) {
+      if (mounted) _snack(AppLocalizations.of(context)!.tabImportFailed);
+    }
+  }
+
+  /// Dialog to paste ASCII tab (`e|--0--3--|` …) into the active track.
+  Future<void> _promptPasteAscii() async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    final text = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.tabPasteAscii),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 8,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+          decoration: InputDecoration(
+            hintText: l10n.tabPasteAsciiHint,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(MaterialLocalizations.of(ctx).okButtonLabel),
+          ),
+        ],
+      ),
+    );
+    if (text != null) pasteAsciiTab(text);
+  }
+
   /// Bottom-sheet list of Song-Book songs; pick one to load as editable tab.
   Future<void> _openFromSongBook() async {
     final l10n = AppLocalizations.of(context)!;
@@ -517,7 +583,10 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     // column timeline (that's what the preview shows).
     final events = _doc.toPlaybackEvents(bpm: _bpm);
     final band = mergePlaybackEvents(
-      [for (final t in _tracks) t.doc.toPlaybackEvents(bpm: _bpm)],
+      [
+        for (final t in audibleTracks(_tracks))
+          t.doc.toPlaybackEvents(bpm: _bpm),
+      ],
     );
     context.read<AudioService>().playTimedChords(band);
     final schedule = <({int col, int start, int end, bool note})>[];
@@ -711,6 +780,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             onPressed: _openFromSongBook,
           ),
           IconButton(
+            icon: const Icon(Icons.content_paste),
+            tooltip: l10n.tabPasteAscii,
+            onPressed: _promptPasteAscii,
+          ),
+          IconButton(
             icon: const Icon(Icons.bookmark_add_outlined),
             tooltip: l10n.tabSaveSongBook,
             onPressed: _promptSave,
@@ -788,10 +862,26 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
           for (var i = 0; i < _tracks.length; i++)
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: ChoiceChip(
-                label: Text(_tracks[i].name),
-                selected: i == _active,
-                onSelected: (_) => selectTrack(i),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ChoiceChip(
+                    label: Text(
+                      _tracks[i].name,
+                      style: _tracks[i].muted
+                          ? const TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                            )
+                          : null,
+                    ),
+                    selected: i == _active,
+                    onSelected: (_) => selectTrack(i),
+                  ),
+                  if (i == _active) ...[
+                    _msToggle('M', _tracks[i].muted, toggleMute),
+                    _msToggle('S', _tracks[i].soloed, toggleSolo),
+                  ],
+                ],
               ),
             ),
           IconButton(
@@ -805,6 +895,34 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             onPressed: _tracks.length > 1 ? removeTrack : null,
           ),
         ],
+      ),
+    );
+  }
+
+  /// A compact M/S toggle badge for the active track.
+  Widget _msToggle(String letter, bool on, VoidCallback onTap) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 2),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          width: 22,
+          height: 22,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: on ? scheme.primary : scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            letter,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: on ? scheme.onPrimary : scheme.onSurfaceVariant,
+            ),
+          ),
+        ),
       ),
     );
   }

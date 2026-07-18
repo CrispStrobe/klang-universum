@@ -2264,6 +2264,18 @@ abstract class AppLocalizations {
   /// **'Open from Song Book'**
   String get tabOpenSongBook;
 
+  /// No description provided for @tabPasteAscii.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste ASCII tab'**
+  String get tabPasteAscii;
+
+  /// No description provided for @tabPasteAsciiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e|--0--3--|\nB|--1-----|\n...'**
+  String get tabPasteAsciiHint;
+
   /// No description provided for @tabSongBookEmpty.
   ///
   /// In en, this message translates to:

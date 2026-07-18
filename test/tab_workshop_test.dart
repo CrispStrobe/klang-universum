@@ -337,6 +337,38 @@ void main() {
     expect(tab.columnCount, greaterThan(0)); // notes became fretted columns
   });
 
+  testWidgets('per-track mute/solo toggles on the active track',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester)..addTrack();
+    await tester.pump();
+
+    expect(tab.isMuted(1), isFalse);
+    tab.toggleMute();
+    await tester.pump();
+    expect(tab.isMuted(1), isTrue);
+
+    tab.toggleSolo();
+    await tester.pump();
+    expect(tab.isSoloed(1), isTrue);
+  });
+
+  testWidgets('pasting ASCII tab loads it into the active track',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    tab.pasteAsciiTab('e|-0-3-|\nB|-----|\nG|-----|\n'
+        'D|-----|\nA|-----|\nE|-----|');
+    await tester.pump();
+    // The two events (open + 3rd fret on the top string) become fretted cells.
+    final topRow = [
+      for (var c = 0; c < tab.columnCount; c++) tab.fretAt(c, 0),
+    ];
+    expect(topRow, contains(0)); // the open note
+    expect(topRow, contains(3)); // the 3rd-fret note
+  });
+
   testWidgets('tempo control starts at 120', (tester) async {
     await pumpGame(tester, const TabWorkshopScreen());
     expect(_tab(tester).bpm, 120);

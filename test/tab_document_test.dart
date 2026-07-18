@@ -267,6 +267,29 @@ void main() {
     );
   });
 
+  test('audibleTracks respects mute and solo', () {
+    TabTrack t(String n) => TabTrack(n, TabDocument.blank(guitar));
+    final a = t('A');
+    final b = t('B');
+    final c = t('C');
+    final all = [a, b, c];
+
+    // Nothing muted/soloed → all audible.
+    expect(audibleTracks(all).map((x) => x.name), ['A', 'B', 'C']);
+
+    // Mute B → A, C.
+    b.muted = true;
+    expect(audibleTracks(all).map((x) => x.name), ['A', 'C']);
+
+    // Solo overrides mute: solo C → only C (even though B is muted).
+    c.soloed = true;
+    expect(audibleTracks(all).map((x) => x.name), ['C']);
+
+    // A second solo joins the soloed set.
+    a.soloed = true;
+    expect(audibleTracks(all).map((x) => x.name), ['A', 'C']);
+  });
+
   test('clearCell removes only that string from a chord', () {
     final doc = TabDocument.blank(guitar, initialColumns: 1)
       ..setFret(0, 0, 5)

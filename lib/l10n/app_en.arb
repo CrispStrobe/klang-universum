@@ -426,6 +426,8 @@
   "tabAddTrack": "Add track",
   "tabRemoveTrack": "Remove track",
   "tabOpenSongBook": "Open from Song Book",
+  "tabPasteAscii": "Paste ASCII tab",
+  "tabPasteAsciiHint": "e|--0--3--|\nB|--1-----|\n...",
   "tabSongBookEmpty": "Your Song Book is empty",
   "tabSaveSongBook": "Save to Song Book",
   "tabSaved": "Saved “{title}”",
