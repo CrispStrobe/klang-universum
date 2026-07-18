@@ -223,6 +223,10 @@ abstract interface class AdvancedTrackerTester {
   void typeVolume(String hexChar);
   double? volumeAt(int channel, int row);
 
+  /// In-grid effect-column hex entry; read the cell's (cmd, param).
+  void typeEffect(String hexChar);
+  (int, int) effectAt(int channel, int row);
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -320,6 +324,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// how many digits have been typed in the current cell (resets on a move).
   int _volAccum = 0;
   int _volDigits = 0;
+
+  /// In-grid effect entry: cmd nibble then two param nibbles (resets on a move).
+  int _fxCmd = 0;
+  int _fxParam = 0;
+  int _fxDigits = 0;
 
   /// Pending state for note-name entry ("F" then "2"): the note's semitone and
   /// whether a sharp was typed, awaiting the octave digit. Null = nothing armed.
@@ -726,6 +735,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// Move the cursor and drop any selection (a plain move / click).
   void _moveCursorClearing(int channel, int row) {
     _resetVolEntry();
+    _resetFxEntry();
     setState(() {
       _cursorChannel = channel.clamp(0, _song.channelCount - 1);
       _cursorRow = row.clamp(0, _song.rows - 1);
@@ -739,6 +749,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// if none, then move the cursor to the new corner.
   void _extendTo(int channel, int row) {
     _resetVolEntry();
+    _resetFxEntry();
     setState(() {
       _anchorChannel ??= _cursorChannel;
       _anchorRow ??= _cursorRow;
@@ -856,6 +867,29 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _volDigits = 0;
   }
 
+  void _resetFxEntry() {
+    _fxCmd = 0;
+    _fxParam = 0;
+    _fxDigits = 0;
+  }
+
+  /// Types the effect column in-grid, FT2-style: the first hex digit is the
+  /// command nibble, the next two build the parameter byte (resets after 3 or on
+  /// a move). Applies progressively so it builds visibly.
+  void _enterEffectHex(int hex) {
+    switch (_fxDigits) {
+      case 0:
+        _fxCmd = hex;
+        _fxParam = 0;
+      case 1:
+        _fxParam = hex;
+      default:
+        _fxParam = (_fxParam * 16 + hex) & 0xFF;
+    }
+    _fxDigits = (_fxDigits + 1) % 3;
+    _setCellCommand(_cursorChannel, _cursorRow, _fxCmd, _fxParam);
+  }
+
   /// Feeds one hex digit into the FT2 volume column (high nibble then low →
   /// value 00–40 = 0–64). No-op on a cell without a note.
   void _enterVolumeHex(int hex) {
@@ -882,6 +916,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           : (_field.index + 1) % vals.length;
       setState(() => _field = vals[next]);
       _resetVolEntry();
+      _resetFxEntry();
       return KeyEventResult.handled;
     }
     if (_field == _CellField.volume) {
@@ -896,9 +931,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       }
     }
     if (_field == _CellField.effect) {
-      // Any printable key opens the effect-column editor for the cursor cell.
+      final hex = _hexOf(event.character);
+      if (hex != null) {
+        _enterEffectHex(hex);
+        return KeyEventResult.handled;
+      }
+      // Backspace/Delete clears the effect column (leaving the note).
+      if (key == LogicalKeyboardKey.backspace ||
+          key == LogicalKeyboardKey.delete) {
+        _resetFxEntry();
+        _setCellCommand(_cursorChannel, _cursorRow, 0, 0);
+        return KeyEventResult.handled;
+      }
+      // Swallow other printable keys so they don't become notes here.
       if (event.character != null && event.character!.trim().isNotEmpty) {
-        _cellMenu(_cursorChannel, _cursorRow);
         return KeyEventResult.handled;
       }
     }
@@ -1440,6 +1486,17 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   @override
   double? volumeAt(int channel, int row) =>
       _song.engine.cellAt(channel, row).volume;
+  @override
+  void typeEffect(String hexChar) {
+    final hex = _hexOf(hexChar);
+    if (hex != null) _enterEffectHex(hex);
+  }
+
+  @override
+  (int, int) effectAt(int channel, int row) {
+    final c = _song.engine.cellAt(channel, row);
+    return (c.fxCmd, c.fxParam);
+  }
 
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
@@ -3092,6 +3149,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 l10n.trackerBlockTransUp,
                 'Alt + ↑↓  ·  Alt + PgUp/PgDn',
               ),
+              const Divider(height: 20),
+              _helpRow(ctx, l10n.trackerFxColumn, l10n.trackerFxHelp),
+              _helpRow(ctx, '0 1 2 3 4', l10n.trackerFxPitch),
+              _helpRow(ctx, '7 A C', l10n.trackerFxTremVolSet),
+              _helpRow(ctx, 'B D F E', l10n.trackerFxFlow),
             ],
           ),
         ),
@@ -3206,11 +3268,23 @@ class _CommandEditorState extends State<_CommandEditor> {
   late int _cmd = widget.initialCmd;
   late int _param = widget.initialParam;
 
-  // Supported commands (nibble → label). 0 with param 0 = none.
+  // The full MOD command set the replayer implements (nibble → label).
+  // 0x0 with param 0 = none; 0x0 with param != 0 = arpeggio.
   static const _commands = <int, String>{
-    0x0: 'None',
-    0xC: 'Cxx  Set volume',
+    0x0: '0xy  Arpeggio / None',
+    0x1: '1xx  Portamento up',
+    0x2: '2xx  Portamento down',
+    0x3: '3xx  Tone portamento',
+    0x4: '4xy  Vibrato',
+    0x5: '5xy  Tone-porta + vol slide',
+    0x6: '6xy  Vibrato + vol slide',
+    0x7: '7xy  Tremolo',
     0xA: 'Axy  Volume slide',
+    0xB: 'Bxx  Position jump',
+    0xC: 'Cxx  Set volume',
+    0xD: 'Dxx  Pattern break',
+    0xE: 'Exy  Extended',
+    0xF: 'Fxx  Set speed / tempo',
   };
 
   @override
@@ -3228,16 +3302,15 @@ class _CommandEditorState extends State<_CommandEditor> {
                   DropdownMenuItem(value: e.key, child: Text(e.value)),
               ],
               onChanged: (v) {
-                setState(() {
-                  _cmd = v ?? 0;
-                  if (_cmd == 0) _param = 0;
-                });
+                setState(() => _cmd = v ?? 0);
                 widget.onChanged(_cmd, _param);
               },
             ),
             const SizedBox(width: 12),
+            // Full hex code (cmd nibble + param byte), FT2-style.
             Text(
-              _param.toRadixString(16).toUpperCase().padLeft(2, '0'),
+              '${_cmd.toRadixString(16).toUpperCase()}'
+              '${_param.toRadixString(16).toUpperCase().padLeft(2, '0')}',
               style: const TextStyle(
                 fontFeatures: [FontFeature.tabularFigures()],
                 fontWeight: FontWeight.w700,
@@ -3245,17 +3318,17 @@ class _CommandEditorState extends State<_CommandEditor> {
             ),
           ],
         ),
-        if (_cmd != 0)
-          Slider(
-            value: _param.toDouble(),
-            max: 255,
-            divisions: 255,
-            label: _param.toRadixString(16).toUpperCase().padLeft(2, '0'),
-            onChanged: (v) {
-              setState(() => _param = v.round());
-              widget.onChanged(_cmd, _param);
-            },
-          ),
+        // Param 00–FF (0 with cmd 0 = no command).
+        Slider(
+          value: _param.toDouble(),
+          max: 255,
+          divisions: 255,
+          label: _param.toRadixString(16).toUpperCase().padLeft(2, '0'),
+          onChanged: (v) {
+            setState(() => _param = v.round());
+            widget.onChanged(_cmd, _param);
+          },
+        ),
       ],
     );
   }

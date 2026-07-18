@@ -2714,6 +2714,30 @@ abstract class AppLocalizations {
   /// **'Metronome'**
   String get trackerMetronome;
 
+  /// No description provided for @trackerFxHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'In the fx column, type: command + 2 hex digits'**
+  String get trackerFxHelp;
+
+  /// No description provided for @trackerFxPitch.
+  ///
+  /// In en, this message translates to:
+  /// **'arpeggio · porta up/down · tone-porta · vibrato'**
+  String get trackerFxPitch;
+
+  /// No description provided for @trackerFxTremVolSet.
+  ///
+  /// In en, this message translates to:
+  /// **'tremolo · volume slide · set volume'**
+  String get trackerFxTremVolSet;
+
+  /// No description provided for @trackerFxFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'jump · pattern break · speed/tempo · extended'**
+  String get trackerFxFlow;
+
   /// No description provided for @trackerOrderMoveLeft.
   ///
   /// In en, this message translates to:

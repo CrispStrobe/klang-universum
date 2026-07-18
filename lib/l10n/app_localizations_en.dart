@@ -1398,6 +1398,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerMetronome => 'Metronome';
 
   @override
+  String get trackerFxHelp => 'In the fx column, type: command + 2 hex digits';
+
+  @override
+  String get trackerFxPitch =>
+      'arpeggio · porta up/down · tone-porta · vibrato';
+
+  @override
+  String get trackerFxTremVolSet => 'tremolo · volume slide · set volume';
+
+  @override
+  String get trackerFxFlow => 'jump · pattern break · speed/tempo · extended';
+
+  @override
   String get trackerOrderMoveLeft => 'Move slot left';
 
   @override

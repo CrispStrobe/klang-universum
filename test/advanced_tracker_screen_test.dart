@@ -401,6 +401,24 @@ void main() {
     expect(v!, closeTo(0.5, 0.02));
   });
 
+  testWidgets('effect field: typing a command builds the hex cell (C20)',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    game.moveCursor(0, 0);
+    await tester.pump();
+
+    game.cycleField(); // note -> volume
+    game.cycleField(); // volume -> effect
+    // "C" then "2" then "0" = C20 (set volume 0x20).
+    game.typeEffect('c');
+    game.typeEffect('2');
+    game.typeEffect('0');
+    await tester.pump();
+    expect(game.effectAt(0, 0), (0xC, 0x20));
+  });
+
   testWidgets('order list can be reordered and extended', (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
     final game = _game(tester);

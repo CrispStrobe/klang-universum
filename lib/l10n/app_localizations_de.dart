@@ -1405,6 +1405,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerMetronome => 'Metronom';
 
   @override
+  String get trackerFxHelp => 'In der FX-Spalte tippen: Befehl + 2 Hex-Ziffern';
+
+  @override
+  String get trackerFxPitch =>
+      'Arpeggio · Porta rauf/runter · Ton-Porta · Vibrato';
+
+  @override
+  String get trackerFxTremVolSet =>
+      'Tremolo · Lautstärke-Slide · Lautstärke setzen';
+
+  @override
+  String get trackerFxFlow =>
+      'Sprung · Pattern-Break · Speed/Tempo · Erweitert';
+
+  @override
   String get trackerOrderMoveLeft => 'Platz nach links';
 
   @override
