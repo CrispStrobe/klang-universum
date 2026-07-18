@@ -375,6 +375,54 @@ ModuleDoc docFromXm(XmModule m) {
   );
 }
 
+/// Maps an IT letter-command (A=1..Z=26) + value → our MOD-numbered `(fxCmd,
+/// fxParam)`. IT is Scream Tracker 3's successor, so the letters match S3M — the
+/// differences are `X` (pan is 0x00..0xFF, not ..0x80) and `T` (T0x/T1x are tempo
+/// SLIDES, only T20+ sets tempo). Shares [_s3mSpecialToFx] for `Sxy`. Verified
+/// against libopenmpt — see docs/ORACLE.md. No-equivalents return `(0, 0)`.
+(int, int) _itEffectToFx(int cmd, int value) {
+  switch (cmd) {
+    case 1: // A — set speed
+      return value == 0 ? (0, 0) : (0xF, value < 0x20 ? value : 0x1F);
+    case 2: // B — position jump
+      return (0xB, value);
+    case 3: // C — pattern break
+      return (0xD, value);
+    case 4: // D — volume slide
+      return (0xA, value);
+    case 5: // E — portamento down
+      return (0x2, value);
+    case 6: // F — portamento up
+      return (0x1, value);
+    case 7: // G — tone portamento
+      return (0x3, value);
+    case 8: // H — vibrato
+      return (0x4, value);
+    case 10: // J — arpeggio
+      return (0x0, value);
+    case 11: // K — vibrato + volume slide
+      return (0x6, value);
+    case 12: // L — tone porta + volume slide
+      return (0x5, value);
+    case 15: // O — sample offset
+      return (0x9, value);
+    case 18: // R — tremolo
+      return (0x7, value);
+    case 19: // S — special/extended (same sub-commands as S3M)
+      return _s3mSpecialToFx(value);
+    case 20: // T — set tempo (T20+); T0x/T1x tempo slides have no equivalent
+      return value >= 0x20 ? (0xF, value) : (0, 0);
+    case 21: // U — fine vibrato (approximated as vibrato)
+      return (0x4, value);
+    case 24: // X — set panning (0x00..0xFF, direct → our 8xx)
+      return (0x8, value);
+    default:
+      // I tremor · M/N channel-volume · P pan-slide · Q retrig · V/W
+      // global-volume · Y panbrello · Z MIDI — no equivalent (dropped).
+      return (0, 0);
+  }
+}
+
 ModuleDoc docFromIt(ItModule m) {
   final samples = <DocSample>[];
   for (final s in m.samples) {
@@ -402,12 +450,15 @@ ModuleDoc docFromIt(ItModule m) {
       final cells = <DocCell>[];
       for (final c in row) {
         final vol = (c.volpan >= 0 && c.volpan <= 64) ? c.volpan : -1;
+        final (fxCmd, fxParam) = _itEffectToFx(c.command, c.commandValue);
         cells.add(
           DocCell(
             note: itNoteToMidi(c.note),
             noteOff: c.note == 255 || c.note == ItCell.noteCut,
             instrument: c.instrument,
             volume: vol,
+            effect: fxCmd,
+            effectParam: fxParam,
           ),
         );
       }

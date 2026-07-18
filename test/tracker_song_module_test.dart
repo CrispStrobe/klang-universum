@@ -7,6 +7,8 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/mod/it_module.dart';
+import 'package:comet_beat/core/audio/mod/it_writer.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
     show parseAnyModule;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
@@ -204,7 +206,38 @@ void main() {
       expect(col[3].fxCmd, 0xD); // pattern break
       expect((col[4].fxCmd, col[4].fxParam), (0xF, 0x80)); // tempo
     });
+
+    test('IT letter-commands map to the right fxCmd/fxParam on import', () {
+      final rows = <List<ItCell>>[
+        [const ItCell(note: 60, instrument: 1, volpan: 64)], // C-5
+        [const ItCell(command: 6, commandValue: 0x20)], // F — porta up → 0x1
+        [const ItCell(command: 8, commandValue: 0x34)], // H — vibrato  → 0x4
+        [const ItCell(command: 24, commandValue: 0xC0)], // X — set pan → 0x8
+        [const ItCell(command: 20, commandValue: 0x80)], // T — tempo   → 0xF
+      ];
+      final m = ItModule(
+        name: 'fxmap',
+        channelCount: 1,
+        order: [0],
+        samples: [ItSample.empty(), ItSample(pcm: _sineF())],
+        patterns: [ItPattern(rows, 1)],
+      );
+      final song = songFromModuleBytes(writeIt(m));
+      final col = song.patterns[0].cells[0];
+      expect((col[1].fxCmd, col[1].fxParam), (0x1, 0x20)); // porta up
+      expect((col[2].fxCmd, col[2].fxParam), (0x4, 0x34)); // vibrato
+      expect((col[3].fxCmd, col[3].fxParam), (0x8, 0xC0)); // set pan (direct)
+      expect((col[4].fxCmd, col[4].fxParam), (0xF, 0x80)); // tempo
+    });
   });
+}
+
+Float64List _sineF() {
+  final s = Float64List(512);
+  for (var i = 0; i < s.length; i++) {
+    s[i] = 0.8 * sin(2 * pi * 4 * i / s.length);
+  }
+  return s;
 }
 
 Int8List _sine() {

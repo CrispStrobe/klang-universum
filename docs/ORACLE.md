@@ -80,4 +80,4 @@ was found before shipping a mapping that silently wouldn't play.
   sample LOOP points are dropped on import (one-shot notes).
 - **S3M** command→`fxCmd`/`fxParam` table: implemented in
   `module_convert._s3mEffectToFx` (core commands, structural test + oracle-
-  verified). **IT** (`_itEffectToFx`) is the same shape — pending.
+  verified). **IT** (`_itEffectToFx`) is DONE too — oracle-verified: an IT porta reads NEARLY IDENTICALLY to openmpt123 (A2 C3 G3 C4 F#4 C5 F5 C6 F6 B6 in both). All four import formats (MOD/XM/S3M/IT) now carry + SOUND their effects.
