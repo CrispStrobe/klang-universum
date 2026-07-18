@@ -26,6 +26,7 @@ import 'dart:isolate';
 import 'package:comet_beat/core/audio/aec_capability.dart';
 import 'package:comet_beat/core/audio/aec_engine.dart';
 import 'package:comet_beat/core/audio/beat_capture.dart';
+import 'package:comet_beat/core/audio/daw_sources.dart' show GrooveSource;
 import 'package:comet_beat/core/audio/groove_capture.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
 import 'package:comet_beat/core/audio/loop_reference.dart';
@@ -45,6 +46,7 @@ import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/daw/send_to_daw.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:comet_beat/shared/music_io/music_export.dart';
 import 'package:comet_beat/shared/score_theme.dart';
@@ -143,6 +145,9 @@ abstract interface class LoopMixerTester {
   /// (headless tests can't drive it); returns the saved multi-part MusicXML,
   /// or null when nothing pitched is enabled.
   String? debugSaveToSongBook(UserSongsService songs);
+
+  /// Send the whole current groove to the Multitrack (DAW) as a clip.
+  void sendToDaw();
 
   /// Installs a sung layer without the mic (headless tests can't record).
   void debugCaptureCells(List<PatternCell> cells);
@@ -716,6 +721,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               enabled: _engine.enabled.isNotEmpty,
               onTap: () => Navigator.pop(sheet, 'wav'),
             ),
+            ListTile(
+              leading: const Icon(Icons.library_add),
+              title: Text(l10n.dawSend),
+              enabled: _engine.enabled.isNotEmpty,
+              onTap: () => Navigator.pop(sheet, 'daw'),
+            ),
           ],
         ),
       ),
@@ -741,6 +752,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         _openInWorkshop();
       case 'wav':
         await _saveWav();
+      case 'daw':
+        sendToDaw();
       default:
         break;
     }
@@ -757,6 +770,13 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     if (xml == null) return null;
     _writeGrooveToSongBook(songs, AppLocalizations.of(context)!.gameLoopMixer);
     return xml;
+  }
+
+  @override
+  void sendToDaw() {
+    if (_engine.enabled.isEmpty) return;
+    // The spec is a value, so this is a snapshot of the current groove.
+    sendToMultitrack(context, GrooveSource(_engine.spec));
   }
 
   /// The current groove as a multi-part MusicXML string (one part per enabled

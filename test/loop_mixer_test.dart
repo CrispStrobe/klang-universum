@@ -10,6 +10,7 @@ import 'package:comet_beat/core/audio/aec_engine.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/synth.dart';
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/loop_mixer_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
@@ -69,6 +70,26 @@ Uint8List _tonePcm16(
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('To Multitrack sends the groove as a DAW clip', (tester) async {
+    final daw = DawService();
+    await pumpGame(
+      tester,
+      const LoopMixerScreen(),
+      extraProviders: [ChangeNotifierProvider<DawService>.value(value: daw)],
+    );
+    final game = _game(tester);
+
+    // Nothing enabled → nothing sent.
+    game.sendToDaw();
+    expect(daw.clipCount, 0);
+
+    game.toggleTrack('drums');
+    await tester.pump();
+    game.sendToDaw();
+    expect(daw.clipCount, 1);
+    expect(daw.bake(), isNotEmpty); // the groove renders to real audio
+  });
 
   testWidgets('toggling cards layers tracks and starts/stops the groove',
       (tester) async {
