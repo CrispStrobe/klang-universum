@@ -2132,6 +2132,54 @@ abstract class AppLocalizations {
   /// **'Score Workshop'**
   String get workshopModeScore;
 
+  /// No description provided for @workshopModeTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar Tab'**
+  String get workshopModeTab;
+
+  /// No description provided for @tabWorkshopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar Tab'**
+  String get tabWorkshopTitle;
+
+  /// No description provided for @tabImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a file'**
+  String get tabImport;
+
+  /// No description provided for @tabDemo.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo riff'**
+  String get tabDemo;
+
+  /// No description provided for @tabTuning.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuning'**
+  String get tabTuning;
+
+  /// No description provided for @tabCapo.
+  ///
+  /// In en, this message translates to:
+  /// **'Capo'**
+  String get tabCapo;
+
+  /// No description provided for @tabShowStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard notation'**
+  String get tabShowStandard;
+
+  /// No description provided for @tabImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that file'**
+  String get tabImportFailed;
+
   /// No description provided for @trackerPrompt.
   ///
   /// In en, this message translates to:

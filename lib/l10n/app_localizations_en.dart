@@ -1105,6 +1105,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopModeScore => 'Score Workshop';
 
   @override
+  String get workshopModeTab => 'Guitar Tab';
+
+  @override
+  String get tabWorkshopTitle => 'Guitar Tab';
+
+  @override
+  String get tabImport => 'Open a file';
+
+  @override
+  String get tabDemo => 'Demo riff';
+
+  @override
+  String get tabTuning => 'Tuning';
+
+  @override
+  String get tabCapo => 'Capo';
+
+  @override
+  String get tabShowStandard => 'Standard notation';
+
+  @override
+  String get tabImportFailed => 'Couldn\'t open that file';
+
+  @override
   String get trackerPrompt =>
       'Pick an instrument, then tap to build your loop!';
 

@@ -1112,6 +1112,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopModeScore => 'Noten-Werkstatt';
 
   @override
+  String get workshopModeTab => 'Gitarren-Tabulatur';
+
+  @override
+  String get tabWorkshopTitle => 'Gitarren-Tabulatur';
+
+  @override
+  String get tabImport => 'Datei öffnen';
+
+  @override
+  String get tabDemo => 'Demo-Riff';
+
+  @override
+  String get tabTuning => 'Stimmung';
+
+  @override
+  String get tabCapo => 'Kapodaster';
+
+  @override
+  String get tabShowStandard => 'Notenschrift';
+
+  @override
+  String get tabImportFailed => 'Datei konnte nicht geöffnet werden';
+
+  @override
   String get trackerPrompt => 'Wähle ein Instrument und tippe deinen Loop!';
 
   @override
