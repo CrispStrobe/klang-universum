@@ -138,3 +138,20 @@ uncompressed-`.sf2` bar (Reed Organ 2.6¢). Dev tool (needs ffmpeg), not CI.
 in as the `VorbisDecode` (native FFI / web wasm) and re-run — the pitch numbers
 must match ffmpeg's, and each stream's glint-vs-ffmpeg PCM should agree at high
 SNR. Then the app drops the `.sf3` rejection for the real decoder.
+
+### glint end-to-end — VERIFIED
+
+The glint Vorbis decoder (clean-room, MIT) is done + fuzz-hardened. Plugged into
+the seam via `lib/core/audio/sf2/vorbis_glint_ffi.dart` (dart:ffi →
+`glint_vorbis_decode`) and run through this harness on the real FluidR3Mono.sf3:
+
+```
+dart run bin/sf3_oracle.dart FluidR3Mono_GM.sf3 --glint <libglint.dylib>
+```
+
+**Result: 500/500 streams decoded, 0 failures, no hang** — Drawbar Organ **1.7¢**,
+Flute **2.1¢**, Synth Strings 2 **2.9¢** (identical to the ffmpeg run). Independently
+confirmed: glint's ctest is 9/9; a fresh glint-vs-ffmpeg decode reads 118 dB; the
+"Piano FF B0(R)" stream that once hung 4 min now decodes in **0.025 s** to
+**519,598 frames — exactly ffmpeg's count**. So the `.sf3` path is proven correct
++ in tune with glint as the decoder, not just the ffmpeg stand-in.
