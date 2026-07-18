@@ -2204,6 +2204,24 @@ abstract class AppLocalizations {
   /// **'Stop recording'**
   String get drumkitStopRecording;
 
+  /// No description provided for @drumkitBeatbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Beatbox'**
+  String get drumkitBeatbox;
+
+  /// No description provided for @drumkitStopListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get drumkitStopListening;
+
+  /// No description provided for @drumkitBeatboxNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing heard — try beatboxing louder.'**
+  String get drumkitBeatboxNothing;
+
   /// No description provided for @drumkitKick.
   ///
   /// In en, this message translates to:

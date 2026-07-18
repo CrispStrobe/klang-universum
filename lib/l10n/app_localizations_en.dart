@@ -1141,6 +1141,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drumkitStopRecording => 'Stop recording';
 
   @override
+  String get drumkitBeatbox => 'Beatbox';
+
+  @override
+  String get drumkitStopListening => 'Stop';
+
+  @override
+  String get drumkitBeatboxNothing => 'Nothing heard — try beatboxing louder.';
+
+  @override
   String get drumkitKick => 'Kick';
 
   @override

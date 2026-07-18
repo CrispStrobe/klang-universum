@@ -1,6 +1,7 @@
 // Drumkit / BoomBox — the step beat-grid over a shared DrumRowsPattern.
 // Audio is a no-op in the headless binding; assertions are on the grid + state.
 
+import 'package:comet_beat/core/audio/beat_capture.dart' show BeatFrame;
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
 import 'package:comet_beat/features/games/drums/drumkit_screen.dart';
 import 'package:flutter/widgets.dart';
@@ -82,5 +83,31 @@ void main() {
     // The stray double-kick collapsed → kick has just two hits.
     expect(kit.hitCount, 3);
     expect(kit.isRecording, isFalse);
+  });
+
+  testWidgets('beatbox capture classifies each hit and quantises onto the grid',
+      (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    kit.setTempo(120); // beatMs 500 → eighth step 250 ms
+    await tester.pump();
+
+    // A quiet frame then a loud attack per hit (detectOnsets needs the rise).
+    // kick @ 250 ms (low pitch), snare @ 1000 (mid zcr), hat @ 1500 (bright).
+    kit.debugBeatboxFrames(const <BeatFrame>[
+      (ms: 240, rms: 0.005, zcr: 0.0, pitchedLow: false),
+      (ms: 250, rms: 0.30, zcr: 0.01, pitchedLow: true), // → kick, step 1
+      (ms: 990, rms: 0.005, zcr: 0.0, pitchedLow: false),
+      (ms: 1000, rms: 0.30, zcr: 0.45, pitchedLow: false), // → snare, step 4
+      (ms: 1490, rms: 0.005, zcr: 0.0, pitchedLow: false),
+      (ms: 1500, rms: 0.30, zcr: 0.67, pitchedLow: false), // → hat, step 6
+    ]);
+    await tester.pump();
+
+    expect(kit.cellAt(Drum.kick, 1), isTrue);
+    expect(kit.cellAt(Drum.snare, 4), isTrue);
+    expect(kit.cellAt(Drum.hat, 6), isTrue);
+    expect(kit.hitCount, 3);
+    expect(kit.isListening, isFalse);
   });
 }

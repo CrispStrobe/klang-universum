@@ -87,6 +87,30 @@ void main() {
     expect(rowToString(pattern.rows[Drum.hat]!), '..x...x...x.....');
   });
 
+  test('beatboxToTaps finds and classifies each hit (for a step machine)', () {
+    const timing = LoopTiming(tempoBpm: 100); // step = 300 ms
+    final s = timing.stepMs;
+    final performance = renderDrumPattern(
+      [
+        (0 * s, Drum.kick),
+        (2 * s, Drum.hat),
+        (4 * s, Drum.snare),
+      ],
+      totalMs: timing.totalMs,
+    );
+    for (var i = 0; i < performance.length; i++) {
+      performance[i] *= 0.5;
+    }
+
+    final taps = beatboxToTaps(_analyze(performance, PitchDetector()));
+
+    // The three hits, correctly classified, near their onset times.
+    expect(taps.map((t) => t.drum).toList(), [Drum.kick, Drum.hat, Drum.snare]);
+    expect(taps[0].ms, lessThan(s));
+    expect((taps[1].ms - 2 * s).abs(), lessThan(s));
+    expect((taps[2].ms - 4 * s).abs(), lessThan(s));
+  });
+
   test('silence and empty traces yield nothing', () {
     expect(quantizeToBeat(const [], totalMs: 4800), isNull);
     expect(

@@ -10,6 +10,7 @@
 // snare≈0.45 · hat≈0.67; see test/beat_capture_test.dart).
 
 import 'package:comet_beat/core/audio/loop_engine.dart';
+import 'package:comet_beat/core/audio/rhythm_quantize.dart';
 import 'package:comet_beat/core/audio/synth.dart';
 
 /// One capture frame: elapsed ms, energy, brightness, and whether the
@@ -21,6 +22,34 @@ Drum classifyHit({required double zcr, required bool pitchedLow}) {
   if (pitchedLow || zcr < 0.15) return Drum.kick;
   if (zcr >= 0.55) return Drum.hat;
   return Drum.snare;
+}
+
+/// Beatboxed [frames] → labelled `(drum, ms)` taps: finds onsets in the energy
+/// trace ([detectOnsets]) and classifies each hit by the BRIGHTEST loud frame of
+/// its attack (dilution from the leading silence only lowers zcr, so the max is
+/// the honest timbre — same rule as [quantizeToBeat]). The onset+classify half,
+/// split out so a step machine can quantise the taps on ITS OWN grid via the
+/// generic `rhythm_quantize` engine (rather than the fixed eighth grid here).
+List<({Drum drum, double ms})> beatboxToTaps(List<BeatFrame> frames) {
+  final onsets = detectOnsets([for (final f in frames) (ms: f.ms, rms: f.rms)]);
+  final taps = <({Drum drum, double ms})>[];
+  for (final o in onsets) {
+    var brightest = 0.0;
+    var pitchedLow = false;
+    for (final f in frames) {
+      if (f.ms < o.ms || f.ms - o.ms >= _refractoryMs) continue;
+      if (f.rms < _rmsFloor) continue;
+      if (f.zcr > brightest) brightest = f.zcr;
+      pitchedLow = pitchedLow || f.pitchedLow;
+    }
+    taps.add(
+      (
+        drum: classifyHit(zcr: brightest, pitchedLow: pitchedLow),
+        ms: o.ms,
+      ),
+    );
+  }
+  return taps;
 }
 
 /// Onsets: an energy jump over both an absolute floor and a rise factor vs.

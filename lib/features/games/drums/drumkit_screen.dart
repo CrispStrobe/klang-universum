@@ -6,10 +6,15 @@
 // SAME model the Loop Mixer's beat track and the Tracker's percussion channel
 // use — so it's the shared beat editor (interconnection to those is a follow-up).
 
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/beat_capture.dart'
+    show BeatFrame, beatboxToTaps;
 import 'package:comet_beat/core/audio/loop_engine.dart'
     show DrumRowsPattern, LoopTiming, kPatternSteps;
+import 'package:comet_beat/core/audio/microphone_pitch_service.dart';
+import 'package:comet_beat/core/audio/pitch_analysis.dart' show PitchReading;
 import 'package:comet_beat/core/audio/rhythm_convert.dart' show toDrumPattern;
 import 'package:comet_beat/core/audio/rhythm_quantize.dart'
     show RhythmOnset, RhythmResolution, quantizeToResolution;
@@ -46,6 +51,15 @@ abstract interface class DrumkitTester {
   /// Test seam: quantise a list of `(drum, loop-ms)` taps into the grid exactly
   /// as a live recording would, without real-time tapping.
   void debugRecordTaps(List<({Drum drum, double ms})> taps);
+
+  /// Beatbox-to-grid: capture the mic, classify each hit (kick/snare/hat) and
+  /// quantise onto the grid — the same pipeline as tapping, timbre-classified.
+  bool get isListening;
+  void toggleBeatbox();
+
+  /// Test seam: run captured beatbox [frames] through classify → quantise →
+  /// grid, without a live microphone.
+  void debugBeatboxFrames(List<BeatFrame> frames);
 }
 
 class DrumkitScreen extends StatefulWidget {
@@ -76,6 +90,15 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   bool _recording = false;
   final List<({Drum drum, double ms})> _taps = [];
 
+  // Beatbox capture: collect mic feature frames over one loop, then classify +
+  // quantise them onto the grid.
+  MicrophonePitchService? _mic;
+  StreamSubscription<PitchReading>? _micSub;
+  final List<BeatFrame> _frames = [];
+  final Stopwatch _captureClock = Stopwatch();
+  Timer? _captureStop;
+  bool _listening = false;
+
   LoopTiming get _timing => LoopTiming(tempoBpm: _tempo); // 2 bars (default)
 
   @override
@@ -97,6 +120,9 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     _ticker.dispose();
     _step.dispose();
     _loop.dispose();
+    _captureStop?.cancel();
+    _micSub?.cancel();
+    _mic?.dispose();
     super.dispose();
   }
 
@@ -263,6 +289,74 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   void debugRecordTaps(List<({Drum drum, double ms})> taps) =>
       _quantizeTapsIntoRows(taps, _timing.beatMs.toDouble());
 
+  // --- Beatbox capture -------------------------------------------------------
+
+  @override
+  bool get isListening => _listening;
+
+  @override
+  void toggleBeatbox() {
+    if (_listening) {
+      _finishBeatbox();
+    } else {
+      _beginBeatbox();
+    }
+  }
+
+  Future<void> _beginBeatbox() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    _frames.clear();
+    // Nothing plays during capture, so keep the beat loop silent.
+    stop();
+    final mic = _mic ??= MicrophonePitchService();
+    mic.echoCancel = false; // full accuracy; no output to cancel
+    try {
+      _micSub = mic.readings.listen((r) {
+        _frames.add(
+          (
+            ms: _captureClock.elapsedMilliseconds.toDouble(),
+            rms: r.rms,
+            zcr: r.zcr,
+            // A hummed "boom" reads as a low pitched note → a kick.
+            pitchedLow: r.hasPitch && r.nearestMidi < 60,
+          ),
+        );
+      });
+      await mic.start();
+    } on PitchCaptureException {
+      await _micSub?.cancel();
+      if (!mounted) return;
+      messenger
+          .showSnackBar(SnackBar(content: Text(l10n.drumkitBeatboxNothing)));
+      return;
+    }
+    if (!mounted) return;
+    _captureClock
+      ..reset()
+      ..start();
+    setState(() => _listening = true);
+    // Capture one loop, then quantise.
+    _captureStop = Timer(
+      Duration(milliseconds: _timing.totalMs),
+      _finishBeatbox,
+    );
+  }
+
+  Future<void> _finishBeatbox() async {
+    _captureStop?.cancel();
+    _captureClock.stop();
+    await _mic?.stop();
+    await _micSub?.cancel();
+    if (!mounted) return;
+    _quantizeTapsIntoRows(beatboxToTaps(_frames), _timing.beatMs.toDouble());
+    setState(() => _listening = false);
+  }
+
+  @override
+  void debugBeatboxFrames(List<BeatFrame> frames) =>
+      _quantizeTapsIntoRows(beatboxToTaps(frames), _timing.beatMs.toDouble());
+
   @override
   int get tempo => _tempo;
 
@@ -401,6 +495,18 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                       _recording
                           ? l10n.drumkitStopRecording
                           : l10n.drumkitRecord,
+                    ),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: toggleBeatbox,
+                    style: _listening
+                        ? FilledButton.styleFrom(backgroundColor: scheme.error)
+                        : null,
+                    icon: Icon(_listening ? Icons.stop : Icons.mic),
+                    label: Text(
+                      _listening
+                          ? l10n.drumkitStopListening
+                          : l10n.drumkitBeatbox,
                     ),
                   ),
                   for (final bpm in DrumkitScreen.tempos)
