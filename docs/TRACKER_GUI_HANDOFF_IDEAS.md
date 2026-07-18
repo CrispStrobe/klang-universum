@@ -291,7 +291,7 @@ text only).
 New arc (user, 2026-07-18): keyboard UX fixes; "change instrument" → a real
 **samples library** + a **DAW module** (beginner + advanced) to change every
 sample/fx; **Loop Mixer as a Workshop MODE** (not just a Compose tile) with
-maximum interconnection; a **Drumkit/BoomBox** mode + a GarageBand-style virtual
+maximum interconnection; a **Drumkit/BoomBox** mode + a studio-style virtual
 drumkit and its interconnection. Grounded in two read-only surveys (keyboard
 widgets · modes/loop-mixer/drums/instruments, 2026-07-18).
 
@@ -382,7 +382,7 @@ Loop Mixer is a working sandbox reached as a **composition game tile**
 is a **single-pad** tap game (`drum_read_screen.dart`) but NO multi-pad kit / no
 step-grid drum editor.
 - **D4a. New `DrumkitScreen`** [screen], home dropdown(4). Two faces like the
-  tracker: **BoomBox (beginner)** = a GarageBand-style **tappable pad grid**
+  tracker: **BoomBox (beginner)** = a studio-style **tappable pad grid**
   (plays `renderDrum` on tap) + a simple **step beat-grid** editing a
   `DrumRowsPattern`; **Advanced** = more steps, per-step velocity, swing.
 - **D4b. More drum voices** [needs-engine] — the enum has only 3; toms/clap/

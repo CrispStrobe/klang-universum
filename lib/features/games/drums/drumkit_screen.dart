@@ -1,6 +1,6 @@
 // lib/features/games/drums/drumkit_screen.dart
 //
-// "Drumkit / BoomBox" — a GarageBand-style virtual drum kit + a step beat-grid,
+// "Drumkit / BoomBox" — a studio-style virtual drum kit + a step beat-grid,
 // a fifth Workshop mode. Tap the pads to audition a drum; toggle the grid to
 // build a loop; hit Play to hear it. The pattern IS a `DrumRowsPattern` — the
 // SAME model the Loop Mixer's beat track and the Tracker's percussion channel
