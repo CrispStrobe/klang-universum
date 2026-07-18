@@ -345,6 +345,27 @@ void main() {
     expect(xml, contains('<score-partwise'));
   });
 
+  testWidgets('exports ABC and re-imports it as a tracker song',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    expect(game.debugExportAbc(), isNull); // nothing placed yet
+    game.setNote(0, 0, 60); // C4
+    game.setNote(0, 4, 64); // E4
+    await tester.pump();
+
+    final abc = game.debugExportAbc();
+    expect(abc, isNotNull);
+    expect(abc, contains('X:')); // ABC tune header
+    expect(abc, contains('K:')); // key field
+
+    // Round-trip: importing the exported ABC rebuilds a song with the notes.
+    game.debugImportAbc(abc!);
+    await tester.pump();
+    expect(game.noteCount, greaterThan(0));
+  });
+
   testWidgets('exports the song as a module and it re-imports with notes',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

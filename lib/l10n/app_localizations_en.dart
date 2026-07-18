@@ -1220,10 +1220,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerSaveSong => 'Save to Song Book';
 
   @override
-  String get trackerImportScore => 'Import score (MusicXML/MIDI)…';
+  String get trackerImportScore => 'Import score (MusicXML/ABC/MIDI)…';
 
   @override
   String get trackerExportXml => 'Export MusicXML…';
+
+  @override
+  String get trackerExportAbc => 'Export ABC…';
 
   @override
   String get trackerExportModule => 'Export module (.mod/.xm/.s3m/.it)…';

@@ -51,7 +51,7 @@ import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/notation/multi_part_export.dart'
-    show multiPartToMidi, multiTrackMidiToMultiPart;
+    show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
@@ -65,7 +65,12 @@ import 'package:comet_beat/shared/tutorial/tutorial.dart';
 import 'package:comet_beat/shared/tutorial/tutorial_sheet.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show MultiPartScore, Score, multiPartScoreFromMusicXml, multiPartToMusicXml;
+    show
+        MultiPartScore,
+        Score,
+        multiPartScoreFromAbc,
+        multiPartScoreFromMusicXml,
+        multiPartToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -200,6 +205,11 @@ abstract interface class AdvancedTrackerTester {
   /// Export the whole song as MIDI / MusicXML bytes (null when nothing pitched).
   Uint8List? debugExportMidi();
   String? debugExportMusicXml();
+
+  /// Export the whole song as ABC text (null when nothing pitched); and import
+  /// an ABC string as a new tracker song (the reverse).
+  String? debugExportAbc();
+  void debugImportAbc(String abc);
 
   /// Export the whole song as a module file of [format] ('mod'/'xm'/'s3m'/'it').
   Uint8List? debugExportModule(String format);
@@ -2125,6 +2135,16 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   }
 
   @override
+  String? debugExportAbc() {
+    final mp = _songMultiPart();
+    return mp == null ? null : multiPartToAbc(mp.score, partNames: mp.names);
+  }
+
+  @override
+  void debugImportAbc(String abc) =>
+      _replaceSong(_songFromMultiPart(multiPartScoreFromAbc(abc)));
+
+  @override
   Uint8List? debugExportModule(String format) {
     final mp = _songMultiPart();
     if (mp == null) return null;
@@ -2226,6 +2246,24 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
+  Future<void> _exportAbc() async {
+    final mp = _songMultiPart();
+    final l10n = AppLocalizations.of(context)!;
+    if (mp == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.trackerSaveEmpty)),
+      );
+      return;
+    }
+    final abc = multiPartToAbc(mp.score, partNames: mp.names);
+    await _saveBytes(
+      Uint8List.fromList(utf8.encode(abc)),
+      'tracker.abc',
+      'ABC',
+      ['abc'],
+    );
+  }
+
   /// Exports the whole song as a tracker MODULE (.mod/.xm/.s3m/.it). Goes via
   /// the Score → ModuleDoc bridge, so notes + structure + a generated sample
   /// timbre carry; the authored effect COLUMN (not in the Score) does not.
@@ -2315,7 +2353,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         acceptedTypeGroups: [
           const XTypeGroup(
             label: 'Score',
-            extensions: ['musicxml', 'xml', 'mid', 'midi'],
+            extensions: ['musicxml', 'xml', 'abc', 'mid', 'midi'],
           ),
         ],
       );
@@ -2324,7 +2362,9 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       final name = file.name.toLowerCase();
       final mp = (name.endsWith('.mid') || name.endsWith('.midi'))
           ? multiTrackMidiToMultiPart(bytes)
-          : multiPartScoreFromMusicXml(utf8.decode(bytes));
+          : name.endsWith('.abc')
+              ? multiPartScoreFromAbc(utf8.decode(bytes))
+              : multiPartScoreFromMusicXml(utf8.decode(bytes));
       _replaceSong(_songFromMultiPart(mp));
     } catch (_) {
       if (!mounted) return;
@@ -2438,6 +2478,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _exportMidi();
                 case 'exportXml':
                   _exportMusicXml();
+                case 'exportAbc':
+                  _exportAbc();
                 case 'exportModule':
                   _pickModuleFormat();
                 case 'workshop':
@@ -2460,6 +2502,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               ),
               _menuRow('exportMidi', Icons.piano, l10n.trackerExportMidi),
               _menuRow('exportXml', Icons.description, l10n.trackerExportXml),
+              _menuRow(
+                'exportAbc',
+                Icons.text_snippet_outlined,
+                l10n.trackerExportAbc,
+              ),
               _menuRow(
                 'exportModule',
                 Icons.grid_on,

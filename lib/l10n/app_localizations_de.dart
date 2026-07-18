@@ -1226,10 +1226,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerSaveSong => 'Ins Liederbuch';
 
   @override
-  String get trackerImportScore => 'Noten importieren (MusicXML/MIDI)…';
+  String get trackerImportScore => 'Noten importieren (MusicXML/ABC/MIDI)…';
 
   @override
   String get trackerExportXml => 'MusicXML exportieren…';
+
+  @override
+  String get trackerExportAbc => 'ABC exportieren…';
 
   @override
   String get trackerExportModule => 'Modul exportieren (.mod/.xm/.s3m/.it)…';
