@@ -4268,6 +4268,42 @@ abstract class AppLocalizations {
   /// **'Tonic, subdominant or dominant?'**
   String get gameHarmonyQuizSubtitle;
 
+  /// No description provided for @gameSpotParallels.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot the Parallels'**
+  String get gameSpotParallels;
+
+  /// No description provided for @gameSpotParallelsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean voice-leading, or forbidden parallels?'**
+  String get gameSpotParallelsSubtitle;
+
+  /// No description provided for @spotParallelsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Between these two chords — is the voice-leading clean, or does it slip into parallels?'**
+  String get spotParallelsPrompt;
+
+  /// No description provided for @spotParallelsListen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get spotParallelsListen;
+
+  /// No description provided for @spotParallelsClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get spotParallelsClean;
+
+  /// No description provided for @spotParallelsParallel.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallels!'**
+  String get spotParallelsParallel;
+
   /// No description provided for @harmonyPrompt.
   ///
   /// In en, this message translates to:

@@ -2240,6 +2240,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameHarmonyQuizSubtitle => 'Tonic, subdominant or dominant?';
 
   @override
+  String get gameSpotParallels => 'Spot the Parallels';
+
+  @override
+  String get gameSpotParallelsSubtitle =>
+      'Clean voice-leading, or forbidden parallels?';
+
+  @override
+  String get spotParallelsPrompt =>
+      'Between these two chords — is the voice-leading clean, or does it slip into parallels?';
+
+  @override
+  String get spotParallelsListen => 'Listen';
+
+  @override
+  String get spotParallelsClean => 'Clean';
+
+  @override
+  String get spotParallelsParallel => 'Parallels!';
+
+  @override
   String harmonyPrompt(String key) {
     return 'What is this chord\'s function in $key?';
   }

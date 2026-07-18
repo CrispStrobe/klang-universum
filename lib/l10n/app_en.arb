@@ -870,6 +870,12 @@
   "romanNumeralReplay": "Hear the chord again",
   "gameHarmonyQuiz": "Function Quiz",
   "gameHarmonyQuizSubtitle": "Tonic, subdominant or dominant?",
+  "gameSpotParallels": "Spot the Parallels",
+  "gameSpotParallelsSubtitle": "Clean voice-leading, or forbidden parallels?",
+  "spotParallelsPrompt": "Between these two chords — is the voice-leading clean, or does it slip into parallels?",
+  "spotParallelsListen": "Listen",
+  "spotParallelsClean": "Clean",
+  "spotParallelsParallel": "Parallels!",
   "harmonyPrompt": "What is this chord's function in {key}?",
   "@harmonyPrompt": {
     "placeholders": {
