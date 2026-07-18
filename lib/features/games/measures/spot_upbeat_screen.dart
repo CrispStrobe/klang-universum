@@ -226,7 +226,7 @@ class _SpotUpbeatScreenState extends State<SpotUpbeatScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final upbeat in const [true, false])
                           Expanded(

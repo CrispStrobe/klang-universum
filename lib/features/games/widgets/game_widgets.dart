@@ -221,6 +221,27 @@ class AnswerGrid extends StatelessWidget {
   }
 }
 
+/// A centered, width-capped row of two (or three) answer buttons — the binary
+/// counterpart to [AnswerGrid]. On a phone it fills the width as before; on a
+/// wide screen (tablet/desktop) it stays near the middle instead of flinging
+/// the options to the far left and right edges. Pass the same children you'd
+/// give a plain [Row] (typically `Expanded` buttons).
+class AnswerRow extends StatelessWidget {
+  final List<Widget> children;
+
+  const AnswerRow({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Row(children: children),
+      ),
+    );
+  }
+}
+
 class GameResultView extends StatelessWidget {
   /// Game type key into [kStarThresholds].
   final String gameType;

@@ -150,7 +150,7 @@ class _TriadSeventhScreenState extends State<TriadSeventhScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final seventh in const [false, true])
                           Expanded(

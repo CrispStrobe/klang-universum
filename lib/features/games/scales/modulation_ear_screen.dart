@@ -161,7 +161,7 @@ class _ModulationEarScreenState extends State<ModulationEarScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final changed in const [false, true])
                           Expanded(

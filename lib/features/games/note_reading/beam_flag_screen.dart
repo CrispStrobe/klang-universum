@@ -196,7 +196,7 @@ class _BeamFlagScreenState extends State<BeamFlagScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final beamed in const [true, false])
                           Expanded(

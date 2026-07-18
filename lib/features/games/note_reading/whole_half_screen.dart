@@ -182,7 +182,7 @@ class _WholeHalfScreenState extends State<WholeHalfScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final half in const [false, true])
                           Expanded(

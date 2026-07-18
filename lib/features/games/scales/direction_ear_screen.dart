@@ -137,7 +137,7 @@ class _DirectionEarScreenState extends State<DirectionEarScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final up in const [true, false])
                           Expanded(

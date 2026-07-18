@@ -513,20 +513,22 @@ class _PlayRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    return Row(
+    // A Column so the (localized, sometimes long) button and hint never
+    // overflow a narrow phone: the button sizes to its content, and the hint
+    // wraps in the full width beneath it.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FilledButton.tonalIcon(
           onPressed: onPlayWhole,
           icon: const Icon(Icons.play_arrow),
           label: Text(l10n.formAnalysisPlayWhole),
         ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            hint,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
+        const SizedBox(height: 4),
+        Text(
+          hint,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
       ],
     );

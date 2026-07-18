@@ -197,7 +197,7 @@ class _TripletReadScreenState extends State<TripletReadScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final trip in const [false, true])
                           Expanded(

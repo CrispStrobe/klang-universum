@@ -139,7 +139,7 @@ class _RunDirectionScreenState extends State<RunDirectionScreen>
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Row(
+                    AnswerRow(
                       children: [
                         for (final asc in const [true, false])
                           Expanded(
