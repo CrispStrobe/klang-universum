@@ -27,6 +27,8 @@ import 'package:comet_beat/features/games/composition/groove_notation.dart'
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart'
+    show showAudioExportSheet;
 import 'package:comet_beat/shared/music_io/music_export.dart'
     show showMusicExportSheet;
 import 'package:crisp_notation/crisp_notation.dart'
@@ -501,6 +503,15 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     );
   }
 
+  /// Render the beat and offer it as WAV or MP3 (pure-Dart, web-safe).
+  void _exportAudio() {
+    showAudioExportSheet(
+      context,
+      pcm: DrumRowsPattern(_rows).render(_timing),
+      baseName: 'beat',
+    );
+  }
+
   @override
   String? debugSaveToSongBook(UserSongsService songs) {
     final l10n = AppLocalizations.of(context)!;
@@ -578,6 +589,11 @@ class _DrumkitScreenState extends State<DrumkitScreen>
             icon: const Icon(Icons.ios_share),
             tooltip: l10n.drumkitExport,
             onPressed: hitCount == 0 ? null : _exportBeat,
+          ),
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: l10n.audioExportTitle,
+            onPressed: hitCount == 0 ? null : _exportAudio,
           ),
         ],
       ),

@@ -69,6 +69,8 @@ import 'package:comet_beat/features/library/starter_pattern.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart'
     show CompositionWorkshopScreen;
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart'
+    show showAudioExportSheet;
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
 import 'package:comet_beat/shared/tutorial/tutorial_sheet.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
@@ -2775,6 +2777,13 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
+  /// Render the whole song and offer it as WAV or MP3 (pure-Dart, web-safe).
+  Future<void> _exportAudio() async {
+    final pcm = wavToMonoFloat(readWavPcm16(_song.renderSongWav()));
+    if (!mounted) return;
+    await showAudioExportSheet(context, pcm: pcm, baseName: 'tracker');
+  }
+
   Future<void> _exportMusicXml() async {
     final mp = _songMultiPart();
     final l10n = AppLocalizations.of(context)!;
@@ -3044,6 +3053,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _exportAbc();
                 case 'exportModule':
                   _pickModuleFormat();
+                case 'exportAudio':
+                  _exportAudio();
                 case 'workshop':
                   _openInWorkshop();
               }
@@ -3084,6 +3095,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 Icons.grid_on,
                 l10n.trackerExportModule,
               ),
+              _menuRow('exportAudio', Icons.download, l10n.audioExportTitle),
               const PopupMenuDivider(),
               _menuRow('workshop', Icons.edit_note, l10n.trackerOpenWorkshop),
             ],

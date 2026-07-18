@@ -45,6 +45,7 @@ import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:comet_beat/shared/music_io/music_export.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart'
@@ -941,18 +942,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       final wav = await Isolate.run(
         () => (LoopEngine()..applySpec(spec)).renderLoop(),
       );
-      final location = await getSaveLocation(
-        suggestedName: 'groove.wav',
-        acceptedTypeGroups: [
-          const XTypeGroup(label: 'WAV', extensions: ['wav']),
-        ],
-      );
-      if (location == null || !mounted) return; // cancelled
-      await XFile.fromData(wav, mimeType: 'audio/wav', name: 'groove.wav')
-          .saveTo(location.path);
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
-      );
+      if (!mounted) return;
+      // Offer WAV or MP3 (both pure-Dart, web-safe) from the shared sheet.
+      final pcm = wavToMonoFloat(readWavPcm16(wav));
+      await showAudioExportSheet(context, pcm: pcm, baseName: 'groove');
     } catch (e) {
       if (kDebugMode) debugPrint('[LOOP] wav save unavailable: $e');
       messenger.showSnackBar(
