@@ -3140,6 +3140,18 @@ abstract class AppLocalizations {
   /// **'Tracks & mixer'**
   String get trackerMixer;
 
+  /// No description provided for @trackerGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get trackerGain;
+
+  /// No description provided for @trackerPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Pan (left ↔ right)'**
+  String get trackerPan;
+
   /// No description provided for @trackerInstruments.
   ///
   /// In en, this message translates to:

@@ -1629,6 +1629,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerMixer => 'Spuren & Mixer';
 
   @override
+  String get trackerGain => 'Lautstärke';
+
+  @override
+  String get trackerPan => 'Panorama (links ↔ rechts)';
+
+  @override
   String get trackerInstruments => 'Instrument für neue Noten';
 
   @override

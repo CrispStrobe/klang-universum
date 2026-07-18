@@ -308,6 +308,20 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('per-channel pan drives the stereo render', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    expect(game.panOf(0), 0.0); // centred by default
+    expect(game.songUsesPan, isFalse); // a centred song stays mono
+
+    game.setPan(0, -0.8); // hard-ish left
+    await tester.pump();
+    expect(game.panOf(0), closeTo(-0.8, 1e-9));
+    expect(game.songUsesPan, isTrue); // now the render goes stereo
+  });
+
   testWidgets('the on-screen piano lights the sounding notes of a row',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

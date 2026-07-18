@@ -206,6 +206,11 @@ abstract interface class AdvancedTrackerTester {
   void toggleMute(int channel);
   void toggleSolo(int channel);
 
+  /// Per-channel stereo pan (−1 left … 0 centre … +1 right).
+  double panOf(int channel);
+  void setPan(int channel, double pan);
+  bool get songUsesPan;
+
   /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
   void importModuleBytes(Uint8List bytes);
   bool debugSaveToSongBook(UserSongsService songs);
@@ -1602,14 +1607,35 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           ),
           // Gain slider.
           Expanded(
-            child: Slider(
-              value: ch.gain.clamp(0.0, 1.2),
-              max: 1.2,
-              onChanged: (v) {
-                _song.setChannelGain(c, v);
-                _syncPlayback();
-                setSheet(() {});
-              },
+            child: Tooltip(
+              message: l10n.trackerGain,
+              child: Slider(
+                value: ch.gain.clamp(0.0, 1.2),
+                max: 1.2,
+                onChanged: (v) {
+                  _song.setChannelGain(c, v);
+                  _syncPlayback();
+                  setSheet(() {});
+                },
+              ),
+            ),
+          ),
+          // Pan slider (L ↔ R; centre = 0). Routes the song to the stereo render.
+          const Icon(Icons.surround_sound, size: 14),
+          Expanded(
+            child: Tooltip(
+              message: l10n.trackerPan,
+              child: Slider(
+                value: ch.pan.clamp(-1.0, 1.0),
+                min: -1.0,
+                onChanged: (v) {
+                  // Snap a near-centre pan to dead centre so a song stays mono
+                  // (and byte-identical) unless the user really pans.
+                  _song.engine.setChannelPan(c, v.abs() < 0.05 ? 0.0 : v);
+                  _syncPlayback();
+                  setSheet(() {});
+                },
+              ),
             ),
           ),
           _headerToggle('M', _song.isMuted(c), scheme.error, () {
@@ -3394,6 +3420,16 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   bool isMuted(int channel) => _song.isMuted(channel);
   @override
   bool isSoloed(int channel) => _song.isSoloed(channel);
+  @override
+  double panOf(int channel) => _song.channels[channel].pan;
+  @override
+  void setPan(int channel, double pan) {
+    setState(() => _song.engine.setChannelPan(channel, pan));
+    _syncPlayback();
+  }
+
+  @override
+  bool get songUsesPan => _song.usesPan;
 
   @override
   void toggleMute(int channel) {

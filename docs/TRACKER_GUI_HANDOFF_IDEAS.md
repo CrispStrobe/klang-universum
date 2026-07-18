@@ -159,6 +159,23 @@ hard ceilings:
   **[needs-engine]** (@tracker-replayer owns `tracker_engine.dart`); the range
   UI + bars UI are [screen].
 
+## B5. Surface the engine features @tracker-replayer shipped (GUI catch-up)
+The engine raced ahead of the GUI. On `main` now but NOT (fully) surfaced in the
+Advanced tracker — the user flagged "we do not yet have it all in the GUI":
+- **Stereo panning** (`TrackerChannel.pan`, `setChannelPan`, `8xx`/`kFxSetPan`,
+  `usesPan`→stereo render). **→ per-channel PAN slider in the mixer [DONE]**;
+  8xx pan authoring is already in the effect editor.
+- **Per-pattern variable length** (`TrackerSong.setPatternRows(i, rows)`). The UI
+  `setRows` should target the CURRENT pattern only (per-pattern), + a per-pattern
+  length control in the arrangement bar. This is also the real "longer music"
+  answer for B4 now that the engine supports it. **[TODO]**
+- **Volume + pan envelopes** (`TrackerChannel.volumeEnvelope`/`panEnvelope`,
+  `VolumeEnvelope`/`PanEnvelope`, `setChannelVolumeEnvelope`/`…Pan…`). A simple
+  per-channel envelope editor (a few draggable points) in the mixer. **[TODO]**
+- **Mid-song tempo/speed** (`Fxx`): the transport/playhead already consume
+  `effectiveTiming`/`resolveTimingMap`; verify a mid-song Fxx shows correctly.
+  **[verify]**
+
 ## C. Wire ALL importers/exporters everywhere useful
 
 **Finding (matrix):** the library has an enormous codec set; most is wired **only

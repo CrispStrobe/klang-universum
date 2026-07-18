@@ -548,6 +548,8 @@
   "trackerCursor": "Cursor bewegen",
   "trackerFxColumn": "Effekt-Spalte (MOD)",
   "trackerMixer": "Spuren & Mixer",
+  "trackerGain": "Lautstärke",
+  "trackerPan": "Panorama (links ↔ rechts)",
   "trackerInstruments": "Instrument für neue Noten",
   "trackerInstrumentDefault": "Spur-Standard",
   "trackerRecordSample": "Sample aufnehmen",
