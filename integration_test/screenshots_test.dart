@@ -7,6 +7,8 @@
 // render, and so takeScreenshot() bytes reach the driver's onScreenshot sink.
 //
 // SHOT_PREFIX (a --dart-define) tags the files per device, e.g. iphone_01_home.
+import 'dart:async';
+
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/tutorial_gate.dart';
 import 'package:comet_beat/main.dart' as app;
@@ -36,10 +38,22 @@ void main() {
   }
 
   // Best-effort navigation: a missing finder skips that one shot, never aborts
-  // the rest (so we always keep whatever we did capture).
-  Future<void> step(String name, Future<void> Function() body) async {
+  // the rest (so we always keep whatever we did capture). Each step is also
+  // hard-bounded in wall-clock: a screen whose init blocks (e.g. a plugin/mic/
+  // audio channel that never returns) would otherwise silently eat the whole
+  // 60-min CI budget with NO clue which screen. On timeout we log the name and
+  // move on — the job finishes, the capture degrades gracefully, and the log
+  // names the culprit for a targeted follow-up. Runs on the Dart isolate, so a
+  // deadlocked *platform* thread still lets this timer fire.
+  Future<void> step(
+    String name,
+    Future<void> Function() body, {
+    int seconds = 120,
+  }) async {
     try {
-      await body();
+      await body().timeout(Duration(seconds: seconds));
+    } on TimeoutException {
+      debugPrint('SHOT_STEP_TIMEOUT $name: exceeded ${seconds}s — skipping');
     } catch (e) {
       debugPrint('SHOT_STEP_SKIPPED $name: $e');
     }
@@ -53,7 +67,9 @@ void main() {
   }
 
   testWidgets('capture store screenshots', (tester) async {
-    await app.main();
+    // Bound startup too: if app.main() (or an eager service init) ever blocks,
+    // fail fast with a clear message instead of a mute 60-min timeout.
+    await app.main().timeout(const Duration(seconds: 120));
     autoShowTutorials = false; // don't let a first-run tutorial cover a screen
     await hold(tester, ms: 1500); // let the first frame render
 
@@ -71,7 +87,7 @@ void main() {
     await hold(tester, ms: 600);
 
     // 1) Home — the learning-module grid
-    await shot(tester, '01_home');
+    await step('home', () => shot(tester, '01_home'));
 
     // 2) A real game (first module -> first game): shows live notation
     await step('game', () async {
