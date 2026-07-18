@@ -63,11 +63,20 @@ TrackerSong songFromModuleDoc(ModuleDoc doc) {
       if (o >= 0 && o < patterns.length) o,
   ];
 
+  // The shared instrument pool: every module sample (1-based, matching
+  // DocCell.instrument), so a note plays its OWN sample via the replayer's
+  // per-note render — real per-note sample fidelity, not one voice per channel.
+  final pool = <TrackerInstrument>[
+    for (var i = 0; i < doc.samples.length; i++)
+      sampleInstrumentFromDoc('smp${i + 1}', doc.samples[i]),
+  ];
+
   return TrackerSong.fromParts(
     channels: band,
     timing: timing,
     patterns: patterns,
     order: order,
+    instruments: pool,
   );
 }
 
@@ -138,7 +147,7 @@ TrackerPattern _patternFromDoc(
     for (var c = 0; c < channelCount && c < row.length; c++) {
       final dc = row[c];
       final hasFx = dc.effect != 0 || dc.effectParam != 0;
-      if (dc.note >= 0 || hasFx) {
+      if (dc.note >= 0 || hasFx || dc.instrument != 0) {
         cells[c][r] = TrackerCell(
           midi: dc.note >= 0 ? dc.note : null,
           volume: dc.note >= 0 && dc.volume >= 0 && dc.volume < 64
@@ -149,6 +158,9 @@ TrackerPattern _patternFromDoc(
           // ringing note.
           fxCmd: dc.effect,
           fxParam: dc.effectParam,
+          // The per-cell instrument (module sample number) → the pool built in
+          // songFromModuleDoc, so the note plays its own sample.
+          instrument: dc.instrument,
         );
       }
       // noteOff cells stop a ring in real trackers; our model rings until the

@@ -6,7 +6,9 @@
 // renderer wires the same machine into non-silent PCM of the right length.
 
 import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replay.dart'
     show kFxSetVolume, kFxVolumeSlide, kDefaultTicksPerRow;
@@ -594,6 +596,81 @@ void main() {
 
       expect(sameRange(0, s4), isTrue); // note 1 (both piano) is identical
       expect(sameRange(s4, piano.length), isFalse); // note 2 differs (flute)
+    });
+  });
+
+  group('per-note non-additive render (per-cell instrument on samples)', () {
+    Float64List tone(double hz) => Float64List.fromList([
+          for (var i = 0; i < 4000; i++) sin(2 * pi * hz * i / kSampleRate),
+        ]);
+
+    const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+
+    List<TrackerCell> withNotes(Map<int, TrackerCell> at) {
+      final c = List<TrackerCell>.filled(timing.rows, TrackerCell.empty);
+      at.forEach((row, cell) => c[row] = cell);
+      return c;
+    }
+
+    test('renderChannelPerNote is byte-identical when the instrument is fixed',
+        () {
+      final inst = SampleInstrument('s', tone(220));
+      final cells = withNotes({
+        0: const TrackerCell(midi: 60),
+        4: const TrackerCell(midi: 64),
+      });
+      final whole = inst.renderChannel(cells, timing);
+      // Same notes, but naming instrument 1 which points back at `inst`.
+      final pc = [
+        for (final c in cells)
+          c.midi != null ? TrackerCell(midi: c.midi, instrument: 1) : c,
+      ];
+      final perNote = renderChannelPerNote(inst, pc, timing, [inst]);
+      expect(perNote, equals(whole));
+    });
+
+    test('a cell instrument plays a different sample from the pool', () {
+      final a = SampleInstrument('a', tone(220));
+      final b = SampleInstrument('b', tone(880));
+      final pool = <TrackerInstrument>[a, b];
+
+      // Note 1 uses the channel default (a); note 2 (row 4) names instrument 2 (b).
+      final mixed = renderChannelPerNote(
+        a,
+        withNotes({
+          0: const TrackerCell(midi: 60),
+          4: const TrackerCell(midi: 60, instrument: 2),
+        }),
+        timing,
+        pool,
+      );
+      // Baseline: both notes on `a`.
+      final allA = renderChannelPerNote(
+        a,
+        withNotes({
+          0: const TrackerCell(midi: 60),
+          4: const TrackerCell(midi: 60),
+        }),
+        timing,
+        pool,
+      );
+      final s4 = timing.stepStartSample(4);
+      var firstHalfSame = true;
+      for (var i = 0; i < s4; i++) {
+        if (mixed[i] != allA[i]) {
+          firstHalfSame = false;
+          break;
+        }
+      }
+      var secondHalfDiffers = false;
+      for (var i = s4; i < mixed.length; i++) {
+        if (mixed[i] != allA[i]) {
+          secondHalfDiffers = true;
+          break;
+        }
+      }
+      expect(firstHalfSame, isTrue); // note 1 (both `a`) identical
+      expect(secondHalfDiffers, isTrue); // note 2 (b vs a) differs
     });
   });
 }

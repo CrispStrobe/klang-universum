@@ -468,6 +468,54 @@ int _nextTriggerRow(List<TrackerCell> cells, int from) {
 Instrument? _additiveOf(TrackerInstrument instrument) =>
     instrument is AdditiveInstrument ? instrument.instrument : null;
 
+/// Renders a NON-additive channel note by note, so each note is played by its
+/// EFFECTIVE instrument — the channel's [channelInstrument] by default, swapped
+/// to `pool[cell.instrument-1]` when a cell names a per-cell instrument (any
+/// type; persists per channel, tracker-style). This is what lets a sample
+/// channel pick a different sample per note (module fidelity + the per-note
+/// enabler for 9xx / mid-song timing).
+///
+/// Each note is rendered over its EXACT run: the trigger cell plus a dummy
+/// cap-trigger at the run's end (so the instrument's run-length-dependent
+/// envelope fades exactly where the whole-channel render would), then only the
+/// run's samples are copied in. Consequence: with no instrument change this is
+/// BYTE-IDENTICAL to `channelInstrument.renderChannel(cells, timing)` — the
+/// regression guard the tests pin. Cost is one `renderChannel` per note (each
+/// only synthesizes its single note), fine for offline render.
+Float64List renderChannelPerNote(
+  TrackerInstrument channelInstrument,
+  List<TrackerCell> cells,
+  TrackerTiming timing,
+  List<TrackerInstrument> pool,
+) {
+  final stem = Float64List(timing.totalSamples);
+  final rows = cells.length;
+  var curInst = channelInstrument;
+  var startStep = 0;
+  for (final (midi, steps) in cellRuns(cells)) {
+    final trigger = cells[startStep];
+    if (trigger.instrument > 0 && trigger.instrument - 1 < pool.length) {
+      curInst = pool[trigger.instrument - 1];
+    }
+    if (midi != null) {
+      final capRow = startStep + steps;
+      final one = List<TrackerCell>.filled(rows, TrackerCell.empty)
+        ..[startStep] = trigger;
+      if (capRow < rows) one[capRow] = TrackerCell(midi: midi); // cap the run
+      final buf = curInst.renderChannel(one, timing);
+      final s = timing.stepStartSample(startStep);
+      final e =
+          capRow < rows ? timing.stepStartSample(capRow) : timing.totalSamples;
+      final lim = min(e, min(buf.length, stem.length));
+      for (var i = s; i < lim; i++) {
+        stem[i] += buf[i];
+      }
+    }
+    startStep += steps;
+  }
+  return stem;
+}
+
 /// The synthesis parameters of an additive [inst] (harmonics + envelope + the
 /// L1 harmonic norm used to keep the voice's peak ≤ 1). Recomputed whenever a
 /// per-cell instrument switches the additive timbre.
@@ -502,9 +550,15 @@ void _renderChannelInto(
 
   final inst = _additiveOf(channel.instrument);
   if (inst == null) {
-    // Non-additive: offline render, unit-peak, × gain, summed at true amplitude.
-    // (Per-cell instrument is not honoured on non-additive channels yet.)
-    final stem = channel.instrument.renderChannel(cells, timing);
+    // Non-additive: build the channel stem, unit-peak × gain, sum at true
+    // amplitude. With no per-cell instrument this is the unchanged whole-channel
+    // render; with per-cell instruments it's a per-note render (each note played
+    // by its pool instrument) that is BYTE-IDENTICAL to the whole render when the
+    // instrument doesn't change (see renderChannelPerNote).
+    final hasPerCell = pool != null && cells.any((c) => c.instrument != 0);
+    final stem = hasPerCell
+        ? renderChannelPerNote(channel.instrument, cells, timing, pool)
+        : channel.instrument.renderChannel(cells, timing);
     var peak = 0.0;
     for (final v in stem) {
       if (v.abs() > peak) peak = v.abs();

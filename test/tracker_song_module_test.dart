@@ -55,7 +55,12 @@ void main() {
       final rows = <List<DocCell>>[
         // A note WITH a porta-up effect (1xx).
         [
-          const DocCell(note: 60, instrument: 1, effect: 0x1, effectParam: 0x08),
+          const DocCell(
+            note: 60,
+            instrument: 1,
+            effect: 0x1,
+            effectParam: 0x08,
+          ),
         ],
         // An effect-ONLY cell (no note) — how a slide continues on a ring.
         [const DocCell(effect: 0x1)],
@@ -137,6 +142,38 @@ void main() {
         expect(songCmd, greaterThan(0), reason: 'XM effects should carry');
       }
       expect(songCmd, lessThanOrEqualTo(docFx));
+    });
+
+    test('import builds the instrument pool + carries per-cell instrument', () {
+      final bytes = _fixture('golden.mod');
+      final doc = parseAnyModule(bytes);
+      final song = songFromModuleBytes(bytes);
+
+      // The pool has one entry per module sample.
+      expect(song.instruments.length, doc.samples.length);
+
+      var docInst = 0;
+      for (final p in doc.patterns) {
+        for (final row in p.rows) {
+          for (final dc in row) {
+            if (dc.instrument != 0) docInst++;
+          }
+        }
+      }
+      var songInst = 0;
+      for (final p in song.patterns) {
+        for (final col in p.cells) {
+          for (final c in col) {
+            if (c.instrument != 0) songInst++;
+          }
+        }
+      }
+      // Per-cell instrument survives the import, and routes via the replayer.
+      expect(songInst, lessThanOrEqualTo(docInst));
+      if (docInst > 0) {
+        expect(songInst, greaterThan(0));
+        expect(song.usesInstruments, isTrue);
+      }
     });
   });
 }
