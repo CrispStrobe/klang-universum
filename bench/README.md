@@ -47,3 +47,42 @@ Decoded audio is real (peak 23770/32768, RMS 1553, 99 % non-zero) — the tones
 survived. Header `FF FB 90 C4` = valid MPEG-1 LIII 128 k/44.1 k mono. First cut:
 zero scalefactors + no bit reservoir (valid, lower quality); scalefactors +
 reservoir + the rate-optimal region search are quality follow-ups.
+
+## A/B vs glint using glint's OWN harness (`bench/ab_vs_glint.py`)
+Reuses glint `tests/benchmark_encoder.py`'s deterministic speech signal +
+`tests/measure_audio.py`'s objective metrics, so the Dart encoder is judged on
+the same reference and yardstick as glint. Both run mono; 30 s.
+Setup: a py3.12 venv with numpy+scipy; `glint/build-bench/glint_cli`.
+```
+python bench/ab_vs_glint.py -b 128        # or -b 256, --seconds N
+```
+
+**Are we bit-perfect?** The DSP *front-end* is machine-equivalent to glint —
+subband 5.3e-15, MDCT 6.7e-16 rel. error (see the golden test). The full
+encoded bitstream is NOT bit-identical: ours is a deliberately simpler encoder
+(zero scalefactors + no bit reservoir + non-optimal region split), so it emits
+a valid, decodable, but lower-fidelity stream. Same *size* (CBR fills the same
+frames), different *contents*.
+
+**How much slower?** ~3–4× slower in Dart JIT, still ~28× realtime:
+
+| bitrate | glint       | dart        | ratio |
+|---------|-------------|-------------|-------|
+| 128 k   | 88× rt      | 28× rt      | 3.1×  |
+| 256 k   | 106× rt     | 27× rt      | 3.9×  |
+
+**Quality gap (and its cause).** measure_audio, 128 k / 256 k:
+
+| metric            | glint 128 | dart 128 | glint 256 | dart 256 |
+|-------------------|-----------|----------|-----------|----------|
+| SNR dB            | 32.1      | 8.1      | 36.6      | 8.0      |
+| NMR mean dB (≤0=masked) | −11.4 | +10.4  | −26.6     | +10.4    |
+| NMR>0 % (audible) | 0.0       | 66.7     | 0.0       | 66.5     |
+
+The Dart line is **flat across bitrate** — extra bits don't help, because
+without scalefactors we can't push quantization noise under the masking
+threshold (`global_gain` alone already fits the frame budget, so the surplus
+bits go unused). glint's noise is fully masked (NMR ≤ 0); ours is audible in
+66 % of Bark bands. => **scalefactors + bit reservoir + a distortion-driven
+(psychoacoustic) rate loop is THE quality follow-up**, and it's now quantified.
+The current output is correct and standards-compliant, just not yet transparent.
