@@ -290,6 +290,11 @@ abstract interface class AdvancedTrackerTester {
   /// The MIDI note at a cell (null = empty).
   int? noteAt(int channel, int row);
 
+  /// Per-pattern length: set the CURRENT pattern's rows only, and read any
+  /// pattern's rows — so patterns can differ in length (tracker-style).
+  void setPatternLength(int rows);
+  int patternRows(int patternIndex);
+
   /// The instrument-picker state: the active pool instrument stamped on new
   /// notes (0 = channel default), the pool size, and a cell's stamped instrument.
   int get activeInstrument;
@@ -567,6 +572,19 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     setState(() {
       _song.setRows(rows);
       if (_cursorRow >= rows) _cursorRow = rows - 1;
+    });
+    _syncPlayback();
+  }
+
+  /// Set the CURRENT pattern's length only (tracker-style per-pattern length —
+  /// the engine now supports variable lengths and the playhead map follows
+  /// them). This is what the length control uses; [setRows] resizes every
+  /// pattern (kept for the test seam + a future "resize all").
+  void _setPatternLength(int rows) {
+    _clearUndo();
+    setState(() {
+      _song.setPatternRows(_song.currentIndex, rows.clamp(1, 1024));
+      if (_cursorRow >= _song.rows) _cursorRow = _song.rows - 1;
     });
     _syncPlayback();
   }
@@ -1855,6 +1873,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   int? noteAt(int channel, int row) => _song.engine.cellAt(channel, row).midi;
+  @override
+  void setPatternLength(int rows) => _setPatternLength(rows);
+  @override
+  int patternRows(int patternIndex) => _song.patterns[patternIndex].rows;
 
   @override
   int get activeInstrument => _activeInstrument;
@@ -3192,7 +3214,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 if (v == -1) {
                   _promptCustomLength(l10n);
                 } else {
-                  setRows(v);
+                  _setPatternLength(v);
                 }
               },
             ),
@@ -3294,7 +3316,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         ],
       ),
     );
-    if (value != null && value > 0) setRows(value.clamp(1, 1024));
+    if (value != null && value > 0) _setPatternLength(value);
   }
 
   Widget _grid(BuildContext context) {

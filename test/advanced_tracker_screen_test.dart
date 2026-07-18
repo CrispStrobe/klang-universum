@@ -308,6 +308,21 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('patterns can have independent lengths (per-pattern)',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setPatternLength(16); // pattern 0 -> 16 rows
+    expect(game.patternRows(0), 16);
+
+    game.addPattern(); // pattern 1 (selected), cloned length
+    game.setPatternLength(32); // pattern 1 -> 32 rows
+    await tester.pump();
+
+    expect(game.patternRows(1), 32);
+    expect(game.patternRows(0), 16); // pattern 0 stays 16 — lengths differ
+  });
+
   testWidgets('per-channel pan drives the stereo render', (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
     final game = _game(tester);
