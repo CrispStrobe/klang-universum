@@ -126,6 +126,19 @@ const _kEnvelopePresets = <String, VolumeEnvelope?>{
   'swell': VolumeEnvelope([(ms: 0, level: 0.2), (ms: 500, level: 1.0)]),
 };
 
+/// Per-channel AUTO-PAN shapes (the pan envelope). `null` = fixed pan.
+/// Breakpoints are `(ms, pan −1..1)`.
+const _kPanPresets = <String, PanEnvelope?>{
+  'off': null,
+  'lr': PanEnvelope([(ms: 0, pan: -1.0), (ms: 500, pan: 1.0)]),
+  'rl': PanEnvelope([(ms: 0, pan: 1.0), (ms: 500, pan: -1.0)]),
+  'pingpong': PanEnvelope([
+    (ms: 0, pan: -1.0),
+    (ms: 250, pan: 1.0),
+    (ms: 500, pan: -1.0),
+  ]),
+};
+
 /// Note letter -> semitone within an octave (for the "note-name" entry mode:
 /// type a letter then an octave digit, e.g. F then 2 -> F2).
 const _kLetterSemitone = <String, int>{
@@ -233,6 +246,11 @@ abstract interface class AdvancedTrackerTester {
   void setEnvelopePreset(int channel, String key);
   bool hasEnvelope(int channel);
   bool get songUsesEnvelopes;
+
+  /// Per-channel auto-pan (pan envelope) by preset key ('off'/'lr'/'rl'/
+  /// 'pingpong'); whether the channel has one.
+  void setPanPreset(int channel, String key);
+  bool hasPanEnvelope(int channel);
 
   /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
   void importModuleBytes(Uint8List bytes);
@@ -1691,15 +1709,42 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             icon: const Icon(Icons.show_chart, size: 20),
             tooltip: l10n.trackerEnvelope,
             itemBuilder: (_) => [
+              PopupMenuItem(
+                enabled: false,
+                child: Text(
+                  l10n.trackerEnvelope,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
               for (final key in _kEnvelopePresets.keys)
                 CheckedPopupMenuItem(
-                  value: key,
+                  value: 'vol:$key',
                   checked: identical(ch.volumeEnvelope, _kEnvelopePresets[key]),
                   child: Text(_envelopeLabel(l10n, key)),
                 ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                enabled: false,
+                child: Text(
+                  l10n.trackerAutoPan,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
+              for (final key in _kPanPresets.keys)
+                CheckedPopupMenuItem(
+                  value: 'pan:$key',
+                  checked: identical(ch.panEnvelope, _kPanPresets[key]),
+                  child: Text(_panLabel(l10n, key)),
+                ),
             ],
-            onSelected: (key) {
-              _song.engine.setChannelVolumeEnvelope(c, _kEnvelopePresets[key]);
+            onSelected: (v) {
+              final key = v.substring(4);
+              if (v.startsWith('vol:')) {
+                _song.engine
+                    .setChannelVolumeEnvelope(c, _kEnvelopePresets[key]);
+              } else {
+                _song.engine.setChannelPanEnvelope(c, _kPanPresets[key]);
+              }
               _syncPlayback();
               setSheet(() {});
             },
@@ -2195,6 +2240,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         'fadeOut' => l10n.trackerEnvFadeOut,
         'pluck' => l10n.trackerEnvPluck,
         'swell' => l10n.trackerEnvSwell,
+        _ => key,
+      };
+
+  String _panLabel(AppLocalizations l10n, String key) => switch (key) {
+        'off' => l10n.trackerPanOff,
+        'lr' => l10n.trackerPanLR,
+        'rl' => l10n.trackerPanRL,
+        'pingpong' => l10n.trackerPanPingPong,
         _ => key,
       };
 
@@ -3515,6 +3568,17 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       _song.channels[channel].volumeEnvelope != null;
   @override
   bool get songUsesEnvelopes => _song.usesEnvelopes;
+  @override
+  void setPanPreset(int channel, String key) {
+    setState(
+      () => _song.engine.setChannelPanEnvelope(channel, _kPanPresets[key]),
+    );
+    _syncPlayback();
+  }
+
+  @override
+  bool hasPanEnvelope(int channel) =>
+      _song.channels[channel].panEnvelope != null;
 
   @override
   void toggleMute(int channel) {

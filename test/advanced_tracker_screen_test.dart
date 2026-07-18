@@ -326,6 +326,24 @@ void main() {
     expect(game.hasEnvelope(0), isFalse);
   });
 
+  testWidgets('an auto-pan preset gives a channel a pan envelope',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    expect(game.hasPanEnvelope(0), isFalse);
+
+    game.setPanPreset(0, 'pingpong');
+    await tester.pump();
+    expect(game.hasPanEnvelope(0), isTrue);
+    expect(game.songUsesPan, isTrue); // auto-pan routes to the stereo render
+
+    game.setPanPreset(0, 'off');
+    await tester.pump();
+    expect(game.hasPanEnvelope(0), isFalse);
+  });
+
   testWidgets('patterns can have independent lengths (per-pattern)',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

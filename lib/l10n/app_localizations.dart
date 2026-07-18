@@ -3224,6 +3224,36 @@ abstract class AppLocalizations {
   /// **'Swell'**
   String get trackerEnvSwell;
 
+  /// No description provided for @trackerAutoPan.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-pan'**
+  String get trackerAutoPan;
+
+  /// No description provided for @trackerPanOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off (fixed)'**
+  String get trackerPanOff;
+
+  /// No description provided for @trackerPanLR.
+  ///
+  /// In en, this message translates to:
+  /// **'Left → right'**
+  String get trackerPanLR;
+
+  /// No description provided for @trackerPanRL.
+  ///
+  /// In en, this message translates to:
+  /// **'Right → left'**
+  String get trackerPanRL;
+
+  /// No description provided for @trackerPanPingPong.
+  ///
+  /// In en, this message translates to:
+  /// **'Ping-pong'**
+  String get trackerPanPingPong;
+
   /// No description provided for @trackerInstruments.
   ///
   /// In en, this message translates to:

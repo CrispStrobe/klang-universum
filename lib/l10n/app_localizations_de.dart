@@ -1673,6 +1673,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerEnvSwell => 'Anschwellen';
 
   @override
+  String get trackerAutoPan => 'Auto-Panorama';
+
+  @override
+  String get trackerPanOff => 'Aus (fest)';
+
+  @override
+  String get trackerPanLR => 'Links → rechts';
+
+  @override
+  String get trackerPanRL => 'Rechts → links';
+
+  @override
+  String get trackerPanPingPong => 'Ping-Pong';
+
+  @override
   String get trackerInstruments => 'Instrument für neue Noten';
 
   @override
