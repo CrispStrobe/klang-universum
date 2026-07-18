@@ -4,6 +4,7 @@
 // ScoreDocument model tests.
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
@@ -27,6 +28,7 @@ Widget _app() => MultiProvider(
         Provider<AudioService>(create: (_) => AudioService()),
         ChangeNotifierProvider(create: (_) => UserSongsService()),
         ChangeNotifierProvider(create: (_) => SettingsService()),
+        ChangeNotifierProvider(create: (_) => DawService()),
       ],
       child: const MaterialApp(
         localizationsDelegates: [
@@ -82,6 +84,22 @@ void main() {
     await pump(tester);
     expect(find.byType(MultiSystemView), findsOneWidget);
     expect(find.byType(PianoKeyboard), findsOneWidget);
+  });
+
+  testWidgets('To Multitrack sends the document as a DAW clip', (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    final daw = Provider.of<DawService>(
+      tester.element(find.byType(CompositionWorkshopScreen)),
+      listen: false,
+    );
+    expect(daw.clipCount, 0);
+
+    await tester.tap(_pianoKey()); // place a note
+    await tester.pump();
+    editor.sendToDaw();
+    expect(daw.clipCount, 1);
+    expect(daw.bake(), isNotEmpty); // the placed note renders as a clip
   });
 
   testWidgets('the Analysis toggle shows the live harmony banner',

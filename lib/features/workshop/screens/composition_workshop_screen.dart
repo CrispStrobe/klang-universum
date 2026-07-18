@@ -14,6 +14,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/note_naming.dart';
@@ -28,6 +29,7 @@ import 'package:comet_beat/features/workshop/model/multi_part_document.dart';
 import 'package:comet_beat/features/workshop/model/score_document.dart';
 import 'package:comet_beat/features/workshop/widgets/multi_part_canvas.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/daw/send_to_daw.dart';
 import 'package:comet_beat/shared/midi_pitch.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:comet_beat/shared/widgets/music_glyph.dart';
@@ -465,6 +467,9 @@ abstract interface class CompositionWorkshopTester {
   /// mode a drag is suppressed (read-only), so this returns false.
   bool debugTryDragStart(String id);
 
+  /// Send the current document to the Multitrack (DAW) as a clip.
+  void sendToDaw();
+
   /// Test seam: whether the 🔍 desktop hover card is currently showing a note.
   bool get debugHoverCardShown;
 
@@ -710,6 +715,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     _dragId = null; // don't leave a phantom drag in flight
     return took;
   }
+
+  @override
+  void sendToDaw() =>
+      sendToMultitrack(context, ScoreSource(_mpd.buildMultiPart()));
 
   @override
   bool get debugHoverCardShown => _inspect && _hoverInfo != null;
@@ -3172,6 +3181,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                           builder: (_) => const AdvancedTrackerScreen(),
                         ),
                       );
+                    case 'daw':
+                      sendToMultitrack(
+                        context,
+                        ScoreSource(_mpd.buildMultiPart()),
+                      );
                   }
                 },
                 itemBuilder: (ctx) => [
@@ -3234,6 +3248,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     Icons.grid_view,
                     l10n.trackerOpenAdvanced,
                     true,
+                  ),
+                  _menuItem(
+                    'daw',
+                    Icons.library_add,
+                    l10n.dawSend,
+                    !_doc.isEmpty,
                   ),
                   const PopupMenuDivider(),
                   _menuItem(
