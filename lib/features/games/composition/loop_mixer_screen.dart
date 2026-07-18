@@ -21,6 +21,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:comet_beat/core/audio/aec_capability.dart';
 import 'package:comet_beat/core/audio/aec_engine.dart';
@@ -933,7 +934,13 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final wav = _engine.renderLoop();
+      // Render off the UI isolate so exporting a long/complex groove never
+      // freezes the frame. We send only the small serializable GrooveSpec (not
+      // the whole engine + its stem cache), rebuild + render in the worker.
+      final spec = _engine.spec;
+      final wav = await Isolate.run(
+        () => (LoopEngine()..applySpec(spec)).renderLoop(),
+      );
       final location = await getSaveLocation(
         suggestedName: 'groove.wav',
         acceptedTypeGroups: [
