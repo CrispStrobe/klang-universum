@@ -56,6 +56,10 @@ abstract interface class DrumkitTester {
   int get tempo;
   void setTempo(int bpm);
 
+  /// Groove: 0 = straight, up to 0.6 delays every off-eighth (a swing feel).
+  double get swing;
+  void setSwing(double swing);
+
   /// Tap-to-record: while on, pad taps are captured and, on stop, quantised
   /// onto the step grid (overdubbed into the pattern).
   bool get isRecording;
@@ -102,6 +106,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   late final Ticker _ticker;
   final _step = ValueNotifier<int>(-1);
   int _tempo = 100;
+  double _swing = 0; // 0 = straight; a groove delays every off-eighth
 
   // Undo/redo history of pattern snapshots (grid edits, record takes, clear).
   static const _maxUndo = 50;
@@ -122,7 +127,8 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   Timer? _captureStop;
   bool _listening = false;
 
-  LoopTiming get _timing => LoopTiming(tempoBpm: _tempo); // 2 bars (default)
+  LoopTiming get _timing =>
+      LoopTiming(tempoBpm: _tempo, swing: _swing); // 2 bars (default)
 
   @override
   void initState() {
@@ -522,6 +528,15 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     _syncPlayback();
   }
 
+  @override
+  double get swing => _swing;
+
+  @override
+  void setSwing(double swing) {
+    setState(() => _swing = swing.clamp(0.0, 0.6));
+    _syncPlayback();
+  }
+
   // --- UI --------------------------------------------------------------------
 
   String _drumLabel(AppLocalizations l10n, Drum d) => switch (d) {
@@ -695,6 +710,17 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                       selected: _tempo == bpm,
                       onSelected: (_) => setTempo(bpm),
                     ),
+                  // Groove feel: straight vs a swung off-beat.
+                  ChoiceChip(
+                    label: Text(l10n.drumkitStraight),
+                    selected: _swing == 0,
+                    onSelected: (_) => setSwing(0),
+                  ),
+                  ChoiceChip(
+                    label: Text(l10n.drumkitSwing),
+                    selected: _swing > 0,
+                    onSelected: (_) => setSwing(0.4),
+                  ),
                   OutlinedButton.icon(
                     onPressed: hitCount == 0 ? null : clear,
                     icon: const Icon(Icons.clear),

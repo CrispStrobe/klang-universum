@@ -1185,6 +1185,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drumkitSaved => 'Saved to the Song Book';
 
   @override
+  String get drumkitStraight => 'Straight';
+
+  @override
+  String get drumkitSwing => 'Swing';
+
+  @override
   String get drumkitKick => 'Kick';
 
   @override

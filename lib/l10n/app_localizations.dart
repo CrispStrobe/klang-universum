@@ -2288,6 +2288,18 @@ abstract class AppLocalizations {
   /// **'Saved to the Song Book'**
   String get drumkitSaved;
 
+  /// No description provided for @drumkitStraight.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight'**
+  String get drumkitStraight;
+
+  /// No description provided for @drumkitSwing.
+  ///
+  /// In en, this message translates to:
+  /// **'Swing'**
+  String get drumkitSwing;
+
   /// No description provided for @drumkitKick.
   ///
   /// In en, this message translates to:

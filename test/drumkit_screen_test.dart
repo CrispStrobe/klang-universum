@@ -41,6 +41,23 @@ void main() {
     expect(kit.hitCount, 2);
   });
 
+  testWidgets('swing groove toggles and clamps to the musical range',
+      (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    expect(kit.swing, 0); // straight by default
+
+    kit.setSwing(0.4);
+    await tester.pump();
+    expect(kit.swing, 0.4);
+
+    kit.setSwing(0.9); // above the musical ceiling → clamped
+    expect(kit.swing, 0.6);
+
+    kit.setSwing(0); // back to straight
+    expect(kit.swing, 0);
+  });
+
   testWidgets('undo/redo covers grid edits, record takes and clear',
       (tester) async {
     await pumpGame(tester, const DrumkitScreen());
