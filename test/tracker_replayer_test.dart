@@ -599,6 +599,60 @@ void main() {
     });
   });
 
+  group('volume envelope', () {
+    test('levelAt interpolates and holds the ends', () {
+      const e = VolumeEnvelope([
+        (ms: 0, level: 0.0),
+        (ms: 100, level: 1.0),
+        (ms: 200, level: 0.5),
+      ]);
+      expect(e.levelAt(-10), 0.0); // before the first point → first level
+      expect(e.levelAt(50), closeTo(0.5, 1e-9)); // halfway 0 → 1
+      expect(e.levelAt(100), 1.0);
+      expect(e.levelAt(150), closeTo(0.75, 1e-9)); // halfway 1 → 0.5
+      expect(e.levelAt(999), 0.5); // after the last point → last level
+      expect(const VolumeEnvelope([]).levelAt(10), 1.0); // empty = no change
+    });
+
+    test('a fade-out envelope makes the note quieter at the end', () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      song.engine
+          .setCell(0, 0, const TrackerCell(midi: 60)); // rings all 8 rows
+      // 8 rows at 120 BPM / 4 spb = 1000 ms; fade full → silent across it.
+      song.engine.setChannelVolumeEnvelope(
+        0,
+        const VolumeEnvelope([(ms: 0, level: 1.0), (ms: 1000, level: 0.0)]),
+      );
+      expect(song.usesEnvelopes, isTrue);
+      final pcm = replaySong(song).pcm;
+      final n = pcm.length;
+      double rms(int a, int b) {
+        var s = 0.0;
+        for (var i = a; i < b; i++) {
+          s += pcm[i] * pcm[i].toDouble();
+        }
+        return sqrt(s / (b - a));
+      }
+
+      expect(rms(0, n ~/ 4), greaterThan(rms(3 * n ~/ 4, n) * 2));
+    });
+
+    test('a flat (always-1.0) envelope leaves the render byte-identical', () {
+      TrackerSong mk(VolumeEnvelope? env) {
+        final s = TrackerSong(timing: const TrackerTiming(rows: 8));
+        s.engine.setCell(0, 0, fx(kFxPortaUp, 0x10, midi: 60)); // → replayer
+        if (env != null) s.engine.setChannelVolumeEnvelope(0, env);
+        return s;
+      }
+
+      final plain = replaySong(mk(null)).pcm;
+      final flat = replaySong(
+        mk(const VolumeEnvelope([(ms: 0, level: 1.0), (ms: 5000, level: 1.0)])),
+      ).pcm;
+      expect(flat, plain);
+    });
+  });
+
   group('audit fixes', () {
     test('6xy continues vibrato with its own memory (does not corrupt it)', () {
       // 4-1-8 arms vibrato (speed 1, depth 8 ⇒ ±1 st). 6-0-4 must NOT reparse

@@ -230,6 +230,12 @@ class TrackerSong {
         (p) => p.cells.any((col) => col.any((c) => c.fxCmd == kFxSetPan)),
       );
 
+  /// Whether any channel carries a (non-empty) [VolumeEnvelope] — a reason to
+  /// route rendering through the replayer (the offline path ignores envelopes).
+  bool get usesEnvelopes => channels.any(
+        (c) => c.volumeEnvelope != null && !c.volumeEnvelope!.isEmpty,
+      );
+
   // --- Pattern editing (delegates to the engine on the current pattern) ---
 
   /// Persist the engine's live cells back into the current pattern snapshot.
@@ -518,9 +524,10 @@ class TrackerSong {
   /// cached offline mix.
   Uint8List renderCurrentPatternWav() {
     syncCurrent();
-    final needsReplayer = current.cells.any(
-      (col) => col.any((c) => c.hasCommand || c.instrument != 0),
-    );
+    final needsReplayer = usesEnvelopes ||
+        current.cells.any(
+          (col) => col.any((c) => c.hasCommand || c.instrument != 0),
+        );
     if (needsReplayer) {
       return usesPan
           ? wavBytesStereo(
@@ -554,7 +561,10 @@ class TrackerSong {
     // instruments, flow, OR variable-length patterns (the offline concatenation
     // assumes one fixed pattern length). A uniform, command-free, unpanned song
     // keeps the fast offline path.
-    if (usesCommands || usesInstruments || songNeedsWalkRender(this)) {
+    if (usesCommands ||
+        usesInstruments ||
+        usesEnvelopes ||
+        songNeedsWalkRender(this)) {
       return wavBytes(replaySong(this).pcm);
     }
     return renderSong(_engine, [for (final i in order) patterns[i].cells]);

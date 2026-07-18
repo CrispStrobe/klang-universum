@@ -466,6 +466,38 @@ Float64List applyChannelEffects(
 /// cells. Levels are combo-independent (each channel carries its gain into
 /// mixStems' unit-peak-per-stem + soft-limiter mixdown), so editing one channel
 /// never changes how loud the others are.
+/// A per-channel VOLUME envelope: a level (0..1) shape over time (ms) applied on
+/// top of a note's synthesized amplitude, so a note can fade in, swell, or fade
+/// out independently of the instrument's own attack/decay. [points] are ascending
+/// in ms with level 0..1; the level linearly interpolates between them, holds the
+/// FIRST level before the first point and the LAST level after the last. Applied
+/// by the replayer's additive voice only (see [levelAt]); null/empty = no change.
+class VolumeEnvelope {
+  const VolumeEnvelope(this.points);
+
+  /// `(ms, level 0..1)` breakpoints, ascending in ms.
+  final List<({int ms, double level})> points;
+
+  bool get isEmpty => points.isEmpty;
+
+  /// The envelope level at [ms] — linear interpolation between breakpoints,
+  /// clamped/held at the ends.
+  double levelAt(double ms) {
+    if (points.isEmpty) return 1.0;
+    if (ms <= points.first.ms) return points.first.level;
+    for (var i = 1; i < points.length; i++) {
+      final b = points[i];
+      if (ms <= b.ms) {
+        final a = points[i - 1];
+        final span = b.ms - a.ms;
+        if (span <= 0) return b.level;
+        return a.level + (b.level - a.level) * ((ms - a.ms) / span);
+      }
+    }
+    return points.last.level;
+  }
+}
+
 class TrackerChannel {
   TrackerChannel({
     required this.id,
@@ -473,6 +505,7 @@ class TrackerChannel {
     required int rows,
     this.gain = 0.6,
     this.pan = 0.0,
+    this.volumeEnvelope,
     List<TrackerChannelEffect>? effects,
     List<TrackerCell>? cells,
   })  : effects = effects != null
@@ -506,6 +539,12 @@ class TrackerChannel {
   /// so the per-channel stem cache is untouched. Default 0 (centre) keeps every
   /// existing (mono) render unchanged.
   double pan;
+
+  /// An optional per-channel [VolumeEnvelope] shaping each note's amplitude over
+  /// time. Null = none (unchanged render). Honoured by the replayer's additive
+  /// voice; set via [TrackerEngine.setChannelVolumeEnvelope] so the WAV
+  /// invalidates. A song with any envelope routes through the replayer.
+  VolumeEnvelope? volumeEnvelope;
 
   /// The channel's insert-effect CHAIN, applied to its stem in order (before
   /// mixStems). Empty = dry. Mutate via [TrackerEngine.setChannelEffects] so
@@ -682,6 +721,13 @@ class TrackerEngine {
   void setChannelPan(int channel, double pan) {
     if (channels[channel].pan == pan) return;
     channels[channel].pan = pan;
+    _wav = null;
+  }
+
+  /// Sets a channel's [VolumeEnvelope] (null = none) and invalidates the mixed
+  /// WAV. The envelope is honoured by the replayer's additive voice.
+  void setChannelVolumeEnvelope(int channel, VolumeEnvelope? envelope) {
+    channels[channel].volumeEnvelope = envelope;
     _wav = null;
   }
 

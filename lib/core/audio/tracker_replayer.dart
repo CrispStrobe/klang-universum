@@ -652,7 +652,8 @@ void _renderChannelInto(
         for (var h = 0; h < tp.harmonics.length; h++) {
           sample += tp.harmonics[h] * sin(voice.oscPhase * (h + 1));
         }
-        mix[i] += (sample / tp.harmNorm) * env * volScale;
+        final el = channel.volumeEnvelope?.levelAt(t * 1000) ?? 1.0;
+        mix[i] += (sample / tp.harmNorm) * env * volScale * el;
         voice.oscPhase += phaseInc;
       }
     }
@@ -1486,7 +1487,8 @@ void _renderChannelIntoVariable(
         for (var h = 0; h < tp.harmonics.length; h++) {
           sample += tp.harmonics[h] * sin(voice.oscPhase * (h + 1));
         }
-        mix[i] += (sample / tp.harmNorm) * env * volScale;
+        final el = channel.volumeEnvelope?.levelAt(t * 1000) ?? 1.0;
+        mix[i] += (sample / tp.harmNorm) * env * volScale * el;
         voice.oscPhase += phaseInc;
       }
     }
