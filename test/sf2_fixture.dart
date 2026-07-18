@@ -120,14 +120,24 @@ Uint8List oneSampleSf2({
   required int loopStart,
   required int loopEnd,
   int pitchCorrection = 0,
+  int attenuationCb = 0,
+  int coarseTune = 0,
+  int fineTune = 0,
 }) {
+  // Instrument-zone generators: keyRange, optional atten/tune, then sampleID
+  // (terminal). Signed tune values are written as their two's-complement bits.
+  final gens = <Uint8List>[_rec4(43, 0 | (127 << 8))];
+  if (attenuationCb != 0) gens.add(_rec4(48, attenuationCb));
+  if (coarseTune != 0) gens.add(_rec4(51, coarseTune & 0xFFFF));
+  if (fineTune != 0) gens.add(_rec4(52, fineTune & 0xFFFF));
+  gens.add(_rec4(53, 0)); // sampleID 0
   final pdta = _pdta([
     _chunk('phdr', _phdr('GMTest', 0, 0)),
     _chunk('pbag', _concat([_rec4(0, 0), _rec4(1, 0)])),
     _chunk('pgen', _rec4(41, 0)), // instrument → inst 0
     _chunk('inst', _inst('GMInst', 1)),
-    _chunk('ibag', _concat([_rec4(0, 0), _rec4(2, 0)])),
-    _chunk('igen', _concat([_rec4(43, 0 | (127 << 8)), _rec4(53, 0)])),
+    _chunk('ibag', _concat([_rec4(0, 0), _rec4(gens.length, 0)])),
+    _chunk('igen', _concat(gens)),
     _chunk(
       'shdr',
       _concat([

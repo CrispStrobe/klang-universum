@@ -151,6 +151,83 @@ void main() {
       expect(crossings(high), greaterThan(crossings(low) * 2));
     });
 
+    test('per-zone initialAttenuation (gen 48) lowers the level', () {
+      final pcm = sineI16(880, 20);
+      Sf2SoundFont build(int cb) => Sf2SoundFont.parse(
+            oneSampleSf2(
+              pcm: pcm,
+              sampleRate: 44100,
+              rootKey: 60,
+              loopStart: 0,
+              loopEnd: 0,
+              attenuationCb: cb,
+            ),
+          );
+      // The zone carries the attenuation…
+      expect(build(0).presets.single.zones.single.attenuationCb, 0);
+      expect(build(100).presets.single.zones.single.attenuationCb, 100);
+      expect(build(100).presets.single.zones.single.gain, closeTo(0.316, 0.02));
+
+      // …and the render is quieter (100 cB = 10 dB ≈ 0.316× peak).
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      final cells = [
+        const TrackerCell(midi: 60),
+        ...List<TrackerCell>.filled(3, TrackerCell.empty),
+      ];
+      double peak(Sf2SoundFont sf) => sf2InstrumentFromPreset(
+            sf,
+            sf.presets.single,
+            id: 'a',
+          ).renderChannel(cells, timing).fold<double>(
+                0,
+                (m, v) => v.abs() > m ? v.abs() : m,
+              );
+      final loud = peak(build(0));
+      final quiet = peak(build(100));
+      expect(quiet, lessThan(loud * 0.5));
+    });
+
+    test('per-zone fine/coarse tune (gen 51/52) is baked into the pitch', () {
+      final pcm = sineI16(880, 20);
+      // A looping sample so the tone sustains across the measurement window.
+      Sf2SoundFont build({int coarse = 0, int fine = 0}) => Sf2SoundFont.parse(
+            oneSampleSf2(
+              pcm: pcm,
+              sampleRate: 44100,
+              rootKey: 60,
+              loopStart: 0,
+              loopEnd: pcm.length,
+              coarseTune: coarse,
+              fineTune: fine,
+            ),
+          );
+      final z = build(coarse: 2, fine: -14).presets.single.zones.single;
+      expect(z.coarseTune, 2);
+      expect(z.fineTune, -14);
+
+      // Play the SAME note through untuned vs +12-semitone (octave up) zones: the
+      // octave-up render has roughly double the zero-crossing rate (higher pitch).
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      final cells = [
+        const TrackerCell(midi: 60),
+        ...List<TrackerCell>.filled(3, TrackerCell.empty),
+      ];
+      Float64List render(Sf2SoundFont sf) =>
+          sf2InstrumentFromPreset(sf, sf.presets.single, id: 'x')
+              .renderChannel(cells, timing);
+      int crossings(Float64List b) {
+        var c = 0;
+        for (var i = 1001; i < 5000; i++) {
+          if ((b[i - 1] < 0) != (b[i] < 0)) c++;
+        }
+        return c;
+      }
+
+      final base = crossings(render(build()));
+      final up = crossings(render(build(coarse: 12)));
+      expect(up, greaterThan(base * 1.7)); // ~2× the pitch
+    });
+
     test('an Sf2Instrument is a renderable tracker instrument', () {
       final sf =
           Sf2SoundFont.parse(twoZoneSf2(sineI16(1000, 8), sineI16(1000, 32)));

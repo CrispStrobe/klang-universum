@@ -28,6 +28,9 @@ const _genKeyRange = 43;
 const _genInstrument = 41;
 const _genSampleId = 53;
 const _genRootKeyOverride = 58;
+const _genInitialAttenuation = 48; // centibels
+const _genCoarseTune = 51; // semitones (signed)
+const _genFineTune = 52; // cents (signed)
 
 /// One sample from a soundfont: its decoded PCM (−1..1), the rate it was
 /// recorded at, the MIDI key it represents ([originalPitch]), and its loop
@@ -61,20 +64,35 @@ class Sf2Sample {
 }
 
 /// One key-split zone of a preset: the sample (by shdr index) to play for MIDI
-/// keys [keyLo]..[keyHi], and the MIDI key that sample is tuned to ([rootKey] —
-/// a zone override, or -1 meaning "use the sample's own original pitch").
+/// keys [keyLo]..[keyHi], the MIDI key that sample is tuned to ([rootKey] — a
+/// zone override, or -1 meaning "use the sample's own original pitch"), and the
+/// zone's level + tuning generators.
 class Sf2Zone {
   const Sf2Zone({
     required this.keyLo,
     required this.keyHi,
     required this.sampleIndex,
     required this.rootKey,
+    this.attenuationCb = 0,
+    this.coarseTune = 0,
+    this.fineTune = 0,
   });
 
   final int keyLo;
   final int keyHi;
   final int sampleIndex;
   final int rootKey;
+
+  /// initialAttenuation (gen 48), in centibels (0 = full; +cB = quieter).
+  final int attenuationCb;
+
+  /// coarseTune (gen 51), in semitones, and fineTune (gen 52), in cents —
+  /// applied on top of the sample's own pitch correction.
+  final int coarseTune;
+  final int fineTune;
+
+  /// The linear gain from [attenuationCb] (dB = cB/10 → gain = 10^(-dB/20)).
+  double get gain => pow(10, -attenuationCb / 200).toDouble();
 
   bool covers(int key) => key >= keyLo && key <= keyHi;
 }
@@ -227,10 +245,13 @@ List<Sf2Preset> _parsePresets(
       final gStart = u16(ibagOff + ib * 4);
       final gEnd = u16(ibagOff + (ib + 1) * 4).clamp(0, igenCount);
       var lo = 0, hi = 127;
+      var atten = 0, coarse = 0, fine = 0;
       int? sampleId, rootOverride;
       for (var g = gStart; g < gEnd; g++) {
         final oper = u16(igenOff + g * 4);
         final amt = u16(igenOff + g * 4 + 2);
+        final samt =
+            data.getInt16(igenOff + g * 4 + 2, Endian.little); // signed
         if (oper == _genKeyRange) {
           lo = amt & 0xFF;
           hi = (amt >> 8) & 0xFF;
@@ -238,6 +259,12 @@ List<Sf2Preset> _parsePresets(
           rootOverride = amt;
         } else if (oper == _genSampleId) {
           sampleId = amt;
+        } else if (oper == _genInitialAttenuation) {
+          atten = amt; // centibels (unsigned)
+        } else if (oper == _genCoarseTune) {
+          coarse = samt; // semitones (signed)
+        } else if (oper == _genFineTune) {
+          fine = samt; // cents (signed)
         }
       }
       if (sampleId != null && sampleId >= 0 && sampleId < sampleCount) {
@@ -249,6 +276,9 @@ List<Sf2Preset> _parsePresets(
             rootKey: (rootOverride != null && rootOverride <= 127)
                 ? rootOverride
                 : -1, // -1 → resolved to the sample's originalPitch later
+            attenuationCb: atten,
+            coarseTune: coarse,
+            fineTune: fine,
           ),
         );
       }
@@ -309,16 +339,17 @@ SampleInstrument sampleInstrumentFromSf2(Sf2Sample s, {required String id}) {
   );
 }
 
-/// Resample a soundfont sample to the engine rate AND bake in its pitch
-/// correction (so the integer-rooted [SampleInstrument] plays in tune), scaling
-/// the loop points by the same factor. A sample that sounds `c` cents sharp is
-/// stretched by 2^(c/1200) to lower it back onto its root key.
-(Float64List, int, int) _resampleWithLoop(Sf2Sample s) {
+/// Resample a soundfont sample to the engine rate AND bake in its tuning (so the
+/// integer-rooted [SampleInstrument] plays in tune), scaling the loop points by
+/// the same factor. Total detune = the sample's own `chPitchCorrection` plus any
+/// per-zone [extraCents] (coarse/fine tune); a sample that sounds `c` cents sharp
+/// is stretched by 2^(c/1200) to lower it back onto its root key.
+(Float64List, int, int) _resampleWithLoop(Sf2Sample s, {int extraCents = 0}) {
   var pcm = s.pcm;
   var loopStart = s.loopStart;
   var loopLen = s.loops ? s.loopEnd - s.loopStart : 0;
-  final ratio =
-      (s.sampleRate / kSampleRate) * pow(2, s.pitchCorrection / 1200.0);
+  final cents = s.pitchCorrection + extraCents;
+  final ratio = (s.sampleRate / kSampleRate) * pow(2, cents / 1200.0);
   if ((ratio - 1.0).abs() > 1e-9) {
     pcm = resampleCubic(pcm, ratio.toDouble());
     loopStart = (loopStart / ratio).round();
@@ -337,10 +368,14 @@ class Sf2Instrument implements TrackerInstrument {
   @override
   final String id;
 
-  /// Per zone: key range + a ready [SampleInstrument] (already resampled/looped).
-  final List<({int keyLo, int keyHi, SampleInstrument inst})> _zones;
+  /// Per zone: key range + a ready [SampleInstrument] (already resampled/looped/
+  /// tuned) + the zone's level [gain] (from initialAttenuation).
+  final List<({int keyLo, int keyHi, SampleInstrument inst, double gain})>
+      _zones;
 
-  ({int keyLo, int keyHi, SampleInstrument inst})? _zoneFor(int key) {
+  ({int keyLo, int keyHi, SampleInstrument inst, double gain})? _zoneFor(
+    int key,
+  ) {
     for (final z in _zones) {
       if (key >= z.keyLo && key <= z.keyHi) return z;
     }
@@ -371,8 +406,9 @@ class Sf2Instrument implements TrackerInstrument {
                 zone.inst.renderChannel([TrackerCell(midi: midi)], noteTiming);
             final n = [buf.length, runSamples, out.length - start]
                 .reduce((a, b) => a < b ? a : b);
+            final g = zone.gain;
             for (var i = 0; i < n; i++) {
-              out[start + i] = buf[i];
+              out[start + i] = buf[i] * g;
             }
           }
         }
@@ -390,15 +426,19 @@ Sf2Instrument sf2InstrumentFromPreset(
   Sf2Preset preset, {
   required String id,
 }) {
-  final zones = <({int keyLo, int keyHi, SampleInstrument inst})>[];
+  final zones =
+      <({int keyLo, int keyHi, SampleInstrument inst, double gain})>[];
   for (final z in preset.zones) {
     final s = sf.sampleAt(z.sampleIndex);
     if (s == null) continue;
-    final (pcm, loopStart, loopLen) = _resampleWithLoop(s);
+    // Per-zone coarse+fine tune baked in on top of the sample's own correction.
+    final (pcm, loopStart, loopLen) =
+        _resampleWithLoop(s, extraCents: z.coarseTune * 100 + z.fineTune);
     zones.add(
       (
         keyLo: z.keyLo,
         keyHi: z.keyHi,
+        gain: z.gain,
         inst: SampleInstrument(
           '$id.${z.sampleIndex}',
           pcm,
