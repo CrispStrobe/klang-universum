@@ -38,6 +38,8 @@ donation link, the app-store posture) stays clean *because* the content does.
 
 ### 1.2 Source verdicts (researched + cited — full report in the PR description)
 
+Full cited licensing report is recorded below and in this branch's commit history.
+
 **Connect first (SAFE — permissive, open bulk access):**
 
 | Source | Content | License | Access | Formats |
@@ -350,4 +352,5 @@ lands there first** — scope it as a separate crisp_notation task if needed.
 **A0 (OpenScore pipeline + license gate)** and **B0 (read-only tab render)** are
 the two "prove it end-to-end, near-zero risk" slices. A0 exercises the whole
 fetch→gate→provenance→Song-Book path against CC0 content; B0 lights up tab display
-for GP files the app *already imports*. Either is a clean, self-contained first PR.
+for GP files the app *already imports*. Either is a clean, self-contained first
+slice — built in small commits and merged straight to `main` (no PRs on our repos).
