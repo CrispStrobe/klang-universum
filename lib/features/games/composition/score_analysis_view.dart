@@ -499,6 +499,29 @@ class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
         ),
       );
     }
+    // Circle of fifths — where this key sits.
+    rows.add(
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 88,
+              height: 88,
+              child: CustomPaint(
+                painter: _KeyWheelPainter(
+                  _analysis.key.tonic.midiNumber % 12,
+                  _analysis.key.isMajor,
+                  theme.colorScheme,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(l10n.analysisCircleOfFifths, style: theme.textTheme.bodySmall),
+          ],
+        ),
+      ),
+    );
     if (rows.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -638,4 +661,67 @@ class _TensionPainter extends CustomPainter {
   @override
   bool shouldRepaint(_TensionPainter old) =>
       old.color != color || old.points != points;
+}
+
+/// A small circle of fifths with the current key highlighted (a minor key is
+/// shown at its relative major's position).
+class _KeyWheelPainter extends CustomPainter {
+  _KeyWheelPainter(this.tonicPc, this.isMajor, this.scheme);
+
+  final int tonicPc;
+  final bool isMajor;
+  final ColorScheme scheme;
+
+  static const _names = [
+    'C',
+    'G',
+    'D',
+    'A',
+    'E',
+    'B',
+    'F♯',
+    'D♭',
+    'A♭',
+    'E♭',
+    'B♭',
+    'F',
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = size.width / 2 - 11;
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..color = scheme.outlineVariant
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    final root = isMajor ? tonicPc : (tonicPc + 3) % 12;
+    final highlight = (root * 7) % 12;
+    for (var i = 0; i < 12; i++) {
+      final ang = -math.pi / 2 + i * (2 * math.pi / 12);
+      final pos = c + Offset(math.cos(ang), math.sin(ang)) * r;
+      final cur = i == highlight;
+      if (cur) canvas.drawCircle(pos, 10, Paint()..color = scheme.primary);
+      final tp = TextPainter(
+        text: TextSpan(
+          text: _names[i],
+          style: TextStyle(
+            color: cur ? scheme.onPrimary : scheme.onSurfaceVariant,
+            fontSize: 9,
+            fontWeight: cur ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KeyWheelPainter old) =>
+      old.tonicPc != tonicPc || old.isMajor != isMajor || old.scheme != scheme;
 }

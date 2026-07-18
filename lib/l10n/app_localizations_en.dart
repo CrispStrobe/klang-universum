@@ -4342,6 +4342,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analysisFormLabel => 'Form';
 
   @override
+  String get analysisCircleOfFifths => 'Circle of fifths';
+
+  @override
   String get analysisTension => 'Tension';
 
   @override

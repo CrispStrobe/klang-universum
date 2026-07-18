@@ -7952,6 +7952,12 @@ abstract class AppLocalizations {
   /// **'Form'**
   String get analysisFormLabel;
 
+  /// No description provided for @analysisCircleOfFifths.
+  ///
+  /// In en, this message translates to:
+  /// **'Circle of fifths'**
+  String get analysisCircleOfFifths;
+
   /// No description provided for @analysisTension.
   ///
   /// In en, this message translates to:

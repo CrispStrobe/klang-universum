@@ -4366,6 +4366,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get analysisFormLabel => 'Form';
 
   @override
+  String get analysisCircleOfFifths => 'Quintenzirkel';
+
+  @override
   String get analysisTension => 'Spannung';
 
   @override
