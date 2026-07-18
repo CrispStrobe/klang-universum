@@ -598,6 +598,39 @@ void main() {
     expect(game.showScope, isFalse);
   });
 
+  testWidgets('song playhead follows a Dxx break (skips the broken rows)',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setRows(8);
+    game.setNote(0, 0, 60); // pattern 0 has notes
+
+    game.addPattern(); // fresh pattern 1 (now selected)
+    final p1 = game.currentPattern;
+    game.setNote(0, 0, 48);
+    game.selectPattern(0);
+
+    // D00 pattern-break at row 3 of pattern 0 → after row 3, jump to the next
+    // order entry at row 0 (rows 4..7 of pattern 0 are never played).
+    game.debugSetCommand(0, 3, 0xD, 0x00);
+    game.addToOrder(p1); // order: 0 · 1
+    await tester.pump();
+
+    // Sample the whole resolved timeline and collect every (order,row) visited.
+    final total = game.debugSongTotalMs;
+    expect(total, greaterThan(0));
+    final visited = <(int, int)>{};
+    for (var i = 0; i < 200; i++) {
+      visited.add(game.debugPlayheadAt(total * i ~/ 200));
+    }
+
+    expect(visited.contains((0, 0)), isTrue); // pattern 0 plays from the top
+    expect(visited.contains((0, 3)), isTrue); // up to the break row
+    expect(visited.contains((1, 0)), isTrue); // then jumps into pattern 1
+    // The broken-off rows of pattern 0 are never highlighted.
+    expect(visited.where((e) => e.$1 == 0 && e.$2 > 3), isEmpty);
+  });
+
   group('sliceFraction (sample trim handles)', () {
     final buf = Float64List.fromList(List.generate(100, (i) => i / 100));
 

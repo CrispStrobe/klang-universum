@@ -133,6 +133,32 @@ and holds `userCells` (sung melody as note cells), `beatRows` (beatboxed drums),
 
 ---
 
+### B4. Extend the Beginner tracker — full range + longer music, without overwhelming kids
+User ask (2026-07-18): "extend beginner tracker mode significantly, but NOT
+overwhelm kids totally… full tonal range and longer music." The Beginner
+(`tracker_screen.dart`) is deliberately a **fixed 8-step (one 4/4 bar),
+C-pentatonic, per-channel octave-shifted** grid with A–D slots — so a whole song
+caps at ~4 bars and can't leave the pentatonic. Keep it friendly but lift the two
+hard ceilings:
+- **Longer music** [screen, maybe needs-engine for row count]: more/longer
+  patterns — either more slots than A–D, or a **bars selector** (1/2/4 bars =
+  8/16/32 steps) so kids can make a real verse. The engine already supports any
+  `rows`; the UI hardcodes `steps = 8`. A gentle "＋ add a bar" button beats a
+  raw row-count field.
+- **Full tonal range** [screen]: an **optional octave/range control** (a "low ↔
+  high" shifter, or a "more notes" toggle that widens the pentatonic to a full
+  diatonic/chromatic row set) so the melody isn't locked to five notes in one
+  octave — while defaulting to the safe consonant grid so nothing sounds wrong
+  out of the box. Progressive disclosure: the simple grid stays the default; the
+  wider range is a toggle, not the front door.
+- **Bridge, not a cliff:** the cleanest "don't overwhelm but don't cap them"
+  answer is **B1** — when a kid outgrows the Beginner grid, *Promote to Advanced*
+  carries their groove over losslessly. So B4 is "raise the Beginner ceiling a
+  bit" + B1 is "the escape hatch to the full tracker." Design the two together.
+- *Coordination:* pattern-length/row changes that need engine support are
+  **[needs-engine]** (@tracker-replayer owns `tracker_engine.dart`); the range
+  UI + bars UI are [screen].
+
 ## C. Wire ALL importers/exporters everywhere useful
 
 **Finding (matrix):** the library has an enormous codec set; most is wired **only

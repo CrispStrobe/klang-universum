@@ -45,6 +45,8 @@ import 'package:comet_beat/core/audio/mod/module_doc.dart' show ModuleFormat;
 import 'package:comet_beat/core/audio/mod/module_notation.dart'
     show multiPartToModuleDoc;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_replayer.dart'
+    show RowTiming, resolveTimingMap, rowIndexAtMs;
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
@@ -233,6 +235,13 @@ abstract interface class AdvancedTrackerTester {
   void toggleScope();
   void loadDemo();
 
+  /// Test: author an effect-column command (e.g. Dxx break) at a cell, and read
+  /// the `(orderIndex, row)` the song-mode playhead resolves at song-time
+  /// [songMs] — proves the highlight follows Bxx/Dxx/E6x flow jumps.
+  void debugSetCommand(int channel, int row, int cmd, int param);
+  (int, int) debugPlayheadAt(int songMs);
+  int get debugSongTotalMs;
+
   /// Order-list editing.
   List<int> get orderList;
   void selectOrderSlot(int i);
@@ -347,6 +356,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// Whether the grid auto-scrolls to follow the playhead during playback.
   bool _followPlay = true;
 
+  /// Song-mode playhead map: the flow-resolved `(startMs, order, pattern, row)`
+  /// sequence, so the highlight follows Bxx/Dxx/E6x jumps + per-pattern lengths
+  /// instead of assuming a fixed pattern length. Rebuilt lazily (nulled by every
+  /// edit via `_syncPlayback`, and on stop).
+  List<RowTiming>? _timingMap;
+
   /// Master oscilloscope: a waveform strip of the current pattern's mix.
   bool _showScope = false;
   Int16List? _scopePcm;
@@ -418,12 +433,23 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           return;
         }
         final pos = elapsed % _song.songTotalMs;
-        _playingOrder.value = pos ~/ t.totalMs;
-        posInPattern = pos % t.totalMs;
-        final step = posInPattern ~/ t.stepMs;
-        if (step != _row.value) {
-          _row.value = step;
-          _maybeTick(step);
+        // The flow-resolved map follows Bxx/Dxx/E6x jumps + per-pattern lengths;
+        // the old `pos ~/ totalMs` assumed every pattern had the same length and
+        // that the order played straight through — wrong on jumps + imports.
+        final map = _timingMap ??= resolveTimingMap(_song);
+        if (map.isEmpty) {
+          posInPattern = 0;
+        } else {
+          final e = map[rowIndexAtMs(map, pos)];
+          if (e.orderIndex != _playingOrder.value) {
+            _playingOrder.value = e.orderIndex;
+          }
+          if (e.row != _row.value) {
+            _row.value = e.row;
+            _maybeTick(e.row);
+          }
+          // Position within the currently-sounding pattern (for the meters).
+          posInPattern = e.row * t.stepMs + (pos - e.startMs);
         }
       } else {
         if (_playingOrder.value != -1) _playingOrder.value = -1;
@@ -1272,6 +1298,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _loop.stop();
     _baseMs = 0;
     _paused = false;
+    _timingMap = null;
     _row.value = -1;
     _playingOrder.value = -1;
     setState(() => _songMode = false);
@@ -1332,6 +1359,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// beat.
   void _syncPlayback() {
     _scopeDirty = true; // the mix changed → the scope waveform is stale
+    _timingMap = null; // structure/tempo may have changed → rebuild lazily
     if (!_clock.isRunning) return;
     final anyNote = _song.engine.channels.any((c) => c.hasAnyNote) ||
         _song.patterns.any((p) => p.hasAnyNote);
@@ -1562,6 +1590,35 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void toggleScope() => setState(() => _showScope = !_showScope);
   @override
   void loadDemo() => _loadDemo();
+  @override
+  void debugSetCommand(int channel, int row, int cmd, int param) {
+    final cur = _song.engine.cellAt(channel, row);
+    _song.engine.setCell(
+      channel,
+      row,
+      TrackerCell(
+        midi: cur.midi,
+        volume: cur.volume,
+        fxCmd: cmd,
+        fxParam: param,
+      ),
+    );
+    _syncPlayback();
+  }
+
+  @override
+  (int, int) debugPlayheadAt(int songMs) {
+    final map = resolveTimingMap(_song);
+    if (map.isEmpty) return (-1, -1);
+    final total = _song.songTotalMs;
+    final pos = total > 0 ? songMs % total : 0;
+    final e = map[rowIndexAtMs(map, pos)];
+    return (e.orderIndex, e.row);
+  }
+
+  @override
+  int get debugSongTotalMs => _song.songTotalMs;
+
   @override
   List<int> get orderList => List.unmodifiable(_song.order);
   @override
