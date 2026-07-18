@@ -4325,6 +4325,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get analyzeAction => 'Harmonie analysieren';
 
   @override
+  String get analysisFormLabel => 'Form';
+
+  @override
   String get analysisTension => 'Spannung';
 
   @override

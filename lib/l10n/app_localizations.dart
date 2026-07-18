@@ -7874,6 +7874,12 @@ abstract class AppLocalizations {
   /// **'Analyse the harmony'**
   String get analyzeAction;
 
+  /// No description provided for @analysisFormLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Form'**
+  String get analysisFormLabel;
+
   /// No description provided for @analysisTension.
   ///
   /// In en, this message translates to:

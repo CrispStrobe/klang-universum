@@ -15,6 +15,8 @@
 import 'dart:math' as math;
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/games/composition/form_timeline.dart'
+    show formColorFor;
 import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/midi_pitch.dart';
@@ -34,6 +36,22 @@ Score blockChordScore(List<List<int>> chords) => Score(
               pitches: [for (final m in c) pitchFromMidi(m)],
               duration: const NoteDuration(DurationBase.whole),
             ),
+          ]),
+      ],
+    );
+
+/// A single-note melody, one bar per inner list (quarters), from midi numbers.
+Score melodyScore(List<List<int>> bars) => Score(
+      clef: Clef.treble,
+      timeSignature: const TimeSignature(4, 4),
+      measures: [
+        for (final bar in bars)
+          Measure([
+            for (final m in bar)
+              NoteElement(
+                pitches: [pitchFromMidi(m)],
+                duration: const NoteDuration(DurationBase.quarter),
+              ),
           ]),
       ],
     );
@@ -210,6 +228,9 @@ class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
                 ),
               ],
             ),
+            // Form (when the tune repeats): coloured sections, same colour =
+            // same melodic material.
+            _formRow(l10n, theme),
             const SizedBox(height: 12),
             Card(
               elevation: 0,
@@ -306,6 +327,57 @@ class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Coloured form sections (same colour = the same tune) — shown only when the
+  /// piece actually repeats melodic material, else it would just be noise.
+  Widget _formRow(AppLocalizations l10n, ThemeData theme) {
+    final form = detectForm(widget.score);
+    final labels = {for (final s in form) s.label};
+    if (form.length < 2 || labels.length >= form.length) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Text(l10n.analysisFormLabel, style: theme.textTheme.labelSmall),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SizedBox(
+              height: 26,
+              child: Row(
+                children: [
+                  for (final s in form)
+                    Expanded(
+                      flex: s.endMeasure - s.startMeasure + 1,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: formColorFor(s.label, theme.colorScheme),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              s.label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

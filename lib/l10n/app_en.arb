@@ -1690,6 +1690,7 @@
   "funcDominantKid": "Tension",
   "analysisHarmonyHeading": "Harmony",
   "analyzeAction": "Analyse the harmony",
+  "analysisFormLabel": "Form",
   "analysisTension": "Tension",
   "analysisVoiceLeading": "Voice leading",
   "analysisVoiceLeadingClean": "No parallel 5ths or 8ves ✓",

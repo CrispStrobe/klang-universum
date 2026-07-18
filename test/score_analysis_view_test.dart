@@ -104,6 +104,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('shows the form row when the tune repeats (A–B–A)',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final aba = melodyScore([
+      [60, 64, 67, 72], // A
+      [67, 65, 64, 62], // B
+      [60, 64, 67, 72], // A — the tune returns
+    ]);
+    await tester.pumpWidget(_app(ScoreAnalysisView(score: aba)));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.analysisFormLabel), findsOneWidget);
+    // Two A sections (bars 0 and 2) and one B — the roman blocks never say A/B.
+    expect(find.text('A'), findsNWidgets(2));
+    expect(find.text('B'), findsOneWidget);
+  });
+
   test('the built-in examples all analyse to at least one chord', () {
     for (final (_, score) in kAnalysisExamples) {
       final a = analyze(score);

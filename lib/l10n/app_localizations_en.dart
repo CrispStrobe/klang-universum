@@ -4301,6 +4301,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyzeAction => 'Analyse the harmony';
 
   @override
+  String get analysisFormLabel => 'Form';
+
+  @override
   String get analysisTension => 'Tension';
 
   @override

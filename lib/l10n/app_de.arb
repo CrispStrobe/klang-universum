@@ -1432,6 +1432,7 @@
   "funcDominantKid": "Spannung",
   "analysisHarmonyHeading": "Harmonie",
   "analyzeAction": "Harmonie analysieren",
+  "analysisFormLabel": "Form",
   "analysisTension": "Spannung",
   "analysisVoiceLeading": "Stimmführung",
   "analysisVoiceLeadingClean": "Keine Quint-/Oktavparallelen ✓",
