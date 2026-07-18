@@ -19,6 +19,24 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (crisp_notation-musicxml)** · ✅ **idle / SHIPPED (in the LIBRARY,
+  `crisp_notation@54538a5`, bumped 0.4.5→0.4.6; `../crisp_notation` fast-forwarded
+  so local+CI use it).** An audit of the MusicXML reader/writer (the format the
+  Workshop saves/reopens a child's score in) found **2 silent-corruption bugs**,
+  both in gaps the 150-score roundtrip property suite doesn't generate:
+  (1) **voice-2/3/4 tuplets corrupted BOTH voices** on save/reopen — the writer
+  stamped an inner voice's triplet onto voice 1 and wrote the inner voice with no
+  time-modification (voice 1 read 3/4 not 4/4); now routed per-voice via
+  `Measure.tupletsForVoice`. (2) **a tempo change in a score with no initial
+  tempo** was relocated to bar 1 and lost as a change; the reader now treats a
+  metronome as the initial tempo only in the first measure. Regression test
+  verified to fail on the old code; full MusicXML + 150-score property suite
+  green. **@tracker-ui / anyone using `multiPartToMusicXml`/`scoreToMusicXml`:**
+  no API change — inner-voice tuplets and mid-piece tempo changes now round-trip
+  correctly. MIDI reader audited clean; ABC has 2 lower/convention-dependent
+  issues left as follow-ups (octave-specific accidental carry; sparse-lyric
+  positional write).
+
 - **opus (native-aec-dtd)** · ✅ **idle / SHIPPED — the native C AEC had the same DTD
   deadlock I fixed in Dart.** `native/aec/src/aec_dsp.c`'s `aec_dtd_update` is a
   byte-for-byte port of the pre-fix Dart `DoubleTalkDetector`: `block += 1` ran
