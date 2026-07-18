@@ -345,6 +345,28 @@ void main() {
     expect(xml, contains('<score-partwise'));
   });
 
+  testWidgets('exports the song as a module and it re-imports with notes',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    game.setNote(0, 4, 67);
+    await tester.pump();
+
+    for (final fmt in ['mod', 'xm', 's3m', 'it']) {
+      final bytes = game.debugExportModule(fmt);
+      expect(bytes, isNotNull, reason: '$fmt export');
+      expect(bytes!.length, greaterThan(0));
+      game.importModuleBytes(bytes); // re-parse back into a tracker song
+      await tester.pump();
+      expect(game.noteCount, greaterThan(0), reason: '$fmt re-import');
+      // Reset for the next format.
+      game.setNote(0, 0, 60);
+      game.setNote(0, 4, 67);
+      await tester.pump();
+    }
+  });
+
   testWidgets(
       'exported MusicXML round-trips to a real score (Workshop handoff)',
       (tester) async {

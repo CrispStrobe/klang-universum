@@ -2312,6 +2312,12 @@ abstract class AppLocalizations {
   /// **'Export MusicXML…'**
   String get trackerExportXml;
 
+  /// No description provided for @trackerExportModule.
+  ///
+  /// In en, this message translates to:
+  /// **'Export module (.mod/.xm/.s3m/.it)…'**
+  String get trackerExportModule;
+
   /// No description provided for @trackerOpenWorkshop.
   ///
   /// In en, this message translates to:

@@ -404,6 +404,7 @@
   "trackerImportScore": "Noten importieren (MusicXML/MIDI)…",
   "trackerExportMidi": "MIDI exportieren…",
   "trackerExportXml": "MusicXML exportieren…",
+  "trackerExportModule": "Modul exportieren (.mod/.xm/.s3m/.it)…",
   "trackerOpenWorkshop": "In der Notenwerkstatt öffnen",
   "trackerSavedSong": "Im Liederbuch gespeichert",
   "trackerSaveEmpty": "Erst ein paar Noten setzen",

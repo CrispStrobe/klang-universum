@@ -435,6 +435,7 @@
   "trackerImportScore": "Import score (MusicXML/MIDI)…",
   "trackerExportMidi": "Export MIDI…",
   "trackerExportXml": "Export MusicXML…",
+  "trackerExportModule": "Export module (.mod/.xm/.s3m/.it)…",
   "trackerOpenWorkshop": "Open in Score Workshop",
   "trackerSavedSong": "Saved to the Song Book",
   "trackerSaveEmpty": "Place some notes first",

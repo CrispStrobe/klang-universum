@@ -39,6 +39,11 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/crisp_dsp/sample_edit.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:comet_beat/core/audio/mod/module_convert.dart'
+    show convertDocTo;
+import 'package:comet_beat/core/audio/mod/module_doc.dart' show ModuleFormat;
+import 'package:comet_beat/core/audio/mod/module_notation.dart'
+    show multiPartToModuleDoc;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
@@ -193,6 +198,9 @@ abstract interface class AdvancedTrackerTester {
   /// Export the whole song as MIDI / MusicXML bytes (null when nothing pitched).
   Uint8List? debugExportMidi();
   String? debugExportMusicXml();
+
+  /// Export the whole song as a module file of [format] ('mod'/'xm'/'s3m'/'it').
+  Uint8List? debugExportModule(String format);
 
   /// Assign a recorded/edited [raw] clip (with voice [fx]) to [channel] — the
   /// device-free path onto the sample editor (the mic is device-only).
@@ -1943,6 +1951,17 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         : multiPartToMusicXml(mp.score, partNames: mp.names);
   }
 
+  @override
+  Uint8List? debugExportModule(String format) {
+    final mp = _songMultiPart();
+    if (mp == null) return null;
+    final fmt = ModuleFormat.values.firstWhere((f) => f.name == format);
+    return convertDocTo(
+      multiPartToModuleDoc(mp.score, title: 'TRACKER', format: fmt),
+      fmt,
+    );
+  }
+
   Future<void> _saveToSongBook() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
@@ -2031,6 +2050,65 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       'tracker.musicxml',
       'MusicXML',
       ['musicxml', 'xml'],
+    );
+  }
+
+  /// Exports the whole song as a tracker MODULE (.mod/.xm/.s3m/.it). Goes via
+  /// the Score → ModuleDoc bridge, so notes + structure + a generated sample
+  /// timbre carry; the authored effect COLUMN (not in the Score) does not.
+  Future<void> _exportModule(ModuleFormat fmt) async {
+    final mp = _songMultiPart();
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    if (mp == null) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.trackerSaveEmpty)));
+      return;
+    }
+    try {
+      final doc = multiPartToModuleDoc(mp.score, title: 'TRACKER', format: fmt);
+      final bytes = convertDocTo(doc, fmt);
+      await _saveBytes(bytes, 'tracker.${fmt.name}', fmt.name.toUpperCase(), [
+        fmt.name,
+      ]);
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.trackerModFailed)));
+    }
+  }
+
+  Future<void> _pickModuleFormat() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.trackerExportModule,
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final f in ModuleFormat.values)
+                    ActionChip(
+                      label: Text('.${f.name}'),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _exportModule(f);
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -2163,6 +2241,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _exportMidi();
                 case 'exportXml':
                   _exportMusicXml();
+                case 'exportModule':
+                  _pickModuleFormat();
                 case 'workshop':
                   _openInWorkshop();
               }
@@ -2182,6 +2262,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               ),
               _menuRow('exportMidi', Icons.piano, l10n.trackerExportMidi),
               _menuRow('exportXml', Icons.description, l10n.trackerExportXml),
+              _menuRow(
+                'exportModule',
+                Icons.grid_on,
+                l10n.trackerExportModule,
+              ),
               const PopupMenuDivider(),
               _menuRow('workshop', Icons.edit_note, l10n.trackerOpenWorkshop),
             ],

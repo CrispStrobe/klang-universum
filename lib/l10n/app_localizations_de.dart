@@ -1202,6 +1202,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerExportXml => 'MusicXML exportieren…';
 
   @override
+  String get trackerExportModule => 'Modul exportieren (.mod/.xm/.s3m/.it)…';
+
+  @override
   String get trackerOpenWorkshop => 'In der Notenwerkstatt öffnen';
 
   @override
