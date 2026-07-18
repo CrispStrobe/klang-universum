@@ -100,14 +100,22 @@ class TtsService with ChangeNotifier {
   TtsService({
     TtsBackend? backend,
     NeuralTts? neural,
-  })  : _backend = backend ?? FlutterTtsBackend(),
+  })  : _injectedBackend = backend,
         _neural = neural?.backend,
         _neuralReady = neural?.ready,
         _neuralSupported = neural?.supported,
         _neuralDownload = neural?.download;
 
-  /// The platform fallback (flutter_tts).
-  final TtsBackend _backend;
+  final TtsBackend? _injectedBackend;
+
+  /// The platform fallback (flutter_tts), created LAZILY on first narration.
+  /// Building `FlutterTtsBackend()` eagerly instantiated the `flutter_tts`
+  /// plugin (FlutterTts() + setSpeechRate/Volume/Pitch) at app startup — that
+  /// hung the iOS-simulator screenshot capture (the app never narrates during
+  /// capture, so the plugin was set up for nothing and blocked). Deferring it to
+  /// the first `speak`/`stop` keeps narration working while leaving startup and
+  /// the capture path free of any flutter_tts platform-channel calls.
+  late final TtsBackend _backend = _injectedBackend ?? FlutterTtsBackend();
 
   /// Optional higher-quality neural backend (CrispASR/Kokoro). Used in
   /// preference to [_backend] when [_neuralReady] reports it can run on this
