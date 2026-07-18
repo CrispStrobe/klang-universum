@@ -490,6 +490,13 @@ const List<Concept> kConcepts = [
     ['duet', 'read_voice', 'which_voice', 'hear_voice', 'spacing_read'],
   ),
   Concept(
+    'voice_leading',
+    GradeBand.g910,
+    ConceptArea.harmony,
+    'Part-writing: parallel fifths & octaves',
+    ['spot_parallels'],
+  ),
+  Concept(
     'score_reading',
     GradeBand.g910,
     ConceptArea.reading,

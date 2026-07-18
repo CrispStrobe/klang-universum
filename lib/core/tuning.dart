@@ -64,6 +64,8 @@ const Map<String, List<int>> kStarThresholds = {
   'harmony_quiz': [100, 600, 900],
   // Roman Numerals: 10 rounds × 100; clean run tops near 1000.
   'roman_numeral': [100, 600, 900],
+  // Spot the Parallels: 10 rounds × 100 (binary clean/parallel).
+  'spot_parallels': [100, 600, 900],
   'major_minor_ear': [100, 600, 900],
   // Which Mode? (Major / Minor / Dorian ear game): 10 rounds x 100.
   'mode_ear': [100, 600, 900],

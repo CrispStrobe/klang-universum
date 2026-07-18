@@ -43,6 +43,7 @@ import 'package:comet_beat/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:comet_beat/features/games/harmony/function_ear_screen.dart';
 import 'package:comet_beat/features/games/harmony/harmony_quiz_screen.dart';
 import 'package:comet_beat/features/games/harmony/roman_numeral_screen.dart';
+import 'package:comet_beat/features/games/harmony/spot_parallels_screen.dart';
 import 'package:comet_beat/features/games/keyboard/chord_grip_hero_screen.dart';
 import 'package:comet_beat/features/games/keyboard/grand_staff_read_screen.dart';
 import 'package:comet_beat/features/games/keyboard/key_chord_screen.dart';
@@ -1027,6 +1028,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameFunctionEar,
       subtitle: (l) => l.gameFunctionEarSubtitle,
       builder: (_) => const FunctionEarScreen(),
+    ),
+    // Top of the harmony ladder: read a two-chord progression and spot forbidden
+    // parallel fifths/octaves. Graded by the library's checkVoiceLeading.
+    GameInfo(
+      id: 'spot_parallels',
+      icon: Icons.compare_arrows,
+      title: (l) => l.gameSpotParallels,
+      subtitle: (l) => l.gameSpotParallelsSubtitle,
+      builder: (_) => const SpotParallelsScreen(),
+      tutorial: harmonyPrimer,
     ),
   ],
   'composition': [
