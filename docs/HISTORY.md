@@ -611,7 +611,12 @@ Games built on crisp_notation capabilities the app didn't use before.
   `quantizeToResolution(eighth)` → `toDrumPattern` — play a beat in and it lands
   as clean eighths, stray double-taps collapsing. Added the fixed-grid
   `quantizeToResolution` (a step machine wants its set grid, not the coarsest
-  feel). Device-free + `debugRecordTaps` seam; +3 tests.
+  feel). Device-free + `debugRecordTaps` seam; +3 tests. **Beatbox-to-grid**: a
+  🎤 button captures the mic for one loop, classifies each hit (kick/snare/hat)
+  by timbre and quantises onto the grid via the same pipeline. New pure bridge
+  `beat_capture.beatboxToTaps` (`detectOnsets` + per-onset `classifyHit` → taps),
+  verified against the real synth→detector harness; `debugBeatboxFrames` seam for
+  a headless test. Both DrumKit record paths converge on the generic engine.
 - **Loop Mixer — beatbox + jam along** (composition, ladder slice 10) — the
   mic closes the circle twice more. **Beatbox a beat:** count-in, 2 bars of
   "boom-ts-pss" into the mic, and it comes back as a teal drum card — onset

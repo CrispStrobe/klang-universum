@@ -834,11 +834,16 @@ small games.** Scope each as its own claimed effort:
    stop, quantises the take onto the step grid (overdub) via the new engines
    (`quantizeToResolution(eighth)` → `toDrumPattern`). Each drum snaps
    independently; stray double-taps collapse; loose timing stays on clean eighths.
-   Device-free + fully tested (`debugRecordTaps` seam). **Remaining:** mic-based
-   record (beatbox → the same pipeline, reusing `beat_capture.classifyHit`);
-   Save-to-Song-Book from the DrumKit (the pattern is a `DrumRowsPattern` — reuse
-   the groove→Song-Book bridge); expose the skill-tier cap as a setting (the grid
-   is fixed eighth today); more `Drum` voices ([needs-engine]).
+   Device-free + fully tested (`debugRecordTaps` seam). ✅ **Beatbox-to-grid
+   (`ff58883`):** a 🎤 button captures the mic for one loop, classifies each hit
+   (kick/snare/hat) by timbre and quantises onto the grid via the SAME pipeline.
+   New pure bridge `beat_capture.beatboxToTaps` (`detectOnsets` + per-onset
+   `classifyHit` → taps) — verified against the real synth→detector harness;
+   `debugBeatboxFrames` seam for a headless widget test. Both record paths now
+   converge on the generic rhythm engine. **Remaining:** Save-to-Song-Book from
+   the DrumKit (needs a drum-pattern→notation converter — the groove bridge drops
+   unpitched drums, so this is real work, not a reuse); expose the skill-tier cap
+   as a setting (the grid is fixed eighth today); more `Drum` voices ([needs-engine]).
 2. ✅ **SHIPPED — Recording with a beginner "Relevanzschwelle" (rhythm relevance
    threshold).** The quantisation ENGINE is done: `lib/core/audio/rhythm_quantize.dart`
    (`04fc357`) — `detectOnsets` → `chooseResolution` (auto coarsest-grid-the-player-
