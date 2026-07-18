@@ -67,6 +67,45 @@ void main() {
       );
     });
 
+    test('detects + rejects a compressed .sf3 (OGG samples)', () {
+      // A soundfont whose smpl data starts with the "OggS" magic = .sf3.
+      // 'OggS' as two little-endian int16 words: 0x674F, 0x5367.
+      final oggPcm = Int16List.fromList([0x674F, 0x5367, 0, 0, 0, 0]);
+      final bytes = oneSampleSf2(
+        pcm: oggPcm,
+        sampleRate: 44100,
+        rootKey: 60,
+        loopStart: 0,
+        loopEnd: 0,
+      );
+      // A normal .sf2 is not compressed; this crafted one is.
+      expect(
+        sf2IsCompressed(
+          oneSampleSf2(
+            pcm: sineI16(64, 4),
+            sampleRate: 44100,
+            rootKey: 60,
+            loopStart: 0,
+            loopEnd: 0,
+          ),
+        ),
+        isFalse,
+      );
+      expect(sf2IsCompressed(bytes), isTrue);
+      expect(sf2IsCompressed(Uint8List.fromList('nope'.codeUnits)), isFalse);
+      // parse throws a clear, catchable error mentioning .sf3.
+      expect(
+        () => Sf2SoundFont.parse(bytes),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('.sf3'),
+          ),
+        ),
+      );
+    });
+
     test('reads chPitchCorrection and bakes it into the resample', () {
       final pcm = sineI16(880, 20);
       Sf2SoundFont build(int corr) => Sf2SoundFont.parse(

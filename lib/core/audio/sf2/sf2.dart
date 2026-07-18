@@ -13,8 +13,10 @@
 //      key (reusing the engine's sample loop) — a real multi-sample GM voice.
 //
 // Handles UNCOMPRESSED `.sf2` (raw PCM in `smpl`). `.sf3` (OGG-Vorbis-compressed
-// samples, e.g. MuseScore's FluidR3Mono) needs an OGG decoder — a follow-up; the
-// MIT FluidR3_GM `.sf2` is uncompressed and works today. Flutter-free, pure Dart.
+// samples, e.g. MuseScore's FluidR3Mono) is DETECTED (via the `OggS` magic) and
+// rejected with a clear error — decoding it needs an OGG decoder (a follow-up);
+// use [sf2IsCompressed] to pre-check. The MIT FluidR3_GM `.sf2` is uncompressed
+// and works today. Flutter-free, pure Dart.
 
 import 'dart:math';
 import 'dart:typed_data';
@@ -159,6 +161,16 @@ class Sf2SoundFont {
     final shdr = chunks['shdr'];
     if (smpl == null || shdr == null) {
       throw const FormatException('SoundFont missing smpl/shdr chunks');
+    }
+    // `.sf3` stores each sample as an OGG-Vorbis stream in `smpl` (starts with
+    // the "OggS" magic) instead of raw PCM — decoding that needs an OGG decoder
+    // we don't have. Fail with a clear, catchable message rather than reading
+    // the compressed bytes as garbage PCM.
+    if (smpl.$2 >= 4 && _tag(bytes, smpl.$1) == 'OggS') {
+      throw const FormatException(
+        'compressed .sf3 (OGG-Vorbis samples) is not supported yet — '
+        'use an uncompressed .sf2 soundfont',
+      );
     }
 
     // Sample pool as signed 16-bit words.
@@ -313,6 +325,37 @@ List<Sf2Preset> _parsePresets(
     }
   }
   return presets;
+}
+
+/// Whether [bytes] is a compressed `.sf3` soundfont (OGG-Vorbis samples), which
+/// [Sf2SoundFont.parse] can't decode. Lets the app check + show a friendly
+/// "please use a .sf2" message instead of catching a [FormatException]. Returns
+/// false for a normal `.sf2` or anything that isn't a RIFF/sfbk soundfont.
+bool sf2IsCompressed(Uint8List bytes) {
+  if (bytes.length < 12 ||
+      _tag(bytes, 0) != 'RIFF' ||
+      _tag(bytes, 8) != 'sfbk') {
+    return false;
+  }
+  final data = ByteData.sublistView(bytes);
+  var pos = 12;
+  while (pos + 8 <= bytes.length) {
+    final ck = _tag(bytes, pos);
+    final size = data.getUint32(pos + 4, Endian.little);
+    if (ck == 'LIST') {
+      var sp = pos + 12; // past 'LIST' <size> <listType>
+      final end = pos + 8 + size;
+      while (sp + 8 <= end) {
+        final ssize = data.getUint32(sp + 4, Endian.little);
+        if (_tag(bytes, sp) == 'smpl') {
+          return ssize >= 4 && _tag(bytes, sp + 8) == 'OggS';
+        }
+        sp = sp + 8 + ssize + (ssize.isOdd ? 1 : 0);
+      }
+    }
+    pos = pos + 8 + size + (size.isOdd ? 1 : 0);
+  }
+  return false;
 }
 
 String _tag(Uint8List b, int o) => String.fromCharCodes(b, o, o + 4);
