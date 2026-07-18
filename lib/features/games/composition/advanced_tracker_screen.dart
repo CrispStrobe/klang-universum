@@ -57,6 +57,7 @@ import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
+import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
@@ -70,7 +71,9 @@ import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
         MultiPartScore,
+        Pitch,
         Score,
+        chordSymbolFor,
         multiPartScoreFromAbc,
         multiPartScoreFromKern,
         multiPartScoreFromMei,
@@ -354,6 +357,13 @@ abstract interface class AdvancedTrackerTester {
   /// channels) — the "keys glow as they play" highlight.
   List<int> debugSoundingMidis(int row);
 
+  /// 🔍 Looking Glass: whether inspect mode is on, toggle it, and (for a test)
+  /// the `(noteNames, rowChord)` the inspector reports for a cell (null = no
+  /// notes in the row).
+  bool get inspectMode;
+  void toggleInspectMode();
+  (String, String?)? debugInspectInfo(int channel, int row);
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -418,6 +428,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// Touch "mark" mode: while on, tapping a cell EXTENDS the selection rather
   /// than moving the cursor freely.
   bool _marking = false;
+
+  /// 🔍 Looking Glass: while on, tapping a cell describes its note + the chord
+  /// the whole row sounds (+ instrument/effect) instead of only moving the cursor.
+  bool _inspect = false;
 
   /// The copied block (row-major), for paste / paste-mix.
   List<List<TrackerCell>>? _clipboard;
@@ -922,6 +936,50 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   }
 
   // --- Block / selection editing (classic tracker block ops) -------------
+
+  /// 🔍 Build the inspector card data for a cell: this cell's note name, the
+  /// chord the whole ROW sounds (across channels), and its instrument/effect
+  /// detail. Null when the row has no notes (nothing to inspect).
+  InspectInfo? _inspectInfoFor(int channel, int row) {
+    final rowMidis = <int>[
+      for (var c = 0; c < _song.channelCount; c++)
+        if (_song.engine.cellAt(c, row).midi case final int m) m,
+    ];
+    if (rowMidis.isEmpty) return null;
+    final cell = _song.engine.cellAt(channel, row);
+    final names = cell.midi != null
+        ? trackerNoteName(cell.midi!)
+        : rowMidis.map(trackerNoteName).join(' ');
+    final parts = <String>[
+      if (cell.instrument > 0) 'instrument ${cell.instrument}',
+      if (cell.hasCommand)
+        'fx ${_commandHex(cell)}'
+      else if (cell.effect != TrackerEffect.none)
+        'fx ${_effectCode(cell.effect)}',
+    ];
+    return InspectInfo(
+      noteNames: names,
+      chordSymbol:
+          chordSymbolFor([for (final m in rowMidis) Pitch.fromMidi(m)]),
+      detail: parts.isEmpty ? null : parts.join(' · '),
+    );
+  }
+
+  /// A cell tap: inspect it in Looking-Glass mode, else move/extend the cursor.
+  void _onCellTap(int channel, int row) {
+    if (_inspect) {
+      _moveCursorClearing(channel, row); // show which cell, then describe it
+      final info = _inspectInfoFor(channel, row);
+      if (info != null) showInspect(context, info);
+      return;
+    }
+    if (_marking) {
+      _extendTo(channel, row);
+    } else {
+      _moveCursorClearing(channel, row);
+    }
+    _focus.requestFocus();
+  }
 
   /// Move the cursor and drop any selection (a plain move / click).
   void _moveCursorClearing(int channel, int row) {
@@ -2020,6 +2078,16 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   @override
   List<int> debugSoundingMidis(int row) => _soundingMidisAt(row);
 
+  @override
+  bool get inspectMode => _inspect;
+  @override
+  void toggleInspectMode() => setState(() => _inspect = !_inspect);
+  @override
+  (String, String?)? debugInspectInfo(int channel, int row) {
+    final info = _inspectInfoFor(channel, row);
+    return info == null ? null : (info.noteNames, info.chordSymbol);
+  }
+
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
     VoiceEffect.chipmunk: Icons.pets,
@@ -2874,6 +2942,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             icon: const Icon(Icons.redo),
             tooltip: l10n.workshopRedo,
             onPressed: _canRedo ? _redo : null,
+          ),
+          IconButton(
+            icon: Icon(_inspect ? Icons.search_off : Icons.search),
+            isSelected: _inspect,
+            tooltip: l10n.inspectMode,
+            onPressed: () => setState(() => _inspect = !_inspect),
           ),
           IconButton(
             icon: const Icon(Icons.child_care),
@@ -3745,14 +3819,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             ? _effectCode(cell.effect)
             : '·');
     return GestureDetector(
-      onTap: () {
-        if (_marking) {
-          _extendTo(channel, row);
-        } else {
-          _moveCursorClearing(channel, row);
-        }
-        _focus.requestFocus();
-      },
+      onTap: () => _onCellTap(channel, row),
       onLongPress: () => _cellMenu(channel, row),
       child: Container(
         width: _cellWidth,

@@ -57,6 +57,30 @@ void main() {
     expect(game.isPlaying, isFalse);
   });
 
+  testWidgets('🔍 Inspect mode: a cell reports its note + the row chord',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    // A C major triad spread across three channels on row 0.
+    game.setNote(0, 0, 60); // C4
+    game.setNote(1, 0, 64); // E4
+    game.setNote(2, 0, 67); // G4
+    await tester.pump();
+
+    expect(game.inspectMode, isFalse);
+    game.toggleInspectMode();
+    await tester.pump();
+    expect(game.inspectMode, isTrue);
+
+    // The tapped cell's own note, plus the chord the whole row sounds.
+    expect(game.debugInspectInfo(0, 0), ('C-4', 'C'));
+    expect(game.debugInspectInfo(1, 0), ('E-4', 'C'));
+
+    // An empty row has nothing to inspect.
+    expect(game.debugInspectInfo(0, 5), isNull);
+  });
+
   testWidgets('endless length: the pattern grows well past one bar',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

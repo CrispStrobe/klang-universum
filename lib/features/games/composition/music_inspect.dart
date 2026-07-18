@@ -22,6 +22,7 @@ class InspectInfo {
     this.roman,
     this.function,
     this.isNonChordTone = false,
+    this.detail,
   });
 
   /// The sounding note name(s), e.g. `E5` or `C4 E4 G4`.
@@ -41,6 +42,9 @@ class InspectInfo {
 
   /// Whether this note is a non-chord tone of its chord.
   final bool isNonChordTone;
+
+  /// A surface-specific extra line (e.g. the Tracker's instrument + effect).
+  final String? detail;
 }
 
 String _pitchName(Pitch p) {
@@ -138,29 +142,45 @@ Future<void> showInspect(BuildContext context, InspectInfo info) {
             const SizedBox(height: 8),
             if (info.degree != null)
               Text(info.degree!, style: theme.textTheme.bodyMedium),
-            if (info.function != null) ...[
+            // The chord row shows whenever a chord is known — the function
+            // colour swatch appears only when a key gave it a T/S/D role (the
+            // Tracker has no key, so it shows a bare chord name).
+            if (info.chordSymbol != null || info.function != null) ...[
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: harmonicFunctionColor(info.function!),
-                      borderRadius: BorderRadius.circular(3),
+                  if (info.function != null) ...[
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: harmonicFunctionColor(info.function!),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
+                    const SizedBox(width: 6),
+                  ],
                   Expanded(
                     child: Text(
-                      '${info.chordSymbol ?? ''}'
-                      '${info.roman != null ? ' · ${info.roman}' : ''}'
-                      ' · ${_functionText(l10n, info.function!)}',
+                      [
+                        if (info.chordSymbol != null) info.chordSymbol,
+                        if (info.roman != null) info.roman,
+                        if (info.function != null)
+                          _functionText(l10n, info.function!),
+                      ].join(' · '),
                       style: theme.textTheme.bodyMedium
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (info.detail != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                info.detail!,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ],
             if (info.isNonChordTone) ...[
