@@ -351,6 +351,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopNoteNames => 'Note names';
 
   @override
+  String get workshopAnalysis => 'Analysis (colour by harmony)';
+
+  @override
   String get workshopInspector => 'Inspector';
 
   @override

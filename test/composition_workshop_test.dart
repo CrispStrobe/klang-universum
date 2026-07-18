@@ -84,6 +84,29 @@ void main() {
     expect(find.byType(PianoKeyboard), findsOneWidget);
   });
 
+  testWidgets('the Analysis toggle shows the live harmony banner',
+      (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    // No analysis banner until the toggle is on.
+    expect(find.text('C Major'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.workshopAnalysis));
+    await tester.pumpAndSettle();
+
+    // The banner appears with the detected key (empty score → C major default).
+    expect(find.text('C Major'), findsOneWidget);
+
+    // Toggling it off removes the banner again.
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.workshopAnalysis));
+    await tester.pumpAndSettle();
+    expect(find.text('C Major'), findsNothing);
+  });
+
   testWidgets('the rest button adds a rest; bars fill per the meter',
       (tester) async {
     await pump(tester);

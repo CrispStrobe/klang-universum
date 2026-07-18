@@ -159,6 +159,7 @@
   "workshopFermata": "Fermata",
   "workshopBarNumbers": "Bar numbers",
   "workshopNoteNames": "Note names",
+  "workshopAnalysis": "Analysis (colour by harmony)",
   "workshopInspector": "Inspector",
   "workshopInspectorEmpty": "Select a note to see its properties.",
   "workshopStructure": "Structure",

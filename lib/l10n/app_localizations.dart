@@ -710,6 +710,12 @@ abstract class AppLocalizations {
   /// **'Note names'**
   String get workshopNoteNames;
 
+  /// No description provided for @workshopAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis (colour by harmony)'**
+  String get workshopAnalysis;
+
   /// No description provided for @workshopInspector.
   ///
   /// In en, this message translates to:

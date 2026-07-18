@@ -504,6 +504,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   bool _chordMode = false; // placed pitches stack onto the selected note
   bool _barNumbers = false; // label each wrapped system with its bar number
   bool _noteNames = false; // draw each note's name below the staff
+  bool _showAnalysis = false; // live harmonic analysis: tint notes by function
   // Studio: an opt-in selection-driven inspector panel (Cause 3). Off by default,
   // so the kid Sandbox surface is unchanged; when on it docks to the right and
   // reflects/edits whatever is selected — the scalable home for note properties.
@@ -1738,6 +1739,63 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// edits whatever is selected — the scalable home for note properties, next to
   /// the (kept) ⌃ palette. Reuses the same `_doc` mutators. Opt-in via the ⋮
   /// menu; off by default so the Sandbox surface is unchanged.
+  // ---- live harmonic analysis (Analysis toggle) --------------------------
+
+  Color _functionTint(HarmonicFunction f) => switch (f) {
+        HarmonicFunction.tonic => const Color(0xFF59A14F), // green — home
+        HarmonicFunction.subdominant => const Color(0xFF4E79A7), // blue — away
+        HarmonicFunction.dominant =>
+          const Color(0xFFF28E2B), // orange — tension
+      };
+
+  String _cadenceLabel(AppLocalizations l10n, CadenceType t) => switch (t) {
+        CadenceType.authentic => l10n.cadenceAuthentic,
+        CadenceType.half => l10n.cadenceHalf,
+        CadenceType.plagal => l10n.cadencePlagal,
+        CadenceType.deceptive => l10n.cadenceDeceptive,
+      };
+
+  String _analysisKeyName(AppLocalizations l10n, ScoreAnalysis a) {
+    final letter = a.key.tonic.step.name.toUpperCase();
+    final alter = a.key.tonic.alter;
+    final acc = alter > 0 ? '♯' * alter : (alter < 0 ? '♭' * -alter : '');
+    return '$letter$acc ${a.key.isMajor ? l10n.modeMajor : l10n.modeMinor}';
+  }
+
+  Widget _analysisBanner(AppLocalizations l10n, ScoreAnalysis a) {
+    final theme = Theme.of(context);
+    final romans = [
+      for (final s in a.segments)
+        if (s.hasChord) s.roman!.symbol,
+    ].join(' – ');
+    final cadences = {for (final c in a.cadences) _cadenceLabel(l10n, c.type)};
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Chip(
+            avatar: const Icon(Icons.vpn_key, size: 15),
+            label: Text(_analysisKeyName(l10n, a)),
+            visualDensity: VisualDensity.compact,
+          ),
+          if (romans.isNotEmpty)
+            Text(
+              romans,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          for (final c in cadences)
+            Text('• $c', style: theme.textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+
   Widget _inspectorPanel(AppLocalizations l10n) {
     final theme = Theme.of(context);
     // The selected NOTES (rests carry none of these properties). The controls
@@ -2701,7 +2759,17 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     final l10n = AppLocalizations.of(context)!;
     final theme = kidsScoreTheme;
     final selectedIds = _doc.selectedIds;
+    // Live harmonic analysis of the active part (Analysis toggle): tints each
+    // note by its chord's function. Computed from the built score so it sees
+    // ties/rests/voices; small scores make this cheap enough per rebuild.
+    final ScoreAnalysis? analysis =
+        _showAnalysis ? analyze(_doc.buildScore()) : null;
     final elementColors = <String, Color>{
+      // Analysis is the base layer; selection + playback override it below.
+      if (analysis != null)
+        for (final seg in analysis.segments)
+          if (seg.function != null)
+            for (final id in seg.elementIds) id: _functionTint(seg.function!),
       for (final id in selectedIds) id: Colors.amber,
       // The playback cursor paints the sounding notes green, overriding any
       // selection tint underneath so the moving highlight always reads.
@@ -2840,6 +2908,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       setState(() => _barNumbers = !_barNumbers);
                     case 'notenames':
                       setState(() => _noteNames = !_noteNames);
+                    case 'analysis':
+                      setState(() => _showAnalysis = !_showAnalysis);
                     case 'studio':
                       _setShelf(_studio ? _Shelf.sandbox : _Shelf.studio);
                     case 'inspector':
@@ -2893,6 +2963,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     value: 'notenames',
                     checked: _noteNames,
                     child: Text(l10n.workshopNoteNames),
+                  ),
+                  CheckedPopupMenuItem<String>(
+                    value: 'analysis',
+                    checked: _showAnalysis,
+                    child: Text(l10n.workshopAnalysis),
                   ),
                   const PopupMenuDivider(),
                   CheckedPopupMenuItem<String>(
@@ -2968,6 +3043,9 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               // G6: instrument parts strip (add · select · clef/transposition/
               // brace/remove). One part = the classic single-instrument editor.
               _partsStrip(l10n),
+              // Live harmonic analysis banner (Analysis toggle): key + roman
+              // progression + cadences, computed from the active part.
+              if (analysis != null) _analysisBanner(l10n, analysis),
               // Row A — compact settings + status.
               // Score canvas — multi-line, vertical scroll. In Studio the
               // inspector docks to its right (Cause 3); off by default.
