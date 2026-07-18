@@ -50,10 +50,13 @@ void main() {
   }
 
   group('MOD effect column import (replayer feed)', () {
-    test('effect nibble → tracker fxCmd/fxParam (note + effect-only cells)', () {
+    test('effect nibble → tracker fxCmd/fxParam (note + effect-only cells)',
+        () {
       final rows = <List<DocCell>>[
         // A note WITH a porta-up effect (1xx).
-        [const DocCell(note: 60, instrument: 1, effect: 0x1, effectParam: 0x08)],
+        [
+          const DocCell(note: 60, instrument: 1, effect: 0x1, effectParam: 0x08),
+        ],
         // An effect-ONLY cell (no note) — how a slide continues on a ring.
         [const DocCell(effect: 0x1)],
       ];
@@ -106,6 +109,34 @@ void main() {
         expect(songCmd, greaterThan(0), reason: 'MOD effects should carry');
       }
       expect(songCmd, lessThanOrEqualTo(docFx)); // never invents commands
+    });
+
+    test('golden.xm: nibble effects carry, letter effects (G+) drop', () {
+      final bytes = _fixture('golden.xm');
+      final doc = parseAnyModule(bytes);
+      var docFx = 0;
+      for (final p in doc.patterns) {
+        for (final row in p.rows) {
+          for (final dc in row) {
+            // The XM carry filter kept only fxCmd-nibble effects (0x0..0xF).
+            expect(dc.effect, lessThanOrEqualTo(0xF));
+            if (dc.effect != 0 || dc.effectParam != 0) docFx++;
+          }
+        }
+      }
+      final song = songFromModuleBytes(bytes);
+      var songCmd = 0;
+      for (final p in song.patterns) {
+        for (final col in p.cells) {
+          for (final c in col) {
+            if (c.hasCommand) songCmd++;
+          }
+        }
+      }
+      if (docFx > 0) {
+        expect(songCmd, greaterThan(0), reason: 'XM effects should carry');
+      }
+      expect(songCmd, lessThanOrEqualTo(docFx));
     });
   });
 }

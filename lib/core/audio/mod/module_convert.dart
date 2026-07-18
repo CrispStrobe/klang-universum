@@ -268,12 +268,19 @@ ModuleDoc docFromXm(XmModule m) {
       for (final c in row) {
         final vol =
             (c.volume >= 0x10 && c.volume <= 0x50) ? c.volume - 0x10 : -1;
+        // XM's main effect column shares MOD's 0x0–0xF numbering, so those map
+        // 1:1 onto our fxCmd/fxParam. XM's letter effects (G+ = 0x10 and up)
+        // don't fit a nibble and use different semantics — drop them for now
+        // (the cross-format table is a follow-up).
+        final carryFx = c.effect <= 0xF;
         cells.add(
           DocCell(
             note: xmNoteToMidi(c.note),
             noteOff: c.note == XmCell.noteOff,
             instrument: c.instrument,
             volume: vol,
+            effect: carryFx ? c.effect : 0,
+            effectParam: carryFx ? c.effectParam : 0,
           ),
         );
       }
