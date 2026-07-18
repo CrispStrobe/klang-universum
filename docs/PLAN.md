@@ -819,6 +819,36 @@ screen`, `b439011`) and more SMuFL faces (Leland/Leipzig shipped `9d94d6f`).
 generative sight-reading, MIDI input. See the "Ideas backlog" + "Opportunity
 roadmap" sections lower down.
 
+#### 🎛️ Maintainer roadmap — "GarageBand-grade" creation tools (2026-07-18, UNCLAIMED)
+
+A big directive block from the maintainer; **the next major arc after the current
+small games.** Scope each as its own claimed effort:
+
+1. **DrumKit → a GarageBand-style beat maker.** Grow the DrumKit from a pad toy
+   into a real drum-machine/recording surface: play pads live, **record** the
+   performance, quantise + edit, layer, and export.
+2. **Recording with a beginner "Relevanzschwelle" (rhythm relevance threshold).**
+   The core UX idea: when a beginner records a rhythm, **quantise to the grid they
+   can actually feel** — 1/4 or 1/8, *not* 1/16. A configurable resolution
+   threshold (skill-tiered: beginners snap to quarters/eighths; advanced unlock
+   sixteenths/triplets) applied to live-captured onsets before they become notes.
+   Reuses the mic/onset pipeline (`beat_capture.dart`, `PitchReading` rms/zcr
+   onsets) + the Loop Mixer's integral-ms/samples grid invariant.
+3. **Conversion to ALL our models.** A recorded/quantised performance must flow
+   into every internal representation — `TrackerSong`, the Workshop
+   `MultiPartDocument`/`Score`, `GrooveSpec`, `TabDocument`, MusicXML/MIDI export —
+   so a captured beat is editable everywhere (mirrors the existing Tracker→Song
+   Book / groove→Song Book bridges).
+4. **A much better Looper.** Beyond Loop Mixer 2.0: tighter overdub/undo, live
+   layering, better quantised punch-in, seamless loop lengths.
+5. **More Workshop work** (unspecified umbrella — capture concrete asks as they
+   land).
+
+These lean on infra we already own (mic capture, onset detection, the groove/
+tracker engines, model converters). Sequence suggestion: **(2) the quantisation
+threshold engine first** (pure, testable, unlocks the rest) → **(1) DrumKit
+record** → **(3) model conversion** → **(4) Looper**. Not started.
+
 ### 🚀 Handover prompt for the next agent (copy-paste this)
 
 ```
