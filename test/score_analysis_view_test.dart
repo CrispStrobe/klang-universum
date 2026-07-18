@@ -5,6 +5,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/score_analysis_view.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart' show analyze;
+import 'package:crisp_notation/crisp_notation.dart' as cn show Key, Pitch, Step;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -124,9 +125,24 @@ void main() {
   });
 
   test('the built-in examples all analyse to at least one chord', () {
-    for (final (_, score) in kAnalysisExamples) {
-      final a = analyze(score);
+    for (final (_, score, key) in kAnalysisExamples) {
+      final a = analyze(score, key: key);
       expect(a.segments.where((s) => s.hasChord), isNotEmpty);
     }
+  });
+
+  test('the engine reads a secondary dominant (V7/V)', () {
+    // C – D7 – G – C in C major: the D7 tonicises the dominant.
+    final score = blockChordScore([
+      [60, 64, 67],
+      [62, 66, 69, 72],
+      [67, 71, 74],
+      [60, 64, 67],
+    ]);
+    final a = analyze(score, key: const cn.Key.major(cn.Pitch(cn.Step.c)));
+    expect(
+      a.segments.map((s) => s.roman?.symbol),
+      contains('V7/V'),
+    );
   });
 }

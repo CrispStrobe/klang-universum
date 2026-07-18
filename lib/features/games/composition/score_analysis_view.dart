@@ -22,6 +22,8 @@ import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/midi_pitch.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart' hide Key;
+// The music Key clashes with material's Widget Key, so reach it via a prefix.
+import 'package:crisp_notation/crisp_notation.dart' as cn show Key;
 import 'package:flutter/material.dart' hide Step;
 import 'package:provider/provider.dart';
 
@@ -57,8 +59,9 @@ Score melodyScore(List<List<int>> bars) => Score(
     );
 
 /// Built-in progressions to show a computed analysis on (language-neutral roman
-/// titles). C major throughout, tonic-heavy so the key is detected reliably.
-final List<(String, Score)> kAnalysisExamples = [
+/// titles), each pinned to C major so the reading is deterministic.
+const cn.Key _cMajor = cn.Key.major(Pitch(Step.c));
+final List<(String, Score, cn.Key?)> kAnalysisExamples = [
   (
     'I – IV – V – I',
     blockChordScore([
@@ -67,6 +70,7 @@ final List<(String, Score)> kAnalysisExamples = [
       [67, 71, 74],
       [60, 64, 67],
     ]),
+    _cMajor,
   ),
   (
     'I – vi – ii – V – I',
@@ -77,6 +81,7 @@ final List<(String, Score)> kAnalysisExamples = [
       [67, 71, 74],
       [60, 64, 67],
     ]),
+    _cMajor,
   ),
   (
     'I – V – vi – IV',
@@ -86,6 +91,19 @@ final List<(String, Score)> kAnalysisExamples = [
       [69, 72, 76],
       [65, 69, 72],
     ]),
+    _cMajor,
+  ),
+  // A secondary dominant — the engine reads the D7 as V7/V (the dominant of the
+  // dominant), tonicising G before landing on it.
+  (
+    'I – V7/V – V – I',
+    blockChordScore([
+      [60, 64, 67], // C
+      [62, 66, 69, 72], // D7 = V7/V
+      [67, 71, 74], // G
+      [60, 64, 67], // C
+    ]),
+    _cMajor,
   ),
 ];
 
@@ -138,12 +156,17 @@ class ScoreAnalysisView extends StatefulWidget {
     super.key,
     required this.score,
     this.title,
+    this.analysisKey,
     this.depth = AnalysisDepth.learner,
     this.showDepthDial = true,
   });
 
   final Score score;
   final String? title;
+
+  /// Fix the analysis key (else it's auto-detected). Use it when a short or
+  /// chromatic example would otherwise be read in the wrong key.
+  final cn.Key? analysisKey;
   final AnalysisDepth depth;
 
   /// Show the kids/learner/expert selector inside the card.
@@ -155,14 +178,16 @@ class ScoreAnalysisView extends StatefulWidget {
 
 class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
   final _pb = ScorePlayback();
-  late ScoreAnalysis _analysis = analyze(widget.score);
+  late ScoreAnalysis _analysis = analyze(widget.score, key: widget.analysisKey);
   late AnalysisDepth _depth = widget.depth;
   int? _playing;
 
   @override
   void didUpdateWidget(ScoreAnalysisView old) {
     super.didUpdateWidget(old);
-    if (old.score != widget.score) _analysis = analyze(widget.score);
+    if (old.score != widget.score) {
+      _analysis = analyze(widget.score, key: widget.analysisKey);
+    }
     if (old.depth != widget.depth) _depth = widget.depth;
   }
 

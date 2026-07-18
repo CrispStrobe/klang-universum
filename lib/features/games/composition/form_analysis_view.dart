@@ -721,8 +721,8 @@ class AnalysisHubScreen extends StatelessWidget {
             for (final e in list) HarmonyAnalysisView(example: e),
           // Computed by the analysis engine straight from the notes.
           header(l10n.analysisHubComputed),
-          for (final (title, score) in kAnalysisExamples)
-            ScoreAnalysisView(title: title, score: score),
+          for (final (title, score, key) in kAnalysisExamples)
+            ScoreAnalysisView(title: title, score: score, analysisKey: key),
           const SizedBox(height: 16),
         ],
       ),
