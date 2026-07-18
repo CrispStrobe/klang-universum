@@ -99,9 +99,17 @@ void main() {
       await back(tester);
     });
 
-    // 3) Composition workshop (score editor)
+    // 3) Composition workshop (score editor). Scope the tap to the AppBar: the
+    // module grid also renders Icons.piano on game cards, so a bare byIcon is
+    // ambiguous on the wider iPad layout (2 matches → tap throws → iPad missed
+    // this shot). The AppBar has exactly one piano (the Workshop menu button).
     await step('workshop', () async {
-      await tester.tap(find.byIcon(Icons.piano));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byIcon(Icons.piano),
+        ),
+      );
       await shot(tester, '03_workshop');
       await back(tester);
     });
