@@ -6,7 +6,20 @@ import 'package:comet_beat/core/audio/daw_sources.dart';
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
+import 'package:crisp_notation/crisp_notation.dart'
+    show
+        Clef,
+        DurationBase,
+        Measure,
+        NoteDuration,
+        NoteElement,
+        Pitch,
+        RestElement,
+        Score,
+        Step;
 import 'package:flutter_test/flutter_test.dart';
+
+const _quarter = NoteDuration(DurationBase.quarter);
 
 DrumRowsPattern _beat(Map<Drum, String> rows) {
   final map = {
@@ -78,6 +91,60 @@ void main() {
       final pcm = GrooveSource(spec).render(kDawSampleRate);
       expect(pcm, isNotEmpty);
       expect(_silent(pcm), isFalse);
+    });
+  });
+
+  group('ScoreSource', () {
+    // A note, a rest, then a C-major chord — one quarter each.
+    Score melody() => Score(
+          clef: Clef.treble,
+          measures: [
+            Measure([
+              NoteElement.note(const Pitch(Step.c), _quarter),
+              const RestElement(_quarter),
+              const NoteElement(
+                pitches: [Pitch(Step.c), Pitch(Step.e), Pitch(Step.g)],
+                duration: _quarter,
+              ),
+            ]),
+          ],
+        );
+
+    test('renders notes as sound, rests as silence, chords included', () {
+      final pcm = renderScore(melody());
+      const q = kDawSampleRate ~/ 2; // a 500 ms quarter at 44.1k
+      expect(pcm.length, 3 * q);
+      expect(_silent(pcm.sublist(0, q)), isFalse); // the C note
+      expect(_silent(pcm.sublist(q, 2 * q)), isTrue); // the rest
+      expect(_silent(pcm.sublist(2 * q, 3 * q)), isFalse); // the chord
+    });
+
+    test('cacheKey is equal for equal scores, differs on the notes', () {
+      expect(
+        ScoreSource.single(melody()).cacheKey,
+        ScoreSource.single(melody()).cacheKey,
+      );
+      final other = Score(
+        clef: Clef.treble,
+        measures: [
+          Measure([NoteElement.note(const Pitch(Step.d), _quarter)]),
+        ],
+      );
+      expect(
+        ScoreSource.single(melody()).cacheKey,
+        isNot(ScoreSource.single(other).cacheKey),
+      );
+    });
+
+    test('a score clip renders onto a DAW timeline', () {
+      final t = DawTimeline(
+        tracks: [
+          DawTrack(clips: [Clip(source: ScoreSource.single(melody()))]),
+        ],
+      );
+      final mix = renderTimeline(t);
+      expect(mix, isNotEmpty);
+      expect(_silent(mix), isFalse);
     });
   });
 }

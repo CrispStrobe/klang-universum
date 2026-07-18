@@ -10,8 +10,17 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
-import 'package:comet_beat/core/audio/synth.dart' show Drum;
+import 'package:comet_beat/core/audio/synth.dart'
+    show Drum, Segment, midiToFrequency, renderSegmentsRaw;
 import 'package:comet_beat/core/audio/wav_io.dart';
+import 'package:crisp_notation/crisp_notation.dart'
+    show
+        MultiPartScore,
+        MusicElement,
+        NoteDuration,
+        NoteElement,
+        RestElement,
+        Score;
 
 /// A DrumKit beat — a [DrumRowsPattern] played at a [LoopTiming] — as a clip
 /// source. Renders directly via the pattern's own offline renderer.
@@ -55,4 +64,104 @@ class GrooveSource implements ClipSource {
 
   @override
   Object get cacheKey => 'groove:${spec.cacheKey}';
+}
+
+// --- Score rendering (Song Book / Workshop / TAB all engrave to a Score) -----
+
+int _durMs(NoteDuration d, int quarterMs) {
+  final (num, den) = d.fraction; // as a fraction of a whole note
+  return (4 * quarterMs * num / den).round();
+}
+
+/// A single voice (a flat element list) → PCM: notes become chord segments,
+/// rests become silence, so the timing is faithful (unlike the reading games'
+/// `playbackOf`, which drops rests + chord tones).
+Float64List _renderVoice(List<MusicElement> elements, int quarterMs) {
+  final segs = <Segment>[
+    for (final e in elements)
+      if (e is NoteElement)
+        (
+          freqs: [for (final p in e.pitches) midiToFrequency(p.midiNumber)],
+          ms: _durMs(e.duration, quarterMs),
+        )
+      else if (e is RestElement)
+        (freqs: const <double>[], ms: _durMs(e.duration, quarterMs)),
+  ];
+  return renderSegmentsRaw(segs);
+}
+
+Float64List _sum(List<Float64List> voices) {
+  final len = voices.fold<int>(0, (m, v) => v.length > m ? v.length : m);
+  final out = Float64List(len);
+  for (final v in voices) {
+    for (var i = 0; i < v.length; i++) {
+      out[i] += v[i];
+    }
+  }
+  return out;
+}
+
+/// Render a [Score] to mono PCM at [quarterMs] per quarter note: every voice
+/// (1–4) is rendered and summed.
+Float64List renderScore(Score score, {int quarterMs = 500}) {
+  final voices = <List<MusicElement>>[[], [], [], []];
+  for (final m in score.measures) {
+    voices[0].addAll(m.elements);
+    voices[1].addAll(m.voice2);
+    voices[2].addAll(m.voice3);
+    voices[3].addAll(m.voice4);
+  }
+  return _sum([
+    for (final v in voices)
+      if (v.isNotEmpty) _renderVoice(v, quarterMs),
+  ]);
+}
+
+/// Render a [MultiPartScore] to mono PCM: every part summed.
+Float64List renderMultiPartScore(MultiPartScore mp, {int quarterMs = 500}) =>
+    _sum(
+      [for (final part in mp.parts) renderScore(part, quarterMs: quarterMs)],
+    );
+
+String _scoreCacheKey(MultiPartScore mp, int quarterMs) {
+  final b = StringBuffer('score@$quarterMs;');
+  for (final part in mp.parts) {
+    for (final m in part.measures) {
+      for (final voice in [m.elements, m.voice2, m.voice3, m.voice4]) {
+        for (final e in voice) {
+          if (e is NoteElement) {
+            final (n, d) = e.duration.fraction;
+            b.write('n${e.pitches.map((p) => p.midiNumber).join(',')}:$n/$d;');
+          } else if (e is RestElement) {
+            final (n, d) = e.duration.fraction;
+            b.write('r$n/$d;');
+          }
+        }
+      }
+    }
+  }
+  return b.toString();
+}
+
+/// Any engraved music — a Song Book song, a Workshop document, a TAB score — as
+/// a clip source. Renders faithfully (chords + rests + all voices/parts) via the
+/// synth. Pass an explicit [key] (e.g. a song id + version) for a cheap cache
+/// identity; otherwise a structural key is derived from the notes.
+class ScoreSource implements ClipSource {
+  ScoreSource(this.score, {this.quarterMs = 500, Object? key})
+      : cacheKey = key ?? _scoreCacheKey(score, quarterMs);
+
+  /// Wrap a single-part [score] as a source.
+  factory ScoreSource.single(Score score, {int quarterMs = 500, Object? key}) =>
+      ScoreSource(MultiPartScore([score]), quarterMs: quarterMs, key: key);
+
+  final MultiPartScore score;
+  final int quarterMs;
+
+  @override
+  final Object cacheKey;
+
+  @override
+  Float64List render(int sampleRate) =>
+      renderMultiPartScore(score, quarterMs: quarterMs);
 }
