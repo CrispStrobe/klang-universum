@@ -29,8 +29,13 @@ class _Lcg {
 }
 
 // One granule (18 slots × 32 samples) through subband → mdct → alias.
-void _granule(_Lcg lcg, Mp3SubbandAnalysis sb, Mp3Mdct mdct,
-    Float64List subband, Float64List mdctOut) {
+void _granule(
+  _Lcg lcg,
+  Mp3SubbandAnalysis sb,
+  Mp3Mdct mdct,
+  Float64List subband,
+  Float64List mdctOut,
+) {
   final slot = Float64List(32);
   final out = Float64List(32);
   for (var ts = 0; ts < 18; ts++) {
