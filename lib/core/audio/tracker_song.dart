@@ -27,7 +27,7 @@
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart'
-    show Instrument, kSampleRate, wavBytes;
+    show Instrument, kSampleRate, wavBytes, wavBytesStereo;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart';
 
@@ -215,6 +215,16 @@ class TrackerSong {
   /// second reason to route rendering through the replayer (which honours it).
   bool get usesInstruments => patterns.any(
         (p) => p.cells.any((col) => col.any((c) => c.instrument != 0)),
+      );
+
+  /// Whether the song pans anything — any channel with a non-centre
+  /// [TrackerChannel.pan], or any 8xx pan command. When true the render produces
+  /// a STEREO WAV ([mixStemsStereo]/[wavBytesStereo]); when false it stays MONO
+  /// and byte-identical, so a non-panned song pays nothing.
+  bool get usesPan =>
+      channels.any((c) => c.pan != 0) ||
+      patterns.any(
+        (p) => p.cells.any((col) => col.any((c) => c.fxCmd == kFxSetPan)),
       );
 
   // --- Pattern editing (delegates to the engine on the current pattern) ---
@@ -509,10 +519,21 @@ class TrackerSong {
       (col) => col.any((c) => c.hasCommand || c.instrument != 0),
     );
     if (needsReplayer) {
-      return wavBytes(
-        replayPattern(channels, current.cells, timing, pool: instruments).pcm,
-      );
+      return usesPan
+          ? wavBytesStereo(
+              replayPatternStereo(
+                channels,
+                current.cells,
+                timing,
+                pool: instruments,
+              ).pcm,
+            )
+          : wavBytes(
+              replayPattern(channels, current.cells, timing, pool: instruments)
+                  .pcm,
+            );
     }
+    if (usesPan) return wavBytesStereo(_engine.renderLoopPcmStereo());
     return _engine.renderLoop();
   }
 
@@ -521,9 +542,15 @@ class TrackerSong {
   /// through the tick [replaySong] when any pattern [usesCommands].
   Uint8List renderSongWav() {
     syncCurrent();
-    // Route through the tick replayer for commands, per-cell instruments, flow,
-    // OR variable-length patterns (the offline concatenation assumes one fixed
-    // pattern length). A uniform, command-free song keeps the fast offline path.
+    // Panned songs render in STEREO; the stereo replayer handles commands /
+    // per-cell instruments / flow / variable-length via the same walk.
+    if (usesPan) {
+      return wavBytesStereo(replaySongStereo(this).pcm);
+    }
+    // Else route through the mono tick replayer for commands, per-cell
+    // instruments, flow, OR variable-length patterns (the offline concatenation
+    // assumes one fixed pattern length). A uniform, command-free, unpanned song
+    // keeps the fast offline path.
     if (usesCommands || usesInstruments || songNeedsWalkRender(this)) {
       return wavBytes(replaySong(this).pcm);
     }

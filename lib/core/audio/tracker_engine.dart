@@ -472,6 +472,7 @@ class TrackerChannel {
     required this.instrument,
     required int rows,
     this.gain = 0.6,
+    this.pan = 0.0,
     List<TrackerChannelEffect>? effects,
     List<TrackerCell>? cells,
   })  : effects = effects != null
@@ -498,6 +499,13 @@ class TrackerChannel {
   /// so the mixed WAV invalidates. (It scales the stem at mixdown, not the stem
   /// itself, so the per-channel stem cache is untouched.)
   double gain;
+
+  /// The channel's stereo pan (−1 = hard left … 0 = centre … +1 = hard right).
+  /// Mutable — go through [TrackerEngine.setChannelPan] so the mixed WAV
+  /// invalidates. Like gain, it applies at the stereo mixdown, not to the stem,
+  /// so the per-channel stem cache is untouched. Default 0 (centre) keeps every
+  /// existing (mono) render unchanged.
+  double pan;
 
   /// The channel's insert-effect CHAIN, applied to its stem in order (before
   /// mixStems). Empty = dry. Mutate via [TrackerEngine.setChannelEffects] so
@@ -668,6 +676,15 @@ class TrackerEngine {
     _wav = null;
   }
 
+  /// Sets a channel's stereo [pan] (−1..1) and invalidates the mixed WAV. Like
+  /// gain, pan is applied at the stereo mixdown, so the per-channel stem cache is
+  /// untouched.
+  void setChannelPan(int channel, double pan) {
+    if (channels[channel].pan == pan) return;
+    channels[channel].pan = pan;
+    _wav = null;
+  }
+
   /// Sets a channel's insert-effect CHAIN (applied to its stem in order before
   /// mixStems; `none` entries are dropped) and invalidates that channel's cached
   /// stem + the mixed WAV.
@@ -826,6 +843,23 @@ class TrackerEngine {
         totalSamples: _timing.totalSamples,
       );
 
+  /// The current pattern mixed to INTERLEAVED stereo PCM16, honouring each
+  /// channel's [TrackerChannel.pan] (constant-power). Used when the song
+  /// [TrackerSong.usesPan]; centre-panned channels split equally, so a song with
+  /// every pan at 0 spreads the mono mix evenly across both sides.
+  Int16List renderLoopPcmStereo() => mixStemsStereo(
+        [
+          for (var i = 0; i < channels.length; i++)
+            if (channels[i].hasAnyNote && !channels[i].muted)
+              (
+                samples: _stem(i),
+                gain: channels[i].gain,
+                pan: channels[i].pan,
+              ),
+        ],
+        totalSamples: _timing.totalSamples,
+      );
+
   /// The current pattern as one loop-ready WAV. An empty pattern renders silence
   /// of the full loop length.
   Uint8List renderLoop() => _wav ??= wavBytes(renderLoopPcm());
@@ -867,4 +901,31 @@ Uint8List renderSong(
     offset += chunk.length;
   }
   return wavBytes(out);
+}
+
+/// The stereo sibling of [renderSong]: concatenates each pattern's
+/// [TrackerEngine.renderLoopPcmStereo] (interleaved L,R) into one 2-channel WAV,
+/// honouring per-channel pan. Used by the song render when a pan is in play but
+/// no effect commands are (the offline mix path). Side-effect-free.
+Uint8List renderSongStereo(
+  TrackerEngine engine,
+  List<List<List<TrackerCell>>> patterns,
+) {
+  if (patterns.isEmpty) return wavBytesStereo(Int16List(0));
+  final saved = engine.exportCells();
+  final chunks = <Int16List>[];
+  for (final pattern in patterns) {
+    engine.importCells(pattern);
+    chunks.add(engine.renderLoopPcmStereo());
+  }
+  engine.importCells(saved);
+
+  final total = chunks.fold<int>(0, (sum, c) => sum + c.length);
+  final out = Int16List(total);
+  var offset = 0;
+  for (final chunk in chunks) {
+    out.setRange(offset, offset + chunk.length, chunk);
+    offset += chunk.length;
+  }
+  return wavBytesStereo(out);
 }

@@ -174,6 +174,90 @@ Int16List mixStems(List<MixStem> stems, {required int totalSamples}) {
   return samples;
 }
 
+// --- Stereo mixing + panning (Tracker Feature C) -----------------------------
+//
+// The mono [mixStems]/[wavBytes] above stay the canonical path; these are their
+// ADDITIVE stereo siblings, used only when a song actually pans a channel. Each
+// stem is unit-peaked × gain exactly like [mixStems], then placed in the stereo
+// field with a CONSTANT-POWER pan law (L = cos θ, R = sin θ, θ = (pan+1)/2·π/2)
+// so a centre pan splits equally (−3 dB per side) and a hard pan sends all the
+// energy to one side. Panned stems are summed and run through the SAME tanh
+// soft-knee (× 0.95) as [mixStems], so a non-panned song rendered stereo would
+// match the mono mix duplicated across both channels.
+
+/// One pre-rendered mixer stem plus its authored level and stereo [pan]
+/// (−1 = hard left … 0 = centre … +1 = hard right).
+typedef MixStemPan = ({Float64List samples, double gain, double pan});
+
+/// Mixes [stems] into one INTERLEAVED stereo PCM16 buffer (L,R,L,R…) of length
+/// `totalSamples * 2`. Per stem: unit-peak × gain (as [mixStems]), constant-power
+/// pan, summed, tanh soft-knee (same 0.95). An empty [stems] list is silence.
+Int16List mixStemsStereo(
+  List<MixStemPan> stems, {
+  required int totalSamples,
+}) {
+  final left = Float64List(totalSamples);
+  final right = Float64List(totalSamples);
+  for (final stem in stems) {
+    var peak = 0.0;
+    for (final v in stem.samples) {
+      if (v.abs() > peak) peak = v.abs();
+    }
+    if (peak == 0) continue;
+    final scale = stem.gain / peak;
+    final theta = (stem.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
+    final lGain = cos(theta);
+    final rGain = sin(theta);
+    final n = min(stem.samples.length, totalSamples);
+    for (var i = 0; i < n; i++) {
+      final s = stem.samples[i] * scale;
+      left[i] += s * lGain;
+      right[i] += s * rGain;
+    }
+  }
+  final out = Int16List(totalSamples * 2);
+  for (var i = 0; i < totalSamples; i++) {
+    out[i * 2] = (_tanh(left[i]) * 0.95 * 32767).round();
+    out[i * 2 + 1] = (_tanh(right[i]) * 0.95 * 32767).round();
+  }
+  return out;
+}
+
+/// Wraps INTERLEAVED (L,R,L,R…) PCM16 [interleaved] into a valid 2-channel WAV
+/// container. [interleaved.length] must be even (whole L,R frames).
+Uint8List wavBytesStereo(
+  Int16List interleaved, {
+  int sampleRate = kSampleRate,
+}) {
+  assert(interleaved.length.isEven, 'interleaved length must be even (L,R)');
+  final dataLength = interleaved.length * 2;
+  final bytes = ByteData(44 + dataLength);
+
+  void writeString(int offset, String s) {
+    for (var i = 0; i < s.length; i++) {
+      bytes.setUint8(offset + i, s.codeUnitAt(i));
+    }
+  }
+
+  writeString(0, 'RIFF');
+  bytes.setUint32(4, 36 + dataLength, Endian.little);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  bytes.setUint32(16, 16, Endian.little); // fmt chunk size
+  bytes.setUint16(20, 1, Endian.little); // PCM
+  bytes.setUint16(22, 2, Endian.little); // numChannels = stereo
+  bytes.setUint32(24, sampleRate, Endian.little);
+  bytes.setUint32(28, sampleRate * 4, Endian.little); // byteRate = sr*ch*2
+  bytes.setUint16(32, 4, Endian.little); // blockAlign = ch*2
+  bytes.setUint16(34, 16, Endian.little); // bits per sample
+  writeString(36, 'data');
+  bytes.setUint32(40, dataLength, Endian.little);
+  for (var i = 0; i < interleaved.length; i++) {
+    bytes.setInt16(44 + i * 2, interleaved[i], Endian.little);
+  }
+  return bytes.buffer.asUint8List();
+}
+
 // --- Percussion (noise-based one-shots for the Loop Mixer's drum track) ---
 //
 // The additive synth above is tonal; drums need noise. These render short

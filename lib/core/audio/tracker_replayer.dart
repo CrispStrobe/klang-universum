@@ -77,6 +77,8 @@ const int kFxVibrato = 0x4; // 4xy
 const int kFxTonePortaVolSlide = 0x5; // 5xy = 3xx (memory) + Axy
 const int kFxVibratoVolSlide = 0x6; // 6xy = 4xy (continue) + Axy
 const int kFxTremolo = 0x7; // 7xy
+const int kFxSetPan =
+    0x8; // 8xx — set channel pan: 0x00 left … 0x80 centre … 0xFF right
 const int kFxSampleOffset =
     0x9; // 9xx — start a sample at xx×256 (sample voices)
 const int kFxPositionJump = 0xB; // Bxx — continue at order xx, row 0
@@ -662,6 +664,91 @@ Int16List _mixToPcm(Float64List mix) {
   return out;
 }
 
+// --- Stereo panning (Feature C) ----------------------------------------------
+//
+// Pan is a purely SPATIAL, post-mix operation: it never changes a voice's mono
+// waveform, so the stereo path renders each channel to its own mono buffer with
+// the existing [_renderChannelInto] (all pitch/volume commands intact), then
+// distributes that buffer across L/R with a constant-power law. A channel's pan
+// starts at [TrackerChannel.pan] and is overridden by 8xx cells (persisting per
+// channel, like volume) — [_panRegions] walks the cells into contiguous
+// (start,end,pan) spans so an 8xx mid-pattern re-pans from that row onward.
+
+/// Maps an 8xx param (0x00 left … 0x80 centre … 0xFF right) to a pan of −1..1.
+double _panFromParam(int param) => ((param - 0x80) / 0x80).clamp(-1.0, 1.0);
+
+/// Interleaves separate [left]/[right] Float64 mixes into stereo PCM16 with the
+/// same tanh soft-knee as [_mixToPcm].
+Int16List _interleaveToPcm(Float64List left, Float64List right) {
+  final out = Int16List(left.length * 2);
+  for (var i = 0; i < left.length; i++) {
+    out[i * 2] = (_tanh(left[i]) * 0.95 * 32767).round();
+    out[i * 2 + 1] = (_tanh(right[i]) * 0.95 * 32767).round();
+  }
+  return out;
+}
+
+/// The pan spans of [cells]: contiguous `(start,end,pan)` sample ranges covering
+/// `[0,totalSamples)`, starting at [basePan] and switching wherever an 8xx cell
+/// sets a new pan (from that row's sample onward, persisting like volume).
+List<({int start, int end, double pan})> _panRegions(
+  double basePan,
+  List<TrackerCell> cells,
+  TrackerTiming timing,
+  int totalSamples,
+) {
+  final regions = <({int start, int end, double pan})>[];
+  var pan = basePan;
+  var regionStart = 0;
+  for (var r = 0; r < cells.length; r++) {
+    final c = cells[r];
+    if (c.fxCmd == kFxSetPan) {
+      final newPan = _panFromParam(c.fxParam);
+      if (newPan != pan) {
+        final s = timing.stepStartSample(r);
+        if (s > regionStart) {
+          regions.add((start: regionStart, end: s, pan: pan));
+        }
+        regionStart = s;
+        pan = newPan;
+      }
+    }
+  }
+  regions.add((start: regionStart, end: totalSamples, pan: pan));
+  return regions;
+}
+
+/// Renders one channel's [cells] mono (via [_renderChannelInto]) then pans it
+/// into the [left]/[right] stereo mixes at [sampleOffset], honouring the
+/// channel's base pan and any 8xx pan changes ([_panRegions]).
+void _renderChannelIntoStereo(
+  Float64List left,
+  Float64List right,
+  TrackerChannel channel,
+  List<TrackerCell> cells,
+  TrackerTiming timing,
+  int ticksPerRow,
+  int sampleOffset, {
+  List<TrackerInstrument>? pool,
+}) {
+  if (channel.muted || !cells.any((c) => !c.isEmpty)) return;
+  final total = timing.totalSamples;
+  final mono = Float64List(total);
+  _renderChannelInto(mono, channel, cells, timing, ticksPerRow, 0, pool: pool);
+  for (final reg in _panRegions(channel.pan, cells, timing, total)) {
+    final theta = (reg.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
+    final lGain = cos(theta);
+    final rGain = sin(theta);
+    final end = min(reg.end, total);
+    for (var i = reg.start; i < end; i++) {
+      final o = sampleOffset + i;
+      if (o >= left.length) break;
+      left[o] += mono[i] * lGain;
+      right[o] += mono[i] * rGain;
+    }
+  }
+}
+
 /// Replays a single pattern ([cells] per channel of [channels]) at [timing],
 /// returning the mixed PCM16. Used for the current-pattern preview.
 ReplayResult replayPattern(
@@ -686,6 +773,39 @@ ReplayResult replayPattern(
     );
   }
   return ReplayResult(_mixToPcm(mix), const [RowTiming(0, 0, 0, 0)]);
+}
+
+/// The stereo sibling of [replayPattern]: renders each channel mono then pans it
+/// (per-channel [TrackerChannel.pan] + 8xx) into an INTERLEAVED stereo PCM16.
+/// [ReplayResult.pcm] is interleaved L,R — wrap it with [wavBytesStereo].
+ReplayResult replayPatternStereo(
+  List<TrackerChannel> channels,
+  List<List<TrackerCell>> cells,
+  TrackerTiming timing, {
+  int ticksPerRow = kDefaultTicksPerRow,
+  List<TrackerInstrument>? pool,
+}) {
+  final speed = _firstFxx(cells, timing.rows, wantTempo: false);
+  final ticks = speed > 0 ? speed : ticksPerRow;
+  final total = timing.totalSamples;
+  final left = Float64List(total);
+  final right = Float64List(total);
+  for (var c = 0; c < channels.length && c < cells.length; c++) {
+    _renderChannelIntoStereo(
+      left,
+      right,
+      channels[c],
+      cells[c],
+      timing,
+      ticks,
+      0,
+      pool: pool,
+    );
+  }
+  return ReplayResult(
+    _interleaveToPcm(left, right),
+    const [RowTiming(0, 0, 0, 0)],
+  );
 }
 
 // --- Flow (phase 3): Bxx position jump + Dxx pattern break -------------------
@@ -986,6 +1106,52 @@ ReplayResult replaySong(
   return ReplayResult(_mixToPcm(mix), timingMap);
 }
 
+/// The stereo sibling of [replaySong]: same order walk / flow expansion, but each
+/// channel is panned (per-channel [TrackerChannel.pan] + 8xx) into an INTERLEAVED
+/// stereo mix. [ReplayResult.pcm] is interleaved L,R — wrap with [wavBytesStereo].
+ReplayResult replaySongStereo(
+  TrackerSong song, {
+  int ticksPerRow = kDefaultTicksPerRow,
+}) {
+  song.syncCurrent();
+  final ticks = songInitialSpeed(song, fallback: ticksPerRow);
+  // Match the mono replaySong gate: flatten flow AND variable-length patterns.
+  if (songNeedsWalkRender(song)) return _replayFlowStereo(song, ticks);
+
+  final timing = effectiveTiming(song);
+  final channels = song.channels;
+  final order = song.order;
+  final patternSamples = timing.totalSamples;
+  final left = Float64List(patternSamples * order.length);
+  final right = Float64List(patternSamples * order.length);
+  final timingMap = <RowTiming>[];
+
+  for (var o = 0; o < order.length; o++) {
+    final patternIndex = order[o];
+    final cells = song.patterns[patternIndex].cells;
+    final sampleOffset = patternSamples * o;
+    final baseMs = timing.totalMs * o;
+    for (var r = 0; r < timing.rows; r++) {
+      timingMap.add(
+        RowTiming(baseMs + timing.stepOnsetMs(r).round(), o, patternIndex, r),
+      );
+    }
+    for (var c = 0; c < channels.length && c < cells.length; c++) {
+      _renderChannelIntoStereo(
+        left,
+        right,
+        channels[c],
+        cells[c],
+        timing,
+        ticks,
+        sampleOffset,
+        pool: song.instruments,
+      );
+    }
+  }
+  return ReplayResult(_interleaveToPcm(left, right), timingMap);
+}
+
 /// The flow render: expand the order via [walkFlow], flatten the played rows into
 /// one long column per channel, and render that flattened song. Voice state
 /// (porta/vibrato/oscillator phase) stays continuous across the flat rows, and
@@ -1024,4 +1190,43 @@ ReplayResult _replayFlow(TrackerSong song, int ticksPerRow) {
       ),
   ];
   return ReplayResult(_mixToPcm(mix), timingMap);
+}
+
+/// The stereo sibling of [_replayFlow]: flatten the played rows then pan each
+/// channel (per-channel [TrackerChannel.pan] + 8xx) into an interleaved mix.
+ReplayResult _replayFlowStereo(TrackerSong song, int ticksPerRow) {
+  final played = walkFlow(song);
+  final channels = song.channels;
+  final base = effectiveTiming(song);
+  final flatRows = played.isEmpty ? 1 : played.length;
+  final flatTiming = base.copyWith(rows: flatRows);
+  final left = Float64List(flatTiming.totalSamples);
+  final right = Float64List(flatTiming.totalSamples);
+
+  for (var c = 0; c < channels.length; c++) {
+    final flatCells = [
+      for (final pr in played) song.patterns[pr.patternIndex].cells[c][pr.row],
+    ];
+    _renderChannelIntoStereo(
+      left,
+      right,
+      channels[c],
+      flatCells,
+      flatTiming,
+      ticksPerRow,
+      0,
+      pool: song.instruments,
+    );
+  }
+
+  final timingMap = [
+    for (var i = 0; i < played.length; i++)
+      RowTiming(
+        flatTiming.stepOnsetMs(i).round(),
+        played[i].orderIndex,
+        played[i].patternIndex,
+        played[i].row,
+      ),
+  ];
+  return ReplayResult(_interleaveToPcm(left, right), timingMap);
 }
