@@ -94,6 +94,36 @@ void main() {
       expect(song.renderSongWav().length, greaterThan(44));
     });
 
+    test('volume column is carried on import — incl. a note-less cell (BUG3)',
+        () {
+      final rows = <List<DocCell>>[
+        // A note with a REDUCED volume column (16/64).
+        [const DocCell(note: 60, instrument: 1, volume: 16)],
+        // A volume-column-ONLY cell (no note) — a mid-note volume change.
+        [const DocCell(volume: 8)],
+        // A note at full volume (64) — no reduction, so no volume carried.
+        [const DocCell(note: 62, instrument: 1, volume: 64)],
+      ];
+      final doc = ModuleDoc(
+        sourceFormat: ModuleFormat.s3m,
+        channelCount: 1,
+        order: [0],
+        patterns: [DocPattern(rows, 1)],
+        samples: [DocSample.empty()],
+      );
+      final song = songFromModuleDoc(doc);
+      final col = song.patterns[0].cells[0];
+
+      expect(col[0].midi, 60);
+      expect(col[0].volume, closeTo(16 / 64, 1e-9)); // reduced volume carried
+
+      expect(col[1].midi, isNull); // note-less…
+      expect(col[1].volume, closeTo(8 / 64, 1e-9)); // …but the volume survives
+
+      expect(col[2].midi, 62);
+      expect(col[2].volume, isNull); // full volume (64) → no reduction stored
+    });
+
     test('golden.mod: every parsed effect becomes a command, none invented',
         () {
       final bytes = _fixture('golden.mod');

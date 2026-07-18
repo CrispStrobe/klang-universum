@@ -269,6 +269,10 @@ class ReplayVoice {
         _vibPhase = 0;
         _tremPhase = 0;
       }
+    } else if (cell.volume != null) {
+      // A volume-column-only cell (no note) sets the RINGING note's volume — a
+      // mid-note change, like a set-volume, without re-triggering.
+      noteVolume = cell.volume!;
     }
 
     // Effect memory + immediate (tick-0) commands.

@@ -524,8 +524,10 @@ class SampleInstrument implements TrackerInstrument {
             Float64List.sublistView(buf, 0, n),
             envelope,
           );
+          // A per-cell volume column scales the note (null = full, unchanged).
+          final vol = trigger.volume ?? 1.0;
           for (var i = 0; i < n; i++) {
-            out[startSample + i] = voiced[i];
+            out[startSample + i] = voiced[i] * vol;
           }
         }
       }

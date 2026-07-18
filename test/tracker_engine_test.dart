@@ -609,6 +609,26 @@ void main() {
       expect(b.any((v) => v != 0), isTrue);
     });
 
+    test('a per-cell volume column scales the note (BUG3)', () {
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      final inst = SampleInstrument('s', sine(0.4, 261.63));
+      List<TrackerCell> col(TrackerCell c) => [
+            c,
+            ...List<TrackerCell>.filled(timing.rows - 1, TrackerCell.empty),
+          ];
+      double peak(Float64List b) => b.fold<double>(
+            0,
+            (m, v) => v.abs() > m ? v.abs() : m,
+          );
+      final full = inst.renderChannel(col(const TrackerCell(midi: 60)), timing);
+      final quiet = inst.renderChannel(
+        col(const TrackerCell(midi: 60, volume: 0.25)),
+        timing,
+      );
+      // A null volume plays full; 0.25 plays at a quarter (not ignored).
+      expect(peak(quiet) / peak(full), closeTo(0.25, 0.02));
+    });
+
     test('the recorded factory applies a voice effect', () {
       const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
       final inst = SampleInstrument.recorded(

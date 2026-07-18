@@ -147,12 +147,13 @@ TrackerPattern _patternFromDoc(
     for (var c = 0; c < channelCount && c < row.length; c++) {
       final dc = row[c];
       final hasFx = dc.effect != 0 || dc.effectParam != 0;
-      if (dc.note >= 0 || hasFx || dc.instrument != 0) {
+      // A volume COLUMN reduction (0..63) — carried even without a note, so a
+      // mid-note volume change isn't dropped at import.
+      final hasVol = dc.volume >= 0 && dc.volume < 64;
+      if (dc.note >= 0 || hasFx || dc.instrument != 0 || hasVol) {
         cells[c][r] = TrackerCell(
           midi: dc.note >= 0 ? dc.note : null,
-          volume: dc.note >= 0 && dc.volume >= 0 && dc.volume < 64
-              ? (dc.volume / 64).clamp(0.0, 1.0)
-              : null,
+          volume: hasVol ? (dc.volume / 64).clamp(0.0, 1.0) : null,
           // MOD effect column → the replayer's classic effect column. An
           // effect-only cell (no note) is how porta/vibrato continue on a
           // ringing note.
