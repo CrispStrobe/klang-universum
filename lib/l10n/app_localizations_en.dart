@@ -1617,6 +1617,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerMixer => 'Tracks & mixer';
 
   @override
+  String get trackerInstruments => 'Instrument for new notes';
+
+  @override
+  String get trackerInstrumentDefault => 'Channel default';
+
+  @override
   String get trackerRecordSample => 'Record sample';
 
   @override

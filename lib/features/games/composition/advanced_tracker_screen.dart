@@ -285,6 +285,13 @@ abstract interface class AdvancedTrackerTester {
   /// The MIDI note at a cell (null = empty).
   int? noteAt(int channel, int row);
 
+  /// The instrument-picker state: the active pool instrument stamped on new
+  /// notes (0 = channel default), the pool size, and a cell's stamped instrument.
+  int get activeInstrument;
+  void setActiveInstrument(int index);
+  int get instrumentPoolSize;
+  int instrumentAt(int channel, int row);
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -359,6 +366,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   int _octave = 4;
   int _editStep = 1;
   _NoteEntry _entryMode = _NoteEntry.pianoKeys;
+
+  /// The instrument stamped onto notes as you place them — 1-based into
+  /// `_song.instruments`, or 0 for "channel default". Picked in the instrument
+  /// panel; the FT2 instrument column, made touch-friendly.
+  int _activeInstrument = 0;
 
   /// FT2-style live record: while ON and playing, notes land at the SOUNDING row
   /// (the playhead) instead of the edit cursor — jam straight into the pattern.
@@ -532,8 +544,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   @override
   int get octave => _octave;
   @override
-  void setNote(int channel, int row, int midi) =>
-      _setCell(channel, row, TrackerCell(midi: midi));
+  void setNote(int channel, int row, int midi) => _setCell(
+        channel,
+        row,
+        TrackerCell(midi: midi, instrument: _activeInstrument),
+      );
   @override
   void clearNote(int channel, int row) =>
       _setCell(channel, row, TrackerCell.empty);
@@ -801,13 +816,18 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           effect: cur.effect,
           fxCmd: cur.fxCmd,
           fxParam: cur.fxParam,
+          instrument: _activeInstrument,
         ),
       );
       setState(() {});
       _syncPlayback();
       return;
     }
-    _song.engine.setCell(_cursorChannel, _cursorRow, TrackerCell(midi: midi));
+    _song.engine.setCell(
+      _cursorChannel,
+      _cursorRow,
+      TrackerCell(midi: midi, instrument: _activeInstrument),
+    );
     setState(() => _cursorRow = (_cursorRow + _editStep) % _song.rows);
     _ensureCursorVisible();
     _syncPlayback();
@@ -1440,6 +1460,51 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   // --- Mixer / instrument panel (per-track instrument + gain + mute/solo) ---
 
+  /// The instrument-list panel: pick which pool instrument new notes carry (the
+  /// FT2 instrument column as a touch-friendly picker). `_song.instruments` is
+  /// the shared 1-based pool; 0 = the channel's own default voice.
+  void _showInstrumentPanel() {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                l10n.trackerInstruments,
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+            ),
+            for (var i = 0; i <= _song.instruments.length; i++)
+              ListTile(
+                leading: Icon(
+                  _activeInstrument == i
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: _activeInstrument == i
+                      ? Theme.of(ctx).colorScheme.primary
+                      : null,
+                ),
+                title: Text(
+                  i == 0
+                      ? l10n.trackerInstrumentDefault
+                      : '$i   ${_instrumentLabel(_song.instruments[i - 1].id)}',
+                ),
+                onTap: () {
+                  setState(() => _activeInstrument = i);
+                  Navigator.of(ctx).pop();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showMixer(AppLocalizations l10n) {
     showModalBottomSheet<void>(
       context: context,
@@ -1742,6 +1807,18 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   int? noteAt(int channel, int row) => _song.engine.cellAt(channel, row).midi;
+
+  @override
+  int get activeInstrument => _activeInstrument;
+  @override
+  void setActiveInstrument(int index) => setState(
+        () => _activeInstrument = index.clamp(0, _song.instruments.length),
+      );
+  @override
+  int get instrumentPoolSize => _song.instruments.length;
+  @override
+  int instrumentAt(int channel, int row) =>
+      _song.engine.cellAt(channel, row).instrument;
 
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
@@ -2574,6 +2651,15 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             icon: const Icon(Icons.tune),
             tooltip: l10n.trackerMixer,
             onPressed: () => _showMixer(l10n),
+          ),
+          IconButton(
+            icon: Badge(
+              isLabelVisible: _activeInstrument > 0,
+              label: Text('$_activeInstrument'),
+              child: const Icon(Icons.queue_music),
+            ),
+            tooltip: l10n.trackerInstruments,
+            onPressed: _showInstrumentPanel,
           ),
           _blockMenu(l10n),
           IconButton(

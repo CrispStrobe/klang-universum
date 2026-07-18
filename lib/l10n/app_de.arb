@@ -547,6 +547,8 @@
   "trackerCursor": "Cursor bewegen",
   "trackerFxColumn": "Effekt-Spalte (MOD)",
   "trackerMixer": "Spuren & Mixer",
+  "trackerInstruments": "Instrument für neue Noten",
+  "trackerInstrumentDefault": "Spur-Standard",
   "trackerRecordSample": "Sample aufnehmen",
   "trackerSampleTrim": "Stille kürzen",
   "trackerSampleTrimDrag": "Zum Kürzen die Griffe ziehen",

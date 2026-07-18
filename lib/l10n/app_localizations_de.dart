@@ -1626,6 +1626,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerMixer => 'Spuren & Mixer';
 
   @override
+  String get trackerInstruments => 'Instrument für neue Noten';
+
+  @override
+  String get trackerInstrumentDefault => 'Spur-Standard';
+
+  @override
   String get trackerRecordSample => 'Sample aufnehmen';
 
   @override

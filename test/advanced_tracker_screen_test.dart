@@ -308,6 +308,27 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('the instrument picker stamps new notes with the pool instrument',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    expect(game.instrumentPoolSize, greaterThan(0));
+    expect(game.activeInstrument, 0); // channel default to start
+
+    // Default: notes carry instrument 0.
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    expect(game.instrumentAt(0, 0), 0);
+
+    // Pick pool instrument 2 -> subsequent notes carry it; earlier ones don't.
+    game.setActiveInstrument(2);
+    game.setNote(0, 4, 64);
+    await tester.pump();
+    expect(game.activeInstrument, 2);
+    expect(game.instrumentAt(0, 4), 2);
+    expect(game.instrumentAt(0, 0), 0); // unchanged
+  });
+
   testWidgets('copy instrument reuses a recorded sample on another track',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

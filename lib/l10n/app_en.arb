@@ -578,6 +578,8 @@
   "trackerCursor": "Move cursor",
   "trackerFxColumn": "Effect column (MOD)",
   "trackerMixer": "Tracks & mixer",
+  "trackerInstruments": "Instrument for new notes",
+  "trackerInstrumentDefault": "Channel default",
   "trackerRecordSample": "Record sample",
   "trackerSampleTrim": "Trim silence",
   "trackerSampleTrimDrag": "Drag the handles to trim the sample",

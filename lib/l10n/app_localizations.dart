@@ -3134,6 +3134,18 @@ abstract class AppLocalizations {
   /// **'Tracks & mixer'**
   String get trackerMixer;
 
+  /// No description provided for @trackerInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument for new notes'**
+  String get trackerInstruments;
+
+  /// No description provided for @trackerInstrumentDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel default'**
+  String get trackerInstrumentDefault;
+
   /// No description provided for @trackerRecordSample.
   ///
   /// In en, this message translates to:
