@@ -460,6 +460,10 @@ abstract interface class CompositionWorkshopTester {
 
   /// Test seam: id of the first note in the active part (null if none).
   String? get debugFirstNoteId;
+
+  /// Test seam: begin a drag on [id] and report whether it took. In Inspect
+  /// mode a drag is suppressed (read-only), so this returns false.
+  bool debugTryDragStart(String id);
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
@@ -685,6 +689,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     return null;
   }
 
+  @override
+  bool debugTryDragStart(String id) {
+    _onElementDragStart(id);
+    final took = _dragId != null;
+    _dragId = null; // don't leave a phantom drag in flight
+    return took;
+  }
+
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
 
@@ -834,7 +846,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     });
   }
 
-  void _onMpDragStart(String globalId) => setState(() => _dragId = globalId);
+  void _onMpDragStart(String globalId) {
+    if (_inspect) return; // 🔍 read-only: a drag must not move a note
+    setState(() => _dragId = globalId);
+  }
 
   /// While dragging, the source note is suppressed (see [_mpSuppressed]) and the
   /// placement ghost follows the pointer — a live drag preview built from the
@@ -845,6 +860,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// pixel, and the ghost snaps to lines/spaces anyway, so an unguarded
   /// setState here rebuilt the whole editor per pixel for no visible change.
   void _onMpDragUpdate(String globalId, int partIndex, StaffTarget target) {
+    if (_inspect) return; // 🔍 read-only
     if (partIndex == _hoverPart && target == _hover) return;
     setState(() {
       _hoverPart = partIndex;
@@ -855,6 +871,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// Drop a dragged element: switch to its part and re-pitch it to the drop
   /// staff position (vertical move).
   void _onMpDragEnd(String globalId, int partIndex, StaffTarget target) {
+    if (_inspect) return; // 🔍 read-only
     setState(() {
       _mpd.setActive(partIndex);
       _mpd.parts[partIndex].moveById(
@@ -1140,17 +1157,21 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   /// view suppresses the original and re-paints the real glyph following the
   /// pointer (crisp_notation C10b `dragPreviewOpacity`), so the app clears its own
   /// hover ghost and keeps no stand-in of its own.
-  void _onElementDragStart(String id) => setState(() {
-        _dragId = id;
-        _dragStartLocal = _pointerLocal;
-        _hover = null; // the view paints the moving note; no app ghost
-        _dropCaretId = null;
-      });
+  void _onElementDragStart(String id) {
+    if (_inspect) return; // 🔍 read-only: a drag must not move a note
+    setState(() {
+      _dragId = id;
+      _dragStartLocal = _pointerLocal;
+      _hover = null; // the view paints the moving note; no app ghost
+      _dropCaretId = null;
+    });
+  }
 
   /// As a horizontal reorder drag moves, mark the live drop slot with the
   /// insertion caret (a vertical re-pitch shows none — the moving glyph already
   /// shows the new pitch). Repaint only; the model isn't touched until drop.
   void _onElementDragUpdate(String id, StaffTarget target) {
+    if (_inspect) return; // 🔍 read-only
     final drop = _pointerLocal;
     final start = _dragStartLocal;
     if (drop == null || start == null) return;
@@ -1164,6 +1185,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   }
 
   void _onElementDragEnd(String id, StaffTarget target) {
+    if (_inspect) return; // 🔍 read-only
     final drop = _pointerLocal;
     final start = _dragStartLocal;
     final dx = (drop != null && start != null) ? drop.dx - start.dx : 0.0;

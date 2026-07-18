@@ -119,6 +119,9 @@ void main() {
     final id = editor.debugFirstNoteId;
     expect(id, isNotNull);
 
+    // A drag is live while editing…
+    expect(editor.debugTryDragStart(id!), isTrue);
+
     // Turn Inspect on from the ⋮ menu.
     expect(editor.inspectMode, isFalse);
     await tester.tap(find.byIcon(Icons.more_vert));
@@ -127,8 +130,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(editor.inspectMode, isTrue);
 
+    // …but a drag is suppressed in Inspect mode so a note can't be moved.
+    expect(editor.debugTryDragStart(id), isFalse);
+
     // Inspecting the note opens the info sheet with its scale-degree phrase.
-    editor.debugInspect(id!);
+    editor.debugInspect(id);
     await tester.pumpAndSettle();
     expect(find.textContaining('major'), findsOneWidget); // "… of C major"
   });
