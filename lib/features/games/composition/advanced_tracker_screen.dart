@@ -145,7 +145,12 @@ const _kKeyToSemitone = <String, int>{
 };
 
 class AdvancedTrackerScreen extends StatefulWidget {
-  const AdvancedTrackerScreen({super.key});
+  const AdvancedTrackerScreen({super.key, this.initialSong});
+
+  /// An optional song to open with — the Beginner→Advanced "promote" hands its
+  /// groove over here so the switch keeps the kid's work instead of starting
+  /// fresh. Null = a new empty song.
+  final TrackerSong? initialSong;
 
   @override
   State<AdvancedTrackerScreen> createState() => _AdvancedTrackerScreenState();
@@ -286,7 +291,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     with SingleTickerProviderStateMixin
     implements AdvancedTrackerTester {
   // Non-final so a module import can swap in a whole new document.
-  TrackerSong _song = TrackerSong();
+  late TrackerSong _song = widget.initialSong ?? TrackerSong();
   final _loop = GaplessLoopPlayer();
   final _recorder = VoiceClipRecorder();
   final _focus = FocusNode();

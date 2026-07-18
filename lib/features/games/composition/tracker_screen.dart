@@ -29,6 +29,7 @@ import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:comet_beat/core/audio/mod/module_instrument_bridge.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
@@ -184,6 +185,10 @@ abstract interface class TrackerTester {
   /// Saves the groove's pitched channels to the Song Book as a multi-part score;
   /// returns true if anything was saved (false when nothing is placed).
   bool debugSaveToSongBook(UserSongsService songs);
+
+  /// The Advanced-mode song this groove promotes to (the Beginner→Advanced
+  /// hand-off) — for asserting the switch is lossless.
+  TrackerSong debugPromoteToSong();
 }
 
 class _TrackerScreenState extends State<TrackerScreen>
@@ -443,6 +448,8 @@ class _TrackerScreenState extends State<TrackerScreen>
   @override
   bool debugSaveToSongBook(UserSongsService songs) =>
       _writeToSongBook(songs, AppLocalizations.of(context)!.gameTracker);
+  @override
+  TrackerSong debugPromoteToSong() => _promoteToSong();
 
   /// The pitched channels as a multi-part score + localized part names, or null
   /// when nothing pitched is placed (drums/empty channels are skipped, matching
@@ -489,6 +496,30 @@ class _TrackerScreenState extends State<TrackerScreen>
 
   bool _slotEmpty(List<List<TrackerCell>> snap) =>
       snap.every((ch) => ch.every((c) => c.isEmpty));
+
+  /// Promote the whole groove to an Advanced-mode [TrackerSong] (lossless — the
+  /// Advanced grid is a chromatic superset of the kid grid): each pattern slot
+  /// becomes a pattern, the band + its instruments carry, and the song order
+  /// mirrors the current arrangement (all non-empty slots when none is set).
+  TrackerSong _promoteToSong() {
+    _slots[_currentSlot] = _engine.exportCells(); // capture live edits
+    final patterns = [
+      for (var i = 0; i < _slotCount; i++)
+        TrackerPattern(name: String.fromCharCode(65 + i), cells: _slots[i]),
+    ];
+    final order = _order.isNotEmpty
+        ? List<int>.of(_order)
+        : [
+            for (var i = 0; i < _slotCount; i++)
+              if (!_slotEmpty(_slots[i])) i,
+          ];
+    return TrackerSong.fromParts(
+      channels: _engine.channels,
+      timing: _engine.timing,
+      patterns: patterns,
+      order: order,
+    );
+  }
 
   /// Saves the live pattern into the current slot, then loads slot [index].
   void _selectSlot(int index) {
@@ -1387,7 +1418,8 @@ class _TrackerScreenState extends State<TrackerScreen>
             tooltip: l10n.trackerModeToAdvanced,
             onPressed: () => Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (_) => const AdvancedTrackerScreen(),
+                builder: (_) =>
+                    AdvancedTrackerScreen(initialSong: _promoteToSong()),
               ),
             ),
           ),

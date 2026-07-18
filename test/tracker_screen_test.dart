@@ -72,6 +72,30 @@ void main() {
     expect(game.noteCount, 0);
   });
 
+  testWidgets('promotes the groove to an Advanced song (lossless)',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+    game.selectChannel(0);
+    game.tapCell(0, 0); // a note in slot A
+    game.tapCell(2, 4);
+    await tester.pump();
+
+    final song = game.debugPromoteToSong();
+    // The band + a pattern per slot carry over.
+    expect(song.channels.length, game.channelIds.length);
+    expect(song.patterns.length, game.slotCount);
+    // Slot A's notes survive in the promoted song.
+    final notes = song.patterns
+        .expand((p) => p.cells)
+        .expand((col) => col)
+        .where((c) => c.midi != null)
+        .length;
+    expect(notes, 2);
+    // The order lists the non-empty slot (A) so it actually plays.
+    expect(song.order, contains(0));
+  });
+
   testWidgets('wide range opens three octaves of pitch rows', (tester) async {
     await pumpGame(tester, const TrackerScreen());
     final game = _game(tester);
