@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -32,6 +33,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         Score,
         StaffTarget,
         StaffView,
+        analyze,
         scoreToMusicXml;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -53,6 +55,14 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
   var _nextId = 0;
   final List<Timer> _hlTimers = [];
   Set<String> _playing = const {}; // notes lit during playback
+  bool _inspect = false; // 🔍 Looking Glass: tap a note to learn what it is
+
+  /// 🔍 Tap a placed note (Inspect on) → its info sheet.
+  void _onNoteTap(String id) {
+    final score = _score;
+    final info = inspectElement(score, id, analyze(score));
+    if (info != null) showInspect(context, info);
+  }
 
   @override
   void dispose() {
@@ -191,7 +201,17 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
     final full = _notes.length >= MyMelodyScreen.maxNotes;
 
     return Scaffold(
-      appBar: GameAppBar(title: l10n.gameMyMelody),
+      appBar: GameAppBar(
+        title: l10n.gameMyMelody,
+        actions: [
+          IconButton(
+            icon: Icon(_inspect ? Icons.search_off : Icons.search),
+            isSelected: _inspect,
+            tooltip: l10n.inspectMode,
+            onPressed: () => setState(() => _inspect = !_inspect),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -217,13 +237,17 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
                               theme: kidsScoreTheme,
                               staffSpace: 14,
                               highlightedIds: _playing,
-                              onStaffTap: _onStaffTap,
+                              // 🔍 Inspect on: tap a note to learn it, and don't
+                              // place a new note on that tap.
+                              onStaffTap: _inspect ? null : _onStaffTap,
+                              onElementTap: _inspect ? _onNoteTap : null,
                             )
                           : StaffView(
                               score: _score,
                               theme: kidsScoreTheme,
                               staffSpace: 14,
                               highlightedIds: _playing,
+                              onElementTap: _inspect ? _onNoteTap : null,
                             ),
                     ),
                   ),

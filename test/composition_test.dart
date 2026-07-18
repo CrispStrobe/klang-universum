@@ -129,6 +129,16 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('my melody 🔍 Inspect toggle flips on', (tester) async {
+    await tester.pumpWidget(_wrap(const MyMelodyScreen(), sri));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.search), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pump();
+    expect(find.byIcon(Icons.search_off), findsOneWidget);
+  });
+
   testWidgets('my melody saves to the Song Book as valid MusicXML',
       (tester) async {
     final songs = UserSongsService();

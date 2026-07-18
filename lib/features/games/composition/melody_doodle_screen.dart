@@ -9,6 +9,7 @@
 // One note per beat keeps it a clean single-voice melody; untouched beats rest.
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -81,6 +82,9 @@ class _MelodyDoodleScreenState extends State<MelodyDoodleScreen>
   final List<Offset> _points = [];
   Size _canvas = Size.zero;
 
+  // 🔍 Looking Glass: tap a rendered note to learn what it is.
+  bool _inspect = false;
+
   // Octave 4 is Pitch's default (middle-C register) — a comfortable range.
   List<Pitch> get _rowPitches =>
       [for (final s in MelodyDoodleScreen.rowSteps) Pitch(s)];
@@ -95,6 +99,13 @@ class _MelodyDoodleScreenState extends State<MelodyDoodleScreen>
 
   @override
   Score get score => _score;
+
+  /// 🔍 Tap a rendered note (Inspect on) → its info sheet.
+  void _onNoteTap(String id) {
+    final score = _score;
+    final info = inspectElement(score, id, analyze(score));
+    if (info != null) showInspect(context, info);
+  }
 
   void _addPoint(Offset p) {
     final before = columns;
@@ -156,7 +167,17 @@ class _MelodyDoodleScreenState extends State<MelodyDoodleScreen>
     ];
 
     return Scaffold(
-      appBar: GameAppBar(title: l10n.gameMelodyDoodle),
+      appBar: GameAppBar(
+        title: l10n.gameMelodyDoodle,
+        actions: [
+          IconButton(
+            icon: Icon(_inspect ? Icons.search_off : Icons.search),
+            isSelected: _inspect,
+            tooltip: l10n.inspectMode,
+            onPressed: () => setState(() => _inspect = !_inspect),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -223,6 +244,7 @@ class _MelodyDoodleScreenState extends State<MelodyDoodleScreen>
                         score: _score,
                         staffSpace: 9,
                         theme: kidsScoreTheme,
+                        onElementTap: _inspect ? _onNoteTap : null,
                       ),
                     ),
                   ),

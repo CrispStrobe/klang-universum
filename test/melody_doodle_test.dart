@@ -95,4 +95,17 @@ void main() {
     // Play is now live.
     expect(tester.widget<FilledButton>(play).onPressed, isNotNull);
   });
+
+  testWidgets('🔍 the Inspect toggle flips on', (tester) async {
+    await pumpGame(tester, const MelodyDoodleScreen());
+    await tester.pump();
+
+    // Off by default (magnifier shown); tapping flips it to the "off" icon.
+    expect(find.byIcon(Icons.search), findsOneWidget);
+    expect(find.byIcon(Icons.search_off), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pump();
+    expect(find.byIcon(Icons.search_off), findsOneWidget);
+  });
 }
