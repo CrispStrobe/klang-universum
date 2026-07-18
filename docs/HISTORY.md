@@ -635,8 +635,12 @@ Games built on crisp_notation capabilities the app didn't use before.
   (`ClipSource`/`Clip`/`DawTrack`/`DawTimeline`/`renderTimeline` with per-source
   cache, sample-accurate placement, gain, tanh soft-limit) + `daw_sources.dart`
   adapters (`DrumSource` a DrumKit beat, `GrooveSource` a Loop Mixer groove).
-  Offline render-then-play (no realtime graph). 11 headless tests; design in
-  `docs/DAW_SCOPING.md`.
+  Offline render-then-play (no realtime graph). Adapters cover EVERY module type
+  (`DrumSource`/`GrooveSource`/`ScoreSource` for DrumKit/Loop Mixer/Song Book+
+  Workshop+TAB, `TrackerSource`, `SampleSource`) — each rendering on demand and
+  cache-keyed by model value. The **Multitrack** arranger screen (reached from the
+  home Workshop menu) places clips on tracks and BAKES the mix to play; per-track
+  mute, seeded demo clips. 20 headless tests; design in `docs/DAW_SCOPING.md`.
 - **DrumKit undo/redo** — a snapshot history (deep-copied pattern before each
   mutation) backs app-bar Undo/Redo across grid edits, whole record takes, and
   clear; a fresh edit drops the redo branch. Fills the gap left by the new
