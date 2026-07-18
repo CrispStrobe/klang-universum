@@ -22,11 +22,21 @@ import 'package:crisp_notation_core/crisp_notation_core.dart';
 /// Reads one SMF chunk (`type` + big-endian length + body) at [offset]; returns
 /// the whole chunk bytes and the offset past it.
 (Uint8List chunk, int next) _readChunk(Uint8List smf, int offset) {
+  // GUARD:chunkheader >>>
+  // Untrusted SMF: bail if the 8-byte chunk header doesn't fit (else the reads
+  // below RangeError). Returning EOF lets the caller's walk terminate cleanly.
+  if (offset < 0 || offset + 8 > smf.length) return (Uint8List(0), smf.length);
+  // GUARD:chunkheader <<<
   final len = (smf[offset + 4] << 24) |
       (smf[offset + 5] << 16) |
       (smf[offset + 6] << 8) |
       smf[offset + 7];
-  final end = offset + 8 + len;
+  var end = offset + 8 + len;
+  // GUARD:chunkclamp >>>
+  // The declared 32-bit length is untrusted; clamp the body to the buffer so a
+  // lying / oversized length can't blow up sublistView.
+  if (end > smf.length) end = smf.length;
+  // GUARD:chunkclamp <<<
   return (Uint8List.sublistView(smf, offset, end), end);
 }
 
@@ -66,6 +76,14 @@ Uint8List mergeToMultiTrackMidi(
 /// so each can be read back with `scoreFromMidi`. Inverse of
 /// [mergeToMultiTrackMidi] for round-trip verification.
 List<Uint8List> splitMultiTrackMidi(Uint8List smf) {
+  // GUARD:mthdlen >>>
+  // Untrusted SMF: reject anything too short for the 14-byte MThd header before
+  // reading the division word at smf[12..13] (else RangeError, not a clean
+  // rejection). Callers importing a MIDI file catch FormatException.
+  if (smf.length < 14) {
+    throw const FormatException('SMF too short for a 14-byte MThd header');
+  }
+  // GUARD:mthdlen <<<
   final division = (smf[12] << 8) | smf[13];
   final tracks = <Uint8List>[];
   var offset = 14; // past MThd

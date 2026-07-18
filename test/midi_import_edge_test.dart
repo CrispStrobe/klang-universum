@@ -5,6 +5,7 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/notation/multi_part_export.dart';
 import 'package:comet_beat/features/games/songs/import/midi_import.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show Measure, NoteElement, RestElement;
@@ -123,5 +124,47 @@ void main() {
     final rests = elements.whereType<RestElement>().toList();
     expect(rests, isNotEmpty, reason: 'the 480-tick gap must become a rest');
     expect(rests.first.duration.fraction, (1, 4));
+  });
+
+  group('multi-track SMF parsing rejects malformed input cleanly', () {
+    // splitMultiTrackMidi / multiTrackMidiToMultiPart parse an untrusted MIDI
+    // file. A truncated header or a chunk declaring more bytes than exist must
+    // not leak a RangeError — reject with FormatException or parse leniently.
+    // (Found by fuzzing: 76k RangeErrors over 100k mutations before the guards.)
+    final validSmf = Uint8List.fromList([
+      0x4D, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 1, 0xE0, // MThd fmt0 1trk
+      0x4D, 0x54, 0x72, 0x6B, 0, 0, 0, 4, 0x00, 0xFF, 0x2F, 0x00, // MTrk end
+    ]);
+
+    test('a sub-header SMF throws FormatException, not RangeError', () {
+      for (final n in [0, 4, 12, 13]) {
+        final short = Uint8List.sublistView(validSmf, 0, n);
+        expect(
+          () => splitMultiTrackMidi(short),
+          throwsFormatException,
+          reason: '$n-byte SMF',
+        );
+        expect(
+          () => splitMultiTrackMidi(short),
+          throwsA(isNot(isA<RangeError>())),
+        );
+      }
+    });
+
+    test('a chunk length exceeding the buffer does not over-read', () {
+      // MTrk header claims a 0xFFFFFFFF-byte body but the file ends right after.
+      final lying = Uint8List.fromList([
+        ...validSmf.sublist(0, 14),
+        0x4D, 0x54, 0x72, 0x6B, 0xFF, 0xFF, 0xFF, 0xFF, // MTrk, huge length
+      ]);
+      // Clamped to the buffer: no over-read, no throw — one (short) track.
+      expect(() => splitMultiTrackMidi(lying), returnsNormally);
+      expect(splitMultiTrackMidi(lying), hasLength(1));
+    });
+
+    test('a valid SMF still splits into one track', () {
+      final tracks = splitMultiTrackMidi(validSmf);
+      expect(tracks, hasLength(1));
+    });
   });
 }
