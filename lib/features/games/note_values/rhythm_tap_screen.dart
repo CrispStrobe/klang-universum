@@ -13,9 +13,9 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:crisp_notation/crisp_notation.dart'
-    show Score, StaffView, TimeSignature;
+import 'package:crisp_notation/crisp_notation.dart' show Score, TimeSignature;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -58,6 +58,13 @@ class RhythmTapScreen extends StatefulWidget {
 
 class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   late int _patternIndex;
   _Pattern get _pattern => _patterns[_patternIndex];
@@ -106,6 +113,14 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
     context.read<AudioService>().playSequence([
       for (final b in _pattern.beats)
         (79, (b * RhythmTapScreen.beatMs).round()), // G5 taps
+    ]);
+    // Light each notehead as it sounds (Score.simple ids them e0, e1, …).
+    _pb.play([
+      for (var i = 0; i < _pattern.beats.length; i++)
+        (
+          ids: {'e$i'},
+          ms: (_pattern.beats[i] * RhythmTapScreen.beatMs).round()
+        ),
     ]);
   }
 
@@ -216,11 +231,12 @@ class _RhythmTapScreenState extends State<RhythmTapScreen> with QuizRoundMixin {
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: StaffView(
+                        child: PlayingStaffView(
                           score: Score.simple(
                             timeSignature: TimeSignature.fourFour,
                             notes: _pattern.dsl,
                           ),
+                          controller: _pb,
                           staffSpace: 10,
                         ),
                       ),

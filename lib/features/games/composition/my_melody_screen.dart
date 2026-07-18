@@ -5,6 +5,7 @@
 // stars, no wrong answers — free creation is the point (and the child is
 // reading and writing real notation the whole time).
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:comet_beat/core/services/audio_service.dart';
@@ -48,6 +49,17 @@ class MyMelodyScreen extends StatefulWidget {
 class _MyMelodyScreenState extends State<MyMelodyScreen> {
   final List<NoteElement> _notes = [];
   var _nextId = 0;
+  final List<Timer> _hlTimers = [];
+  Set<String> _playing = const {}; // notes lit during playback
+
+  @override
+  void dispose() {
+    for (final t in _hlTimers) {
+      t.cancel();
+    }
+    super.dispose();
+  }
+
   NoteInput _input = NoteInput.staff;
 
   /// Show low material (e.g. a cello's C2) in the bass clef instead of a tower
@@ -90,6 +102,32 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
     context.read<AudioService>().playSequence([
       for (final note in _notes) (note.pitches.first.midiNumber, 400),
     ]);
+    _startHighlight();
+  }
+
+  // Light each note in turn as playback advances (both staff modes support
+  // highlightedIds). A local timer chain — my_melody's InteractiveStaff mode
+  // can't use the StaffView-only PlayingStaffView.
+  void _startHighlight() {
+    for (final t in _hlTimers) {
+      t.cancel();
+    }
+    _hlTimers.clear();
+    var offset = 0;
+    for (final note in _notes) {
+      final id = note.id;
+      _hlTimers.add(
+        Timer(Duration(milliseconds: offset), () {
+          if (mounted) setState(() => _playing = {if (id != null) id});
+        }),
+      );
+      offset += 400;
+    }
+    _hlTimers.add(
+      Timer(Duration(milliseconds: offset), () {
+        if (mounted) setState(() => _playing = const {});
+      }),
+    );
   }
 
   /// A clean 4/4-barred score for export, so it opens tidily in MuseScore &
@@ -176,12 +214,14 @@ class _MyMelodyScreenState extends State<MyMelodyScreen> {
                               score: _score,
                               theme: kidsScoreTheme,
                               staffSpace: 14,
+                              highlightedIds: _playing,
                               onStaffTap: _onStaffTap,
                             )
                           : StaffView(
                               score: _score,
                               theme: kidsScoreTheme,
                               staffSpace: 14,
+                              highlightedIds: _playing,
                             ),
                     ),
                   ),

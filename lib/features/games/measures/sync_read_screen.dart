@@ -19,6 +19,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -53,6 +54,13 @@ class _SyncReadScreenState extends State<SyncReadScreen>
   bool get isFinished => finished;
 
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   late bool _sync;
   late Pitch _note; // one comfortable pitch, repeated for the rhythm
@@ -125,6 +133,10 @@ class _SyncReadScreenState extends State<SyncReadScreen>
     }
     if (correct) {
       audio.playSequence(_phrase);
+      _pb.play([
+        for (var i = 0; i < _phrase.length; i++)
+          (ids: {'n$i'}, ms: _phrase[i].$2),
+      ]);
     } else {
       audio.playWrong();
     }
@@ -171,6 +183,7 @@ class _SyncReadScreenState extends State<SyncReadScreen>
                             child: ReadingStaffView(
                               score: _cardScore,
                               staffSpace: 14,
+                              playback: _pb,
                             ),
                           ),
                         ),

@@ -17,6 +17,7 @@ import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -66,6 +67,13 @@ class _EnharmonicScreenState extends State<EnharmonicScreen>
     with QuizRoundMixin
     implements EnharmonicTester {
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   late Pitch _a;
   late Pitch _b;
@@ -149,6 +157,10 @@ class _EnharmonicScreenState extends State<EnharmonicScreen>
     }
     if (correct) {
       audio.playPhrase([_a.midiNumber, _b.midiNumber], noteMs: 420);
+      _pb.play([
+        (ids: {'a'}, ms: 420),
+        (ids: {'b'}, ms: 420),
+      ]);
     } else {
       audio.playWrong();
     }
@@ -205,8 +217,9 @@ class _EnharmonicScreenState extends State<EnharmonicScreen>
                               horizontal: 24,
                               vertical: 12,
                             ),
-                            child: StaffView(
+                            child: PlayingStaffView(
                               score: _cardScore,
+                              controller: _pb,
                               staffSpace: 14,
                               theme: kidsScoreTheme,
                             ),

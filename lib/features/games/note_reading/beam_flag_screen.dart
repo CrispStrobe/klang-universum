@@ -19,6 +19,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -54,6 +55,13 @@ class _BeamFlagScreenState extends State<BeamFlagScreen>
   bool get isFinished => finished;
 
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   late Pitch _a; // first eighth
   late Pitch _b; // second eighth
@@ -103,6 +111,10 @@ class _BeamFlagScreenState extends State<BeamFlagScreen>
     }
     if (correct) {
       audio.playPhrase([_a.midiNumber, _b.midiNumber], noteMs: 300);
+      _pb.play([
+        (ids: {'a'}, ms: 300),
+        (ids: {'b'}, ms: 300),
+      ]);
     } else {
       audio.playWrong();
     }
@@ -175,6 +187,7 @@ class _BeamFlagScreenState extends State<BeamFlagScreen>
                             child: ReadingStaffView(
                               score: _cardScore,
                               staffSpace: 14,
+                              playback: _pb,
                             ),
                           ),
                         ),

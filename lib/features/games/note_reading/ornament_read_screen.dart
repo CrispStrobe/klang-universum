@@ -14,6 +14,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -48,6 +49,13 @@ class _OrnamentReadScreenState extends State<OrnamentReadScreen>
   bool get isFinished => finished;
 
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   late Ornament _ornament;
   late Pitch _note;
@@ -123,6 +131,10 @@ class _OrnamentReadScreenState extends State<OrnamentReadScreen>
     }
     if (correct) {
       audio.playSequence(_phrase);
+      // One shown note ('n'); keep it lit through the whole flourish.
+      _pb.play([
+        for (final n in _phrase) (ids: {'n'}, ms: n.$2),
+      ]);
     } else {
       audio.playWrong();
     }
@@ -169,6 +181,7 @@ class _OrnamentReadScreenState extends State<OrnamentReadScreen>
                             child: ReadingStaffView(
                               score: _cardScore,
                               staffSpace: 14,
+                              playback: _pb,
                             ),
                           ),
                         ),

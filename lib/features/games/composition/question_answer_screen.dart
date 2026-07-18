@@ -12,6 +12,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
@@ -28,6 +29,10 @@ class QuestionAnswerScreen extends StatefulWidget {
 class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
     with QuizRoundMixin {
   final _random = Random();
+  // One highlighter per staff so the question lights during the question and
+  // the tapped answer lights during the answer, across one combined playback.
+  final _qPb = ScorePlayback();
+  final _aPb = [ScorePlayback(), ScorePlayback()];
 
   late List<Pitch> _question; // ends on G4 (dominant) — open
   late List<List<Pitch>> _answers; // 2 candidates, shuffled
@@ -37,6 +42,15 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
 
   @override
   int get totalRounds => 8;
+
+  @override
+  void dispose() {
+    _qPb.dispose();
+    for (final p in _aPb) {
+      p.dispose();
+    }
+    super.dispose();
+  }
 
   // The phrases themselves are the audio feedback.
   @override
@@ -76,17 +90,34 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
   }
 
   void _playQuestion() {
-    context.read<AudioService>().playSequence([
+    final seq = [
       for (var i = 0; i < _question.length; i++)
         (_question[i].midiNumber, i == _question.length - 1 ? 700 : 400),
+    ];
+    context.read<AudioService>().playSequence(seq);
+    // Light the question notes (Score.simple ids them e0, e1, … in order).
+    _qPb.play([
+      for (var i = 0; i < seq.length; i++) (ids: {'e$i'}, ms: seq[i].$2),
     ]);
   }
 
-  void _playQuestionAndAnswer(List<Pitch> answer) {
+  void _playQuestionAndAnswer(int index) {
+    final answer = _answers[index];
     context.read<AudioService>().playSequence([
       for (final p in _question) (p.midiNumber, 380),
       for (var i = 0; i < answer.length; i++)
         (answer[i].midiNumber, i == answer.length - 1 ? 800 : 380),
+    ]);
+    // Question staff lights during the question, then clears.
+    _qPb.play([
+      for (var i = 0; i < _question.length; i++) (ids: {'e$i'}, ms: 380),
+    ]);
+    // The tapped answer staff waits out the question (empty highlight), then
+    // lights its notes as they sound.
+    _aPb[index].play([
+      (ids: <String>{}, ms: _question.length * 380),
+      for (var i = 0; i < answer.length; i++)
+        (ids: {'e$i'}, ms: i == answer.length - 1 ? 800 : 380),
     ]);
   }
 
@@ -104,7 +135,7 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
   void _onCardTap(int index) {
     if (_lastAnswer == true) return; // round already resolved
     final correct = index == _correctCard;
-    _playQuestionAndAnswer(_answers[index]);
+    _playQuestionAndAnswer(index);
 
     if (_tapped == null || !answeredWrong) {
       context
@@ -164,8 +195,9 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: StaffView(
+                              child: PlayingStaffView(
                                 score: _phraseScore(_question),
+                                controller: _qPb,
                                 staffSpace: 8,
                               ),
                             ),
@@ -213,10 +245,11 @@ class _QuestionAnswerScreenState extends State<QuestionAnswerScreen>
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Center(
-                                            child: StaffView(
+                                            child: PlayingStaffView(
                                               score: _phraseScore(
                                                 _answers[i],
                                               ),
+                                              controller: _aPb[i],
                                               staffSpace: 8,
                                             ),
                                           ),

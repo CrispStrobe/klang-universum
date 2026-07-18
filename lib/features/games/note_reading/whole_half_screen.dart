@@ -11,6 +11,7 @@ import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -38,6 +39,13 @@ class _WholeHalfScreenState extends State<WholeHalfScreen>
     with QuizRoundMixin
     implements WholeHalfTester {
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   bool _wide = false; // 2★ adds the bass clef
   late Clef _clef;
@@ -106,6 +114,10 @@ class _WholeHalfScreenState extends State<WholeHalfScreen>
     final audio = context.read<AudioService>();
     if (correct) {
       audio.playPhrase([_a.midiNumber, _b.midiNumber], noteMs: 380);
+      _pb.play([
+        (ids: {'a'}, ms: 380),
+        (ids: {'b'}, ms: 380),
+      ]);
     } else {
       audio.playWrong();
     }
@@ -161,6 +173,7 @@ class _WholeHalfScreenState extends State<WholeHalfScreen>
                             child: ReadingStaffView(
                               score: _cardScore,
                               staffSpace: 14,
+                              playback: _pb,
                             ),
                           ),
                         ),

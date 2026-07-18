@@ -17,6 +17,7 @@ import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/games/widgets/game_widgets.dart';
+import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/features/games/widgets/reading_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -61,6 +62,13 @@ class _ArticulationReadScreenState extends State<ArticulationReadScreen>
   bool get isFinished => finished;
 
   final _random = Random();
+  final _pb = ScorePlayback();
+
+  @override
+  void dispose() {
+    _pb.dispose();
+    super.dispose();
+  }
 
   late Articulation _mark; // the correct mark this round
   late Pitch _pitch; // the note it sits on
@@ -112,6 +120,9 @@ class _ArticulationReadScreenState extends State<ArticulationReadScreen>
         [_pitch.midiNumber],
         noteMs: _mark == Articulation.staccato ? 150 : 500,
       );
+      _pb.play([
+        (ids: {'n'}, ms: _mark == Articulation.staccato ? 150 : 500),
+      ]);
     } else {
       audio.playWrong();
     }
@@ -185,6 +196,7 @@ class _ArticulationReadScreenState extends State<ArticulationReadScreen>
                             child: ReadingStaffView(
                               score: _cardScore,
                               staffSpace: 14,
+                              playback: _pb,
                             ),
                           ),
                         ),
