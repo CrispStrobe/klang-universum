@@ -172,9 +172,15 @@ Advanced tracker — the user flagged "we do not yet have it all in the GUI":
 - **Volume + pan envelopes** (`TrackerChannel.volumeEnvelope`/`panEnvelope`,
   `VolumeEnvelope`/`PanEnvelope`, `setChannelVolumeEnvelope`/`…Pan…`). A simple
   per-channel envelope editor (a few draggable points) in the mixer. **[TODO]**
-- **Mid-song tempo/speed** (`Fxx`): the transport/playhead already consume
-  `effectiveTiming`/`resolveTimingMap`; verify a mid-song Fxx shows correctly.
-  **[verify]**
+- **Mid-song tempo/speed** (`Fxx`): ⚠ **VERIFIED A GAP → [needs-engine,
+  @tracker-replayer].** A GUI-authored `Fxx` tempo (probe: `F28` = 40 BPM at
+  row 8 of a 16-row pattern) leaves `debugSongTotalMs` UNCHANGED (2000 → 2000),
+  so `resolveTimingMap`/`songTotalMs` are NOT tempo-command aware — the visual
+  playhead won't track a tempo change even though Feature A renders the audio
+  with it. `resolveTimingMap`/`songTotalMs`/`effectiveTiming` live in
+  `tracker_replayer.dart`/`tracker_song.dart` (his). The screen side is already
+  correct (it consumes the map every frame); once the map accounts for per-row
+  Fxx, the playhead follows for free. **Filed for @tracker-replayer.**
 
 ## C. Wire ALL importers/exporters everywhere useful
 
