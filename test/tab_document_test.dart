@@ -80,6 +80,21 @@ void main() {
     expect(fretted.first.frets[0], anyOf(0, isNotNull));
   });
 
+  test('GP export: toScore round-trips through the Guitar Pro writer', () {
+    final doc = TabDocument.blank(guitar, initialColumns: 2)
+      ..setFret(0, 0, 0)
+      ..setFret(1, 5, 3);
+    final bytes = writeGpFromGpif(scoreToGpif(doc.toScore(), tuning: guitar));
+    expect(bytes.length, greaterThan(0));
+    expect(bytes.sublist(0, 2), [0x50, 0x4B]); // .gp is a zip (PK header)
+
+    // Re-reading the file we just wrote recovers the notes.
+    final back = scoreFromGpif(readGpifFromGp(bytes));
+    final notes =
+        back.measures.expand((m) => m.elements).whereType<NoteElement>();
+    expect(notes, hasLength(2));
+  });
+
   test('clearCell removes only that string from a chord', () {
     final doc = TabDocument.blank(guitar, initialColumns: 1)
       ..setFret(0, 0, 5)

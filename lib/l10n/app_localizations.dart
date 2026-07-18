@@ -2216,6 +2216,42 @@ abstract class AppLocalizations {
   /// **'Remove step'**
   String get tabRemoveColumn;
 
+  /// No description provided for @tabExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get tabExport;
+
+  /// No description provided for @tabExportGp.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar Pro (.gp)'**
+  String get tabExportGp;
+
+  /// No description provided for @tabExportMusicXml.
+  ///
+  /// In en, this message translates to:
+  /// **'MusicXML'**
+  String get tabExportMusicXml;
+
+  /// No description provided for @tabExportMidi.
+  ///
+  /// In en, this message translates to:
+  /// **'MIDI'**
+  String get tabExportMidi;
+
+  /// No description provided for @tabExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get tabExportFailed;
+
+  /// No description provided for @tabSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {path}'**
+  String tabSavedTo(String path);
+
   /// No description provided for @tabImportFailed.
   ///
   /// In en, this message translates to:

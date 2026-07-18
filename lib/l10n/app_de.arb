@@ -387,6 +387,15 @@
   "tabClearCell": "Löschen",
   "tabAddColumn": "Schritt hinzufügen",
   "tabRemoveColumn": "Schritt entfernen",
+  "tabExport": "Exportieren",
+  "tabExportGp": "Guitar Pro (.gp)",
+  "tabExportMusicXml": "MusicXML",
+  "tabExportMidi": "MIDI",
+  "tabExportFailed": "Export fehlgeschlagen",
+  "tabSavedTo": "Gespeichert unter {path}",
+  "@tabSavedTo": {
+    "placeholders": { "path": { "type": "String" } }
+  },
   "tabImportFailed": "Datei konnte nicht geöffnet werden",
   "libraryTitle": "Freie Musik-Bibliotheken",
   "librarySearchHint": "Nach Titel oder Komponist suchen",

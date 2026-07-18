@@ -1147,6 +1147,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabRemoveColumn => 'Remove step';
 
   @override
+  String get tabExport => 'Export';
+
+  @override
+  String get tabExportGp => 'Guitar Pro (.gp)';
+
+  @override
+  String get tabExportMusicXml => 'MusicXML';
+
+  @override
+  String get tabExportMidi => 'MIDI';
+
+  @override
+  String get tabExportFailed => 'Export failed';
+
+  @override
+  String tabSavedTo(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
   String get tabImportFailed => 'Couldn\'t open that file';
 
   @override

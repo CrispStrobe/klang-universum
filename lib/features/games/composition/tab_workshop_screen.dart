@@ -5,7 +5,9 @@ import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -84,6 +86,9 @@ abstract class TabWorkshopTester {
   void deleteCell();
   void addColumn();
   void removeColumnAtCursor();
+  void play();
+  bool get isPlaying;
+  Set<String> get highlightedIds;
 }
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
@@ -103,6 +108,7 @@ class TabWorkshopScreen extends StatefulWidget {
 }
 
 class _TabWorkshopScreenState extends State<TabWorkshopScreen>
+    with SingleTickerProviderStateMixin
     implements TabWorkshopTester {
   late TabDocument _doc;
   int _capo = 0;
@@ -113,15 +119,24 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   String? _sourceName;
   final _focus = FocusNode();
 
+  // Playback highlight: a Ticker lights the sounding column's note id in time.
+  late final Ticker _ticker;
+  bool _playing = false;
+  Set<String> _highlightedIds = const {};
+  List<({int col, int start, int end, bool note})> _schedule = const [];
+  int _totalMs = 0;
+
   @override
   void initState() {
     super.initState();
     final score = widget.initialScore ?? asciiTabToScore(_demoTab);
     _doc = TabDocument.fromScore(score, Tuning.standardGuitar);
+    _ticker = createTicker(_onTick);
   }
 
   @override
   void dispose() {
+    _ticker.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -164,6 +179,13 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _doc.removeColumn(_selCol);
         _selCol = _selCol.clamp(0, _doc.columns.length - 1);
       });
+
+  @override
+  void play() => _play();
+  @override
+  bool get isPlaying => _playing;
+  @override
+  Set<String> get highlightedIds => _highlightedIds;
 
   // ── Actions ──────────────────────────────────────────────────────────────
   @override
@@ -216,8 +238,109 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       });
 
   void _play() {
+    if (_playing) {
+      _stopPlayback();
+      return;
+    }
     final events = _doc.toPlaybackEvents();
     context.read<AudioService>().playTimedChords(events);
+    // Build the highlight timeline in lockstep with the audio events.
+    final schedule = <({int col, int start, int end, bool note})>[];
+    var t = 0;
+    for (var c = 0; c < events.length; c++) {
+      final (midis, ms) = events[c];
+      schedule.add((col: c, start: t, end: t + ms, note: midis.isNotEmpty));
+      t += ms;
+    }
+    if (_ticker.isActive) _ticker.stop();
+    setState(() {
+      _schedule = schedule;
+      _totalMs = t;
+      _playing = true;
+      _highlightedIds = const {};
+    });
+    _ticker.start();
+  }
+
+  void _stopPlayback() {
+    if (_ticker.isActive) _ticker.stop();
+    setState(() {
+      _playing = false;
+      _highlightedIds = const {};
+    });
+  }
+
+  void _onTick(Duration elapsed) {
+    final ms = elapsed.inMilliseconds;
+    if (ms >= _totalMs) {
+      _stopPlayback();
+      return;
+    }
+    Set<String> ids = const {};
+    for (final e in _schedule) {
+      if (e.note && ms >= e.start && ms < e.end) {
+        ids = {'t${e.col}'};
+        break;
+      }
+    }
+    if (!setEquals(ids, _highlightedIds)) {
+      setState(() => _highlightedIds = ids);
+    }
+  }
+
+  // ── Export ───────────────────────────────────────────────────────────────
+  Future<void> _export(String format) async {
+    final score = _doc.toScore();
+    final base = (_sourceName ?? 'tab').replaceAll(RegExp(r'\.[^.]*$'), '');
+    switch (format) {
+      case 'gp':
+        await _saveBytes(
+          writeGpFromGpif(scoreToGpif(score, tuning: _doc.tuning)),
+          '$base.gp',
+          'Guitar Pro',
+          const ['gp'],
+        );
+      case 'musicxml':
+        await _saveBytes(
+          Uint8List.fromList(utf8.encode(scoreToMusicXml(score))),
+          '$base.musicxml',
+          'MusicXML',
+          const ['musicxml'],
+        );
+      case 'midi':
+        await _saveBytes(
+          scoreToMidi(score),
+          '$base.mid',
+          'MIDI',
+          const ['mid'],
+        );
+    }
+  }
+
+  Future<void> _saveBytes(
+    Uint8List bytes,
+    String suggestedName,
+    String label,
+    List<String> extensions,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final location = await getSaveLocation(
+        suggestedName: suggestedName,
+        acceptedTypeGroups: [
+          XTypeGroup(label: label, extensions: extensions),
+        ],
+      );
+      if (location == null || !mounted) return;
+      await XFile.fromData(bytes, name: suggestedName).saveTo(location.path);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.tabSavedTo(location.path))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.tabExportFailed)));
+    }
   }
 
   void _snack(String msg) => ScaffoldMessenger.of(context)
@@ -255,18 +378,21 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final score = _doc.toScore();
     final view = _showStandard
         ? NotationTabView(
-            score: _doc.toScore(),
+            score: score,
             tuning: _doc.tuning,
             capo: _capo,
             showTuning: true,
+            highlightedIds: _highlightedIds,
           )
         : TabStaffView(
-            score: _doc.toScore(),
+            score: score,
             tuning: _doc.tuning,
             capo: _capo,
             showTuning: true,
+            highlightedIds: _highlightedIds,
           );
 
     return Scaffold(
@@ -274,7 +400,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         title: Text(_sourceName ?? l10n.tabWorkshopTitle),
         actions: [
           IconButton(
-            icon: const Icon(Icons.play_arrow),
+            icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
             tooltip: l10n.tabPlay,
             onPressed: _play,
           ),
@@ -282,6 +408,19 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             icon: const Icon(Icons.folder_open),
             tooltip: l10n.tabImport,
             onPressed: openScoreFile,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.ios_share),
+            tooltip: l10n.tabExport,
+            onSelected: _export,
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'gp', child: Text(l10n.tabExportGp)),
+              PopupMenuItem(
+                value: 'musicxml',
+                child: Text(l10n.tabExportMusicXml),
+              ),
+              PopupMenuItem(value: 'midi', child: Text(l10n.tabExportMidi)),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.music_note),

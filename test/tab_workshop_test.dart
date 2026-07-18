@@ -142,4 +142,26 @@ void main() {
     await tester.pump();
     expect(tab.fretAt(1, 2), 7);
   });
+
+  testWidgets('play lights the sounding column, then stops', (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    // A note in the first column (a quarter = 500ms at 120bpm).
+    tab.selectCell(0, 0);
+    tab.enterFret(3);
+    await tester.pump();
+
+    tab.play();
+    await tester.pump(); // kick the ticker
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tab.isPlaying, isTrue);
+    expect(tab.highlightedIds, contains('t0'));
+
+    // Tapping play again stops and clears the highlight.
+    tab.play();
+    await tester.pump();
+    expect(tab.isPlaying, isFalse);
+    expect(tab.highlightedIds, isEmpty);
+  });
 }
