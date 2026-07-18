@@ -23,7 +23,9 @@ import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/midi_pitch.dart';
 import 'package:comet_beat/shared/score_theme.dart';
-import 'package:crisp_notation/crisp_notation.dart';
+// crisp_notation_core now also exports a `FormSection` (theory analysis); this
+// file wants form_timeline.dart's FormSection widget, so hide the library one.
+import 'package:crisp_notation/crisp_notation.dart' hide FormSection;
 import 'package:flutter/material.dart' hide Step;
 import 'package:provider/provider.dart';
 
