@@ -483,6 +483,51 @@
   "@voiceLabSavedTo": {
     "placeholders": { "path": { "type": "String" } }
   },
+  "voiceLabSaveTitle": "In Meine Samples speichern",
+  "voiceLabMyTitle": "Meine Samples",
+  "voiceLabSaveName": "Name",
+  "voiceLabCancel": "Abbrechen",
+  "voiceLabSave": "Speichern",
+  "voiceLabDelete": "Löschen",
+  "voiceLabDefaultName": "Stimme {n}",
+  "@voiceLabDefaultName": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "voiceLabMyEmpty": "Noch keine gespeicherten Samples. Bearbeite eine Stimme und tippe auf das Lesezeichen.",
+  "sampleExtractTitle": "Sample-Extraktor",
+  "sampleExtractOpen": "Module öffnen…",
+  "sampleExtractHint": "Öffne eine oder mehrere Tracker-Module (.mod, .xm, .s3m, .it), um ihre Samples zu extrahieren. Du kannst jedes vorhören, als WAV exportieren oder zu Meine Samples hinzufügen.\n\nVerwende nur Dateien, für die du die Rechte hast — die App macht keine Lizenzaussage über die Samples eines Moduls.",
+  "sampleExtractCount": "{n} Samples",
+  "@sampleExtractCount": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "sampleExtractLibrary": "Meine Samples: {n}",
+  "@sampleExtractLibrary": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "sampleExtractMeta": "{module} · {secs}s",
+  "@sampleExtractMeta": {
+    "placeholders": {
+      "module": { "type": "String" },
+      "secs": { "type": "String" }
+    }
+  },
+  "sampleExtractPreview": "Vorhören",
+  "sampleExtractExport": "WAV exportieren",
+  "sampleExtractAdd": "Zu Meine Samples",
+  "sampleExtractAddAll": "Alle zu Meine Samples",
+  "sampleExtractAdded": "„{name}“ hinzugefügt",
+  "@sampleExtractAdded": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "sampleExtractAddedAll": "{n} Samples hinzugefügt",
+  "@sampleExtractAddedAll": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "sampleExtractFailed": "Konnte nicht gelesen werden: {files}",
+  "@sampleExtractFailed": {
+    "placeholders": { "files": { "type": "String" } }
+  },
   "tabPasteAscii": "ASCII-Tab einfügen",
   "tabPasteAsciiHint": "e|--0--3--|\nB|--1-----|\n...",
   "tabSongBookEmpty": "Dein Liederbuch ist leer",

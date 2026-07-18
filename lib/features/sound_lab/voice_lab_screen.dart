@@ -16,6 +16,7 @@ import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:file_selector/file_selector.dart';
@@ -68,6 +69,9 @@ abstract class VoiceLabTester {
   VoiceEffect get effect;
   void setEffect(VoiceEffect e);
   void setParam(String key, double value);
+  Future<void> saveToLibrary(String name);
+  List<SampleClip> get library;
+  void recall(int index);
 }
 
 class VoiceLabScreen extends StatefulWidget {
@@ -80,9 +84,11 @@ class VoiceLabScreen extends StatefulWidget {
 class _VoiceLabScreenState extends State<VoiceLabScreen>
     implements VoiceLabTester {
   final _recorder = VoiceClipRecorder();
+  final _store = SampleClipStore();
   Float64List? _clip;
   Float64List? _out;
   bool _recording = false;
+  List<SampleClip> _library = const [];
 
   VoiceEffect _effect = VoiceEffect.normal;
   double _pitch = 0;
@@ -90,6 +96,14 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
   double _tremolo = 0;
   double _gate = 0;
   double _reverb = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _store.load().then((list) {
+      if (mounted) setState(() => _library = list);
+    });
+  }
 
   @override
   void dispose() {
@@ -205,6 +219,103 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
     await showAudioExportSheet(context, pcm: out, baseName: 'voice');
   }
 
+  // ── My Samples (persistence) ─────────────────────────────────────────────
+  @override
+  List<SampleClip> get library => _library;
+
+  @override
+  Future<void> saveToLibrary(String name) async {
+    final out = _out;
+    if (out == null || out.isEmpty) return;
+    final list = await _store.save(
+      SampleClip(name: name, sampleRate: _sr, pcm: out, source: 'Voice Lab'),
+    );
+    if (mounted) setState(() => _library = list);
+  }
+
+  @override
+  void recall(int index) {
+    _clip = _library[index].pcm;
+    _reprocess();
+  }
+
+  Future<void> _saveDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_out == null || _out!.isEmpty) return;
+    final controller = TextEditingController(
+      text: l10n.voiceLabDefaultName(_library.length + 1),
+    );
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.voiceLabSaveTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.voiceLabSaveName),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.voiceLabCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(l10n.voiceLabSave),
+          ),
+        ],
+      ),
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+    await saveToLibrary(trimmed);
+  }
+
+  Future<void> _openLibrary() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: StatefulBuilder(
+          builder: (ctx, setSheet) => _library.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child:
+                      Text(l10n.voiceLabMyEmpty, textAlign: TextAlign.center),
+                )
+              : ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (var i = 0; i < _library.length; i++)
+                      ListTile(
+                        leading: const Icon(Icons.graphic_eq),
+                        title: Text(_library[i].name),
+                        subtitle: _library[i].source != null
+                            ? Text(_library[i].source!)
+                            : null,
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: l10n.voiceLabDelete,
+                          onPressed: () async {
+                            final list = await _store.delete(_library[i].name);
+                            if (mounted) setState(() => _library = list);
+                            setSheet(() {});
+                          },
+                        ),
+                        onTap: () {
+                          recall(i);
+                          Navigator.of(ctx).pop();
+                        },
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
   void _snack(String msg) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(msg)));
@@ -226,6 +337,16 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
             icon: const Icon(Icons.ios_share),
             tooltip: l10n.voiceLabExport,
             onPressed: hasClip ? _export : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmark_add_outlined),
+            tooltip: l10n.voiceLabSaveTitle,
+            onPressed: hasClip ? _saveDialog : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmarks_outlined),
+            tooltip: l10n.voiceLabMyTitle,
+            onPressed: _openLibrary,
           ),
         ],
       ),

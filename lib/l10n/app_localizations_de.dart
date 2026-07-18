@@ -1419,6 +1419,85 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get voiceLabSaveTitle => 'In Meine Samples speichern';
+
+  @override
+  String get voiceLabMyTitle => 'Meine Samples';
+
+  @override
+  String get voiceLabSaveName => 'Name';
+
+  @override
+  String get voiceLabCancel => 'Abbrechen';
+
+  @override
+  String get voiceLabSave => 'Speichern';
+
+  @override
+  String get voiceLabDelete => 'Löschen';
+
+  @override
+  String voiceLabDefaultName(int n) {
+    return 'Stimme $n';
+  }
+
+  @override
+  String get voiceLabMyEmpty =>
+      'Noch keine gespeicherten Samples. Bearbeite eine Stimme und tippe auf das Lesezeichen.';
+
+  @override
+  String get sampleExtractTitle => 'Sample-Extraktor';
+
+  @override
+  String get sampleExtractOpen => 'Module öffnen…';
+
+  @override
+  String get sampleExtractHint =>
+      'Öffne eine oder mehrere Tracker-Module (.mod, .xm, .s3m, .it), um ihre Samples zu extrahieren. Du kannst jedes vorhören, als WAV exportieren oder zu Meine Samples hinzufügen.\n\nVerwende nur Dateien, für die du die Rechte hast — die App macht keine Lizenzaussage über die Samples eines Moduls.';
+
+  @override
+  String sampleExtractCount(int n) {
+    return '$n Samples';
+  }
+
+  @override
+  String sampleExtractLibrary(int n) {
+    return 'Meine Samples: $n';
+  }
+
+  @override
+  String sampleExtractMeta(String module, String secs) {
+    return '$module · ${secs}s';
+  }
+
+  @override
+  String get sampleExtractPreview => 'Vorhören';
+
+  @override
+  String get sampleExtractExport => 'WAV exportieren';
+
+  @override
+  String get sampleExtractAdd => 'Zu Meine Samples';
+
+  @override
+  String get sampleExtractAddAll => 'Alle zu Meine Samples';
+
+  @override
+  String sampleExtractAdded(String name) {
+    return '„$name“ hinzugefügt';
+  }
+
+  @override
+  String sampleExtractAddedAll(int n) {
+    return '$n Samples hinzugefügt';
+  }
+
+  @override
+  String sampleExtractFailed(String files) {
+    return 'Konnte nicht gelesen werden: $files';
+  }
+
+  @override
   String get tabPasteAscii => 'ASCII-Tab einfügen';
 
   @override

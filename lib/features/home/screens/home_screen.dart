@@ -26,6 +26,7 @@ import 'package:comet_beat/features/games/screens/module_screen.dart';
 import 'package:comet_beat/features/progress/screens/progress_screen.dart';
 import 'package:comet_beat/features/recital/recital_screen.dart';
 import 'package:comet_beat/features/settings/screens/settings_screen.dart';
+import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
 import 'package:comet_beat/features/sound_lab/sound_lab_screen.dart';
 import 'package:comet_beat/features/sound_lab/voice_lab_screen.dart';
 import 'package:comet_beat/features/textbook/textbook_screen.dart';
@@ -199,6 +200,7 @@ class HomeScreen extends StatelessWidget {
                   4 => const DrumkitScreen(),
                   5 => const SoundLabScreen(),
                   6 => const VoiceLabScreen(),
+                  7 => const SampleExtractorScreen(),
                   _ => const CompositionWorkshopScreen(),
                 },
               ),
@@ -271,6 +273,16 @@ class HomeScreen extends StatelessWidget {
                     const Icon(Icons.record_voice_over, size: 20),
                     const SizedBox(width: 12),
                     Text(l10n.voiceLabTitle),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 7,
+                child: Row(
+                  children: [
+                    const Icon(Icons.colorize, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.sampleExtractTitle),
                   ],
                 ),
               ),

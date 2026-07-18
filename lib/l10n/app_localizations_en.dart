@@ -1412,6 +1412,85 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get voiceLabSaveTitle => 'Save to My Samples';
+
+  @override
+  String get voiceLabMyTitle => 'My Samples';
+
+  @override
+  String get voiceLabSaveName => 'Name';
+
+  @override
+  String get voiceLabCancel => 'Cancel';
+
+  @override
+  String get voiceLabSave => 'Save';
+
+  @override
+  String get voiceLabDelete => 'Delete';
+
+  @override
+  String voiceLabDefaultName(int n) {
+    return 'Voice $n';
+  }
+
+  @override
+  String get voiceLabMyEmpty =>
+      'No saved samples yet. Shape a voice, then tap the bookmark to keep it.';
+
+  @override
+  String get sampleExtractTitle => 'Sample Extractor';
+
+  @override
+  String get sampleExtractOpen => 'Open modules…';
+
+  @override
+  String get sampleExtractHint =>
+      'Open one or more tracker modules (.mod, .xm, .s3m, .it) to lift out their samples. You can preview each, export it as a WAV, or add it to My Samples.\n\nUse only files you have the right to reuse — the app makes no licensing claim about a module\'s samples.';
+
+  @override
+  String sampleExtractCount(int n) {
+    return '$n samples';
+  }
+
+  @override
+  String sampleExtractLibrary(int n) {
+    return 'My Samples: $n';
+  }
+
+  @override
+  String sampleExtractMeta(String module, String secs) {
+    return '$module · ${secs}s';
+  }
+
+  @override
+  String get sampleExtractPreview => 'Preview';
+
+  @override
+  String get sampleExtractExport => 'Export WAV';
+
+  @override
+  String get sampleExtractAdd => 'Add to My Samples';
+
+  @override
+  String get sampleExtractAddAll => 'Add all to My Samples';
+
+  @override
+  String sampleExtractAdded(String name) {
+    return 'Added “$name”';
+  }
+
+  @override
+  String sampleExtractAddedAll(int n) {
+    return 'Added $n samples';
+  }
+
+  @override
+  String sampleExtractFailed(String files) {
+    return 'Could not read: $files';
+  }
+
+  @override
   String get tabPasteAscii => 'Paste ASCII tab';
 
   @override

@@ -8,6 +8,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/features/sound_lab/voice_lab_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/game_test_support.dart';
 
@@ -67,5 +68,27 @@ void main() {
     lab.setParam('speed', 1.5);
     await tester.pump();
     expect(lab.output!.length, greaterThan(before)); // slower = longer
+  });
+
+  testWidgets('My Samples: save the shaped voice, recall it', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await pumpGame(tester, const VoiceLabScreen(key: ValueKey('a')));
+    final lab = _lab(tester);
+
+    lab.debugSetClip(_tone(4410));
+    await tester.pump();
+    await lab.saveToLibrary('my voice');
+    await tester.pump();
+    expect(lab.library.single.name, 'my voice');
+
+    // A distinct key forces a fresh State that loads the saved library on init.
+    await pumpGame(tester, const VoiceLabScreen(key: ValueKey('b')));
+    await tester.pumpAndSettle(); // let initState's async load complete
+    final lab2 = _lab(tester);
+    expect(lab2.library.single.name, 'my voice');
+    expect(lab2.output, isNull);
+    lab2.recall(0);
+    await tester.pump();
+    expect(lab2.output, isNotEmpty);
   });
 }

@@ -521,6 +521,51 @@
   "@voiceLabSavedTo": {
     "placeholders": { "path": { "type": "String" } }
   },
+  "voiceLabSaveTitle": "Save to My Samples",
+  "voiceLabMyTitle": "My Samples",
+  "voiceLabSaveName": "Name",
+  "voiceLabCancel": "Cancel",
+  "voiceLabSave": "Save",
+  "voiceLabDelete": "Delete",
+  "voiceLabDefaultName": "Voice {n}",
+  "@voiceLabDefaultName": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "voiceLabMyEmpty": "No saved samples yet. Shape a voice, then tap the bookmark to keep it.",
+  "sampleExtractTitle": "Sample Extractor",
+  "sampleExtractOpen": "Open modules…",
+  "sampleExtractHint": "Open one or more tracker modules (.mod, .xm, .s3m, .it) to lift out their samples. You can preview each, export it as a WAV, or add it to My Samples.\n\nUse only files you have the right to reuse — the app makes no licensing claim about a module's samples.",
+  "sampleExtractCount": "{n} samples",
+  "@sampleExtractCount": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "sampleExtractLibrary": "My Samples: {n}",
+  "@sampleExtractLibrary": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "sampleExtractMeta": "{module} · {secs}s",
+  "@sampleExtractMeta": {
+    "placeholders": {
+      "module": { "type": "String" },
+      "secs": { "type": "String" }
+    }
+  },
+  "sampleExtractPreview": "Preview",
+  "sampleExtractExport": "Export WAV",
+  "sampleExtractAdd": "Add to My Samples",
+  "sampleExtractAddAll": "Add all to My Samples",
+  "sampleExtractAdded": "Added “{name}”",
+  "@sampleExtractAdded": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "sampleExtractAddedAll": "Added {n} samples",
+  "@sampleExtractAddedAll": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "sampleExtractFailed": "Could not read: {files}",
+  "@sampleExtractFailed": {
+    "placeholders": { "files": { "type": "String" } }
+  },
   "tabPasteAscii": "Paste ASCII tab",
   "tabPasteAsciiHint": "e|--0--3--|\nB|--1-----|\n...",
   "tabSongBookEmpty": "Your Song Book is empty",

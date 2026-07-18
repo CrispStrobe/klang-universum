@@ -2720,6 +2720,132 @@ abstract class AppLocalizations {
   /// **'Saved to {path}'**
   String voiceLabSavedTo(String path);
 
+  /// No description provided for @voiceLabSaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to My Samples'**
+  String get voiceLabSaveTitle;
+
+  /// No description provided for @voiceLabMyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Samples'**
+  String get voiceLabMyTitle;
+
+  /// No description provided for @voiceLabSaveName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get voiceLabSaveName;
+
+  /// No description provided for @voiceLabCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get voiceLabCancel;
+
+  /// No description provided for @voiceLabSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get voiceLabSave;
+
+  /// No description provided for @voiceLabDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get voiceLabDelete;
+
+  /// No description provided for @voiceLabDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice {n}'**
+  String voiceLabDefaultName(int n);
+
+  /// No description provided for @voiceLabMyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved samples yet. Shape a voice, then tap the bookmark to keep it.'**
+  String get voiceLabMyEmpty;
+
+  /// No description provided for @sampleExtractTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample Extractor'**
+  String get sampleExtractTitle;
+
+  /// No description provided for @sampleExtractOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open modules…'**
+  String get sampleExtractOpen;
+
+  /// No description provided for @sampleExtractHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open one or more tracker modules (.mod, .xm, .s3m, .it) to lift out their samples. You can preview each, export it as a WAV, or add it to My Samples.\n\nUse only files you have the right to reuse — the app makes no licensing claim about a module\'s samples.'**
+  String get sampleExtractHint;
+
+  /// No description provided for @sampleExtractCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} samples'**
+  String sampleExtractCount(int n);
+
+  /// No description provided for @sampleExtractLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'My Samples: {n}'**
+  String sampleExtractLibrary(int n);
+
+  /// No description provided for @sampleExtractMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{module} · {secs}s'**
+  String sampleExtractMeta(String module, String secs);
+
+  /// No description provided for @sampleExtractPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get sampleExtractPreview;
+
+  /// No description provided for @sampleExtractExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export WAV'**
+  String get sampleExtractExport;
+
+  /// No description provided for @sampleExtractAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to My Samples'**
+  String get sampleExtractAdd;
+
+  /// No description provided for @sampleExtractAddAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Add all to My Samples'**
+  String get sampleExtractAddAll;
+
+  /// No description provided for @sampleExtractAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added “{name}”'**
+  String sampleExtractAdded(String name);
+
+  /// No description provided for @sampleExtractAddedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {n} samples'**
+  String sampleExtractAddedAll(int n);
+
+  /// No description provided for @sampleExtractFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read: {files}'**
+  String sampleExtractFailed(String files);
+
   /// No description provided for @tabPasteAscii.
   ///
   /// In en, this message translates to:
