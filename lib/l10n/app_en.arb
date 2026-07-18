@@ -497,7 +497,7 @@
   "trackerModFailed": "Couldn't read/write that .mod.",
   "trackerBorrowSample": "Borrow instrument…",
   "trackerSaveSong": "Save to Song Book",
-  "trackerImportScore": "Import score (MusicXML/ABC/MIDI)…",
+  "trackerImportScore": "Import score (MusicXML/ABC/MEI/kern/MIDI)…",
   "trackerExportMidi": "Export MIDI…",
   "trackerExportXml": "Export MusicXML…",
   "trackerExportAbc": "Export ABC…",

@@ -72,8 +72,11 @@ import 'package:crisp_notation/crisp_notation.dart'
         MultiPartScore,
         Score,
         multiPartScoreFromAbc,
+        multiPartScoreFromKern,
+        multiPartScoreFromMei,
         multiPartScoreFromMusicXml,
-        multiPartToMusicXml;
+        multiPartToMusicXml,
+        readMusicXmlFromMxl;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -264,6 +267,10 @@ abstract interface class AdvancedTrackerTester {
   /// an ABC string as a new tracker song (the reverse).
   String? debugExportAbc();
   void debugImportAbc(String abc);
+
+  /// Import a Humdrum **kern string as a new tracker song (the multi-part path
+  /// the file picker uses, minus the picker).
+  void debugImportKern(String kern);
 
   /// Export the whole song as a module file of [format] ('mod'/'xm'/'s3m'/'it').
   Uint8List? debugExportModule(String format);
@@ -2515,6 +2522,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       _replaceSong(_songFromMultiPart(multiPartScoreFromAbc(abc)));
 
   @override
+  void debugImportKern(String kern) =>
+      _replaceSong(_songFromMultiPart(multiPartScoreFromKern(kern)));
+
+  @override
   Uint8List? debugExportModule(String format) {
     final mp = _songMultiPart();
     if (mp == null) return null;
@@ -2723,18 +2734,31 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         acceptedTypeGroups: [
           const XTypeGroup(
             label: 'Score',
-            extensions: ['musicxml', 'xml', 'abc', 'mid', 'midi'],
+            extensions: [
+              'musicxml',
+              'xml',
+              'mxl',
+              'abc',
+              'mei',
+              'krn',
+              'mid',
+              'midi',
+            ],
           ),
         ],
       );
       if (file == null || !mounted) return;
       final bytes = await file.readAsBytes();
       final name = file.name.toLowerCase();
-      final mp = (name.endsWith('.mid') || name.endsWith('.midi'))
-          ? multiTrackMidiToMultiPart(bytes)
-          : name.endsWith('.abc')
-              ? multiPartScoreFromAbc(utf8.decode(bytes))
-              : multiPartScoreFromMusicXml(utf8.decode(bytes));
+      // All multi-part readers, so every voice becomes its own tracker channel.
+      final mp = switch (name.split('.').last) {
+        'mid' || 'midi' => multiTrackMidiToMultiPart(bytes),
+        'abc' => multiPartScoreFromAbc(utf8.decode(bytes)),
+        'mei' => multiPartScoreFromMei(utf8.decode(bytes)),
+        'krn' => multiPartScoreFromKern(utf8.decode(bytes)),
+        'mxl' => multiPartScoreFromMusicXml(readMusicXmlFromMxl(bytes)),
+        _ => multiPartScoreFromMusicXml(utf8.decode(bytes)),
+      };
       _replaceSong(_songFromMultiPart(mp));
     } catch (_) {
       if (!mounted) return;

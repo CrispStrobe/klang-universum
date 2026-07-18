@@ -2639,7 +2639,7 @@ abstract class AppLocalizations {
   /// No description provided for @trackerImportScore.
   ///
   /// In en, this message translates to:
-  /// **'Import score (MusicXML/ABC/MIDI)…'**
+  /// **'Import score (MusicXML/ABC/MEI/kern/MIDI)…'**
   String get trackerImportScore;
 
   /// No description provided for @trackerExportXml.

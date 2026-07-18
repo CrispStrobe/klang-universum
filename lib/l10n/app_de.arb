@@ -466,7 +466,7 @@
   "trackerModFailed": "Diese .mod ließ sich nicht lesen/schreiben.",
   "trackerBorrowSample": "Instrument leihen…",
   "trackerSaveSong": "Ins Liederbuch",
-  "trackerImportScore": "Noten importieren (MusicXML/ABC/MIDI)…",
+  "trackerImportScore": "Noten importieren (MusicXML/ABC/MEI/kern/MIDI)…",
   "trackerExportMidi": "MIDI exportieren…",
   "trackerExportXml": "MusicXML exportieren…",
   "trackerExportAbc": "ABC exportieren…",

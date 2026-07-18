@@ -490,6 +490,17 @@ void main() {
     expect(game.noteCount, greaterThan(0));
   });
 
+  testWidgets('imports a Humdrum **kern score into tracker channels',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    // A minimal one-spine **kern melody: C D E F quarter notes.
+    game.debugImportKern('**kern\n4c\n4d\n4e\n4f\n*-\n');
+    await tester.pump();
+    expect(game.noteCount, greaterThan(0));
+    expect(game.channelCount, greaterThanOrEqualTo(1));
+  });
+
   testWidgets('exports the song as a module and it re-imports with notes',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
