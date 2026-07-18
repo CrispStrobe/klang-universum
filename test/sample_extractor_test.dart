@@ -4,6 +4,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
     show convertToMod;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
@@ -51,11 +52,11 @@ SampleExtractorTester _screen(WidgetTester tester) =>
 void main() {
   group('extractModuleSamples (pure)', () {
     test('recovers a module\'s named sample as non-empty PCM', () {
-      final out = extractModuleSamples(_moduleWith('sine'), moduleName: 'song');
+      final out = extractModuleSamples(_moduleWith('sine'), sourceFile: 'song');
       expect(out, isNotEmpty);
       final s = out.first;
       expect(s.displayName, 'sine');
-      expect(s.moduleName, 'song');
+      expect(s.sourceFile, 'song');
       expect(s.pcm, isNotEmpty);
       expect(s.sampleRate, greaterThan(0));
     });
@@ -82,11 +83,107 @@ void main() {
 
     test('toClip prefixes the module name and carries the rate', () {
       final s =
-          extractModuleSamples(_moduleWith('kick'), moduleName: 'demo').first;
+          extractModuleSamples(_moduleWith('kick'), sourceFile: 'demo').first;
       final clip = s.toClip();
       expect(clip.name, contains('demo'));
       expect(clip.name, contains('kick'));
       expect(clip.sampleRate, s.sampleRate);
+    });
+  });
+
+  group('extractArchiveSamples (sample packs)', () {
+    // A real 16-bit mono WAV the reader will accept.
+    Uint8List wavBytesFor(List<int> samples, {int rate = 22050}) {
+      final b = BytesBuilder();
+      void u16(int v) => b.add([v & 0xff, (v >> 8) & 0xff]);
+      void u32(int v) => b.add(
+            [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff],
+          );
+      final data = <int>[
+        for (final s in samples) ...[s & 0xff, (s >> 8) & 0xff],
+      ];
+      b.add('RIFF'.codeUnits);
+      u32(36 + data.length);
+      b.add('WAVE'.codeUnits);
+      b.add('fmt '.codeUnits);
+      u32(16);
+      u16(1); // PCM
+      u16(1); // mono
+      u32(rate);
+      u32(rate * 2);
+      u16(2);
+      u16(16);
+      b.add('data'.codeUnits);
+      u32(data.length);
+      b.add(data);
+      return b.toBytes();
+    }
+
+    Uint8List zipWith(Map<String, Uint8List> entries) {
+      final a = Archive();
+      entries.forEach(
+        (name, bytes) => a.addFile(ArchiveFile.bytes(name, bytes)),
+      );
+      return Uint8List.fromList(ZipEncoder().encode(a));
+    }
+
+    test('pulls every WAV out of a zip, skipping non-WAV entries', () {
+      final zip = zipWith({
+        'kit/kick.wav': wavBytesFor([100, -100, 200]),
+        'kit/snare.wav': wavBytesFor([1, 2, 3, 4]),
+        'kit/readme.txt': Uint8List.fromList('hello'.codeUnits),
+      });
+      final out = extractArchiveSamples(zip, sourceFile: 'kit');
+      expect(out.map((s) => s.displayName).toList()..sort(), ['kick', 'snare']);
+      expect(out.first.sourceFile, 'kit');
+      expect(out.first.sampleRate, 22050);
+      expect(out.every((s) => s.pcm.isNotEmpty), isTrue);
+    });
+
+    test('an unreadable WAV entry is skipped, the rest survive', () {
+      final zip = zipWith({
+        'ok.wav': wavBytesFor([5, 6]),
+        'broken.wav': Uint8List.fromList(List.filled(64, 0)), // not RIFF
+      });
+      final out = extractArchiveSamples(zip);
+      expect(out.single.displayName, 'ok');
+    });
+
+    test('7z is rejected with an explicit, actionable message', () {
+      final sevenZ = Uint8List.fromList(
+        [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C, ...List.filled(32, 0)],
+      );
+      expect(isSevenZip(sevenZ), isTrue);
+      expect(looksLikeArchive(sevenZ), isTrue); // sniffed, then refused
+      expect(
+        () => extractArchiveSamples(sevenZ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('7z'),
+          ),
+        ),
+      );
+    });
+
+    test('looksLikeArchive distinguishes packs from modules', () {
+      final oneWav = wavBytesFor([1]);
+      final pack = zipWith({'a.wav': oneWav});
+      expect(looksLikeArchive(pack), isTrue);
+      expect(looksLikeArchive(_moduleWith('sine')), isFalse);
+    });
+
+    test('a corrupt archive fails safely — no raw error escapes', () {
+      final badZip = Uint8List.fromList([0x50, 0x4B, ...List.filled(40, 0xAB)]);
+      // The zip reader scans for a central directory, so garbage usually just
+      // yields no entries rather than throwing; either outcome is acceptable
+      // as long as it isn't an unhandled non-FormatException.
+      try {
+        expect(extractArchiveSamples(badZip), isEmpty);
+      } on FormatException {
+        // Container rejected outright — also fine.
+      }
     });
   });
 

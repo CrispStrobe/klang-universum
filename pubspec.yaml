@@ -39,6 +39,11 @@ dependencies:
   url_launcher: ^6.3.0
   http: ^1.2.0
   xml: ^6.5.0
+  # Already pulled in transitively (crisp_notation reads .mxl); promoted to a
+  # direct dep because the Sample Extractor imports sample PACKS with it.
+  # MIT + pure Dart (so it works on web too): Zip/Tar/GZip/BZip2/XZ. It does
+  # NOT do 7z — see the explicit .7z error in sample_extractor.dart.
+  archive: ^4.0.0
 
   # Notation rendering — path dep on the local library workspace, which tracks
   # main ahead of the pub.dev releases (see ../crisp_notation/docs/CONTRACT.md).

@@ -15,8 +15,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 const _kModuleGroup = XTypeGroup(
-  label: 'Modules',
-  extensions: ['mod', 'xm', 's3m', 'it'],
+  label: 'Modules & sample packs',
+  extensions: [
+    // Tracker modules…
+    'mod', 'xm', 's3m', 'it',
+    // …and sample-pack archives (no 7z — package:archive has no LZMA codec).
+    'zip', 'tar', 'gz', 'tgz', 'bz2', 'xz',
+  ],
 );
 
 /// Test seam.
@@ -71,7 +76,10 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
   // ── Ingest ─────────────────────────────────────────────────────────────────
   void _ingest(Uint8List bytes, String name) {
     try {
-      final extracted = extractModuleSamples(bytes, moduleName: name);
+      // Sniff the container: a sample-pack archive, else a tracker module.
+      final extracted = looksLikeArchive(bytes)
+          ? extractArchiveSamples(bytes, sourceFile: name)
+          : extractModuleSamples(bytes, sourceFile: name);
       setState(() => _samples.addAll(extracted));
     } catch (_) {
       setState(() => _failed.add(name));
@@ -247,7 +255,7 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
                         title: Text(s.displayName),
                         subtitle: Text(
                           l10n.sampleExtractMeta(
-                            s.moduleName,
+                            s.sourceFile,
                             (s.pcm.length / s.sampleRate).toStringAsFixed(2),
                           ),
                         ),
