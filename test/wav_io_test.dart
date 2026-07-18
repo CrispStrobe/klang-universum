@@ -16,6 +16,7 @@ Uint8List _wav({
   int sampleRate = 44100,
   int bitsPerSample = 16,
   List<int> pcm16 = const [0, 0],
+  List<int>? rawData, // exact data-chunk bytes (for non-16-bit depths)
   int? dataSizeOverride, // claim a different data size than is actually present
   bool includeData = true,
   String? extraChunkId, // a chunk inserted before 'data' (tests the walk)
@@ -27,9 +28,10 @@ Uint8List _wav({
       b.add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
   void str(String s) => b.add(s.codeUnits);
 
-  final pcmBytes = <int>[
-    for (final s in pcm16) ...[s & 0xff, (s >> 8) & 0xff],
-  ];
+  final pcmBytes = rawData ??
+      <int>[
+        for (final s in pcm16) ...[s & 0xff, (s >> 8) & 0xff],
+      ];
 
   str('RIFF');
   u32(0); // riff size — the reader ignores it
@@ -71,11 +73,60 @@ void main() {
     expect(() => readWavPcm16(_wav(audioFormat: 3)), throwsFormatException);
   });
 
-  test('rejects a non-16-bit depth', () {
+  test('rejects an unsupported depth and a compressed format', () {
+    // 12-bit isn't a thing we decode…
     expect(
-      () => readWavPcm16(_wav(bitsPerSample: 8)),
+      () => readWavPcm16(_wav(bitsPerSample: 12)),
       throwsFormatException,
     );
+    // …nor is a compressed encoding (0x11 = IMA ADPCM).
+    expect(
+      () => readWavPcm16(_wav(audioFormat: 0x11)),
+      throwsFormatException,
+    );
+  });
+
+  // Real sample libraries ship more than PCM16 — ~a third of VCSL is 24-bit,
+  // and these used to be rejected outright. Each depth normalizes to PCM16.
+  test('decodes 24-bit PCM (the common sample-library depth)', () {
+    final wav = readWavPcm16(
+      _wav(
+        bitsPerSample: 24,
+        // LE 24-bit: +0x400000 → 16384, and 0xC00000 (negative) → -16384.
+        rawData: const [0x00, 0x00, 0x40, 0x00, 0x00, 0xC0],
+      ),
+    );
+    expect(wav.samples, [16384, -16384]);
+  });
+
+  test('decodes 8-bit PCM (unsigned, centred on 128)', () {
+    final wav = readWavPcm16(
+      _wav(bitsPerSample: 8, rawData: const [128, 255, 0]),
+    );
+    expect(wav.samples, [0, 32512, -32768]);
+  });
+
+  test('decodes 32-bit IEEE float', () {
+    final bytes = Uint8List(12);
+    final view = ByteData.sublistView(bytes);
+    view.setFloat32(0, 1.0, Endian.little);
+    view.setFloat32(4, -1.0, Endian.little);
+    view.setFloat32(8, 0.5, Endian.little);
+    final wav = readWavPcm16(
+      _wav(audioFormat: 3, bitsPerSample: 32, rawData: bytes),
+    );
+    expect(wav.samples, [32767, -32767, 16384]);
+  });
+
+  test('accepts WAVE_FORMAT_EXTENSIBLE (0xFFFE), which 24-bit writers use', () {
+    final wav = readWavPcm16(
+      _wav(
+        audioFormat: 0xFFFE,
+        bitsPerSample: 24,
+        rawData: const [0x00, 0x00, 0x40],
+      ),
+    );
+    expect(wav.samples, [16384]);
   });
 
   test('rejects a file with no data chunk', () {

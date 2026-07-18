@@ -50,7 +50,7 @@ class _SampleLibrarySheet extends StatefulWidget {
 }
 
 class _SampleLibrarySheetState extends State<_SampleLibrarySheet> {
-  late final ContentSource _source = widget.sources.first;
+  late ContentSource _source = widget.sources.first;
   final _search = TextEditingController();
   List<LibraryItem> _items = const [];
   bool _loading = false;
@@ -133,6 +133,24 @@ class _SampleLibrarySheetState extends State<_SampleLibrarySheet> {
                 ),
               ],
             ),
+            if (widget.sources.length > 1)
+              DropdownButton<ContentSource>(
+                value: _source,
+                isExpanded: true,
+                items: [
+                  for (final s in widget.sources)
+                    DropdownMenuItem(value: s, child: Text(s.name)),
+                ],
+                onChanged: (s) {
+                  if (s == null || s == _source) return;
+                  setState(() {
+                    _source = s;
+                    _items = const [];
+                    _error = null;
+                  });
+                  _reload();
+                },
+              ),
             const SizedBox(height: 8),
             TextField(
               controller: _search,

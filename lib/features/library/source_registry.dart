@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/library/sources/commons_source.dart';
 import 'package:comet_beat/features/library/sources/openscore_source.dart';
+import 'package:comet_beat/features/library/sources/vcsl_source.dart';
 import 'package:http/http.dart' as http;
 
 /// Production [HttpGet]: a plain GET returning the body bytes, or throwing on a
@@ -44,5 +45,8 @@ List<ContentSource> buildSources({HttpGet http = defaultHttpGet}) => [
 /// sample-instrument UI is the intended consumer (see
 /// docs/CC0_SAMPLE_SOURCE_HANDOFF.md). CC0/PD-filtered by the default policy.
 List<ContentSource> buildSampleSources({HttpGet http = defaultHttpGet}) => [
+      // VCSL first: a blanket-CC0 instrument library (thousands of WAVs) is a
+      // better default than Commons' mixed bag, which needs per-file filtering.
+      VcslSource(http),
       CommonsSource.audio(http),
     ];
