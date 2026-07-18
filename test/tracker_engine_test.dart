@@ -201,6 +201,101 @@ void main() {
     });
   });
 
+  group('KarplusInstrument channel (plucked string)', () {
+    TrackerChannel pluckChannel(int rows) => TrackerChannel(
+          id: 'pluck',
+          instrument: const KarplusInstrument('pluck'),
+          rows: rows,
+        );
+
+    test('renders a full-length buffer; empty is silence; deterministic', () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final ch = pluckChannel(timing.rows);
+      final silent = ch.instrument.renderChannel(ch.cells, timing);
+      expect(silent.length, timing.totalSamples);
+      expect(silent.every((v) => v == 0), isTrue);
+
+      ch.cells[0] = const TrackerCell(midi: 60);
+      final a = ch.instrument.renderChannel(ch.cells, timing);
+      final b = ch.instrument.renderChannel(ch.cells, timing);
+      expect(a.any((v) => v != 0), isTrue);
+      expect(a, equals(b)); // stable stem for the cache
+    });
+
+    test('a note is pitched at its frequency (autocorrelation period)', () {
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      List<TrackerCell> one(int midi) => [
+            TrackerCell(midi: midi),
+            ...List<TrackerCell>.filled(timing.rows - 1, TrackerCell.empty),
+          ];
+      const inst = KarplusInstrument('pluck');
+      // Fundamental period = the lag (in a plausible range) that maximizes
+      // autocorrelation over a settled window — a robust pitch measure for a
+      // plucked tone (zero-crossings just track the excitation noise).
+      int period(Float64List b) {
+        var bestLag = 40;
+        var best = -1e18;
+        for (var lag = 40; lag <= 800; lag++) {
+          var s = 0.0;
+          for (var i = 4000; i < 12000; i++) {
+            s += b[i] * b[i + lag];
+          }
+          if (s > best) {
+            best = s;
+            bestLag = lag;
+          }
+        }
+        return bestLag;
+      }
+
+      final low = period(inst.renderChannel(one(48), timing)); // C3 ~130.8 Hz
+      final high = period(inst.renderChannel(one(72), timing)); // C5 ~523.3 Hz
+      // Detected period ≈ sampleRate / noteFreq, within a couple samples.
+      expect((low - kSampleRate / 130.81).abs(), lessThan(3));
+      expect((high - kSampleRate / 523.25).abs(), lessThan(3));
+      expect(low, greaterThan(high * 2)); // two octaves down ⇒ ~4× the period
+    });
+
+    test('a pluck decays within its run (later is quieter than the attack)',
+        () {
+      const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);
+      final ch = pluckChannel(timing.rows)
+        ..cells[0] = const TrackerCell(midi: 60);
+      final buf = ch.instrument.renderChannel(ch.cells, timing);
+      double rms(int a, int b) {
+        var s = 0.0;
+        for (var i = a; i < b; i++) {
+          s += buf[i] * buf[i];
+        }
+        return sqrt(s / (b - a));
+      }
+
+      final early = rms(500, 2500); // just after the attack
+      final late = rms(20000, 22000); // deep into the decay
+      expect(late, lessThan(early));
+      expect(early, greaterThan(0));
+    });
+
+    test('the plucked strings are in the built-in sound library palette', () {
+      final ids = kTrackerInstruments.map((o) => o.id).toSet();
+      expect(ids.containsAll({'pluck', 'harp', 'pluckBass'}), isTrue);
+      // Each builds an audible instrument.
+      for (final o in kTrackerInstruments.where(
+        (o) => {'pluck', 'harp', 'pluckBass'}.contains(o.id),
+      )) {
+        const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+        final cells = [
+          const TrackerCell(midi: 62),
+          ...List<TrackerCell>.filled(3, TrackerCell.empty),
+        ];
+        expect(
+          o.build().renderChannel(cells, timing).any((v) => v != 0),
+          isTrue,
+        );
+      }
+    });
+  });
+
   group('PercussionInstrument channel', () {
     test('each non-empty cell is a one-shot drum hit; empty is silence', () {
       const timing = TrackerTiming(rows: 8, stepsPerBeat: 2);

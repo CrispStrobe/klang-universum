@@ -18,6 +18,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/envelope.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/karplus.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
@@ -272,6 +273,53 @@ class SfxrInstrument implements TrackerInstrument {
           params.copyWith(baseFreq: midiToFrequency(midi) / 440),
           durationSec: ms / 1000,
           rng: rng,
+        );
+        final n = min(buf.length, out.length - startSample);
+        for (var i = 0; i < n; i++) {
+          out[startSample + i] = buf[i];
+        }
+      }
+      startStep += steps;
+    }
+    return out;
+  }
+}
+
+/// A Karplus-Strong plucked-string instrument (guitar / harp / koto / plucked
+/// bass) — a physical-model timbre that complements the additive voices without
+/// any sample assets. Each note run is a fresh pluck at the note frequency,
+/// decaying within its run like a real string; [damping] sets the sustain/decay
+/// and [blend] the string↔percussive character. Deterministic via [seed] (stable
+/// stem cache), so it plugs into the same offline-mix path as the other voices.
+class KarplusInstrument implements TrackerInstrument {
+  const KarplusInstrument(
+    this.id, {
+    this.damping = 0.996,
+    this.blend = 1.0,
+    this.seed = 0,
+  });
+
+  @override
+  final String id;
+  final double damping;
+  final double blend;
+  final int seed;
+
+  @override
+  Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) {
+    final out = Float64List(timing.totalSamples);
+    var startStep = 0;
+    for (final (midi, steps) in cellRuns(cells)) {
+      if (midi != null) {
+        final startSample = timing.stepStartSample(startStep);
+        final endSample = timing.stepStartSample(startStep + steps);
+        final buf = karplusPluck(
+          freq: midiToFrequency(midi),
+          samples: endSample - startSample,
+          damping: damping,
+          blend: blend,
+          // Per-note seed keeps the render deterministic yet varies the burst.
+          seed: seed + startStep,
         );
         final n = min(buf.length, out.length - startSample);
         for (var i = 0; i < n; i++) {
@@ -689,7 +737,8 @@ class InstrumentOption {
   final TrackerInstrument Function() build;
 }
 
-/// The picker palette: four additive voices + five chiptune presets.
+/// The picker palette / built-in sound library: four additive voices, seven
+/// chiptune (sfxr) presets, and three Karplus-Strong plucked strings.
 final List<InstrumentOption> kTrackerInstruments = [
   InstrumentOption(
     'piano',
@@ -727,6 +776,16 @@ final List<InstrumentOption> kTrackerInstruments = [
   InstrumentOption(
     'bell',
     () => SfxrInstrument.preset('bell', sfxrBell, seed: 17),
+  ),
+  // Karplus-Strong plucked strings — melodic, sample-free physical models.
+  InstrumentOption('pluck', () => const KarplusInstrument('pluck')),
+  InstrumentOption(
+    'harp',
+    () => const KarplusInstrument('harp', damping: 0.9985),
+  ),
+  InstrumentOption(
+    'pluckBass',
+    () => const KarplusInstrument('pluckBass', damping: 0.992),
   ),
 ];
 
