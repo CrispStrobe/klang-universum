@@ -113,6 +113,9 @@ flutter:
   assets:
     - assets/images/
     - assets/sounds/
+    # Bundled CC0 percussion one-shots (VCSL, public domain) for the tracker's
+    # sound library — see assets/sounds/percussion/LICENSE.txt.
+    - assets/sounds/percussion/
     # Selectable SMuFL faces (Petaluma, Leland, Leipzig — all SIL OFL 1.1) with
     # their glyph metadata + license, loaded at runtime by the notation-font
     # setting. (Bravura, the default, is bundled by crisp_notation.)
