@@ -20,6 +20,7 @@ import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
+import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/workshop/export/score_pdf.dart';
@@ -450,6 +451,15 @@ abstract interface class CompositionWorkshopTester {
   /// Test seam: render the export for [ext] (bytes for binary formats, text
   /// otherwise) — so a test can prove multi-part MIDI/ABC carry every part.
   Future<(Uint8List?, String?)> debugGenerateExport(String ext);
+
+  /// 🔍 Whether Looking-Glass inspect mode is on.
+  bool get inspectMode;
+
+  /// Test seam: run the inspector on element [id] (as an element tap would).
+  void debugInspect(String id);
+
+  /// Test seam: id of the first note in the active part (null if none).
+  String? get debugFirstNoteId;
 }
 
 class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
@@ -505,6 +515,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   bool _barNumbers = false; // label each wrapped system with its bar number
   bool _noteNames = false; // draw each note's name below the staff
   bool _showAnalysis = false; // live harmonic analysis: tint notes by function
+  bool _inspect = false; // 🔍 Looking Glass: tap a note to see what it is
   // Studio: an opt-in selection-driven inspector panel (Cause 3). Off by default,
   // so the kid Sandbox surface is unchanged; when on it docks to the right and
   // reflects/edits whatever is selected — the scalable home for note properties.
@@ -658,6 +669,22 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   Future<(Uint8List?, String?)> debugGenerateExport(String ext) =>
       _generateExport(kExportFormats.firstWhere((f) => f.ext == ext));
 
+  @override
+  bool get inspectMode => _inspect;
+
+  @override
+  void debugInspect(String id) => _inspectTapped(id);
+
+  @override
+  String? get debugFirstNoteId {
+    for (final m in _doc.buildScore().measures) {
+      for (final e in m.elements) {
+        if (e is NoteElement && e.pitches.isNotEmpty) return e.id;
+      }
+    }
+    return null;
+  }
+
   NoteDuration get _pendingDuration =>
       NoteDuration(_pendingBase, dots: _dotted ? 1 : 0);
 
@@ -720,26 +747,56 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     _placePitch(pitch);
   }
 
-  void _onElementTap(String id) => setState(() {
-        // Tapping a note in the OTHER voice follows the caret to it: mutations
-        // target the active voice, so a cross-voice edit needs the voice to
-        // switch. setActiveVoice clears the old (per-voice) selection, then the
-        // tapped note is selected in its now-active voice. Single-voice
-        // documents always tap within the active voice, so this is a no-op there.
-        final voice = _doc.voiceOfId(id);
-        if (voice != null && voice != _doc.activeVoice) {
-          _doc.setActiveVoice(voice);
-        }
-        _doc.toggleSelected(id);
-        _syncControlsToSelection();
-      });
+  /// 🔍 Looking Glass: describe the tapped note (name + degree + chord/roman/
+  /// function) instead of editing it. Works in single-part (local id) and
+  /// full-score (global `p<part>:<rawId>`) modes by resolving the owning score.
+  void _inspectTapped(String id) {
+    final Score score;
+    final String localId;
+    final part = MultiPartDocument.partIndexOf(id);
+    if (part >= 0) {
+      score = _mpd.parts[part].buildScore();
+      localId = MultiPartDocument.rawIdOf(id);
+    } else {
+      score = _doc.buildScore();
+      localId = id;
+    }
+    final info = inspectElement(score, localId, analyze(score));
+    if (info != null) showInspect(context, info);
+  }
+
+  void _onElementTap(String id) {
+    if (_inspect) {
+      _inspectTapped(id);
+      return;
+    }
+    setState(() {
+      // Tapping a note in the OTHER voice follows the caret to it: mutations
+      // target the active voice, so a cross-voice edit needs the voice to
+      // switch. setActiveVoice clears the old (per-voice) selection, then the
+      // tapped note is selected in its now-active voice. Single-voice
+      // documents always tap within the active voice, so this is a no-op there.
+      final voice = _doc.voiceOfId(id);
+      if (voice != null && voice != _doc.activeVoice) {
+        _doc.setActiveVoice(voice);
+      }
+      _doc.toggleSelected(id);
+      _syncControlsToSelection();
+    });
+  }
 
   /// Full-score canvas tap (multi-part mode): select the element across parts
   /// and switch the toolbar to its owning part.
-  void _onGlobalElementTap(String globalId) => setState(() {
-        _mpd.selectByGlobalId(globalId);
-        _syncControlsToSelection();
-      });
+  void _onGlobalElementTap(String globalId) {
+    if (_inspect) {
+      _inspectTapped(globalId);
+      return;
+    }
+    setState(() {
+      _mpd.selectByGlobalId(globalId);
+      _syncControlsToSelection();
+    });
+  }
 
   // ---- G6: in-place editing on the full-score canvas (C12) ----------------
 
@@ -2910,6 +2967,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       setState(() => _noteNames = !_noteNames);
                     case 'analysis':
                       setState(() => _showAnalysis = !_showAnalysis);
+                    case 'inspect':
+                      setState(() => _inspect = !_inspect);
                     case 'studio':
                       _setShelf(_studio ? _Shelf.sandbox : _Shelf.studio);
                     case 'inspector':
@@ -2968,6 +3027,11 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     value: 'analysis',
                     checked: _showAnalysis,
                     child: Text(l10n.workshopAnalysis),
+                  ),
+                  CheckedPopupMenuItem<String>(
+                    value: 'inspect',
+                    checked: _inspect,
+                    child: Text(l10n.inspectMode),
                   ),
                   const PopupMenuDivider(),
                   CheckedPopupMenuItem<String>(

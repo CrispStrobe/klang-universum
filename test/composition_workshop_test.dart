@@ -107,6 +107,32 @@ void main() {
     expect(find.text('C Major'), findsNothing);
   });
 
+  testWidgets('🔍 Inspect mode: tapping a note opens its Looking-Glass card',
+      (tester) async {
+    await pump(tester);
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    final editor = _editor(tester);
+
+    // Place a note via the piano so there is something to inspect.
+    await tester.tap(_pianoKey());
+    await tester.pump();
+    final id = editor.debugFirstNoteId;
+    expect(id, isNotNull);
+
+    // Turn Inspect on from the ⋮ menu.
+    expect(editor.inspectMode, isFalse);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.inspectMode));
+    await tester.pumpAndSettle();
+    expect(editor.inspectMode, isTrue);
+
+    // Inspecting the note opens the info sheet with its scale-degree phrase.
+    editor.debugInspect(id!);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('major'), findsOneWidget); // "… of C major"
+  });
+
   testWidgets('the rest button adds a rest; bars fill per the meter',
       (tester) async {
     await pump(tester);
