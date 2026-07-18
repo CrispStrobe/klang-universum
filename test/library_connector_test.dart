@@ -13,6 +13,7 @@ import 'package:comet_beat/features/library/donation.dart';
 import 'package:comet_beat/features/library/library_browser_screen.dart';
 import 'package:comet_beat/features/library/library_import.dart';
 import 'package:comet_beat/features/library/license_policy.dart';
+import 'package:comet_beat/features/library/sources/commons_source.dart';
 import 'package:comet_beat/features/library/sources/openscore_source.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
@@ -197,6 +198,36 @@ void main() {
       final schubert = await s.browse(query: 'schubert');
       expect(schubert, hasLength(1));
       expect(schubert.single.composer, 'Franz Schubert');
+    });
+  });
+
+  group('CommonsSource (per-file licenses)', () {
+    const commonsJson = '''
+    {"query":{"pages":{
+      "1":{"pageid":1,"title":"File:Free Tune.mid","imageinfo":[{"url":"https://upload.wikimedia.org/x/Free_Tune.mid","extmetadata":{"LicenseShortName":{"value":"CC0"},"Artist":{"value":"<a>Jane Doe</a>"}}}]},
+      "2":{"pageid":2,"title":"File:Share Alike.mid","imageinfo":[{"url":"https://upload.wikimedia.org/x/Share_Alike.mid","extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"}}}]},
+      "3":{"pageid":3,"title":"File:No Commercial.mid","imageinfo":[{"url":"https://upload.wikimedia.org/x/No_Commercial.mid","extmetadata":{"LicenseShortName":{"value":"CC BY-NC 2.0"}}}]}
+    }}}''';
+
+    test('parseSearch reads title/license/composer, strips File:/.mid + HTML',
+        () {
+      final src = CommonsSource((_) async => Uint8List(0));
+      final items = src.parseSearch(commonsJson);
+      expect(items, hasLength(3));
+      final free = items.firstWhere((i) => i.title == 'Free Tune');
+      expect(free.declaredLicense, 'CC0');
+      expect(free.composer, 'Jane Doe'); // <a> stripped
+      expect(free.format, 'midi');
+      expect(free.sourceUrl, contains('commons.wikimedia.org/wiki/'));
+    });
+
+    test('browse drops non-permissive (NC) files via the gate', () async {
+      final src = CommonsSource((_) async => utf8.encode(commonsJson));
+      final items = await src.browse();
+      final licenses = items.map((i) => i.declaredLicense).toList();
+      expect(licenses, contains('CC0'));
+      expect(licenses, contains('CC BY-SA 4.0'));
+      expect(licenses.any((l) => l.contains('NC')), isFalse); // filtered
     });
   });
 

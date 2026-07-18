@@ -8,6 +8,7 @@
 import 'dart:typed_data';
 
 import 'package:comet_beat/features/library/content_source.dart';
+import 'package:comet_beat/features/library/sources/commons_source.dart';
 import 'package:comet_beat/features/library/sources/openscore_source.dart';
 import 'package:http/http.dart' as http;
 
@@ -35,4 +36,5 @@ Future<Uint8List> defaultHttpGet(Uri url) async {
 List<ContentSource> buildSources({HttpGet http = defaultHttpGet}) => [
       OpenScoreSource.lieder(http),
       OpenScoreSource.stringQuartets(http),
+      CommonsSource(http),
     ];
