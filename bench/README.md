@@ -33,3 +33,17 @@ dart run bin/mp3_bench.dart /tmp/ref.txt 20000
   builds are AOT (faster). Encoding a 3-min song ≈ 13,850 granules ≈ 3.5 s JIT.
   (AOT `dart compile exe` is blocked here by the app's native-asset deps, so
   the in-app release-mode number will sit between JIT and glint.)
+
+## End-to-end encode validation (slice 5c/6)
+`mp3EncodeMono(pcm)` → a complete MPEG-1 Layer III (mono, CBR) file, verified
+with a real-world decoder:
+```
+# encode 3 s of 440+880 Hz from a bin/ script, then:
+ffmpeg -v error -i out.mp3 -f s16le out.pcm      # exit 0, no errors
+ffprobe out.mp3   # codec_name=mp3 sample_rate=44100 channels=1
+                  # duration=3.004 bit_rate=127999
+```
+Decoded audio is real (peak 23770/32768, RMS 1553, 99 % non-zero) — the tones
+survived. Header `FF FB 90 C4` = valid MPEG-1 LIII 128 k/44.1 k mono. First cut:
+zero scalefactors + no bit reservoir (valid, lower quality); scalefactors +
+reservoir + the rate-optimal region search are quality follow-ups.
