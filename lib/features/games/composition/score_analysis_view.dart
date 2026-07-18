@@ -12,6 +12,8 @@
 // numerals & cadence names for learners, +chord symbols & non-chord tones for
 // experts.
 
+import 'dart:math' as math;
+
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/widgets/playing_staff.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -278,8 +280,12 @@ class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
                     ),
                 ],
               ),
+            // Tension curve (learner+): tonic low → dominant high.
+            if (!kid) _tensionCurve(l10n, theme),
             const SizedBox(height: 10),
             _legend(l10n, theme, kid),
+            // Expert extras: voice-leading check + non-chord tones.
+            if (_depth == AnalysisDepth.expert) _expertSection(l10n, theme),
             const SizedBox(height: 12),
             // Wrap so the play button + depth dial never overflow a phone.
             Wrap(
@@ -331,6 +337,100 @@ class _ScoreAnalysisViewState extends State<ScoreAnalysisView> {
             ],
           ),
       ],
+    );
+  }
+
+  // ---- expert layer ------------------------------------------------------
+
+  static double _tension(HarmonicFunction? f) => switch (f) {
+        HarmonicFunction.tonic => 0.2,
+        HarmonicFunction.subdominant => 0.55,
+        HarmonicFunction.dominant => 1.0,
+        null => 0.0,
+      };
+
+  Widget _tensionCurve(AppLocalizations l10n, ThemeData theme) {
+    final points = [for (final s in _analysis.segments) _tension(s.function)];
+    if (points.length < 2) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Text(l10n.analysisTension, style: theme.textTheme.labelSmall),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SizedBox(
+              height: 26,
+              child: CustomPaint(
+                painter: _TensionPainter(points, theme.colorScheme.primary),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _pitchName(Pitch p) {
+    final acc =
+        p.alter > 0 ? '♯' * p.alter : (p.alter < 0 ? '♭' * -p.alter : '');
+    return '${p.step.name.toUpperCase()}$acc';
+  }
+
+  Widget _expertSection(AppLocalizations l10n, ThemeData theme) {
+    final rows = <Widget>[];
+    // Voice-leading check — only meaningful for a chordal (≥3-voice) texture.
+    final chordal = [
+      for (final s in _analysis.segments)
+        if (s.hasChord) s,
+    ];
+    final maxVoices = chordal.isEmpty
+        ? 0
+        : chordal.map((s) => s.pitches.length).reduce(math.max);
+    if (maxVoices >= 3) {
+      final chords = [
+        for (final s in chordal)
+          s.pitches.toList()..sort((a, b) => b.midiNumber - a.midiNumber),
+      ];
+      final issues = checkVoiceLeading(chords).where((i) {
+        return i.rule == VoiceLeadingRule.parallelFifths ||
+            i.rule == VoiceLeadingRule.parallelOctaves;
+      }).toList();
+      rows.add(
+        issues.isEmpty
+            ? Text(
+                '${l10n.analysisVoiceLeading}: '
+                '${l10n.analysisVoiceLeadingClean}',
+                style: theme.textTheme.bodySmall,
+              )
+            : Text(
+                '${l10n.analysisVoiceLeading}: '
+                '${issues.map((i) => i.rule == VoiceLeadingRule.parallelFifths ? l10n.analysisParallelFifths : l10n.analysisParallelOctaves).toSet().join(', ')}',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.error),
+              ),
+      );
+    }
+    // Non-chord tones across the piece.
+    final ncts = <String>{
+      for (final s in _analysis.segments)
+        for (final p in s.nonChordTones) _pitchName(p),
+    };
+    if (ncts.isNotEmpty) {
+      rows.add(
+        Text(
+          '${l10n.analysisNonChordTones}: ${ncts.join(', ')}',
+          style: theme.textTheme.bodySmall,
+        ),
+      );
+    }
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: rows,
+      ),
     );
   }
 
@@ -427,4 +527,40 @@ class _SegmentBlock extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Draws the harmonic-tension curve: a small polyline where each point is a
+/// segment's tension (tonic low → dominant high).
+class _TensionPainter extends CustomPainter {
+  _TensionPainter(this.points, this.color);
+
+  final List<double> points;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2) return;
+    double x(int i) => size.width * i / (points.length - 1);
+    double y(int i) => size.height * (1 - points[i]) * 0.9 + size.height * 0.05;
+
+    final line = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
+    final path = Path()..moveTo(x(0), y(0));
+    for (var i = 1; i < points.length; i++) {
+      path.lineTo(x(i), y(i));
+    }
+    canvas.drawPath(path, line);
+
+    final dot = Paint()..color = color;
+    for (var i = 0; i < points.length; i++) {
+      canvas.drawCircle(Offset(x(i), y(i)), 2.5, dot);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TensionPainter old) =>
+      old.color != color || old.points != points;
 }

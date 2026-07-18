@@ -4316,6 +4316,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get analyzeAction => 'Harmonie analysieren';
 
   @override
+  String get analysisTension => 'Spannung';
+
+  @override
+  String get analysisVoiceLeading => 'Stimmführung';
+
+  @override
+  String get analysisVoiceLeadingClean => 'Keine Quint-/Oktavparallelen ✓';
+
+  @override
+  String get analysisParallelFifths => 'Quintparallelen';
+
+  @override
+  String get analysisParallelOctaves => 'Oktavparallelen';
+
+  @override
+  String get analysisNonChordTones => 'Akkordfremde Töne';
+
+  @override
   String get cadenceAuthentic => 'authentische Kadenz';
 
   @override

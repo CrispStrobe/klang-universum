@@ -71,6 +71,24 @@ void main() {
     expect(find.text('F'), findsWidgets); // chord symbol
   });
 
+  testWidgets(
+      'the tension curve shows at learner depth; expert adds the '
+      'voice-leading check', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    await tester.pumpWidget(_app(ScoreAnalysisView(score: iToneIV)));
+    await tester.pumpAndSettle();
+
+    // Tension curve is drawn at the default (learner) depth.
+    expect(find.text(l10n.analysisTension), findsOneWidget);
+
+    // Expert depth adds the voice-leading readout (a chordal, 3-voice texture).
+    await tester.tap(find.text(l10n.analysisDepthExpert));
+    await tester.pumpAndSettle();
+    expect(find.textContaining(l10n.analysisVoiceLeading), findsOneWidget);
+  });
+
   testWidgets('playing a chord and the whole progression does not throw',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1400));

@@ -4292,6 +4292,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyzeAction => 'Analyse the harmony';
 
   @override
+  String get analysisTension => 'Tension';
+
+  @override
+  String get analysisVoiceLeading => 'Voice leading';
+
+  @override
+  String get analysisVoiceLeadingClean => 'No parallel 5ths or 8ves ✓';
+
+  @override
+  String get analysisParallelFifths => 'Parallel fifths';
+
+  @override
+  String get analysisParallelOctaves => 'Parallel octaves';
+
+  @override
+  String get analysisNonChordTones => 'Non-chord tones';
+
+  @override
   String get cadenceAuthentic => 'perfect cadence';
 
   @override

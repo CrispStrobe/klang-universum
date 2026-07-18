@@ -7856,6 +7856,42 @@ abstract class AppLocalizations {
   /// **'Analyse the harmony'**
   String get analyzeAction;
 
+  /// No description provided for @analysisTension.
+  ///
+  /// In en, this message translates to:
+  /// **'Tension'**
+  String get analysisTension;
+
+  /// No description provided for @analysisVoiceLeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice leading'**
+  String get analysisVoiceLeading;
+
+  /// No description provided for @analysisVoiceLeadingClean.
+  ///
+  /// In en, this message translates to:
+  /// **'No parallel 5ths or 8ves ✓'**
+  String get analysisVoiceLeadingClean;
+
+  /// No description provided for @analysisParallelFifths.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel fifths'**
+  String get analysisParallelFifths;
+
+  /// No description provided for @analysisParallelOctaves.
+  ///
+  /// In en, this message translates to:
+  /// **'Parallel octaves'**
+  String get analysisParallelOctaves;
+
+  /// No description provided for @analysisNonChordTones.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-chord tones'**
+  String get analysisNonChordTones;
+
   /// No description provided for @cadenceAuthentic.
   ///
   /// In en, this message translates to:
