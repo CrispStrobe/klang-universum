@@ -413,6 +413,9 @@
   "tabCapo": "Capo",
   "tabShowStandard": "Standard notation",
   "tabTempo": "Tempo",
+  "tabTracks": "Tracks",
+  "tabAddTrack": "Add track",
+  "tabRemoveTrack": "Remove track",
   "tabSaveSongBook": "Save to Song Book",
   "tabSaved": "Saved “{title}”",
   "@tabSaved": {

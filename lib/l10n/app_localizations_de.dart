@@ -1139,6 +1139,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabTempo => 'Tempo';
 
   @override
+  String get tabTracks => 'Spuren';
+
+  @override
+  String get tabAddTrack => 'Spur hinzufügen';
+
+  @override
+  String get tabRemoveTrack => 'Spur entfernen';
+
+  @override
   String get tabSaveSongBook => 'Ins Liederbuch speichern';
 
   @override

@@ -114,6 +114,58 @@ Pitch pitchFromMidi(int midi) {
   return Pitch(_naturalSteps[pc - 1]!, alter: 1, octave: octave);
 }
 
+/// One track in a multi-track tab "band" — a named [TabDocument] (its own
+/// tuning, so a bass track can sit next to a guitar track).
+class TabTrack {
+  String name;
+  TabDocument doc;
+  TabTrack(this.name, this.doc);
+}
+
+/// Merges several tracks' `(midis, ms)` timelines into one sequential timeline
+/// where every slice carries the pitches sounding across ALL tracks at that
+/// moment — so `AudioService.playTimedChords` plays the band together. Tracks
+/// may differ in length; the merge runs to the longest. Pure + testable.
+List<(List<int>, int)> mergePlaybackEvents(
+  List<List<(List<int>, int)>> tracks,
+) {
+  // Expand each track into absolute [start, end) segments.
+  final segs = <List<({int start, int end, List<int> midis})>>[];
+  for (final t in tracks) {
+    var at = 0;
+    final s = <({int start, int end, List<int> midis})>[];
+    for (final (midis, ms) in t) {
+      s.add((start: at, end: at + ms, midis: midis));
+      at += ms;
+    }
+    segs.add(s);
+  }
+  // Slice at every segment boundary.
+  final bounds = <int>{0};
+  for (final s in segs) {
+    for (final e in s) {
+      bounds
+        ..add(e.start)
+        ..add(e.end);
+    }
+  }
+  final times = bounds.toList()..sort();
+  final out = <(List<int>, int)>[];
+  for (var i = 0; i + 1 < times.length; i++) {
+    final t0 = times[i];
+    final t1 = times[i + 1];
+    if (t1 <= t0) continue;
+    final midis = <int>{};
+    for (final s in segs) {
+      for (final e in s) {
+        if (e.start <= t0 && t0 < e.end) midis.addAll(e.midis);
+      }
+    }
+    out.add((midis.toList()..sort(), t1 - t0));
+  }
+  return out;
+}
+
 /// A mutable tablature document: [tuning] + a list of [columns].
 class TabDocument {
   Tuning tuning;

@@ -1132,6 +1132,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabTempo => 'Tempo';
 
   @override
+  String get tabTracks => 'Tracks';
+
+  @override
+  String get tabAddTrack => 'Add track';
+
+  @override
+  String get tabRemoveTrack => 'Remove track';
+
+  @override
   String get tabSaveSongBook => 'Save to Song Book';
 
   @override

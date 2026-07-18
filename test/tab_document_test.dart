@@ -149,6 +149,65 @@ void main() {
     expect(doc.columns[0].techniques, isEmpty);
   });
 
+  group('mergePlaybackEvents (band)', () {
+    test('two tracks sound together on a shared slice', () {
+      // Track A: one 500ms note (midi 40). Track B: one 500ms note (midi 52).
+      final merged = mergePlaybackEvents([
+        [
+          ([40], 500),
+        ],
+        [
+          ([52], 500),
+        ],
+      ]);
+      expect(merged, hasLength(1));
+      expect(merged.single.$1, [40, 52]); // both sounding, sorted
+      expect(merged.single.$2, 500);
+    });
+
+    test('slices at boundaries when tracks differ in rhythm', () {
+      // A: 40 for 1000ms. B: 52 for 500ms then 53 for 500ms.
+      final merged = mergePlaybackEvents([
+        [
+          ([40], 1000),
+        ],
+        [
+          ([52], 500),
+          ([53], 500),
+        ],
+      ]);
+      expect(merged, hasLength(2));
+      expect(merged[0].$1, [40, 52]);
+      expect(merged[0].$2, 500);
+      expect(merged[1].$1, [40, 53]);
+      expect(merged[1].$2, 500);
+    });
+
+    test('runs to the longest track; a rest contributes nothing', () {
+      final merged = mergePlaybackEvents([
+        [
+          ([40], 500),
+        ],
+        [
+          (<int>[], 500), // rest
+          ([52], 500),
+        ],
+      ]);
+      expect(merged, hasLength(2));
+      expect(merged[0].$1, [40]);
+      expect(merged[1].$1, [52]); // track A already finished
+      expect(merged.fold<int>(0, (a, e) => a + e.$2), 1000);
+    });
+
+    test('a single track passes through unchanged', () {
+      final doc = TabDocument.blank(guitar, initialColumns: 2)
+        ..setFret(0, 0, 0);
+      final solo = doc.toPlaybackEvents();
+      final merged = mergePlaybackEvents([solo]);
+      expect(merged.map((e) => e.$2).toList(), solo.map((e) => e.$2).toList());
+    });
+  });
+
   test('clearCell removes only that string from a chord', () {
     final doc = TabDocument.blank(guitar, initialColumns: 1)
       ..setFret(0, 0, 5)

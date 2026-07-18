@@ -199,6 +199,70 @@ void main() {
     expect(svc.songs.single.musicXml, contains('<score-partwise'));
   });
 
+  testWidgets('tracks: add, switch, edit independently, remove',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    expect(tab.trackCount, 1);
+    expect(tab.activeTrack, 0);
+
+    // Edit track 1.
+    tab.selectCell(0, 0);
+    tab.enterFret(5);
+    await tester.pump();
+    expect(tab.fretAt(0, 0), 5);
+
+    // A new track is blank and becomes active.
+    tab.addTrack();
+    await tester.pump();
+    expect(tab.trackCount, 2);
+    expect(tab.activeTrack, 1);
+    expect(tab.fretAt(0, 0), isNull);
+
+    tab.selectCell(0, 0);
+    tab.enterFret(7);
+    await tester.pump();
+    expect(tab.fretAt(0, 0), 7);
+
+    // Track 1 kept its own edit.
+    tab.selectTrack(0);
+    await tester.pump();
+    expect(tab.fretAt(0, 0), 5);
+
+    // Removing drops to one track and never goes below one.
+    tab.selectTrack(1);
+    tab.removeTrack();
+    await tester.pump();
+    expect(tab.trackCount, 1);
+    tab.removeTrack();
+    await tester.pump();
+    expect(tab.trackCount, 1);
+  });
+
+  testWidgets('saving a two-track band writes multi-part MusicXML',
+      (tester) async {
+    final svc = UserSongsService();
+    await pumpGame(
+      tester,
+      const TabWorkshopScreen(),
+      extraProviders: [
+        ChangeNotifierProvider<UserSongsService>.value(value: svc),
+      ],
+    );
+    final tab = _tab(tester)..addTrack();
+    await tester.pump();
+    tab.selectCell(0, 0);
+    tab.enterFret(3);
+    await tester.pump();
+
+    tab.saveToSongBook('Band');
+    await tester.pump();
+    expect(svc.songs, hasLength(1));
+    // Two parts in the score-partwise part-list.
+    expect('<score-part '.allMatches(svc.songs.single.musicXml).length, 2);
+  });
+
   testWidgets('tempo control starts at 120', (tester) async {
     await pumpGame(tester, const TabWorkshopScreen());
     expect(_tab(tester).bpm, 120);

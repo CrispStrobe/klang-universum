@@ -2186,6 +2186,24 @@ abstract class AppLocalizations {
   /// **'Tempo'**
   String get tabTempo;
 
+  /// No description provided for @tabTracks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks'**
+  String get tabTracks;
+
+  /// No description provided for @tabAddTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Add track'**
+  String get tabAddTrack;
+
+  /// No description provided for @tabRemoveTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove track'**
+  String get tabRemoveTrack;
+
   /// No description provided for @tabSaveSongBook.
   ///
   /// In en, this message translates to:

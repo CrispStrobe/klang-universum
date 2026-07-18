@@ -97,6 +97,11 @@ abstract class TabWorkshopTester {
   String? chordNameAt(int col);
   void saveToSongBook(String title);
   int get bpm;
+  int get trackCount;
+  int get activeTrack;
+  void selectTrack(int index);
+  void addTrack();
+  void removeTrack();
 }
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
@@ -118,7 +123,12 @@ class TabWorkshopScreen extends StatefulWidget {
 class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     with SingleTickerProviderStateMixin
     implements TabWorkshopTester {
-  late TabDocument _doc;
+  late List<TabTrack> _tracks;
+  int _active = 0;
+
+  /// The document being edited — the active track's.
+  TabDocument get _doc => _tracks[_active].doc;
+
   int _capo = 0;
   bool _showStandard = true;
   NoteDuration _dur = NoteDuration.quarter;
@@ -139,7 +149,9 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   void initState() {
     super.initState();
     final score = widget.initialScore ?? asciiTabToScore(_demoTab);
-    _doc = TabDocument.fromScore(score, Tuning.standardGuitar);
+    _tracks = [
+      TabTrack('Guitar', TabDocument.fromScore(score, Tuning.standardGuitar)),
+    ];
     _ticker = createTicker(_onTick);
   }
 
@@ -211,9 +223,51 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   @override
   int get bpm => _bpm;
   @override
+  int get trackCount => _tracks.length;
+  @override
+  int get activeTrack => _active;
+
+  @override
+  void selectTrack(int index) => setState(() {
+        _active = index.clamp(0, _tracks.length - 1);
+        _selCol = _selCol.clamp(0, _doc.columns.length - 1);
+        _selString = _selString.clamp(0, _doc.stringCount - 1);
+      });
+
+  @override
+  void addTrack() => setState(() {
+        _tracks.add(
+          TabTrack(
+            'Track ${_tracks.length + 1}',
+            TabDocument.blank(Tuning.standardGuitar),
+          ),
+        );
+        _active = _tracks.length - 1;
+        _selCol = 0;
+        _selString = 0;
+      });
+
+  @override
+  void removeTrack() => setState(() {
+        if (_tracks.length <= 1) return; // always keep one track
+        _tracks.removeAt(_active);
+        _active = _active.clamp(0, _tracks.length - 1);
+        _selCol = _selCol.clamp(0, _doc.columns.length - 1);
+        _selString = _selString.clamp(0, _doc.stringCount - 1);
+      });
+
+  /// MusicXML for the whole band — multi-part when there is more than one
+  /// track, else the single active track.
+  String _bandMusicXml() => _tracks.length > 1
+      ? multiPartToMusicXml(
+          MultiPartScore([for (final t in _tracks) t.doc.toScore()]),
+        )
+      : scoreToMusicXml(_doc.toScore());
+
+  @override
   void saveToSongBook(String title) {
     final name = title.trim().isEmpty ? 'Tab' : title.trim();
-    final xml = scoreToMusicXml(_doc.toScore());
+    final xml = _bandMusicXml();
     context.read<UserSongsService>().addSong(
           ImportedSong(
             id: 'tab_${name}_${_doc.columns.length}',
@@ -249,7 +303,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       final score = parseTabFile(name, bytes);
       if (!mounted) return;
       setState(() {
-        _doc = TabDocument.fromScore(score, _doc.tuning);
+        _tracks[_active].doc = TabDocument.fromScore(score, _doc.tuning);
         _sourceName = name;
         _selCol = 0;
         _selString = 0;
@@ -261,14 +315,15 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   }
 
   void _loadDemo() => setState(() {
-        _doc = TabDocument.fromScore(asciiTabToScore(_demoTab), _doc.tuning);
+        _tracks[_active].doc =
+            TabDocument.fromScore(asciiTabToScore(_demoTab), _doc.tuning);
         _sourceName = null;
         _selCol = 0;
         _selString = 0;
       });
 
   void _clearAll() => setState(() {
-        _doc = TabDocument.blank(_doc.tuning);
+        _tracks[_active].doc = TabDocument.blank(_doc.tuning);
         _sourceName = null;
         _selCol = 0;
         _selString = 0;
@@ -279,9 +334,13 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       _stopPlayback();
       return;
     }
+    // Audio: every track sounding together. Highlight: the ACTIVE track's own
+    // column timeline (that's what the preview shows).
     final events = _doc.toPlaybackEvents(bpm: _bpm);
-    context.read<AudioService>().playTimedChords(events);
-    // Build the highlight timeline in lockstep with the audio events.
+    final band = mergePlaybackEvents(
+      [for (final t in _tracks) t.doc.toPlaybackEvents(bpm: _bpm)],
+    );
+    context.read<AudioService>().playTimedChords(band);
     final schedule = <({int col, int start, int end, bool note})>[];
     var t = 0;
     for (var c = 0; c < events.length; c++) {
@@ -339,7 +398,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         );
       case 'musicxml':
         await _saveBytes(
-          Uint8List.fromList(utf8.encode(scoreToMusicXml(score))),
+          Uint8List.fromList(utf8.encode(_bandMusicXml())),
           '$base.musicxml',
           'MusicXML',
           const ['musicxml'],
@@ -482,6 +541,8 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         onKeyEvent: _onKey,
         child: Column(
           children: [
+            _trackStrip(l10n),
+            const Divider(height: 1),
             _controls(l10n),
             const Divider(height: 1),
             Expanded(
@@ -506,6 +567,39 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             _editorPanel(l10n),
           ],
         ),
+      ),
+    );
+  }
+
+  /// The band's track strip: pick the track you're editing, add or remove one.
+  Widget _trackStrip(AppLocalizations l10n) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          Text(l10n.tabTracks),
+          const SizedBox(width: 8),
+          for (var i = 0; i < _tracks.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: ChoiceChip(
+                label: Text(_tracks[i].name),
+                selected: i == _active,
+                onSelected: (_) => selectTrack(i),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.library_add_outlined),
+            tooltip: l10n.tabAddTrack,
+            onPressed: addTrack,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: l10n.tabRemoveTrack,
+            onPressed: _tracks.length > 1 ? removeTrack : null,
+          ),
+        ],
       ),
     );
   }
