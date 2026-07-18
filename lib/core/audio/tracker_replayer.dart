@@ -611,7 +611,9 @@ void _renderSampleChannelInto(
     voice.armRow(cells[r]);
     if (voice.retriggeredThisRow) {
       final c = cells[r];
-      readPos = c.fxCmd == kFxSampleOffset ? (c.fxParam * 256).toDouble() : 0.0;
+      final os = cur is SampleInstrument ? cur.offsetScale : 1.0;
+      readPos =
+          c.fxCmd == kFxSampleOffset ? (c.fxParam * 256 * os).toDouble() : 0.0;
       noteStartSample = timing.stepStartSample(r);
     }
     if ((!voice.active && !voice.hasPendingNote) ||
@@ -709,7 +711,9 @@ void _renderSampleChannelIntoVariable(
     voice.armRow(cells[r]);
     if (voice.retriggeredThisRow) {
       final c = cells[r];
-      readPos = c.fxCmd == kFxSampleOffset ? (c.fxParam * 256).toDouble() : 0.0;
+      final os = cur is SampleInstrument ? cur.offsetScale : 1.0;
+      readPos =
+          c.fxCmd == kFxSampleOffset ? (c.fxParam * 256 * os).toDouble() : 0.0;
       noteStartSample = rowStart[r];
     }
     if ((!voice.active && !voice.hasPendingNote) ||

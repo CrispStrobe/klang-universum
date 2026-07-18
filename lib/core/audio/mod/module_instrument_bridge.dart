@@ -47,6 +47,8 @@ SampleInstrument sampleInstrumentFromDoc(
     baseMidi: baseMidi,
     loopStart: loopStart,
     loopLength: loopLength,
+    // A 9xx offset is in original-sample units → same 1/ratio scale as the loop.
+    offsetScale: 1 / ratio,
   );
 }
 

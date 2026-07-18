@@ -49,6 +49,40 @@ double _detect(SampleInstrument inst, int note) {
 }
 
 void main() {
+  group('9xx sample offset scales by the c5speed→engine ratio (bug fix)', () {
+    // A rising ramp so the read START position is directly observable.
+    DocSample rampSample({int c5speed = 8363, int n = 10240}) {
+      final pcm = Float64List(n);
+      for (var i = 0; i < n; i++) {
+        pcm[i] = i / n;
+      }
+      return DocSample(name: 'ramp', c5speed: c5speed, pcm: pcm);
+    }
+
+    test(
+        'the offset lands at param×256 of the ORIGINAL sample, not the engine '
+        'buffer', () {
+      final inst = sampleInstrumentFromDoc('r', rampSample());
+      // c5speed 8363 → engine 44100 ⇒ scale ≈ 5.27.
+      expect(inst.offsetScale, closeTo(44100 / 8363, 0.01));
+
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      List<TrackerCell> col(TrackerCell first) => [
+            first,
+            ...List<TrackerCell>.filled(timing.rows - 1, TrackerCell.empty),
+          ];
+      // 9x08 → 8×256 = 2048 ORIGINAL samples = 2048/10240 = 20% into the ramp.
+      final offset = inst.renderChannel(
+        col(const TrackerCell(midi: 60, fxCmd: 0x9, fxParam: 0x08)),
+        timing,
+      );
+      // Just past the declick, the read sits ~0.20 up the ramp. Without the
+      // c5speed scaling it would land ~5.27× too shallow (~0.04) and fail.
+      expect(offset[500], greaterThan(0.15));
+      expect(offset[500], lessThan(0.30));
+    });
+  });
+
   group('sampleInstrumentFromDoc — pitch is faithful and shifts by note', () {
     late SampleInstrument inst;
     setUpAll(() {

@@ -435,6 +435,7 @@ class SampleInstrument implements TrackerInstrument {
     this.envelope = Envelope.declick,
     this.loopStart = 0,
     this.loopLength = 0,
+    this.offsetScale = 1.0,
   });
 
   /// Records-once: applies [fx] to [raw] and keeps the result as the sample.
@@ -468,6 +469,13 @@ class SampleInstrument implements TrackerInstrument {
   final int loopStart;
   final int loopLength;
 
+  /// Converts a `9xx` sample-offset param (in ORIGINAL module-sample units) to
+  /// this buffer's units. When the module PCM was resampled to the engine rate
+  /// (ratio = c5speed/engineRate), the same offset lands `engineRate/c5speed`×
+  /// deeper — the bridge sets this to that factor. `1.0` (default) for a sample
+  /// already at the engine rate (byte-identical to before).
+  final double offsetScale;
+
   bool get loops =>
       loopLength > 0 &&
       loopStart >= 0 &&
@@ -483,7 +491,9 @@ class SampleInstrument implements TrackerInstrument {
       // 9xx sample offset (classic MOD): start the sample at param×256. Read from
       // the triggering cell's effect column; the cells already carry it here.
       final trigger = cells[startStep];
-      final offset = trigger.fxCmd == 0x9 ? trigger.fxParam * 256 : 0;
+      final offset = trigger.fxCmd == 0x9
+          ? (trigger.fxParam * 256 * offsetScale).round()
+          : 0;
       if (midi != null && offset < sample.length) {
         final src =
             offset > 0 ? Float64List.sublistView(sample, offset) : sample;
