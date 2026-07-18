@@ -180,6 +180,63 @@ void main() {
       );
     });
 
+    test('DTD does not deadlock after a silent far-end lead-in', () {
+      // Regression (port of aec_offline_test's DST-free analogue): the DTD
+      // counted warmup over EVERY block, including far-end-silent ones where the
+      // filter can't converge. Warmup then expired with W still zero, so
+      // echoEst = 0 -> rho = 0 -> freeze, and the freeze re-armed forever. On a
+      // realistic capture-before-playback start this made the +DTD engine far
+      // WORSE than plain. Echo only, no near-end talker.
+      const frame = 1024;
+      const silent = 13; // just past the 12-block DTD warmup
+      const tail = 60;
+      const blocks = silent + tail;
+      final rng = Random(31);
+      // Far-end silent for the lead-in, then active.
+      final ref = List<double>.generate(
+        blocks * frame,
+        (t) => t < silent * frame ? 0.0 : (rng.nextDouble() * 2 - 1) * 0.4,
+      );
+
+      double tailErle({required bool dtd}) {
+        final e = AecEngineFfi.create(frame: frame, libraryPath: libPath);
+        e.setDtd(dtd);
+        var micE = 0.0, outE = 0.0;
+        for (var bi = 0; bi < blocks; bi++) {
+          final r = <double>[];
+          final m = <double>[];
+          for (var i = 0; i < frame; i++) {
+            final t = bi * frame + i;
+            r.add(ref[t]);
+            m.add(echoAt(ref, t)); // echo only
+          }
+          e.reference(_toPcm16(r));
+          e.pump(_toPcm16(m));
+          final cleaned = e.read();
+          if (bi >= blocks - 20) {
+            for (var i = 0; i < frame; i++) {
+              final t = bi * frame + i;
+              final micPcm = echoAt(ref, t) * 32767;
+              micE += micPcm * micPcm;
+              outE += cleaned[i] * cleaned[i].toDouble();
+            }
+          }
+        }
+        e.dispose();
+        return 10 * (log(micE / (outE + 1e-9)) / ln10); // tail ERLE (dB)
+      }
+
+      final plain = tailErle(dtd: false);
+      final withDtd = tailErle(dtd: true);
+      // Opting into DTD must never be much WORSE than the linear-only path.
+      expect(
+        withDtd,
+        greaterThan(plain - 3),
+        reason: 'ERLE: plain ${plain.toStringAsFixed(1)} dB -> '
+            '+DTD ${withDtd.toStringAsFixed(1)} dB (deadlock)',
+      );
+    });
+
     test('residual suppression deepens echo-only ERLE through the engine', () {
       const frame = 1024;
       const blocks = 80;

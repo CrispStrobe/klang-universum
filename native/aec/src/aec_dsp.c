@@ -492,10 +492,21 @@ int aec_dtd_freeze(const AecDtd* d) { return (d && d->hangover > 0) ? 1 : 0; }
 void aec_dtd_update(AecDtd* d, const double* reference, const double* mic,
                     const double* cleaned, int blockSize) {
   if (!d) return;
-  d->block += 1;
   double refMs = 0.0;
   for (int i = 0; i < blockSize; i++) refMs += reference[i] * reference[i];
-  if (refMs / blockSize >= d->farEndFloor && d->block > d->warmupBlocks) {
+  int farEndActive = (refMs / blockSize >= d->farEndFloor);
+
+  // Count warmup ONLY over far-end-active blocks. The engine's canceller skips
+  // its own update while the far-end is silent, so counting those blocks burns
+  // the warmup before W has learned anything — then warmup expires with W still
+  // zero, echoEst = mic - cleaned = 0, ee = 0, rho = 0/(0+1e-12) = 0 < threshold
+  // -> freeze -> adapt off -> W stays zero -> rho stays 0 -> the freeze re-arms
+  // every block, forever. ~280 ms of capture-before-playback (the normal case)
+  // then costs ~28 dB of ERLE for the rest of the session. (Matches the fix in
+  // aec_offline.dart's DoubleTalkDetector.)
+  if (farEndActive) d->block += 1;
+
+  if (farEndActive && d->block > d->warmupBlocks) {
     double dot = 0.0, mm = 0.0, ee = 0.0;
     for (int i = 0; i < blockSize; i++) {
       double e = mic[i] - cleaned[i];  // echo estimate W·x
@@ -503,8 +514,18 @@ void aec_dtd_update(AecDtd* d, const double* reference, const double* mic,
       mm += mic[i] * mic[i];
       ee += e * e;
     }
-    double rho = dot / (sqrt(mm * ee) + 1e-12);
-    if (rho < d->threshold) d->hangover = d->hangoverBlocks;
+    // ee == 0 means the filter has produced NO echo estimate yet (W still
+    // zero) — "no information", not "near-end detected". Correlating against it
+    // gives rho = 0, read as double-talk, freezing the very adaptation that
+    // would fix it. Guard against it, and hold the FULL hangover on arming
+    // (falling through to the decrement below would spend one block here).
+    if (ee > 0.0 && mm > 0.0) {
+      double rho = dot / (sqrt(mm * ee) + 1e-12);
+      if (rho < d->threshold) {
+        d->hangover = d->hangoverBlocks;
+        return;
+      }
+    }
   }
   if (d->hangover > 0) d->hangover -= 1;
 }
