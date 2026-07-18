@@ -1395,6 +1395,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerPlayFromCursor => 'Play from cursor';
 
   @override
+  String get trackerOrderMoveLeft => 'Move slot left';
+
+  @override
+  String get trackerOrderMoveRight => 'Move slot right';
+
+  @override
+  String get trackerOrderInsert => 'Insert a copy';
+
+  @override
+  String get trackerOrderPrevPat => 'Slot → previous pattern';
+
+  @override
+  String get trackerOrderNextPat => 'Slot → next pattern';
+
+  @override
   String get trackerClearCell => 'Clear cell';
 
   @override

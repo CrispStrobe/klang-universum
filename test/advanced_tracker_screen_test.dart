@@ -382,6 +382,28 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('order list can be reordered and extended', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    final p1 = () {
+      game.addPattern();
+      return game.currentPattern;
+    }();
+    game.addToOrder(p1); // order = [0, 1]
+    await tester.pump();
+    expect(game.orderList, [0, 1]);
+
+    game.selectOrderSlot(0);
+    game.orderMove(1); // swap slots 0 and 1 -> [1, 0]
+    await tester.pump();
+    expect(game.orderList, [1, 0]);
+
+    game.selectOrderSlot(0);
+    game.orderInsert(); // insert a copy of slot 0 after it -> [1, 1, 0]
+    await tester.pump();
+    expect(game.orderList, [1, 1, 0]);
+  });
+
   testWidgets('play-from-cursor starts the pattern playing', (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
     final game = _game(tester);

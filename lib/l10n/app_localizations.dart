@@ -2708,6 +2708,36 @@ abstract class AppLocalizations {
   /// **'Play from cursor'**
   String get trackerPlayFromCursor;
 
+  /// No description provided for @trackerOrderMoveLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Move slot left'**
+  String get trackerOrderMoveLeft;
+
+  /// No description provided for @trackerOrderMoveRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Move slot right'**
+  String get trackerOrderMoveRight;
+
+  /// No description provided for @trackerOrderInsert.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert a copy'**
+  String get trackerOrderInsert;
+
+  /// No description provided for @trackerOrderPrevPat.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot → previous pattern'**
+  String get trackerOrderPrevPat;
+
+  /// No description provided for @trackerOrderNextPat.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot → next pattern'**
+  String get trackerOrderNextPat;
+
   /// No description provided for @trackerClearCell.
   ///
   /// In en, this message translates to:

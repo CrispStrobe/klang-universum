@@ -1402,6 +1402,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerPlayFromCursor => 'Ab Cursor abspielen';
 
   @override
+  String get trackerOrderMoveLeft => 'Platz nach links';
+
+  @override
+  String get trackerOrderMoveRight => 'Platz nach rechts';
+
+  @override
+  String get trackerOrderInsert => 'Kopie einfügen';
+
+  @override
+  String get trackerOrderPrevPat => 'Platz → vorheriges Pattern';
+
+  @override
+  String get trackerOrderNextPat => 'Platz → nächstes Pattern';
+
+  @override
   String get trackerClearCell => 'Zelle löschen';
 
   @override

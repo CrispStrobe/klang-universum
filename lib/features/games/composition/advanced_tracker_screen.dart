@@ -212,6 +212,12 @@ abstract interface class AdvancedTrackerTester {
   /// Play the current pattern from the cursor row (FT2 F7).
   void playFromCursor();
 
+  /// Order-list editing.
+  List<int> get orderList;
+  void selectOrderSlot(int i);
+  void orderMove(int delta);
+  void orderInsert();
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -297,6 +303,9 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// The number of rows between highlighted "beat" lines in the grid (FT2's
   /// row-highlight spacing; default = the beat, i.e. stepsPerBeat).
   int? _highlightEvery;
+
+  /// The selected position in the order list (for reorder/insert/delete).
+  int _orderCursor = 0;
 
   /// Pending state for note-name entry ("F" then "2"): the note's semitone and
   /// whether a sharp was typed, awaiting the octave digit. Null = nothing armed.
@@ -510,6 +519,49 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   void _addEmptyPattern() => addPattern();
   void _clonePattern() => addPattern(clone: true);
+
+  // --- Order-list editing (reorder / insert / retarget) ------------------
+  // Mutates `_song.order` directly (a public list) — screen-side, no model file.
+
+  void _orderMove(int delta) {
+    final j = _orderCursor + delta;
+    if (j < 0 || j >= _song.order.length) return;
+    setState(() {
+      final tmp = _song.order[_orderCursor];
+      _song.order[_orderCursor] = _song.order[j];
+      _song.order[j] = tmp;
+      _orderCursor = j;
+    });
+    _syncPlayback();
+  }
+
+  void _orderInsert() {
+    setState(() {
+      _song.order.insert(_orderCursor + 1, _song.order[_orderCursor]);
+      _orderCursor += 1;
+    });
+    _syncPlayback();
+  }
+
+  void _orderDelete(int i) {
+    if (_song.order.length <= 1) return;
+    setState(() {
+      _song.order.removeAt(i);
+      _orderCursor = _orderCursor.clamp(0, _song.order.length - 1);
+    });
+    _syncPlayback();
+  }
+
+  /// Retarget the selected order slot to the prev/next pattern (FT2 sets the
+  /// order value), and load that pattern for editing.
+  void _orderRetarget(int delta) {
+    if (_song.order.isEmpty) return;
+    final n = _song.patterns.length;
+    setState(() {
+      _song.order[_orderCursor] = (_song.order[_orderCursor] + delta + n) % n;
+    });
+    selectPattern(_song.order[_orderCursor]);
+  }
 
   // --- Editing ---
 
@@ -1327,6 +1379,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void interpolateBlock() => _interpolateBlock();
   @override
   void playFromCursor() => _playPattern(fromRow: _cursorRow);
+  @override
+  List<int> get orderList => List.unmodifiable(_song.order);
+  @override
+  void selectOrderSlot(int i) => setState(() => _orderCursor = i);
+  @override
+  void orderMove(int delta) => _orderMove(delta);
+  @override
+  void orderInsert() => _orderInsert();
 
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
@@ -2277,7 +2337,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             ),
           ),
           const SizedBox(width: 8),
-          // Order list: the play sequence; the sounding entry lights up.
+          // Order list: the play sequence; the sounding entry lights up, the
+          // selected slot (for reorder/retarget) is outlined.
           Text('${l10n.trackerSong}: '),
           Expanded(
             child: SizedBox(
@@ -2292,16 +2353,51 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 2),
                         child: InputChip(
                           label: Text(_song.patterns[_song.order[i]].name),
-                          selected: i == playing,
-                          onPressed: () => selectPattern(_song.order[i]),
-                          onDeleted: () =>
-                              setState(() => _song.removeFromOrder(i)),
+                          selected:
+                              playing >= 0 ? i == playing : i == _orderCursor,
+                          side: (playing < 0 && i == _orderCursor)
+                              ? BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                )
+                              : null,
+                          onPressed: () {
+                            setState(() => _orderCursor = i);
+                            selectPattern(_song.order[i]);
+                          },
+                          onDeleted: () => _orderDelete(i),
                         ),
                       ),
                     ActionChip(
                       avatar: const Icon(Icons.add, size: 16),
                       label: Text(_song.current.name),
                       onPressed: () => addToOrder(_song.currentIndex),
+                    ),
+                    // Order-slot edit cluster (retarget · move · insert).
+                    IconButton(
+                      icon: const Icon(Icons.expand_more, size: 18),
+                      tooltip: l10n.trackerOrderPrevPat,
+                      onPressed: () => _orderRetarget(-1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.expand_less, size: 18),
+                      tooltip: l10n.trackerOrderNextPat,
+                      onPressed: () => _orderRetarget(1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left, size: 20),
+                      tooltip: l10n.trackerOrderMoveLeft,
+                      onPressed: () => _orderMove(-1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right, size: 20),
+                      tooltip: l10n.trackerOrderMoveRight,
+                      onPressed: () => _orderMove(1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.control_point_duplicate, size: 18),
+                      tooltip: l10n.trackerOrderInsert,
+                      onPressed: _orderInsert,
                     ),
                   ],
                 ),
