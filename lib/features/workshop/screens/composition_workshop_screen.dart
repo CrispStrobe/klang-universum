@@ -593,19 +593,19 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   final _pianoScroll =
       ScrollController(initialScrollOffset: 14 * _pianoKeyWidth);
 
-  // The 42-key keyboard never changes (constant config + a stable `onKeyTap`
-  // tear-off), so build it once and reuse the instance — Flutter then skips
-  // rebuilding all 42 keys on every editor setState (edits / selection / hover).
-  late final Widget _pianoKeyboard = SizedBox(
-    width: _pianoWhiteKeys * _pianoKeyWidth,
-    child: PianoKeyboard(
-      startMidi: _pianoStartMidi,
-      whiteKeyCount: _pianoWhiteKeys,
-      showLabels: true,
-      showOctaveNumbers: true,
-      onKeyTap: _onPianoKey,
-    ),
+  // The 42-key keyboard's KEYS never change (constant config + a stable
+  // `onKeyTap` tear-off), so build the PianoKeyboard once and reuse it — it
+  // layouts to its parent, so only the wrapping SizedBox width changes on zoom.
+  late final Widget _pianoKeys = PianoKeyboard(
+    startMidi: _pianoStartMidi,
+    whiteKeyCount: _pianoWhiteKeys,
+    showLabels: true,
+    showOctaveNumbers: true,
+    onKeyTap: _onPianoKey,
   );
+
+  /// Zoom for the on-screen piano key WIDTH (independent of the staff zoom).
+  double _pianoZoom = 1.0;
 
   @override
   void dispose() {
@@ -3326,11 +3326,47 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     top: false,
                     child: SizedBox(
                       height: 140,
-                      child: SingleChildScrollView(
-                        controller: _pianoScroll,
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.all(8),
-                        child: _pianoKeyboard,
+                      child: Row(
+                        children: [
+                          // Piano key-size zoom.
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.zoom_in, size: 20),
+                                tooltip: l10n.workshopZoomIn,
+                                onPressed: () => setState(
+                                  () => _pianoZoom =
+                                      (_pianoZoom + 0.2).clamp(0.6, 2.2),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.zoom_out, size: 20),
+                                tooltip: l10n.workshopZoomOut,
+                                onPressed: () => setState(
+                                  () => _pianoZoom =
+                                      (_pianoZoom - 0.2).clamp(0.6, 2.2),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Expanded(
+                            child: Scrollbar(
+                              controller: _pianoScroll,
+                              child: SingleChildScrollView(
+                                controller: _pianoScroll,
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.all(8),
+                                child: SizedBox(
+                                  width: _pianoWhiteKeys *
+                                      _pianoKeyWidth *
+                                      _pianoZoom,
+                                  child: _pianoKeys,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
