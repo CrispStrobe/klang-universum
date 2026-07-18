@@ -438,6 +438,7 @@
   "trackerImportMod": "Import tune (MOD/XM/S3M/IT)…",
   "trackerExportMod": "Export .mod…",
   "trackerImportMidi": "Import MIDI…",
+  "trackerImportAbc": "Import ABC…",
   "trackerExportMidi": "Export MIDI…",
   "trackerModFailed": "Couldn't read/write that .mod.",
   "trackerBorrowSample": "Borrow instrument…",

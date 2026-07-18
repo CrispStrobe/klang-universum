@@ -407,6 +407,7 @@
   "trackerImportMod": "Melodie importieren (MOD/XM/S3M/IT)…",
   "trackerExportMod": ".mod exportieren…",
   "trackerImportMidi": "MIDI importieren…",
+  "trackerImportAbc": "ABC importieren…",
   "trackerExportMidi": "MIDI exportieren…",
   "trackerModFailed": "Diese .mod ließ sich nicht lesen/schreiben.",
   "trackerBorrowSample": "Instrument leihen…",

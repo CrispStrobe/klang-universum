@@ -1208,6 +1208,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerImportMidi => 'Import MIDI…';
 
   @override
+  String get trackerImportAbc => 'Import ABC…';
+
+  @override
   String get trackerExportMidi => 'Export MIDI…';
 
   @override

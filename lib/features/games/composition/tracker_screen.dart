@@ -17,6 +17,8 @@
 // full note·instrument·volume·fx cell, keyboard entry, sfxr/sampled instruments)
 // hangs off the same TrackerEngine document later — see docs/TRACKER_HANDOVER.md.
 
+import 'dart:convert';
+
 import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/mod/mod.dart';
@@ -166,6 +168,10 @@ abstract interface class TrackerTester {
 
   /// The current pattern serialized to Standard MIDI File bytes.
   Uint8List exportMidiBytes();
+
+  /// The current pattern as ABC text; and load an ABC string into the channels.
+  String exportAbcText();
+  void importAbcText(String abc);
 
   /// Saves the groove's pitched channels to the Song Book as a multi-part score;
   /// returns true if anything was saved (false when nothing is placed).
@@ -400,6 +406,12 @@ class _TrackerScreenState extends State<TrackerScreen>
   void importMidiScore(Score score) => _loadMidi(score);
   @override
   Uint8List exportMidiBytes() => scoreToMidi(_trackerAsScore());
+
+  @override
+  String exportAbcText() => scoreToAbc(_trackerAsScore());
+
+  @override
+  void importAbcText(String abc) => _loadMidi(scoreFromAbc(abc));
   @override
   bool debugSaveToSongBook(UserSongsService songs) =>
       _writeToSongBook(songs, AppLocalizations.of(context)!.gameTracker);
@@ -746,6 +758,48 @@ class _TrackerScreenState extends State<TrackerScreen>
       );
       if (location == null || !mounted) return;
       await XFile.fromData(bytes, name: 'tracker.mid').saveTo(location.path);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.trackerModFailed)));
+    }
+  }
+
+  // ── ABC import / export (via the Score bridge) ─────────────────────────────
+
+  Future<void> _importAbc() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = AppLocalizations.of(context)!.trackerModFailed;
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'ABC', extensions: ['abc']),
+        ],
+      );
+      if (file == null || !mounted) return;
+      _loadMidi(scoreFromAbc(utf8.decode(await file.readAsBytes())));
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
+  }
+
+  Future<void> _exportAbc() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bytes =
+          Uint8List.fromList(utf8.encode(scoreToAbc(_trackerAsScore())));
+      final location = await getSaveLocation(
+        suggestedName: 'tracker.abc',
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'ABC', extensions: ['abc']),
+        ],
+      );
+      if (location == null || !mounted) return;
+      await XFile.fromData(bytes, name: 'tracker.abc').saveTo(location.path);
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.workshopSavedTo(location.path))),
       );
@@ -1300,6 +1354,10 @@ class _TrackerScreenState extends State<TrackerScreen>
                   _importMidi();
                 case 'exportMid':
                   _exportMidi();
+                case 'importAbc':
+                  _importAbc();
+                case 'exportAbc':
+                  _exportAbc();
                 case 'borrow':
                   _borrowInstrument();
                 case 'saveSong':
@@ -1329,6 +1387,14 @@ class _TrackerScreenState extends State<TrackerScreen>
               PopupMenuItem(
                 value: 'exportMid',
                 child: Text(l10n.trackerExportMidi),
+              ),
+              PopupMenuItem(
+                value: 'importAbc',
+                child: Text(l10n.trackerImportAbc),
+              ),
+              PopupMenuItem(
+                value: 'exportAbc',
+                child: Text(l10n.trackerExportAbc),
               ),
               PopupMenuItem(
                 value: 'borrow',

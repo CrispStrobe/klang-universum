@@ -383,6 +383,21 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ABC imports and exports (the Score bridge)', (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+
+    // A one-bar ABC melody — imports onto the (pentatonic) grid.
+    game.importAbcText('X:1\nL:1/8\nK:C\nCDEG z4 |\n');
+    await tester.pump();
+    expect(game.noteCount, greaterThan(0));
+
+    final abc = game.exportAbcText();
+    expect(abc, contains('X:')); // a valid ABC tune header
+    expect(abc, contains('K:'));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('long-press toggles a note soft (dynamics)', (tester) async {
     await pumpGame(tester, const TrackerScreen());
     final game = _game(tester);

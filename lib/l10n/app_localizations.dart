@@ -2336,6 +2336,12 @@ abstract class AppLocalizations {
   /// **'Import MIDI…'**
   String get trackerImportMidi;
 
+  /// No description provided for @trackerImportAbc.
+  ///
+  /// In en, this message translates to:
+  /// **'Import ABC…'**
+  String get trackerImportAbc;
+
   /// No description provided for @trackerExportMidi.
   ///
   /// In en, this message translates to:
