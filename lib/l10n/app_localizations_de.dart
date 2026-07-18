@@ -1285,6 +1285,38 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get soundLabSaveTitle => 'In Meine Klänge speichern';
+
+  @override
+  String get soundLabMyTitle => 'Meine Klänge';
+
+  @override
+  String get soundLabSaveName => 'Name';
+
+  @override
+  String get soundLabCancel => 'Abbrechen';
+
+  @override
+  String get soundLabSave => 'Speichern';
+
+  @override
+  String get soundLabDelete => 'Löschen';
+
+  @override
+  String soundLabDefaultName(int n) {
+    return 'Klang $n';
+  }
+
+  @override
+  String soundLabSaved(String name) {
+    return '„$name“ gespeichert';
+  }
+
+  @override
+  String get soundLabMyEmpty =>
+      'Noch keine gespeicherten Klänge. Erstelle einen und tippe auf das Lesezeichen.';
+
+  @override
   String get soundLabSquare => 'Rechteck';
 
   @override

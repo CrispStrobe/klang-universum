@@ -432,6 +432,21 @@
   "@soundLabSavedTo": {
     "placeholders": { "path": { "type": "String" } }
   },
+  "soundLabSaveTitle": "In Meine Klänge speichern",
+  "soundLabMyTitle": "Meine Klänge",
+  "soundLabSaveName": "Name",
+  "soundLabCancel": "Abbrechen",
+  "soundLabSave": "Speichern",
+  "soundLabDelete": "Löschen",
+  "soundLabDefaultName": "Klang {n}",
+  "@soundLabDefaultName": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "soundLabSaved": "„{name}“ gespeichert",
+  "@soundLabSaved": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "soundLabMyEmpty": "Noch keine gespeicherten Klänge. Erstelle einen und tippe auf das Lesezeichen.",
   "soundLabSquare": "Rechteck",
   "soundLabSaw": "Säge",
   "soundLabSine": "Sinus",

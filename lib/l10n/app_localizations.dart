@@ -2468,6 +2468,60 @@ abstract class AppLocalizations {
   /// **'Saved to {path}'**
   String soundLabSavedTo(String path);
 
+  /// No description provided for @soundLabSaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to My Sounds'**
+  String get soundLabSaveTitle;
+
+  /// No description provided for @soundLabMyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Sounds'**
+  String get soundLabMyTitle;
+
+  /// No description provided for @soundLabSaveName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get soundLabSaveName;
+
+  /// No description provided for @soundLabCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get soundLabCancel;
+
+  /// No description provided for @soundLabSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get soundLabSave;
+
+  /// No description provided for @soundLabDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get soundLabDelete;
+
+  /// No description provided for @soundLabDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound {n}'**
+  String soundLabDefaultName(int n);
+
+  /// No description provided for @soundLabSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved “{name}”'**
+  String soundLabSaved(String name);
+
+  /// No description provided for @soundLabMyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved sounds yet. Make one, then tap the bookmark to keep it.'**
+  String get soundLabMyEmpty;
+
   /// No description provided for @soundLabSquare.
   ///
   /// In en, this message translates to:

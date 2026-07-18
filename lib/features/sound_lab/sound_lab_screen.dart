@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/sound_lab/sfx_engine.dart';
+import 'package:comet_beat/features/sound_lab/sound_preset_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,10 @@ abstract class SoundLabTester {
   void loadPreset(String name);
   void randomizeSound();
   void setKnob(String key, double value);
+  List<SoundPreset> get myPresets;
+  Future<void> saveAs(String name);
+  void loadMyPreset(int index);
+  Future<void> deleteMyPreset(int index);
 }
 
 class SoundLabScreen extends StatefulWidget {
@@ -61,6 +66,17 @@ class _SoundLabScreenState extends State<SoundLabScreen>
   double _morph = 0.5;
   int _seed = 1;
   late Float64List _pcm = _render();
+
+  final _store = SoundPresetStore();
+  List<SoundPreset> _saved = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _store.load().then((list) {
+      if (mounted) setState(() => _saved = list);
+    });
+  }
 
   Float64List _render() =>
       sfxRender(_params, sampleRate: kSampleRate.toDouble());
@@ -87,6 +103,22 @@ class _SoundLabScreenState extends State<SoundLabScreen>
   void setKnob(String key, double value) =>
       _update(_params.copyWith({key: value}));
 
+  @override
+  List<SoundPreset> get myPresets => _saved;
+  @override
+  Future<void> saveAs(String name) async {
+    final list = await _store.save(SoundPreset(name, _params));
+    if (mounted) setState(() => _saved = list);
+  }
+
+  @override
+  void loadMyPreset(int index) => _update(_saved[index].params);
+  @override
+  Future<void> deleteMyPreset(int index) async {
+    final list = await _store.delete(_saved[index].name);
+    if (mounted) setState(() => _saved = list);
+  }
+
   // ── Actions ──────────────────────────────────────────────────────────────
   Uint8List _wav() {
     final i16 = Int16List(_pcm.length);
@@ -111,6 +143,82 @@ class _SoundLabScreenState extends State<SoundLabScreen>
       );
   }
 
+  Future<void> _saveDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(
+      text: l10n.soundLabDefaultName(_saved.length + 1),
+    );
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.soundLabSaveTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.soundLabSaveName),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.soundLabCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(l10n.soundLabSave),
+          ),
+        ],
+      ),
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+    await saveAs(trimmed);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l10n.soundLabSaved(trimmed))));
+  }
+
+  Future<void> _openMySounds() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: StatefulBuilder(
+          builder: (ctx, setSheet) => _saved.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child:
+                      Text(l10n.soundLabMyEmpty, textAlign: TextAlign.center),
+                )
+              : ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (var i = 0; i < _saved.length; i++)
+                      ListTile(
+                        leading: const Icon(Icons.graphic_eq),
+                        title: Text(_saved[i].name),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: l10n.soundLabDelete,
+                          onPressed: () async {
+                            await deleteMyPreset(i);
+                            setSheet(() {});
+                          },
+                        ),
+                        onTap: () {
+                          loadMyPreset(i);
+                          Navigator.of(ctx).pop();
+                        },
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -132,6 +240,16 @@ class _SoundLabScreenState extends State<SoundLabScreen>
             icon: const Icon(Icons.link),
             tooltip: l10n.soundLabShare,
             onPressed: _copyToken,
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmark_add_outlined),
+            tooltip: l10n.soundLabSaveTitle,
+            onPressed: _saveDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmarks_outlined),
+            tooltip: l10n.soundLabMyTitle,
+            onPressed: _openMySounds,
           ),
         ],
       ),

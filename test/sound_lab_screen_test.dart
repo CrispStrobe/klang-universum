@@ -4,6 +4,7 @@ import 'package:comet_beat/features/sound_lab/sfx_engine.dart';
 import 'package:comet_beat/features/sound_lab/sound_lab_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/game_test_support.dart';
 
@@ -47,5 +48,28 @@ void main() {
     lab.randomizeSound();
     await tester.pump();
     expect(lab.params.toJson(), isNot(before));
+  });
+
+  testWidgets('My Sounds: save, recall, delete via the seam', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await pumpGame(tester, const SoundLabScreen());
+    final lab = _lab(tester);
+
+    lab.loadPreset('laser');
+    await tester.pump();
+    await lab.saveAs('my laser');
+    await tester.pump();
+    expect(lab.myPresets.single.name, 'my laser');
+
+    // Move away, then recall the saved sound restores its params.
+    lab.loadPreset('coin');
+    await tester.pump();
+    lab.loadMyPreset(0);
+    await tester.pump();
+    expect(lab.params.wave, SfxWave.sawtooth); // the laser preset again
+
+    await lab.deleteMyPreset(0);
+    await tester.pump();
+    expect(lab.myPresets, isEmpty);
   });
 }

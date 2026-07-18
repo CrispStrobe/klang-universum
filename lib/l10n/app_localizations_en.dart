@@ -1278,6 +1278,38 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get soundLabSaveTitle => 'Save to My Sounds';
+
+  @override
+  String get soundLabMyTitle => 'My Sounds';
+
+  @override
+  String get soundLabSaveName => 'Name';
+
+  @override
+  String get soundLabCancel => 'Cancel';
+
+  @override
+  String get soundLabSave => 'Save';
+
+  @override
+  String get soundLabDelete => 'Delete';
+
+  @override
+  String soundLabDefaultName(int n) {
+    return 'Sound $n';
+  }
+
+  @override
+  String soundLabSaved(String name) {
+    return 'Saved “$name”';
+  }
+
+  @override
+  String get soundLabMyEmpty =>
+      'No saved sounds yet. Make one, then tap the bookmark to keep it.';
+
+  @override
   String get soundLabSquare => 'Square';
 
   @override

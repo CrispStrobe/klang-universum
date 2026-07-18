@@ -470,6 +470,21 @@
   "@soundLabSavedTo": {
     "placeholders": { "path": { "type": "String" } }
   },
+  "soundLabSaveTitle": "Save to My Sounds",
+  "soundLabMyTitle": "My Sounds",
+  "soundLabSaveName": "Name",
+  "soundLabCancel": "Cancel",
+  "soundLabSave": "Save",
+  "soundLabDelete": "Delete",
+  "soundLabDefaultName": "Sound {n}",
+  "@soundLabDefaultName": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "soundLabSaved": "Saved “{name}”",
+  "@soundLabSaved": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "soundLabMyEmpty": "No saved sounds yet. Make one, then tap the bookmark to keep it.",
   "soundLabSquare": "Square",
   "soundLabSaw": "Saw",
   "soundLabSine": "Sine",
