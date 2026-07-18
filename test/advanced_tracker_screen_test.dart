@@ -81,6 +81,26 @@ void main() {
     expect(game.debugInspectInfo(0, 5), isNull);
   });
 
+  testWidgets('🔍 Inspect mode: desktop hover raises the corner card',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60); // C4
+    await tester.pump();
+
+    game.toggleInspectMode();
+    await tester.pump();
+
+    // Hovering the note cell shows the card; an empty cell clears it.
+    game.debugHoverCell(0, 0);
+    await tester.pump();
+    expect(game.debugHoverCardShown, isTrue);
+
+    game.debugHoverCell(0, 5); // empty
+    await tester.pump();
+    expect(game.debugHoverCardShown, isFalse);
+  });
+
   testWidgets('endless length: the pattern grows well past one bar',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

@@ -365,6 +365,11 @@ abstract interface class AdvancedTrackerTester {
   void toggleInspectMode();
   (String, String?)? debugInspectInfo(int channel, int row);
 
+  /// 🔍 Desktop hover: drive the hover over a cell and read whether the corner
+  /// card is showing (a note cell shows it; an empty cell clears it).
+  void debugHoverCell(int channel, int row);
+  bool get debugHoverCardShown;
+
   /// Block editing (copy/cut/paste/paste-mix/transpose over a marked rectangle).
   bool get hasSelection;
   void selectTrack();
@@ -433,6 +438,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// 🔍 Looking Glass: while on, tapping a cell describes its note + the chord
   /// the whole row sounds (+ instrument/effect) instead of only moving the cursor.
   bool _inspect = false;
+
+  /// 🔍 Desktop hover-inspect: the info for the cell under the mouse while
+  /// Inspect is on (shown as a card pinned to the grid's corner — the grid is a
+  /// dense scroller, so a cursor-anchored card would drift). Null on touch.
+  InspectInfo? _hoverInfo;
 
   /// The copied block (row-major), for paste / paste-mix.
   List<List<TrackerCell>>? _clipboard;
@@ -964,6 +974,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           chordSymbolFor([for (final m in rowMidis) Pitch.fromMidi(m)]),
       detail: parts.isEmpty ? null : parts.join(' · '),
     );
+  }
+
+  /// 🔍 Desktop hover over a cell (Inspect on): show its info in the corner
+  /// card. A no-note cell clears the card.
+  void _onCellHover(int channel, int row) {
+    if (!_inspect) return;
+    final info = _inspectInfoFor(channel, row);
+    if (info != _hoverInfo) setState(() => _hoverInfo = info);
   }
 
   /// A cell tap: inspect it in Looking-Glass mode, else move/extend the cursor.
@@ -2088,6 +2106,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final info = _inspectInfoFor(channel, row);
     return info == null ? null : (info.noteNames, info.chordSymbol);
   }
+
+  @override
+  void debugHoverCell(int channel, int row) => _onCellHover(channel, row);
+  @override
+  bool get debugHoverCardShown => _inspect && _hoverInfo != null;
 
   static const _voiceIcons = <VoiceEffect, IconData>{
     VoiceEffect.normal: Icons.person,
@@ -3554,7 +3577,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final stepsPerBeat = _song.timing.stepsPerBeat;
     final gridWidth = _rowNumWidth + _song.channelCount * _cellWidth;
 
-    return ColoredBox(
+    final grid = ColoredBox(
       color: _classic ? const Color(0xFF0A130A) : Colors.transparent,
       child: Scrollbar(
         controller: _vScroll,
@@ -3583,7 +3606,38 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         ),
       ),
     );
+    // 🔍 On desktop, the corner card shows the hovered cell's note + row chord;
+    // leaving the grid clears it. No-op on touch.
+    return MouseRegion(
+      onExit: _inspect
+          ? (_) {
+              if (_hoverInfo != null) setState(() => _hoverInfo = null);
+            }
+          : null,
+      child: Stack(
+        children: [
+          grid,
+          if (_inspect && _hoverInfo != null)
+            Positioned(top: 8, right: 8, child: _hoverInspectCard()),
+        ],
+      ),
+    );
   }
+
+  /// The desktop hover card (Inspect mode), pinned to the grid corner.
+  Widget _hoverInspectCard() => IgnorePointer(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: Card(
+            elevation: 4,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: inspectBody(context, _hoverInfo!),
+            ),
+          ),
+        ),
+      );
 
   static const _headerHeight = 56.0;
 
@@ -3812,70 +3866,76 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         : (hasNote && cell.effect != TrackerEffect.none
             ? _effectCode(cell.effect)
             : '·');
-    return GestureDetector(
-      onTap: () => _onCellTap(channel, row),
-      onLongPress: () => _cellMenu(channel, row),
-      child: Container(
-        width: _cellWidth,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected
-              ? (_classic
-                  ? const Color(0x553B5BDB)
-                  : scheme.secondaryContainer.withValues(alpha: 0.6))
-              : null,
-          border: Border.all(
-            color: isCursor
-                ? (_classic ? const Color(0xFFE3B341) : scheme.primary)
-                : (_classic ? const Color(0xFF17301A) : scheme.outlineVariant),
-            width: isCursor ? 2 : 0.5,
+    return MouseRegion(
+      onEnter:
+          _inspect ? (_) => _onCellHover(channel, row) : null, // 🔍 desktop
+      child: GestureDetector(
+        onTap: () => _onCellTap(channel, row),
+        onLongPress: () => _cellMenu(channel, row),
+        child: Container(
+          width: _cellWidth,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected
+                ? (_classic
+                    ? const Color(0x553B5BDB)
+                    : scheme.secondaryContainer.withValues(alpha: 0.6))
+                : null,
+            border: Border.all(
+              color: isCursor
+                  ? (_classic ? const Color(0xFFE3B341) : scheme.primary)
+                  : (_classic
+                      ? const Color(0xFF17301A)
+                      : scheme.outlineVariant),
+              width: isCursor ? 2 : 0.5,
+            ),
           ),
-        ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                note,
-                style: TextStyle(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  fontSize: 14 * _zoom,
-                  color: hasNote
-                      ? (_classic
-                          ? _classicNoteColor(cell.midi!)
-                          : scheme.onSurface)
-                      : (_classic
-                          ? const Color(0xFF2C4A32)
-                          : scheme.onSurfaceVariant.withValues(alpha: 0.4)),
-                  fontWeight: hasNote ? FontWeight.w600 : FontWeight.w400,
-                  decoration: isCursor && _field == _CellField.note
-                      ? TextDecoration.underline
-                      : null,
-                  decorationColor:
-                      _classic ? const Color(0xFFE3B341) : scheme.primary,
-                  decorationThickness: 2,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  note,
+                  style: TextStyle(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    fontSize: 14 * _zoom,
+                    color: hasNote
+                        ? (_classic
+                            ? _classicNoteColor(cell.midi!)
+                            : scheme.onSurface)
+                        : (_classic
+                            ? const Color(0xFF2C4A32)
+                            : scheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                    fontWeight: hasNote ? FontWeight.w600 : FontWeight.w400,
+                    decoration: isCursor && _field == _CellField.note
+                        ? TextDecoration.underline
+                        : null,
+                    decorationColor:
+                        _classic ? const Color(0xFFE3B341) : scheme.primary,
+                    decorationThickness: 2,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              // Volume + effect sub-columns; the active field underlines when the
-              // cell holds the cursor (the FT2 column cursor).
-              Text(
-                vol,
-                style: _subColStyle(
-                  scheme,
-                  isCursor && _field == _CellField.volume,
+                const SizedBox(width: 4),
+                // Volume + effect sub-columns; the active field underlines when the
+                // cell holds the cursor (the FT2 column cursor).
+                Text(
+                  vol,
+                  style: _subColStyle(
+                    scheme,
+                    isCursor && _field == _CellField.volume,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              Text(
-                fx,
-                style: _subColStyle(
-                  scheme,
-                  isCursor && _field == _CellField.effect,
+                const SizedBox(width: 2),
+                Text(
+                  fx,
+                  style: _subColStyle(
+                    scheme,
+                    isCursor && _field == _CellField.effect,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
