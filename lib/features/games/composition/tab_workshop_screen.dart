@@ -129,6 +129,11 @@ abstract class TabWorkshopTester {
   bool get inspectMode;
   void toggleInspectMode();
   (String, String?)? debugInspectInfo(int col, int string);
+
+  /// 🔍 Desktop hover: drive the hover over a cell and read whether the corner
+  /// card is showing (a fretted cell shows it; an empty column clears it).
+  void debugHoverCell(int col, int string);
+  bool get debugHoverCardShown;
 }
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
@@ -163,6 +168,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   int _selString = 0;
   int _bpm = 120;
   bool _inspect = false; // 🔍 Looking Glass: tap a cell to see its note + chord
+  InspectInfo? _hoverInfo; // 🔍 desktop hover: the cell under the mouse's card
   String? _sourceName;
   final _focus = FocusNode();
 
@@ -314,6 +320,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     final info = _inspectInfoFor(col, string);
     return info == null ? null : (info.noteNames, info.chordSymbol);
   }
+
+  @override
+  void debugHoverCell(int col, int string) => _onCellHover(col, string);
+  @override
+  bool get debugHoverCardShown => _inspect && _hoverInfo != null;
 
   /// A committed note from the mic lands at the cursor, then the cursor steps
   /// on — so playing a phrase writes it across the grid.
@@ -1017,7 +1028,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   /// The editable string×step grid.
   Widget _grid() {
     final n = _doc.stringCount;
-    return SingleChildScrollView(
+    final grid = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -1060,40 +1071,81 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         ],
       ),
     );
+    // 🔍 On desktop, the corner card shows the hovered cell's note + column
+    // chord; leaving the grid clears it. No-op on touch.
+    return MouseRegion(
+      onExit: _inspect
+          ? (_) {
+              if (_hoverInfo != null) setState(() => _hoverInfo = null);
+            }
+          : null,
+      child: Stack(
+        children: [
+          grid,
+          if (_inspect && _hoverInfo != null)
+            Positioned(top: 8, right: 8, child: _hoverInspectCard()),
+        ],
+      ),
+    );
   }
 
   Widget _cell(int col, int string) {
     final fret = _doc.columns[col].frets[string];
     final selected = col == _selCol && string == _selString;
     final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () => _onCellTap(col, string),
-      child: Container(
-        width: 32,
-        height: 30,
-        margin: const EdgeInsets.all(1),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected
-              ? scheme.primaryContainer
-              : scheme.surfaceContainerHighest,
-          border: Border.all(
-            color: selected ? scheme.primary : scheme.outlineVariant,
-            width: selected ? 2 : 1,
+    return MouseRegion(
+      onEnter: _inspect ? (_) => _onCellHover(col, string) : null, // 🔍 desktop
+      child: GestureDetector(
+        onTap: () => _onCellTap(col, string),
+        child: Container(
+          width: 32,
+          height: 30,
+          margin: const EdgeInsets.all(1),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest,
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant,
+              width: selected ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(4),
           ),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          fret?.toString() ?? '·',
-          style: TextStyle(
-            fontFamily: 'monospace',
-            fontWeight: FontWeight.bold,
-            color: fret == null ? scheme.onSurfaceVariant : scheme.onSurface,
+          child: Text(
+            fret?.toString() ?? '·',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.bold,
+              color: fret == null ? scheme.onSurfaceVariant : scheme.onSurface,
+            ),
           ),
         ),
       ),
     );
   }
+
+  /// 🔍 Desktop hover over a cell (Inspect on): show its card in the corner.
+  void _onCellHover(int col, int string) {
+    if (!_inspect) return;
+    final info = _inspectInfoFor(col, string);
+    if (info != _hoverInfo) setState(() => _hoverInfo = info);
+  }
+
+  /// The desktop hover card (Inspect mode), pinned to the grid corner.
+  Widget _hoverInspectCard() => IgnorePointer(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: Card(
+            elevation: 4,
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: inspectBody(context, _hoverInfo!),
+            ),
+          ),
+        ),
+      );
 
   /// Duration palette + fret keypad + column add/remove.
   Widget _editorPanel(AppLocalizations l10n) {

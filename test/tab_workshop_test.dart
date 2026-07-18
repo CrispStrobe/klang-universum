@@ -151,6 +151,34 @@ void main() {
     // there; here the single-note spelling is what's tab-specific.)
   });
 
+  testWidgets('🔍 Inspect mode: desktop hover raises the corner card',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    // Inert until Inspect is on.
+    tab.selectCell(0, 0);
+    tab.enterFret(3);
+    await tester.pump();
+    tab.debugHoverCell(0, 0);
+    await tester.pump();
+    expect(tab.debugHoverCardShown, isFalse);
+
+    tab.toggleInspectMode();
+    await tester.pump();
+
+    // Hovering a fretted cell shows the card; a fresh empty column clears it.
+    tab.debugHoverCell(0, 0);
+    await tester.pump();
+    expect(tab.debugHoverCardShown, isTrue);
+
+    tab.addColumn(); // inserts an empty column at index 1
+    await tester.pump();
+    tab.debugHoverCell(1, 0);
+    await tester.pump();
+    expect(tab.debugHoverCardShown, isFalse);
+  });
+
   testWidgets('add and remove a column changes the count', (tester) async {
     await pumpGame(tester, const TabWorkshopScreen());
     final tab = _tab(tester);
