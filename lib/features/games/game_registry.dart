@@ -131,6 +131,7 @@ import 'package:comet_beat/shared/tutorial/primers.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// Every game by ID, across all modules — for curriculum/recital lookups.
 final Map<String, GameInfo> kGamesById = {
@@ -1386,7 +1387,12 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameSightReading,
       subtitle: (l) => l.gameSightReadingSubtitle,
       builder: (ctx) => PlayAlongScreen(
-        chart: sightReadingChart(DateTime.now().microsecondsSinceEpoch),
+        // Difficulty scales with the player's best tier (0..3): more range,
+        // skips and eighths as they improve.
+        chart: sightReadingChart(
+          DateTime.now().microsecondsSinceEpoch,
+          stars: ctx.read<ProgressService>().starsFor('sight_reading'),
+        ),
         title: AppLocalizations.of(ctx)!.gameSightReading,
         gameId: 'sight_reading',
         sriPrefix: 'voice.sight_reading',

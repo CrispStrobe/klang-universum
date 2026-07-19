@@ -13,25 +13,51 @@ import 'package:comet_beat/core/audio/play_along.dart';
 /// per scale degree and no accidentals to read at this level.
 const List<int> _cMajorC4 = [60, 62, 64, 65, 67, 69, 71, 72];
 
-/// Builds a [PlayAlongChart] of [bars] 4/4 bars at [bpm]: an in-key melody that
-/// moves mostly by step (with the odd small skip), starts and ends on the tonic,
-/// and never leaves the scale range. Deterministic for a given [seed].
-PlayAlongChart sightReadingChart(int seed, {int bars = 4, int bpm = 90}) {
+/// Builds a [PlayAlongChart] of [bars] 4/4 bars: an in-key melody that moves
+/// mostly by step, starts and ends on the tonic, and never leaves the scale
+/// range. Deterministic for a given [seed].
+///
+/// [stars] (0..3, the player's best tier) scales the difficulty:
+///   0 — five-note range (C4–G4), steps only, quarters, gentle 80 BPM;
+///   1–2 — full octave (C4–C5), the odd skip, some eighths, 90 BPM;
+///   3 — full octave, more skips + the occasional leap, more eighths, 104 BPM.
+/// [bpm] overrides the tier's default tempo when given.
+PlayAlongChart sightReadingChart(
+  int seed, {
+  int bars = 4,
+  int stars = 1,
+  int? bpm,
+}) {
   final rng = Random(seed);
+  final level = stars.clamp(0, 3);
+  final maxDegree =
+      level == 0 ? 4 : _cMajorC4.length - 1; // C4–G4 vs full octave
+  final allowEighths = level >= 1;
+  final eighthOneIn =
+      level >= 3 ? 2 : 3; // how often a beat splits into eighths
+  final tempo = bpm ?? (level == 0 ? 80 : (level >= 3 ? 104 : 90));
+
   final totalBeats = bars * 4;
   final notes = <TargetNote>[];
   var idx = 0; // start on the tonic (C4)
 
-  // Stepwise-biased next scale degree: ±1 usually, an occasional ±2, a rare
-  // repeat — always clamped inside the scale.
+  // Stepwise-biased next scale degree, clamped inside the (tier-sized) range.
+  // Beginners get steps only; skips and the rare leap appear with the tier.
   int nextDegree() {
     final r = rng.nextInt(12);
-    final delta = r < 7
-        ? (r.isEven ? 1 : -1) // step (7/12)
-        : r < 10
-            ? (r.isEven ? 2 : -2) // small skip (3/12)
-            : 0; // repeat (2/12)
-    return (idx + delta).clamp(0, _cMajorC4.length - 1);
+    final int delta;
+    if (level == 0) {
+      delta = r.isEven ? 1 : -1; // steps only
+    } else if (r < 7) {
+      delta = r.isEven ? 1 : -1; // step
+    } else if (r < 10) {
+      delta = r.isEven ? 2 : -2; // small skip
+    } else if (level >= 3 && r == 11) {
+      delta = 3; // an occasional upward leap
+    } else {
+      delta = 0; // repeat
+    }
+    return (idx + delta).clamp(0, maxDegree);
   }
 
   for (var slot = 0; slot < totalBeats; slot++) {
@@ -43,8 +69,8 @@ PlayAlongChart sightReadingChart(int seed, {int bars = 4, int bpm = 90}) {
       );
       break;
     }
-    // A quarter, or (1 in 3) a pair of eighths in this beat.
-    if (rng.nextInt(3) == 0) {
+    // A quarter, or (at higher tiers) a pair of eighths in this beat.
+    if (allowEighths && rng.nextInt(eighthOneIn) == 0) {
       for (var e = 0; e < 2; e++) {
         idx = nextDegree();
         notes.add(
@@ -65,7 +91,7 @@ PlayAlongChart sightReadingChart(int seed, {int bars = 4, int bpm = 90}) {
 
   return PlayAlongChart(
     name: 'Sight-singing',
-    bpm: bpm,
+    bpm: tempo,
     notes: notes,
     octaveAgnostic: true, // sung back — the octave is voice-dependent
   );
