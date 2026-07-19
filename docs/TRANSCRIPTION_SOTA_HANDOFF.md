@@ -184,7 +184,15 @@ detected meter in the commit.
 > package does NOT bind `--separate` yet, so the clean path is a Demucs ONNX via
 > the onnx_runtime_dart htdemucs fast path (mirrors basic_pitch). **Remaining:
 > publish/convert the MIT HTDemucs ONNX, set `_modelUrl`, confirm the 2 tensor
-> names + segment length.**
+> names + segment length.** ✅ **Re-check (2026-07-19): CrispASR separation is
+> now FULLY PARITY + fast (ggml, §248) — but the Dart `crispasr 0.8.11` binds
+> NEITHER separation nor any pitch model, and models are GGUF, so a SECOND
+> Separator drives it via the CLI: `crispasrCliSeparator({binary, model})`
+> (`946a91a3`, `crispasr_separate.dart` + io/stub, 4 tests) shells out to
+> `crispasr --separate` and reads the `<in>_<stem>.wav` back into Stems (desktop/
+> dev route; FFI binding to `crispasr_run_separate` is the productionisation).
+> **⇒ W-SEP has TWO wireable backends: onnx-htdemucs (app-shippable, needs the
+> ONNX) and CrispASR-ggml (works today via the CLI + a GGUF).**
 
 **Role.** The reason we fail on full songs is mixed sources. Split a song into
 stems and transcribe each with the right engine → a multi-part score. This is the
