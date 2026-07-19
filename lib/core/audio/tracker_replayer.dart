@@ -23,9 +23,10 @@
 // classic decimal row param). The row-timing map maps each flat row back to its
 // (orderIndex, patternIndex, row) so the playhead can follow the non-linear
 // sequence. Implemented too: Exy extended — E1x/E2x fine porta, E3x glissando
-// control, E4x/E7x vibrato/tremolo waveform (sine/saw/square), E9x retrigger,
-// EAx/EBx fine volume, ECx note cut, EDx note delay (per-tick, in ReplayVoice) +
-// E6x pattern loop (a row-level flow, in walkFlow). Fxx SET-SPEED (param <0x20 →
+// control, E4x/E7x vibrato/tremolo waveform (sine/saw/square), E5x set-finetune,
+// E9x retrigger, EAx/EBx fine volume, ECx note cut, EDx note delay (per-tick, in
+// ReplayVoice) + E6x pattern loop (a row-level flow, in walkFlow), and Rxy
+// retrigger+volslide (kFxRetrigVolSlide). Fxx SET-SPEED (param <0x20 →
 // ticks/row) AND SET-TEMPO (param ≥0x20 → BPM): [walkFlow] annotates every played
 // row with the speed/tempo IN EFFECT for that row. A song with a single (or no)
 // value renders UNIFORMLY (the top-of-module value, [songInitialSpeed]/
@@ -104,7 +105,14 @@ const int kExNoteDelay = 0xD; // EDx — delay the note trigger until tick x
 const int kExGlissando =
     0x3; // E3x — 1: tone-porta snaps output to whole semitones · 0: off
 const int kExVibratoWaveform = 0x4; // E4x — 0 sine · 1 saw(ramp) · 2 square
+const int kExSetFinetune =
+    0x5; // E5x — nudge the note's tune; 8 = centre, <8 flat, >8 sharp
 const int kExTremoloWaveform = 0x7; // E7x — 0 sine · 1 saw(ramp) · 2 square
+
+/// Rxy — retrigger the note every y ticks, applying volume change code x on each
+/// retrigger (the XM table). Not a 0x0–0xF nibble, so it never collides with the
+/// classic MOD commands; importers can map XM effect 0x1B onto it.
+const int kFxRetrigVolSlide = 0x1B;
 
 // --- Tuning constants (MUSICAL APPROXIMATIONS, not period-accurate MOD) -------
 //
@@ -179,6 +187,30 @@ double trackerLfo(int waveform, double phase) {
   }
 }
 
+/// The Rxy (retrigger + volslide) volume change for code [x], applied to volume
+/// [v] on each retrigger — the classic XM table (0/8 = no change; 1–5 subtract
+/// 1/2/4/8/16; 6/7 = ×⅔/×½; 9–D add 1/2/4/8/16; E/F = ×1½/×2).
+int retrigVolume(int v, int x) {
+  final n = switch (x) {
+    1 => v - 1,
+    2 => v - 2,
+    3 => v - 4,
+    4 => v - 8,
+    5 => v - 16,
+    6 => v * 2 ~/ 3,
+    7 => v ~/ 2,
+    9 => v + 1,
+    0xA => v + 2,
+    0xB => v + 4,
+    0xC => v + 8,
+    0xD => v + 16,
+    0xE => v * 3 ~/ 2,
+    0xF => v * 2,
+    _ => v, // 0 and 8: no change
+  };
+  return n.clamp(0, kMaxVolume);
+}
+
 class ReplayVoice {
   /// Current base pitch as a FRACTIONAL MIDI note (porta/tone-porta move this).
   double pitch = 0;
@@ -205,6 +237,7 @@ class ReplayVoice {
   int _memTremSpeed = 0;
   int _memTremDepth = 0;
   int _memVolSlide = 0;
+  int _memRetrig = 0; // Rxy param (x = vol code, y = tick interval)
 
   // LFO waveform select (E4x/E7x) + glissando control (E3x) — persist across
   // rows like a real tracker's per-channel control state.
@@ -329,6 +362,8 @@ class ReplayVoice {
         if (_param != 0) _memVolSlide = _param;
       case kFxSetVolume:
         volume = _param.clamp(0, kMaxVolume);
+      case kFxRetrigVolSlide:
+        if (_param != 0) _memRetrig = _param;
       case kFxExtended:
         // One-time (tick-0) extended commands: fine porta and fine volume.
         switch (_exSub) {
@@ -348,6 +383,9 @@ class ReplayVoice {
             _vibWave = _exVal;
           case kExTremoloWaveform:
             _tremWave = _exVal;
+          case kExSetFinetune:
+            // Nudge this note's tune: 8 = centre, each step ±1/16 semitone.
+            pitch += (_exVal - 8) * kPortaSemitonesPerUnit;
         }
     }
   }
@@ -437,6 +475,18 @@ class ReplayVoice {
         _tremPhase = 0;
       } else if (_exSub == kExNoteCut && k >= _exVal) {
         effVol = 0;
+      }
+    }
+
+    // Rxy: retrigger every y ticks, changing volume by code x each time.
+    if (_cmd == kFxRetrigVolSlide) {
+      final y = _memRetrig & 0xF;
+      if (y > 0 && k > 0 && k % y == 0) {
+        retrigger = true;
+        _vibPhase = 0;
+        _tremPhase = 0;
+        volume = retrigVolume(volume, (_memRetrig >> 4) & 0xF);
+        effVol = volume.toDouble();
       }
     }
 
@@ -606,6 +656,7 @@ bool _hasPerTickEffect(List<TrackerCell> cells) {
         cmd == kFxTremolo ||
         cmd == kFxVolumeSlide ||
         cmd == kFxSetVolume ||
+        cmd == kFxRetrigVolSlide ||
         cmd == kFxExtended) {
       return true;
     }

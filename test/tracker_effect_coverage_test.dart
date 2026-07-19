@@ -1,7 +1,7 @@
 // Replayer effect-coverage additions (opus libraries-and-tab, cross-lane) —
-// Extended sub-commands E3x glissando + E4x/E7x vibrato/tremolo waveform.
-// Pure per-tick trajectory tests via `traceChannel` (no audio). Kept in a
-// separate file from the tracker worker's `tracker_effects_test.dart`.
+// E3x glissando, E4x/E7x vibrato/tremolo waveform, E5x set-finetune, and Rxy
+// retrigger+volslide. Pure per-tick trajectory tests via `traceChannel` (no
+// audio). Kept in a separate file from the worker's `tracker_effects_test.dart`.
 
 import 'dart:math';
 
@@ -111,6 +111,39 @@ void main() {
         for (var k = 0; k < kDefaultTicksPerRow; k++) t.pitchAt(2, k),
       ].any((p) => (p - p.roundToDouble()).abs() > 1e-6);
       expect(anyMicrotonal, isTrue);
+    });
+  });
+
+  group('E5x set finetune', () {
+    double tuneOf(int x) => traceChannel([
+          TrackerCell(midi: 60, fxCmd: kFxExtended, fxParam: 0x50 | x),
+        ]).pitchAt(0, 0);
+
+    test('nudges the note tune by (x−8)/16 of a semitone; 8 is centre', () {
+      expect(tuneOf(8), closeTo(60.0, 1e-9)); // centre — no change
+      expect(tuneOf(0xC), closeTo(60 + 4 / 16, 1e-9)); // a touch sharp
+      expect(tuneOf(0x0), closeTo(60 - 8 / 16, 1e-9)); // as flat as it goes
+    });
+  });
+
+  group('Rxy retrigger + volume slide', () {
+    test('retriggers every y ticks and changes volume by code x', () {
+      // R13: x=1 (volume −1 per retrigger), y=3 (every 3 ticks).
+      final t = traceChannel([
+        const TrackerCell(midi: 60, fxCmd: kFxRetrigVolSlide, fxParam: 0x13),
+      ]);
+      expect(t.retriggerAt(0, 3), isTrue);
+      expect(t.retriggerAt(0, 1), isFalse);
+      expect(t.volumeAt(0, 3), closeTo(kMaxVolume - 1, 1e-9));
+    });
+
+    test('retrigVolume follows the XM table', () {
+      expect(retrigVolume(40, 0), 40); // no change
+      expect(retrigVolume(40, 8), 40); // no change
+      expect(retrigVolume(40, 3), 36); // −4
+      expect(retrigVolume(40, 7), 20); // ×½
+      expect(retrigVolume(40, 0xF), kMaxVolume); // ×2, clamped
+      expect(retrigVolume(10, 0xB), 14); // +4
     });
   });
 }
