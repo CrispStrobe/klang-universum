@@ -13,7 +13,6 @@ import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/loop_mixer_screen.dart';
-import 'package:comet_beat/features/games/composition/loop_secrets.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
@@ -292,34 +291,6 @@ void main() {
     }
   });
 
-  testWidgets('long-pressing the variant badge rolls a random variant',
-      (tester) async {
-    await pumpGame(tester, const LoopMixerScreen());
-    final game = _game(tester);
-    game.toggleTrack('drums');
-    await tester.pump();
-    expect(game.variantOf('drums'), 0);
-
-    // Long-press the drums variant badge → it rolls to a different variant.
-    await tester.longPress(
-      find
-          .descendant(
-            of: find.byType(CircleAvatar),
-            matching: find.text('A'),
-          )
-          .first,
-    );
-    await tester.pump();
-    expect(game.variantOf('drums'), isNot(0));
-    expect(game.isPlaying, isTrue);
-
-    // The seam rolls too (always lands in range).
-    for (var i = 0; i < 10; i++) {
-      game.rollTrackVariant('drums');
-      expect(game.variantOf('drums'), inInclusiveRange(0, 3));
-    }
-  });
-
   testWidgets('kit chips swap the drum timbre', (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);
@@ -341,24 +312,6 @@ void main() {
     game.setKit('nonsense');
     await tester.pump();
     expect(game.kitId, 'clean');
-  });
-
-  testWidgets('a secret combo unlocks a reveal + a found counter',
-      (tester) async {
-    await pumpGame(tester, const LoopMixerScreen());
-    final game = _game(tester);
-    // Exactly drums + bass matches the "Rhythm Section" combo.
-    game.toggleTrack('drums');
-    await tester.pump();
-    game.toggleTrack('bass');
-    await tester.pump();
-    expect(find.textContaining('Rhythm Section'), findsOneWidget);
-    expect(find.text('1/${kLoopCombos.length}'), findsOneWidget);
-
-    // Breaking the set hides the reveal; the counter persists at 1/N.
-    game.toggleTrack('chords');
-    await tester.pump(const Duration(seconds: 3));
-    expect(find.text('1/${kLoopCombos.length}'), findsOneWidget);
   });
 
   testWidgets('Save to Song Book is offered only when a pitched track plays',

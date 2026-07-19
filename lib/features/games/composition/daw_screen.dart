@@ -40,6 +40,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         Score,
         Step;
 import 'package:flutter/material.dart' hide Step;
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:provider/provider.dart';
 
 /// Test handle onto the running arranger.
@@ -48,6 +49,9 @@ abstract interface class DawTester {
   int get trackCount;
   int get clipCount;
   bool get isPlaying;
+
+  /// The playhead position (ms) during playback; 0 when stopped.
+  double get playheadMs;
   bool isTrackMuted(int track);
   void toggleTrackMute(int track);
   void addDemoBeat();
@@ -105,8 +109,38 @@ class DawScreen extends StatefulWidget {
   State<DawScreen> createState() => _DawScreenState();
 }
 
-class _DawScreenState extends State<DawScreen> implements DawTester {
+class _DawScreenState extends State<DawScreen>
+    with SingleTickerProviderStateMixin
+    implements DawTester {
   bool _playing = false;
+
+  // Playhead: driven by the Ticker's own elapsed (NOT wall-clock), so it stays
+  // in step with the baked audio AND is deterministic under `tester.pump`.
+  late final Ticker _ticker;
+  final ValueNotifier<double> _positionMs = ValueNotifier<double>(0);
+  double _totalMs = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick);
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _positionMs.dispose();
+    super.dispose();
+  }
+
+  void _onTick(Duration elapsed) {
+    final ms = elapsed.inMilliseconds.toDouble();
+    if (_totalMs > 0 && ms >= _totalMs) {
+      stop(); // reached the end of the arrangement
+      return;
+    }
+    _positionMs.value = ms;
+  }
 
   AudioService get _audio => context.read<AudioService>();
   DawService get _daw => context.read<DawService>();
@@ -286,16 +320,27 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   void play() {
     final pcm = _bake();
     if (pcm.isEmpty) return;
-    if (!_audio.soundOn) return;
-    _audio.playWavBytes(wavBytes(_toPcm16(pcm)));
+    // The transport (playhead) runs whenever Play is engaged; only the audible
+    // output is gated on the sound toggle, so a muted session still scrubs.
+    if (_audio.soundOn) _audio.playWavBytes(wavBytes(_toPcm16(pcm)));
+    _totalMs = pcm.length / kDawSampleRate * 1000;
+    _positionMs.value = 0;
+    _ticker
+      ..stop()
+      ..start(); // elapsed restarts at 0
     setState(() => _playing = true);
   }
 
   @override
   void stop() {
+    _ticker.stop();
+    _positionMs.value = 0;
     _audio.stop();
     setState(() => _playing = false);
   }
+
+  @override
+  double get playheadMs => _positionMs.value;
 
   // --- UI --------------------------------------------------------------------
 
@@ -564,11 +609,33 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
               scrollDirection: Axis.horizontal,
               child: SizedBox(
                 width: laneWidth,
-                child: Column(
+                child: Stack(
                   children: [
-                    _ruler(laneWidth, scheme),
-                    for (var i = 0; i < daw.timeline.tracks.length; i++)
-                      _lane(daw, i, scheme, laneWidth),
+                    Column(
+                      children: [
+                        _ruler(laneWidth, scheme),
+                        for (var i = 0; i < daw.timeline.tracks.length; i++)
+                          _lane(daw, i, scheme, laneWidth),
+                      ],
+                    ),
+                    // The playhead: a thin line that sweeps across during play.
+                    Positioned.fill(
+                      child: ValueListenableBuilder<double>(
+                        valueListenable: _positionMs,
+                        builder: (context, ms, _) {
+                          if (!_playing) return const SizedBox.shrink();
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: ms / 1000 * _pxPerSecond,
+                              ),
+                              child: Container(width: 2, color: scheme.primary),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),

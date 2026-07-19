@@ -227,4 +227,45 @@ void main() {
     // The bake spans the resampled clip: ~2x the source length (half-rate → full).
     expect(daw.debugBakeLength(), greaterThan(src.length));
   });
+
+  testWidgets('the playhead advances during play and resets on stop',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat(); // gives the arrangement some length
+    await tester.pump();
+
+    expect(daw.playheadMs, 0);
+    daw.play();
+    expect(daw.isPlaying, isTrue);
+
+    // The Ticker drives the playhead off its own elapsed, so tester.pump
+    // advances it deterministically (no wall-clock). The first frame after
+    // start() establishes the baseline (elapsed 0); it grows after that.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(daw.playheadMs, greaterThan(0));
+    final mid = daw.playheadMs;
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(daw.playheadMs, greaterThan(mid)); // it moved forward
+
+    daw.stop();
+    expect(daw.isPlaying, isFalse);
+    expect(daw.playheadMs, 0); // reset
+  });
+
+  testWidgets('playback auto-stops when the playhead reaches the end',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    await tester.pump();
+    daw.play();
+
+    // Pump well past the arrangement length; the ticker should trip stop().
+    await tester.pump(); // baseline frame
+    await tester.pump(const Duration(seconds: 30));
+    expect(daw.isPlaying, isFalse);
+    expect(daw.playheadMs, 0);
+  });
 }
