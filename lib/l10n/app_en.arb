@@ -2046,6 +2046,7 @@
   "proseScoreReading": "A full score stacks every instrument’s part on the page at once. Following it — keeping your place across several staves as the music moves — is the skill a conductor uses to hear the whole ensemble from paper.",
   "proseOrnaments": "Ornaments are little decorations added to a note — a trill (rapidly alternating with the note above), a mordent (a quick flick) or a turn (a curl around the note). They add sparkle without changing the tune underneath.",
   "proseInstrumentFamilies": "The orchestra sorts its instruments into families by how they make sound: strings (bowed or plucked), woodwind, brass, percussion and keyboards. Knowing the families helps you pick out who’s playing what when you listen.",
+  "proseVoiceLeading": "Voice leading is how each note of a chord steps to the next — smoothly, with every voice moving as little as it can, so the parts sound like separate singing lines. The classic rule is to avoid parallel fifths and octaves: when two voices leap the same distance in the same direction, they stop sounding independent and blur into one. Spotting and smoothing those moves is what makes four parts feel alive.",
   "gameInstrumentFamily": "Which Family?",
   "gameInstrumentFamilySubtitle": "Sort an instrument into its family: strings, woodwind, brass, percussion or keyboard.",
   "instrumentFamilyPrompt": "Which family does it belong to?",

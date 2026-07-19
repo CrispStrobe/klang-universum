@@ -158,6 +158,7 @@ String? conceptProse(AppLocalizations l10n, String id) => switch (id) {
       'transposing_instruments' => l10n.proseTransposingInstruments,
       'tenor_clef' => l10n.proseTenorClef,
       'satb_voices' => l10n.proseSatbVoices,
+      'voice_leading' => l10n.proseVoiceLeading,
       'score_reading' => l10n.proseScoreReading,
       'ornaments' => l10n.proseOrnaments,
       'modes' => l10n.proseModes,

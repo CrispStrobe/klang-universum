@@ -9662,6 +9662,12 @@ abstract class AppLocalizations {
   /// **'The orchestra sorts its instruments into families by how they make sound: strings (bowed or plucked), woodwind, brass, percussion and keyboards. Knowing the families helps you pick out who’s playing what when you listen.'**
   String get proseInstrumentFamilies;
 
+  /// No description provided for @proseVoiceLeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice leading is how each note of a chord steps to the next — smoothly, with every voice moving as little as it can, so the parts sound like separate singing lines. The classic rule is to avoid parallel fifths and octaves: when two voices leap the same distance in the same direction, they stop sounding independent and blur into one. Spotting and smoothing those moves is what makes four parts feel alive.'**
+  String get proseVoiceLeading;
+
   /// No description provided for @gameInstrumentFamily.
   ///
   /// In en, this message translates to:

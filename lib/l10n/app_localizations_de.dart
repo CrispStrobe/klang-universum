@@ -5344,6 +5344,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Das Orchester ordnet seine Instrumente nach der Art, wie sie Klang erzeugen, in Familien: Streicher (gestrichen oder gezupft), Holzbläser, Blechbläser, Schlagwerk und Tasten. Die Familien zu kennen hilft dir, beim Hören herauszufinden, wer was spielt.';
 
   @override
+  String get proseVoiceLeading =>
+      'Stimmführung beschreibt, wie jeder Ton eines Akkords zum nächsten weiterschreitet — möglichst glatt, wobei jede Stimme so wenig wie möglich springt, damit die Teile wie eigenständige singende Linien klingen. Die klassische Regel lautet, Parallelen in Quinten und Oktaven zu vermeiden: Bewegen sich zwei Stimmen im gleichen Abstand in dieselbe Richtung, verlieren sie ihre Eigenständigkeit und verschmelzen zu einer. Solche Stellen zu erkennen und zu glätten macht vier Stimmen erst lebendig.';
+
+  @override
   String get gameInstrumentFamily => 'Welche Familie?';
 
   @override
