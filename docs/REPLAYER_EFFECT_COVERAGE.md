@@ -57,8 +57,9 @@ pure via `traceChannel(cells, {ticksPerRow}) → ChannelTrace`
 - **Fine F-nibble slides** in Axy / 1xx / 2xx (backlog-named "FF nibble")
 - **Gxx** global volume, **Hxy** global-vol slide
 - **Mxx** set channel volume, **Nxy** channel-vol slide (backlog group B, bullet 2)
-- **Pxy** panning slide, **Txy** tremor, **Kxx** key-off, **Lxx** env position,
-  **Xxx** extra-fine porta
+- **Txy** tremor ✅ *(added — `kFxTremor` 0x1D; importer wiring TODO)*
+- **Pxy** panning slide, **Kxx** key-off, **Lxx** env position, **Xxx**
+  extra-fine porta
 - **Volume-column mini-commands** — the volume column exists as a static level
   (`applyVolumeColumn`, Cxx-equivalent) but not the XM vol-column
   vibrato/porta/pan sub-commands.
@@ -69,14 +70,15 @@ pure via `traceChannel(cells, {ticksPerRow}) → ChannelTrace`
   **EDx** re-attack) are **now FIXED** by @tracker-replayer — verified in source
   (armRow leaves the vib memory alone; the render resets `noteStartSample` only
   at the actual fire tick).
-- **E3x/E4x/E7x/E5x + Rxy added** by opus (libraries-and-tab, cross-lane,
+- **E3x/E4x/E7x/E5x + Rxy + Txy added** by opus (libraries-and-tab, cross-lane,
   maintainer-authorized), all zero-regression. E3x glissando + E4x/E7x
   vibrato/tremolo waveforms + E5x finetune (Extended sub-commands, were no-ops,
-  flow through real `.mod`/`.xm` E-commands); **Rxy** retrigger+volslide on a new
-  non-colliding `fxCmd` (0x1B) with the exact XM volume table. Tests:
-  `tracker_effect_coverage_test.dart`. **Rxy importer wiring TODO (one line):**
-  map XM effect R (0x1B) → `kFxRetrigVolSlide` in the `.xm` reader so real files
-  reach it (replayer side is done + gated into `_hasPerTickEffect`).
+  flow through real `.mod`/`.xm` E-commands); **Rxy** retrigger+volslide
+  (`fxCmd 0x1B`, exact XM volume table) and **Txy** tremor (`fxCmd 0x1D`,
+  on-x/off-y gate) on new non-colliding commands. Tests:
+  `tracker_effect_coverage_test.dart`. **Importer wiring TODO (one line each):**
+  map XM effect R→`kFxRetrigVolSlide` and T→`kFxTremor` in the `.xm` reader so
+  real files reach them (replayer side done + gated into `_hasPerTickEffect`).
 
 ## Remaining, by value ÷ effort (needs core/model work — @tracker-replayer)
 
