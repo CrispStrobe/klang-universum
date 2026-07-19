@@ -181,3 +181,13 @@ polyphase filterbank. It detects and skips the Xing header frame like a standard
 decoder. Cross-checked against ffmpeg: our decoder reads 19.9 dB on a broadband
 192k file, EXACTLY matching ffmpeg's 19.9 dB. Pure-Dart encode→decode round-trip
 (no external tools, CI-safe): mono 73, stereo 76/74, joint 75/74 dB.
+
+## Oracle validation (bench/oracle_tests.py)
+Three families vs ffmpeg (and lame), across signals × modes × bitrates:
+- **A. Encode oracle** (our encode → ffmpeg decode): tone/chord/sweep 78–80 dB,
+  speech 38–52, music 63–75 — our streams are standard.
+- **B. Decode agreement** (our decoder vs ffmpeg on our streams): |diff| = 0.00
+  on every signal — our decoder matches the reference exactly.
+- **C. Foreign decode** (ffmpeg/lame encode → OUR decoder): after adding short-
+  block support, chord 77, music 61–73, tone/sweep 79–80 — our decoder handles
+  real MP3s from any encoder, including short/transient blocks.

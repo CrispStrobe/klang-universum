@@ -12,6 +12,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/mp3/mp3_decoder.dart';
 import 'package:comet_beat/core/audio/mp3/mp3_encoder.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -197,4 +198,74 @@ void main() {
     },
     skip: ffmpeg ? false : 'ffmpeg not on PATH',
   );
+
+  test(
+    'our decoder handles ffmpeg-encoded SHORT blocks (transient content)',
+    () {
+      // Note attacks make ffmpeg switch to short blocks — the block type our
+      // long-only encoder never emits, so this only tests the decoder against a
+      // foreign encoder (the oracle). Decoding it proves short/mixed/start/stop
+      // block support.
+      const n = sr * 2;
+      final x = Float64List(n);
+      for (var i = 0; i < n; i++) {
+        final t = i / sr;
+        // Percussive: sharp exponential attacks every 0.25 s.
+        final phase = t % 0.25;
+        final env = math.exp(-40 * phase);
+        x[i] = 0.7 * env * math.sin(2 * math.pi * 300 * t);
+      }
+      final dir = Directory.systemTemp.createTempSync('mp3sb');
+      try {
+        // Reference WAV → ffmpeg-encoded MP3 (its own short-block decisions).
+        final wav = _writeWavMono(x, sr);
+        File('${dir.path}/r.wav').writeAsBytesSync(wav);
+        final enc = Process.runSync('ffmpeg', [
+          '-v', 'error', '-y', '-i', '${dir.path}/r.wav', //
+          '-c:a', 'libmp3lame', '-b:a', '128k', '-ac', '1', '${dir.path}/f.mp3',
+        ]);
+        expect(enc.exitCode, 0, reason: 'ffmpeg encode: ${enc.stderr}');
+        // Decode the foreign file with OUR decoder.
+        final pcm = mp3Decode(File('${dir.path}/f.mp3').readAsBytesSync());
+        expect(pcm.channels, 1);
+        // A long-only decoder would mangle the short-block frames (~10 dB);
+        // full block support reconstructs it faithfully.
+        expect(
+          _snr(x, pcm.samples),
+          greaterThan(30),
+          reason: 'short-block decode',
+        );
+      } finally {
+        dir.deleteSync(recursive: true);
+      }
+    },
+    skip: ffmpeg ? false : 'ffmpeg not on PATH',
+  );
+}
+
+/// Minimal mono PCM16 WAV container for feeding ffmpeg.
+Uint8List _writeWavMono(Float64List x, int sr) {
+  final n = x.length;
+  final b = BytesBuilder();
+  final hdr = ByteData(44);
+  hdr.setUint32(0, 0x46464952, Endian.little); // "RIFF"
+  hdr.setUint32(4, 36 + n * 2, Endian.little);
+  hdr.setUint32(8, 0x45564157, Endian.little); // "WAVE"
+  hdr.setUint32(12, 0x20746d66, Endian.little); // "fmt "
+  hdr.setUint32(16, 16, Endian.little);
+  hdr.setUint16(20, 1, Endian.little);
+  hdr.setUint16(22, 1, Endian.little);
+  hdr.setUint32(24, sr, Endian.little);
+  hdr.setUint32(28, sr * 2, Endian.little);
+  hdr.setUint16(32, 2, Endian.little);
+  hdr.setUint16(34, 16, Endian.little);
+  hdr.setUint32(36, 0x61746164, Endian.little); // "data"
+  hdr.setUint32(40, n * 2, Endian.little);
+  b.add(hdr.buffer.asUint8List());
+  final pcm = ByteData(n * 2);
+  for (var i = 0; i < n; i++) {
+    pcm.setInt16(i * 2, (x[i].clamp(-1.0, 1.0) * 32767).round(), Endian.little);
+  }
+  b.add(pcm.buffer.asUint8List());
+  return b.toBytes();
 }
