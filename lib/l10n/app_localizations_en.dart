@@ -3935,6 +3935,38 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get gameConnectRoadmap => 'Connect the Road Signs';
+
+  @override
+  String get gameConnectRoadmapSubtitle =>
+      'Match each navigation sign to what it tells you to do';
+
+  @override
+  String get connectRoadmapPrompt =>
+      'Read the map! Connect each road sign to what it means.';
+
+  @override
+  String get roadmapDaCapo => 'Go back to the beginning';
+
+  @override
+  String get roadmapDalSegno => 'Go back to the Segno sign';
+
+  @override
+  String get roadmapFine => 'The end — stop here';
+
+  @override
+  String get roadmapCoda => 'Jump to the ending section';
+
+  @override
+  String get roadmapSegno => 'The sign you jump back to';
+
+  @override
+  String get roadmapAlFine => '…keep going until Fine';
+
+  @override
+  String get roadmapAlCoda => '…then jump to the Coda';
+
+  @override
   String get beatCount4 => '4 beats';
 
   @override

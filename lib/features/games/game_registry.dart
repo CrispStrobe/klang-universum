@@ -320,6 +320,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameConnectKeysigSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.keySignatures),
     ),
+    // Match each navigation "road sign" (Da Capo, Coda, Fine…) to what it tells
+    // you to do — reading the map through a piece.
+    GameInfo(
+      id: 'connect_roadmap',
+      icon: Icons.signpost_outlined,
+      title: (l) => l.gameConnectRoadmap,
+      subtitle: (l) => l.gameConnectRoadmapSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.navigation),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

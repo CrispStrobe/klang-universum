@@ -1577,6 +1577,16 @@
   "@keySigFlats": {
     "placeholders": {"count": {"type": "int"}}
   },
+  "gameConnectRoadmap": "Connect the Road Signs",
+  "gameConnectRoadmapSubtitle": "Match each navigation sign to what it tells you to do",
+  "connectRoadmapPrompt": "Read the map! Connect each road sign to what it means.",
+  "roadmapDaCapo": "Go back to the beginning",
+  "roadmapDalSegno": "Go back to the Segno sign",
+  "roadmapFine": "The end — stop here",
+  "roadmapCoda": "Jump to the ending section",
+  "roadmapSegno": "The sign you jump back to",
+  "roadmapAlFine": "…keep going until Fine",
+  "roadmapAlCoda": "…then jump to the Coda",
   "beatCount4": "4 beats",
   "beatCount2": "2 beats",
   "beatCount1": "1 beat",

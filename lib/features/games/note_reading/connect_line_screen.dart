@@ -57,6 +57,7 @@ enum ConnectMode {
   degrees,
   timeSignatures,
   keySignatures,
+  navigation,
 }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
@@ -158,6 +159,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.degrees => 'connect_degrees',
         ConnectMode.timeSignatures => 'connect_time',
         ConnectMode.keySignatures => 'connect_keysig',
+        ConnectMode.navigation => 'connect_roadmap',
         ConnectMode.notes => switch (widget.clef) {
             Clef.bass => 'connect_line_bass',
             Clef.tenor => 'connect_line_tenor',
@@ -187,6 +189,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.degrees => _degreeItems(),
       ConnectMode.timeSignatures => _timeSigItems(),
       ConnectMode.keySignatures => _keysigItems(),
+      ConnectMode.navigation => _navItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -546,6 +549,59 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         _ => l10n.keySigFlats(-fifths),
       };
 
+  List<_ConnectItem> _navItems() {
+    // Match a music "road sign" to what it tells you to do. The terms are
+    // universal Italian (shown as-is, like the tempo words); only the meanings
+    // localise. Four core signs for beginners; the rest join at 2★.
+    const easy = {'Da Capo', 'Dal Segno', 'Fine', 'Coda'};
+    const all = [
+      'Da Capo',
+      'Dal Segno',
+      'Fine',
+      'Coda',
+      'Segno',
+      'al Fine',
+      'al Coda',
+    ];
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final pool = [
+      for (final term in all)
+        if (wide || easy.contains(term)) term,
+    ]..shuffle(_random);
+    final picked = pool.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: Text(
+            picked[i],
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          matchKey: picked[i],
+          sriId: 'reading.roadmap.${picked[i].replaceAll(' ', '_')}',
+          playMidi: null,
+          label: (ctx) => _navMeaning(AppLocalizations.of(ctx)!, picked[i]),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static String _navMeaning(AppLocalizations l10n, String term) =>
+      switch (term) {
+        'Da Capo' => l10n.roadmapDaCapo,
+        'Dal Segno' => l10n.roadmapDalSegno,
+        'Fine' => l10n.roadmapFine,
+        'Coda' => l10n.roadmapCoda,
+        'Segno' => l10n.roadmapSegno,
+        'al Fine' => l10n.roadmapAlFine,
+        _ => l10n.roadmapAlCoda, // 'al Coda'
+      };
+
   List<_ConnectItem> _beatItems() {
     // Each note-value glyph paired with how many beats it lasts in 4/4:
     // whole = 4, half = 2, quarter = 1, eighth = ½. Whole/half/quarter/eighth
@@ -664,6 +720,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.degrees => l10n.gameConnectDegrees,
       ConnectMode.timeSignatures => l10n.gameConnectTime,
       ConnectMode.keySignatures => l10n.gameConnectKeysig,
+      ConnectMode.navigation => l10n.gameConnectRoadmap,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
@@ -676,6 +733,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.degrees => l10n.connectDegreesPrompt,
       ConnectMode.timeSignatures => l10n.connectTimePrompt,
       ConnectMode.keySignatures => l10n.connectKeysigPrompt,
+      ConnectMode.navigation => l10n.connectRoadmapPrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

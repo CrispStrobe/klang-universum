@@ -7340,6 +7340,66 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 flat} other{{count} flats}}'**
   String keySigFlats(int count);
 
+  /// No description provided for @gameConnectRoadmap.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Road Signs'**
+  String get gameConnectRoadmap;
+
+  /// No description provided for @gameConnectRoadmapSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each navigation sign to what it tells you to do'**
+  String get gameConnectRoadmapSubtitle;
+
+  /// No description provided for @connectRoadmapPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the map! Connect each road sign to what it means.'**
+  String get connectRoadmapPrompt;
+
+  /// No description provided for @roadmapDaCapo.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to the beginning'**
+  String get roadmapDaCapo;
+
+  /// No description provided for @roadmapDalSegno.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to the Segno sign'**
+  String get roadmapDalSegno;
+
+  /// No description provided for @roadmapFine.
+  ///
+  /// In en, this message translates to:
+  /// **'The end — stop here'**
+  String get roadmapFine;
+
+  /// No description provided for @roadmapCoda.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to the ending section'**
+  String get roadmapCoda;
+
+  /// No description provided for @roadmapSegno.
+  ///
+  /// In en, this message translates to:
+  /// **'The sign you jump back to'**
+  String get roadmapSegno;
+
+  /// No description provided for @roadmapAlFine.
+  ///
+  /// In en, this message translates to:
+  /// **'…keep going until Fine'**
+  String get roadmapAlFine;
+
+  /// No description provided for @roadmapAlCoda.
+  ///
+  /// In en, this message translates to:
+  /// **'…then jump to the Coda'**
+  String get roadmapAlCoda;
+
   /// No description provided for @beatCount4.
   ///
   /// In en, this message translates to:

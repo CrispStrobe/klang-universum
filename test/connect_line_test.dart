@@ -174,6 +174,21 @@ void main() {
     expect(game.score, greaterThan(0));
   });
 
+  testWidgets('navigation mode: matching each road sign to its meaning clears',
+      (tester) async {
+    await tester.pumpWidget(_app(mode: ConnectMode.navigation));
+    final game = _game(tester);
+
+    for (var i = 0; i < ConnectLineScreen.pairs; i++) {
+      await _drag(tester, i, game.matchingRight(i));
+    }
+    expect(game.matchedCount, ConnectLineScreen.pairs);
+
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(game.round, 1);
+    expect(game.score, greaterThan(0));
+  });
+
   testWidgets(
       'dynamics mode: matching each mark to its meaning clears the round'
       ' and records under reading.dynamics', (tester) async {

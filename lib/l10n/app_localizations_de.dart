@@ -3950,6 +3950,38 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get gameConnectRoadmap => 'Wegweiser verbinden';
+
+  @override
+  String get gameConnectRoadmapSubtitle =>
+      'Ordne jedem Navigationszeichen zu, was es dir sagt';
+
+  @override
+  String get connectRoadmapPrompt =>
+      'Lies die Landkarte! Verbinde jeden Wegweiser mit seiner Bedeutung.';
+
+  @override
+  String get roadmapDaCapo => 'Zurück zum Anfang';
+
+  @override
+  String get roadmapDalSegno => 'Zurück zum Segno-Zeichen';
+
+  @override
+  String get roadmapFine => 'Das Ende — hier aufhören';
+
+  @override
+  String get roadmapCoda => 'Zum Schlussteil springen';
+
+  @override
+  String get roadmapSegno => 'Das Zeichen, zu dem du zurückspringst';
+
+  @override
+  String get roadmapAlFine => '…weiter bis Fine';
+
+  @override
+  String get roadmapAlCoda => '…dann zur Coda springen';
+
+  @override
   String get beatCount4 => '4 Schläge';
 
   @override

@@ -238,8 +238,8 @@ const List<Concept> kConcepts = [
     GradeBand.g34,
     ConceptArea.form,
     'Verse and chorus; repeats',
-    ['form_read'],
-  ), // GAP: no form game
+    ['form_read', 'connect_roadmap'],
+  ),
 
   // --- Grades 5–6: both clefs, accidentals, intervals, I/IV/V triads.
   Concept(
