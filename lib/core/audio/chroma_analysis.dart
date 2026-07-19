@@ -212,6 +212,10 @@ class ChordDetector {
 
   /// Analyse one window of mono samples in [-1, 1].
   ChordReading analyze(Float64List samples) {
+    // A window shorter than 2 samples can't be Hann-windowed or FFT-binned
+    // (the bin clamp would be `clamp(1, 0)`), and a bad/empty mic frame must
+    // never crash the chord listener — treat it as silence.
+    if (samples.length < 2) return ChordReading.silent();
     // Gate on the ABSOLUTE band level, which means measuring it *before* peak
     // normalization: `chromagram` scales its output so the loudest bin is 1, so
     // any sum over it is scale-invariant (always ≈1..12 for any non-zero input).
@@ -258,6 +262,7 @@ class ChordDetector {
   /// The 12-bin pitch-class energy profile of [samples], normalized so its max
   /// is 1 (0 for silence). Public for tests and visualisation.
   List<double> chromagram(Float64List samples) {
+    if (samples.length < 2) return List<double>.filled(12, 0);
     final chroma = _rawChroma(samples);
     _peakNormalize(chroma);
     return chroma;
@@ -283,6 +288,10 @@ class ChordDetector {
     for (var bin = loBin; bin <= hiBin; bin++) {
       final freq = bin * sampleRate / n;
       final mag = sqrt(re[bin] * re[bin] + im[bin] * im[bin]);
+      // A NaN/Inf sample (bad mic frame) yields a non-finite magnitude; skip it
+      // so the chroma — and everything derived from it (energy gate, cosine
+      // scores) — stays finite instead of leaking NaN downstream.
+      if (!mag.isFinite) continue;
       final midi = 69.0 + 12.0 * (log(freq / a4) / ln2);
       final pc = (midi.round() % 12 + 12) % 12;
       chroma[pc] += mag;
