@@ -182,7 +182,7 @@ const List<Concept> kConcepts = [
     GradeBand.g34,
     ConceptArea.meter,
     'Reading the time signature',
-    ['time_signature', 'which_beat', 'meter_detective'],
+    ['time_signature', 'which_beat', 'meter_detective', 'connect_time'],
   ),
   Concept(
     'strong_weak_beat',

@@ -7112,6 +7112,72 @@ abstract class AppLocalizations {
   /// **'Leading tone'**
   String get degreeLeadingTone;
 
+  /// No description provided for @gameConnectTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Time Signatures'**
+  String get gameConnectTime;
+
+  /// No description provided for @gameConnectTimeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each time signature to what its numbers mean'**
+  String get gameConnectTimeSubtitle;
+
+  /// No description provided for @connectTimePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'What do the numbers mean? Connect each time signature to its beats!'**
+  String get connectTimePrompt;
+
+  /// No description provided for @timeSigMeaning44.
+  ///
+  /// In en, this message translates to:
+  /// **'Four quarter beats'**
+  String get timeSigMeaning44;
+
+  /// No description provided for @timeSigMeaning34.
+  ///
+  /// In en, this message translates to:
+  /// **'Three quarter beats'**
+  String get timeSigMeaning34;
+
+  /// No description provided for @timeSigMeaning24.
+  ///
+  /// In en, this message translates to:
+  /// **'Two quarter beats'**
+  String get timeSigMeaning24;
+
+  /// No description provided for @timeSigMeaning68.
+  ///
+  /// In en, this message translates to:
+  /// **'Six eighth beats'**
+  String get timeSigMeaning68;
+
+  /// No description provided for @timeSigMeaning22.
+  ///
+  /// In en, this message translates to:
+  /// **'Two half beats'**
+  String get timeSigMeaning22;
+
+  /// No description provided for @timeSigMeaning98.
+  ///
+  /// In en, this message translates to:
+  /// **'Nine eighth beats'**
+  String get timeSigMeaning98;
+
+  /// No description provided for @timeSigMeaning128.
+  ///
+  /// In en, this message translates to:
+  /// **'Twelve eighth beats'**
+  String get timeSigMeaning128;
+
+  /// No description provided for @timeSigMeaning54.
+  ///
+  /// In en, this message translates to:
+  /// **'Five quarter beats'**
+  String get timeSigMeaning54;
+
   /// No description provided for @beatCount4.
   ///
   /// In en, this message translates to:

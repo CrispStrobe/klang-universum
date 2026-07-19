@@ -3816,6 +3816,41 @@ class AppLocalizationsDe extends AppLocalizations {
   String get degreeLeadingTone => 'Leitton';
 
   @override
+  String get gameConnectTime => 'Taktarten verbinden';
+
+  @override
+  String get gameConnectTimeSubtitle =>
+      'Ordne jeder Taktart zu, was ihre Zahlen bedeuten';
+
+  @override
+  String get connectTimePrompt =>
+      'Was bedeuten die Zahlen? Verbinde jede Taktart mit ihren Schlägen!';
+
+  @override
+  String get timeSigMeaning44 => 'Vier Viertel-Schläge';
+
+  @override
+  String get timeSigMeaning34 => 'Drei Viertel-Schläge';
+
+  @override
+  String get timeSigMeaning24 => 'Zwei Viertel-Schläge';
+
+  @override
+  String get timeSigMeaning68 => 'Sechs Achtel-Schläge';
+
+  @override
+  String get timeSigMeaning22 => 'Zwei Halbe-Schläge';
+
+  @override
+  String get timeSigMeaning98 => 'Neun Achtel-Schläge';
+
+  @override
+  String get timeSigMeaning128 => 'Zwölf Achtel-Schläge';
+
+  @override
+  String get timeSigMeaning54 => 'Fünf Viertel-Schläge';
+
+  @override
   String get beatCount4 => '4 Schläge';
 
   @override

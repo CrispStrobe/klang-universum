@@ -302,6 +302,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameConnectDegreesSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.degrees),
     ),
+    // Match a time signature to what its numbers mean (4/4 ↔ four quarter
+    // beats) — a matching drill for reading the time signature.
+    GameInfo(
+      id: 'connect_time',
+      icon: Icons.timelapse_outlined,
+      title: (l) => l.gameConnectTime,
+      subtitle: (l) => l.gameConnectTimeSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.timeSignatures),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

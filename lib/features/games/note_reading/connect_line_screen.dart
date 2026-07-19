@@ -55,6 +55,7 @@ enum ConnectMode {
   tempo,
   beats,
   degrees,
+  timeSignatures,
 }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
@@ -153,6 +154,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.tempo => 'connect_tempo',
         ConnectMode.beats => 'connect_beats',
         ConnectMode.degrees => 'connect_degrees',
+        ConnectMode.timeSignatures => 'connect_time',
         ConnectMode.notes =>
           widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
       };
@@ -177,6 +179,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.tempo => _tempoItems(),
       ConnectMode.beats => _beatItems(),
       ConnectMode.degrees => _degreeItems(),
+      ConnectMode.timeSignatures => _timeSigItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -445,6 +448,57 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         _ => l10n.degreeLeadingTone, // 7
       };
 
+  List<_ConnectItem> _timeSigItems() {
+    // Match a time signature to what its numbers mean (top = how many, bottom =
+    // of what). The simple/common metres for beginners; the wider ones at 2★.
+    const easy = {'4/4', '3/4', '2/4', '6/8'};
+    const all = ['4/4', '3/4', '2/4', '6/8', '2/2', '9/8', '12/8', '5/4'];
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final pool = [
+      for (final sig in all)
+        if (wide || easy.contains(sig)) sig,
+    ]..shuffle(_random);
+    final picked = pool.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final n in picked[i].split('/'))
+                Text(
+                  n,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    height: 1.0,
+                  ),
+                ),
+            ],
+          ),
+          matchKey: picked[i],
+          sriId: 'meter.timesig.${picked[i].replaceAll('/', '_')}',
+          playMidi: null,
+          label: (ctx) => _timeSigMeaning(AppLocalizations.of(ctx)!, picked[i]),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static String _timeSigMeaning(AppLocalizations l10n, String sig) =>
+      switch (sig) {
+        '4/4' => l10n.timeSigMeaning44,
+        '3/4' => l10n.timeSigMeaning34,
+        '2/4' => l10n.timeSigMeaning24,
+        '6/8' => l10n.timeSigMeaning68,
+        '2/2' => l10n.timeSigMeaning22,
+        '9/8' => l10n.timeSigMeaning98,
+        '12/8' => l10n.timeSigMeaning128,
+        _ => l10n.timeSigMeaning54, // 5/4
+      };
+
   List<_ConnectItem> _beatItems() {
     // Each note-value glyph paired with how many beats it lasts in 4/4:
     // whole = 4, half = 2, quarter = 1, eighth = ½. Whole/half/quarter/eighth
@@ -561,6 +615,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.tempo => l10n.gameConnectTempo,
       ConnectMode.beats => l10n.gameConnectBeats,
       ConnectMode.degrees => l10n.gameConnectDegrees,
+      ConnectMode.timeSignatures => l10n.gameConnectTime,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
@@ -571,6 +626,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.tempo => l10n.connectTempoPrompt,
       ConnectMode.beats => l10n.connectBeatsPrompt,
       ConnectMode.degrees => l10n.connectDegreesPrompt,
+      ConnectMode.timeSignatures => l10n.connectTimePrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

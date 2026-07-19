@@ -3801,6 +3801,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get degreeLeadingTone => 'Leading tone';
 
   @override
+  String get gameConnectTime => 'Connect the Time Signatures';
+
+  @override
+  String get gameConnectTimeSubtitle =>
+      'Match each time signature to what its numbers mean';
+
+  @override
+  String get connectTimePrompt =>
+      'What do the numbers mean? Connect each time signature to its beats!';
+
+  @override
+  String get timeSigMeaning44 => 'Four quarter beats';
+
+  @override
+  String get timeSigMeaning34 => 'Three quarter beats';
+
+  @override
+  String get timeSigMeaning24 => 'Two quarter beats';
+
+  @override
+  String get timeSigMeaning68 => 'Six eighth beats';
+
+  @override
+  String get timeSigMeaning22 => 'Two half beats';
+
+  @override
+  String get timeSigMeaning98 => 'Nine eighth beats';
+
+  @override
+  String get timeSigMeaning128 => 'Twelve eighth beats';
+
+  @override
+  String get timeSigMeaning54 => 'Five quarter beats';
+
+  @override
   String get beatCount4 => '4 beats';
 
   @override
