@@ -485,6 +485,60 @@ ModuleDoc docFromIt(ItModule m) {
   );
 }
 
+/// The MOD `(effect, param)` for a doc cell: a real MOD-numbered effect
+/// (0x0–0xF) if present, else a Cxx synthesised from the volume column, else a
+/// C00 for a note-off, else none. Effects > 0xF (our internal extended set) and
+/// the arp/none ambiguity are handled: effect 0 with a non-zero param is a real
+/// `0xy` arpeggio, effect 0 with param 0 is "no command".
+(int, int) _modEffectFor(DocCell c) {
+  final hasEffect = (c.effect != 0 || c.effectParam != 0) && c.effect <= 0xF;
+  if (hasEffect) return (c.effect, c.effectParam & 0xFF);
+  if (c.volume >= 0) return (0xC, c.volume.clamp(0, 64));
+  if (c.noteOff) return (0xC, 0);
+  return (0, 0);
+}
+
+/// Doc MOD-numbered `(fxCmd, fxParam)` → an S3M/IT letter-command number
+/// (A=1, B=2, …) and its info/value byte — the inverse of [_s3mEffectToFx] /
+/// [_itEffectToFx]. [directPan] true for IT (its X pan is 0x00–0xFF direct),
+/// false for S3M (X pan is 0x00–0x80, so halve). `0xC` set-volume routes to the
+/// volume column instead (see the writers), and `0xE` extended is not translated
+/// here; those and any unknown return `(0, 0)` (no command).
+(int, int) _fxToLetterEffect(int cmd, int param, {required bool directPan}) {
+  switch (cmd) {
+    case 0x0:
+      return param == 0 ? (0, 0) : (10, param); // J arpeggio (0 = none)
+    case 0x1:
+      return (6, param); // F porta up
+    case 0x2:
+      return (5, param); // E porta down
+    case 0x3:
+      return (7, param); // G tone porta
+    case 0x4:
+      return (8, param); // H vibrato
+    case 0x5:
+      return (12, param); // L tone porta + vol slide
+    case 0x6:
+      return (11, param); // K vibrato + vol slide
+    case 0x7:
+      return (18, param); // R tremolo
+    case 0x8:
+      return (24, directPan ? param : (param ~/ 2).clamp(0, 0x80)); // X pan
+    case 0x9:
+      return (15, param); // O sample offset
+    case 0xA:
+      return (4, param); // D volume slide
+    case 0xB:
+      return (2, param); // B position jump
+    case 0xD:
+      return (3, param); // C pattern break
+    case 0xF:
+      return param < 0x20 ? (1, param) : (20, param); // A speed / T tempo
+    default:
+      return (0, 0);
+  }
+}
+
 /// Neutral → canonical 4-channel ProTracker [ModModule].
 ModModule docToMod(ModuleDoc doc) {
   // Exactly 31 sample slots.
@@ -521,20 +575,18 @@ ModModule docToMod(ModuleDoc doc) {
       for (var ch = 0; ch < 4; ch++) {
         if (ch < srcRow.length) {
           final c = srcRow[ch];
-          // MOD has neither a volume column nor a note-off, but a Cxx effect
-          // sets the note volume (0x00–0x40): carry an explicit volume that way,
-          // and emulate a note-off as C00 (volume 0) so the note is silenced (a
-          // rest) instead of ringing on. MOD isn't carrying any other effect
-          // here, so the single effect slot is free; a real effect (once
-          // translated) would take precedence.
-          final hasVol = c.volume >= 0;
-          final cxx = hasVol || c.noteOff;
+          // The doc effect is MOD-numbered (0x0–0xF), so it carries 1:1. MOD has
+          // one effect slot: a real effect wins; otherwise synthesise a Cxx from
+          // the volume column, or C00 from a note-off (MOD has neither — Cxx sets
+          // the volume, C00 silences the note as a rest). Effects > 0xF are our
+          // internal extended commands, which MOD can't represent → dropped.
+          final (eff, param) = _modEffectFor(c);
           cells.add(
             ModCell(
               sample: c.instrument.clamp(0, 31),
               period: c.note < 0 ? 0 : midiToPeriod(c.note),
-              effect: cxx ? 0xC : 0,
-              effectParam: hasVol ? c.volume.clamp(0, 64) : 0,
+              effect: eff,
+              effectParam: param,
             ),
           );
         } else {
@@ -609,6 +661,11 @@ XmModule docToXm(ModuleDoc doc) {
                   : (c.note < 0 ? 0 : (c.note - 11).clamp(1, 96)),
               instrument: c.instrument.clamp(0, 255),
               volume: c.volume < 0 ? 0 : (0x10 + c.volume).clamp(0x10, 0x50),
+              // XM's main effect column shares MOD's 0x0–0xF numbering, so the
+              // doc effect carries 1:1 (matching docFromXm's cap). Extended
+              // (>0xF) internal effects are dropped, as the reader drops them.
+              effect: c.effect <= 0xF ? c.effect : 0,
+              effectParam: c.effect <= 0xF ? c.effectParam & 0xFF : 0,
             ),
           );
         } else {
@@ -649,6 +706,24 @@ int _midiToS3mNote(int midi) {
 /// Samples convert exactly (normalized ×128 inverts the reader's /128); notes,
 /// instruments, the volume column, loops and structure convert. Per-cell effects
 /// are already dropped on the neutral model.
+/// A doc cell → an [S3mCell]: note/instrument, the volume column (a MOD `Cxx`
+/// set-volume effect routes here, since S3M keeps volume in the column), and the
+/// translated effect command/info.
+S3mCell _s3mCellFrom(DocCell c) {
+  final vol = c.volume >= 0
+      ? c.volume.clamp(0, 64)
+      : (c.effect == 0xC ? c.effectParam.clamp(0, 64) : S3mCell.noVolume);
+  final (command, info) =
+      _fxToLetterEffect(c.effect, c.effectParam & 0xFF, directPan: false);
+  return S3mCell(
+    note: c.noteOff ? S3mCell.noteOff : _midiToS3mNote(c.note),
+    instrument: c.instrument.clamp(0, 255),
+    volume: vol,
+    command: command,
+    info: info,
+  );
+}
+
 S3mModule docToS3m(ModuleDoc doc) {
   final samples = <S3mSample>[];
   for (final ds in doc.samples) {
@@ -682,11 +757,7 @@ S3mModule docToS3m(ModuleDoc doc) {
         if (ch < srcRow.length) {
           final c = srcRow[ch];
           cells.add(
-            S3mCell(
-              note: c.noteOff ? S3mCell.noteOff : _midiToS3mNote(c.note),
-              instrument: c.instrument.clamp(0, 255),
-              volume: c.volume < 0 ? S3mCell.noVolume : c.volume.clamp(0, 64),
-            ),
+            _s3mCellFrom(c),
           );
         } else {
           cells.add(S3mCell.empty);
@@ -716,6 +787,25 @@ Uint8List convertToS3m(ModuleDoc doc) => writeS3m(docToS3m(doc));
 /// IT note numbers equal MIDI (itNoteToMidi is identity for 0..119), so notes map
 /// directly. Samples convert exactly (×128/×32768 inverts the reader's /128//32768;
 /// v1 writes 8-bit — the neutral model carries no bit depth). Written uncompressed.
+/// A doc cell → an [ItCell]: note/instrument, the volume-column (a MOD `Cxx` set-
+/// volume routes here), and the translated effect command/value (IT X pan is
+/// direct 0x00–0xFF).
+ItCell _itCellFrom(DocCell c) {
+  final vol = c.volume >= 0
+      ? c.volume.clamp(0, 64)
+      : (c.effect == 0xC ? c.effectParam.clamp(0, 64) : -1);
+  final (command, value) =
+      _fxToLetterEffect(c.effect, c.effectParam & 0xFF, directPan: true);
+  return ItCell(
+    // IT note 255 = note-off (writeIt emits it since it != -1).
+    note: c.noteOff ? 255 : (c.note < 0 ? -1 : c.note.clamp(0, 119)),
+    instrument: c.instrument.clamp(0, 255),
+    volpan: vol,
+    command: command,
+    commandValue: value,
+  );
+}
+
 ItModule docToIt(ModuleDoc doc) {
   final samples = <ItSample>[];
   for (final ds in doc.samples) {
@@ -747,12 +837,7 @@ ItModule docToIt(ModuleDoc doc) {
         if (ch < srcRow.length) {
           final c = srcRow[ch];
           cells.add(
-            ItCell(
-              // IT note 255 = note-off (writeIt emits it since it != -1).
-              note: c.noteOff ? 255 : (c.note < 0 ? -1 : c.note.clamp(0, 119)),
-              instrument: c.instrument.clamp(0, 255),
-              volpan: c.volume < 0 ? -1 : c.volume.clamp(0, 64),
-            ),
+            _itCellFrom(c),
           );
         } else {
           cells.add(ItCell.empty);
