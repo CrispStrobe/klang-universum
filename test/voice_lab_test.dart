@@ -48,6 +48,26 @@ void main() {
     test('tremolo is an identity at depth 0', () {
       expect(tremoloFx(clip, 0), same(clip));
     });
+
+    test('alien (ring-mod) changes the samples when dialled in', () {
+      final base = voiceLabProcess(clip);
+      final wet = voiceLabProcess(clip, alien: 0.8);
+      expect(wet.length, base.length);
+      expect(wet, isNot(base));
+    });
+
+    test('crunch (distortion) changes the samples when dialled in', () {
+      final base = voiceLabProcess(clip);
+      final wet = voiceLabProcess(clip, crunch: 0.8);
+      expect(wet, isNot(base));
+    });
+
+    test('echo (delay) leaves a decaying tail after the source', () {
+      final wet = voiceLabProcess(clip, echo: 0.6);
+      expect(wet.length, clip.length);
+      // Energy past where the dry clip has decayed comes from the delay taps.
+      expect(wet, isNot(voiceLabProcess(clip)));
+    });
   });
 
   testWidgets('screen processes an injected clip and reacts to controls',

@@ -8,8 +8,11 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/convolution_reverb.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/dynamics.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/pitch_shift.dart';
+import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
@@ -37,15 +40,20 @@ Float64List tremoloFx(Float64List x, double depth, {double rateHz = 5}) {
   return out;
 }
 
-/// The full transform chain (pure): pitch → speed → character → tremolo → gate
-/// → reverb. Exposed so it is unit-testable without the UI.
+/// The full transform chain (pure): pitch → speed → character → alien → crunch
+/// → tremolo → gate → echo → reverb. Exposed so it is unit-testable without the
+/// UI. Every effect is bypassed at its 0 default, so the chain is a no-op when
+/// nothing is dialled in.
 Float64List voiceLabProcess(
   Float64List clip, {
   VoiceEffect effect = VoiceEffect.normal,
   double semitones = 0,
   double speed = 1,
+  double alien = 0, // ring-mod wet mix (metallic/alien voice)
+  double crunch = 0, // fuzz distortion wet mix
   double tremolo = 0,
   double gate = 0, // 0 = off; 1 = aggressive
+  double echo = 0, // delay wet mix
   double reverb = 0, // wet mix
 }) {
   if (clip.isEmpty) return clip;
@@ -53,9 +61,23 @@ Float64List voiceLabProcess(
   if (semitones != 0) x = granularPitchShift(x, semitones);
   if (speed != 1 && speed > 0) x = timeStretch(x, speed);
   x = applyVoiceEffect(x, effect);
+  if (alien > 0) {
+    x = ringModFx(x, carrierHz: 150, mix: alien);
+  }
+  if (crunch > 0) {
+    x = distortionFx(
+      x,
+      kind: DistortionKind.fuzz,
+      drive: 3 + crunch * 9,
+      mix: crunch,
+    );
+  }
   if (tremolo > 0) x = tremoloFx(x, tremolo);
   if (gate > 0) {
     x = gateFx(x, sampleRate: _sr.toDouble(), thresholdDb: -60 + gate * 45);
+  }
+  if (echo > 0) {
+    x = delayFx(x, delayMs: 260, feedback: 0.4, mix: echo);
   }
   if (reverb > 0) {
     x = convolutionReverbFx(x, sampleRate: _sr.toDouble(), mix: reverb);
@@ -94,8 +116,11 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
   VoiceEffect _effect = VoiceEffect.normal;
   double _pitch = 0;
   double _speed = 1;
+  double _alien = 0;
+  double _crunch = 0;
   double _tremolo = 0;
   double _gate = 0;
+  double _echo = 0;
   double _reverb = 0;
 
   @override
@@ -122,8 +147,11 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
               effect: _effect,
               semitones: _pitch,
               speed: _speed,
+              alien: _alien,
+              crunch: _crunch,
               tremolo: _tremolo,
               gate: _gate,
+              echo: _echo,
               reverb: _reverb,
             );
     });
@@ -153,10 +181,16 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
         _pitch = value;
       case 'speed':
         _speed = value;
+      case 'alien':
+        _alien = value;
+      case 'crunch':
+        _crunch = value;
       case 'tremolo':
         _tremolo = value;
       case 'gate':
         _gate = value;
+      case 'echo':
+        _echo = value;
       case 'reverb':
         _reverb = value;
     }
@@ -372,8 +406,11 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
             const Divider(),
             _slider(l10n.voiceLabPitch, _pitch, -12, 12, 'pitch'),
             _slider(l10n.voiceLabSpeed, _speed, 0.5, 2, 'speed'),
+            _slider(l10n.voiceLabAlien, _alien, 0, 1, 'alien'),
+            _slider(l10n.voiceLabCrunch, _crunch, 0, 1, 'crunch'),
             _slider(l10n.voiceLabTremolo, _tremolo, 0, 1, 'tremolo'),
             _slider(l10n.voiceLabGate, _gate, 0, 1, 'gate'),
+            _slider(l10n.voiceLabEcho, _echo, 0, 0.8, 'echo'),
             _slider(l10n.voiceLabReverb, _reverb, 0, 0.8, 'reverb'),
           ],
         ],
@@ -403,10 +440,16 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
                   _pitch = v;
                 case 'speed':
                   _speed = v;
+                case 'alien':
+                  _alien = v;
+                case 'crunch':
+                  _crunch = v;
                 case 'tremolo':
                   _tremolo = v;
                 case 'gate':
                   _gate = v;
+                case 'echo':
+                  _echo = v;
                 case 'reverb':
                   _reverb = v;
               }

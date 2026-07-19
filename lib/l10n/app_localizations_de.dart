@@ -1664,6 +1664,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get voiceLabReverb => 'Hall';
 
   @override
+  String get voiceLabAlien => 'Alien';
+
+  @override
+  String get voiceLabCrunch => 'Verzerrung';
+
+  @override
+  String get voiceLabEcho => 'Echo';
+
+  @override
   String get voiceLabNoMic => 'Mikrofon-Berechtigung wird benötigt';
 
   @override

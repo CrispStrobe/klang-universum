@@ -1657,6 +1657,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceLabReverb => 'Reverb';
 
   @override
+  String get voiceLabAlien => 'Alien';
+
+  @override
+  String get voiceLabCrunch => 'Crunch';
+
+  @override
+  String get voiceLabEcho => 'Echo';
+
+  @override
   String get voiceLabNoMic => 'Microphone permission is needed';
 
   @override

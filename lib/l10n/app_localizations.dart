@@ -3194,6 +3194,24 @@ abstract class AppLocalizations {
   /// **'Reverb'**
   String get voiceLabReverb;
 
+  /// No description provided for @voiceLabAlien.
+  ///
+  /// In en, this message translates to:
+  /// **'Alien'**
+  String get voiceLabAlien;
+
+  /// No description provided for @voiceLabCrunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Crunch'**
+  String get voiceLabCrunch;
+
+  /// No description provided for @voiceLabEcho.
+  ///
+  /// In en, this message translates to:
+  /// **'Echo'**
+  String get voiceLabEcho;
+
   /// No description provided for @voiceLabNoMic.
   ///
   /// In en, this message translates to:
