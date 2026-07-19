@@ -20,6 +20,13 @@ import 'package:flutter/material.dart';
 /// How the user wants the engine chosen.
 enum EngineChoice { auto, monophonic, neural }
 
+/// Top-level worker for `compute()` — runs the pure-Dart monophonic pipeline in a
+/// background isolate so the UI thread stays responsive on long recordings. Only
+/// used when no neural engine is in play (the ONNX model handle can't cross an
+/// isolate boundary), so it's always the monophonic path here.
+Future<TranscriptionResult> _monoInIsolate(({Uint8List bytes, double a4}) m) =>
+    transcribeRecording(m.bytes, a4: m.a4);
+
 class TranscribeScreen extends StatefulWidget {
   const TranscribeScreen({super.key, this.debugPickAudio, this.debugNeural});
 
@@ -73,11 +80,19 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
         EngineChoice.neural => TranscriptionEngine.neural,
         EngineChoice.auto => null,
       };
-      final result = await transcribeRecording(
-        bytes,
-        neural: neural,
-        forceEngine: force,
-      );
+      // With no neural engine in play the pipeline is pure Dart → run it in a
+      // background isolate so the UI (and spinner) stay live on long clips. With
+      // neural, the ONNX handle can't cross an isolate, so run inline. Under a
+      // widget test (a debug pick source) run inline too — a compute() isolate
+      // doesn't advance the test's fake clock.
+      final useIsolate = neural == null && widget.debugPickAudio == null;
+      final result = useIsolate
+          ? await compute(_monoInIsolate, (bytes: bytes, a4: 440.0))
+          : await transcribeRecording(
+              bytes,
+              neural: neural,
+              forceEngine: force,
+            );
       if (!mounted) return;
       setState(() {
         _result = result;
