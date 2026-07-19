@@ -1,9 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
 import 'package:comet_beat/core/audio/microphone_pitch_service.dart';
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
+import 'package:comet_beat/core/audio/score_instrument_render.dart'
+    show renderMultiPartWithInstrument;
+import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
@@ -11,6 +17,8 @@ import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_mic_capture.dart';
 import 'package:comet_beat/features/games/composition/tab_patterns.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
+    show showMyInstrumentsSheet;
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/daw/send_to_daw.dart';
@@ -99,6 +107,9 @@ abstract class TabWorkshopTester {
   void removeColumnAtCursor();
   void play();
   bool get isPlaying;
+
+  /// Render+play the whole tab through [inst] (the picker minus the sheet).
+  void debugPlayWithInstrument(TrackerInstrument inst);
 
   /// A one-bar metronome count-in before playback (opt-in).
   bool get countInOn;
@@ -321,6 +332,41 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   void play() => _play();
   @override
   bool get isPlaying => _playing;
+
+  @override
+  void debugPlayWithInstrument(TrackerInstrument inst) =>
+      _renderAndPlayWith(inst);
+
+  /// Pick a saved "My Instruments" voice and hear the whole tab through it — a
+  /// preview, separate from the highlighting transport.
+  Future<void> _playWithInstrument() async {
+    final saved = await showMyInstrumentsSheet(context);
+    if (saved == null || !mounted) return;
+    final inst = saved.instrument;
+    if (inst != null) {
+      _renderAndPlayWith(inst);
+    }
+  }
+
+  void _renderAndPlayWith(TrackerInstrument inst) {
+    final quarterMs = (60000 / (_bpm <= 0 ? 120 : _bpm)).round();
+    final pcm = renderMultiPartWithInstrument(
+      _bandScore(),
+      inst,
+      quarterMs: quarterMs,
+    );
+    if (pcm.isEmpty) return;
+    var peak = 0.0;
+    for (final s in pcm) {
+      if (s.abs() > peak) peak = s.abs();
+    }
+    final g = peak > 0.9 ? 0.9 / peak : 1.0;
+    final i16 = Int16List(pcm.length);
+    for (var i = 0; i < pcm.length; i++) {
+      i16[i] = (pcm[i] * g * 32767).round().clamp(-32768, 32767);
+    }
+    unawaited(context.read<AudioService>().playWavBytes(wavBytes(i16)));
+  }
 
   @override
   bool get countInOn => _countIn;
@@ -934,6 +980,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
             tooltip: l10n.tabPlay,
             onPressed: _play,
+          ),
+          IconButton(
+            icon: const Icon(Icons.piano_outlined),
+            tooltip: l10n.workshopPlayWithInstrument,
+            onPressed: _playWithInstrument,
           ),
           IconButton(
             icon: const Icon(Icons.av_timer),

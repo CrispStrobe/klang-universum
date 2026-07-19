@@ -8,6 +8,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show SampleInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
@@ -82,6 +84,23 @@ void main() {
     // The tuning picker and the standard-notation switch are present.
     expect(find.byType(DropdownButton<Tuning>), findsOneWidget);
     expect(find.byType(Switch), findsOneWidget);
+  });
+
+  testWidgets('play-with-instrument renders the tab through a saved voice',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    // The demo riff has notes; a saved voice must render+play without throwing.
+    final pcm = Float64List(1024);
+    for (var i = 0; i < pcm.length; i++) {
+      pcm[i] = 0.4 * math.sin(2 * math.pi * 220 * i / 44100);
+    }
+    expect(
+      () => tab.debugPlayWithInstrument(SampleInstrument('v', pcm)),
+      returnsNormally,
+    );
+    expect(find.byIcon(Icons.piano_outlined), findsWidgets);
   });
 
   testWidgets('the capo stepper is bounded at 0 and increments',
