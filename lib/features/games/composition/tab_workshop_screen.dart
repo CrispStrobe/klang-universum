@@ -1439,9 +1439,22 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                 runSpacing: 12,
                 children: [
                   for (final entry in kGuitarChords.entries)
-                    InkWell(
-                      onTap: () => Navigator.of(ctx).pop(entry.key),
-                      child: ChordDiagramView(entry.value),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Tap the diagram to attach it…
+                        InkWell(
+                          onTap: () => Navigator.of(ctx).pop(entry.key),
+                          child: ChordDiagramView(entry.value),
+                        ),
+                        // …or hear it first, without closing the picker.
+                        TextButton.icon(
+                          icon: const Icon(Icons.play_arrow, size: 16),
+                          label: Text(l10n.tabPatternPreview),
+                          onPressed: () =>
+                              _previewColumns(strumColumns(entry.value, _dur)),
+                        ),
+                      ],
                     ),
                 ],
               ),

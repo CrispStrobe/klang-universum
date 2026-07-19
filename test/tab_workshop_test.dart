@@ -264,6 +264,26 @@ void main() {
     );
   });
 
+  testWidgets('chord picker previews a chord without attaching it',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+    tab.selectCell(0, 0);
+    await tester.pump();
+    expect(tab.chordNameAt(0), isNull);
+
+    // Open the chord picker and hit a chord's preview (not its diagram).
+    await tester
+        .tap(find.widgetWithIcon(OutlinedButton, Icons.grid_goldenratio));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithIcon(TextButton, Icons.play_arrow).first);
+    await tester.pump();
+
+    // Nothing attached; the picker is still open ("No chord" clear is showing).
+    expect(tab.chordNameAt(0), isNull);
+    expect(find.byIcon(Icons.clear), findsOneWidget);
+  });
+
   testWidgets('tapping a fret keypad button writes to the selected cell',
       (tester) async {
     await pumpGame(tester, const TabWorkshopScreen());
