@@ -792,6 +792,7 @@
     "placeholders": { "title": { "type": "String" } }
   },
   "tabUndo": "Undo",
+  "tabRedo": "Redo",
   "tabPlay": "Play",
   "tabCountIn": "Count-in",
   "tabClear": "Clear",

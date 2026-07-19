@@ -3764,6 +3764,12 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get tabUndo;
 
+  /// No description provided for @tabRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get tabRedo;
+
   /// No description provided for @tabPlay.
   ///
   /// In en, this message translates to:

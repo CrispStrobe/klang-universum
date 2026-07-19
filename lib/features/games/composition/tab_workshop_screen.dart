@@ -106,9 +106,11 @@ abstract class TabWorkshopTester {
   void addColumn();
   void removeColumnAtCursor();
 
-  /// Restores the active track to its state before the last edit.
+  /// Restores the active track to its state before/after the last undo.
   void undo();
+  void redo();
   bool get canUndo;
+  bool get canRedo;
 
   /// Copies the whole bar the cursor is in and inserts it right after; the
   /// cursor lands on the first column of the copy. Returns columns added.
@@ -211,30 +213,61 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   late List<TabTrack> _tracks;
   int _active = 0;
 
-  /// Undo history: `(trackIndex, deep-copied columns)` captured BEFORE each
-  /// edit, newest last, capped so it never grows without bound.
+  /// Undo/redo history: `(trackIndex, deep-copied columns)` snapshots, newest
+  /// last, capped so they never grow without bound.
   final List<(int, List<TabColumn>)> _undoStack = [];
+  final List<(int, List<TabColumn>)> _redoStack = [];
   static const _maxUndo = 50;
 
-  /// Snapshot the active track before a mutation so [undo] can restore it.
+  (int, List<TabColumn>) _captureState() =>
+      (_active, [for (final c in _doc.columns) c.copy()]);
+
+  /// Snapshot the active track before a mutation so [undo] can restore it. A
+  /// fresh edit invalidates the redo history.
   void _snapshot() {
-    _undoStack.add((_active, [for (final c in _doc.columns) c.copy()]));
+    _undoStack.add(_captureState());
     if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
+    _redoStack.clear();
+  }
+
+  /// Drop all history — the document or track indices changed (load / paste /
+  /// track removal), so old snapshots are stale.
+  void _clearHistory() {
+    _undoStack.clear();
+    _redoStack.clear();
+  }
+
+  void _restore((int, List<TabColumn>) snap) {
+    final (track, cols) = snap;
+    _active = track.clamp(0, _tracks.length - 1);
+    _tracks[_active].doc.columns
+      ..clear()
+      ..addAll(cols);
+    _selCol = _selCol.clamp(0, _doc.columns.length - 1);
   }
 
   @override
   bool get canUndo => _undoStack.isNotEmpty;
+  @override
+  bool get canRedo => _redoStack.isNotEmpty;
 
   @override
   void undo() {
     if (_undoStack.isEmpty) return;
-    final (track, cols) = _undoStack.removeLast();
+    final prev = _undoStack.removeLast();
     setState(() {
-      _active = track.clamp(0, _tracks.length - 1);
-      _tracks[_active].doc.columns
-        ..clear()
-        ..addAll(cols);
-      _selCol = _selCol.clamp(0, _doc.columns.length - 1);
+      _redoStack.add(_captureState()); // so redo can come back here
+      _restore(prev);
+    });
+  }
+
+  @override
+  void redo() {
+    if (_redoStack.isEmpty) return;
+    final next = _redoStack.removeLast();
+    setState(() {
+      _undoStack.add(_captureState());
+      _restore(next);
     });
   }
 
@@ -648,7 +681,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _active = _active.clamp(0, _tracks.length - 1);
         _selCol = _selCol.clamp(0, _doc.columns.length - 1);
         _selString = _selString.clamp(0, _doc.stringCount - 1);
-        _undoStack.clear(); // track indices shifted — snapshots are stale
+        _clearHistory();
       });
 
   @override
@@ -734,7 +767,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _sourceName = name;
         _selCol = 0;
         _selString = 0;
-        _undoStack.clear(); // a fresh document starts a fresh undo history
+        _clearHistory();
       });
     } catch (_) {
       if (!mounted) return;
@@ -751,7 +784,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _sourceName = title;
         _selCol = 0;
         _selString = 0;
-        _undoStack.clear();
+        _clearHistory();
       });
     } catch (_) {
       if (mounted) _snack(AppLocalizations.of(context)!.tabImportFailed);
@@ -767,7 +800,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _tracks[_active].doc = TabDocument.fromScore(score, _doc.tuning);
         _selCol = 0;
         _selString = 0;
-        _undoStack.clear();
+        _clearHistory();
       });
     } catch (_) {
       if (mounted) _snack(AppLocalizations.of(context)!.tabImportFailed);
@@ -1075,6 +1108,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             icon: const Icon(Icons.undo),
             tooltip: l10n.tabUndo,
             onPressed: canUndo ? undo : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            tooltip: l10n.tabRedo,
+            onPressed: canRedo ? redo : null,
           ),
           IconButton(
             icon: Icon(_playing ? Icons.stop : Icons.play_arrow),

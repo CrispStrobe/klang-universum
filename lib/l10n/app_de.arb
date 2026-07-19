@@ -732,6 +732,7 @@
     "placeholders": { "title": { "type": "String" } }
   },
   "tabUndo": "Rückgängig",
+  "tabRedo": "Wiederholen",
   "tabPlay": "Abspielen",
   "tabCountIn": "Einzähler",
   "tabClear": "Leeren",

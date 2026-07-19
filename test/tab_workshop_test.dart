@@ -276,11 +276,24 @@ void main() {
     await tester.pump();
     expect(tab.fretAt(1, 2), isNull); // back to before the edit
     expect(tab.canUndo, isFalse);
+    expect(tab.canRedo, isTrue);
+
+    tab.redo();
+    await tester.pump();
+    expect(tab.fretAt(1, 2), 7); // the edit came back
+    expect(tab.canRedo, isFalse);
+
+    // A NEW edit clears the redo history.
+    tab.undo();
+    tab.enterFret(2);
+    await tester.pump();
+    expect(tab.canRedo, isFalse);
 
     // A refused transpose leaves no undo entry to burn.
+    final undoDepth = tab.canUndo;
     tab.transposeBy(-99);
     await tester.pump();
-    expect(tab.canUndo, isFalse);
+    expect(tab.canUndo, undoDepth); // unchanged
   });
 
   testWidgets('generative insert adds a run after the cursor and moves it',

@@ -1992,6 +1992,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabUndo => 'Undo';
 
   @override
+  String get tabRedo => 'Redo';
+
+  @override
   String get tabPlay => 'Play';
 
   @override
