@@ -2498,6 +2498,12 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get dawRemoveClip;
 
+  /// No description provided for @dawLoop.
+  ///
+  /// In en, this message translates to:
+  /// **'Loop'**
+  String get dawLoop;
+
   /// No description provided for @dawSnap.
   ///
   /// In en, this message translates to:

@@ -52,6 +52,10 @@ abstract interface class DawTester {
 
   /// The playhead position (ms) during playback; 0 when stopped.
   double get playheadMs;
+
+  /// Whether playback loops back to the start at the end of the arrangement.
+  bool get loopOn;
+  void toggleLoop();
   bool isTrackMuted(int track);
   void toggleTrackMute(int track);
   void addDemoBeat();
@@ -119,6 +123,7 @@ class _DawScreenState extends State<DawScreen>
   late final Ticker _ticker;
   final ValueNotifier<double> _positionMs = ValueNotifier<double>(0);
   double _totalMs = 0;
+  bool _loop = false;
 
   @override
   void initState() {
@@ -136,7 +141,13 @@ class _DawScreenState extends State<DawScreen>
   void _onTick(Duration elapsed) {
     final ms = elapsed.inMilliseconds.toDouble();
     if (_totalMs > 0 && ms >= _totalMs) {
-      stop(); // reached the end of the arrangement
+      // Reached the end: loop restarts from the top, else stop. The re-bake in
+      // play() is cheap (every clip is served from the per-source cache).
+      if (_loop) {
+        play();
+      } else {
+        stop();
+      }
       return;
     }
     _positionMs.value = ms;
@@ -342,6 +353,12 @@ class _DawScreenState extends State<DawScreen>
   @override
   double get playheadMs => _positionMs.value;
 
+  @override
+  bool get loopOn => _loop;
+
+  @override
+  void toggleLoop() => setState(() => _loop = !_loop);
+
   // --- UI --------------------------------------------------------------------
 
   // Bake the arrangement and offer WAV/MP3 export via the shared sheet.
@@ -497,6 +514,12 @@ class _DawScreenState extends State<DawScreen>
             icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
             tooltip: _playing ? l10n.songStop : l10n.myMelodyPlay,
             onPressed: _playing ? stop : play,
+          ),
+          IconButton(
+            icon: const Icon(Icons.repeat),
+            color: _loop ? scheme.primary : null,
+            tooltip: l10n.dawLoop,
+            onPressed: toggleLoop,
           ),
           IconButton(
             icon: Icon(daw.snapOn ? Icons.grid_on : Icons.grid_off),

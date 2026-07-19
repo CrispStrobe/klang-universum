@@ -434,6 +434,7 @@
   "dawFadeIn": "Einblenden",
   "dawFadeOut": "Ausblenden",
   "dawRemoveClip": "Entfernen",
+  "dawLoop": "Schleife",
   "dawSnap": "Am Raster ausrichten",
   "drumkitTitle": "Schlagzeug",
   "drumkitRecord": "Aufnehmen",

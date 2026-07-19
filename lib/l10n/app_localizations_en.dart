@@ -1296,6 +1296,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawRemoveClip => 'Remove';
 
   @override
+  String get dawLoop => 'Loop';
+
+  @override
   String get dawSnap => 'Snap to grid';
 
   @override

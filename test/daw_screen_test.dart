@@ -268,4 +268,26 @@ void main() {
     expect(daw.isPlaying, isFalse);
     expect(daw.playheadMs, 0);
   });
+
+  testWidgets('loop keeps playing past the end instead of stopping',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    await tester.pump();
+
+    expect(daw.loopOn, isFalse);
+    daw.toggleLoop();
+    expect(daw.loopOn, isTrue);
+
+    daw.play();
+    await tester.pump(); // baseline
+    // Pump well past the arrangement length: without loop it would stop; with
+    // loop it restarts and is still playing.
+    await tester.pump(const Duration(seconds: 20));
+    expect(daw.isPlaying, isTrue);
+
+    daw.stop();
+    expect(daw.isPlaying, isFalse);
+  });
 }
