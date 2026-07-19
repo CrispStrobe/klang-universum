@@ -82,4 +82,21 @@ void main() {
       Duration(minutes: 3),
     ),
   );
+
+  test(
+    '--play with no output renders + plays a temp (seam-skipped)',
+    () async {
+      // COMET_RENDERSONG_NOPLAY skips the real player, so CI stays silent.
+      final r = await Process.run(
+        'dart',
+        ['run', 'bin/rendersong.dart', abc, '--play'],
+        environment: {'COMET_RENDERSONG_NOPLAY': '1'},
+      );
+      expect(r.exitCode, 0, reason: 'stderr: ${r.stderr}');
+      expect(r.stderr.toString(), contains('playing'));
+    },
+    timeout: const Timeout(
+      Duration(minutes: 3),
+    ),
+  );
 }

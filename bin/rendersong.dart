@@ -61,12 +61,15 @@ void main(List<String> args) {
   var bitrate = 192;
   var gain = 1.0;
   var reverb = 0.16; // subtle room by default; --reverb 0 for dry
+  var play = false; // play the result through the system audio
 
   for (var i = 0; i < args.length; i++) {
     final a = args[i];
     switch (a) {
       case '--sf2':
         sf2 = _next(args, ++i, a);
+      case '--play':
+        play = true;
       case '--single':
         single = true;
       case '--notation':
@@ -92,9 +95,14 @@ void main(List<String> args) {
         pos.add(a);
     }
   }
-  if (pos.length < 2) _usage(exitCode: 2);
+  // With --play, the output file is optional — synthesize to a temp WAV, play
+  // it, and remove it. Otherwise <in> <out> are both required.
+  if (pos.isEmpty || (pos.length < 2 && !play)) _usage(exitCode: 2);
   final inPath = pos[0];
-  final outPath = pos[1];
+  final playTemp = play && pos.length < 2;
+  final outPath = playTemp
+      ? '${Directory.systemTemp.path}/rendersong_${pid}_play.wav'
+      : pos[1];
   if (bpm < 1) _fail('--bpm must be positive');
   final fmt = from ?? _formatOf(inPath);
   final lower = outPath.toLowerCase();
@@ -193,9 +201,24 @@ void main(List<String> args) {
 
   final secs = (frames / kSampleRate).toStringAsFixed(1);
   final chans = isStereo ? 'stereo' : 'mono';
-  stderr.writeln(
-    'wrote $outPath  (${bytes.length} bytes, ${secs}s @ $effBpm BPM, $chans)',
-  );
+  if (!playTemp) {
+    stderr.writeln(
+      'wrote $outPath  (${bytes.length} bytes, ${secs}s @ $effBpm BPM, $chans)',
+    );
+  }
+
+  if (play) {
+    stderr.writeln('playing (${secs}s, $chans) …');
+    final ok = _playFile(outPath);
+    if (playTemp) {
+      try {
+        File(outPath).deleteSync();
+      } catch (_) {}
+    }
+    if (!ok) {
+      _fail('no audio player found (tried afplay/ffplay/play/mpv/aplay/cvlc)');
+    }
+  }
 }
 
 int _quarterMs(int bpm) => (60000 / bpm).round();
@@ -438,6 +461,36 @@ String _next(List<String> args, int i, String flag) {
   return args[i];
 }
 
+/// Play [path] through the first available system audio player, blocking until
+/// it finishes. Returns false if none is installed.
+bool _playFile(String path) {
+  // Test/CI seam: skip the actual player (no audio) but report success.
+  if (Platform.environment['COMET_RENDERSONG_NOPLAY'] == '1') return true;
+  // (command, leading args); the file path is appended. First on PATH wins.
+  final players = <(String, List<String>)>[
+    ('afplay', <String>[]), // macOS, built-in
+    ('ffplay', ['-autoexit', '-nodisp', '-loglevel', 'quiet']),
+    ('play', ['-q']), // sox
+    ('mpv', ['--really-quiet']),
+    ('aplay', ['-q']), // Linux/ALSA (WAV)
+    ('cvlc', ['--play-and-exit', '--quiet']),
+  ];
+  final finder = Platform.isWindows ? 'where' : 'which';
+  for (final (cmd, args) in players) {
+    try {
+      if (Process.runSync(finder, [cmd]).exitCode != 0) continue;
+    } catch (_) {
+      continue;
+    }
+    try {
+      return Process.runSync(cmd, [...args, path]).exitCode == 0;
+    } catch (_) {
+      continue;
+    }
+  }
+  return false;
+}
+
 Never _fail(String msg) {
   stderr.writeln('error: $msg');
   exit(2);
@@ -461,6 +514,8 @@ Options:
   --bitrate <K>    MP3 bitrate kbps (default 192)
   --gain <G>       output gain multiplier (default 1.0)
   --reverb <0..1>  master reverb mix (default 0.16; 0 = dry)
+  --play           play the result through the system audio (the <out> file is
+                   optional with --play — a temp is used and removed)
   --from <fmt>     force input format (abc/midi/musicxml/mxl/mscx/mscz/mei/
                    kern/gp3/gp4/gp5/gp/gpx/gpif)
 
