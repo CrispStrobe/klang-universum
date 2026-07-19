@@ -4,7 +4,10 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/sf2/sf2_remote.dart' show SoundFontSource;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/features/library/soundfont_download.dart'
+    show kGmSoundFonts;
 import 'package:comet_beat/features/library/soundfont_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -110,5 +113,46 @@ void main() {
     // The friendly loader error surfaces; no preset list.
     expect(find.textContaining('Vorbis decoder'), findsOneWidget);
     expect(find.byType(ListTile), findsNothing);
+  });
+
+  testWidgets('Download General MIDI fetches a font and lists its presets',
+      (tester) async {
+    final fontBytes = velSplitSf2(sineI16(2000, 8), sineI16(2000, 64));
+    SoundFontSource? requested;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async => showSoundFontSheet(
+                context,
+                pick: () async => null,
+                download: (source) async {
+                  requested = source;
+                  return fontBytes; // stand in for the real HTTP download
+                },
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // The download entry point is offered in the empty state.
+    await tester.tap(find.text('Download General MIDI…'));
+    await tester.pumpAndSettle();
+
+    // The catalog dialog lists the curated fonts; pick the first (compact one).
+    expect(find.text(kGmSoundFonts.first.name), findsOneWidget);
+    await tester.tap(find.text(kGmSoundFonts.first.name));
+    await tester.pumpAndSettle();
+
+    // The downloaded font loads → the count chip + preset list appear.
+    expect(requested, kGmSoundFonts.first);
+    expect(find.textContaining('sounds'), findsOneWidget);
+    expect(find.byType(ListTile), findsWidgets);
   });
 }

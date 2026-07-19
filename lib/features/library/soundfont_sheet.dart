@@ -14,11 +14,14 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/sf2/sf2.dart'
     show Sf2Preset, VorbisDecode;
+import 'package:comet_beat/core/audio/sf2/sf2_remote.dart' show SoundFontSource;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/library/soundfont_download.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -47,19 +50,29 @@ Future<TrackerInstrument?> showSoundFontSheet(
   BuildContext context, {
   SoundFontPicker pick = _defaultPick,
   VorbisDecode? vorbis,
+  SoundFontBytesDownloader download = downloadGmSoundFontBytes,
 }) {
   return showModalBottomSheet<TrackerInstrument>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _SoundFontSheet(pick: pick, vorbis: vorbis),
+    builder: (_) =>
+        _SoundFontSheet(pick: pick, vorbis: vorbis, download: download),
   );
 }
 
 class _SoundFontSheet extends StatefulWidget {
-  const _SoundFontSheet({required this.pick, this.vorbis});
+  const _SoundFontSheet({
+    required this.pick,
+    this.vorbis,
+    required this.download,
+  });
 
   final SoundFontPicker pick;
   final VorbisDecode? vorbis;
+
+  /// Fetches a catalog SoundFont's bytes (licence-gated + cached). Injected for
+  /// tests; defaults to the real HTTP+disk downloader.
+  final SoundFontBytesDownloader download;
 
   @override
   State<_SoundFontSheet> createState() => _SoundFontSheetState();
@@ -105,6 +118,86 @@ class _SoundFontSheetState extends State<_SoundFontSheet> {
         _busy = false;
       });
     }
+  }
+
+  /// Offer the curated free General-MIDI catalog; on pick, download (once,
+  /// cached) and load it into the browser. `.sf3` fonts decode via the glint
+  /// Vorbis path `loadSoundFont` auto-selects.
+  Future<void> _downloadGm() async {
+    final source = await _pickCatalogSource();
+    if (source == null || !mounted) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final bytes = await widget.download(source);
+      final loaded = loadSoundFont(bytes, vorbis: widget.vorbis);
+      if (!mounted) return;
+      setState(() {
+        _font = loaded;
+        _fontName = source.name;
+        _selected = null;
+        _selectedInst = null;
+        _filter = '';
+        _busy = false;
+      });
+    } on SoundFontLoadException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _busy = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Could not download this SoundFont. Check your connection '
+              'and try again.';
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  /// A small chooser over [kGmSoundFonts] (name + size + licence), or null if
+  /// dismissed. Each row is a one-time download the app then caches.
+  Future<SoundFontSource?> _pickCatalogSource() {
+    return showDialog<SoundFontSource>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Download General MIDI'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'A full 128-instrument General-MIDI SoundFont. '
+                'Downloaded once, then kept on this device.',
+                style: TextStyle(fontSize: 13),
+              ),
+            ),
+            for (final s in kGmSoundFonts)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.download),
+                title: Text(s.name),
+                subtitle: Text(
+                  '${soundFontSizeHint(s)} · ${s.attribution}',
+                ),
+                onTap: () => Navigator.pop(ctx, s),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _select(Sf2Preset p) {
@@ -218,6 +311,16 @@ class _SoundFontSheetState extends State<_SoundFontSheet> {
                 icon: const Icon(Icons.folder_open),
                 label: const Text('Choose SoundFont file…'),
               ),
+              // Fetch a free General-MIDI font on demand (native only — the web
+              // build has no disk cache for a 140 MB download).
+              if (!kIsWeb) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _busy ? null : _downloadGm,
+                  icon: const Icon(Icons.cloud_download_outlined),
+                  label: const Text('Download General MIDI…'),
+                ),
+              ],
               if (_busy) ...[
                 const SizedBox(height: 16),
                 const CircularProgressIndicator(),
