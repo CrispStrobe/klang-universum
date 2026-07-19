@@ -439,6 +439,39 @@ void main() {
       final peak = replaySong(song).pcm.fold<int>(0, (m, v) => max(m, v.abs()));
       expect(peak, greaterThan(1000));
     });
+
+    test('EEx pattern delay repeats the row x extra times (walkFlow)', () {
+      final s = TrackerSong(timing: const TrackerTiming(rows: 4));
+      s.engine.setCell(0, 1, ex(kExPatternDelay, 2, midi: 60)); // EE2 on row 1
+      s.syncCurrent();
+      expect(songUsesFlow(s), isTrue);
+      final rows = [for (final pr in walkFlow(s)) pr.row];
+      // Row 1 plays 3 times (1 + 2 delay); the rest once.
+      expect(rows, [0, 1, 1, 1, 2, 3]);
+    });
+
+    test('EE0 pattern delay is a no-op', () {
+      final s = TrackerSong(timing: const TrackerTiming(rows: 4));
+      s.engine.setCell(0, 1, ex(kExPatternDelay, 0, midi: 60));
+      s.syncCurrent();
+      final rows = [for (final pr in walkFlow(s)) pr.row];
+      expect(rows, [0, 1, 2, 3]);
+    });
+
+    test('a pattern-delay song lengthens the render', () {
+      TrackerSong build({bool delay = false}) {
+        final song = TrackerSong(timing: const TrackerTiming(rows: 4));
+        song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+        if (delay) song.engine.setCell(0, 1, ex(kExPatternDelay, 3));
+        song.syncCurrent();
+        return song;
+      }
+
+      final plain = replaySong(build()).pcm.length;
+      final delayed = replaySong(build(delay: true)).pcm.length;
+      // Row 1 repeated 3 extra times → 4 extra rows over a 4-row pattern (~2×).
+      expect(delayed, greaterThan(plain));
+    });
   });
 
   group('Fxx set-speed', () {

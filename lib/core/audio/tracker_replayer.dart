@@ -25,8 +25,9 @@
 // sequence. Implemented too: Exy extended — E1x/E2x fine porta, E3x glissando
 // control, E4x/E7x vibrato/tremolo waveform (sine/saw/square), E5x set-finetune,
 // E9x retrigger, EAx/EBx fine volume, ECx note cut, EDx note delay (per-tick, in
-// ReplayVoice) + E6x pattern loop (a row-level flow, in walkFlow), and Rxy
-// retrigger+volslide (kFxRetrigVolSlide). Fxx SET-SPEED (param <0x20 →
+// ReplayVoice) + E6x pattern loop and EEx pattern delay (row-level flow, in
+// walkFlow), and Rxy retrigger+volslide (kFxRetrigVolSlide). Fxx SET-SPEED
+// (param <0x20 →
 // ticks/row) AND SET-TEMPO (param ≥0x20 → BPM): [walkFlow] annotates every played
 // row with the speed/tempo IN EFFECT for that row. A song with a single (or no)
 // value renders UNIFORMLY (the top-of-module value, [songInitialSpeed]/
@@ -108,6 +109,8 @@ const int kExVibratoWaveform = 0x4; // E4x — 0 sine · 1 saw(ramp) · 2 square
 const int kExSetFinetune =
     0x5; // E5x — nudge the note's tune; 8 = centre, <8 flat, >8 sharp
 const int kExTremoloWaveform = 0x7; // E7x — 0 sine · 1 saw(ramp) · 2 square
+const int kExPatternDelay =
+    0xE; // EEx — repeat the current row x extra times (row-level, in walkFlow)
 
 /// Rxy — retrigger the note every y ticks, applying volume change code x on each
 /// retrigger (the XM table). Not a 0x0–0xF nibble, so it never collides with the
@@ -1247,7 +1250,8 @@ bool songUsesFlow(TrackerSong song) => song.patterns.any(
               c.fxCmd == kFxPositionJump ||
               c.fxCmd == kFxPatternBreak ||
               (c.fxCmd == kFxExtended &&
-                  ((c.fxParam >> 4) & 0xF) == kExPatternLoop),
+                  (((c.fxParam >> 4) & 0xF) == kExPatternLoop ||
+                      ((c.fxParam >> 4) & 0xF) == kExPatternDelay)),
         ),
       ),
     );
@@ -1401,6 +1405,24 @@ List<PlayedRow> walkFlow(TrackerSong song, {int maxRows = 4096}) {
       }
     }
     played.add(PlayedRow(oi, patternIndex, row, curSpeed, curTempo));
+
+    // EEx pattern delay: repeat THIS row x additional times (x+1 total) before
+    // advancing. The extra copies re-run the row (additive voices re-trigger on
+    // each), lengthening it consistently across walk → timing → render. First
+    // EEx on the row wins; delay of 0 is a no-op.
+    int? patternDelay;
+    for (final col in cells) {
+      final c = col[row];
+      if (c.fxCmd == kFxExtended &&
+          ((c.fxParam >> 4) & 0xF) == kExPatternDelay) {
+        patternDelay ??= c.fxParam & 0xF;
+      }
+    }
+    if (patternDelay != null && patternDelay > 0) {
+      for (var i = 0; i < patternDelay && played.length < maxRows; i++) {
+        played.add(PlayedRow(oi, patternIndex, row, curSpeed, curTempo));
+      }
+    }
 
     // Scan the row across channels for flow commands (first of each wins).
     int? jumpToOrder;
