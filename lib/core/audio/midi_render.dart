@@ -135,6 +135,10 @@ class _Note {
   final pan = List<double>.filled(16, 0.0);
   final sustain = List<bool>.filled(16, false);
   final modCents = List<double>.filled(16, 0.0); // CC1 → vibrato depth
+  // Pitch-bend range (RPN 0), default ±2 st; RPN select + data-entry state.
+  final bendRange = List<double>.filled(16, _bendRangeSemis);
+  final rpnMsb = List<int>.filled(16, 127);
+  final rpnLsb = List<int>.filled(16, 127);
   // Per-channel pitch-bend curve: (absolute sample, semitones), time-ordered.
   final bendByChannel = List.generate(16, (_) => <(int, double)>[]);
 
@@ -221,12 +225,24 @@ class _Note {
             final down = ev.d2 >= 64;
             if (!down) liftPedal(ch, ev.tick);
             sustain[ch] = down;
+          case 101:
+            rpnMsb[ch] = ev.d2;
+          case 100:
+            rpnLsb[ch] = ev.d2;
+          case 6: // data-entry MSB: RPN 0 → bend range in semitones
+            if (rpnMsb[ch] == 0 && rpnLsb[ch] == 0) {
+              bendRange[ch] = ev.d2.toDouble();
+            }
+          case 38: // data-entry LSB: RPN 0 → the cents part of the range
+            if (rpnMsb[ch] == 0 && rpnLsb[ch] == 0) {
+              bendRange[ch] = bendRange[ch].truncateToDouble() + ev.d2 / 100.0;
+            }
         }
       case 0xC0:
         program[ch] = ev.d1;
       case 0xE0:
         final value = (ev.d2 << 7) | ev.d1; // 0..16383, 8192 = centre
-        final semis = (value - 8192) / 8192.0 * _bendRangeSemis;
+        final semis = (value - 8192) / 8192.0 * bendRange[ch];
         bendByChannel[ch].add((sampleAt(ev.tick).round(), semis));
     }
   }

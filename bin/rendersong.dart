@@ -33,6 +33,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
+    show chorusFx;
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart' show reverbFx;
 import 'package:comet_beat/core/audio/gm_song_render.dart';
 import 'package:comet_beat/core/audio/midi_render.dart' show renderMidiFile;
@@ -41,8 +43,7 @@ import 'package:comet_beat/core/audio/score_instrument_render.dart';
 import 'package:comet_beat/core/audio/sf2/sf2.dart' show VorbisDecode;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
 import 'package:comet_beat/core/audio/sf2/vorbis_glint_ffi.dart';
-import 'package:comet_beat/core/audio/synth.dart'
-    show Instrument, kSampleRate, wavBytes, wavBytesStereo;
+import 'package:comet_beat/core/audio/synth.dart' show Instrument, kSampleRate;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 // The Flutter-free notation core (a dependency_override, re-exported via
 // crisp_notation) — import it directly to stay Flutter-free.
@@ -61,6 +62,8 @@ void main(List<String> args) {
   var bitrate = 192;
   var gain = 1.0;
   var reverb = 0.16; // subtle room by default; --reverb 0 for dry
+  var chorus = 0.0; // off by default
+  var bits = 16; // WAV bit depth (16 or 24)
   var play = false; // play the result through the system audio
 
   for (var i = 0; i < args.length; i++) {
@@ -85,6 +88,11 @@ void main(List<String> args) {
         gain = double.parse(_next(args, ++i, a));
       case '--reverb':
         reverb = double.parse(_next(args, ++i, a)).clamp(0.0, 1.0);
+      case '--chorus':
+        chorus = double.parse(_next(args, ++i, a)).clamp(0.0, 1.0);
+      case '--bits':
+        bits = int.parse(_next(args, ++i, a));
+        if (bits != 16 && bits != 24) _fail('--bits must be 16 or 24');
       case '--from':
         from = _next(args, ++i, a);
       case '-h':
@@ -107,8 +115,9 @@ void main(List<String> args) {
   final fmt = from ?? _formatOf(inPath);
   final lower = outPath.toLowerCase();
   final isMp3 = lower.endsWith('.mp3');
-  if (!isMp3 && !lower.endsWith('.wav')) {
-    _fail('output must end in .wav or .mp3');
+  final isFlac = lower.endsWith('.flac');
+  if (!isMp3 && !isFlac && !lower.endsWith('.wav')) {
+    _fail('output must end in .wav, .mp3 or .flac');
   }
 
   // General-MIDI per-part voicing: with a SoundFont, voice each part by its OWN
@@ -177,27 +186,39 @@ void main(List<String> args) {
   final int frames;
   final isStereo =
       stereoPair != null || (gmParts != null && gmParts.length > 1);
+  // WAV/FLAC share the PCM path; FLAC writes a WAV then converts.
+  final wantWavPcm = !isMp3;
   if (isStereo) {
     var (left, right) = stereoPair ?? panPartsToStereo(gmParts!);
     if (left.isEmpty) _fail('the score produced no notes to render');
+    if (chorus > 0) {
+      left = chorusFx(left, mix: chorus);
+      right = chorusFx(right, mix: chorus);
+    }
     if (reverb > 0) {
       left = reverbFx(left, mix: reverb);
       right = reverbFx(right, mix: reverb);
     }
     _masterStereo(left, right, target);
     frames = left.length;
-    bytes = isMp3
-        ? mp3EncodeStereo(left, right, bitrate: bitrate)
-        : _wavStereo(left, right);
+    bytes = wantWavPcm
+        ? _wavStereo(left, right, bits)
+        : mp3EncodeStereo(left, right, bitrate: bitrate);
   } else {
     var m = (gmParts != null && gmParts.isNotEmpty) ? gmParts.first : mono!;
     if (m.isEmpty) _fail('the score produced no notes to render');
+    if (chorus > 0) m = chorusFx(m, mix: chorus);
     if (reverb > 0) m = reverbFx(m, mix: reverb);
     _master(m, target);
     frames = m.length;
-    bytes = isMp3 ? mp3EncodeMono(m, bitrate: bitrate) : wavBytes(_toInt16(m));
+    bytes = wantWavPcm ? _wavMono(m, bits) : mp3EncodeMono(m, bitrate: bitrate);
   }
-  File(outPath).writeAsBytesSync(bytes);
+
+  if (isFlac) {
+    _writeFlac(outPath, bytes); // WAV bytes → .flac via an external encoder
+  } else {
+    File(outPath).writeAsBytesSync(bytes);
+  }
 
   final secs = (frames / kSampleRate).toStringAsFixed(1);
   final chans = isStereo ? 'stereo' : 'mono';
@@ -432,26 +453,82 @@ void _masterStereo(Float64List left, Float64List right, double target) {
   }
 }
 
-/// Interleave a stereo pair and encode as a WAV.
-Uint8List _wavStereo(Float64List left, Float64List right) {
-  final n = left.length > right.length ? left.length : right.length;
-  final il = Int16List(n * 2);
-  for (var i = 0; i < n; i++) {
-    final l = i < left.length ? left[i] : 0.0;
-    final r = i < right.length ? right[i] : 0.0;
-    il[i * 2] = (l.clamp(-1.0, 1.0) * 32767).round();
-    il[i * 2 + 1] = (r.clamp(-1.0, 1.0) * 32767).round();
+Uint8List _wavMono(Float64List x, int bits) => _wav([x], bits);
+Uint8List _wavStereo(Float64List l, Float64List r, int bits) =>
+    _wav([l, r], bits);
+
+/// Encode [chans] (mono or stereo) as a PCM WAV at [bits] (16 or 24) bit depth.
+Uint8List _wav(List<Float64List> chans, int bits) {
+  final numCh = chans.length;
+  var n = 0;
+  for (final c in chans) {
+    if (c.length > n) n = c.length;
   }
-  return wavBytesStereo(il);
+  final bytesPer = bits ~/ 8;
+  final blockAlign = numCh * bytesPer;
+  final dataLen = n * blockAlign;
+  final b = BytesBuilder();
+  void u32(int v) =>
+      b.add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
+  void u16(int v) => b.add([v & 0xff, (v >> 8) & 0xff]);
+  b.add('RIFF'.codeUnits);
+  u32(36 + dataLen);
+  b.add('WAVE'.codeUnits);
+  b.add('fmt '.codeUnits);
+  u32(16);
+  u16(1); // PCM
+  u16(numCh);
+  u32(kSampleRate);
+  u32(kSampleRate * blockAlign);
+  u16(blockAlign);
+  u16(bits);
+  b.add('data'.codeUnits);
+  u32(dataLen);
+  final maxv = (1 << (bits - 1)) - 1;
+  for (var i = 0; i < n; i++) {
+    for (final c in chans) {
+      final s = i < c.length ? c[i] : 0.0;
+      final v = (s.clamp(-1.0, 1.0) * maxv).round();
+      if (bits == 16) {
+        b.add([v & 0xff, (v >> 8) & 0xff]);
+      } else {
+        // 24-bit little-endian signed.
+        b.add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff]);
+      }
+    }
+  }
+  return b.toBytes();
 }
 
-Int16List _toInt16(Float64List pcm) {
-  final out = Int16List(pcm.length);
-  for (var i = 0; i < pcm.length; i++) {
-    final v = (pcm[i] * 32767).round();
-    out[i] = v < -32768 ? -32768 : (v > 32767 ? 32767 : v);
+/// Write [wavBytes] as a `.flac` at [outPath] via an external encoder
+/// (flac or ffmpeg). Fails clearly if neither is installed.
+void _writeFlac(String outPath, Uint8List wavBytes) {
+  final tmp = '${Directory.systemTemp.path}/rendersong_${pid}_flac.wav';
+  File(tmp).writeAsBytesSync(wavBytes);
+  void cleanup() {
+    try {
+      File(tmp).deleteSync();
+    } catch (_) {}
   }
-  return out;
+
+  final converters = <(String, List<String>)>[
+    ('flac', ['-s', '-f', '-o', outPath, tmp]),
+    ('ffmpeg', ['-y', '-loglevel', 'quiet', '-i', tmp, outPath]),
+  ];
+  final finder = Platform.isWindows ? 'where' : 'which';
+  for (final (cmd, cmdArgs) in converters) {
+    try {
+      if (Process.runSync(finder, [cmd]).exitCode != 0) continue;
+    } catch (_) {
+      continue;
+    }
+    final ok = Process.runSync(cmd, cmdArgs).exitCode == 0;
+    cleanup();
+    if (ok) return;
+    _fail('FLAC conversion failed via $cmd');
+  }
+  cleanup();
+  _fail('no FLAC encoder found (install flac or ffmpeg)');
 }
 
 // ── arg plumbing ─────────────────────────────────────────────────────────────
@@ -514,8 +591,13 @@ Options:
   --bitrate <K>    MP3 bitrate kbps (default 192)
   --gain <G>       output gain multiplier (default 1.0)
   --reverb <0..1>  master reverb mix (default 0.16; 0 = dry)
+  --chorus <0..1>  master chorus mix (default 0 = off)
+  --bits <16|24>   WAV/FLAC bit depth (default 16)
   --play           play the result through the system audio (the <out> file is
                    optional with --play — a temp is used and removed)
+
+Output: <out.wav | out.mp3 | out.flac>. FLAC needs an external `flac` or
+`ffmpeg` on PATH.
   --from <fmt>     force input format (abc/midi/musicxml/mxl/mscx/mscz/mei/
                    kern/gp3/gp4/gp5/gp/gpx/gpif)
 

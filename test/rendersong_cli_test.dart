@@ -76,11 +76,35 @@ void main() {
     () async {
       final r = await _render(abc, '${dir.path}/x.ogg');
       expect(r.exitCode, isNot(0));
-      expect(r.stderr.toString(), contains('.wav or .mp3'));
+      expect(r.stderr.toString(), contains('.wav'));
     },
     timeout: const Timeout(
       Duration(minutes: 3),
     ),
+  );
+
+  test(
+    '--bits 24 (+ chorus) writes a 24-bit WAV',
+    () async {
+      final out = '${dir.path}/w24.wav';
+      final r = await Process.run(
+        'dart',
+        [
+          'run',
+          'bin/rendersong.dart',
+          abc,
+          out,
+          '--bits',
+          '24',
+          '--chorus',
+          '0.3',
+        ],
+      );
+      expect(r.exitCode, 0, reason: 'stderr: ${r.stderr}');
+      final b = File(out).readAsBytesSync();
+      expect(b[34], 24, reason: 'bitsPerSample field = 24');
+    },
+    timeout: const Timeout(Duration(minutes: 3)),
   );
 
   test(
