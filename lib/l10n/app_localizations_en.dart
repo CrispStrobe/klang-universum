@@ -3228,6 +3228,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameValueOrder => 'Longest First';
 
   @override
+  String get gameDynamicsOrder => 'Soft to Loud';
+
+  @override
+  String get gameDynamicsOrderSubtitle =>
+      'Put the dynamic marks in order from softest to loudest';
+
+  @override
+  String get dynamicsOrderPrompt => 'Tap the dynamics from softest to loudest!';
+
+  @override
+  String get dynamicsOrderHint => 'pp is the softest, ff is the loudest.';
+
+  @override
   String get gameValueOrderSubtitle => 'Order the note values by length';
 
   @override

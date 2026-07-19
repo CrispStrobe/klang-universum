@@ -196,7 +196,7 @@ const List<Concept> kConcepts = [
     GradeBand.g34,
     ConceptArea.dynamics,
     'p and f (piano/forte)',
-    ['dynamics_duel', 'connect_dynamics'],
+    ['dynamics_duel', 'connect_dynamics', 'dynamics_order'],
   ),
   Concept(
     'tempo_terms',

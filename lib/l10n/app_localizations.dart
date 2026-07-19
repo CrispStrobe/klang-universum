@@ -6098,6 +6098,30 @@ abstract class AppLocalizations {
   /// **'Longest First'**
   String get gameValueOrder;
 
+  /// No description provided for @gameDynamicsOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft to Loud'**
+  String get gameDynamicsOrder;
+
+  /// No description provided for @gameDynamicsOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Put the dynamic marks in order from softest to loudest'**
+  String get gameDynamicsOrderSubtitle;
+
+  /// No description provided for @dynamicsOrderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the dynamics from softest to loudest!'**
+  String get dynamicsOrderPrompt;
+
+  /// No description provided for @dynamicsOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'pp is the softest, ff is the loudest.'**
+  String get dynamicsOrderHint;
+
   /// No description provided for @gameValueOrderSubtitle.
   ///
   /// In en, this message translates to:

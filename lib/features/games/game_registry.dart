@@ -94,6 +94,7 @@ import 'package:comet_beat/features/games/note_values/beat_sort_screen.dart';
 import 'package:comet_beat/features/games/note_values/dotted_sort_screen.dart';
 import 'package:comet_beat/features/games/note_values/duration_duel_screen.dart';
 import 'package:comet_beat/features/games/note_values/dynamics_duel_screen.dart';
+import 'package:comet_beat/features/games/note_values/dynamics_order_screen.dart';
 import 'package:comet_beat/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:comet_beat/features/games/note_values/rhythm_tap_screen.dart';
 import 'package:comet_beat/features/games/note_values/tempo_duel_screen.dart';
@@ -357,6 +358,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameValueOrder,
       subtitle: (l) => l.gameValueOrderSubtitle,
       builder: (_) => const ValueOrderScreen(),
+    ),
+    // Order dynamic marks softest → loudest — the pp…ff ladder as a sequence.
+    GameInfo(
+      id: 'dynamics_order',
+      icon: Icons.graphic_eq,
+      title: (l) => l.gameDynamicsOrder,
+      subtitle: (l) => l.gameDynamicsOrderSubtitle,
+      builder: (_) => const DynamicsOrderScreen(),
     ),
     GameInfo(
       id: 'connect_symbols',

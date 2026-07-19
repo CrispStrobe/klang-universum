@@ -3244,6 +3244,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameValueOrder => 'Von lang nach kurz';
 
   @override
+  String get gameDynamicsOrder => 'Von leise nach laut';
+
+  @override
+  String get gameDynamicsOrderSubtitle =>
+      'Bringe die Dynamikzeichen von am leisesten nach am lautesten';
+
+  @override
+  String get dynamicsOrderPrompt => 'Tippe die Dynamik von leise nach laut!';
+
+  @override
+  String get dynamicsOrderHint => 'pp ist am leisesten, ff am lautesten.';
+
+  @override
   String get gameValueOrderSubtitle => 'Ordne die Notenwerte nach ihrer Länge';
 
   @override
