@@ -19,7 +19,7 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus** · ✅ **SHIPPED — layout-engine crash-hardening** (crisp_notation `443be86`). Fuzzed `layoutPages`/`layoutMultiPartPages`/`layoutStaffSystemSystems` against degenerate scores (empty measures, extreme durations, huge/tiny page metrics, unusual + additive meters, chords/tuplets/voice2). One real internal crash found + fixed: an empty (0-measure) score threw `StateError: Bad state: No element` (`layoutSystems` read `measureRegions.last`) — reachable from the PDF export of an empty Workshop doc; now paginates to zero pages. All other throws are the documented `ArgumentError` preconditions (unequal measure counts, empty multi-part). Locked with a `pagination robustness` group in `layout_edge_test.dart` (empty-score regression + 150-iter valid-input fuzz + precondition contract). Now idle.
+- **opus** · ✅ **SHIPPED — layout-engine crash-hardening** (crisp_notation `443be86`). Fuzzed `layoutPages`/`layoutMultiPartPages`/`layoutStaffSystemSystems` against degenerate scores (empty measures, extreme durations, huge/tiny page metrics, unusual + additive meters, chords/tuplets/voice2). One real internal crash found + fixed: an empty (0-measure) score threw `StateError: Bad state: No element` (`layoutSystems` read `measureRegions.last`) — reachable from the PDF export of an empty Workshop doc; now paginates to zero pages. All other throws are the documented `ArgumentError` preconditions (unequal measure counts, empty multi-part). Locked with a `pagination robustness` group in `layout_edge_test.dart` (empty-score regression + 150-iter valid-input fuzz + precondition contract). **Then** scoped the **Loop Mixer 3.0** arc into PLAN.md (§ "Loop Mixer 3.0 — from mixer to instrument") — content variety (chosen lead), live-performance FX, visual juice, discovery/combos, improvise, arrangement — and flagged the **broken "show as sheet music" panel** as §A (bug, do first). Docs only. Now idle.
 
 - **opus (library-import-multipart)** · ✅ **idle / SHIPPED — fixed online-library import data-loss.** The OpenScore/Commons fetch pipeline decoded `.mscx` via single-part `scoreFromMscx` + MIDI via single-track `scoreFromMidi` → a 4-part OpenScore string quartet / multi-track MIDI lost all but the first part on import. Added **`multiPartScoreFromMscx`/`staffSystemFromMscx`** to `crisp_notation` (**`crisp_notation@516dcd2`**, per-staff id prefixes + per-`<Part>` instrument names) + fixed `bytesToMusicXml` to decode mscx/MIDI via the multi-part readers → `multiPartToMusicXml` (**`02d114d`**). +2 tests (lib reader + app 2-part mscx/midi import); 1675 core + 21 library tests green. So import AND export now keep every part for the multi-capable formats. **+ robustness follow-up (`crisp_notation@ba74b01`):** extended `reader_robustness_test.dart` to fuzz the multi-part reader entry points (`multiPartScoreFrom*`, the actual import surface + the new mscx reader) — 2000 mutations each of a genuine 2-part doc, all reject cleanly with FormatException (no RangeError/hang).
 
@@ -1767,6 +1767,159 @@ keeps existing signatures stable.
     **Jam mode** (groove plays, child plays cello over it through the AEC
     path, app shows what they play vs. the harmony — the loop mixer becomes a
     play-along backing band). Big; needs the AEC on-device path.
+
+## Loop Mixer 3.0 — from mixer to instrument (scoped ideas)
+
+**STATUS 2026-07-19: PLANNED — scoped, unclaimed.** The 2.0 ladder made the Loop
+Mixer *capable* (data patterns, variants, swing, progressions, capture, jam,
+share; both follow-ups — groove→score export, native-AEC jam grading — also
+shipped). But **at rest it still reads like a settings form**: five on/off cards,
+a row of beat dots, one effect button, and everything in one key/one kit. Nothing
+on screen reacts to the audio, there's no way to *perform* (no build-up, no live
+effects, no launch feel), and every session sounds like the same band. This
+section scopes the work to make it feel **alive and inexhaustible** — a toy that
+plays like an instrument. **Maintainer's pick to lead with: the *content
+variety* set (§B)**, because it multiplies what every later slice has to play
+with. The rest is ordered by fun-per-effort, not dependency; most items are
+independently shippable.
+
+**Diagnosis — why it feels flat (five gaps, each addressed below):**
+1. No performance/arrangement layer — cards are binary toggles; the only build-up
+   is an *automatic* fill every 4th bar. You configure; you never play. → §C, §G
+2. Almost no visual feedback — just beat dots; the cards ignore the audio. → §E
+3. One flavour — hardcoded C-pentatonic, one synth kit, 5 stems × 3 variants. → §B
+4. Sound design is one button — a whole `crisp_dsp/` toolbox sits imported but
+   unused (only `modulated_delay`/`reverb` are wired). → §C
+5. The genuinely fun parts (sing / beatbox / jam / follow) are buried in a 34px
+   strip under a static grid. → surface them as part of §E/§F.
+
+**Invariants every item MUST preserve (the 2.0 spine):**
+- **Any combination stays consonant** — new pitched content is authored in, or
+  rigidly transposed within, one scale so no two layers clash (the "colour
+  melody" rule). Non-negotiable for a 6+ audience.
+- **Sample-integral timing** — step length stays a whole number of ms *and*
+  samples at 44.1 kHz (`LoopTiming`), or the seam clicks and stems drift.
+- **Backward-compatible spec/token** — new `GrooveSpec` fields must default so old
+  `KU1.` tokens still decode (`fromJson` already tolerates missing keys); extend
+  `cacheKey` so new renders don't collide with cached old ones.
+- **No step editor here** — grid editing is the Tracker's job by design; the Loop
+  Mixer stays the *playing* surface.
+- Engine work is additive; existing signatures stay stable. Acceptance bar (from
+  the ladder): every slice ships a headless roundtrip test that proves the
+  *feature* (render → `listen.dart --wav` reads the authored/transposed notes, or
+  a synth→detector roundtrip), not just unit coverage.
+
+### §A. Bug — the live-engraving ("show as sheet music") panel is broken
+The score panel (`loop_mixer_screen.dart:1362` → `StaffView(score: grooveScore(
+_engine.cellsFor(id)!, …))`) renders wrong / nothing / crashes. `grooveScore`
+itself is pure and unit-tested (`groove_notation_test.dart`), so the fault is in
+the app path: suspect the **progression-mode cells** (`cellsFor` returns 4
+resolved bars including multi-midi chord cells) not engraving cleanly inside the
+96px `FittedBox`, a `StaffView` regression, or a null/empty edge. **Needs a live
+repro first** — run the screen, toggle the Score button with each of
+melody / chords / bass enabled, with and without a progression, and capture what
+actually renders. Then fix + add a widget/golden test so it can't silently
+re-break. **S–M. Do this first — a visibly broken feature undercuts the whole
+toy.**
+
+### §B. Content variety — break the one-flavour limit (the chosen lead)
+1. **Key & scale select.** Add `key` (root pitch-class 0–11) + `scale`
+   (major-pentatonic / minor-pentatonic; later dorian/blues) to `GrooveSpec`;
+   transpose every pitched stem and the jam/`chordAtBar` math by the root, and
+   swap the pentatonic set + tonic/relative logic for minor. Rigid transposition
+   preserves the consonance guarantee for free. Instantly multiplies mood (a low
+   minor groove feels nothing like bright major). UI: two chip rows. **M.**
+   Verify: render → `listen.dart --wav` reads the transposed notes; token
+   roundtrip; every key×scale combo stays all-consonant.
+2. **Swappable drum kits.** Parameterize `renderDrum` (`synth.dart`) with a
+   `DrumKit` profile (tuning, decay, noise colour, pitch-sweep depth) + add
+   `GrooveSpec.kit`. Ship ~4: the current clean synth, a deep round electronic
+   kit, a soft acoustic kit, a dusty/filtered lo-fi kit. Zero pattern authoring —
+   pure timbre, transforms the vibe. UI: a kit chip row. **M.** Verify: kit
+   changes the rendered spectrum (peak/decay assertions) but not the onset grid.
+3. **Style presets (the headline "many flavours").** A `Style` bundles a per-stem
+   pattern *feel* (drum groove family, bass motion, chord voicing, melody
+   character) plus default tempo, swing, kit and scale bias. The current patterns
+   become the default style; author 3–4 more (laid-back swung, four-on-the-floor,
+   gentle latin, mellow lo-fi). Picking a style re-points which pattern set the
+   five cards draw from. Composes items 1–2. **L** (pattern authoring is the
+   cost). Verify: each style renders, stays consonant, default tempo keeps timing
+   sample-integral.
+4. **More variants + per-card "roll".** Grow A/B/C toward A–E per stem, and add a
+   small "roll this card" control that swaps to a random *in-style* variant. Cheap
+   content multiplier. **S–M.**
+
+### §C. Performance & live feel — make it playable, not just configurable
+1. **Momentary effect strip — hold to apply, swipe to sweep.** A bottom row of
+   large effect pads active only while a finger is down; drag up/down sets
+   intensity. Wire the already-present but unused `crisp_dsp/` effects on the mix
+   bus: a sweepable low/high filter, a beat-repeat/stutter gate, a tape-stop
+   (pitch+time ramp to a halt), an echo throw, a bit-crush. The single
+   best-feeling touch gesture in the genre — momentary (hold) beats toggle because
+   it self-corrects on release. Needs a live path on the output (the 2.0 spine
+   flagged this as the one real wall). **First cut without streaming DSP:**
+   pre-render a few discrete intensity steps per effect and crossfade — cheap,
+   ships on the existing offline path. **M–L.**
+2. **One-knob "make it sound produced" master filter.** A single sweep: low-pass
+   one way, high-pass the other from centre. One gesture = a big musical move
+   (filter down for a breakdown, open up for a drop); teaches tension/release. A
+   cheaper first slice of item 1. **S–M.**
+3. **Quantized launch with an "armed/queued" glow.** Toggling a card (or a
+   section, §G) never fires instantly — it pulses "waiting" and snaps in on the
+   next bar. The seam scheduler already swaps at the boundary; this just exposes
+   it as *felt* feedback, so stabs always land on beat. **S.**
+4. **Dice / "surprise me".** One button rolls a fresh always-good groove: a random
+   in-style enabled set + variants (+ maybe key/kit). Instant gratification and a
+   cold-start for a kid who doesn't know where to begin. Recombines existing
+   content. **S.**
+
+### §D. Visual juice — make the sound visible
+1. **Beat- & level-reactive cards.** Every enabled card pulses on its own hits and
+   glows to its live level (drive from the rendered stem's per-step energy, which
+   the engine already computes). The biggest single cause of the "static form"
+   feel is that nothing reacts to the audio. Procedural — no art assets. **S–M.**
+2. **Embodied parts — each stem as a little performer.** Replace/augment the
+   slider-cards with a small animated character per stem that visibly performs its
+   loop (bobs on the beat, "sings" when active, goes still when muted) so the
+   arrangement is legible to a non-reader at a glance. Reuse the app's existing
+   mascot visual language for art direction. Biggest perceived transformation;
+   mostly art + choreography over the existing `mixStems`. **M–L** (needs an
+   art-direction call).
+3. **Step-resolution playhead + mini-visualizer.** Upgrade the beat-dot row to a
+   step playhead over a light waveform/level lane so you can watch the loop
+   breathe. **S.**
+
+### §E. Discovery & game shape — pull replay
+1. **Secret combos.** A small data table: certain enabled-stem sets (or set +
+   key/style) unlock a one-off bonus — a special animation and/or an extra
+   musical layer/fill you can't get otherwise. Show a "found 1/3" tracker per
+   style. Turns an open sandbox into a hunt; the retention engine. Sits on the
+   existing `spec → WAV` caching. **S–M** (data + a reveal animation).
+2. **Gentle band-challenges.** Optional zero-pressure prompts ("add something high
+   and sparkly", "make it feel calm") that nudge exploration without a score,
+   matching the app's no-fail stance. **S.**
+
+### §F. Play & improvise — add a *play* verb
+1. **Scale-locked smear pad (solo surface).** A pad where dragging a finger plays
+   only in-key notes over the running groove (horizontal = pitch, vertical =
+   rhythm/density). Impossible to hit a wrong note; lets a child improvise a lead,
+   captured into a layer. **M.**
+2. **Record-your-own-sound → a playable part.** Extend the shipped mic capture so
+   a sampled voice/clap/mouth-sound is auto-chopped and joins the mix as its own
+   card/character ("that's MY voice in the song!"). Builds on `groove_capture` /
+   `beat_capture`. **M.**
+
+### §G. Build-a-song & keep it — arrangement + pride of authorship
+1. **Section/scene grid.** Columns are song sections (intro / groove / drop /
+   outro); tapping a section launches its whole layer set at once, quantized;
+   chain sections to auto-advance into a full arranged track. The direct answer to
+   "it's just one loop." Composes §C-3. **M–L.**
+2. **Record & replay the performance.** Capture a whole session (cards toggling,
+   effect swipes, sections) as a timeline you can play back and export as one
+   arranged track — not just the 2/4-bar loop. Extends the shipped WAV/MP3
+   export; gate any sharing behind the parental-control stance. **M–L.**
+3. **Save slots / preset shelf.** In-app named groove slots (the share token
+   already serializes the spec) so a kid can keep and revisit their bands. **S.**
 
 ## Ideas backlog for the next agent (Jul 2026 handoff)
 
