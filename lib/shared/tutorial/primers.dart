@@ -863,6 +863,16 @@ Tutorial enharmonicPrimer(AppLocalizations l10n) => Tutorial(
           score: _spelled(const [(Step.c, 1), (Step.d, -1)]),
           beats: _run([61, 61], ms: 700),
         ),
+        // Active recall: F♯ and G♭ are the same key, spelled two ways.
+        TutorialStep(
+          text: l10n.primerEnharmonicTry,
+          score: _spelled(const [(Step.f, 1), (Step.g, -1)]),
+          beats: _run([66, 66], ms: 700),
+          choices: [
+            TutorialChoice(l10n.sameLabel, correct: true),
+            TutorialChoice(l10n.enharmonicDifferent),
+          ],
+        ),
       ],
     );
 
@@ -1171,6 +1181,16 @@ Tutorial articulationPrimer(AppLocalizations l10n) => Tutorial(
           // Emphasised: the same notes, pushed harder.
           play: (a) => a.playPhrase([60, 62, 64], noteMs: 420),
         ),
+        // Active recall: the dots mean short-and-detached.
+        TutorialStep(
+          text: l10n.primerArticulationTry,
+          score: _articulated([60, 62, 64], Articulation.staccato),
+          play: (a) => a.playPhrase([60, 62, 64], noteMs: 160),
+          choices: [
+            TutorialChoice(l10n.articulationStaccato, correct: true),
+            TutorialChoice(l10n.articulationAccent),
+          ],
+        ),
       ],
     );
 
@@ -1198,6 +1218,15 @@ Tutorial beamPrimer(AppLocalizations l10n) => Tutorial(
           // Two eighths on one beat — the engraver joins them with a beam.
           score: _notes([60, 62], dur: DurationBase.eighth),
           play: (a) => a.playPhrase([60, 62], noteMs: 280),
+        ),
+        // Active recall: two eighths joined on one beat are beamed.
+        TutorialStep(
+          text: l10n.primerBeamTry,
+          score: _notes([60, 62], dur: DurationBase.eighth),
+          choices: [
+            TutorialChoice(l10n.beamLabel, correct: true),
+            TutorialChoice(l10n.flagLabel),
+          ],
         ),
       ],
     );

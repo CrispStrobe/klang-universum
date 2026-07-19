@@ -9164,6 +9164,12 @@ abstract class AppLocalizations {
   /// **'So F♯ and G♭ sound identical. Other twins: C♯=D♭, D♯=E♭, G♯=A♭, A♯=B♭.'**
   String get primerEnharmonicTwins;
 
+  /// No description provided for @primerEnharmonicTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: do F♯ and G♭ sound the same or different?'**
+  String get primerEnharmonicTry;
+
   /// No description provided for @primerExpressionTitle.
   ///
   /// In en, this message translates to:
@@ -9314,6 +9320,12 @@ abstract class AppLocalizations {
   /// **'A wedge > is an accent: give that note an extra push so it stands out from its neighbours.'**
   String get primerArticulationAccent;
 
+  /// No description provided for @primerArticulationTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: dots over the notes mean…?'**
+  String get primerArticulationTry;
+
   /// No description provided for @primerBeamTitle.
   ///
   /// In en, this message translates to:
@@ -9331,6 +9343,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'When eighths share a beat they are joined by a BEAM instead of flags — the same sound, just tidier to read.'**
   String get primerBeamBeam;
+
+  /// No description provided for @primerBeamTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: two eighths joined on one beat are…?'**
+  String get primerBeamTry;
 
   /// No description provided for @primerToneTitle.
   ///

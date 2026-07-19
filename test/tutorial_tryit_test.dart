@@ -26,6 +26,9 @@ void main() {
       directionPrimer(l),
       stepSkipPrimer(l),
       tieSlurPrimer(l),
+      beamPrimer(l),
+      articulationPrimer(l),
+      enharmonicPrimer(l),
     ];
     for (final primer in primers) {
       expect(

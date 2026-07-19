@@ -4982,6 +4982,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'So F♯ and G♭ sound identical. Other twins: C♯=D♭, D♯=E♭, G♯=A♭, A♯=B♭.';
 
   @override
+  String get primerEnharmonicTry =>
+      'Now you try: do F♯ and G♭ sound the same or different?';
+
+  @override
   String get primerExpressionTitle => 'Fast or slow, loud or soft';
 
   @override
@@ -5074,6 +5078,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'A wedge > is an accent: give that note an extra push so it stands out from its neighbours.';
 
   @override
+  String get primerArticulationTry => 'Now you try: dots over the notes mean…?';
+
+  @override
   String get primerBeamTitle => 'Flags and beams';
 
   @override
@@ -5083,6 +5090,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerBeamBeam =>
       'When eighths share a beat they are joined by a BEAM instead of flags — the same sound, just tidier to read.';
+
+  @override
+  String get primerBeamTry =>
+      'Now you try: two eighths joined on one beat are…?';
 
   @override
   String get primerToneTitle => 'Half steps and whole steps';

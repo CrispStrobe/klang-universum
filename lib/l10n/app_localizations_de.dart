@@ -5002,6 +5002,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Fis und Ges klingen also gleich. Weitere Zwillinge: Cis=Des, Dis=Es, Gis=As, Ais=B.';
 
   @override
+  String get primerEnharmonicTry =>
+      'Jetzt du: Klingen Fis und Ges gleich oder verschieden?';
+
+  @override
   String get primerExpressionTitle => 'Schnell oder langsam, laut oder leise';
 
   @override
@@ -5094,6 +5098,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ein Keil > ist ein Akzent: gib dieser Note einen extra Schubs, damit sie hervorsticht.';
 
   @override
+  String get primerArticulationTry =>
+      'Jetzt du: Punkte über den Noten bedeuten…?';
+
+  @override
   String get primerBeamTitle => 'Fähnchen und Balken';
 
   @override
@@ -5103,6 +5111,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerBeamBeam =>
       'Liegen Achtel auf demselben Schlag, verbindet sie ein BALKEN statt der Fähnchen — derselbe Klang, nur übersichtlicher zu lesen.';
+
+  @override
+  String get primerBeamTry => 'Jetzt du: Zwei Achtel auf einem Schlag sind…?';
 
   @override
   String get primerToneTitle => 'Halbtöne und Ganztöne';
