@@ -193,6 +193,47 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether the clip spans [atTimelineMs] with room to split on both sides —
+  /// the UI enables "Split at playhead" only then.
+  bool canSplitClip(int track, int index, double atTimelineMs) {
+    if (track >= timeline.tracks.length) return false;
+    final clips = timeline.tracks[track].clips;
+    if (index >= clips.length) return false;
+    final clip = clips[index];
+    final offset = atTimelineMs - clip.startMs;
+    return offset > _minSplitMs &&
+        offset < clipDurationMs(track, index) - _minSplitMs;
+  }
+
+  static const double _minSplitMs = 5;
+
+  /// Split the clip at absolute timeline position [atTimelineMs] into two
+  /// source-sharing clips (non-destructive — both are just trim windows onto the
+  /// same render): the left keeps its start + fade-in and ends at the cut; the
+  /// right is placed at the cut, plays from the cut to the original end, and
+  /// keeps the fade-out. The seam carries no fade, so the split is inaudible.
+  /// No-op when the cut isn't strictly inside the clip ([canSplitClip]).
+  void splitClip(int track, int index, double atTimelineMs) {
+    if (!canSplitClip(track, index, atTimelineMs)) return;
+    final clips = timeline.tracks[track].clips;
+    final clip = clips[index];
+    final offset = atTimelineMs - clip.startMs; // ms into the played window
+    final cut = clip.trimStartMs + offset; // the split point in source ms
+    _record();
+    // Left: [trimStart, cut) — drop the fade-out at the seam.
+    clips[index] = clip.copyWith(trimEndMs: cut, fadeOutMs: 0);
+    // Right: [cut, original end), placed at the cut — drop the fade-in.
+    clips.insert(
+      index + 1,
+      clip.copyWith(
+        startMs: clip.startMs + offset,
+        trimStartMs: cut,
+        fadeInMs: 0,
+      ),
+    );
+    notifyListeners();
+  }
+
   /// Project tempo — the snap grid is one beat at this tempo, so clips line up
   /// rhythmically rather than to an arbitrary millisecond grid.
   double bpm = 120;

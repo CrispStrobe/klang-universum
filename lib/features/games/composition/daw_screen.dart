@@ -92,6 +92,11 @@ abstract interface class DawTester {
   void removeClip(int track, int index);
   void duplicateClip(int track, int index);
 
+  /// Split the clip at [atMs] (timeline ms) into two; [canSplitClip] is true
+  /// only when the cut falls strictly inside the clip.
+  void splitClip(int track, int index, double atMs);
+  bool canSplitClip(int track, int index, double atMs);
+
   /// Timeline: move a clip in time, and read a clip's start + to-scale duration.
   void moveClip(int track, int index, double startMs);
   double clipStartMs(int track, int index);
@@ -363,6 +368,14 @@ class _DawScreenState extends State<DawScreen>
 
   @override
   void duplicateClip(int track, int index) => _daw.duplicateClip(track, index);
+
+  @override
+  void splitClip(int track, int index, double atMs) =>
+      _daw.splitClip(track, index, atMs);
+
+  @override
+  bool canSplitClip(int track, int index, double atMs) =>
+      _daw.canSplitClip(track, index, atMs);
 
   @override
   void moveClip(int track, int index, double startMs) =>
@@ -672,7 +685,8 @@ class _DawScreenState extends State<DawScreen>
                     ];
                   }(),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 4,
                     children: [
                       TextButton.icon(
                         onPressed: frozen
@@ -692,7 +706,17 @@ class _DawScreenState extends State<DawScreen>
                         icon: const Icon(Icons.control_point_duplicate),
                         label: Text(l10n.dawDuplicate),
                       ),
-                      const Spacer(),
+                      // Split at the playhead — only when it falls inside the clip.
+                      TextButton.icon(
+                        onPressed: canSplitClip(track, index, playheadMs)
+                            ? () {
+                                Navigator.of(sheetCtx).pop();
+                                splitClip(track, index, playheadMs);
+                              }
+                            : null,
+                        icon: const Icon(Icons.content_cut),
+                        label: Text(l10n.dawSplit),
+                      ),
                       TextButton.icon(
                         onPressed: () {
                           Navigator.of(sheetCtx).pop();

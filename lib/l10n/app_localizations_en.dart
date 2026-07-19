@@ -1500,6 +1500,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawDuplicate => 'Duplicate';
 
   @override
+  String get dawSplit => 'Split';
+
+  @override
   String get dawFreeze => 'Freeze to audio';
 
   @override

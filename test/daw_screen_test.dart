@@ -158,6 +158,25 @@ void main() {
     expect(daw.clipGain(0, 0), lessThan(1.0));
   });
 
+  testWidgets('Split cuts a clip in two at the playhead', (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    await tester.pump();
+    expect(daw.clipCount, 1);
+
+    // Put the playhead inside the clip, then open the inspector.
+    daw.seekTo(daw.clipDurationMs(0, 0) / 2);
+    await tester.pump();
+    await tester.tap(find.text('🥁'));
+    await tester.pumpAndSettle();
+
+    // Tap Split → the one clip becomes two.
+    await tester.tap(find.text('Split'));
+    await tester.pumpAndSettle();
+    expect(daw.clipCount, 2);
+  });
+
   testWidgets('the snap toggle flips snapping and a ruler labels the timeline',
       (tester) async {
     await _pumpDaw(tester);

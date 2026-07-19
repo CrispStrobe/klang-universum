@@ -368,6 +368,50 @@ void main() {
     expect(() => s.loadProject('garbage{'), throwsFormatException);
     expect(s.clipCount, 1); // unchanged — threw before mutating
   });
+
+  group('splitClip', () {
+    // A 1-second clip (44100 samples @ 44.1 kHz) landing at 0 on track 0.
+    DawService oneSecond() => DawService()..addClip(_tone(0.5, 44100));
+
+    test('splits one clip into two source-sharing windows', () {
+      final s = oneSecond();
+      expect(s.canSplitClip(0, 0, 400), isTrue);
+      s.splitClip(0, 0, 400);
+      expect(s.clipCount, 2);
+      final left = s.timeline.tracks[0].clips[0];
+      final right = s.timeline.tracks[0].clips[1];
+      expect(left.trimEndMs, closeTo(400, 1)); // left ends at the cut
+      expect(left.startMs, 0);
+      expect(right.startMs, closeTo(400, 1)); // right placed at the cut
+      expect(right.trimStartMs, closeTo(400, 1));
+      expect(right.source, same(left.source)); // shared render, non-destructive
+      // Durations sum back to the original second.
+      expect(s.clipDurationMs(0, 0), closeTo(400, 2));
+      expect(s.clipDurationMs(0, 1), closeTo(600, 2));
+    });
+
+    test('will not split at the edges or outside the clip', () {
+      final s = oneSecond();
+      expect(s.canSplitClip(0, 0, 0), isFalse); // at the start
+      expect(s.canSplitClip(0, 0, 1000), isFalse); // at the end
+      expect(s.canSplitClip(0, 0, 5000), isFalse); // past the clip
+      s.splitClip(0, 0, 0);
+      expect(s.clipCount, 1); // a no-op
+    });
+
+    test('the seam carries no fade; undo restores the single clip', () {
+      final s = oneSecond()..setClipFades(0, 0, fadeInMs: 50, fadeOutMs: 50);
+      s.splitClip(0, 0, 400);
+      final left = s.timeline.tracks[0].clips[0];
+      final right = s.timeline.tracks[0].clips[1];
+      expect(left.fadeInMs, 50); // outer fade kept
+      expect(left.fadeOutMs, 0); // no fade at the seam
+      expect(right.fadeInMs, 0);
+      expect(right.fadeOutMs, 50);
+      s.undo();
+      expect(s.clipCount, 1);
+    });
+  });
 }
 
 /// A live source whose render reflects a mutable buffer — a stand-in for a

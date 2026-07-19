@@ -2852,6 +2852,12 @@ abstract class AppLocalizations {
   /// **'Duplicate'**
   String get dawDuplicate;
 
+  /// No description provided for @dawSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Split'**
+  String get dawSplit;
+
   /// No description provided for @dawFreeze.
   ///
   /// In en, this message translates to:

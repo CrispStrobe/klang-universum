@@ -1505,6 +1505,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawDuplicate => 'Duplizieren';
 
   @override
+  String get dawSplit => 'Teilen';
+
+  @override
   String get dawFreeze => 'In Audio umwandeln';
 
   @override
