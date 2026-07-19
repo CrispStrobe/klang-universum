@@ -287,6 +287,23 @@ int _asInt(Object? v, String what) {
   return v.toInt();
 }
 
+/// Upper bound on a pattern's row count — far above any real song (a channel
+/// column is `List.filled(rows, …)`, so an unbounded `rows` from an untrusted
+/// share token is an allocation bomb: a tiny token declaring `rows: 2e9` would
+/// OOM the app when pasted). 64K rows is ~0.5 MB/channel — a hard safety cap.
+const int kMaxTrackerRows = 1 << 16;
+
+/// Reads a bounded integer field from decoded token JSON. Rejects an
+/// out-of-range value with a clean [TrackerSongCodecException] BEFORE it can
+/// size an allocation — the token decoder's DoS guard.
+int _boundedInt(Object? v, int fallback, int min, int max, String what) {
+  final n = v is num ? v.toInt() : fallback;
+  if (n < min || n > max) {
+    throw TrackerSongCodecException('$what out of range ($n)');
+  }
+  return n;
+}
+
 Map<String, dynamic> _instrumentToJson(TrackerInstrument inst, String where) {
   try {
     return instrumentToJson(inst);
@@ -308,10 +325,12 @@ Map<String, dynamic> _timingToJson(TrackerTiming t) => {
     };
 
 TrackerTiming _timingFromJson(Map<String, dynamic> m) => TrackerTiming(
-      tempoBpm: (m['tempoBpm'] as num?)?.toInt() ?? 120,
-      rows: (m['rows'] as num?)?.toInt() ?? 16,
-      stepsPerBeat: (m['stepsPerBeat'] as num?)?.toInt() ?? 4,
-      swing: (m['swing'] as num?)?.toDouble() ?? 0.0,
+      // Bound every size/rate field so a crafted token can't OOM (rows sizes a
+      // per-channel List.filled) or divide-by-zero (tempo/steps are divisors).
+      tempoBpm: _boundedInt(m['tempoBpm'], 120, 1, 100000, 'tempoBpm'),
+      rows: _boundedInt(m['rows'], 16, 1, kMaxTrackerRows, 'rows'),
+      stepsPerBeat: _boundedInt(m['stepsPerBeat'], 4, 1, 1024, 'stepsPerBeat'),
+      swing: ((m['swing'] as num?)?.toDouble() ?? 0.0).clamp(0.0, 0.9),
     );
 
 // ── channel ──────────────────────────────────────────────────────────────────

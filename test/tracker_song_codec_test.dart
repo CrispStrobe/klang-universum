@@ -5,6 +5,7 @@
 
 import 'dart:convert';
 
+import 'package:archive/archive.dart' show ZLibEncoder;
 import 'package:comet_beat/core/audio/crisp_dsp/fm.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
@@ -247,6 +248,46 @@ void main() {
       // Not even JSON.
       expect(
         () => trackerSongFromJsonString('{not json'),
+        throwsA(isA<TrackerSongCodecException>()),
+      );
+    });
+
+    test('a crafted oversize timing is rejected, not allocated (DoS guard)',
+        () {
+      // `rows` sizes a per-channel List.filled — an unbounded value from an
+      // untrusted share token would OOM the app. `tempoBpm`/`stepsPerBeat` are
+      // divisors. The decoder must reject each cleanly, BEFORE allocating.
+      for (final timing in const [
+        {'rows': 2000000000}, // ~16 GB allocation bomb
+        {'rows': 0}, // below the valid floor
+        {'tempoBpm': 0}, // divide-by-zero (beatMs)
+        {'stepsPerBeat': 0}, // divide-by-zero (stepMs)
+      ]) {
+        expect(
+          () => trackerSongFromJson({
+            'format': kTrackerSongFormat,
+            'version': 1,
+            'timing': timing,
+          }),
+          throwsA(isA<TrackerSongCodecException>()),
+          reason: 'timing $timing',
+        );
+      }
+    });
+
+    test('a pasted token with a bomb rows count returns null, never OOMs', () {
+      // Build a real CBS1. token around malicious JSON (same encoding the codec
+      // uses) and paste it: the UI decoder must return null, not allocate.
+      const badJson = '{"format":"$kTrackerSongFormat","version":1,'
+          '"timing":{"rows":2000000000},"patterns":[],"channels":[],'
+          '"instruments":[],"order":[]}';
+      final token = kTrackerSongTokenPrefix +
+          base64UrlEncode(
+            const ZLibEncoder().encodeBytes(utf8.encode(badJson)),
+          );
+      expect(tryTrackerSongFromToken(token), isNull);
+      expect(
+        () => trackerSongFromToken(token),
         throwsA(isA<TrackerSongCodecException>()),
       );
     });
