@@ -1234,6 +1234,9 @@ class LoopEngine {
                   (step % LoopTiming.stepsPerBar >= 5 &&
                       !row[step] &&
                       rng.nextDouble() < 0.06),
+              // Extended kit voices (open hat, clap, tom, rim, cowbell) pass
+              // through the jam variation unchanged — authored as placed.
+              _ => row[step],
             },
         ],
     };

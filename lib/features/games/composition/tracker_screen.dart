@@ -1192,12 +1192,16 @@ class _TrackerScreenState extends State<TrackerScreen>
         Drum.kick => const Color(0xFF4E342E),
         Drum.snare => const Color(0xFF6D4C41),
         Drum.hat => const Color(0xFF8D6E63),
+        // Extended kit voices — a neutral continuation of the palette; @tracker-ui
+        // may give each its own colour.
+        _ => const Color(0xFFA1887F),
       };
 
   static IconData _drumIcon(Drum d) => switch (d) {
         Drum.kick => Icons.circle,
         Drum.snare => Icons.radio_button_checked,
         Drum.hat => Icons.blur_on,
+        _ => Icons.graphic_eq, // extended kit voices (default icon)
       };
 
   void _clearAll() {

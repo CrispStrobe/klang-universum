@@ -572,12 +572,19 @@ class _DrumkitScreenState extends State<DrumkitScreen>
         Drum.kick => l10n.drumkitKick,
         Drum.snare => l10n.drumkitSnare,
         Drum.hat => l10n.drumkitHat,
+        // Extended kit voices — the enum name until @tracker-ui adds l10n keys.
+        Drum.openHat => 'Open hat',
+        Drum.clap => 'Clap',
+        Drum.tom => 'Tom',
+        Drum.rim => 'Rim',
+        Drum.cowbell => 'Cowbell',
       };
 
   IconData _drumIcon(Drum d) => switch (d) {
         Drum.kick => Icons.circle,
         Drum.snare => Icons.blur_circular,
         Drum.hat => Icons.brightness_high,
+        _ => Icons.graphic_eq, // extended kit voices (default icon)
       };
 
   @override

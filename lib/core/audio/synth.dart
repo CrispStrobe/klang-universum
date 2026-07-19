@@ -265,7 +265,10 @@ Uint8List wavBytesStereo(
 // loop cache and the tests rely on byte-identical renders).
 
 /// The percussion voices the drum pattern can place.
-enum Drum { kick, snare, hat }
+/// The percussion palette. The first three (kick/snare/hat) are the classic
+/// grid rows; the rest widen the kit (open hat, clap, tom, rim, cowbell). New
+/// voices are APPENDED so existing index/order mappings stay stable.
+enum Drum { kick, snare, hat, openHat, clap, tom, rim, cowbell }
 
 Float64List _normalizedToUnitPeak(Float64List buffer) {
   var peak = 0.0;
@@ -318,6 +321,78 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
         final white = noise.nextDouble() * 2 - 1;
         out[i] = (white - prev) * exp(-60 * t);
         prev = white;
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.openHat:
+      // Like the hat but a long, sizzling decay (an open hi-hat).
+      final n = (280 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      final noise = Random(4);
+      var prev = 0.0;
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final white = noise.nextDouble() * 2 - 1;
+        out[i] = (white - prev) * exp(-11 * t);
+        prev = white;
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.clap:
+      // Three quick noise bursts ~9 ms apart (the hand transients) into a
+      // slightly longer diffuse tail — the classic clap shape.
+      final n = (200 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      final noise = Random(5);
+      final burstGap = (9 * sampleRate) ~/ 1000;
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final white = noise.nextDouble() * 2 - 1;
+        // Sum three sharply-decaying transients, then a soft tail after them.
+        var env = 0.0;
+        for (var b = 0; b < 3; b++) {
+          final bt = (i - b * burstGap) / sampleRate;
+          if (bt >= 0) env += exp(-140 * bt);
+        }
+        final tail = 0.35 * exp(-18 * t);
+        out[i] = white * (env + tail);
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.tom:
+      // A mid tom: a sine gliding 190→95 Hz with a medium decay (a softer,
+      // higher, longer sibling of the kick).
+      final n = (220 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      var phase = 0.0;
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final freq = 190 - (190 - 95) * (t / 0.220);
+        phase += freq / sampleRate;
+        out[i] = sin(2 * pi * phase) * exp(-9 * t);
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.rim:
+      // A rimshot: a short ~1700 Hz tone click with a hint of noise, very fast
+      // decay.
+      final n = (35 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      final noise = Random(6);
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final tone = sin(2 * pi * 1700 * t);
+        final click = (noise.nextDouble() * 2 - 1) * 0.4;
+        out[i] = (tone + click) * exp(-90 * t);
+      }
+      return _normalizedToUnitPeak(out);
+    case Drum.cowbell:
+      // Two detuned square-ish tones (~540 + ~800 Hz), medium decay — the 808
+      // cowbell.
+      final n = (250 * sampleRate) ~/ 1000;
+      final out = Float64List(n);
+      double sq(double x) => sin(2 * pi * x) >= 0 ? 1.0 : -1.0;
+      for (var i = 0; i < n; i++) {
+        final t = i / sampleRate;
+        final a = sq(540 * t);
+        final b = sq(800 * t);
+        out[i] = (a + b) * exp(-8 * t);
       }
       return _normalizedToUnitPeak(out);
   }

@@ -127,6 +127,12 @@ int _drumMidi(Drum drum) => switch (drum) {
       Drum.kick => 41, // F2
       Drum.snare => 60, // C4
       Drum.hat => 79, // G5
+      // Extended kit voices spread across the staff so lines stay distinct.
+      Drum.tom => 48, // C3
+      Drum.clap => 64, // E4
+      Drum.rim => 72, // C5
+      Drum.cowbell => 76, // E5
+      Drum.openHat => 81, // A5
     };
 
 /// One drum row (eighth-grid booleans) as [PatternCell]s: each hit is a single
