@@ -14,14 +14,19 @@ void main() {
     for (final g in kGamesByModule.values.expand((x) => x)) g.id: g,
   };
 
-  test('each recently-added game carries its own primer', () {
+  test('each recently-added / corrected game carries its own primer', () {
     for (final id in const [
+      // My six new games.
       'connect_degrees',
       'connect_time',
       'connect_keysig',
       'connect_roadmap',
       'dynamics_order',
       'tempo_order',
+      // Corrected: were falling back to a general/mismatched module primer.
+      'meter_detective', // march/waltz → strong-beat pattern
+      'place_note_bass', // bass reading (not the treble fallback)
+      'key_name', // key-signature naming (not the module general)
     ]) {
       expect(byId[id], isNotNull, reason: '$id is registered');
       expect(

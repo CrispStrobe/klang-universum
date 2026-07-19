@@ -539,6 +539,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gamePlaceNoteBass,
       subtitle: (l) => l.gamePlaceNoteSubtitle,
       builder: (_) => const PlaceNoteScreen(clef: Clef.bass),
+      tutorial: readingBassPrimer,
     ),
     GameInfo(
       id: 'melody_echo',
@@ -777,6 +778,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameMeterDetective,
       subtitle: (l) => l.gameMeterDetectiveSubtitle,
       builder: (_) => const MeterDetectiveScreen(),
+      tutorial: strongBeatPrimer,
     ),
     GameInfo(
       id: 'beat_runner',
@@ -1413,6 +1415,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameKeyName,
       subtitle: (l) => l.gameKeyNameSubtitle,
       builder: (_) => const KeyNameScreen(),
+      tutorial: keySignaturePrimer,
     ),
     GameInfo(
       id: 'key_ear',
