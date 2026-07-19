@@ -1565,6 +1565,18 @@
   "timeSigMeaning98": "Nine eighth beats",
   "timeSigMeaning128": "Twelve eighth beats",
   "timeSigMeaning54": "Five quarter beats",
+  "gameConnectKeysig": "Connect the Key Signatures",
+  "gameConnectKeysigSubtitle": "Match each key signature to how many sharps or flats it has",
+  "connectKeysigPrompt": "How many sharps or flats? Connect each key signature to its count!",
+  "keySigNone": "No sharps or flats",
+  "keySigSharps": "{count, plural, =1{1 sharp} other{{count} sharps}}",
+  "@keySigSharps": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "keySigFlats": "{count, plural, =1{1 flat} other{{count} flats}}",
+  "@keySigFlats": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "beatCount4": "4 beats",
   "beatCount2": "2 beats",
   "beatCount1": "1 beat",

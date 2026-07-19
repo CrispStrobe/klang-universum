@@ -56,6 +56,7 @@ enum ConnectMode {
   beats,
   degrees,
   timeSignatures,
+  keySignatures,
 }
 
 /// One matchable item: a left visual, a (unique) right name, a match key, the
@@ -156,6 +157,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.beats => 'connect_beats',
         ConnectMode.degrees => 'connect_degrees',
         ConnectMode.timeSignatures => 'connect_time',
+        ConnectMode.keySignatures => 'connect_keysig',
         ConnectMode.notes => switch (widget.clef) {
             Clef.bass => 'connect_line_bass',
             Clef.tenor => 'connect_line_tenor',
@@ -184,6 +186,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.beats => _beatItems(),
       ConnectMode.degrees => _degreeItems(),
       ConnectMode.timeSignatures => _timeSigItems(),
+      ConnectMode.keySignatures => _keysigItems(),
       ConnectMode.notes => _noteItems(),
     };
     _lefts = items;
@@ -503,6 +506,46 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         _ => l10n.timeSigMeaning54, // 5/4
       };
 
+  List<_ConnectItem> _keysigItems() {
+    // Match a rendered key signature to how many accidentals it has — the
+    // circle-of-fifths count, not the key name (so no B/H spelling to localise).
+    // 0/1♯/1♭/2♯ for beginners; 2♭/3♯/3♭/4♯ at 2★.
+    const easy = [0, 1, -1, 2];
+    const all = [0, 1, -1, 2, -2, 3, -3, 4];
+    final wide = context.read<ProgressService>().starsFor(progressId) >= 2;
+    final pool = [
+      for (final f in all)
+        if (wide || easy.contains(f)) f,
+    ]..shuffle(_random);
+    final picked = pool.take(ConnectLineScreen.pairs).toList();
+
+    return [
+      for (var i = 0; i < picked.length; i++)
+        _ConnectItem(
+          card: StaffView(
+            score: Score.simple(
+              keySignature: KeySignature(picked[i]),
+              notes: 'r:w',
+            ),
+            staffSpace: 7,
+            theme: kidsScoreTheme,
+          ),
+          matchKey: 'keysig${picked[i]}',
+          sriId: 'reading.keysig.${picked[i]}',
+          playMidi: null,
+          label: (ctx) => _keysigLabel(AppLocalizations.of(ctx)!, picked[i]),
+          color: (_, __) => _symbolPalette[i % _symbolPalette.length],
+        ),
+    ];
+  }
+
+  static String _keysigLabel(AppLocalizations l10n, int fifths) =>
+      switch (fifths.sign) {
+        0 => l10n.keySigNone,
+        1 => l10n.keySigSharps(fifths),
+        _ => l10n.keySigFlats(-fifths),
+      };
+
   List<_ConnectItem> _beatItems() {
     // Each note-value glyph paired with how many beats it lasts in 4/4:
     // whole = 4, half = 2, quarter = 1, eighth = ½. Whole/half/quarter/eighth
@@ -620,6 +663,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.beats => l10n.gameConnectBeats,
       ConnectMode.degrees => l10n.gameConnectDegrees,
       ConnectMode.timeSignatures => l10n.gameConnectTime,
+      ConnectMode.keySignatures => l10n.gameConnectKeysig,
       ConnectMode.notes => l10n.gameConnectLine,
     };
     final prompt = switch (widget.mode) {
@@ -631,6 +675,7 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
       ConnectMode.beats => l10n.connectBeatsPrompt,
       ConnectMode.degrees => l10n.connectDegreesPrompt,
       ConnectMode.timeSignatures => l10n.connectTimePrompt,
+      ConnectMode.keySignatures => l10n.connectKeysigPrompt,
       ConnectMode.notes => l10n.connectLinePrompt,
     };
 

@@ -3914,6 +3914,42 @@ class AppLocalizationsDe extends AppLocalizations {
   String get timeSigMeaning54 => 'Fünf Viertel-Schläge';
 
   @override
+  String get gameConnectKeysig => 'Vorzeichen verbinden';
+
+  @override
+  String get gameConnectKeysigSubtitle =>
+      'Ordne jeder Tonart zu, wie viele Kreuze oder Be sie hat';
+
+  @override
+  String get connectKeysigPrompt =>
+      'Wie viele Kreuze oder Be? Verbinde jede Tonart mit ihrer Anzahl!';
+
+  @override
+  String get keySigNone => 'Keine Vorzeichen';
+
+  @override
+  String keySigSharps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Kreuze',
+      one: '1 Kreuz',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String keySigFlats(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ♭',
+      one: '1 ♭',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get beatCount4 => '4 Schläge';
 
   @override

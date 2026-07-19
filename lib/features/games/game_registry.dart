@@ -311,6 +311,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameConnectTimeSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.timeSignatures),
     ),
+    // Match a key signature to how many sharps/flats it has (the circle-of-
+    // fifths count, not the key name) — thickens key-signature reading.
+    GameInfo(
+      id: 'connect_keysig',
+      icon: Icons.tag,
+      title: (l) => l.gameConnectKeysig,
+      subtitle: (l) => l.gameConnectKeysigSubtitle,
+      builder: (_) => const ConnectLineScreen(mode: ConnectMode.keySignatures),
+    ),
     GameInfo(
       id: 'rhythm_tap',
       icon: Icons.touch_app,

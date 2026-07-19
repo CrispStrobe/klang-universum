@@ -289,7 +289,7 @@ const List<Concept> kConcepts = [
     GradeBand.g56,
     ConceptArea.scales,
     'Key signatures',
-    ['key_sig'],
+    ['key_sig', 'connect_keysig'],
   ),
   Concept(
     'major_scales',

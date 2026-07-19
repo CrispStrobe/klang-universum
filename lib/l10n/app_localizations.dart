@@ -7304,6 +7304,42 @@ abstract class AppLocalizations {
   /// **'Five quarter beats'**
   String get timeSigMeaning54;
 
+  /// No description provided for @gameConnectKeysig.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect the Key Signatures'**
+  String get gameConnectKeysig;
+
+  /// No description provided for @gameConnectKeysigSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Match each key signature to how many sharps or flats it has'**
+  String get gameConnectKeysigSubtitle;
+
+  /// No description provided for @connectKeysigPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How many sharps or flats? Connect each key signature to its count!'**
+  String get connectKeysigPrompt;
+
+  /// No description provided for @keySigNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No sharps or flats'**
+  String get keySigNone;
+
+  /// No description provided for @keySigSharps.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 sharp} other{{count} sharps}}'**
+  String keySigSharps(int count);
+
+  /// No description provided for @keySigFlats.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 flat} other{{count} flats}}'**
+  String keySigFlats(int count);
+
   /// No description provided for @beatCount4.
   ///
   /// In en, this message translates to:

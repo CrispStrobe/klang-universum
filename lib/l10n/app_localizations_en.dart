@@ -3899,6 +3899,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timeSigMeaning54 => 'Five quarter beats';
 
   @override
+  String get gameConnectKeysig => 'Connect the Key Signatures';
+
+  @override
+  String get gameConnectKeysigSubtitle =>
+      'Match each key signature to how many sharps or flats it has';
+
+  @override
+  String get connectKeysigPrompt =>
+      'How many sharps or flats? Connect each key signature to its count!';
+
+  @override
+  String get keySigNone => 'No sharps or flats';
+
+  @override
+  String keySigSharps(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sharps',
+      one: '1 sharp',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String keySigFlats(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count flats',
+      one: '1 flat',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get beatCount4 => '4 beats';
 
   @override
