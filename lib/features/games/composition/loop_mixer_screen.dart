@@ -41,6 +41,7 @@ import 'package:comet_beat/core/services/loop_player_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
+import 'package:comet_beat/features/games/composition/groove_slots.dart';
 import 'package:comet_beat/features/games/composition/loop_secrets.dart';
 import 'package:comet_beat/features/games/composition/multipart_to_tracker.dart';
 import 'package:comet_beat/features/games/composition/score_analysis_view.dart'
@@ -61,6 +62,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoopMixerScreen extends StatefulWidget {
   const LoopMixerScreen({super.key, this.aecFactory, this.initialSpec});
@@ -168,6 +170,15 @@ abstract interface class LoopMixerTester {
 
   /// Send the whole current groove to the Multitrack (DAW) as a clip.
   void sendToDaw();
+
+  /// Saves the current groove to a local slot (bypasses the name dialog).
+  Future<void> debugSaveGroove(String name);
+
+  /// The saved slot names.
+  Future<List<String>> debugSlotNames();
+
+  /// Loads a saved groove by name; true if found + applied.
+  Future<bool> debugLoadGroove(String name);
 
   /// Installs a sung layer without the mic (headless tests can't record).
   void debugCaptureCells(List<PatternCell> cells);
@@ -708,6 +719,98 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     return true;
   }
 
+  Future<GrooveSlotsService> _slotsService() async =>
+      GrooveSlotsService(await SharedPreferences.getInstance());
+
+  /// Names the current groove and saves it to the local slot list.
+  Future<void> _saveGrooveSlot() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(l10n.loopMixerSaveSlot),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(hintText: l10n.loopMixerSlotNameHint),
+          onSubmitted: (v) => Navigator.pop(dialog, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog, controller.text),
+            child: Text(l10n.loopMixerSave),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || name == null || name.trim().isEmpty) return;
+    await (await _slotsService()).save(name, grooveToken);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.loopMixerSlotSaved(name.trim()))),
+    );
+  }
+
+  /// Lists the saved grooves; tap loads one, the bin deletes it.
+  Future<void> _openSlots() async {
+    final l10n = AppLocalizations.of(context)!;
+    final service = await _slotsService();
+    var slots = service.list();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: StatefulBuilder(
+          builder: (context, setSheet) => slots.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(l10n.loopMixerNoSlots),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final slot in slots)
+                      ListTile(
+                        leading: const Icon(Icons.queue_music),
+                        title: Text(slot.name),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () async {
+                            slots = await service.delete(slot.name);
+                            setSheet(() {});
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          loadGrooveToken(slot.token);
+                        },
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<void> debugSaveGroove(String name) async =>
+      (await _slotsService()).save(name, grooveToken);
+
+  @override
+  Future<List<String>> debugSlotNames() async =>
+      (await _slotsService()).list().map((s) => s.name).toList();
+
+  @override
+  Future<bool> debugLoadGroove(String name) async {
+    for (final slot in (await _slotsService()).list()) {
+      if (slot.name == name) return loadGrooveToken(slot.token);
+    }
+    return false;
+  }
+
   Future<void> _openShareSheet() async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
@@ -726,6 +829,17 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               leading: const Icon(Icons.content_paste_go),
               title: Text(l10n.loopMixerPasteCode),
               onTap: () => Navigator.pop(sheet, 'paste'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.bookmark_add),
+              title: Text(l10n.loopMixerSaveSlot),
+              enabled: _engine.enabled.isNotEmpty,
+              onTap: () => Navigator.pop(sheet, 'save'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.bookmarks),
+              title: Text(l10n.loopMixerMySlots),
+              onTap: () => Navigator.pop(sheet, 'slots'),
             ),
             ListTile(
               leading: const Icon(Icons.library_music),
@@ -782,6 +896,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         );
       case 'paste':
         await _promptForToken();
+      case 'save':
+        await _saveGrooveSlot();
+      case 'slots':
+        await _openSlots();
       case 'songbook':
         await _saveToSongBook();
       case 'musicxml':

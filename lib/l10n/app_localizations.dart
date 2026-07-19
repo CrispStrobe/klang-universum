@@ -2000,6 +2000,42 @@ abstract class AppLocalizations {
   /// **'Surprise me — roll a new groove'**
   String get loopMixerRoll;
 
+  /// No description provided for @loopMixerSaveSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to my grooves'**
+  String get loopMixerSaveSlot;
+
+  /// No description provided for @loopMixerMySlots.
+  ///
+  /// In en, this message translates to:
+  /// **'My grooves'**
+  String get loopMixerMySlots;
+
+  /// No description provided for @loopMixerSlotNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name your groove'**
+  String get loopMixerSlotNameHint;
+
+  /// No description provided for @loopMixerSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get loopMixerSave;
+
+  /// No description provided for @loopMixerSlotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved “{name}”'**
+  String loopMixerSlotSaved(String name);
+
+  /// No description provided for @loopMixerNoSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved grooves yet'**
+  String get loopMixerNoSlots;
+
   /// Snackbar when a secret Loop Mixer combo is discovered.
   ///
   /// In en, this message translates to:

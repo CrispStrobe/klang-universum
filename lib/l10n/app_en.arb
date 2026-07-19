@@ -384,6 +384,15 @@
   "loopMixerKitLofi": "Lo-fi",
   "loopMixerHarmonyOff": "Free",
   "loopMixerRoll": "Surprise me — roll a new groove",
+  "loopMixerSaveSlot": "Save to my grooves",
+  "loopMixerMySlots": "My grooves",
+  "loopMixerSlotNameHint": "Name your groove",
+  "loopMixerSave": "Save",
+  "loopMixerSlotSaved": "Saved “{name}”",
+  "@loopMixerSlotSaved": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "loopMixerNoSlots": "No saved grooves yet",
   "loopMixerComboFound": "Combo unlocked: {name}!",
   "@loopMixerComboFound": {
     "description": "Snackbar when a secret Loop Mixer combo is discovered.",

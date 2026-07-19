@@ -1036,6 +1036,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerRoll => 'Surprise me — roll a new groove';
 
   @override
+  String get loopMixerSaveSlot => 'Save to my grooves';
+
+  @override
+  String get loopMixerMySlots => 'My grooves';
+
+  @override
+  String get loopMixerSlotNameHint => 'Name your groove';
+
+  @override
+  String get loopMixerSave => 'Save';
+
+  @override
+  String loopMixerSlotSaved(String name) {
+    return 'Saved “$name”';
+  }
+
+  @override
+  String get loopMixerNoSlots => 'No saved grooves yet';
+
+  @override
   String loopMixerComboFound(String name) {
     return 'Combo unlocked: $name!';
   }

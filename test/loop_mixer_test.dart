@@ -314,6 +314,30 @@ void main() {
     expect(game.kitId, 'clean');
   });
 
+  testWidgets('a groove saves to a slot and loads back', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    await tester.pump();
+    await tester.runAsync(() => game.debugSaveGroove('MyJam'));
+    expect(
+      await tester.runAsync(() => game.debugSlotNames()),
+      contains('MyJam'),
+    );
+
+    // Clear the band, then load the saved slot back.
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    await tester.pump();
+    expect(game.enabledTracks, isEmpty);
+    final ok = await tester.runAsync(() => game.debugLoadGroove('MyJam'));
+    expect(ok, isTrue);
+    await tester.pump();
+    expect(game.enabledTracks, containsAll(['drums', 'bass']));
+  });
+
   testWidgets('Save to Song Book is offered only when a pitched track plays',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
