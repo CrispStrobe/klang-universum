@@ -82,7 +82,9 @@ typedef PatternCell = ({List<int>? midis, int steps});
 sealed class LoopPattern {
   const LoopPattern();
 
-  Float64List render(LoopTiming timing);
+  /// Render onto [timing]; pitched patterns shift every note by [transpose]
+  /// semitones (drums ignore it).
+  Float64List render(LoopTiming timing, {int transpose = 0});
 }
 
 /// A pitched pattern: cells laid back-to-back on the step grid.
@@ -95,12 +97,12 @@ class MelodicPattern extends LoopPattern {
   final List<PatternCell> cells;
 
   @override
-  Float64List render(LoopTiming timing) {
+  Float64List render(LoopTiming timing, {int transpose = 0}) {
     assert(
       cells.fold<int>(0, (sum, c) => sum + c.steps) == kPatternSteps,
       'pattern must fill the 2-bar grid exactly',
     );
-    return renderCells(cells, instrument, timing);
+    return renderCells(cells, instrument, timing, transpose: transpose);
   }
 }
 
@@ -110,15 +112,17 @@ class MelodicPattern extends LoopPattern {
 Float64List renderCells(
   List<PatternCell> cells,
   Instrument instrument,
-  LoopTiming timing,
-) {
+  LoopTiming timing, {
+  int transpose = 0,
+}) {
   var step = 0;
   final segments = <Segment>[];
   for (final cell in cells) {
     segments.add(
       (
         freqs: [
-          for (final m in cell.midis ?? const <int>[]) midiToFrequency(m),
+          for (final m in cell.midis ?? const <int>[])
+            midiToFrequency(m + transpose),
         ],
         ms: timing.boundaryMs(step + cell.steps) - timing.boundaryMs(step),
       ),
@@ -136,7 +140,8 @@ class DrumRowsPattern extends LoopPattern {
   final Map<Drum, List<bool>> rows;
 
   @override
-  Float64List render(LoopTiming timing) => renderDrumPattern(
+  Float64List render(LoopTiming timing, {int transpose = 0}) =>
+      renderDrumPattern(
         [
           for (final MapEntry(key: drum, value: row) in rows.entries)
             for (var step = 0; step < row.length; step++)
@@ -302,6 +307,12 @@ const kMaxTempoBpm = 240;
 
 /// `spec → WAV` render (cached), which makes share tokens, save slots and
 /// seam-swap scheduling trivial.
+/// The pitch collection the pitched stems play in. Minor pentatonic reuses the
+/// relative-major set (the same five notes a minor third up), so a groove in
+/// minor is a rigid transposition of the authored C-major-pentatonic content —
+/// every layer stays consonant for free (the "colour melody" rule).
+enum GrooveScale { majorPentatonic, minorPentatonic }
+
 class GrooveSpec {
   const GrooveSpec({
     this.enabled = const {},
@@ -310,6 +321,8 @@ class GrooveSpec {
     this.tempoBpm = 100,
     this.swing = 0,
     this.progressionId,
+    this.key = 0,
+    this.scale = GrooveScale.majorPentatonic,
     this.userCells,
     this.userInstrument,
     this.beatRows,
@@ -320,6 +333,12 @@ class GrooveSpec {
   final Map<String, double> levels;
   final int tempoBpm;
   final double swing;
+
+  /// Root pitch-class the groove is transposed to (0 = C … 11 = B).
+  final int key;
+
+  /// Major or minor pentatonic (minor = the relative-major set, +3 semitones).
+  final GrooveScale scale;
 
   /// A [kProgressions] id, or null for the free 2-bar vamp.
   final String? progressionId;
@@ -354,6 +373,11 @@ class GrooveSpec {
             .clamp(kMinTempoBpm, kMaxTempoBpm),
         swing: (json['s'] as num? ?? 0).toDouble(),
         progressionId: json['p'] as String?,
+        // Untrusted token: wrap the root into 0..11 rather than trust it.
+        key: (((json['k'] as num? ?? 0).toInt() % 12) + 12) % 12,
+        scale: json['sc'] == 'min'
+            ? GrooveScale.minorPentatonic
+            : GrooveScale.majorPentatonic,
         userCells:
             json['u'] is Map ? _cellsFromJson((json['u'] as Map)['c']) : null,
         userInstrument:
@@ -378,6 +402,9 @@ class GrooveSpec {
         't': tempoBpm,
         if (swing != 0) 's': double.parse(swing.toStringAsFixed(2)),
         if (progressionId != null) 'p': progressionId,
+        // Omitted at defaults so pre-key `KU1.` tokens stay byte-identical.
+        if (key != 0) 'k': key,
+        if (scale == GrooveScale.minorPentatonic) 'sc': 'min',
         if (userCells != null)
           'u': {
             'c': _cellsToJson(userCells!),
@@ -833,6 +860,30 @@ class LoopEngine {
     _clearRenderCaches();
   }
 
+  int _key = 0;
+  int get key => _key;
+  set key(int value) {
+    final wrapped = ((value % 12) + 12) % 12;
+    if (wrapped == _key) return;
+    _key = wrapped;
+    _clearRenderCaches();
+  }
+
+  GrooveScale _scale = GrooveScale.majorPentatonic;
+  GrooveScale get scale => _scale;
+  set scale(GrooveScale value) {
+    if (value == _scale) return;
+    _scale = value;
+    _clearRenderCaches();
+  }
+
+  /// Semitones every pitched note is shifted by. Minor pentatonic borrows the
+  /// relative-major set (+3), so the authored C-major-pentatonic content lands
+  /// on the requested key's pentatonic collection either way — consonant for
+  /// free. The five sounding pitch-classes are `{0,2,4,7,9} + pitchTranspose`.
+  int get pitchTranspose =>
+      _key + (_scale == GrooveScale.minorPentatonic ? 3 : 0);
+
   Progression? _progression;
   Progression? get progression => _progression;
 
@@ -865,6 +916,8 @@ class LoopEngine {
         tempoBpm: _tempoBpm,
         swing: _swing,
         progressionId: _progression?.id,
+        key: _key,
+        scale: _scale,
         userCells: (_userTrack?.variants.first as MelodicPattern?)?.cells,
         userInstrument: _userTrack == null
             ? null
@@ -909,6 +962,8 @@ class LoopEngine {
       });
     tempoBpm = next.tempoBpm;
     swing = next.swing;
+    key = next.key;
+    scale = next.scale;
     Progression? found;
     for (final p in kProgressions) {
       if (p.id == next.progressionId) found = p;
@@ -1012,6 +1067,20 @@ class LoopEngine {
     ];
   }
 
+  /// [cellsFor] transposed into the current [key]/[scale] — what actually
+  /// sounds. The live engraving, the follow-along target and the Song-Book
+  /// export use this so the written notes match the heard ones. ([cellsFor]
+  /// itself stays authored-C, since the render paths transpose at synthesis.)
+  List<PatternCell>? engravedCellsFor(String id) {
+    final cells = cellsFor(id);
+    final t = pitchTranspose;
+    if (cells == null || t == 0) return cells;
+    return [
+      for (final c in cells)
+        (midis: c.midis?.map((m) => m + t).toList(), steps: c.steps),
+    ];
+  }
+
   Float64List _stemFor(LoopTrack track) {
     final variant = _variantOf(track);
     final key = '${track.id}#$variant#${_progression?.id ?? 'vamp'}';
@@ -1020,7 +1089,10 @@ class LoopEngine {
 
   Float64List _renderStem(LoopTrack track, int variant) {
     final prog = _progression;
-    if (prog == null) return track.variants[variant].render(timing);
+    final t = pitchTranspose;
+    if (prog == null) {
+      return track.variants[variant].render(timing, transpose: t);
+    }
 
     final follower = track.chordFollower;
     if (follower != null) {
@@ -1037,12 +1109,13 @@ class LoopEngine {
         ],
         follower.instrument,
         timing,
+        transpose: t,
       );
     }
 
     // Everything else tiles its 2-bar pattern across the progression —
     // exact, because the swung step grid is periodic per bar.
-    final twoBars = track.variants[variant].render(_vampTiming);
+    final twoBars = track.variants[variant].render(_vampTiming, transpose: t);
     final reps = prog.degrees.length ~/ 2;
     final out = Float64List(twoBars.length * reps);
     for (var r = 0; r < reps; r++) {
@@ -1089,14 +1162,21 @@ class LoopEngine {
   }
 
   /// How a played/sung [midi] fits the groove at [bar]: a tone of the
-  /// sounding chord, a C-pentatonic scale tone, or outside.
+  /// sounding chord, a pentatonic scale tone, or outside. Both sets shift with
+  /// the current [key]/[scale] (via [pitchTranspose]) so grading matches what
+  /// actually sounds.
   JamFit jamFit(int midi, {required int bar}) {
     final degree = chordAtBar(bar);
+    final t = pitchTranspose;
     final pc = midi % 12;
     for (final interval in degree.triad) {
-      if ((degree.rootOffset + interval) % 12 == pc) return JamFit.chordTone;
+      if ((degree.rootOffset + interval + t) % 12 == pc) {
+        return JamFit.chordTone;
+      }
     }
-    if (const [0, 2, 4, 7, 9].contains(pc)) return JamFit.scaleTone;
+    for (final p in const [0, 2, 4, 7, 9]) {
+      if ((p + t) % 12 == pc) return JamFit.scaleTone;
+    }
     return JamFit.outside;
   }
 
@@ -1199,7 +1279,12 @@ class LoopEngine {
         ] else
           cell,
     ];
-    return renderCells(varied, pattern.instrument, timing);
+    return renderCells(
+      varied,
+      pattern.instrument,
+      timing,
+      transpose: pitchTranspose,
+    );
   }
 
   /// The drum stem for a fill iteration. Vamp mode: the 2-bar fill pattern.
