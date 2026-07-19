@@ -28,6 +28,9 @@ import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/recording_analysis.dart';
 import 'package:comet_beat/core/audio/streaming_analyzer.dart';
 import 'package:comet_beat/core/audio/synth.dart';
+import 'package:comet_beat/core/audio/transcription/contracts.dart';
+import 'package:comet_beat/core/audio/transcription/note_hmm.dart';
+import 'package:comet_beat/core/audio/transcription/pyin.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 
 const _usage = '''
@@ -50,6 +53,8 @@ Options:
   --chords        Also run chord recognition.
   --all           Print silent frames too (default: only frames with a result).
   --melody        With --wav: print the smoothed melody transcription, not frames.
+  --transcribe    With --wav: run the pYIN + note-HMM pipeline (S1+S2) and print
+                  the segmented NoteEvents (the monophonic transcriber).
   -h, --help      Show this help.
 ''';
 
@@ -65,6 +70,7 @@ Future<void> main(List<String> argv) async {
   final withChords = args.flag('chords');
   final printAll = args.flag('all');
   final melodyOnly = args.flag('melody');
+  final transcribe = args.flag('transcribe');
 
   StreamingAudioAnalyzer analyzerFor(int sr) => StreamingAudioAnalyzer(
         detector: PitchDetector(sampleRate: sr, a4: a4),
@@ -88,6 +94,16 @@ Future<void> main(List<String> argv) async {
     if (!file.existsSync()) {
       stderr.writeln('No such file: $wavPath');
       exitCode = 2;
+      return;
+    }
+    if (transcribe) {
+      _transcribe(
+        file.readAsBytesSync(),
+        a4,
+        switchCost: double.tryParse(args.value('switch') ?? ''),
+        minFrames: int.tryParse(args.value('minframes') ?? ''),
+        smoothWindow: int.tryParse(args.value('smooth') ?? ''),
+      );
       return;
     }
     // Shared with the app: one tested file-analysis path (recording_analysis).
@@ -176,6 +192,83 @@ void _selftest(
 }
 
 double _midi(int m) => midiToFrequency(m);
+
+/// Run the monophonic transcription pipeline (S1 pYIN → S2 note-HMM) over a WAV
+/// and print the segmented notes. This is the real-audio validation path for the
+/// transcription work (e.g. a sung "Mary Had a Little Lamb").
+void _transcribe(
+  Uint8List wavBytes,
+  double a4, {
+  double? switchCost,
+  int? minFrames,
+  int? smoothWindow,
+}) {
+  final wav = readWavPcm16(wavBytes);
+  final mono = wavToMonoFloat(wav);
+  stderr.writeln(
+    'Loaded @ ${wav.sampleRate} Hz, ${wav.channels}ch  '
+    '(${(mono.length / wav.sampleRate).toStringAsFixed(2)}s)  → pYIN+HMM',
+  );
+  var track = pyinF0(mono, sampleRate: wav.sampleRate);
+  if (smoothWindow != null && smoothWindow > 1) {
+    track = _medianSmoothF0(track, smoothWindow);
+  }
+  final notes = segmentNotes(
+    track,
+    a4: a4,
+    switchCost: switchCost ?? 1.8,
+    minFrames: minFrames ?? 5,
+  );
+  const names = [
+    'C', 'C#', 'D', 'D#', 'E', 'F', //
+    'F#', 'G', 'G#', 'A', 'A#', 'B',
+  ];
+  String name(int m) => '${names[m % 12]}${m ~/ 12 - 1}';
+  for (final n in notes) {
+    stdout.writeln(
+      '${(n.onMs / 1000).toStringAsFixed(2)}s  '
+      '${name(n.midi).padRight(4)}  '
+      '${noteDurationMs(n).toStringAsFixed(0).padLeft(4)}ms  '
+      'conf ${n.confidence.toStringAsFixed(2)}',
+    );
+  }
+  stdout.writeln('— ${notes.length} notes: '
+      '${notes.map((n) => name(n.midi)).join(' ')}');
+}
+
+/// Sliding-window median filter over the voiced F0 values of a PitchTrack.
+/// Standard pYIN post-processing: a single-frame octave jump (a spurious
+/// sub/super-harmonic lock) is out-voted by its neighbours, so it's removed
+/// before the note HMM ever sees it. Unvoiced frames pass through untouched.
+PitchTrack _medianSmoothF0(PitchTrack track, int window) {
+  final half = window ~/ 2;
+  final out = <PitchFrame>[];
+  for (var i = 0; i < track.length; i++) {
+    final f = track[i];
+    if (f.f0Hz <= 0) {
+      out.add(f);
+      continue;
+    }
+    final vals = <double>[];
+    for (var j = i - half; j <= i + half; j++) {
+      if (j < 0 || j >= track.length) continue;
+      if (track[j].f0Hz > 0) vals.add(track[j].f0Hz);
+    }
+    if (vals.isEmpty) {
+      out.add(f);
+      continue;
+    }
+    vals.sort();
+    out.add(
+      (
+        timeMs: f.timeMs,
+        f0Hz: vals[vals.length ~/ 2],
+        voicedProb: f.voicedProb,
+      ),
+    );
+  }
+  return out;
+}
 
 /// Echo-cancel a captured mic recording using the reference that was played.
 // The AEC file path is now the shared offline core (lib/core/audio/
