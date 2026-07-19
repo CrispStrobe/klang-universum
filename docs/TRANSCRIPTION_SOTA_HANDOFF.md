@@ -24,7 +24,7 @@ parallel. Recommended ordering by leverage:
 | **2** | **W-HARMONY** | neural chord + key estimation | lead sheets; enharmonic spelling input |
 | **2** | **W-NOTATION** | ✅ *slice 1 (key + enharmonic spelling) SHIPPED* — remaining: voice/staff separation (+ PM2S later) | turns a note dump into a READABLE engraving |
 | **3** | **W-PIANO-MT3** | piano-specialist model, then seq2seq multi-instrument | near-SOTA polyphonic; frontier |
-| **3** | **W-DRUMS** | drum transcription (onset classification) | pairs with `beat_capture.dart`; completes the band |
+| **3** | **W-DRUMS** | ✅ *DSP path (kick/snare/hat) SHIPPED* — remaining: finer kit + pattern-quantise | pairs with `beat_capture.dart`; completes the band |
 
 Wave 1's three are what "reaching SOTA" hinges on. Waves 2–3 are quality/polish
 and frontier; spin them up as capacity allows. N1+N2 are already owned.
