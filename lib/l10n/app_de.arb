@@ -345,6 +345,7 @@
   "loopMixerKitWarm": "Warm",
   "loopMixerKitLofi": "Lo-fi",
   "loopMixerFilter": "Filter",
+  "loopMixerQuantize": "Quantisiert starten (im Takt einsetzen)",
   "loopMixerStyle": "Stil",
   "loopMixerStyleClassic": "Klassisch",
   "loopMixerStyleFour": "Four-on-Floor",

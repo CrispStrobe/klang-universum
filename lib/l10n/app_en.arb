@@ -383,6 +383,7 @@
   "loopMixerKitWarm": "Warm",
   "loopMixerKitLofi": "Lo-fi",
   "loopMixerFilter": "Filter",
+  "loopMixerQuantize": "Quantize launch (drop in on the beat)",
   "loopMixerStyle": "Style",
   "loopMixerStyleClassic": "Classic",
   "loopMixerStyleFour": "Four-on-floor",

@@ -1994,6 +1994,12 @@ abstract class AppLocalizations {
   /// **'Filter'**
   String get loopMixerFilter;
 
+  /// No description provided for @loopMixerQuantize.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantize launch (drop in on the beat)'**
+  String get loopMixerQuantize;
+
   /// No description provided for @loopMixerStyle.
   ///
   /// In en, this message translates to:

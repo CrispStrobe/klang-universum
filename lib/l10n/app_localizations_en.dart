@@ -1033,6 +1033,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerFilter => 'Filter';
 
   @override
+  String get loopMixerQuantize => 'Quantize launch (drop in on the beat)';
+
+  @override
   String get loopMixerStyle => 'Style';
 
   @override

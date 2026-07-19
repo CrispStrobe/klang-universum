@@ -143,6 +143,11 @@ abstract interface class LoopMixerTester {
   bool loadGrooveToken(String token);
   bool get isInfinite;
   void toggleInfinite();
+
+  /// Quantized launch: card changes queue to the next seam when on.
+  bool get quantizeLaunch;
+  void toggleQuantize();
+  Set<String> get pendingLaunches;
   bool get hasVoiceTrack;
   bool get hasBeatTrack;
   bool get isJamming;
@@ -334,8 +339,19 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool _showScore = false;
   bool _infinite = false;
 
+  // Quantized launch: when on, toggling a playing card queues the change until
+  // the next loop seam (it "arms") so layers always drop in on the beat.
+  bool _quantize = false;
+  final Set<String> _pendingLaunches = {};
+
   @override
   bool get isInfinite => _infinite;
+  @override
+  bool get quantizeLaunch => _quantize;
+  @override
+  void toggleQuantize() => _toggleQuantize();
+  @override
+  Set<String> get pendingLaunches => _pendingLaunches;
   @override
   void toggleInfinite() => setState(() => _infinite = !_infinite);
 
@@ -1253,6 +1269,16 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   /// the downbeat kick masks the restart.
   void _onLoopWrap() {
     _iteration++;
+    // Armed (quantized) card changes land here, on the beat.
+    if (_applyPendingLaunches() && _engine.enabled.isEmpty) {
+      _clock
+        ..stop()
+        ..reset();
+      _lastPhaseMs = 0;
+      _currentWav = null;
+      _loop.stop();
+      return;
+    }
     if (_engine.enabled.isEmpty || !_clock.isRunning) return;
     // Infinite mode re-renders a seeded variation every loop; otherwise the
     // cached render only changes when the fill schedules in or out.
@@ -1276,9 +1302,37 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   }
 
   void _toggle(String id) {
+    // Quantized launch: while a groove is playing, arm the change and apply it
+    // at the next seam instead of firing instantly.
+    if (_quantize && _clock.isRunning && _engine.enabled.isNotEmpty) {
+      setState(() {
+        if (!_pendingLaunches.add(id)) _pendingLaunches.remove(id);
+      });
+      return;
+    }
     setState(() => _engine.toggle(id));
     _syncPlayback();
     _checkCombo();
+  }
+
+  void _toggleQuantize() {
+    setState(() {
+      _quantize = !_quantize;
+      if (!_quantize) _pendingLaunches.clear(); // drop armed changes
+    });
+  }
+
+  // Apply the armed launches at a loop seam; returns true if any fired.
+  bool _applyPendingLaunches() {
+    if (_pendingLaunches.isEmpty) return false;
+    setState(() {
+      for (final id in _pendingLaunches) {
+        _engine.toggle(id);
+      }
+      _pendingLaunches.clear();
+    });
+    _checkCombo();
+    return true;
   }
 
   /// Secret combos discovered this session (see loop_secrets.dart).
@@ -1621,6 +1675,18 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                   ),
                   IconButton(
                     icon: Icon(
+                      Icons.grid_4x4,
+                      color: _quantize
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                    isSelected: _quantize,
+                    tooltip: l10n.loopMixerQuantize,
+                    onPressed: _toggleQuantize,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: Icon(
                       Icons.surround_sound,
                       color: send != LoopSend.none
                           ? Theme.of(context).colorScheme.primary
@@ -1766,6 +1832,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                               shape: creatureShapeFor(track.id),
                               label: _trackLabel(l10n, track.id),
                               active: _engine.enabled.contains(track.id),
+                              armed: _pendingLaunches.contains(track.id),
                               variant: _engine.variants[track.id] ?? 0,
                               variantCount: track.variants.length,
                               level: _engine.levels[track.id] ?? 1.0,
@@ -2266,6 +2333,7 @@ class _TrackCard extends StatelessWidget {
     required this.shape,
     required this.label,
     required this.active,
+    this.armed = false,
     required this.variant,
     required this.variantCount,
     required this.level,
@@ -2279,6 +2347,7 @@ class _TrackCard extends StatelessWidget {
   final CreatureShape shape;
   final String label;
   final bool active;
+  final bool armed;
   final int variant;
   final int variantCount;
   final double level;
@@ -2297,9 +2366,13 @@ class _TrackCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: active ? color : color.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
+          // Armed (queued for the next seam): an amber ring so the change reads
+          // as "waiting" before it snaps in on the beat.
           border: Border.all(
-            color: active ? color : color.withValues(alpha: 0.4),
-            width: active ? 3 : 1.5,
+            color: armed
+                ? Colors.amber
+                : (active ? color : color.withValues(alpha: 0.4)),
+            width: armed || active ? 3 : 1.5,
           ),
         ),
         child: Column(

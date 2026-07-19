@@ -678,6 +678,42 @@ void main() {
     expect(game.loopIteration, 6);
   });
 
+  testWidgets('quantized launch arms a card and fires it at the seam',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    // Start a groove so there's a running loop to quantize against.
+    game.toggleTrack('drums');
+    await tester.pump();
+    expect(game.isPlaying, isTrue);
+
+    game.toggleQuantize();
+    await tester.pump();
+    expect(game.quantizeLaunch, isTrue);
+
+    // Toggling bass now ARMS it — it doesn't sound yet.
+    game.toggleTrack('bass');
+    await tester.pump();
+    expect(game.pendingLaunches, contains('bass'));
+    expect(game.enabledTracks, {'drums'}); // not yet live
+
+    // The next loop seam applies the armed change.
+    game.debugLoopWrap();
+    await tester.pump();
+    expect(game.pendingLaunches, isEmpty);
+    expect(game.enabledTracks, {'drums', 'bass'});
+
+    // Turning quantize off drops any armed (but not-yet-fired) changes.
+    game.toggleTrack('drums'); // arm removal of drums
+    await tester.pump();
+    expect(game.pendingLaunches, contains('drums'));
+    game.toggleQuantize();
+    await tester.pump();
+    expect(game.pendingLaunches, isEmpty);
+    expect(game.enabledTracks, {'drums', 'bass'}); // drums stayed on
+  });
+
   testWidgets('the master filter knob drives the engine', (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);
