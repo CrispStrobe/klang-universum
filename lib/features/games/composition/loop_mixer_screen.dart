@@ -991,7 +991,9 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     final rows = <Widget>[];
     for (final track in _engine.tracks) {
       if (!_engine.enabled.contains(track.id)) continue;
-      final cells = _engine.cellsFor(track.id);
+      // engravedCellsFor = cellsFor transposed by the current key/scale, so the
+      // staff tracks transposition once that UI lands (identity at C major).
+      final cells = _engine.engravedCellsFor(track.id);
       Score? score;
       Clef clef = Clef.treble;
       if (cells != null) {
