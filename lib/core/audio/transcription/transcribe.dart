@@ -78,20 +78,28 @@ Score transcribeToScore(
     pos += dur;
   }
 
-  // Pack cells into 4/4 bars, decomposing runs into note values.
+  // Pack cells into 4/4 bars, decomposing runs into note values. Every element
+  // gets a unique id ('e0', 'e1', …) — the MIDI writer (scoreToMidi) only emits
+  // notes it can find by id, so without these the MIDI export is silent.
   final measures = <Measure>[];
   var bar = <MusicElement>[];
   var posInBar = 0;
+  var nextId = 0;
   void emit(int? midi, int steps) {
     var remaining = steps;
     while (remaining > 0) {
       final room = stepsPerBar - posInBar;
       final fit = math.min(remaining, room);
       final (chunk, duration) = _durations.firstWhere((d) => d.$1 <= fit);
+      final id = 'e${nextId++}';
       bar.add(
         midi == null
-            ? RestElement(duration)
-            : NoteElement(pitches: [_pitchFromMidi(midi)], duration: duration),
+            ? RestElement(duration, id: id)
+            : NoteElement(
+                pitches: [_pitchFromMidi(midi)],
+                duration: duration,
+                id: id,
+              ),
       );
       posInBar += chunk;
       remaining -= chunk;

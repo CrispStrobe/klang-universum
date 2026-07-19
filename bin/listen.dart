@@ -37,7 +37,7 @@ import 'package:comet_beat/core/audio/transcription/transcribe.dart';
 import 'package:comet_beat/core/audio/transcription/tuning.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:crisp_notation_core/crisp_notation_core.dart'
-    show MultiPartScore, multiPartToMusicXml;
+    show MultiPartScore, multiPartToMusicXml, scoreToMidi;
 
 const _usage = '''
 Play-along detector CLI.
@@ -63,7 +63,10 @@ Options:
                   tuning) + rhythm -> a score -> MusicXML. Uses --wav <file>,
                   else a synthesized self-test melody. The segmented notes are
                   printed to stderr; MusicXML goes to --out (or stdout).
-  --out <file>    Where --transcribe writes the MusicXML (default: stdout).
+  --out <file>    Where --transcribe writes the MusicXML (default: stdout,
+                  unless only --midi is given).
+  --midi <file>   Also write a Standard MIDI File of the transcription (carries
+                  the detected tempo) — the handier hand-off for a DAW.
   --smooth <n>    Median-smooth the pYIN F0 over an n-frame window (odd; e.g. 5)
                   before note segmentation — removes single-frame octave jumps.
   --switch <c>    Note-HMM pitch-switch cost (default 1.8; higher = fewer notes).
@@ -285,6 +288,17 @@ void _transcribe(_Args args, double a4) {
     '${notes.isEmpty ? '' : ':  ${notes.map((n) => name(n.midi)).join(' ')}'}',
   );
 
+  // Standard MIDI File — the more useful hand-off for a DAW/notation app —
+  // carrying the detected tempo. Binary, so it only ever goes to a file.
+  final midiPath = args.value('midi');
+  if (midiPath != null) {
+    final bpm = grid.bpm > 0 ? grid.bpm : 120.0;
+    File(midiPath).writeAsBytesSync(scoreToMidi(score, quarterBpm: bpm));
+    stderr.writeln('Wrote MIDI → $midiPath');
+  }
+
+  // MusicXML to --out, or (when neither --out nor --midi asked for a file) to
+  // stdout so the pipe-to-a-viewer path still works.
   final xml = multiPartToMusicXml(
     MultiPartScore([score]),
     partNames: const ['Transcription'],
@@ -293,7 +307,7 @@ void _transcribe(_Args args, double a4) {
   if (out != null) {
     File(out).writeAsStringSync(xml);
     stderr.writeln('Wrote MusicXML → $out');
-  } else {
+  } else if (midiPath == null) {
     stdout.write(xml);
   }
 }

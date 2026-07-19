@@ -87,4 +87,33 @@ void main() {
   test('no notes yields an empty score, never throws', () {
     expect(transcribeToScore(const [], _grid).measures, isEmpty);
   });
+
+  test('the transcribed Score exports non-silent MIDI (element ids present)',
+      () {
+    final score = transcribeToScore(
+      [
+        _n(60, 0, 500),
+        _n(62, 500, 1000),
+        _n(64, 1000, 1500),
+        _n(65, 1500, 2000),
+      ],
+      _grid,
+    );
+
+    // Every pitched element carries an id — scoreToMidi only emits notes it can
+    // find by id, so without ids the MIDI export is silent. Regression guard.
+    final noteEls =
+        score.measures.expand((m) => m.elements).whereType<NoteElement>();
+    expect(noteEls, isNotEmpty);
+    expect(noteEls.every((n) => n.id != null), isTrue, reason: 'ids for MIDI');
+
+    // Round-trip through a Standard MIDI File: the four pitches read back.
+    final back = scoreFromMidi(scoreToMidi(score));
+    final pitches = back.measures
+        .expand((m) => m.elements)
+        .whereType<NoteElement>()
+        .map((n) => n.pitches.single.midiNumber)
+        .toList();
+    expect(pitches, [60, 62, 64, 65]);
+  });
 }
