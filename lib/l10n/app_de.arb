@@ -522,6 +522,10 @@
       "secs": { "type": "String" }
     }
   },
+  "sampleExtractBrowsePacks": "Freie Pakete durchsuchen",
+  "samplePackSearch": "Instrumente suchen…",
+  "samplePackHint": "Freie Instrument-Sample-Pakete. Es werden nur Pakete mit eindeutig freier Lizenz gelistet — Unklares wird ausgeblendet.",
+  "samplePackEmpty": "Keine Pakete gefunden",
   "sampleExtractPreview": "Vorhören",
   "sampleExtractExport": "WAV exportieren",
   "sampleExtractExportFolder": "Alle in einen Ordner exportieren",

@@ -6,6 +6,7 @@
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/library/sample_pack_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -84,6 +85,19 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
     } catch (_) {
       setState(() => _failed.add(name));
     }
+  }
+
+  /// Browses free (licence-gated) sample packs online and ingests the pick.
+  Future<void> _browsePacks() async {
+    final picked = await showSamplePackSheet(context);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _samples.clear();
+      _failed.clear();
+      _busy = true;
+    });
+    _ingest(picked.bytes, picked.name);
+    if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _pickFiles() async {
@@ -210,6 +224,12 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
                   icon: const Icon(Icons.folder_open),
                   label: Text(l10n.sampleExtractOpen),
                   onPressed: _busy ? null : _pickFiles,
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.travel_explore),
+                  label: Text(l10n.sampleExtractBrowsePacks),
+                  onPressed: _busy ? null : _browsePacks,
                 ),
                 const SizedBox(width: 12),
                 if (_samples.isNotEmpty)

@@ -123,10 +123,20 @@ class LicensePolicy {
       // Restrictive variants take priority over the permissive read.
       if (nc) return LicenseKind.ccByNc;
       if (nd) return LicenseKind.ccByNd;
-      if (s.contains('by sa') || s.contains('by-sa') || s.contains('bysa')) {
+      // ShareAlike MUST be checked before the plain-attribution read, or a
+      // spelled-out "Attribution-ShareAlike" would be downgraded to CC BY.
+      if (s.contains('by sa') ||
+          s.contains('by-sa') ||
+          s.contains('bysa') ||
+          s.contains('sharealike') ||
+          s.contains('share alike')) {
         return LicenseKind.ccBySa;
       }
-      if (s.contains('by')) return LicenseKind.ccBy;
+      // Sites spell it either way ("CC BY 4.0" / "Creative Commons
+      // Attribution 4.0" — Freepats uses the long form).
+      if (s.contains('by') || s.contains('attribution')) {
+        return LicenseKind.ccBy;
+      }
       return LicenseKind.unknown; // "CC" with no recognisable clause
     }
 

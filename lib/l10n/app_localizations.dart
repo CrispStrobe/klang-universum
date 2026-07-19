@@ -2864,6 +2864,30 @@ abstract class AppLocalizations {
   /// **'{module} · {secs}s'**
   String sampleExtractMeta(String module, String secs);
 
+  /// No description provided for @sampleExtractBrowsePacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse free packs'**
+  String get sampleExtractBrowsePacks;
+
+  /// No description provided for @samplePackSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search instruments…'**
+  String get samplePackSearch;
+
+  /// No description provided for @samplePackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Free instrument sample packs. Only packs whose licence is clearly permissive are listed — anything ambiguous is hidden.'**
+  String get samplePackHint;
+
+  /// No description provided for @samplePackEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No packs found'**
+  String get samplePackEmpty;
+
   /// No description provided for @sampleExtractPreview.
   ///
   /// In en, this message translates to:

@@ -560,6 +560,10 @@
       "secs": { "type": "String" }
     }
   },
+  "sampleExtractBrowsePacks": "Browse free packs",
+  "samplePackSearch": "Search instruments…",
+  "samplePackHint": "Free instrument sample packs. Only packs whose licence is clearly permissive are listed — anything ambiguous is hidden.",
+  "samplePackEmpty": "No packs found",
   "sampleExtractPreview": "Preview",
   "sampleExtractExport": "Export WAV",
   "sampleExtractExportFolder": "Export all to a folder",

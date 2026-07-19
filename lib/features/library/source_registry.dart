@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/library/sources/commons_source.dart';
+import 'package:comet_beat/features/library/sources/freepats_source.dart';
 import 'package:comet_beat/features/library/sources/openscore_source.dart';
 import 'package:comet_beat/features/library/sources/vcsl_source.dart';
 import 'package:http/http.dart' as http;
@@ -49,4 +50,11 @@ List<ContentSource> buildSampleSources({HttpGet http = defaultHttpGet}) => [
       // better default than Commons' mixed bag, which needs per-file filtering.
       VcslSource(http),
       CommonsSource.audio(http),
+    ];
+
+/// Sources that yield whole sample PACKS (archives of many WAVs) rather than
+/// single files — consumed by the Sample Extractor via `showSamplePackSheet`.
+/// Licences vary per instrument here, so the policy gate does real work.
+List<ContentSource> buildSamplePackSources({HttpGet http = defaultHttpGet}) => [
+      FreepatsSource(http),
     ];

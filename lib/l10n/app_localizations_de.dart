@@ -1502,6 +1502,19 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get sampleExtractBrowsePacks => 'Freie Pakete durchsuchen';
+
+  @override
+  String get samplePackSearch => 'Instrumente suchen…';
+
+  @override
+  String get samplePackHint =>
+      'Freie Instrument-Sample-Pakete. Es werden nur Pakete mit eindeutig freier Lizenz gelistet — Unklares wird ausgeblendet.';
+
+  @override
+  String get samplePackEmpty => 'Keine Pakete gefunden';
+
+  @override
   String get sampleExtractPreview => 'Vorhören';
 
   @override

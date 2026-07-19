@@ -1495,6 +1495,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get sampleExtractBrowsePacks => 'Browse free packs';
+
+  @override
+  String get samplePackSearch => 'Search instruments…';
+
+  @override
+  String get samplePackHint =>
+      'Free instrument sample packs. Only packs whose licence is clearly permissive are listed — anything ambiguous is hidden.';
+
+  @override
+  String get samplePackEmpty => 'No packs found';
+
+  @override
   String get sampleExtractPreview => 'Preview';
 
   @override
