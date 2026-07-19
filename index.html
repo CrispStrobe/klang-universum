@@ -41,6 +41,10 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <!-- glint Ogg-Vorbis wasm shim for decoding .sf3 SoundFonts on web. Exposes
+       globalThis.glintVorbis; the wasm itself loads lazily on the first .sf3.
+       See web/glint/README.md + lib/core/audio/sf2/vorbis_capability_web.dart. -->
+  <script type="module" src="glint/bootstrap.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
