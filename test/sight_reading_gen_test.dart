@@ -97,4 +97,18 @@ void main() {
       b.notes.map((n) => (n.midi, n.startBeat, n.beats)),
     );
   });
+
+  test('opens on a stable degree that varies with the seed', () {
+    expect(sightReadingChart(0).notes.first.midi, 60); // tonic C
+    expect(sightReadingChart(1).notes.first.midi, 67); // dominant G
+    expect(sightReadingChart(2).notes.first.midi, 64); // mediant E
+  });
+
+  test('closes with a stepwise cadence (2̂ → 1̂, D → C)', () {
+    for (final seed in [1, 7, 13, 20, 33]) {
+      final notes = sightReadingChart(seed).notes;
+      expect(notes[notes.length - 2].midi, 62, reason: 'penultimate D');
+      expect(notes.last.midi, 60, reason: 'final C');
+    }
+  });
 }

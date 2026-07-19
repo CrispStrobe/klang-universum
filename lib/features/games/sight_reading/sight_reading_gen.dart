@@ -39,7 +39,9 @@ PlayAlongChart sightReadingChart(
 
   final totalBeats = bars * 4;
   final notes = <TargetNote>[];
-  var idx = 0; // start on the tonic (C4)
+  // Open on a stable degree — tonic, dominant or mediant — so tunes don't all
+  // start on the same note. All three sit inside even the 0★ range.
+  var idx = const [0, 4, 2][seed % 3];
 
   // Stepwise-biased next scale degree, clamped inside the (tier-sized) range.
   // Beginners get steps only; skips and the rare leap appear with the tier.
@@ -60,10 +62,11 @@ PlayAlongChart sightReadingChart(
     return (idx + delta).clamp(0, maxDegree);
   }
 
+  // Place the note at the current degree, then step to the next — so the first
+  // note is the chosen opening degree, and each following note moves by a step.
   for (var slot = 0; slot < totalBeats; slot++) {
     // Resolve to the tonic on the very last beat.
     if (slot == totalBeats - 1) {
-      idx = 0;
       notes.add(
         TargetNote(midi: _cMajorC4[0], startBeat: slot.toDouble(), beats: 1),
       );
@@ -72,7 +75,6 @@ PlayAlongChart sightReadingChart(
     // A quarter, or (at higher tiers) a pair of eighths in this beat.
     if (allowEighths && rng.nextInt(eighthOneIn) == 0) {
       for (var e = 0; e < 2; e++) {
-        idx = nextDegree();
         notes.add(
           TargetNote(
             midi: _cMajorC4[idx],
@@ -80,13 +82,25 @@ PlayAlongChart sightReadingChart(
             beats: 0.5,
           ),
         );
+        idx = nextDegree();
       }
     } else {
-      idx = nextDegree();
       notes.add(
         TargetNote(midi: _cMajorC4[idx], startBeat: slot.toDouble(), beats: 1),
       );
+      idx = nextDegree();
     }
+  }
+
+  // Cadential close: step down to the final tonic (2̂ → 1̂) so the phrase ends
+  // with a sense of arrival instead of a random jump onto C.
+  if (notes.length >= 2) {
+    final penult = notes[notes.length - 2];
+    notes[notes.length - 2] = TargetNote(
+      midi: _cMajorC4[1], // D — a step above the closing C
+      startBeat: penult.startBeat,
+      beats: penult.beats,
+    );
   }
 
   return PlayAlongChart(
