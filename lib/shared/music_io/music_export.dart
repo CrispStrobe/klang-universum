@@ -4,10 +4,10 @@
 // holds a MultiPartScore (Song Book, trackers, Loop Mixer, …) can offer the
 // whole library's writers from one place instead of copy-pasting per screen.
 //
-// Multi-part formats keep every voice (MusicXML/.mxl/ABC/MEI/MuseScore/kern/
-// LilyPond/MIDI/module); only Braille and PDF export the first part (a
-// single-Score engrave that mirrors the Score Workshop's "active part") — the
-// library has no multi-part writer for those yet.
+// Every format here keeps every part (MusicXML/.mxl/ABC/MEI/MuseScore/kern/
+// LilyPond/MIDI/module all multi-voice; PDF engraves one system per line with
+// all staves) — only Braille exports the first part (a single-Score engrave
+// with no multi-part writer yet).
 
 import 'dart:async';
 import 'dart:convert';
@@ -20,7 +20,7 @@ import 'package:comet_beat/core/audio/mod/module_notation.dart'
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi;
 import 'package:comet_beat/features/workshop/export/score_pdf.dart'
-    show exportScoreToPdf;
+    show exportMultiPartToPdf;
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:file_selector/file_selector.dart';
@@ -89,7 +89,7 @@ final List<_ExportFormat> _kFormats = [
     'mscx',
     (mp, names) => _utf8(multiPartToMscx(mp, partNames: names)),
   ),
-  _ExportFormat('PDF', 'pdf', (mp, names) => exportScoreToPdf(_first(mp))),
+  _ExportFormat('PDF', 'pdf', (mp, names) => exportMultiPartToPdf(mp)),
 ];
 
 /// Shows the export picker; on pick, builds the bytes and prompts for a save

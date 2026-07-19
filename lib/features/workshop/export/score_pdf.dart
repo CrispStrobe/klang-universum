@@ -113,3 +113,85 @@ Future<Uint8List> exportScoreToPdf(
   }
   return doc.save();
 }
+
+/// A multi-part score → a print-ready PDF that engraves EVERY part (one system
+/// per line holds all staves, connected by systemic barlines), so a full/
+/// orchestral score prints every instrument — unlike [exportScoreToPdf], which
+/// renders a single staff. Mirrors it exactly, swapping the single-staff
+/// pagination + rasterizer for their multi-part twins (`layoutMultiPartPages` +
+/// `renderStaffSystemLayoutToPng`, both already in crisp_notation).
+Future<Uint8List> exportMultiPartToPdf(
+  MultiPartScore multiPart, {
+  CrispNotationTheme theme = CrispNotationTheme.standard,
+  PdfPageFormat pageFormat = _a4,
+  double spatium = _defaultSpatium,
+  double rasterScale = 3,
+  double margin = 8,
+}) async {
+  if (multiPart.parts.length <= 1) {
+    return exportScoreToPdf(
+      multiPart.parts.isEmpty
+          ? const Score(clef: Clef.treble, measures: [])
+          : multiPart.parts.first,
+      theme: theme,
+      pageFormat: pageFormat,
+      spatium: spatium,
+      rasterScale: rasterScale,
+      margin: margin,
+    );
+  }
+
+  final metadata = MusicFonts.metadataOrNull(theme.musicFont) ??
+      await MusicFonts.load(theme.musicFont);
+  final settings = LayoutSettings(metadata: metadata);
+
+  final metrics = PageMetrics(
+    width: pageFormat.width / spatium,
+    height: pageFormat.height / spatium,
+    marginTop: margin,
+    marginBottom: margin,
+    marginLeft: margin,
+    marginRight: margin,
+  );
+  final paged = layoutMultiPartPages(multiPart, settings, metrics: metrics);
+
+  final pages = <List<(PositionedMultiPartSystem, Uint8List)>>[];
+  for (final page in paged.pages) {
+    final rendered = <(PositionedMultiPartSystem, Uint8List)>[];
+    for (final positioned in page.systems) {
+      final png = await renderStaffSystemLayoutToPng(
+        positioned.system.layout,
+        staffSpace: spatium * rasterScale,
+        theme: theme,
+        background: const Color(0x00000000),
+      );
+      rendered.add((positioned, png));
+    }
+    pages.add(rendered);
+  }
+
+  final doc = pw.Document();
+  for (final rendered in pages) {
+    doc.addPage(
+      pw.Page(
+        pageFormat: pageFormat,
+        margin: pw.EdgeInsets.zero,
+        build: (context) => pw.Stack(
+          children: [
+            for (final (positioned, png) in rendered)
+              pw.Positioned(
+                left: metrics.marginLeft * spatium,
+                top: (metrics.marginTop + positioned.top) * spatium,
+                child: pw.Image(
+                  pw.MemoryImage(png),
+                  width: positioned.system.layout.width * spatium,
+                  height: positioned.system.layout.height * spatium,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  return doc.save();
+}

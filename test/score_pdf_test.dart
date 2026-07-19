@@ -79,4 +79,53 @@ void main() {
       expect(long.length, greaterThan(short.length));
     });
   });
+
+  group('multi-part PDF engraves every part', () {
+    Score bass(int bars) => Score(
+          clef: Clef.bass,
+          timeSignature: TimeSignature.fourFour,
+          measures: [
+            for (var b = 0; b < bars; b++)
+              Measure([
+                for (var i = 0; i < 4; i++)
+                  NoteElement.note(
+                    const Pitch(Step.c, octave: 3),
+                    _quarter,
+                    id: 'lb${b}n$i',
+                  ),
+              ]),
+          ],
+        );
+
+    testWidgets('a 3-part score exports a valid, bigger PDF than 1 part',
+        (tester) async {
+      await tester.runAsync(() async {
+        MusicFonts.metadataOrNull(CrispNotationTheme.standard.musicFont) ??
+            await MusicFonts.load(CrispNotationTheme.standard.musicFont);
+        final trio = MultiPartScore([_score(2), bass(2), _score(2)]);
+        final bytes = await exportMultiPartToPdf(trio);
+        expect(String.fromCharCodes(bytes.take(4)), '%PDF');
+        // Three staves per system → more ink than a single part.
+        final onePart = await exportMultiPartToPdf(MultiPartScore([_score(2)]));
+        expect(
+          bytes.length,
+          greaterThan(onePart.length),
+          reason: 'the extra parts add ink',
+        );
+      });
+    });
+
+    testWidgets('a single-part MultiPartScore matches the single path',
+        (tester) async {
+      await tester.runAsync(() async {
+        final mp = await exportMultiPartToPdf(MultiPartScore([_score(4)]));
+        final single = await exportScoreToPdf(_score(4));
+        expect(
+          mp.length,
+          single.length,
+          reason: 'one part routes through exportScoreToPdf',
+        );
+      });
+    });
+  });
 }

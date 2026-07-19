@@ -2694,7 +2694,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       // single-system PNG/SVG strips. Grand staff isn't paginated, so it falls
       // back to the single-staff score.
       case 'pdf':
-        return (await exportScoreToPdf(score, theme: kidsScoreTheme), null);
+        // Engrave every part (all staves per system) when multi-part.
+        return (
+          await (_mpd.partCount > 1
+              ? exportMultiPartToPdf(_mpd.buildMultiPart(),
+                  theme: kidsScoreTheme)
+              : exportScoreToPdf(score, theme: kidsScoreTheme)),
+          null,
+        );
       default:
         return (null, null);
     }
