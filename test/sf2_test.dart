@@ -221,6 +221,75 @@ void main() {
       expect(crossings(high), greaterThan(crossings(low) * 2));
     });
 
+    test('a velocity-split preset picks the RIGHT layer per note velocity', () {
+      // Soft layer = low-pitch buzz (vel 0..63), loud layer = high-pitch buzz
+      // (vel 64..127), both over the WHOLE keyboard. The tracker's per-cell
+      // volume column (0..1) is the velocity → a quiet note reads the soft
+      // sample, a loud one the loud sample.
+      final soft = sineI16(2000, 8); // low pitch
+      final loud = sineI16(2000, 64); // high pitch
+      final sf = Sf2SoundFont.parse(velSplitSf2(soft, loud));
+      final zones = sf.presets.single.zones;
+      expect(zones.length, 2);
+      // The velocity windows parsed off gen 44.
+      final velWindows = zones.map((z) => (z.velLo, z.velHi)).toSet();
+      expect(velWindows, {(0, 63), (64, 127)});
+
+      final inst = sf2InstrumentFromPreset(sf, sf.presets.single, id: 'vel');
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      List<TrackerCell> at(double? vol) => [
+            TrackerCell(midi: 60, volume: vol),
+            ...List<TrackerCell>.filled(timing.rows - 1, TrackerCell.empty),
+          ];
+      int crossings(Float64List buf) {
+        var c = 0;
+        for (var i = 1; i < 3000; i++) {
+          if ((buf[i - 1] < 0) != (buf[i] < 0)) c++;
+        }
+        return c;
+      }
+
+      // Same note (60); volume 0.3 (vel 38 → soft layer) vs 1.0 (vel 127 → loud
+      // layer). The loud layer is the high-pitch sample → far more crossings.
+      final quietNote = inst.renderChannel(at(0.3), timing);
+      final loudNote = inst.renderChannel(at(1.0), timing);
+      expect(quietNote.any((v) => v != 0), isTrue);
+      expect(loudNote.any((v) => v != 0), isTrue);
+      expect(crossings(loudNote), greaterThan(crossings(quietNote) * 2));
+      // A note with no volume set = full velocity → the loud (high) layer too.
+      final fullVel = crossings(inst.renderChannel(at(null), timing));
+      expect(fullVel, greaterThan(crossings(quietNote) * 2));
+    });
+
+    test('the volume column scales an SF2 note level (velocity → gain)', () {
+      // On a non-split voice, the per-cell volume still sets the note's level
+      // (velocity), so a half-volume note is ~half the peak of a full one.
+      final sf = Sf2SoundFont.parse(
+        oneSampleSf2(
+          pcm: sineI16(880, 20),
+          sampleRate: 44100,
+          rootKey: 60,
+          loopStart: 0,
+          loopEnd: 0,
+        ),
+      );
+      final inst = sf2InstrumentFromPreset(sf, sf.presets.single, id: 'lvl');
+      const timing = TrackerTiming(rows: 4, stepsPerBeat: 2);
+      double peak(double? vol) {
+        final cells = [
+          TrackerCell(midi: 60, volume: vol),
+          ...List<TrackerCell>.filled(3, TrackerCell.empty),
+        ];
+        return inst
+            .renderChannel(cells, timing)
+            .fold<double>(0, (m, v) => v.abs() > m ? v.abs() : m);
+      }
+
+      final full = peak(null); // full velocity (127)
+      final half = peak(0.5); // vel ~64
+      expect(half, closeTo(full * 0.5, full * 0.06));
+    });
+
     test('per-zone initialAttenuation (gen 48) lowers the level', () {
       final pcm = sineI16(880, 20);
       Sf2SoundFont build(int cb) => Sf2SoundFont.parse(

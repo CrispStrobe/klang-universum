@@ -35,6 +35,7 @@ typedef VorbisDecode = Float64List? Function(Uint8List oggStream);
 
 // SF2 generator operators we read.
 const _genKeyRange = 43;
+const _genVelRange = 44;
 const _genInstrument = 41;
 const _genSampleId = 53;
 const _genRootKeyOverride = 58;
@@ -83,6 +84,8 @@ class Sf2Zone {
     required this.keyHi,
     required this.sampleIndex,
     required this.rootKey,
+    this.velLo = 0,
+    this.velHi = 127,
     this.attenuationCb = 0,
     this.coarseTune = 0,
     this.fineTune = 0,
@@ -92,6 +95,12 @@ class Sf2Zone {
   final int keyHi;
   final int sampleIndex;
   final int rootKey;
+
+  /// velRange (gen 44): the MIDI velocity window this zone (sample layer) covers,
+  /// so a soft vs loud note picks a different recording. Default 0..127 (the
+  /// whole range) when the instrument isn't velocity-split.
+  final int velLo;
+  final int velHi;
 
   /// initialAttenuation (gen 48), in centibels (0 = full; +cB = quieter).
   final int attenuationCb;
@@ -105,6 +114,10 @@ class Sf2Zone {
   double get gain => pow(10, -attenuationCb / 200).toDouble();
 
   bool covers(int key) => key >= keyLo && key <= keyHi;
+
+  /// Whether this zone covers both [key] and MIDI [vel] (a velocity-split layer).
+  bool coversKeyVel(int key, int vel) =>
+      covers(key) && vel >= velLo && vel <= velHi;
 }
 
 /// A resolved preset: a General MIDI voice ([bank]/[program], e.g. program 0 =
@@ -294,6 +307,7 @@ List<Sf2Preset> _parsePresets(
       final gStart = u16(ibagOff + ib * 4);
       final gEnd = u16(ibagOff + (ib + 1) * 4).clamp(0, igenCount);
       var lo = 0, hi = 127;
+      var vlo = 0, vhi = 127;
       var atten = 0, coarse = 0, fine = 0;
       int? sampleId, rootOverride;
       for (var g = gStart; g < gEnd; g++) {
@@ -304,6 +318,9 @@ List<Sf2Preset> _parsePresets(
         if (oper == _genKeyRange) {
           lo = amt & 0xFF;
           hi = (amt >> 8) & 0xFF;
+        } else if (oper == _genVelRange) {
+          vlo = amt & 0xFF;
+          vhi = (amt >> 8) & 0xFF;
         } else if (oper == _genRootKeyOverride) {
           rootOverride = amt;
         } else if (oper == _genSampleId) {
@@ -321,6 +338,8 @@ List<Sf2Preset> _parsePresets(
           Sf2Zone(
             keyLo: lo,
             keyHi: hi,
+            velLo: vlo,
+            velHi: vhi,
             sampleIndex: sampleId,
             rootKey: (rootOverride != null && rootOverride <= 127)
                 ? rootOverride
@@ -448,28 +467,63 @@ class Sf2Instrument implements TrackerInstrument {
   @override
   final String id;
 
-  /// Per zone: key range + a ready [SampleInstrument] (already resampled/looped/
-  /// tuned) + the zone's level [gain] (from initialAttenuation).
-  final List<({int keyLo, int keyHi, SampleInstrument inst, double gain})>
-      _zones;
+  /// Per zone: key range + velocity range (the sample layer) + a ready
+  /// [SampleInstrument] (already resampled/looped/tuned) + the zone's level
+  /// [gain] (from initialAttenuation).
+  final List<
+      ({
+        int keyLo,
+        int keyHi,
+        int velLo,
+        int velHi,
+        SampleInstrument inst,
+        double gain,
+      })> _zones;
 
-  ({int keyLo, int keyHi, SampleInstrument inst, double gain})? _zoneFor(
-    int key,
-  ) {
+  ({
+    int keyLo,
+    int keyHi,
+    int velLo,
+    int velHi,
+    SampleInstrument inst,
+    double gain,
+  })? _zoneFor(int key, int vel) {
+    // Prefer the layer covering BOTH key and velocity (velocity-split voices);
+    // then any zone covering the key (non-split, or vel outside every layer);
+    // then the first zone as a last resort.
+    for (final z in _zones) {
+      if (key >= z.keyLo &&
+          key <= z.keyHi &&
+          vel >= z.velLo &&
+          vel <= z.velHi) {
+        return z;
+      }
+    }
     for (final z in _zones) {
       if (key >= z.keyLo && key <= z.keyHi) return z;
     }
-    return _zones.isEmpty ? null : _zones.first; // fall back to the first zone
+    return _zones.isEmpty ? null : _zones.first;
   }
 
   @override
   Float64List renderChannel(List<TrackerCell> cells, TrackerTiming timing) {
     final out = Float64List(timing.totalSamples);
     if (_zones.isEmpty) return out;
+    // The tracker's per-cell volume column (0..1, null = full) is the note's
+    // MIDI velocity → it selects the velocity layer AND scales the level.
+    final velByStep = <int, int>{};
+    {
+      var s = 0;
+      for (final c in cells) {
+        velByStep[s] = ((c.volume ?? 1.0) * 127).round().clamp(0, 127);
+        s++;
+      }
+    }
     var startStep = 0;
     for (final (midi, steps) in cellRuns(cells)) {
       if (midi != null) {
-        final zone = _zoneFor(midi);
+        final vel = velByStep[startStep] ?? 127;
+        final zone = _zoneFor(midi, vel);
         if (zone != null) {
           final start = timing.stepStartSample(startStep);
           final end = timing.stepStartSample(startStep + steps);
@@ -486,7 +540,9 @@ class Sf2Instrument implements TrackerInstrument {
                 zone.inst.renderChannel([TrackerCell(midi: midi)], noteTiming);
             final n = [buf.length, runSamples, out.length - start]
                 .reduce((a, b) => a < b ? a : b);
-            final g = zone.gain;
+            // Zone attenuation × the note's velocity level (linear, like the
+            // tracker's volume column elsewhere; full velocity = ×1, unchanged).
+            final g = zone.gain * (vel / 127.0);
             for (var i = 0; i < n; i++) {
               out[start + i] = buf[i] * g;
             }
@@ -506,8 +562,14 @@ Sf2Instrument sf2InstrumentFromPreset(
   Sf2Preset preset, {
   required String id,
 }) {
-  final zones =
-      <({int keyLo, int keyHi, SampleInstrument inst, double gain})>[];
+  final zones = <({
+    int keyLo,
+    int keyHi,
+    int velLo,
+    int velHi,
+    SampleInstrument inst,
+    double gain,
+  })>[];
   for (final z in preset.zones) {
     final s = sf.sampleAt(z.sampleIndex);
     if (s == null) continue;
@@ -518,6 +580,8 @@ Sf2Instrument sf2InstrumentFromPreset(
       (
         keyLo: z.keyLo,
         keyHi: z.keyHi,
+        velLo: z.velLo,
+        velHi: z.velHi,
         gain: z.gain,
         inst: SampleInstrument(
           '$id.${z.sampleIndex}',

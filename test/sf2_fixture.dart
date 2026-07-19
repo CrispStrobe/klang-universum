@@ -208,6 +208,46 @@ Uint8List compressedSf3({
   return _chunk('RIFF', _concat([_tag('sfbk'), _sdtaRaw(oggStream), pdta]));
 }
 
+/// A two-sample, one-preset SF2 split by VELOCITY (not key): both zones cover
+/// the whole keyboard, but sample A ([soft]) plays for MIDI velocity 0..63 and
+/// sample B ([loud]) for 64..127 — a velocity layer (SF2 gen 44).
+Uint8List velSplitSf2(Int16List soft, Int16List loud) {
+  final pdta = _pdta([
+    _chunk('phdr', _phdr('VelSplit', 0, 0)),
+    _chunk('pbag', _concat([_rec4(0, 0), _rec4(1, 0)])),
+    _chunk('pgen', _rec4(41, 0)),
+    _chunk('inst', _inst('VelInst', 2)),
+    _chunk('ibag', _concat([_rec4(0, 0), _rec4(3, 0), _rec4(6, 0)])),
+    _chunk(
+      'igen',
+      _concat([
+        _rec4(43, 0 | (127 << 8)), // zone A: all keys
+        _rec4(44, 0 | (63 << 8)), //  …velocity 0..63 (soft)
+        _rec4(53, 0), // sample A
+        _rec4(43, 0 | (127 << 8)), // zone B: all keys
+        _rec4(44, 64 | (127 << 8)), // …velocity 64..127 (loud)
+        _rec4(53, 1), // sample B
+      ]),
+    ),
+    _chunk(
+      'shdr',
+      _concat([
+        _shdr('Soft', 0, soft.length, 0, 0, 44100, 60),
+        _shdr('Loud', soft.length, soft.length + loud.length, 0, 0, 44100, 60),
+        _shdr('EOS', 0, 0, 0, 0, 0, 0),
+      ]),
+    ),
+  ]);
+  return _chunk(
+    'RIFF',
+    _concat([
+      _tag('sfbk'),
+      _sdta([soft, loud]),
+      pdta,
+    ]),
+  );
+}
+
 /// A two-sample, one-preset, TWO-zone SF2 (key split at 60): sample A (low) for
 /// keys 0..59, sample B (high) for keys 60..127.
 Uint8List twoZoneSf2(Int16List a, Int16List b) {
