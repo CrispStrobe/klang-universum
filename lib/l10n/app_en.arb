@@ -535,6 +535,10 @@
   "transcribeEngineMono": "Melody",
   "transcribeEngineNeural": "Neural",
   "transcribeNeuralWebNote": "The neural engine needs the app (not the web version) — the melody engine will be used here.",
+  "transcribeNeuralPitch": "Neural pitch (CREPE)",
+  "@transcribeNeuralPitch": {
+    "description": "Toggle: use the CREPE neural F0 model for the melody pitch instead of the built-in tracker. More accurate on singing; downloads a small model on first use."
+  },
   "transcribeResult": "{count} notes · {bpm} BPM",
   "@transcribeResult": {
     "placeholders": {

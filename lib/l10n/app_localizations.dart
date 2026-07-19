@@ -2660,6 +2660,12 @@ abstract class AppLocalizations {
   /// **'The neural engine needs the app (not the web version) — the melody engine will be used here.'**
   String get transcribeNeuralWebNote;
 
+  /// Toggle: use the CREPE neural F0 model for the melody pitch instead of the built-in tracker. More accurate on singing; downloads a small model on first use.
+  ///
+  /// In en, this message translates to:
+  /// **'Neural pitch (CREPE)'**
+  String get transcribeNeuralPitch;
+
   /// No description provided for @transcribeResult.
   ///
   /// In en, this message translates to:

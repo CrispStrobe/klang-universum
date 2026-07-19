@@ -475,6 +475,7 @@
   "transcribeEngineMono": "Melodie",
   "transcribeEngineNeural": "Neuronal",
   "transcribeNeuralWebNote": "Die neuronale Engine braucht die App (nicht die Web-Version) – hier wird die Melodie-Engine verwendet.",
+  "transcribeNeuralPitch": "Neuronale Tonhöhe (CREPE)",
   "transcribeResult": "{count} Noten · {bpm} BPM",
   "@transcribeResult": {
     "placeholders": {

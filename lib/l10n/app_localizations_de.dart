@@ -1399,6 +1399,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die neuronale Engine braucht die App (nicht die Web-Version) – hier wird die Melodie-Engine verwendet.';
 
   @override
+  String get transcribeNeuralPitch => 'Neuronale Tonhöhe (CREPE)';
+
+  @override
   String transcribeResult(int count, int bpm) {
     return '$count Noten · $bpm BPM';
   }

@@ -10,6 +10,7 @@
 import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:comet_beat/core/audio/transcription/transcription_service.dart';
 import 'package:comet_beat/features/games/songs/song_screen.dart';
+import 'package:comet_beat/features/games/transcribe/crepe_provider.dart';
 import 'package:comet_beat/features/games/transcribe/neural_provider.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation_core/crisp_notation_core.dart' show Score;
@@ -28,13 +29,21 @@ Future<TranscriptionResult> _monoInIsolate(({Uint8List bytes, double a4}) m) =>
     transcribeRecording(m.bytes, a4: m.a4);
 
 class TranscribeScreen extends StatefulWidget {
-  const TranscribeScreen({super.key, this.debugPickAudio, this.debugNeural});
+  const TranscribeScreen({
+    super.key,
+    this.debugPickAudio,
+    this.debugNeural,
+    this.debugCrepe,
+  });
 
   /// Test seam: replaces the file-picker. Returns WAV bytes, or null to cancel.
   final Future<Uint8List?> Function()? debugPickAudio;
 
   /// Test seam: replaces neural-engine loading.
   final Future<NeuralTranscriber?> Function({bool download})? debugNeural;
+
+  /// Test seam: replaces CREPE F0-estimator loading.
+  final Future<F0Estimator?> Function({bool download})? debugCrepe;
 
   @override
   State<TranscribeScreen> createState() => _TranscribeScreenState();
@@ -44,6 +53,7 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
   bool _busy = false;
   String? _error;
   EngineChoice _choice = EngineChoice.auto;
+  bool _neuralPitch = false;
   TranscriptionResult? _result;
 
   Future<Uint8List?> _pickAudio() async {
@@ -56,6 +66,11 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
 
   Future<NeuralTranscriber?> _neural({bool download = false}) {
     final loader = widget.debugNeural ?? loadNeuralTranscriber;
+    return loader(download: download);
+  }
+
+  Future<F0Estimator?> _crepe({bool download = false}) {
+    final loader = widget.debugCrepe ?? loadCrepeF0Estimator;
     return loader(download: download);
   }
 
@@ -75,22 +90,30 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
       final neural = _choice == EngineChoice.monophonic
           ? null
           : await _neural(download: _choice == EngineChoice.neural);
+      // Neural pitch (CREPE) upgrades the monophonic F0 when opted in — not for
+      // the polyphonic neural engine, which doesn't use an F0 estimator.
+      final f0 = (_neuralPitch && _choice != EngineChoice.neural)
+          ? await _crepe(download: true)
+          : null;
       final force = switch (_choice) {
         EngineChoice.monophonic => TranscriptionEngine.monophonic,
         EngineChoice.neural => TranscriptionEngine.neural,
         EngineChoice.auto => null,
       };
-      // With no neural engine in play the pipeline is pure Dart → run it in a
-      // background isolate so the UI (and spinner) stay live on long clips. With
-      // neural, the ONNX handle can't cross an isolate, so run inline. Under a
-      // widget test (a debug pick source) run inline too — a compute() isolate
-      // doesn't advance the test's fake clock.
-      final useIsolate = neural == null && widget.debugPickAudio == null;
+      // With no ONNX model in play the pipeline is pure Dart → run it in a
+      // background isolate so the UI (and spinner) stay live on long clips. A
+      // neural transcriber OR a CREPE F0 estimator holds an ONNX handle that
+      // can't cross an isolate, so run inline then. Under a widget test (a debug
+      // pick source) run inline too — a compute() isolate doesn't advance the
+      // test's fake clock.
+      final useIsolate =
+          neural == null && f0 == null && widget.debugPickAudio == null;
       final result = useIsolate
           ? await compute(_monoInIsolate, (bytes: bytes, a4: 440.0))
           : await transcribeRecording(
               bytes,
               neural: neural,
+              f0: f0,
               forceEngine: force,
             );
       if (!mounted) return;
@@ -159,6 +182,19 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
                   l10n.transcribeNeuralWebNote,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+              ),
+            // CREPE neural pitch upgrades the melody F0; native-only, and not for
+            // the polyphonic neural engine (which has no F0 stage).
+            if (_choice != EngineChoice.neural && !kIsWeb)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                dense: true,
+                value: _neuralPitch,
+                onChanged: _busy
+                    ? null
+                    : (v) => setState(() => _neuralPitch = v ?? false),
+                title: Text(l10n.transcribeNeuralPitch),
               ),
             const SizedBox(height: 16),
             FilledButton.icon(

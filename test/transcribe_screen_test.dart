@@ -7,6 +7,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
+import 'package:comet_beat/core/audio/transcription/pyin.dart';
 import 'package:comet_beat/features/games/transcribe/transcribe_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -59,6 +60,37 @@ void main() {
     // A result card with the note count + an "Open in Song Book" action.
     expect(find.text(l10n.transcribeOpenSongBook), findsOneWidget);
     expect(find.textContaining('BPM'), findsOneWidget);
+  });
+
+  testWidgets('the neural-pitch toggle routes F0 through the CREPE seam',
+      (t) async {
+    final wav = _scaleWav();
+    var crepeUsed = false;
+    await t.pumpWidget(
+      _app(
+        TranscribeScreen(
+          debugPickAudio: () async => wav,
+          debugNeural: ({bool download = false}) async => null,
+          // A stand-in CREPE estimator: flags that it ran, then delegates to the
+          // real pYIN so the pipeline still produces notes.
+          debugCrepe: ({bool download = false}) async =>
+              (Float64List mono, int sr) {
+            crepeUsed = true;
+            return pyinF0(mono, sampleRate: sr);
+          },
+        ),
+      ),
+    );
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // Opt into neural pitch, then transcribe.
+    await t.tap(find.text(l10n.transcribeNeuralPitch));
+    await t.pumpAndSettle();
+    await t.tap(find.text(l10n.transcribePickFile));
+    await t.pumpAndSettle();
+
+    expect(crepeUsed, isTrue, reason: 'CREPE estimator should have been used');
+    expect(find.text(l10n.transcribeOpenSongBook), findsOneWidget);
   });
 
   testWidgets('a cancelled pick leaves no result and no spinner', (t) async {

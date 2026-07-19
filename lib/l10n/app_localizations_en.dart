@@ -1394,6 +1394,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The neural engine needs the app (not the web version) — the melody engine will be used here.';
 
   @override
+  String get transcribeNeuralPitch => 'Neural pitch (CREPE)';
+
+  @override
   String transcribeResult(int count, int bpm) {
     return '$count notes · $bpm BPM';
   }
