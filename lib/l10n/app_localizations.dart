@@ -2930,6 +2930,30 @@ abstract class AppLocalizations {
   /// **'No packs found'**
   String get samplePackEmpty;
 
+  /// No description provided for @mySamplesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Samples'**
+  String get mySamplesTitle;
+
+  /// No description provided for @mySamplesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved samples yet. Extract some from a module or pack, or save a voice.'**
+  String get mySamplesEmpty;
+
+  /// No description provided for @mySamplesPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get mySamplesPreview;
+
+  /// No description provided for @mySamplesDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get mySamplesDelete;
+
   /// No description provided for @sampleExtractPreview.
   ///
   /// In en, this message translates to:

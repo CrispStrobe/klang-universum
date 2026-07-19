@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/library/sample_pack_sheet.dart';
+import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -85,6 +86,16 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
     } catch (_) {
       setState(() => _failed.add(name));
     }
+  }
+
+  /// Opens the shared library so extracted samples can be auditioned and
+  /// pruned without leaving the screen (manage-only: picking isn't meaningful
+  /// here, the extractor's job is filling the library, not reading from it).
+  Future<void> _openLibrary() async {
+    await showMySamplesSheet(context, store: _store, pickable: false);
+    if (!mounted) return;
+    final list = await _store.load();
+    if (mounted) setState(() => _librarySize = list.length);
   }
 
   /// Browses free (licence-gated) sample packs online and ingests the pick.
@@ -238,9 +249,10 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 const Spacer(),
-                Text(
-                  l10n.sampleExtractLibrary(_librarySize),
-                  style: Theme.of(context).textTheme.bodySmall,
+                TextButton.icon(
+                  icon: const Icon(Icons.bookmarks_outlined, size: 18),
+                  label: Text(l10n.sampleExtractLibrary(_librarySize)),
+                  onPressed: _busy ? null : _openLibrary,
                 ),
               ],
             ),

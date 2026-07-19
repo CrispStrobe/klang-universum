@@ -16,6 +16,7 @@ import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
@@ -272,53 +273,19 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
     await saveToLibrary(trimmed);
   }
 
-  Future<void> _openLibrary() async {
-    final l10n = AppLocalizations.of(context)!;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: StatefulBuilder(
-          builder: (ctx, setSheet) => _library.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(24),
-                  child:
-                      Text(l10n.voiceLabMyEmpty, textAlign: TextAlign.center),
-                )
-              : ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (var i = 0; i < _library.length; i++)
-                      ListTile(
-                        leading: const Icon(Icons.graphic_eq),
-                        title: Text(_library[i].name),
-                        subtitle: _library[i].source != null
-                            ? Text(_library[i].source!)
-                            : null,
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: l10n.voiceLabDelete,
-                          onPressed: () async {
-                            final list = await _store.delete(_library[i].name);
-                            if (mounted) setState(() => _library = list);
-                            setSheet(() {});
-                          },
-                        ),
-                        onTap: () {
-                          recall(i);
-                          Navigator.of(ctx).pop();
-                        },
-                      ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
   void _snack(String msg) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(msg)));
+
+  Future<void> _openLibrary() async {
+    final picked = await showMySamplesSheet(context, store: _store);
+    if (picked == null || !mounted) return;
+    _clip = picked.pcm;
+    _reprocess();
+    // Keep the in-screen list in step with any deletes made in the sheet.
+    final list = await _store.load();
+    if (mounted) setState(() => _library = list);
+  }
 
   @override
   Widget build(BuildContext context) {

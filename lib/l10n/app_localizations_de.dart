@@ -1536,6 +1536,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get samplePackEmpty => 'Keine Pakete gefunden';
 
   @override
+  String get mySamplesTitle => 'Meine Samples';
+
+  @override
+  String get mySamplesEmpty =>
+      'Noch keine Samples. Extrahiere welche aus einem Modul oder Paket, oder speichere eine Stimme.';
+
+  @override
+  String get mySamplesPreview => 'Vorhören';
+
+  @override
+  String get mySamplesDelete => 'Löschen';
+
+  @override
   String get sampleExtractPreview => 'Vorhören';
 
   @override
