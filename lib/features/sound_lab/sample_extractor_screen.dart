@@ -76,12 +76,27 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
   }
 
   // ── Ingest ─────────────────────────────────────────────────────────────────
-  void _ingest(Uint8List bytes, String name) {
+  void _ingest(
+    Uint8List bytes,
+    String name, {
+    String? license,
+    String? sourceUrl,
+  }) {
     try {
       // Sniff the container: a sample-pack archive, else a tracker module.
       final extracted = looksLikeArchive(bytes)
-          ? extractArchiveSamples(bytes, sourceFile: name)
-          : extractModuleSamples(bytes, sourceFile: name);
+          ? extractArchiveSamples(
+              bytes,
+              sourceFile: name,
+              license: license,
+              sourceUrl: sourceUrl,
+            )
+          : extractModuleSamples(
+              bytes,
+              sourceFile: name,
+              license: license,
+              sourceUrl: sourceUrl,
+            );
       setState(() => _samples.addAll(extracted));
     } catch (_) {
       setState(() => _failed.add(name));
@@ -107,7 +122,12 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
       _failed.clear();
       _busy = true;
     });
-    _ingest(picked.bytes, picked.name);
+    _ingest(
+      picked.bytes,
+      picked.name,
+      license: picked.license,
+      sourceUrl: picked.sourceUrl,
+    );
     if (mounted) setState(() => _busy = false);
   }
 

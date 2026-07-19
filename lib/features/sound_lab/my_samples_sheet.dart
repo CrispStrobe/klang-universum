@@ -35,6 +35,7 @@ Future<SampleClip?> showMySamplesSheet(
 abstract class MySamplesTester {
   List<SampleClip> get clips;
   Future<void> deleteAt(int index);
+  List<SampleClip> get attributionRequired;
 }
 
 @visibleForTesting
@@ -79,11 +80,53 @@ class _MySamplesSheetState extends State<MySamplesSheet>
     if (mounted) setState(() => _clips = list);
   }
 
+  @override
+  List<SampleClip> get attributionRequired => _needAttribution;
+
   void _preview(SampleClip clip) {
     if (clip.pcm.isEmpty) return;
     context.read<AudioService>().playWavBytes(
           pcmFloatToWav(clip.pcm, sampleRate: clip.sampleRate),
         );
+  }
+
+  /// Clips whose licence obliges crediting the author.
+  List<SampleClip> get _needAttribution =>
+      _clips.where((c) => c.needsAttribution).toList();
+
+  Future<void> _showCredits() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.mySamplesCredits),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final c in _needAttribution) ...[
+                Text(c.name, style: Theme.of(ctx).textTheme.titleSmall),
+                Text(
+                  [
+                    if (c.source != null) c.source!,
+                    if (c.license != null) c.license!,
+                    if (c.sourceUrl != null) c.sourceUrl!,
+                  ].join(' · '),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.mySamplesClose),
+          ),
+        ],
+      ),
+    );
   }
 
   String _duration(SampleClip clip) {
@@ -111,6 +154,12 @@ class _MySamplesSheetState extends State<MySamplesSheet>
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const Spacer(),
+                  if (_needAttribution.isNotEmpty)
+                    TextButton.icon(
+                      icon: const Icon(Icons.copyright, size: 18),
+                      label: Text(l10n.mySamplesCredits),
+                      onPressed: _showCredits,
+                    ),
                   if (_clips.isNotEmpty)
                     Text(
                       '${_clips.length}',
@@ -135,6 +184,7 @@ class _MySamplesSheetState extends State<MySamplesSheet>
                         final clip = _clips[i];
                         final detail = [
                           if (clip.source != null) clip.source!,
+                          if (clip.license != null) clip.license!,
                           _duration(clip),
                         ].where((s) => s.isNotEmpty).join(' · ');
                         return ListTile(

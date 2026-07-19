@@ -34,6 +34,8 @@ class ExtractedSample {
     required this.pcm,
     required this.sourceFile,
     required this.index,
+    this.license,
+    this.sourceUrl,
   });
 
   final String name;
@@ -45,12 +47,19 @@ class ExtractedSample {
   final String sourceFile;
   final int index; // 1-based slot within the module
 
+  /// Provenance carried from an online source (a pack's declared licence + a
+  /// URL back to it); null for a user's own local file.
+  final String? license;
+  final String? sourceUrl;
+
   /// A library entry for this sample (name prefixed with the module).
   SampleClip toClip() => SampleClip(
         name: '$sourceFile – $displayName',
         sampleRate: sampleRate,
         pcm: pcm,
         source: sourceFile,
+        license: license,
+        sourceUrl: sourceUrl,
       );
 
   /// A non-empty display label (falls back to the slot number).
@@ -130,6 +139,8 @@ Archive _openArchive(Uint8List bytes) {
 List<ExtractedSample> extractArchiveSamples(
   Uint8List bytes, {
   String sourceFile = 'pack',
+  String? license,
+  String? sourceUrl,
 }) {
   // .7z goes through our own pure-Dart reader; everything else through
   // package:archive. Both yield (name, bytes) pairs we treat identically.
@@ -161,6 +172,8 @@ List<ExtractedSample> extractArchiveSamples(
           pcm: pcm,
           sourceFile: sourceFile,
           index: out.length + 1,
+          license: license,
+          sourceUrl: sourceUrl,
         ),
       );
     } catch (_) {
@@ -186,6 +199,8 @@ const _kDefaultC5Speed = 8363;
 List<ExtractedSample> extractModuleSamples(
   Uint8List bytes, {
   String sourceFile = 'module',
+  String? license,
+  String? sourceUrl,
 }) {
   final doc = parseAnyModule(bytes);
   final out = <ExtractedSample>[];
@@ -199,6 +214,8 @@ List<ExtractedSample> extractModuleSamples(
         pcm: s.pcm,
         sourceFile: sourceFile,
         index: i + 1,
+        license: license,
+        sourceUrl: sourceUrl,
       ),
     );
   }

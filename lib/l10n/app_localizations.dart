@@ -2966,6 +2966,18 @@ abstract class AppLocalizations {
   /// **'No saved samples yet. Extract some from a module or pack, or save a voice.'**
   String get mySamplesEmpty;
 
+  /// No description provided for @mySamplesCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits'**
+  String get mySamplesCredits;
+
+  /// No description provided for @mySamplesClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get mySamplesClose;
+
   /// No description provided for @mySamplesPreview.
   ///
   /// In en, this message translates to:

@@ -289,5 +289,8 @@ void main() {
     expect(picked, isNotNull);
     expect(picked!.name, 'Acoustic Guitar');
     expect(picked!.bytes, [1, 2, 3, 4]);
+    // Provenance rides along so extracted samples keep their licence.
+    expect(picked!.license, isNotNull);
+    expect(picked!.sourceUrl, contains('freepats'));
   });
 }

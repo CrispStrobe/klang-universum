@@ -539,6 +539,8 @@
   "samplePackEmpty": "Keine Pakete gefunden",
   "mySamplesTitle": "Meine Samples",
   "mySamplesEmpty": "Noch keine Samples. Extrahiere welche aus einem Modul oder Paket, oder speichere eine Stimme.",
+  "mySamplesCredits": "Credits",
+  "mySamplesClose": "Schließen",
   "mySamplesPreview": "Vorhören",
   "mySamplesDelete": "Löschen",
   "sampleExtractPreview": "Vorhören",

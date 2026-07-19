@@ -87,6 +87,41 @@ void main() {
     expect(tile.onTap, isNull);
   });
 
+  testWidgets('only attribution-licensed clips appear in Credits',
+      (tester) async {
+    final store = SampleClipStore();
+    await store.save(
+      SampleClip(name: 'cc0 kick', sampleRate: 22050, pcm: _tone(64)),
+    );
+    await store.save(
+      SampleClip(
+        name: 'by guitar',
+        sampleRate: 22050,
+        pcm: _tone(64),
+        source: 'Freepats',
+        license: 'CC BY 4.0',
+        sourceUrl: 'https://freepats.zenvoid.org/g.html',
+      ),
+    );
+    await pumpGame(tester, _hosted(MySamplesSheet(store: SampleClipStore())));
+    await tester.pumpAndSettle();
+
+    // The CC0 clip needs no credit; the CC BY one does.
+    final need = _sheet(tester).attributionRequired;
+    expect(need.map((c) => c.name), ['by guitar']);
+    // …and the Credits action is offered because at least one clip needs it.
+    expect(find.widgetWithText(TextButton, 'Credits'), findsOneWidget);
+  });
+
+  testWidgets('no Credits button when nothing needs attribution',
+      (tester) async {
+    await _seed(); // both clips are CC0/unknown
+    await pumpGame(tester, _hosted(MySamplesSheet(store: SampleClipStore())));
+    await tester.pumpAndSettle();
+    expect(_sheet(tester).attributionRequired, isEmpty);
+    expect(find.widgetWithText(TextButton, 'Credits'), findsNothing);
+  });
+
   testWidgets('rows are tappable when the host picks (pickable: true)',
       (tester) async {
     await _seed();

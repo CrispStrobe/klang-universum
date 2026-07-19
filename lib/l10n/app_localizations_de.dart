@@ -1555,6 +1555,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Noch keine Samples. Extrahiere welche aus einem Modul oder Paket, oder speichere eine Stimme.';
 
   @override
+  String get mySamplesCredits => 'Credits';
+
+  @override
+  String get mySamplesClose => 'Schließen';
+
+  @override
   String get mySamplesPreview => 'Vorhören';
 
   @override

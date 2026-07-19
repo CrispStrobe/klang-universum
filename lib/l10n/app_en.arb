@@ -577,6 +577,8 @@
   "samplePackEmpty": "No packs found",
   "mySamplesTitle": "My Samples",
   "mySamplesEmpty": "No saved samples yet. Extract some from a module or pack, or save a voice.",
+  "mySamplesCredits": "Credits",
+  "mySamplesClose": "Close",
   "mySamplesPreview": "Preview",
   "mySamplesDelete": "Delete",
   "sampleExtractPreview": "Preview",

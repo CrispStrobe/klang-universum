@@ -19,19 +19,39 @@ class SampleClip {
     required this.sampleRate,
     required this.pcm,
     this.source,
+    this.license,
+    this.sourceUrl,
   });
 
   final String name;
   final int sampleRate;
   final Float64List pcm;
 
-  /// Where it came from (e.g. a module title) — display-only, may be null.
+  /// Where it came from (e.g. a module title or "Freepats") — may be null.
   final String? source;
+
+  /// The declared licence of the origin, when known (e.g. "CC0", "CC BY 4.0").
+  /// Kept so attribution-required samples don't lose their provenance once
+  /// they're in the library — see [needsAttribution].
+  final String? license;
+
+  /// A URL back to the origin, for credits.
+  final String? sourceUrl;
+
+  /// True if the licence obliges crediting the author (CC BY / BY-SA). CC0 /
+  /// public-domain / unknown do not, so this stays conservative: it only fires
+  /// on an explicit attribution licence.
+  bool get needsAttribution {
+    final l = license?.toLowerCase() ?? '';
+    return l.contains('by') || l.contains('attribution');
+  }
 
   Map<String, dynamic> toJson() => {
         'name': name,
         'rate': sampleRate,
         if (source != null) 'source': source,
+        if (license != null) 'license': license,
+        if (sourceUrl != null) 'sourceUrl': sourceUrl,
         'pcm': base64Encode(_floatToInt16Bytes(pcm)),
       };
 
@@ -40,12 +60,15 @@ class SampleClip {
     final rate = j['rate'];
     final pcm = j['pcm'];
     if (name is! String || rate is! int || pcm is! String) return null;
+    String? str(Object? v) => v is String ? v : null;
     try {
       return SampleClip(
         name: name,
         sampleRate: rate,
         pcm: _int16BytesToFloat(base64Decode(pcm)),
-        source: j['source'] is String ? j['source'] as String : null,
+        source: str(j['source']),
+        license: str(j['license']),
+        sourceUrl: str(j['sourceUrl']),
       );
     } catch (_) {
       return null;

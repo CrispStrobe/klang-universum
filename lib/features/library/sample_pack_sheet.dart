@@ -14,7 +14,12 @@ import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 /// The pack the user picked: its display name and raw archive bytes.
-typedef PickedPack = ({String name, Uint8List bytes});
+typedef PickedPack = ({
+  String name,
+  Uint8List bytes,
+  String? license,
+  String? sourceUrl
+});
 
 /// Shows the pack browser; resolves to the chosen pack, or null if cancelled.
 Future<PickedPack?> showSamplePackSheet(
@@ -82,7 +87,14 @@ class _SamplePackSheetState extends State<_SamplePackSheet> {
     try {
       final bytes = await _source.fetch(item);
       if (!mounted) return;
-      Navigator.of(context).pop((name: item.title, bytes: bytes));
+      Navigator.of(context).pop(
+        (
+          name: item.title,
+          bytes: bytes,
+          license: item.declaredLicense,
+          sourceUrl: item.sourceUrl,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() {

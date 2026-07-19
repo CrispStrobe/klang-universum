@@ -34,6 +34,26 @@ void main() {
       }
     });
 
+    test('carries licence + sourceUrl through JSON, back-compat', () {
+      final clip = SampleClip(
+        name: 'g',
+        sampleRate: 44100,
+        pcm: _tone(16),
+        source: 'Freepats',
+        license: 'CC BY 4.0',
+        sourceUrl: 'https://freepats.zenvoid.org/x.html',
+      );
+      final back = decodeClips(encodeClips([clip])).single;
+      expect(back.source, 'Freepats');
+      expect(back.license, 'CC BY 4.0');
+      expect(back.sourceUrl, 'https://freepats.zenvoid.org/x.html');
+      expect(back.needsAttribution, isTrue);
+      // An old clip without the new fields still reads (back-compat).
+      final legacy = decodeClips('[{"name":"o","rate":8000,"pcm":""}]').single;
+      expect(legacy.license, isNull);
+      expect(legacy.needsAttribution, isFalse);
+    });
+
     test('blank / garbage decodes to empty, never throws', () {
       expect(decodeClips(null), isEmpty);
       expect(decodeClips(''), isEmpty);

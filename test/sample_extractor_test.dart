@@ -141,6 +141,23 @@ void main() {
       expect(out.every((s) => s.pcm.isNotEmpty), isTrue);
     });
 
+    test('carries a pack\'s licence + url onto every extracted sample', () {
+      final zip = zipWith({
+        'a.wav': wavBytesFor([1, 2, 3]),
+      });
+      final out = extractArchiveSamples(
+        zip,
+        sourceFile: 'guitar',
+        license: 'CC BY 4.0',
+        sourceUrl: 'https://freepats.zenvoid.org/g.html',
+      );
+      expect(out.single.license, 'CC BY 4.0');
+      expect(out.single.sourceUrl, contains('freepats'));
+      final clip = out.single.toClip();
+      expect(clip.license, 'CC BY 4.0');
+      expect(clip.needsAttribution, isTrue);
+    });
+
     test('an unreadable WAV entry is skipped, the rest survive', () {
       final zip = zipWith({
         'ok.wav': wavBytesFor([5, 6]),
