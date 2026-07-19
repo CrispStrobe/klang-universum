@@ -15,6 +15,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/transcription/metre.dart';
+import 'package:comet_beat/core/audio/transcription/notation.dart';
 import 'package:comet_beat/core/audio/transcription/rhythm.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:comet_beat/core/audio/transcription/transcribe.dart';
@@ -32,6 +33,7 @@ typedef TranscriptionResult = ({
   InputProbe probe,
   double bpm,
   Meter meter,
+  KeyEstimate key,
 });
 
 /// Transcribe [wavBytes] (a PCM16 WAV, any channel count / sample rate) into a
@@ -59,11 +61,14 @@ Future<TranscriptionResult> transcribeRecording(
   );
   final grid = detectRhythm(mono, sampleRate: wav.sampleRate);
   final meter = estimateMeter(grid);
-  final score = transcribeToScore(
+  final raw = transcribeToScore(
     routed.notes,
     grid,
     beatsPerBar: meter.beatsPerBar,
   );
+  // Detect the key and re-spell (B-flat, not A-sharp) + stamp the key signature.
+  final key = estimateKey(routed.notes);
+  final score = respell(raw, fifths: key.fifths);
   return (
     score: score,
     notes: routed.notes,
@@ -71,5 +76,6 @@ Future<TranscriptionResult> transcribeRecording(
     probe: routed.probe,
     bpm: grid.bpm,
     meter: meter,
+    key: key,
   );
 }
