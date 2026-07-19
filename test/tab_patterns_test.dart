@@ -208,4 +208,46 @@ void main() {
         scaleColumns(guitar, 48, kScales['Major pentatonic']!, q, octaves: 2);
     expect(two.length, greaterThan(one.length));
   });
+
+  test('a scale in a position stays inside the fret box', () {
+    const start = 5;
+    const span = 4; // the default box width
+    final cols = scaleColumns(
+      guitar,
+      48,
+      kScales['Major']!,
+      q,
+      startFret: start,
+    );
+    // Same concert pitches as the open-position C major run…
+    final midis = [
+      for (final c in cols)
+        guitar.strings[c.frets.keys.first].midiNumber + c.frets.values.first,
+    ];
+    expect(midis, [48, 50, 52, 53, 55, 57, 59, 60]);
+    // …but every note is fingered inside the [start, start+span] window.
+    for (final c in cols) {
+      expect(c.frets.values.first, inInclusiveRange(start, start + span));
+    }
+  });
+
+  test('a high position re-anchors the root up so it never falls off', () {
+    // The sheet's root is a fixed C3 (48); a 12th-fret box must still work by
+    // anchoring to the next C inside the window rather than returning nothing.
+    final cols = scaleColumns(guitar, 48, kScales['Major']!, q, startFret: 12);
+    expect(cols, isNotEmpty);
+    final first = guitar.strings[cols.first.frets.keys.first].midiNumber +
+        cols.first.frets.values.first;
+    expect(first % 12, 0); // still starts on a C
+    expect(first, greaterThan(48)); // re-anchored above the fixed C3 root
+  });
+
+  test('box scale descending reverses the run', () {
+    final up = scaleBoxColumns(guitar, 0, kScales['Major']!, q, 5);
+    final down =
+        scaleBoxColumns(guitar, 0, kScales['Major']!, q, 5, descending: true);
+    int midi(TabColumn c) =>
+        guitar.strings[c.frets.keys.first].midiNumber + c.frets.values.first;
+    expect(down.map(midi).toList(), up.map(midi).toList().reversed.toList());
+  });
 }

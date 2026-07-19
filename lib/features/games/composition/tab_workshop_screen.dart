@@ -122,6 +122,7 @@ abstract class TabWorkshopTester {
     int octaves,
     bool descending,
     int repeat,
+    int? startFret,
   });
   void saveToSongBook(String title);
   int get bpm;
@@ -395,6 +396,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     int octaves = 1,
     bool descending = false,
     int repeat = 1,
+    int? startFret,
   }) {
     final intervals = kScales[scaleName];
     if (intervals == null) return 0;
@@ -407,6 +409,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
           _dur,
           octaves: octaves,
           descending: descending,
+          startFret: startFret,
         ),
     ]);
   }
@@ -1486,6 +1489,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     var scaleName = kScales.keys.first;
     var octaves = 1;
     var descending = false;
+    int? startFret; // null = open (lowest fret); else a hand-position box
     var repeat = 1;
 
     // The chord voicings, in chip order — labels paired with their [ChordStyle].
@@ -1627,6 +1631,19 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                     ),
                   ],
                 ),
+                heading(l10n.tabPatternPosition),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    seg(
+                      l10n.tabPatternPositionOpen,
+                      startFret == null,
+                      () => startFret = null,
+                    ),
+                    for (final f in [3, 5, 7, 9, 12])
+                      seg('$f', startFret == f, () => startFret = f),
+                  ],
+                ),
               ]);
           }
           children.addAll([
@@ -1665,6 +1682,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                             _dur,
                             octaves: octaves,
                             descending: descending,
+                            startFret: startFret,
                           ),
                       },
                     );
@@ -1685,6 +1703,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                           octaves: octaves,
                           descending: descending,
                           repeat: repeat,
+                          startFret: startFret,
                         ),
                     };
                     Navigator.of(ctx).pop(n);

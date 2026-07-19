@@ -204,9 +204,14 @@ List<TabColumn> progressionColumns(
   return out;
 }
 
-/// A scale run over [octaves] (capped by the root an octave up), each note laid
-/// on [tuning] at its lowest fret; notes unreachable on the tuning are skipped.
-/// [descending] reverses the run. One note per column at [duration].
+/// A scale run over [octaves] (capped by the root an octave up), one note per
+/// column at [duration]; [descending] reverses it.
+///
+/// Placement: with [startFret] null the run uses each note's LOWEST fret (open
+/// position — it can zig-zag across the neck). With a [startFret] the run is
+/// laid inside a hand position — a [span]-fret box from that fret — via
+/// [scaleBoxColumns], which re-anchors the root into the box so the shape holds
+/// in one position. Notes off the fretboard are skipped.
 List<TabColumn> scaleColumns(
   Tuning tuning,
   int rootMidi,
@@ -214,7 +219,21 @@ List<TabColumn> scaleColumns(
   NoteDuration duration, {
   int octaves = 1,
   bool descending = false,
+  int? startFret,
+  int span = 4,
 }) {
+  if (startFret != null) {
+    return scaleBoxColumns(
+      tuning,
+      rootMidi % 12,
+      intervals,
+      duration,
+      startFret,
+      span: span,
+      octaves: octaves,
+      descending: descending,
+    );
+  }
   final midis = <int>[
     for (var o = 0; o < octaves; o++)
       for (final iv in intervals) rootMidi + 12 * o + iv,
@@ -228,6 +247,60 @@ List<TabColumn> scaleColumns(
     cols.add(
       TabColumn(frets: {placement.$1: placement.$2}, duration: duration),
     );
+  }
+  return cols;
+}
+
+/// A scale run kept inside a hand position: a [span]-fret window from
+/// [startFret]. The root pitch-class [rootPc] (0 = C) is re-anchored to the
+/// LOWEST such note inside the window (so a high [startFret] can't fall off the
+/// neck), then the run ascends [octaves] octave(s), each note placed on the
+/// lowest-pitched string whose fret lands in the window — the standard "box"
+/// fingering that climbs low→high strings. A note that doesn't fit the window
+/// (e.g. the closing octave just past a small box) falls back to its lowest
+/// fret. [descending] reverses the run. Empty if the root isn't in the box.
+List<TabColumn> scaleBoxColumns(
+  Tuning tuning,
+  int rootPc,
+  List<int> intervals,
+  NoteDuration duration,
+  int startFret, {
+  int span = 4,
+  int octaves = 1,
+  bool descending = false,
+}) {
+  final pc = rootPc % 12;
+  // Anchor: the lowest-pitched note inside the window whose class is the root.
+  int? rootMidi;
+  for (var s = tuning.strings.length - 1; s >= 0 && rootMidi == null; s--) {
+    for (var f = startFret; f <= startFret + span; f++) {
+      if ((tuning.strings[s].midiNumber + f) % 12 == pc) {
+        rootMidi = tuning.strings[s].midiNumber + f;
+        break;
+      }
+    }
+  }
+  if (rootMidi == null) return const [];
+  final midis = <int>[
+    for (var o = 0; o < octaves; o++)
+      for (final iv in intervals) rootMidi + 12 * o + iv,
+    rootMidi + 12 * octaves,
+  ];
+  final run = descending ? midis.reversed : midis;
+  final cols = <TabColumn>[];
+  for (final m in run) {
+    (int, int)? placed;
+    // Lowest-pitched string (highest index) whose fret is in the window.
+    for (var s = tuning.strings.length - 1; s >= 0; s--) {
+      final fret = m - tuning.strings[s].midiNumber;
+      if (fret >= startFret && fret <= startFret + span) {
+        placed = (s, fret);
+        break;
+      }
+    }
+    placed ??= tuning.fretFor(pitchFromMidi(m));
+    if (placed == null) continue;
+    cols.add(TabColumn(frets: {placed.$1: placed.$2}, duration: duration));
   }
   return cols;
 }

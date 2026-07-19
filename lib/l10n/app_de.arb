@@ -690,6 +690,8 @@
   "tabPatternRoot": "Grundton",
   "tabPatternScaleType": "Tonleiter",
   "tabPatternOctaves": "Oktaven",
+  "tabPatternPosition": "Lage",
+  "tabPatternPositionOpen": "Offen",
   "tabPatternPreview": "Vorhören",
   "tabPatternInsert": "Einfügen",
   "tabPatternAdded": "{count} Schritte hinzugefügt",
