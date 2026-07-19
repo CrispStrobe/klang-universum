@@ -1995,6 +1995,9 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get tabUndo => 'Rückgängig';
+
+  @override
   String get tabPlay => 'Abspielen';
 
   @override

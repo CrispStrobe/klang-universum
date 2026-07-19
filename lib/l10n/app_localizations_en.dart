@@ -1989,6 +1989,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tabUndo => 'Undo';
+
+  @override
   String get tabPlay => 'Play';
 
   @override

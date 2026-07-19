@@ -106,6 +106,10 @@ abstract class TabWorkshopTester {
   void addColumn();
   void removeColumnAtCursor();
 
+  /// Restores the active track to its state before the last edit.
+  void undo();
+  bool get canUndo;
+
   /// Copies the whole bar the cursor is in and inserts it right after; the
   /// cursor lands on the first column of the copy. Returns columns added.
   int duplicateBar();
@@ -206,6 +210,33 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     implements TabWorkshopTester {
   late List<TabTrack> _tracks;
   int _active = 0;
+
+  /// Undo history: `(trackIndex, deep-copied columns)` captured BEFORE each
+  /// edit, newest last, capped so it never grows without bound.
+  final List<(int, List<TabColumn>)> _undoStack = [];
+  static const _maxUndo = 50;
+
+  /// Snapshot the active track before a mutation so [undo] can restore it.
+  void _snapshot() {
+    _undoStack.add((_active, [for (final c in _doc.columns) c.copy()]));
+    if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
+  }
+
+  @override
+  bool get canUndo => _undoStack.isNotEmpty;
+
+  @override
+  void undo() {
+    if (_undoStack.isEmpty) return;
+    final (track, cols) = _undoStack.removeLast();
+    setState(() {
+      _active = track.clamp(0, _tracks.length - 1);
+      _tracks[_active].doc.columns
+        ..clear()
+        ..addAll(cols);
+      _selCol = _selCol.clamp(0, _doc.columns.length - 1);
+    });
+  }
 
   /// The document being edited — the active track's.
   TabDocument get _doc => _tracks[_active].doc;
@@ -316,47 +347,66 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   }
 
   @override
-  void enterFret(int fret) => setState(() {
-        _doc.setDuration(_selCol, _dur);
-        _doc.setFret(_selCol, _selString, fret);
-      });
+  void enterFret(int fret) {
+    _snapshot();
+    setState(() {
+      _doc.setDuration(_selCol, _dur);
+      _doc.setFret(_selCol, _selString, fret);
+    });
+  }
 
   @override
-  void deleteCell() => setState(() => _doc.clearCell(_selCol, _selString));
+  void deleteCell() {
+    _snapshot();
+    setState(() => _doc.clearCell(_selCol, _selString));
+  }
 
   @override
-  void addColumn() => setState(() {
-        _doc.insertColumn(_selCol + 1);
-        _selCol = (_selCol + 1).clamp(0, _doc.columns.length - 1);
-      });
+  void addColumn() {
+    _snapshot();
+    setState(() {
+      _doc.insertColumn(_selCol + 1);
+      _selCol = (_selCol + 1).clamp(0, _doc.columns.length - 1);
+    });
+  }
 
   @override
-  void removeColumnAtCursor() => setState(() {
-        _doc.removeColumn(_selCol);
-        _selCol = _selCol.clamp(0, _doc.columns.length - 1);
-      });
+  void removeColumnAtCursor() {
+    _snapshot();
+    setState(() {
+      _doc.removeColumn(_selCol);
+      _selCol = _selCol.clamp(0, _doc.columns.length - 1);
+    });
+  }
 
   @override
   int duplicateBar() {
+    _snapshot();
     final (_, end) = _doc.barBoundsAt(_selCol);
     final n = _doc.duplicateBar(_selCol);
     if (n > 0) {
       // Park the cursor on the first column of the fresh copy.
       setState(() => _selCol = end.clamp(0, _doc.columns.length - 1));
+    } else {
+      _undoStack.removeLast(); // nothing changed — drop the snapshot
     }
     return n;
   }
 
   @override
   bool transposeBy(int semitones) {
+    _snapshot();
     final ok = _doc.transposeBy(semitones);
     if (ok) {
       setState(() {});
-    } else if (mounted) {
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tabTransposeLimit)),
-      );
+    } else {
+      _undoStack.removeLast(); // nothing changed — drop the snapshot
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.tabTransposeLimit)),
+        );
+      }
     }
     return ok;
   }
@@ -410,15 +460,22 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   @override
   Set<String> get highlightedIds => _highlightedIds;
   @override
-  void toggleTechnique(TabTechnique t) =>
-      setState(() => _doc.toggleTechnique(_selCol, t));
+  void toggleTechnique(TabTechnique t) {
+    _snapshot();
+    setState(() => _doc.toggleTechnique(_selCol, t));
+  }
+
   @override
   Set<TabTechnique> techniquesAt(int col) =>
       col < _doc.columns.length ? _doc.columns[col].techniques : const {};
   @override
-  void setChordByName(String? name) => setState(
-        () => _doc.setChord(_selCol, name == null ? null : kGuitarChords[name]),
-      );
+  void setChordByName(String? name) {
+    _snapshot();
+    setState(
+      () => _doc.setChord(_selCol, name == null ? null : kGuitarChords[name]),
+    );
+  }
+
   @override
   String? chordNameAt(int col) =>
       col < _doc.columns.length ? _doc.columns[col].chord?.name : null;
@@ -436,6 +493,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   /// Drops [cols] in after the cursor and parks the cursor on the last of them.
   int _insertRun(List<TabColumn> cols) {
     if (cols.isEmpty) return 0;
+    _snapshot();
     setState(() {
       final at = _selCol + 1;
       _doc.insertColumnsAt(at, cols);
@@ -590,6 +648,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _active = _active.clamp(0, _tracks.length - 1);
         _selCol = _selCol.clamp(0, _doc.columns.length - 1);
         _selString = _selString.clamp(0, _doc.stringCount - 1);
+        _undoStack.clear(); // track indices shifted — snapshots are stale
       });
 
   @override
@@ -675,6 +734,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _sourceName = name;
         _selCol = 0;
         _selString = 0;
+        _undoStack.clear(); // a fresh document starts a fresh undo history
       });
     } catch (_) {
       if (!mounted) return;
@@ -691,6 +751,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _sourceName = title;
         _selCol = 0;
         _selString = 0;
+        _undoStack.clear();
       });
     } catch (_) {
       if (mounted) _snack(AppLocalizations.of(context)!.tabImportFailed);
@@ -706,6 +767,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _tracks[_active].doc = TabDocument.fromScore(score, _doc.tuning);
         _selCol = 0;
         _selString = 0;
+        _undoStack.clear();
       });
     } catch (_) {
       if (mounted) _snack(AppLocalizations.of(context)!.tabImportFailed);
@@ -1009,6 +1071,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       appBar: AppBar(
         title: Text(_sourceName ?? l10n.tabWorkshopTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: l10n.tabUndo,
+            onPressed: canUndo ? undo : null,
+          ),
           IconButton(
             icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
             tooltip: l10n.tabPlay,

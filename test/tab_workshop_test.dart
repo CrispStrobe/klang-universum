@@ -259,6 +259,30 @@ void main() {
     expect(tab.fretAt(0, 0), 4); // unchanged
   });
 
+  testWidgets('undo reverts the last edit', (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+    tab.selectCell(1, 2);
+    await tester.pump();
+    expect(tab.fretAt(1, 2), isNull);
+    expect(tab.canUndo, isFalse);
+
+    tab.enterFret(7);
+    await tester.pump();
+    expect(tab.fretAt(1, 2), 7);
+    expect(tab.canUndo, isTrue);
+
+    tab.undo();
+    await tester.pump();
+    expect(tab.fretAt(1, 2), isNull); // back to before the edit
+    expect(tab.canUndo, isFalse);
+
+    // A refused transpose leaves no undo entry to burn.
+    tab.transposeBy(-99);
+    await tester.pump();
+    expect(tab.canUndo, isFalse);
+  });
+
   testWidgets('generative insert adds a run after the cursor and moves it',
       (tester) async {
     await pumpGame(tester, const TabWorkshopScreen());

@@ -3758,6 +3758,12 @@ abstract class AppLocalizations {
   /// **'Saved “{title}”'**
   String tabSaved(String title);
 
+  /// No description provided for @tabUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get tabUndo;
+
   /// No description provided for @tabPlay.
   ///
   /// In en, this message translates to:

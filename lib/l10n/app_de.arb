@@ -731,6 +731,7 @@
   "@tabSaved": {
     "placeholders": { "title": { "type": "String" } }
   },
+  "tabUndo": "Rückgängig",
   "tabPlay": "Abspielen",
   "tabCountIn": "Einzähler",
   "tabClear": "Leeren",
