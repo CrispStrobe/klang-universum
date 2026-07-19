@@ -162,6 +162,7 @@ listed here rather than done by me:
 - **opus (libraries-and-tab) → Tab Workshop: redo (+ undo audit)** · ✅ **SHIPPED.** Audited every editor for undo: **Composition Workshop, Tracker, DrumKit, DAW all have it**; the ONLY gap is **Voice Lab** (no undo) — but that's in the blocked `sound-lab` lane, so left for that worker. Completed my own Tab Workshop's undo with **redo**: a redo stack (undo→push current, redo→pop, fresh edit clears it), a ↷ app-bar button, `_clearHistory` drops both stacks on load/paste/track-removal. +de/en, +extended widget test (undo→redo round trip). My file only, analyze clean, tab suite green (34). Now idle.
 - **opus (libraries-and-tab) → Tab Workshop: undo** · ✅ **SHIPPED.** The editor's biggest missing feature. A bounded 50-deep undo history captures `(activeTrack, deep-copied columns)` before each edit — fret entry, delete, add/remove/duplicate column, duplicate-bar, transpose, technique toggle, chord attach, generative insert (via the shared `_insertRun`). App-bar ↶ button (disabled when empty) restores the pre-edit state; no-op edits drop their snapshot (undo never burns a tap); a load/paste/track-removal clears history. +de/en, +widget test. My file only, analyze clean, tab suites green (62). Now idle.
 - **opus (libraries-and-tab) → 7z reader hardening (2 real RangeError leaks)** · ✅ **SHIPPED.** A fuzz pass (bit-flip + random-garbage, the mp3/sf2/midi pattern) on my `lib/core/archive/sevenz_reader.dart` found TWO crash-safety bugs: a malformed `.7z` threw a raw `RangeError` (not `FormatException`), which the sample-pack import would let crash. (1) `nextHeaderOffset/Size` (signed `getUint64`) **overflowed int64** past the `> length` check → `sublistView` RangeError; fixed with overflow-safe per-field bounds. (2) `package:archive`'s LZMA/BZip2/Deflate codecs aren't hardened — a corrupt stream throws a raw error deep inside; wrapped `_runCoder` to normalise any non-`FormatException` escape. +2 fuzz tests (400 bit-flips + 400 random → only `FormatException`, no hang); valid archives still byte-identical. `core/archive` (not audio), analyze clean. Now idle.
+- **opus (libraries-and-tab) → Live Looper / "Perform" ladder (maintainer-directed arc)** · 🚧 **ACTIVE.** Turn the loop/mix tools into a live loop-station: record your own loops → each a `LoopStack` layer that loops in sync → mute/undo/scenes → arrange. 3-tier ladder over one engine (Groovebox = current Loop Mixer · **Live Looper = new Advanced tile** · Multitrack = current DAW). Full scoping + slices S0–S5 in the "Live Looper / Perform ladder" section below. Building in defined slices; **S0 first** = pure `lib/core/audio/loop_stack_render.dart` (sum `LoopStack.activeLayers` → one seamless PCM loop, wires the shipped-but-unused `loop_record.dart`). New files (loop-mixer/looper domain — idle lane), zero collision. Rebase per slice.
 - **opus (libraries-and-tab) → Tab Workshop: transpose** · ✅ **SHIPPED.** A "change the key" op: `TabDocument.transposeBy(n)` shifts every note n semitones on its OWN string (correct pitch shift, fingering kept). All-or-nothing — returns false + changes nothing if any note would leave 0..24 (never silently drops), clears the now-wrong chord labels on success. Two ▲/▼ toolbar buttons (arrow icons, distinct from the capo stepper's +/-) + `transposeBy` seam + a "can't transpose further" snackbar. de/en. +3 pure doc tests + a widget seam test. My files only, analyze clean, tab suites green (61). Now idle.
 - **opus (libraries-and-tab) → Tab Workshop: duplicate bar** · ✅ **SHIPPED.** The tab editor had generative insert + single-column ops but no way to repeat AUTHORED content. Added **Duplicate bar**: copies the whole ≤8-step (4/4) bar the cursor is in (deep copy via new `TabColumn.copy`) and inserts it right after; `TabDocument.barBoundsAt` reuses `toScore`'s exact tiling. A filledTonal button next to add/remove step + a `duplicateBar` seam; de/en. +2 pure doc tests + a widget seam test. My files only (`tab_document.dart` + `tab_workshop_screen.dart`), analyze clean, tab suites green (57). Now idle.
 - **opus (libraries-and-tab) → specific primers for `fretboard_find` + `capo_match`** · ✅ **SHIPPED.** The two new guitar games had only the generic guitar-module fallback primer; added dedicated tutorials (the "specific>general" case that adds value): `fretboardFindPrimer` (one note lives in several places — tap any; plays a middle C) + `capoMatchPrimer` (a capo clamps strings up → a known shape sounds higher; plays a C shape then the capo-2 D). Wired `tutorial:` into both GameInfos; +8 de/en primer keys. tutorial + consistency suites green (every module primer builds), analyze clean. Rebased clean. Now idle.
@@ -1474,6 +1475,81 @@ Ladder, Staff Runner, Chord Grip Hero, Dynamics & Tempo Charades, Note Snake, an
 Recital Mode all live now
 ([HISTORY.md](HISTORY.md#original-concepts--shipped)). New original ideas get
 added here as they come up.
+
+## Live Looper / "Perform" ladder — scoping + slices (2026-07-19)
+
+**The idea (kid-facing):** a child hears live-looping music and wants to *make a
+song live* — play something, loop it, stack more on top, then arrange it. Turn
+our loop/mix tools into that experience, kept fun and forgiving for a beginner
+and deep enough for an ambitious kid or a real musician.
+
+**Structure — a 3-tier ladder over ONE shared engine (not one crowded screen).**
+Mirrors the house pattern (two skins over one model, like the tracker's
+Beginner/Advanced tiles), and is a workflow *and* a skill ladder:
+
+1. **Groovebox (Beginner)** — *the current Loop Mixer, unchanged.* Tap curated
+   layers on/off, dice, secret combos, scenes. Feels like producing in seconds.
+2. **Live Looper / "Perform" (Advanced)** — *the new tile.* Record your OWN
+   loops — sing, beatbox, tap pads, or play the on-screen keyboard-instrument —
+   each take becomes a **layer** on an overdub stack that loops in sync; mute/
+   solo/undo layers, launch scenes, then hand off to arrange.
+3. **Multitrack (Arrange)** — *the current DAW, unchanged.* The finished loops
+   land on a timeline to arrange, merge, and export.
+
+**What we already own (grounded inventory, 2026-07-19):**
+- `loop_engine.dart` — `GrooveSpec` (whole groove as a value) + offline
+  `renderLoop` (bakes enabled tracks to one seamless-loop WAV, render-cached) +
+  `GrooveScene` (4 capture/launch/chain scene pads) + `quantizeLaunch` (queue a
+  change to the next bar seam). Playback = `LoopPlayerService.playLoop(wav,
+  position)` / `GaplessLoopPlayer` (baked WAV hot-swapped IN PHASE via the
+  screen's `_clock`), so a re-render re-enters the loop without restarting.
+- `loop_record.dart` — **the overdub primitive, shipped but UNWIRED:**
+  `LoopStack<T>` (ordered layers + undo/redo + per-layer mute + `activeLayers`),
+  `quantizeLoopBars` (snap a take to whole bars), `snapPunch` (quantized punch-
+  in/out). This is the missing engine's heart — never imported by any UI.
+- Capture: `groove_capture.quantizeToGroove` (sung → pentatonic cells),
+  `beat_capture` (beatbox → kick/snare/hat rows), `smear_pad` (scale-locked
+  jam-at-the-playhead lead → one card), `melody_recorder` (sung → `(midi, ms)`).
+- Play-in surfaces: `PianoKeyboard` widget + `InstrumentPlayScreen` (play a saved
+  instrument on a keyboard — but NO record-to-loop), DrumKit pads with tap-to-
+  record + beatbox-to-grid + undo/redo.
+- Arrange: `DawService.addClip(ClipSource)` with `SampleSource`/`GrooveSource`/
+  `DrumSource`/`ScoreSource`/`TrackerSource`; offline `renderTimeline` bake.
+
+**The one honest constraint (design, not a bug):** the app is **offline
+render-then-play — no realtime audio graph** (stated in `daw_timeline.dart`).
+So "live looping" is the **loop-station model**, not live input-monitoring:
+`record a take → auto-quantise to whole bars → add it as a layer → re-bake the
+summed mix offline → hot-swap the looping WAV IN PHASE`. Fast (per-source render
+cache) and seamless, and it's exactly how sing/beatbox/smear already behave —
+just generalised to a growing, mutable stack of the kid's OWN takes.
+
+**The gap = wire `LoopStack` into a surface.** Everything else exists.
+
+### Slices (value ÷ effort; each shippable + tested)
+- **S0 — pure `LoopStack` renderer (enabler).** New `lib/core/audio/
+  loop_stack_render.dart`: sum a stack's `activeLayers` (each a PCM loop, aligned
+  to a common bar-length) into one seamless PCM loop. Pure + unit-tested (like
+  `renderTimeline`). Unblocks every UI slice.
+- **S1 — the Perform surface.** New `perform_screen.dart` (Advanced tile, home
+  Workshop entry): a base loop plays; **Record** does count-in → capture N bars
+  (start with the shipped sing/beatbox paths) → `quantizeLoopBars` → push a
+  `LoopStack` layer → re-render (S0) + in-phase hot-swap. A layer list with
+  mute/solo + the stack's own undo/redo. The minimal "record & stack your own
+  loops."
+- **S2 — play-in melodic layer.** Wire `PianoKeyboard` + a saved instrument
+  voice + a "record my played notes to a loop" capture → a melodic layer. The
+  "play it in" controller.
+- **S3 — play-in drum pads.** Tap-pads in Perform → record a drum layer (reuse
+  the DrumKit tap-to-record pipeline).
+- **S4 — scenes / clip-launch in Perform.** Snapshot which layers are active
+  (extend the `GrooveScene` concept to `LoopStack` layers) → arm/launch/chain at
+  the seam.
+- **S5 — hand off to arrange.** Bounce the looper (whole mix and/or per layer) →
+  the Multitrack as `SampleSource` clips via `DawService.addClip`, so the live
+  jam becomes an editable arrangement.
+
+**No brand/market names in code or docs** — concepts only (per house rule).
 
 ## Loop Mixer 2.0 — the groovebox ladder (roadmap) — ✅ ALL SLICES SHIPPED
 
