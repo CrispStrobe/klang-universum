@@ -119,6 +119,19 @@ void main() {
     expect(game.instrumentAt(0, 0), 2);
   });
 
+  testWidgets('an extended effect renders its letter code in the grid',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    // Gxx = set global volume (fxCmd 0x10) → shown as a "G20" effect code, not
+    // a two-digit "1020" that would break the 3-char column.
+    game.debugSetCommand(0, 0, 0x10, 0x20);
+    await tester.pump();
+    expect(find.text('G20'), findsOneWidget);
+    // The command is stored intact for the replayer to honour.
+    expect(game.effectAt(0, 0), (0x10, 0x20));
+  });
+
   testWidgets('the grid shows a cell\'s per-cell instrument number',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

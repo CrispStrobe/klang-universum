@@ -50,7 +50,14 @@ import 'package:comet_beat/core/audio/sound_library.dart';
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart'
-    show RowTiming, resolveTimingMap, rowIndexAtMs;
+    show
+        RowTiming,
+        kFxGlobalVolSlide,
+        kFxPanSlide,
+        kFxSetGlobalVolume,
+        kFxTempoSlide,
+        resolveTimingMap,
+        rowIndexAtMs;
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/audio/tracker_song_codec.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
@@ -2628,18 +2635,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   @override
   void debugSetCommand(int channel, int row, int cmd, int param) {
     final cur = _song.engine.cellAt(channel, row);
-    _song.engine.setCell(
-      channel,
-      row,
-      TrackerCell(
-        midi: cur.midi,
-        volume: cur.volume,
-        effect: cur.effect,
-        fxCmd: cmd,
-        fxParam: param,
-        instrument: cur.instrument,
-      ),
-    );
+    setState(() {
+      _song.engine.setCell(
+        channel,
+        row,
+        TrackerCell(
+          midi: cur.midi,
+          volume: cur.volume,
+          effect: cur.effect,
+          fxCmd: cmd,
+          fxParam: param,
+          instrument: cur.instrument,
+        ),
+      );
+    });
     _syncPlayback();
   }
 
@@ -5010,9 +5019,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   static Color _classicNoteColor(int midi) =>
       HSVColor.fromAHSV(1, (midi % 12) / 12 * 360, 0.55, 0.95).toColor();
 
-  /// The effect column as a 3-char hex code (command nibble + param byte).
+  /// The effect column as a 3-char code: a single command char + a 2-hex param.
+  /// Radix-36 gives the classic tracker letter scheme — 0–9 then A–F for the MOD
+  /// nibbles, and G, H, P, T… for the extended (>0xF) effects (global volume,
+  /// pan/tempo slide) — so an extended command still fits the column (e.g. G20).
   static String _commandHex(TrackerCell c) {
-    final cmd = c.fxCmd.toRadixString(16).toUpperCase();
+    final cmd = c.fxCmd.toRadixString(36).toUpperCase();
     final p = c.fxParam.toRadixString(16).toUpperCase().padLeft(2, '0');
     return '$cmd$p';
   }
@@ -5391,6 +5403,11 @@ class _CommandEditorState extends State<_CommandEditor> {
     0xD: 'Dxx  Pattern break',
     0xE: 'Exy  Extended',
     0xF: 'Fxx  Set speed / tempo',
+    // Extended (letter) effects the replayer supports; shown G../H../P../T..
+    kFxSetGlobalVolume: 'Gxx  Set global volume',
+    kFxGlobalVolSlide: 'Hxy  Global volume slide',
+    kFxPanSlide: 'Pxy  Pan slide',
+    kFxTempoSlide: 'Txy  Tempo slide',
   };
 
   @override
