@@ -3356,6 +3356,48 @@ abstract class AppLocalizations {
   /// **'My Samples'**
   String get mySamplesTitle;
 
+  /// No description provided for @myInstrumentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Instruments'**
+  String get myInstrumentsTitle;
+
+  /// No description provided for @myInstrumentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved instruments yet. Shape a voice and tap “Save as instrument”.'**
+  String get myInstrumentsEmpty;
+
+  /// No description provided for @myInstrumentsAudition.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a note'**
+  String get myInstrumentsAudition;
+
+  /// No description provided for @myInstrumentsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get myInstrumentsDelete;
+
+  /// No description provided for @voiceLabSaveInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as instrument'**
+  String get voiceLabSaveInstrument;
+
+  /// No description provided for @voiceLabInstrumentSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved “{name}” to My Instruments'**
+  String voiceLabInstrumentSaved(String name);
+
+  /// No description provided for @voiceLabMyInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'My Instruments'**
+  String get voiceLabMyInstruments;
+
   /// No description provided for @mySamplesEmpty.
   ///
   /// In en, this message translates to:

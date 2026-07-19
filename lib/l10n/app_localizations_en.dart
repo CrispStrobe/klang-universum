@@ -1751,6 +1751,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mySamplesTitle => 'My Samples';
 
   @override
+  String get myInstrumentsTitle => 'My Instruments';
+
+  @override
+  String get myInstrumentsEmpty =>
+      'No saved instruments yet. Shape a voice and tap “Save as instrument”.';
+
+  @override
+  String get myInstrumentsAudition => 'Play a note';
+
+  @override
+  String get myInstrumentsDelete => 'Delete';
+
+  @override
+  String get voiceLabSaveInstrument => 'Save as instrument';
+
+  @override
+  String voiceLabInstrumentSaved(String name) {
+    return 'Saved “$name” to My Instruments';
+  }
+
+  @override
+  String get voiceLabMyInstruments => 'My Instruments';
+
+  @override
   String get mySamplesEmpty =>
       'No saved samples yet. Extract some from a module or pack, or save a voice.';
 

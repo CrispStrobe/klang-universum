@@ -5,6 +5,9 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerCell, TrackerTiming;
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/features/sound_lab/voice_lab_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -134,6 +137,30 @@ void main() {
     await tester.pump();
     expect(lab.effect, randomVoice(math.Random(3)).effect);
     expect(lab.output, isNot(plain)); // the voice changed
+  });
+
+  testWidgets('Save as instrument stores a reusable, playable instrument',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await pumpGame(tester, const VoiceLabScreen(key: ValueKey('inst')));
+    final lab = _lab(tester);
+    lab.debugSetClip(_tone(4410));
+    await tester.pump();
+
+    await lab.saveAsInstrument('My Voice');
+    await tester.pump();
+
+    // It persisted, and rebuilds to something that actually renders a note.
+    final saved = await InstrumentLibraryStore().load();
+    expect(saved.map((s) => s.name), ['My Voice']);
+    expect(saved.single.source, 'Voice Lab');
+    final inst = saved.single.instrument;
+    expect(inst, isNotNull);
+    final note = inst!.renderChannel(
+      const [TrackerCell(midi: 60)],
+      const TrackerTiming(rows: 4),
+    );
+    expect(note, isNotEmpty);
   });
 
   testWidgets('My Samples: save the shaped voice, recall it', (tester) async {

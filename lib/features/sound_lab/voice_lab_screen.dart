@@ -16,8 +16,14 @@ import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show SampleInstrument;
+import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
+    show instrumentToJsonString;
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart';
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -126,6 +132,7 @@ abstract class VoiceLabTester {
   void setParam(String key, double value);
   void surprise(int seed);
   Future<void> saveToLibrary(String name);
+  Future<void> saveAsInstrument(String name);
   List<SampleClip> get library;
   void recall(int index);
 }
@@ -141,6 +148,7 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
     implements VoiceLabTester {
   final _recorder = VoiceClipRecorder();
   final _store = SampleClipStore();
+  final _instStore = InstrumentLibraryStore();
   Float64List? _clip;
   Float64List? _out;
   bool _recording = false;
@@ -330,6 +338,61 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
     _reprocess();
   }
 
+  // ── My Instruments (save the shaped voice as a reusable instrument) ───────
+  @override
+  Future<void> saveAsInstrument(String name) async {
+    final out = _out;
+    if (out == null || out.isEmpty) return;
+    // The shaped voice becomes a playable sample instrument (middle C = base).
+    final inst = SampleInstrument('voicelab', out);
+    await _instStore.save(
+      SavedInstrument(
+        name: name,
+        json: instrumentToJsonString(inst),
+        source: 'Voice Lab',
+      ),
+    );
+  }
+
+  Future<void> _saveInstrumentDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_out == null || _out!.isEmpty) return;
+    final controller = TextEditingController(
+      text: l10n.voiceLabDefaultName(1),
+    );
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.voiceLabSaveInstrument),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.voiceLabCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: Text(l10n.voiceLabSave),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty) return;
+    await saveAsInstrument(name);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.voiceLabInstrumentSaved(name))),
+      );
+    }
+  }
+
+  Future<void> _openInstruments() =>
+      showMyInstrumentsSheet(context, pickable: false);
+
   Future<void> _saveDialog() async {
     final l10n = AppLocalizations.of(context)!;
     if (_out == null || _out!.isEmpty) return;
@@ -410,6 +473,25 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
             icon: const Icon(Icons.bookmarks_outlined),
             tooltip: l10n.voiceLabMyTitle,
             onPressed: _openLibrary,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.piano_outlined),
+            tooltip: l10n.voiceLabMyInstruments,
+            onSelected: (v) {
+              if (v == 'save') _saveInstrumentDialog();
+              if (v == 'browse') _openInstruments();
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'save',
+                enabled: hasClip,
+                child: Text(l10n.voiceLabSaveInstrument),
+              ),
+              PopupMenuItem(
+                value: 'browse',
+                child: Text(l10n.voiceLabMyInstruments),
+              ),
+            ],
           ),
         ],
       ),
