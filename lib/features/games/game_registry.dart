@@ -675,6 +675,18 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       builder: (_) => const ConnectLineScreen(clef: Clef.bass),
       tutorial: readingBassPrimer,
     ),
+    // Tenor clef — the matching-modality companion to the tenor note reader.
+    // Advanced, so open it only once treble note-connecting is solid.
+    GameInfo(
+      id: 'connect_line_tenor',
+      icon: Icons.polyline,
+      title: (l) => '${l.gameConnectLine} — ${l.clefTenor}',
+      subtitle: (l) => l.gameConnectLineSubtitle,
+      builder: (_) => const ConnectLineScreen(clef: Clef.tenor),
+      unlockedWhen: (p) => p.starsFor('connect_line') >= 2,
+      lockedHint: (l) => l.advancedGameHint,
+      tutorial: tenorClefPrimer,
+    ),
     GameInfo(
       id: 'odd_one_out_bass',
       icon: Icons.filter_2,

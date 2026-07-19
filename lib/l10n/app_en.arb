@@ -1490,6 +1490,7 @@
     }
   },
   "clefBass": "Bass clef",
+  "clefTenor": "Tenor clef",
   "gameLineSpace": "Line or Space?",
   "gameLineSpaceSubtitle": "Swipe: is the note on a line or in a space?",
   "gameFallingNotes": "Falling Notes",

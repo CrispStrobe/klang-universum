@@ -113,6 +113,7 @@ abstract interface class ConnectLineTester {
   bool get finished;
   int get round;
   int get matchedCount;
+  String get progressId;
 
   /// The right-column index whose name matches left item [leftIndex].
   int matchingRight(int leftIndex);
@@ -155,8 +156,11 @@ class _ConnectLineScreenState extends State<ConnectLineScreen>
         ConnectMode.beats => 'connect_beats',
         ConnectMode.degrees => 'connect_degrees',
         ConnectMode.timeSignatures => 'connect_time',
-        ConnectMode.notes =>
-          widget.clef == Clef.bass ? 'connect_line_bass' : 'connect_line',
+        ConnectMode.notes => switch (widget.clef) {
+            Clef.bass => 'connect_line_bass',
+            Clef.tenor => 'connect_line_tenor',
+            _ => 'connect_line',
+          },
       };
 
   // We play each linked note's own pitch (and a buzz on a miss).

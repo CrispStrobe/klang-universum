@@ -6854,6 +6854,12 @@ abstract class AppLocalizations {
   /// **'Bass clef'**
   String get clefBass;
 
+  /// No description provided for @clefTenor.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenor clef'**
+  String get clefTenor;
+
   /// No description provided for @gameLineSpace.
   ///
   /// In en, this message translates to:

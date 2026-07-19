@@ -1258,6 +1258,7 @@
     }
   },
   "clefBass": "Bassschlüssel",
+  "clefTenor": "Tenorschlüssel",
   "gameLineSpace": "Linie oder Zwischenraum?",
   "gameLineSpaceSubtitle": "Wische: Linie oder Zwischenraum?",
   "gameFallingNotes": "Notenregen",

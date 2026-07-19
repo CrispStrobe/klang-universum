@@ -3655,6 +3655,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clefBass => 'Bass clef';
 
   @override
+  String get clefTenor => 'Tenor clef';
+
+  @override
   String get gameLineSpace => 'Line or Space?';
 
   @override

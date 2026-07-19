@@ -480,7 +480,7 @@ const List<Concept> kConcepts = [
     GradeBand.g910,
     ConceptArea.reading,
     'The tenor clef',
-    ['note_reading_tenor'],
+    ['note_reading_tenor', 'connect_line_tenor'],
   ),
   Concept(
     'satb_voices',

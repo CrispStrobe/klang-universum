@@ -8,13 +8,15 @@ import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/note_reading/connect_line_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:crisp_notation/crisp_notation.dart' show Clef;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Widget _app({ConnectMode mode = ConnectMode.notes}) => MultiProvider(
+Widget _app({ConnectMode mode = ConnectMode.notes, Clef clef = Clef.treble}) =>
+    MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SettingsService()),
         ChangeNotifierProvider(
@@ -31,7 +33,7 @@ Widget _app({ConnectMode mode = ConnectMode.notes}) => MultiProvider(
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [Locale('en'), Locale('de')],
-        home: ConnectLineScreen(mode: mode),
+        home: ConnectLineScreen(mode: mode, clef: clef),
       ),
     );
 
@@ -81,6 +83,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
     expect(game.round, 1);
     expect(game.score, greaterThan(0));
+  });
+
+  testWidgets('tenor clef: notes read in tenor clef, own progress id',
+      (tester) async {
+    await tester.pumpWidget(_app(clef: Clef.tenor));
+    final game = _game(tester);
+    expect(game.progressId, 'connect_line_tenor');
+
+    for (var i = 0; i < ConnectLineScreen.pairs; i++) {
+      await _drag(tester, i, game.matchingRight(i));
+    }
+    expect(game.matchedCount, ConnectLineScreen.pairs);
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(game.round, 1);
   });
 
   testWidgets('symbols mode: matching each glyph to its name clears the round',
