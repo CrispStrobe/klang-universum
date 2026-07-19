@@ -3,6 +3,8 @@
 // change the decoded render). Uses procedural voices so the render is exact
 // (SampleInstrument PCM is Float32-lossy; covered in the instrument codec test).
 
+import 'dart:convert';
+
 import 'package:comet_beat/core/audio/crisp_dsp/fm.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
@@ -158,6 +160,109 @@ void main() {
       final ch0Cells = (pat0['cells'] as List).first as List;
       expect(ch0Cells[1], isNull); // an empty step is null, not an object
       expect((ch0Cells[0] as Map)['n'], 60); // a note step carries its data
+    });
+  });
+
+  group('share token', () {
+    test('token round-trips + renders byte-identically', () {
+      final song = richSong();
+      final token = trackerSongToToken(song, title: 'My Jam');
+      expect(token.startsWith(kTrackerSongTokenPrefix), isTrue);
+      final decoded = trackerSongFromToken(token);
+      expect(decoded.renderSongWav(), song.renderSongWav());
+    });
+
+    test('the token is smaller than the raw JSON (compression)', () {
+      final song = richSong();
+      final token = trackerSongToToken(song);
+      final raw = trackerSongToJsonString(song);
+      expect(token.length, lessThan(raw.length));
+    });
+
+    test('tryTrackerSongFromToken returns null on foreign/corrupt input', () {
+      expect(tryTrackerSongFromToken('hello world'), isNull);
+      expect(tryTrackerSongFromToken('KU1.abcdef'), isNull); // wrong prefix
+      expect(tryTrackerSongFromToken('CBS1.@@@notbase64@@@'), isNull);
+      expect(tryTrackerSongFromToken('CBS1.'), isNull); // empty body
+      // A real token still decodes.
+      final real = tryTrackerSongFromToken(trackerSongToToken(richSong()));
+      expect(real, isNotNull);
+    });
+
+    test('trackerSongFromToken throws a specific error on a bad prefix', () {
+      expect(
+        () => trackerSongFromToken('nope'),
+        throwsA(
+          isA<TrackerSongCodecException>().having(
+            (e) => e.message,
+            'message',
+            contains(kTrackerSongTokenPrefix),
+          ),
+        ),
+      );
+    });
+
+    test('trackerSongInfo / …FromToken read metadata without full decode', () {
+      final token = trackerSongToToken(richSong(), title: 'My Jam');
+      final info = trackerSongInfoFromToken(token);
+      expect(info.title, 'My Jam');
+      expect(info.channelCount, 2);
+      expect(info.patternCount, 2);
+      expect(info.orderLength, 3);
+      expect(info.instrumentCount, 2);
+      expect(info.version, kTrackerSongVersion);
+    });
+  });
+
+  group('validation + migration', () {
+    test('a foreign format is rejected', () {
+      expect(
+        () => trackerSongFromJson({'format': 'somethingelse'}),
+        throwsA(isA<TrackerSongCodecException>()),
+      );
+    });
+
+    test('a future version is rejected with a clear message', () {
+      final json = trackerSongToJson(richSong());
+      json['version'] = kTrackerSongVersion + 1;
+      expect(
+        () => trackerSongFromJson(json),
+        throwsA(
+          isA<TrackerSongCodecException>()
+              .having((e) => e.message, 'message', contains('update')),
+        ),
+      );
+    });
+
+    test('malformed data raises TrackerSongCodecException, not a raw cast', () {
+      // Valid tag, but the required lists are missing.
+      expect(
+        () => trackerSongFromJson({
+          'format': kTrackerSongFormat,
+          'version': 1,
+          'timing': {'tempoBpm': 120},
+        }),
+        throwsA(isA<TrackerSongCodecException>()),
+      );
+      // Not even JSON.
+      expect(
+        () => trackerSongFromJsonString('{not json'),
+        throwsA(isA<TrackerSongCodecException>()),
+      );
+    });
+
+    test('an unknown effect name degrades to none (forward-compatible)', () {
+      // A cell / channel effect added in a future version must not crash an
+      // older reader — it falls back to "none".
+      final json = trackerSongToJson(richSong());
+      final pat = (json['patterns'] as List)[0] as Map<String, dynamic>;
+      ((pat['cells'] as List)[0] as List)[0] =
+          jsonDecode('{"n":60,"e":"future_fx"}');
+      final ch = (json['channels'] as List)[1] as Map<String, dynamic>;
+      ch['effects'] = ['future_insert'];
+      final decoded = trackerSongFromJson(json); // must not throw
+      expect(decoded.patterns[0].cells[0][0].effect, TrackerEffect.none);
+      expect(decoded.channels[1].effects, [TrackerChannelEffect.none]);
     });
   });
 }

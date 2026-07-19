@@ -5,71 +5,298 @@
 // instrument), each channel (instrument, gain, pan, mute, volume/pan envelopes,
 // insert effects), the order list, timing, and the shared instrument pool.
 //
-// Instruments serialize via tracker_instrument_codec, so a song using a loaded
-// SoundFont voice (Sf2/MultiSample — not embeddable) throws its
-// InstrumentCodecException; use the reference-based store for those. Correctness
-// is guaranteed by a render-roundtrip test (a song and its decoded twin render
-// byte-identically). Pure Dart, no Flutter. The JSON string is a share token.
+// Three layers:
+//   • JSON       — [trackerSongToJson] / [trackerSongFromJson] (a Map).
+//   • String     — [trackerSongToJsonString] / [trackerSongFromJsonString].
+//   • Share token — [trackerSongToToken] / [trackerSongFromToken]: the JSON
+//     zlib-compressed + url-safe base64, prefixed `CBS1.` (small, paste-able).
+//     [tryTrackerSongFromToken] never throws (for UI paste handling), mirroring
+//     the Loop Mixer's `KU1.` groove token.
+//
+// Robust by design: every decode path validates the format tag + version (with a
+// [ _migrate] hook for future upgrades) and raises a clear, catchable
+// [TrackerSongCodecException] instead of a raw cast error. Instruments serialize
+// via tracker_instrument_codec, so a song using a loaded SoundFont voice
+// (Sf2/MultiSample — not embeddable) reports which channel and points at the
+// reference store. Correctness is guaranteed by a render-roundtrip test (a song
+// and its decoded twin render byte-identically). Pure Dart, no Flutter.
 
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:archive/archive.dart' show ZLibDecoder, ZLibEncoder;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
 
-/// The on-disk format tag + version (bump on a breaking layout change).
+/// The on-disk format tag + version (bump on a breaking layout change; add a
+/// migration step in [_migrate]).
 const String kTrackerSongFormat = 'cometbeat.trackersong';
 const int kTrackerSongVersion = 1;
 
-/// Serialize a whole [song] to a JSON-safe map (see [trackerSongToJsonString]).
-Map<String, dynamic> trackerSongToJson(TrackerSong song) {
+/// Share-token prefix — `CBS1.` = CometBeat Song v1 (mirrors the Loop Mixer's
+/// `KU1.` groove token). The remainder is url-safe base64 of the zlib-compressed
+/// JSON.
+const String kTrackerSongTokenPrefix = 'CBS1.';
+
+/// A clear, catchable error for any malformed song data / token (never a raw
+/// cast/format exception leaking to the UI).
+class TrackerSongCodecException implements Exception {
+  TrackerSongCodecException(this.message);
+  final String message;
+  @override
+  String toString() => 'TrackerSongCodecException: $message';
+}
+
+// ── JSON ─────────────────────────────────────────────────────────────────────
+
+/// Serialize a whole [song] to a JSON-safe map. An optional [title] is stored
+/// for library display (the song model itself has no title).
+Map<String, dynamic> trackerSongToJson(TrackerSong song, {String? title}) {
   song.syncCurrent(); // fold any live edit into the current pattern first
   return {
     'format': kTrackerSongFormat,
     'version': kTrackerSongVersion,
+    if (title != null && title.isNotEmpty) 'title': title,
     'timing': _timingToJson(song.timing),
     'order': List<int>.of(song.order),
-    'instruments': [for (final i in song.instruments) instrumentToJson(i)],
+    'instruments': [
+      for (var i = 0; i < song.instruments.length; i++)
+        _instrumentToJson(song.instruments[i], 'pool instrument ${i + 1}'),
+    ],
     'channels': [for (final c in song.channels) _channelToJson(c)],
     'patterns': [for (final p in song.patterns) _patternToJson(p)],
   };
 }
 
 /// Rebuild a [TrackerSong] from [json] (as produced by [trackerSongToJson]).
+/// Throws [TrackerSongCodecException] on anything malformed.
 TrackerSong trackerSongFromJson(Map<String, dynamic> json) {
-  final timing = _timingFromJson(json['timing'] as Map<String, dynamic>);
-  final patterns = [
-    for (final p in (json['patterns'] as List))
-      _patternFromJson(p as Map<String, dynamic>),
-  ];
-  // The engine's channels start on pattern 0; size them to it (fromParts loads
-  // pattern 0's cells into the engine).
-  final rows0 = patterns.isNotEmpty && patterns.first.cells.isNotEmpty
-      ? patterns.first.cells.first.length
-      : timing.rows;
-  final channels = [
-    for (final c in (json['channels'] as List))
-      _channelFromJson(c as Map<String, dynamic>, rows0),
-  ];
-  final instruments = [
-    for (final i in (json['instruments'] as List))
-      instrumentFromJson(i as Map<String, dynamic>),
-  ];
-  return TrackerSong.fromParts(
-    channels: channels,
-    timing: timing,
-    patterns: patterns,
-    order: [for (final o in (json['order'] as List)) o as int],
-    instruments: instruments,
+  final data = _migrate(json);
+  try {
+    final timing = _timingFromJson(_map(data, 'timing'));
+    final patterns = [
+      for (final p in _list(data, 'patterns'))
+        _patternFromJson(_asMap(p, 'pattern')),
+    ];
+    // The engine's channels start on pattern 0; size them to it.
+    final rows0 = patterns.isNotEmpty && patterns.first.cells.isNotEmpty
+        ? patterns.first.cells.first.length
+        : timing.rows;
+    final channels = [
+      for (final c in _list(data, 'channels'))
+        _channelFromJson(_asMap(c, 'channel'), rows0),
+    ];
+    final instruments = [
+      for (final i in _list(data, 'instruments'))
+        instrumentFromJson(_asMap(i, 'instrument')),
+    ];
+    return TrackerSong.fromParts(
+      channels: channels,
+      timing: timing,
+      patterns: patterns,
+      order: [for (final o in _list(data, 'order')) _asInt(o, 'order entry')],
+      instruments: instruments,
+    );
+  } on TrackerSongCodecException {
+    rethrow;
+  } on InstrumentCodecException catch (e) {
+    throw TrackerSongCodecException('instrument decode failed — ${e.message}');
+  } catch (e) {
+    throw TrackerSongCodecException('malformed song data ($e)');
+  }
+}
+
+/// song → compact JSON string.
+String trackerSongToJsonString(TrackerSong song, {String? title}) =>
+    jsonEncode(trackerSongToJson(song, title: title));
+
+/// JSON string → song (throws [TrackerSongCodecException] on bad input).
+TrackerSong trackerSongFromJsonString(String s) {
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(s);
+  } catch (_) {
+    throw TrackerSongCodecException('invalid JSON');
+  }
+  if (decoded is! Map<String, dynamic>) {
+    throw TrackerSongCodecException('expected a JSON object');
+  }
+  return trackerSongFromJson(decoded);
+}
+
+// ── Share token (compressed) ─────────────────────────────────────────────────
+
+/// A compact, paste-able share token: the song's JSON zlib-compressed + url-safe
+/// base64, prefixed [kTrackerSongTokenPrefix]. Far smaller than raw JSON for a
+/// real song (many patterns/cells compress well).
+String trackerSongToToken(TrackerSong song, {String? title}) {
+  final jsonBytes = utf8.encode(trackerSongToJsonString(song, title: title));
+  final compressed = const ZLibEncoder().encodeBytes(jsonBytes);
+  return '$kTrackerSongTokenPrefix${base64UrlEncode(compressed)}';
+}
+
+/// Decode a [token] from [trackerSongToToken]. Throws [TrackerSongCodecException]
+/// with a specific reason (bad prefix / base64 / decompression / JSON) so the UI
+/// can tell the user what went wrong.
+TrackerSong trackerSongFromToken(String token) {
+  final body = _tokenBody(token);
+  final Uint8List jsonBytes;
+  try {
+    jsonBytes = const ZLibDecoder().decodeBytes(base64Url.decode(body));
+  } on TrackerSongCodecException {
+    rethrow;
+  } catch (_) {
+    throw TrackerSongCodecException('corrupt song token (bad data)');
+  }
+  final String jsonStr;
+  try {
+    jsonStr = utf8.decode(jsonBytes);
+  } catch (_) {
+    throw TrackerSongCodecException('corrupt song token (bad text)');
+  }
+  return trackerSongFromJsonString(jsonStr);
+}
+
+/// Like [trackerSongFromToken] but returns null on ANY foreign/corrupt input
+/// (for UI paste handling — never throws). Mirrors the groove `KU1.` decoder.
+TrackerSong? tryTrackerSongFromToken(String token) {
+  try {
+    return trackerSongFromToken(token);
+  } catch (_) {
+    return null;
+  }
+}
+
+// ── Metadata peek (library lists) ────────────────────────────────────────────
+
+/// Lightweight song metadata read WITHOUT building the full song — for a library
+/// list / preview.
+class TrackerSongInfo {
+  const TrackerSongInfo({
+    required this.title,
+    required this.version,
+    required this.channelCount,
+    required this.patternCount,
+    required this.orderLength,
+    required this.instrumentCount,
+  });
+
+  final String title;
+  final int version;
+  final int channelCount;
+  final int patternCount;
+  final int orderLength;
+  final int instrumentCount;
+}
+
+/// Read [TrackerSongInfo] from a JSON map (validates format/version).
+TrackerSongInfo trackerSongInfo(Map<String, dynamic> json) {
+  final data = _migrate(json);
+  int len(String k) => (data[k] is List) ? (data[k] as List).length : 0;
+  return TrackerSongInfo(
+    title: (data['title'] as String?) ?? '',
+    version: (data['version'] as num?)?.toInt() ?? kTrackerSongVersion,
+    channelCount: len('channels'),
+    patternCount: len('patterns'),
+    orderLength: len('order'),
+    instrumentCount: len('instruments'),
   );
 }
 
-/// Convenience: song → compact JSON string (a share token) and back.
-String trackerSongToJsonString(TrackerSong song) =>
-    jsonEncode(trackerSongToJson(song));
+/// Read [TrackerSongInfo] from a share token (throws on a bad token).
+TrackerSongInfo trackerSongInfoFromToken(String token) {
+  final body = _tokenBody(token);
+  try {
+    final bytes = const ZLibDecoder().decodeBytes(base64Url.decode(body));
+    final json = jsonDecode(utf8.decode(bytes));
+    if (json is! Map<String, dynamic>) {
+      throw TrackerSongCodecException('token is not a song');
+    }
+    return trackerSongInfo(json);
+  } on TrackerSongCodecException {
+    rethrow;
+  } catch (_) {
+    throw TrackerSongCodecException('corrupt song token');
+  }
+}
 
-TrackerSong trackerSongFromJsonString(String s) =>
-    trackerSongFromJson(jsonDecode(s) as Map<String, dynamic>);
+// ── version / migration ──────────────────────────────────────────────────────
+
+/// Validate the format tag + version and upgrade older payloads to the current
+/// layout. A `null` format is tolerated (hand-built maps / tests); a DIFFERENT
+/// non-null format or a FUTURE version is rejected with a clear message.
+Map<String, dynamic> _migrate(Map<String, dynamic> json) {
+  final fmt = json['format'];
+  if (fmt != null && fmt != kTrackerSongFormat) {
+    throw TrackerSongCodecException('not a CometBeat song (format "$fmt")');
+  }
+  final ver = (json['version'] as num?)?.toInt() ?? kTrackerSongVersion;
+  if (ver > kTrackerSongVersion) {
+    throw TrackerSongCodecException(
+      'this song is version $ver but the app supports up to '
+      '$kTrackerSongVersion — please update the app',
+    );
+  }
+  // v1 is current; future upgrades (v1→v2 …) chain here.
+  return json;
+}
+
+// ── typed field access (clear errors, not raw casts) ─────────────────────────
+
+String _tokenBody(String token) {
+  final t = token.trim();
+  if (!t.startsWith(kTrackerSongTokenPrefix)) {
+    throw TrackerSongCodecException(
+      'not a CometBeat song token (expected a "$kTrackerSongTokenPrefix" prefix)',
+    );
+  }
+  final raw = t.substring(kTrackerSongTokenPrefix.length);
+  try {
+    return base64Url.normalize(raw);
+  } catch (_) {
+    throw TrackerSongCodecException('corrupt song token (invalid base64)');
+  }
+}
+
+Map<String, dynamic> _map(Map<String, dynamic> m, String key) {
+  final v = m[key];
+  if (v is! Map<String, dynamic>) {
+    throw TrackerSongCodecException('missing/invalid "$key" object');
+  }
+  return v;
+}
+
+List<dynamic> _list(Map<String, dynamic> m, String key) {
+  final v = m[key];
+  if (v is! List) {
+    throw TrackerSongCodecException('missing/invalid "$key" list');
+  }
+  return v;
+}
+
+Map<String, dynamic> _asMap(Object? v, String what) {
+  if (v is! Map<String, dynamic>) {
+    throw TrackerSongCodecException('expected a $what object');
+  }
+  return v;
+}
+
+int _asInt(Object? v, String what) {
+  if (v is! num) throw TrackerSongCodecException('expected an integer $what');
+  return v.toInt();
+}
+
+Map<String, dynamic> _instrumentToJson(TrackerInstrument inst, String where) {
+  try {
+    return instrumentToJson(inst);
+  } on InstrumentCodecException catch (e) {
+    throw TrackerSongCodecException(
+      '$where can\'t be saved (${e.message}). Loaded SoundFont voices are '
+      'stored by reference — see the reference store.',
+    );
+  }
+}
 
 // ── timing ───────────────────────────────────────────────────────────────────
 
@@ -91,7 +318,7 @@ TrackerTiming _timingFromJson(Map<String, dynamic> m) => TrackerTiming(
 
 Map<String, dynamic> _channelToJson(TrackerChannel c) => {
       'id': c.id,
-      'instrument': instrumentToJson(c.instrument),
+      'instrument': _instrumentToJson(c.instrument, 'channel "${c.id}"'),
       'gain': c.gain,
       'pan': c.pan,
       'muted': c.muted,
@@ -104,23 +331,32 @@ Map<String, dynamic> _channelToJson(TrackerChannel c) => {
 TrackerChannel _channelFromJson(Map<String, dynamic> m, int rows) {
   final ch = TrackerChannel(
     id: (m['id'] as String?) ?? 'ch',
-    instrument: instrumentFromJson(m['instrument'] as Map<String, dynamic>),
+    instrument: instrumentFromJson(_asMap(m['instrument'], 'instrument')),
     rows: rows,
     gain: (m['gain'] as num?)?.toDouble() ?? 0.6,
     pan: (m['pan'] as num?)?.toDouble() ?? 0.0,
     volumeEnvelope: m['volumeEnvelope'] == null
         ? null
-        : _volEnvFromJson(m['volumeEnvelope'] as Map<String, dynamic>),
+        : _volEnvFromJson(_asMap(m['volumeEnvelope'], 'volumeEnvelope')),
     panEnvelope: m['panEnvelope'] == null
         ? null
-        : _panEnvFromJson(m['panEnvelope'] as Map<String, dynamic>),
+        : _panEnvFromJson(_asMap(m['panEnvelope'], 'panEnvelope')),
     effects: [
       for (final e in (m['effects'] as List? ?? const []))
-        TrackerChannelEffect.values.byName(e as String),
+        _channelEffectFromName(e as String),
     ],
   );
   ch.muted = (m['muted'] as bool?) ?? false;
   return ch;
+}
+
+/// An unknown insert-effect name degrades to [TrackerChannelEffect.none] rather
+/// than throwing (forward-compatible with effects added in a later version).
+TrackerChannelEffect _channelEffectFromName(String name) {
+  for (final e in TrackerChannelEffect.values) {
+    if (e.name == name) return e;
+  }
+  return TrackerChannelEffect.none;
 }
 
 // ── envelopes ────────────────────────────────────────────────────────────────
@@ -132,7 +368,7 @@ Map<String, dynamic> _volEnvToJson(VolumeEnvelope e) => {
     };
 
 VolumeEnvelope _volEnvFromJson(Map<String, dynamic> m) => VolumeEnvelope([
-      for (final p in (m['points'] as List))
+      for (final p in (m['points'] as List? ?? const []))
         (
           ms: ((p as Map)['ms'] as num).toInt(),
           level: (p['level'] as num).toDouble(),
@@ -146,7 +382,7 @@ Map<String, dynamic> _panEnvToJson(PanEnvelope e) => {
     };
 
 PanEnvelope _panEnvFromJson(Map<String, dynamic> m) => PanEnvelope([
-      for (final p in (m['points'] as List))
+      for (final p in (m['points'] as List? ?? const []))
         (
           ms: ((p as Map)['ms'] as num).toInt(),
           pan: (p['pan'] as num).toDouble(),
@@ -166,10 +402,10 @@ Map<String, dynamic> _patternToJson(TrackerPattern p) => {
 TrackerPattern _patternFromJson(Map<String, dynamic> m) => TrackerPattern(
       name: (m['name'] as String?) ?? '00',
       cells: [
-        for (final col in (m['cells'] as List))
+        for (final col in _list(m, 'cells'))
           [
             for (final cell in (col as List))
-              _cellFromJson(cell as Map<String, dynamic>?),
+              _cellFromJson(cell == null ? null : _asMap(cell, 'cell')),
           ],
       ],
     );
@@ -199,11 +435,18 @@ TrackerCell _cellFromJson(Map<String, dynamic>? m) {
   return TrackerCell(
     midi: (m['n'] as num?)?.toInt(),
     volume: (m['v'] as num?)?.toDouble(),
-    effect: m['e'] == null
-        ? TrackerEffect.none
-        : TrackerEffect.values.byName(m['e'] as String),
+    effect: _trackerEffectFromName(m['e'] as String?),
     fxCmd: (m['c'] as num?)?.toInt() ?? 0,
     fxParam: (m['p'] as num?)?.toInt() ?? 0,
     instrument: (m['i'] as num?)?.toInt() ?? 0,
   );
+}
+
+/// An unknown cell-effect name degrades to [TrackerEffect.none] (forward-compat).
+TrackerEffect _trackerEffectFromName(String? name) {
+  if (name == null) return TrackerEffect.none;
+  for (final e in TrackerEffect.values) {
+    if (e.name == name) return e;
+  }
+  return TrackerEffect.none;
 }
