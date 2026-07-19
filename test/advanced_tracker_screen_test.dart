@@ -931,6 +931,25 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('a pattern can be renamed as a song section', (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.addPattern(clone: false); // pattern index 1
+    await tester.pump();
+
+    game.renamePattern(1, 'Chorus');
+    await tester.pump();
+    expect(game.patternName(1), 'Chorus');
+    // The section label is rendered in the pattern selector.
+    expect(find.text('Chorus'), findsWidgets);
+
+    // Save/Load carries the section name (the codec serializes it).
+    final token = game.debugSongToken();
+    game.debugLoadToken(token);
+    await tester.pump();
+    expect(game.patternName(1), 'Chorus');
+  });
+
   testWidgets('quantize toggle round-trips through the screen seam',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

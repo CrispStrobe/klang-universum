@@ -2362,6 +2362,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerPatternClone => 'Pattern klonen';
 
   @override
+  String get trackerRenamePattern => 'Abschnitt umbenennen';
+
+  @override
+  String get trackerRenamePatternHint => 'z. B. Intro, Strophe, Refrain';
+
+  @override
   String get trackerTempo => 'Tempo';
 
   @override

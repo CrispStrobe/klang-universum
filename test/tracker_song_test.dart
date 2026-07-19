@@ -619,6 +619,23 @@ void main() {
     });
   });
 
+  group('renamePattern (song sections)', () {
+    test('renames a pattern and trims whitespace', () {
+      final song = TrackerSong()..addPattern();
+      song.renamePattern(1, '  Chorus  ');
+      expect(song.patterns[1].name, 'Chorus');
+    });
+
+    test('ignores a blank name and an out-of-range index', () {
+      final song = TrackerSong();
+      final original = song.patterns[0].name;
+      song.renamePattern(0, '   ');
+      expect(song.patterns[0].name, original); // unchanged
+      song.renamePattern(5, 'Nope'); // no such pattern
+      expect(song.patterns.length, 1);
+    });
+  });
+
   group('quantizeRowToBeat', () {
     // stepsPerBeat 4, 16 rows: beats at 0, 4, 8, 12.
     test('snaps back to the nearest earlier beat', () {

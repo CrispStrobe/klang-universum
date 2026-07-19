@@ -4502,6 +4502,18 @@ abstract class AppLocalizations {
   /// **'Clone pattern'**
   String get trackerPatternClone;
 
+  /// No description provided for @trackerRenamePattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename section'**
+  String get trackerRenamePattern;
+
+  /// No description provided for @trackerRenamePatternHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Intro, Verse, Chorus'**
+  String get trackerRenamePatternHint;
+
   /// No description provided for @trackerTempo.
   ///
   /// In en, this message translates to:

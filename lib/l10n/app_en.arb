@@ -892,6 +892,8 @@
   "trackerEditStep": "Step",
   "trackerPatternNew": "New pattern",
   "trackerPatternClone": "Clone pattern",
+  "trackerRenamePattern": "Rename section",
+  "trackerRenamePatternHint": "e.g. Intro, Verse, Chorus",
   "trackerTempo": "Tempo",
   "trackerSwing": "Swing",
   "trackerSwingOff": "Off",

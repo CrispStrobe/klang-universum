@@ -341,6 +341,17 @@ class TrackerSong {
     _engine.importCells(current.cells);
   }
 
+  /// Renames pattern [index] to [name] — a song "section" label (Intro, Verse,
+  /// Chorus …) shown in the pattern selector + order list. Trims whitespace;
+  /// a blank name is ignored (a pattern always has a label). No-op on a bad
+  /// index.
+  void renamePattern(int index, String name) {
+    if (index < 0 || index >= patterns.length) return;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    patterns[index].name = trimmed;
+  }
+
   /// Appends [patternIndex] to the play order.
   void addToOrder(int patternIndex) {
     assert(patternIndex >= 0 && patternIndex < patterns.length);

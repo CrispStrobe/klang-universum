@@ -262,6 +262,10 @@ abstract interface class AdvancedTrackerTester {
   void addPattern({bool clone});
   void selectPattern(int index);
   void addToOrder(int patternIndex);
+
+  /// Rename a pattern to a song-section label; read any pattern's name.
+  void renamePattern(int index, String name);
+  String patternName(int index);
   void playSong();
 
   /// Transport.
@@ -2703,6 +2707,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   @override
   int patternRows(int patternIndex) => _song.patterns[patternIndex].rows;
   @override
+  void renamePattern(int index, String name) =>
+      setState(() => _song.renamePattern(index, name));
+  @override
+  String patternName(int index) => _song.patterns[index].name;
+  @override
   double get swing => _song.timing.swing;
   @override
   void setSwing(double swing) {
@@ -4269,12 +4278,21 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   for (var i = 0; i < _song.patterns.length; i++)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: ChoiceChip(
-                        label: Text(_song.patterns[i].name),
-                        selected: i == _song.currentIndex,
-                        onSelected: (_) => selectPattern(i),
+                      child: GestureDetector(
+                        // Long-press a pattern to rename it (a song section).
+                        onLongPress: () => _promptRenamePattern(i),
+                        child: ChoiceChip(
+                          label: Text(_song.patterns[i].name),
+                          selected: i == _song.currentIndex,
+                          onSelected: (_) => selectPattern(i),
+                        ),
                       ),
                     ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    tooltip: l10n.trackerRenamePattern,
+                    onPressed: () => _promptRenamePattern(_song.currentIndex),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.add, size: 20),
                     tooltip: l10n.trackerPatternNew,
@@ -4544,6 +4562,38 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       ),
     );
     if (value != null && value > 0) _setPatternLength(value);
+  }
+
+  /// Renames pattern [index] to a song-section label (Intro / Verse / Chorus …).
+  Future<void> _promptRenamePattern(int index) async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: _song.patterns[index].name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.trackerRenamePattern),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(hintText: l10n.trackerRenamePatternHint),
+          onSubmitted: (t) => Navigator.of(ctx).pop(t),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.trackerCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(l10n.trackerOk),
+          ),
+        ],
+      ),
+    );
+    if (name != null && name.trim().isNotEmpty) {
+      setState(() => _song.renamePattern(index, name));
+    }
   }
 
   Widget _grid(BuildContext context) {

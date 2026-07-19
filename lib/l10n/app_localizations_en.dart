@@ -2353,6 +2353,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerPatternClone => 'Clone pattern';
 
   @override
+  String get trackerRenamePattern => 'Rename section';
+
+  @override
+  String get trackerRenamePatternHint => 'e.g. Intro, Verse, Chorus';
+
+  @override
   String get trackerTempo => 'Tempo';
 
   @override
