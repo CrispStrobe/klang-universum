@@ -18,11 +18,11 @@ parallel. Recommended ordering by leverage:
 
 | Wave | Worker | What | Why now |
 |---|---|---|---|
-| **1** | **W-CREPE** | CREPE F0 (MIT, ONNX) behind `PitchTrack` | highest quality-per-effort; fixes sung-voice octave-doubling + drift |
+| **1** | **W-CREPE** | ✅ *adapter shell + decoder + harness PRE-BUILT* — worker only publishes the ONNX + confirms 2 tensor names | highest quality-per-effort; fixes sung-voice octave-doubling + drift |
 | **1** | **W-METRE** | ✅ *slice 1 (`estimateMeter`) SHIPPED* — remaining: metrical quantisation | correct barlines/anacrusis/meter, not assumed 4/4 |
 | **1** | **W-SEP** | source separation → per-stem multi-part transcription | the single biggest jump: "transcribe a whole song" |
 | **2** | **W-HARMONY** | neural chord + key estimation | lead sheets; enharmonic spelling input |
-| **2** | **W-NOTATION** | score-level: voice/staff separation + spelling (+ PM2S later) | turns a note dump into a READABLE engraving |
+| **2** | **W-NOTATION** | ✅ *slice 1 (key + enharmonic spelling) SHIPPED* — remaining: voice/staff separation (+ PM2S later) | turns a note dump into a READABLE engraving |
 | **3** | **W-PIANO-MT3** | piano-specialist model, then seq2seq multi-instrument | near-SOTA polyphonic; frontier |
 | **3** | **W-DRUMS** | drum transcription (onset classification) | pairs with `beat_capture.dart`; completes the band |
 
@@ -87,6 +87,18 @@ agents push to `origin/main` in parallel — collisions are the main hazard.
 ## WAVE 1
 
 ### W-CREPE — neural monophonic F0 (the highest-leverage upgrade)
+
+> ✅ **ADAPTER SHELL + DECODER + HARNESS PRE-BUILT (`aa1cb95b`):** `crepe.dart`
+> (resample→16k, framing, per-frame normalise, 360-bin activation→f0 decode — all
+> unit-tested) + `crepe_model_store.dart` (native download-on-demand, mirrors
+> BasicPitchModelStore, `_modelUrl` is a TODO placeholder) + `crepe_test.dart`
+> (7 tests; decoder fully locked, model-gated block skip-if-absent). It already
+> plugs into the router's `F0Estimator` seam. **Remaining (≈ an afternoon):
+> export/publish the MIT CREPE ONNX, set `_modelUrl`, confirm the `_inputName`/
+> `_outputName` tensor names against the export, add a cosine-parity fixture.**
+> Backend is free — ORT / FFI / ggml — anything yielding a 360-bin activation.
+> **Consider RMVPE (MIT) as the quality tier after CREPE** — SOTA on sung f0 and
+> robust to accompaniment; the same shell + seam accept it unchanged.
 
 **Role.** Add CREPE (Kim et al. 2018, MIT) as a neural F0 estimator behind the
 `PitchTrack` contract — an accurate, timbre-robust alternative to pYIN that fixes
@@ -212,9 +224,17 @@ progression in the commit. (4) Deterministic + skip-if-absent.
 
 ### W-NOTATION — score-level: readable engraving (voice/staff + spelling)
 
+> ✅ **Slice 1 SHIPPED (`7a87e751`, `notation.dart`, 10 tests):** `estimateKey`
+> (Krumhansl-Schmuckler) + `spellMidi` (line-of-fifths, key-correct accidentals,
+> exact octave) + `respell(Score)` (re-spells notes + stamps the KeySignature);
+> wired into `transcription_service` (the Score now carries the right key +
+> accidentals, and TranscriptionResult exposes the key). **Remaining for this
+> worker: voice/staff separation (grand staff + ≤4 voices) below, and the
+> optional PM2S neural slice.**
+
 **Role.** Turn a flat `NoteEvent` stream into a READABLE score: separate voices
-and hands/staves, add a key signature, and spell enharmonics correctly. This is
-the MIDI→Score gap that makes output publishable, not a note dump.
+and hands/staves, add a key signature, and spell enharmonics correctly. Slice 1
+did key + spelling; the remaining slice is voice/staff separation.
 
 **Files.** `lib/core/audio/transcription/engrave.dart` +
 `test/transcription/engrave_test.dart`. Post-processes a `Score` /
