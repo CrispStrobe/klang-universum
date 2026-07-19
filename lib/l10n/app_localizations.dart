@@ -2258,6 +2258,30 @@ abstract class AppLocalizations {
   /// **'Added to the Multitrack'**
   String get dawSent;
 
+  /// No description provided for @dawMergeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge all'**
+  String get dawMergeAll;
+
+  /// No description provided for @dawMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Merged into one audio take'**
+  String get dawMerged;
+
+  /// No description provided for @dawFreeze.
+  ///
+  /// In en, this message translates to:
+  /// **'Freeze to audio'**
+  String get dawFreeze;
+
+  /// No description provided for @dawFrozen.
+  ///
+  /// In en, this message translates to:
+  /// **'Frozen to an audio take'**
+  String get dawFrozen;
+
   /// No description provided for @drumkitTitle.
   ///
   /// In en, this message translates to:

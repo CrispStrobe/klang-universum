@@ -646,8 +646,13 @@ Games built on crisp_notation capabilities the app didn't use before.
   (`GrooveSource`), Song Book (`ScoreSource`), Composition Workshop + TAB
   Workshop (multi-part `ScoreSource`), and the Tracker (`TrackerSource`) — each
   via the shared `sendToMultitrack` helper (`addClip` + a localized snackbar),
-  each with a live widget test that the clip lands and bakes to audio. ~30
-  headless tests; design in `docs/DAW_SCOPING.md`.
+  each with a live widget test that the clip lands and bakes to audio. Clips
+  can be **merged and converted**: *Freeze* bakes a live clip's current render
+  into a fixed `SampleSource` take (it stops tracking its source module and
+  needs no re-render), and *Merge all* flattens every clip into one baked take
+  (preserving relative timing) — the arranger surfaces both (a Merge-all button;
+  tap a clip chip to freeze, delete to remove). ~32 headless tests; design in
+  `docs/DAW_SCOPING.md`.
 - **DrumKit undo/redo** — a snapshot history (deep-copied pattern before each
   mutation) backs app-bar Undo/Redo across grid edits, whole record takes, and
   clear; a fresh edit drops the redo branch. Fills the gap left by the new

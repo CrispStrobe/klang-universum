@@ -1178,6 +1178,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawSent => 'Zur Mehrspur hinzugefügt';
 
   @override
+  String get dawMergeAll => 'Alles zusammenführen';
+
+  @override
+  String get dawMerged => 'Zu einer Audiospur zusammengeführt';
+
+  @override
+  String get dawFreeze => 'In Audio umwandeln';
+
+  @override
+  String get dawFrozen => 'In eine Audiospur umgewandelt';
+
+  @override
   String get drumkitTitle => 'Schlagzeug';
 
   @override

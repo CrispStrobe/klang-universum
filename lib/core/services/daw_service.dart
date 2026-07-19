@@ -44,6 +44,83 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Remove one clip.
+  void removeClip(int track, int index) {
+    timeline.tracks[track].clips.removeAt(index);
+    notifyListeners();
+  }
+
+  /// Whether a clip is already a baked audio take (a [SampleSource]) rather than
+  /// a live "vector" source that re-renders on edit.
+  bool isClipFrozen(int track, int index) =>
+      timeline.tracks[track].clips[index].source is SampleSource;
+
+  /// **Convert** (freeze) a live clip to a fixed audio take: bake its current
+  /// render and replace the vector source with a [SampleSource] of it. The clip
+  /// keeps its place/gain/mute but stops tracking edits in its source module and
+  /// needs no re-render. One of the maintainer's verbs — a mutable take made
+  /// permanent. No-op if already frozen or silent.
+  void freezeClip(int track, int index) {
+    final clip = timeline.tracks[track].clips[index];
+    if (clip.source is SampleSource) return;
+    final pcm = _cache.putIfAbsent(
+      clip.source.cacheKey,
+      () => clip.source.render(kDawSampleRate),
+    );
+    if (pcm.isEmpty) return;
+    timeline.tracks[track].clips[index] = Clip(
+      source: SampleSource(pcm),
+      startMs: clip.startMs,
+      gain: clip.gain,
+      muted: clip.muted,
+    );
+    notifyListeners();
+  }
+
+  /// **Merge** clips into one baked audio take, preserving their relative
+  /// timing: the group renders (unlimited, so the master limiter still applies
+  /// once at final bake) to a single [SampleSource] placed at the earliest
+  /// start. Returns null and changes nothing if the group is silent.
+  Clip? _mergeGroup(List<Clip> clips) {
+    final live = clips.where((c) => !c.muted).toList();
+    if (live.isEmpty) return null;
+    var minStart = double.infinity;
+    for (final c in live) {
+      if (c.startMs < minStart) minStart = c.startMs;
+    }
+    final shifted = [
+      for (final c in live) c.copyWith(startMs: c.startMs - minStart),
+    ];
+    final pcm = renderTimeline(
+      DawTimeline(tracks: [DawTrack(clips: shifted)]),
+      cache: _cache,
+      limit: false,
+    );
+    if (pcm.isEmpty) return null;
+    return Clip(source: SampleSource(pcm), startMs: minStart);
+  }
+
+  /// Merge one track's clips into a single audio take on that track.
+  void mergeTrack(int track) {
+    final merged = _mergeGroup(timeline.tracks[track].clips);
+    timeline.tracks[track].clips
+      ..clear()
+      ..addAll([if (merged != null) merged]);
+    notifyListeners();
+  }
+
+  /// Merge **every** clip across all tracks into one audio take on track 0
+  /// (\"one or many, including all\"). Other lanes are left empty.
+  void mergeAll() {
+    final all = [for (final t in timeline.tracks) ...t.clips];
+    final merged = _mergeGroup(all);
+    for (final t in timeline.tracks) {
+      t.clips.clear();
+    }
+    if (merged != null) timeline.tracks[0].clips.add(merged);
+    notifyListeners();
+  }
+
   /// Drop every clip (and the render cache).
   void clear() {
     for (final t in timeline.tracks) {

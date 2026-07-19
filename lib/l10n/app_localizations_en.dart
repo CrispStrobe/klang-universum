@@ -1171,6 +1171,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawSent => 'Added to the Multitrack';
 
   @override
+  String get dawMergeAll => 'Merge all';
+
+  @override
+  String get dawMerged => 'Merged into one audio take';
+
+  @override
+  String get dawFreeze => 'Freeze to audio';
+
+  @override
+  String get dawFrozen => 'Frozen to an audio take';
+
+  @override
   String get drumkitTitle => 'Drum Kit';
 
   @override

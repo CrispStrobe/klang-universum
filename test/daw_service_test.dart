@@ -49,4 +49,69 @@ void main() {
     expect(s.clipCount, 0);
     expect(s.bake(), isEmpty);
   });
+
+  test('removeClip drops just that clip', () {
+    final s = DawService()
+      ..addClip(_tone(0.4, 100))
+      ..addClip(_tone(0.4, 100));
+    expect(s.clipCount, 2);
+    s.removeClip(0, 0);
+    expect(s.clipCount, 1);
+  });
+
+  test('freezeClip converts a live source to a baked audio take', () {
+    // A live source whose render tracks a mutable list (a stand-in "vector").
+    final live = _MutableSource([0.5, 0.5, 0.5]);
+    final s = DawService()..addClip(live);
+    expect(s.isClipFrozen(0, 0), isFalse);
+
+    s.freezeClip(0, 0);
+    expect(s.isClipFrozen(0, 0), isTrue);
+    expect(s.clipCount, 1);
+    final frozen = s.bake();
+    expect(_silent(frozen), isFalse);
+
+    // After freezing, mutating the original source no longer changes the bake.
+    live.values.setAll(0, [0, 0, 0]);
+    expect(_silent(s.bake()), isFalse); // still the frozen audio
+  });
+
+  test('mergeAll flattens every clip into one audio take at the earliest start',
+      () {
+    final s = DawService()
+      ..addClip(_tone(0.3, 100)) // track 0 @ 0 ms
+      ..addClip(_tone(0.3, 100), track: 1); // track 1 @ 2000 ms
+    expect(s.clipCount, 2);
+    final beforeLen = s.bake().length;
+
+    s.mergeAll();
+    expect(s.clipCount, 1);
+    expect(s.isClipFrozen(0, 0), isTrue); // the merged take is baked audio
+    // Merging preserves the arrangement length (the group renders in place).
+    expect(s.bake().length, beforeLen);
+    // The single take sits on track 0.
+    expect(s.timeline.tracks[0].clips.length, 1);
+    expect(s.timeline.tracks[1].clips, isEmpty);
+  });
+
+  test('mergeTrack flattens only its own lane', () {
+    final s = DawService()
+      ..addClip(_tone(0.3, 100))
+      ..addClip(_tone(0.3, 100), track: 1);
+    s.mergeTrack(1);
+    expect(s.timeline.tracks[1].clips.length, 1);
+    expect(s.isClipFrozen(1, 0), isTrue);
+    expect(s.timeline.tracks[0].clips.length, 1); // untouched
+  });
+}
+
+/// A live source whose render reflects a mutable buffer — a stand-in for a
+/// module's "vector" model, so freezing can be shown to snapshot it.
+class _MutableSource implements ClipSource {
+  _MutableSource(this.values);
+  final List<double> values;
+  @override
+  Object get cacheKey => Object.hashAll(values);
+  @override
+  Float64List render(int sampleRate) => Float64List.fromList(values);
 }

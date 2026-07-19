@@ -61,6 +61,43 @@ void main() {
     expect(daw.debugBakeLength(), 0); // the only track is muted → silence
   });
 
+  testWidgets('merge all flattens the arrangement into one baked take',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    daw.addDemoTune();
+    await tester.pump();
+    expect(daw.clipCount, 2);
+    final before = daw.debugBakeLength();
+
+    daw.mergeAll();
+    await tester.pump();
+    expect(daw.clipCount, 1);
+    expect(daw.trackCount, 2); // lanes stay; only the clips collapse
+    expect(daw.isClipFrozen(0, 0), isTrue);
+    // Merging preserves the arrangement, so the bake length is unchanged.
+    expect(daw.debugBakeLength(), before);
+  });
+
+  testWidgets('freeze converts a live clip to audio; remove drops it',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat(); // a live DrumSource
+    await tester.pump();
+    expect(daw.isClipFrozen(0, 0), isFalse);
+
+    daw.freezeClip(0, 0);
+    await tester.pump();
+    expect(daw.isClipFrozen(0, 0), isTrue);
+    expect(daw.debugBakeLength(), greaterThan(0));
+
+    daw.removeClip(0, 0);
+    await tester.pump();
+    expect(daw.clipCount, 0);
+  });
+
   testWidgets('clear empties every track', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);

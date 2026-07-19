@@ -47,6 +47,13 @@ abstract interface class DawTester {
   void play();
   void stop();
 
+  /// Merge/convert: flatten every clip into one baked audio take; freeze a
+  /// single live clip to audio; whether a clip is already baked; remove a clip.
+  void mergeAll();
+  void freezeClip(int track, int index);
+  bool isClipFrozen(int track, int index);
+  void removeClip(int track, int index);
+
   /// Test seam: the length (samples) the arrangement bakes to.
   int debugBakeLength();
 }
@@ -126,6 +133,21 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   @override
   void clear() => _daw.clear();
 
+  @override
+  void mergeAll() {
+    _daw.mergeAll();
+    if (_playing) play(); // the merged take is bit-identical, but re-sync state
+  }
+
+  @override
+  void freezeClip(int track, int index) => _daw.freezeClip(track, index);
+
+  @override
+  bool isClipFrozen(int track, int index) => _daw.isClipFrozen(track, index);
+
+  @override
+  void removeClip(int track, int index) => _daw.removeClip(track, index);
+
   Float64List _bake() => _daw.bake();
 
   Int16List _toPcm16(Float64List pcm) {
@@ -155,6 +177,23 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   }
 
   // --- UI --------------------------------------------------------------------
+
+  void _mergeAllWithToast() {
+    final l10n = AppLocalizations.of(context)!;
+    mergeAll();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.dawMerged)),
+    );
+  }
+
+  void _freezeWithToast(int track, int index) {
+    if (isClipFrozen(track, index)) return;
+    final l10n = AppLocalizations.of(context)!;
+    freezeClip(track, index);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.dawFrozen)),
+    );
+  }
 
   String _clipLabel(Clip clip) {
     final s = clip.source;
@@ -233,6 +272,11 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                     icon: const Icon(Icons.add),
                     label: Text(l10n.dawAddTune),
                   ),
+                  FilledButton.tonalIcon(
+                    onPressed: daw.clipCount < 2 ? null : _mergeAllWithToast,
+                    icon: const Icon(Icons.layers),
+                    label: Text(l10n.dawMergeAll),
+                  ),
                 ],
               ),
             ),
@@ -269,11 +313,23 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                     : ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
-                          for (final clip in track.clips)
+                          for (var j = 0; j < track.clips.length; j++)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 2),
-                              child: Chip(label: Text(_clipLabel(clip))),
+                              child: InputChip(
+                                avatar: daw.isClipFrozen(i, j)
+                                    ? const Icon(Icons.lock, size: 16)
+                                    : null,
+                                label: Text(_clipLabel(track.clips[j])),
+                                tooltip: daw.isClipFrozen(i, j)
+                                    ? null
+                                    : AppLocalizations.of(context)!.dawFreeze,
+                                onPressed: daw.isClipFrozen(i, j)
+                                    ? null
+                                    : () => _freezeWithToast(i, j),
+                                onDeleted: () => removeClip(i, j),
+                              ),
                             ),
                         ],
                       ),
