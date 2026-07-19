@@ -33,6 +33,7 @@ void main() {
         DawTrack(
           name: 'Bass',
           muted: true,
+          soloed: true,
           clips: [Clip(source: _tone(0.3, 8))],
         ),
       ],
@@ -44,6 +45,7 @@ void main() {
     expect(back.tracks[0].name, 'Drums');
     expect(back.tracks[0].gain, closeTo(0.8, 1e-9));
     expect(back.tracks[1].muted, isTrue);
+    expect(back.tracks[1].soloed, isTrue);
 
     final clip = back.tracks[0].clips.single;
     expect(clip.startMs, 250);

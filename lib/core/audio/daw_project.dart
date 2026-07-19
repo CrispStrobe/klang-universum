@@ -42,6 +42,7 @@ String projectToJson(
           'name': track.name,
           'gain': track.gain,
           'muted': track.muted,
+          'soloed': track.soloed,
           'clips': [
             for (final clip in track.clips)
               {
@@ -115,6 +116,7 @@ DawTimeline projectFromJson(String json) {
         name: t['name'] is String ? t['name'] as String : '',
         gain: t['gain'] is num ? num_(t['gain']) : 1.0,
         muted: t['muted'] == true,
+        soloed: t['soloed'] == true,
         clips: clips,
       ),
     );

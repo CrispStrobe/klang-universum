@@ -54,6 +54,7 @@ class DawService extends ChangeNotifier {
               name: t.name,
               gain: t.gain,
               muted: t.muted,
+              soloed: t.soloed,
               clips: [...t.clips],
             ),
         ],
@@ -133,6 +134,16 @@ class DawService extends ChangeNotifier {
   }
 
   double trackGain(int track) => timeline.tracks[track].gain;
+
+  /// Solo / unsolo a track. While any track is soloed, only soloed tracks are
+  /// heard — the quickest way to isolate one lane.
+  void toggleTrackSolo(int track) {
+    _record();
+    timeline.tracks[track].soloed = !timeline.tracks[track].soloed;
+    notifyListeners();
+  }
+
+  bool isTrackSoloed(int track) => timeline.tracks[track].soloed;
 
   /// Remove one clip.
   void removeClip(int track, int index) {

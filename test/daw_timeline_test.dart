@@ -67,6 +67,37 @@ void main() {
     expect(mix[12], closeTo(0.3, 1e-9)); // only b's tail
   });
 
+  test('solo isolates: only soloed (unmuted) tracks are heard', () {
+    final a = _ToneSource(0.5, 10);
+    final b = _ToneSource(0.5, 10);
+    final c = _ToneSource(0.5, 10);
+    final t = DawTimeline(
+      tracks: [
+        DawTrack(soloed: true, clips: [Clip(source: a)]),
+        DawTrack(clips: [Clip(source: b)]), // not soloed → silent
+        DawTrack(
+          soloed: true,
+          muted: true,
+          clips: [Clip(source: c)],
+        ), // muted wins
+      ],
+    );
+    final mix = renderTimeline(t, sampleRate: _sr, limit: false);
+    // Only track A plays → its level, not summed with B or C.
+    expect(mix[0], closeTo(0.5, 1e-9));
+    // With no solo anywhere, A and B would sum to 1.0; assert solo removed B.
+    final noSolo = DawTimeline(
+      tracks: [
+        DawTrack(clips: [Clip(source: _ToneSource(0.5, 10))]),
+        DawTrack(clips: [Clip(source: _ToneSource(0.5, 10))]),
+      ],
+    );
+    expect(
+      renderTimeline(noSolo, sampleRate: _sr, limit: false)[0],
+      closeTo(1.0, 1e-9),
+    );
+  });
+
   test('muted clips and muted tracks drop out', () {
     final a = _ToneSource(0.5, 10);
     final b = _ToneSource(0.5, 10);

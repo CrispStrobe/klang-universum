@@ -108,18 +108,22 @@ class Clip {
       );
 }
 
-/// One DAW track — a lane of clips with its own [gain]/[muted].
+/// One DAW track — a lane of clips with its own [gain]/[muted]/[soloed].
 class DawTrack {
   DawTrack({
     this.name = '',
     this.gain = 1.0,
     this.muted = false,
+    this.soloed = false,
     List<Clip>? clips,
   }) : clips = clips ?? [];
 
   String name;
   double gain;
   bool muted;
+
+  /// When ANY track is soloed, only soloed (and unmuted) tracks are heard.
+  bool soloed;
   final List<Clip> clips;
 }
 
@@ -147,8 +151,12 @@ Float64List renderTimeline(
   final placed =
       <({int start, Float64List pcm, double gain, int fadeIn, int fadeOut})>[];
   var totalSamples = 0;
+  // Solo is timeline-wide: if any track is soloed, non-soloed tracks fall
+  // silent (a muted track stays silent regardless).
+  final anySolo = timeline.tracks.any((t) => t.soloed);
   for (final track in timeline.tracks) {
     if (track.muted) continue;
+    if (anySolo && !track.soloed) continue;
     for (final clip in track.clips) {
       if (clip.muted) continue;
       final rendered = store.putIfAbsent(

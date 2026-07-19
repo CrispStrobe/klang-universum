@@ -64,6 +64,10 @@ abstract interface class DawTester {
   /// Per-track volume fader (linear gain).
   void setTrackGain(int track, double gain);
   double trackGain(int track);
+
+  /// Solo a track (while any track is soloed, only soloed tracks are heard).
+  void toggleTrackSolo(int track);
+  bool isTrackSoloed(int track);
   void addDemoBeat();
   void addDemoTune();
   void addSampleClip(SampleClip clip);
@@ -201,6 +205,15 @@ class _DawScreenState extends State<DawScreen>
 
   @override
   double trackGain(int track) => _daw.trackGain(track);
+
+  @override
+  void toggleTrackSolo(int track) {
+    _daw.toggleTrackSolo(track);
+    if (_playing) play(); // re-bake — solo changes what's audible
+  }
+
+  @override
+  bool isTrackSoloed(int track) => _daw.isTrackSoloed(track);
 
   DrumRowsPattern _demoBeat() {
     final rows = {
@@ -852,6 +865,19 @@ class _DawScreenState extends State<DawScreen>
                   track.name,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              InkWell(
+                onTap: () => toggleTrackSolo(i),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Text(
+                    'S',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: track.soloed ? scheme.primary : scheme.outline,
+                    ),
+                  ),
                 ),
               ),
               InkWell(

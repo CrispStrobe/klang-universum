@@ -274,6 +274,23 @@ void main() {
     expect(s.trackGain(0), 1.0);
   });
 
+  test('toggleTrackSolo isolates a track and undoes', () {
+    final s = DawService()
+      ..addClip(_tone(0.5, 100))
+      ..addClip(_tone(0.5, 100), track: 1)
+      ..moveClip(1, 0, 0); // align both at t=0 so they overlap at sample 0
+    expect(s.isTrackSoloed(0), isFalse);
+    final both = renderTimeline(s.timeline, limit: false)[0].abs();
+
+    s.toggleTrackSolo(0);
+    expect(s.isTrackSoloed(0), isTrue);
+    final soloed = renderTimeline(s.timeline, limit: false)[0].abs();
+    expect(soloed, lessThan(both)); // track 1 dropped out
+
+    s.undo();
+    expect(s.isTrackSoloed(0), isFalse);
+  });
+
   test('clipPeaks summarizes a clip and reflects its trim', () {
     // A ramp 0..1 so peaks grow across the clip.
     final ramp = Float64List(1000);
