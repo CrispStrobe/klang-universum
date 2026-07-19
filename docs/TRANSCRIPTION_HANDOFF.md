@@ -188,48 +188,87 @@ exactly as in `contracts.dart`. You never compute pitch.
 
 ---
 
-## Worker 3 — neural track B (Basic Pitch via ONNX, polyphonic)
+## Worker 3 — ONNX/Dart specialist: Basic Pitch (polyphonic, neural)
 
-You own the **polyphonic** path — the only way to transcribe real
-multi-instrument songs a monophonic tracker can't. Read § Shared context.
-Worktree slug `transcribe-basicpitch`.
+You are an **ONNX + Dart expert**. You own the **polyphonic** transcriber — the
+only way to read real multi-instrument songs a monophonic tracker can't — by
+running **Basic Pitch** on **`onnx_runtime_dart`** (already a path dep). Read
+§ Shared context. Worktree slug `transcribe-basicpitch`.
 
-**Build:**
+### The model — Apache-2.0 ⇒ you may PORT directly (with attribution)
+Basic Pitch (spotify/basic-pitch, ICASSP 2022) is **Apache-2.0 for BOTH code and
+weights**. Unlike the pYIN/Tony (GPL) situation, you **may port the Python
+directly** — keep the `NOTICE`/attribution — not merely clean-room. The package
+ships an **ONNX** model (`nmp.onnx`) alongside TF/CoreML/TFLite.
 
-1. **Obtain the model.** Export/convert **Basic Pitch** (spotify/basic-pitch,
-   **Apache-2.0** incl. weights) to ONNX (an ONNX export exists; verify the
-   Apache-2.0 licence travels with the file). Keep the model **out of the app
-   bundle by default** — download-on-demand or an opt-in asset, mirroring the
-   CrispASR/Kokoro pattern (`cacheEnsureFile`). ~a few MB.
+**Constants — verify against `basic_pitch/constants.py`, do not hardcode blind:**
+- 22050 Hz mono; FFT hop 256 → ~86 frames/s; ~2 s windows (`AUDIO_N_SAMPLES`)
+  with an overlap the package trims (`N_OVERLAPPING_FRAMES`).
+- **Front-end is IN the graph** — the shipped models take **raw audio windows**
+  (shape ≈ `[1, AUDIO_N_SAMPLES]`), CQT/harmonic-stacking done internally.
+  **Verify the ONNX input signature first**: if it's audio, you need **no CQT
+  port**; only if it expects HCQT do you port the (patent-free) harmonic-CQT
+  front-end.
+- Outputs: three heads — `onset` (Yo), `note` (Yn) both 88 freqs = MIDI 21..108,
+  `contour` (Yp, 3×, pitch bends). Shapes ≈ `[1, n_frames, n_freqs]`. **Inspect
+  the real tensor NAMES + shapes** (via `../onnx_runtime_dart/lib/onnx_proto.dart`
+  or a probe) — don't assume; watch dynamic batch/time axes.
 
-2. **`basic_pitch.dart` — `Future<List<NoteEvent>> basicPitchTranscribe(Float64List mono, {int sampleRate = 44100})`.**
-   - Build the model input: Basic Pitch consumes a **Harmonic CQT** (a stack of
-     CQTs at harmonic multiples) of 22050 Hz mono — resample if needed
-     (clean-room CQT is patent-free; or reuse an existing pure-Dart FFT/CQT).
-   - Run it through **`onnx_runtime_dart`** (already a path dep — see how
-     CrispASR uses it). The model emits three posteriorgrams (onset / note /
-     contour); post-process (peak-pick onsets, threshold the note frames, form
-     note segments) into `NoteEvent`s. Follow Basic Pitch's documented note-
-     creation logic (re-implement, don't copy GPL).
+### Contract
+`Future<List<NoteEvent>> basicPitchTranscribe(Float64List mono, {int sampleRate = 44100})`
+in `lib/core/audio/transcription/basic_pitch.dart`. Emit `NoteEvent` exactly per
+`contracts.dart` — interchangeable with Worker 1's monophonic notes at S5.
 
-**Contract:** produce `List<NoteEvent>` exactly as in `contracts.dart` — so your
-output is interchangeable with Worker 1's at the notation stage.
+### Pipeline
+1. **Resample → 22050 mono:** `resampleLinear(mono, sampleRate / 22050)`
+   (`lib/core/audio/crisp_dsp/resample.dart`; ratio = inRate/outRate, so
+   44100 → `2.0`).
+2. **Window** into `AUDIO_N_SAMPLES` frames with the package's overlap; pad the
+   tail.
+3. **Run** each window: `Tensor.float(Float32List, shape)` →
+   `session.runAsync({'<inputName>': t})` → `Map<String, Tensor>`. API +
+   session setup: copy the pattern in `lib/core/services/tts_service.dart` and
+   `../onnx_runtime_dart/lib/onnx_runtime_dart.dart`. **onnx_runtime_dart is
+   Float32** — convert Float64↔Float32 both ways.
+4. **Unwrap** per-window outputs into full Yo/Yn/Yp posteriorgrams (trim overlap
+   per `N_OVERLAPPING_FRAMES`).
+5. **Note creation:** port basic_pitch `output_to_notes_polyphonic`
+   (Apache-2.0): onset threshold (def 0.5) + frame threshold (def 0.3), form
+   note segments in Yn gated by Yo, min note length (~11 frames ≈ 128 ms),
+   optional pitch-bend from Yp. ⚠ the `melodia_trick` flag is a gap-fill
+   heuristic *named after* Melodia — it is **NOT** the patented Melodia salience
+   method; still, default it **off** for zero ambiguity.
+6. **Map → NoteEvent:** `midi = 21 + freqIndex`; `onMs = startFrame * 256 / 22050
+   * 1000` (≈ 11.61 ms/frame); `offMs` likewise; `confidence = note amplitude`.
 
-**Done (measurable):**
-- Synthetic: a rendered **C-major triad** (C4 E4 G4 held ~1 s) → three notes;
-  `notePrf(groundTruth, result)` **F ≥ 0.9**.
-- Real: the public-domain **"I-IV-V-I chord progression.ogg"** (CC0, Wikimedia)
-  → recovers the C/F/G/C chord tones (note-F ≥ 0.6 vs a hand-labelled ground
-  truth); runs end-to-end through `onnx_runtime_dart` on macOS. Report in commit.
+### Model delivery (no bloat, CI-safe)
+Download-on-demand (mirror CrispASR/Kokoro `cacheEnsureFile`); keep it **out of
+the default bundle**. Confirm the Apache-2.0 `LICENSE`/`NOTICE` ships with the
+file. Editing `pubspec.yaml`/`assets/` touches a shared file — **announce on the
+board first**.
 
-**Tests:** `test/transcription/basic_pitch_test.dart` — a model-I/O shape test
-(mock or a tiny fixture) + the synthetic-triad metric; the real-recording run
-documented (the model download can't run in CI, so gate that path so CI stays
-green without the model — skip-if-absent).
+### Done (measurable, via `note_metrics.dart`)
+- **Post-processing** (no model): a hand-built posteriorgram (synthetic Yo/Yn
+  with 3 clear notes) → 3 `NoteEvent`s, deterministic. This is the core lockable
+  test.
+- **Synthetic end-to-end** (gated on the model present): a rendered **C-major
+  triad** (C4 E4 G4, ~1 s) → 3 notes, `notePrf(gt, result).f ≥ 0.9`.
+- **Real:** CC0 **"I-IV-V-I chord progression.ogg"** (Wikimedia) → recovers the
+  C/F/G/C chord tones (note-F ≥ 0.6 vs a hand-labelled ground truth); runs on
+  macOS via `onnx_runtime_dart`. Report the F-number in the commit.
+- **CI green WITHOUT the model:** gate the model path skip-if-absent
+  (`if (!modelFile.existsSync()) { markTestSkipped(...); return; }`); the
+  post-processing test needs no model.
 
-**Non-collision:** only `basic_pitch.dart` + its test (+ `pubspec.yaml`/an
-`assets/` entry for the model, coordinated on the board since pubspec is shared —
-announce before editing it). Do not touch the pure-Dart modules or the contract.
+### Tests
+`test/transcription/basic_pitch_test.dart`: (a) note-creation on a hand-built
+posteriorgram (deterministic, no model); (b) the synthetic-triad end-to-end,
+model-gated; (c) the real recording as a documented CLI demo. Score with
+`note_metrics`.
+
+**Boundaries:** only `basic_pitch.dart` + its test (+ `pubspec.yaml`/`assets/`
+for the model, **announced first**). Never touch `contracts.dart`,
+`note_metrics.dart`, or the pure-Dart modules.
 
 ---
 
