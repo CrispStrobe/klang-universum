@@ -20,6 +20,7 @@
 // (their partials aren't integer multiples). One number separates "monophonic &
 // tonal" from "everything the neural net is better at."
 
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -40,6 +41,16 @@ typedef InputProbe = ({
   double harmonicity,
   bool preferNeural,
 });
+
+/// A monophonic F0 estimator producing the shared [PitchTrack] — the seam that
+/// lets a better pitch model (CREPE / RMVPE / FCPE, via ORT / FFI / ggml) replace
+/// the built-in pure-Dart pYIN without touching the router or the note segmenter.
+/// Returns `FutureOr` so a synchronous pYIN and an async neural model share it.
+/// The default is [pyinF0]; inject via `transcribeAuto(f0: ...)`.
+typedef F0Estimator = FutureOr<PitchTrack> Function(
+  Float64List mono,
+  int sampleRate,
+);
 
 /// A polyphonic transcriber (e.g. Basic Pitch) injected by the caller. Kept as a
 /// function so this pure-Dart file never depends on the native ONNX engine.
@@ -152,14 +163,18 @@ int _lowestStrongPeak(Float64List mag, double binHz, double thresh) {
   return -1;
 }
 
-/// The pure-Dart monophonic chain as one call: pYIN → auto-tuning →
-/// note-HMM → octave-artifact cleanup → NoteEvents. Web-safe.
-List<NoteEvent> transcribeMonophonic(
+/// The monophonic chain as one call: F0 ([f0] or the default pure-Dart pYIN) →
+/// auto-tuning → note-HMM → octave-artifact cleanup → NoteEvents. Web-safe when
+/// [f0] is null (the default).
+Future<List<NoteEvent>> transcribeMonophonic(
   Float64List mono, {
   int sampleRate = 44100,
   double a4 = 440,
-}) {
-  final track = pyinF0(mono, sampleRate: sampleRate);
+  F0Estimator? f0,
+}) async {
+  final track = f0 == null
+      ? pyinF0(mono, sampleRate: sampleRate)
+      : await f0(mono, sampleRate);
   final ref = tunedReference(track, a4: a4);
   final notes = segmentNotes(track, a4: ref);
   return removeOctaveArtifacts(notes);
@@ -176,14 +191,16 @@ typedef RoutedTranscription = ({
 /// Transcribe [mono], automatically choosing the engine.
 ///
 /// If the probe prefers neural AND a [neural] transcriber is supplied, use it;
-/// otherwise use the pure-Dart monophonic chain. Pass [forceEngine] to override
-/// the probe (e.g. a user toggle). With no [neural] available the router always
-/// falls back to monophonic — so this is safe to call on web.
+/// otherwise use the monophonic chain. Pass [forceEngine] to override the probe
+/// (e.g. a user toggle), and [f0] to swap in a better monophonic pitch model
+/// (CREPE/RMVPE); the default pYIN keeps this web-safe. With no [neural] the
+/// router always falls back to monophonic.
 Future<RoutedTranscription> transcribeAuto(
   Float64List mono, {
   int sampleRate = 44100,
   double a4 = 440,
   NeuralTranscriber? neural,
+  F0Estimator? f0,
   TranscriptionEngine? forceEngine,
 }) async {
   final probe = probeInput(mono, sampleRate: sampleRate);
@@ -197,7 +214,12 @@ Future<RoutedTranscription> transcribeAuto(
     );
   }
   return (
-    notes: transcribeMonophonic(mono, sampleRate: sampleRate, a4: a4),
+    notes: await transcribeMonophonic(
+      mono,
+      sampleRate: sampleRate,
+      a4: a4,
+      f0: f0,
+    ),
     engine: TranscriptionEngine.monophonic,
     probe: probe,
   );

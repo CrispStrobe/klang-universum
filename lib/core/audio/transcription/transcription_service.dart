@@ -44,6 +44,7 @@ Future<TranscriptionResult> transcribeRecording(
   Uint8List wavBytes, {
   double a4 = 440,
   NeuralTranscriber? neural,
+  F0Estimator? f0,
   TranscriptionEngine? forceEngine,
 }) async {
   final wav = readWavPcm16(wavBytes);
@@ -53,6 +54,7 @@ Future<TranscriptionResult> transcribeRecording(
     sampleRate: wav.sampleRate,
     a4: a4,
     neural: neural,
+    f0: f0,
     forceEngine: forceEngine,
   );
   final grid = detectRhythm(mono, sampleRate: wav.sampleRate);

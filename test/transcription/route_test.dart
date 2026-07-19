@@ -107,6 +107,27 @@ void main() {
     expect(r.engine, TranscriptionEngine.monophonic);
   });
 
+  test('an injected F0 estimator replaces pYIN on the monophonic path',
+      () async {
+    // Stand in for CREPE/RMVPE: a fake estimator that reports a steady A4 for the
+    // whole clip. The note-HMM should then transcribe a single A4 — proving the
+    // pitch model swaps in behind the PitchTrack contract without other changes.
+    var called = false;
+    Future<PitchTrack> fakeF0(Float64List mono, int sr) async {
+      called = true;
+      return [
+        for (var i = 0; i < 100; i++)
+          (timeMs: i * 10.0, f0Hz: 440.0, voicedProb: 0.95),
+      ];
+    }
+
+    final r = await transcribeAuto(_tone([67], rich: true), f0: fakeF0);
+    expect(called, isTrue);
+    expect(r.engine, TranscriptionEngine.monophonic);
+    expect(r.notes, isNotEmpty);
+    expect(r.notes.every((n) => n.midi == 69), isTrue); // A4, from the fake F0
+  });
+
   test('forceEngine overrides the probe', () async {
     var called = false;
     Future<List<NoteEvent>> fakeNeural(Float64List mono, int sr) async {
