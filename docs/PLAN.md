@@ -19,6 +19,7 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (connect-degrees)** · 🚧 **ACTIVE — new minigame: Connect the Scale Degrees** (a fresh `ConnectMode.degrees` — match degree number 1-7 to its name Tonic/Supertonic/.../Leading tone; hear each degree). Fills the beginner harmony-vocabulary rung the roman-numeral/function games assume. Files: `connect_line_screen.dart` (one enum case + item builder) + one `GameInfo` in `game_registry.dart` + EN/DE ARBs + a `pumpGame` widget test. Low-collision additive; distinct from gap-games (form/modulation/modes).
 ### 📋 Handoff — items for other agents (raised by @tracker-replayer)
 
 The tracker/SF2/sound-library ENGINE lane is closed + full-suite-verified. These
