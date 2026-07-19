@@ -93,12 +93,25 @@ agents push to `origin/main` in parallel — collisions are the main hazard.
 > unit-tested) + `crepe_model_store.dart` (native download-on-demand, mirrors
 > BasicPitchModelStore, `_modelUrl` is a TODO placeholder) + `crepe_test.dart`
 > (7 tests; decoder fully locked, model-gated block skip-if-absent). It already
-> plugs into the router's `F0Estimator` seam. **Remaining (≈ an afternoon):
-> export/publish the MIT CREPE ONNX, set `_modelUrl`, confirm the `_inputName`/
-> `_outputName` tensor names against the export, add a cosine-parity fixture.**
-> Backend is free — ORT / FFI / ggml — anything yielding a 360-bin activation.
-> **Consider RMVPE (MIT) as the quality tier after CREPE** — SOTA on sung f0 and
-> robust to accompaniment; the same shell + seam accept it unchanged.
+> plugs into the router's `F0Estimator` seam.
+>
+> ✅ **STATUS 2026-07-19 — the ggml path is LIVE (CrispASR is porting THIS roster).**
+> `cstr/crepe-GGUF` is **published** (MIT; tiny 0.27–0.93 MB — the shipping
+> default — and full 12–42 MB; spec = 16 kHz, 1024-frame, 360 bins @ 20¢,
+> ~32.7–1975 Hz — exactly our decoder). CrispASR's `feat/music-transcription`
+> branch has a **ggml CREPE runtime** (`src/crepe.{h,cpp}`, cos=1.0 vs torchcrepe,
+> tiny RTF 0.28 on Metal), a `--pitch` CLI (mirrors `--separate`), and the C API
+> **`crepe_compute_f0` → `crepe_frame{time_ms, f0_hz, voiced_prob}` = our
+> `PitchFrame` EXACTLY** (plus `crepe_compute_activation` for the raw 360 bins
+> our `decodeActivation` consumes). Its PLAN.md literally says it's "Porting the
+> CometBeat/mus-textbook transcription→SOTA roster … from ONNX to CrispASR
+> ggml/GGUF" — so the contract is aligned by design. **Only their Dart FFI +
+> WASM surfaces are pending (their explicit "Next").** ⇒ When that lands,
+> `crispasr_session_pitch*` drops straight into `transcribeAuto(f0:)` with NO
+> adapter. **NB: no crepe *ONNX* is published (GGUF only), so our ONNX shell
+> (`crepe.dart`) is a spec-matched FALLBACK — the live model backend is ggml.**
+> **Consider RMVPE (MIT) as the quality tier after CREPE** — the same seam takes
+> it unchanged.
 
 **Role.** Add CREPE (Kim et al. 2018, MIT) as a neural F0 estimator behind the
 `PitchTrack` contract — an accurate, timbre-robust alternative to pYIN that fixes
