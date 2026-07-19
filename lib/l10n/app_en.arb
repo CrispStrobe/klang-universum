@@ -603,6 +603,7 @@
   "soundLabEcho": "Echo",
   "voiceLabTitle": "Voice Lab",
   "voiceLabPlay": "Play",
+  "voiceLabSurprise": "Surprise me",
   "voiceLabExport": "Export WAV",
   "voiceLabRecord": "Record",
   "voiceLabLoad": "Load audio",

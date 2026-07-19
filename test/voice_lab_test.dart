@@ -70,6 +70,39 @@ void main() {
     });
   });
 
+  group('randomVoice (the 🎲 roll)', () {
+    test('always a fun, in-range voice', () {
+      for (var seed = 0; seed < 50; seed++) {
+        final v = randomVoice(math.Random(seed));
+        expect(v.effect, isNot(VoiceEffect.normal)); // never the plain voice
+        expect(v.pitch, inInclusiveRange(-6, 6));
+        expect(v.speed, inInclusiveRange(0.7, 1.5));
+        for (final amt in [v.alien, v.crunch, v.tremolo, v.echo, v.reverb]) {
+          expect(amt, inInclusiveRange(0.0, 1.0));
+        }
+        // The rendered result is non-silent for a real clip.
+        final out = voiceLabProcess(
+          _tone(4410),
+          effect: v.effect,
+          semitones: v.pitch,
+          speed: v.speed,
+          alien: v.alien,
+          crunch: v.crunch,
+          tremolo: v.tremolo,
+          echo: v.echo,
+          reverb: v.reverb,
+        );
+        expect(out, isNotEmpty);
+      }
+    });
+
+    test('the same seed is reproducible; different seeds vary', () {
+      expect(randomVoice(math.Random(7)), randomVoice(math.Random(7)));
+      final rolls = {for (var s = 0; s < 20; s++) randomVoice(math.Random(s))};
+      expect(rolls.length, greaterThan(10)); // plenty of variety
+    });
+  });
+
   testWidgets('screen processes an injected clip and reacts to controls',
       (tester) async {
     await pumpGame(tester, const VoiceLabScreen());
@@ -88,6 +121,19 @@ void main() {
     lab.setParam('speed', 1.5);
     await tester.pump();
     expect(lab.output!.length, greaterThan(before)); // slower = longer
+  });
+
+  testWidgets('🎲 Surprise applies a random voice to the clip', (tester) async {
+    await pumpGame(tester, const VoiceLabScreen());
+    final lab = _lab(tester);
+    lab.debugSetClip(_tone(4410));
+    await tester.pump();
+    final plain = lab.output;
+
+    lab.surprise(3); // a fixed seed → deterministic in the test
+    await tester.pump();
+    expect(lab.effect, randomVoice(math.Random(3)).effect);
+    expect(lab.output, isNot(plain)); // the voice changed
   });
 
   testWidgets('My Samples: save the shaped voice, recall it', (tester) async {

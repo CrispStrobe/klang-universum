@@ -85,6 +85,38 @@ Float64List voiceLabProcess(
   return x;
 }
 
+/// A full Voice Lab setting: a character plus every effect amount.
+typedef VoiceLabParams = ({
+  VoiceEffect effect,
+  double pitch,
+  double speed,
+  double alien,
+  double crunch,
+  double tremolo,
+  double echo,
+  double reverb,
+});
+
+/// Rolls a fun, tasteful random voice from [rng] (pure + seeded, so the 🎲
+/// button is testable). Always picks a non-`normal` character; each effect is
+/// off more often than not, so the result is playful rather than a mush.
+VoiceLabParams randomVoice(math.Random rng) {
+  final characters =
+      VoiceEffect.values.where((e) => e != VoiceEffect.normal).toList();
+  double maybe(double max, [double prob = 0.4]) =>
+      rng.nextDouble() < prob ? 0.15 + rng.nextDouble() * (max - 0.15) : 0.0;
+  return (
+    effect: characters[rng.nextInt(characters.length)],
+    pitch: (rng.nextInt(13) - 6).toDouble(), // −6..+6 semitones
+    speed: 0.7 + rng.nextDouble() * 0.8, // 0.7..1.5×
+    alien: maybe(0.7, 0.3),
+    crunch: maybe(0.6, 0.3),
+    tremolo: maybe(0.7),
+    echo: maybe(0.6),
+    reverb: maybe(0.7),
+  );
+}
+
 /// Test seam.
 abstract class VoiceLabTester {
   void debugSetClip(Float64List clip);
@@ -92,6 +124,7 @@ abstract class VoiceLabTester {
   VoiceEffect get effect;
   void setEffect(VoiceEffect e);
   void setParam(String key, double value);
+  void surprise(int seed);
   Future<void> saveToLibrary(String name);
   List<SampleClip> get library;
   void recall(int index);
@@ -194,6 +227,21 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
       case 'reverb':
         _reverb = value;
     }
+    _reprocess();
+  }
+
+  @override
+  void surprise(int seed) {
+    final p = randomVoice(math.Random(seed));
+    _effect = p.effect;
+    _pitch = p.pitch;
+    _speed = p.speed;
+    _alien = p.alien;
+    _crunch = p.crunch;
+    _tremolo = p.tremolo;
+    _gate = 0;
+    _echo = p.echo;
+    _reverb = p.reverb;
     _reprocess();
   }
 
@@ -337,6 +385,12 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
       appBar: AppBar(
         title: Text(l10n.voiceLabTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.casino_outlined),
+            tooltip: l10n.voiceLabSurprise,
+            onPressed:
+                hasClip ? () => surprise(math.Random().nextInt(1 << 31)) : null,
+          ),
           IconButton(
             icon: const Icon(Icons.play_arrow),
             tooltip: l10n.voiceLabPlay,

@@ -1633,6 +1633,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get voiceLabPlay => 'Abspielen';
 
   @override
+  String get voiceLabSurprise => 'Überrasch mich';
+
+  @override
   String get voiceLabExport => 'WAV exportieren';
 
   @override

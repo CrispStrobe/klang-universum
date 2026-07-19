@@ -3134,6 +3134,12 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get voiceLabPlay;
 
+  /// No description provided for @voiceLabSurprise.
+  ///
+  /// In en, this message translates to:
+  /// **'Surprise me'**
+  String get voiceLabSurprise;
+
   /// No description provided for @voiceLabExport.
   ///
   /// In en, this message translates to:
