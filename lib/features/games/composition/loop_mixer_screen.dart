@@ -42,6 +42,8 @@ import 'package:comet_beat/core/audio/synth.dart'
         renderSegments,
         timbreFor,
         wavBytes;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
@@ -58,6 +60,7 @@ import 'package:comet_beat/features/games/composition/score_analysis_view.dart'
 import 'package:comet_beat/features/games/composition/smear_pad.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/daw/send_to_daw.dart';
@@ -120,6 +123,13 @@ abstract interface class LoopMixerTester {
   void cycleTrackVariant(String id);
   void rollTrackVariant(String id);
   void setTrackLevel(String id, double level);
+
+  /// Whether track [id] can be voiced by a saved instrument (pitched tracks
+  /// only), the id of its current voice (null = built-in timbre), and a setter
+  /// that bypasses the picker sheet (headless tests can't drive it).
+  bool trackIsPitched(String id);
+  String? voiceIdOf(String id);
+  void debugSetTrackVoice(String id, TrackerInstrument? voice);
   void setSwing(double value);
   void setTempo(int bpm);
   void setProgression(String? id);
@@ -327,6 +337,14 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void rollTrackVariant(String id) => _rollVariant(id);
   @override
   void setTrackLevel(String id, double level) => _setLevel(id, level);
+  @override
+  bool trackIsPitched(String id) =>
+      _trackIsPitched(_engine.tracks.firstWhere((t) => t.id == id));
+  @override
+  String? voiceIdOf(String id) => _engine.trackVoice(id)?.id;
+  @override
+  void debugSetTrackVoice(String id, TrackerInstrument? voice) =>
+      _setTrackVoice(id, voice);
   @override
   void setSwing(double value) => _setSwing(value);
   @override
@@ -1416,6 +1434,62 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _checkCombo();
   }
 
+  /// A track is pitched — and so can be voiced by a saved instrument — if it
+  /// re-voices per chord (a follower) or any variant plays notes (melodic).
+  /// Drum tracks have no midi cells, so a voice would be a no-op.
+  bool _trackIsPitched(LoopTrack t) =>
+      t.chordFollower != null || t.variants.any((v) => v is MelodicPattern);
+
+  /// Long-press a pitched track → voice it with a saved "My Instruments" sound
+  /// (a formula synth OR a sampled soundbank voice — both render the same way),
+  /// or reset it to its built-in timbre. SoundFont-reference saves need their
+  /// font bytes and are skipped (`saved.instrument` is null then).
+  Future<void> _pickVoice(AppLocalizations l10n, String id) async {
+    final voiced = _engine.trackVoice(id) != null;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.piano),
+              title: Text(l10n.loopVoiceWithInstrument),
+              onTap: () => Navigator.pop(ctx, 'pick'),
+            ),
+            if (voiced)
+              ListTile(
+                leading: const Icon(Icons.undo),
+                title: Text(l10n.loopVoiceReset),
+                onTap: () => Navigator.pop(ctx, 'reset'),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'reset') {
+      _setTrackVoice(id, null);
+      return;
+    }
+    final saved = await showMyInstrumentsSheet(context);
+    if (!mounted || saved == null) return;
+    final inst = saved.instrument;
+    if (inst == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.loopVoiceUnavailable)),
+      );
+      return;
+    }
+    _setTrackVoice(id, inst);
+  }
+
+  void _setTrackVoice(String id, TrackerInstrument? voice) {
+    setState(() => _engine.setTrackVoice(id, voice));
+    _currentWav = null; // the cached loop is stale — force a re-render
+    _syncPlayback();
+  }
+
   // Move to the next challenge that isn't already satisfied (wraps around).
   void _nextChallenge() {
     setState(() {
@@ -2167,6 +2241,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                               onCycleVariant: () => _cycleVariant(track.id),
                               onRollVariant: () => _rollVariant(track.id),
                               onLevel: (v) => _setLevel(track.id, v),
+                              voiced: _engine.trackVoice(track.id) != null,
+                              onVoice: _trackIsPitched(track)
+                                  ? () => _pickVoice(l10n, track.id)
+                                  : null,
                             ),
                           ),
                         ),
@@ -2698,6 +2776,8 @@ class _TrackCard extends StatelessWidget {
     required this.onCycleVariant,
     required this.onRollVariant,
     required this.onLevel,
+    this.onVoice,
+    this.voiced = false,
   });
 
   final Color color;
@@ -2713,11 +2793,19 @@ class _TrackCard extends StatelessWidget {
   final VoidCallback onRollVariant;
   final ValueChanged<double> onLevel;
 
+  /// Long-press a pitched track to voice it with a saved "My Instruments"
+  /// sound (null for unpitched tracks — drums have no notes to voice).
+  final VoidCallback? onVoice;
+
+  /// Whether this track currently plays through a saved instrument.
+  final bool voiced;
+
   @override
   Widget build(BuildContext context) {
     final foreground = active ? Colors.white : color;
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onVoice,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
@@ -2772,6 +2860,12 @@ class _TrackCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                // A small keyboard glyph marks a track voiced by a saved
+                // instrument (long-press to change / reset).
+                if (voiced) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.piano, size: 18, color: foreground),
+                ],
               ],
             ),
             // Per-card level, only offered while the layer sounds.

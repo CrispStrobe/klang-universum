@@ -1934,6 +1934,24 @@ abstract class AppLocalizations {
   /// **'Layer looping grooves — you are the band'**
   String get gameLoopMixerSubtitle;
 
+  /// Loop Mixer: long-press a pitched track to voice it with a saved instrument
+  ///
+  /// In en, this message translates to:
+  /// **'Play with a saved instrument'**
+  String get loopVoiceWithInstrument;
+
+  /// Loop Mixer: clear a track's saved-instrument voice
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to built-in sound'**
+  String get loopVoiceReset;
+
+  /// Loop Mixer: shown when a saved instrument is a SoundFont reference without bytes
+  ///
+  /// In en, this message translates to:
+  /// **'This voice needs its SoundFont file, so it can\'t be used here.'**
+  String get loopVoiceUnavailable;
+
   /// No description provided for @loopMixerPrompt.
   ///
   /// In en, this message translates to:

@@ -10,6 +10,8 @@ import 'package:comet_beat/core/audio/aec_engine.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/synth.dart';
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show SampleInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/loop_creatures.dart';
@@ -886,6 +888,34 @@ void main() {
     game.setSend(LoopSend.none);
     await tester.pump();
     expect(game.send, LoopSend.none);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a saved instrument voices a pitched track and clears back',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    // Only pitched tracks (notes on a grid) can be voiced; drums cannot.
+    expect(game.trackIsPitched('bass'), isTrue);
+    expect(game.trackIsPitched('drums'), isFalse);
+
+    game.toggleTrack('bass');
+    await tester.pump();
+    expect(game.voiceIdOf('bass'), isNull);
+
+    final voice =
+        SampleInstrument('mine', Float64List(1024)..fillRange(0, 8, 0.3));
+    game.debugSetTrackVoice('bass', voice);
+    await tester.pump();
+    expect(game.voiceIdOf('bass'), 'mine');
+    // The piano badge marks the voiced card.
+    expect(find.byIcon(Icons.piano), findsOneWidget);
+
+    game.debugSetTrackVoice('bass', null);
+    await tester.pump();
+    expect(game.voiceIdOf('bass'), isNull);
+    expect(find.byIcon(Icons.piano), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

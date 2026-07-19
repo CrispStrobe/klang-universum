@@ -1011,6 +1011,16 @@ class AppLocalizationsDe extends AppLocalizations {
       'Staple Grooves übereinander — du bist die Band';
 
   @override
+  String get loopVoiceWithInstrument => 'Mit gespeichertem Instrument spielen';
+
+  @override
+  String get loopVoiceReset => 'Auf Originalklang zurücksetzen';
+
+  @override
+  String get loopVoiceUnavailable =>
+      'Für diese Stimme fehlt die SoundFont-Datei – hier nicht nutzbar.';
+
+  @override
   String get loopMixerPrompt => 'Tippe die Karten und starte deine Band!';
 
   @override

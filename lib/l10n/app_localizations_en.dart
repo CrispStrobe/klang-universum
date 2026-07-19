@@ -1006,6 +1006,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Layer looping grooves — you are the band';
 
   @override
+  String get loopVoiceWithInstrument => 'Play with a saved instrument';
+
+  @override
+  String get loopVoiceReset => 'Reset to built-in sound';
+
+  @override
+  String get loopVoiceUnavailable =>
+      'This voice needs its SoundFont file, so it can\'t be used here.';
+
+  @override
   String get loopMixerPrompt => 'Tap the cards to start your band!';
 
   @override

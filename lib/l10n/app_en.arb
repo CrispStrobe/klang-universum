@@ -380,6 +380,18 @@
   "gridComposerClear": "Clear",
   "gameLoopMixer": "Loop Mixer",
   "gameLoopMixerSubtitle": "Layer looping grooves — you are the band",
+  "loopVoiceWithInstrument": "Play with a saved instrument",
+  "@loopVoiceWithInstrument": {
+    "description": "Loop Mixer: long-press a pitched track to voice it with a saved instrument"
+  },
+  "loopVoiceReset": "Reset to built-in sound",
+  "@loopVoiceReset": {
+    "description": "Loop Mixer: clear a track's saved-instrument voice"
+  },
+  "loopVoiceUnavailable": "This voice needs its SoundFont file, so it can't be used here.",
+  "@loopVoiceUnavailable": {
+    "description": "Loop Mixer: shown when a saved instrument is a SoundFont reference without bytes"
+  },
   "loopMixerPrompt": "Tap the cards to start your band!",
   "loopMixerStop": "Stop",
   "loopMixerSwing": "Swing",
