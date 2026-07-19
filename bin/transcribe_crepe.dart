@@ -7,9 +7,16 @@
 // octave-doubles on real singing.
 //
 //   dart run bin/transcribe_crepe.dart path/to/audio.wav
-//       [--a4 440] [--fmin 50] [--fmax 2006] [--f0] [--json]
+//       [--a4 440] [--fmin 50] [--fmax 2006] [--workers N] [--batch 512]
+//       [--f0] [--json]
 //
-//   --f0    dump the raw pitch track (time, Hz, voicing) instead of notes
+//   --f0         dump the raw pitch track (time, Hz, voicing) instead of notes
+//   --workers N  run inference on an N-isolate pool (0 = single-threaded)
+//   --batch N    frames per inference batch
+//
+// The execution path is also gated by env — COMET_CREPE_WORKERS /
+// COMET_CREPE_POOLCONV / COMET_CREPE_BATCH — so sync vs pooled can be
+// A/B-benchmarked without recompiling (flags override env). See CrepeRunConfig.
 //
 // Convert anything to mono WAV first, e.g.
 //   ffmpeg -i in.ogg -ac 1 -ar 44100 -c:a pcm_s16le out.wav
@@ -21,7 +28,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
-import 'package:comet_beat/core/audio/transcription/crepe.dart';
 import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
@@ -47,11 +53,18 @@ double _optD(List<String> a, String f, double d) {
   return i >= 0 && i + 1 < a.length ? double.parse(a[i + 1]) : d;
 }
 
+int _optI(List<String> a, String f, int d) {
+  final i = a.indexOf(f);
+  return i >= 0 && i + 1 < a.length ? int.parse(a[i + 1]) : d;
+}
+
 Future<void> main(List<String> args) async {
   final positional = args.where((a) => !a.startsWith('--')).toList();
   if (positional.isEmpty) {
-    stderr.writeln('usage: dart run bin/transcribe_crepe.dart audio.wav '
-        '[--a4 440] [--fmin 50] [--fmax 2006] [--f0] [--json]');
+    stderr.writeln(
+      'usage: dart run bin/transcribe_crepe.dart audio.wav '
+      '[--a4 440] [--fmin 50] [--fmax 2006] [--f0] [--json]',
+    );
     exit(64);
   }
   final path = positional.first;
@@ -62,20 +75,31 @@ Future<void> main(List<String> args) async {
 
   final wav = readWavPcm16(File(path).readAsBytesSync());
   final mono = wavToMonoFloat(wav);
-  stderr.writeln('loaded $path — ${wav.sampleRate} Hz, ${wav.channels}ch, '
-      '${(mono.length / wav.sampleRate).toStringAsFixed(2)} s');
+  stderr.writeln(
+    'loaded $path — ${wav.sampleRate} Hz, ${wav.channels}ch, '
+    '${(mono.length / wav.sampleRate).toStringAsFixed(2)} s',
+  );
 
   final model = await CrepeModelStore().load();
   final fmin = _optD(args, '--fmin', 50);
   final fmax = _optD(args, '--fmax', 2006);
+  // Path (sync vs isolate-pool) gated by env; --workers/--batch override it.
+  final envCfg = CrepeRunConfig.fromEnv();
+  final cfg = CrepeRunConfig(
+    workers: _optI(args, '--workers', envCfg.workers),
+    poolConv: envCfg.poolConv,
+    batchFrames: _optI(args, '--batch', envCfg.batchFrames),
+  );
+  stderr.writeln('crepe $cfg');
   final sw = Stopwatch()..start();
 
   if (args.contains('--f0')) {
     // Raw pitch track.
-    final PitchTrack track = crepeF0(
+    final PitchTrack track = await crepeRun(
       mono,
       model: model,
       sampleRate: wav.sampleRate,
+      config: cfg,
       fmin: fmin,
       fmax: fmax,
     );
@@ -91,9 +115,11 @@ Future<void> main(List<String> args) async {
       stderr.writeln('${track.length} frames (${sw.elapsedMilliseconds} ms):');
       stdout.writeln('   time(s)     f0(Hz)   voiced');
       for (final f in track) {
-        stdout.writeln('${(f.timeMs / 1000).toStringAsFixed(3).padLeft(9)}  '
-            '${f.f0Hz.toStringAsFixed(2).padLeft(9)}  '
-            '${f.voicedProb.toStringAsFixed(3).padLeft(7)}');
+        stdout.writeln(
+          '${(f.timeMs / 1000).toStringAsFixed(3).padLeft(9)}  '
+          '${f.f0Hz.toStringAsFixed(2).padLeft(9)}  '
+          '${f.voicedProb.toStringAsFixed(3).padLeft(7)}',
+        );
       }
     }
     return;
@@ -104,8 +130,14 @@ Future<void> main(List<String> args) async {
     mono,
     sampleRate: wav.sampleRate,
     a4: _optD(args, '--a4', 440),
-    f0: (m, sr) =>
-        crepeF0(m, model: model, sampleRate: sr, fmin: fmin, fmax: fmax),
+    f0: (m, sr) => crepeRun(
+      m,
+      model: model,
+      sampleRate: sr,
+      config: cfg,
+      fmin: fmin,
+      fmax: fmax,
+    ),
   );
   sw.stop();
 
@@ -127,11 +159,13 @@ Future<void> main(List<String> args) async {
     stdout.writeln('  #   note   start      end     conf');
     for (var i = 0; i < events.length; i++) {
       final n = events[i];
-      stdout.writeln('${(i + 1).toString().padLeft(3)}  '
-          '${_noteName(n.midi).padRight(5)} '
-          '${(n.onMs / 1000).toStringAsFixed(3).padLeft(7)}s '
-          '${(n.offMs / 1000).toStringAsFixed(3).padLeft(7)}s '
-          '${n.confidence.toStringAsFixed(2).padLeft(6)}');
+      stdout.writeln(
+        '${(i + 1).toString().padLeft(3)}  '
+        '${_noteName(n.midi).padRight(5)} '
+        '${(n.onMs / 1000).toStringAsFixed(3).padLeft(7)}s '
+        '${(n.offMs / 1000).toStringAsFixed(3).padLeft(7)}s '
+        '${n.confidence.toStringAsFixed(2).padLeft(6)}',
+      );
     }
   }
 }

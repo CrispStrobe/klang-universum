@@ -38,6 +38,10 @@ const String _outName = 'activation';
 /// an F0 + voicing → a [PitchTrack]. Only bins in `[fmin, fmax]` Hz are
 /// considered (CREPE defaults 50–2006 Hz). Pure / synchronous / web-safe; the
 /// caller supplies a loaded [model] (see `crepe_model_store.dart`).
+///
+/// This is the single-threaded path. For the isolate-pool path (`runAsync`), see
+/// [crepeF0Async] — same math, same output, selected by env in the native
+/// `crepe_model_store.dart`.
 PitchTrack crepeF0(
   Float64List mono, {
   required OnnxModel model,
@@ -47,50 +51,121 @@ PitchTrack crepeF0(
   double fmax = 2006,
   int batchFrames = 512,
 }) {
-  // 1 · Resample to 16 kHz (ratio = inRate/outRate).
-  final audio =
-      sampleRate == _sr ? mono : resampleLinear(mono, sampleRate / _sr);
-  final hop = (_sr * hopMs / 1000).round();
-  if (audio.isEmpty || hop <= 0) return const [];
-
-  // 2 · Pad by window/2 each side; frame count = 1 + len // hop (torchcrepe).
-  const halfWin = _window ~/ 2;
-  final totalFrames = 1 + audio.length ~/ hop;
-  final padded = Float64List(audio.length + _window)
-    ..setRange(halfWin, halfWin + audio.length, audio);
-
-  final (minBin, maxBin) = _binRange(fmin, fmax);
+  final p = _prepare(mono, sampleRate, hopMs, fmin, fmax);
   final track = <PitchFrame>[];
-
-  // 3 · Run frames in bounded batches; decode each.
   final frameBuf = Float32List(batchFrames * _window);
-  for (var f0i = 0; f0i < totalFrames; f0i += batchFrames) {
-    final nf = math.min(batchFrames, totalFrames - f0i);
-    for (var b = 0; b < nf; b++) {
-      _fillNormalizedFrame(padded, (f0i + b) * hop, frameBuf, b * _window);
-    }
-    final input = nf == batchFrames
-        ? frameBuf
-        : Float32List.sublistView(frameBuf, 0, nf * _window);
+  for (var f0i = 0; f0i < p.totalFrames; f0i += batchFrames) {
+    final nf = math.min(batchFrames, p.totalFrames - f0i);
+    final input = _fillBatch(p.padded, p.hop, f0i, nf, frameBuf, batchFrames);
     final act = model.run(
       {
         _inName: Tensor.float(Float32List.fromList(input), [nf, _window]),
       },
       const [_outName],
     )[_outName]!;
-    final af = act.f ?? act.asFloatList();
-    for (var b = 0; b < nf; b++) {
-      final (hz, voiced) = _decodeFrame(af, b * _pitchBins, minBin, maxBin);
-      track.add(
-        (
-          timeMs: (f0i + b) * hop / _sr * 1000.0,
-          f0Hz: hz,
-          voicedProb: voiced,
-        ),
-      );
-    }
+    _decodeBatch(act.f ?? act.asFloatList(), nf, f0i, p, track);
   }
   return track;
+}
+
+/// Isolate-pool variant of [crepeF0]: identical framing / normalisation /
+/// decoding, but inference goes through [OnnxModel.runAsync] so a model that was
+/// [OnnxModel.parallelize]d executes its Conv/MatMul on the worker pool. With no
+/// prior `parallelize` this behaves exactly like [crepeF0] (just async). The
+/// native `crepe_model_store.dart` sets up the pool and picks this path from env
+/// (`COMET_CREPE_WORKERS`); results stay bitwise identical to the sync path.
+Future<PitchTrack> crepeF0Async(
+  Float64List mono, {
+  required OnnxModel model,
+  int sampleRate = 44100,
+  double hopMs = 10,
+  double fmin = 50,
+  double fmax = 2006,
+  int batchFrames = 512,
+}) async {
+  final p = _prepare(mono, sampleRate, hopMs, fmin, fmax);
+  final track = <PitchFrame>[];
+  final frameBuf = Float32List(batchFrames * _window);
+  for (var f0i = 0; f0i < p.totalFrames; f0i += batchFrames) {
+    final nf = math.min(batchFrames, p.totalFrames - f0i);
+    final input = _fillBatch(p.padded, p.hop, f0i, nf, frameBuf, batchFrames);
+    final out = await model.runAsync(
+      {
+        _inName: Tensor.float(Float32List.fromList(input), [nf, _window]),
+      },
+      const [_outName],
+    );
+    final af = out[_outName]!.f ?? out[_outName]!.asFloatList();
+    _decodeBatch(af, nf, f0i, p, track);
+  }
+  return track;
+}
+
+/// Shared prep: resample→16 kHz, 512-pad each side, frame count, and the
+/// fmin/fmax bin gate. `totalFrames == 0` when the audio is empty (→ empty
+/// track).
+({Float64List padded, int hop, int totalFrames, int minBin, int maxBin})
+    _prepare(
+  Float64List mono,
+  int sampleRate,
+  double hopMs,
+  double fmin,
+  double fmax,
+) {
+  final audio =
+      sampleRate == _sr ? mono : resampleLinear(mono, sampleRate / _sr);
+  final hop = (_sr * hopMs / 1000).round();
+  const halfWin = _window ~/ 2;
+  final totalFrames = (audio.isEmpty || hop <= 0) ? 0 : 1 + audio.length ~/ hop;
+  final padded = Float64List(audio.length + _window)
+    ..setRange(halfWin, halfWin + audio.length, audio);
+  final (minBin, maxBin) = _binRange(fmin, fmax);
+  return (
+    padded: padded,
+    hop: hop,
+    totalFrames: totalFrames,
+    minBin: minBin,
+    maxBin: maxBin,
+  );
+}
+
+/// Normalise [nf] frames starting at global frame [start] into [frameBuf];
+/// return the `[nf, 1024]` input view (the whole buffer when full).
+Float32List _fillBatch(
+  Float64List padded,
+  int hop,
+  int start,
+  int nf,
+  Float32List frameBuf,
+  int batchFrames,
+) {
+  for (var b = 0; b < nf; b++) {
+    _fillNormalizedFrame(padded, (start + b) * hop, frameBuf, b * _window);
+  }
+  return nf == batchFrames
+      ? frameBuf
+      : Float32List.sublistView(frameBuf, 0, nf * _window);
+}
+
+/// Decode [nf] activation rows and append their PitchFrames (timed from global
+/// frame [start]).
+void _decodeBatch(
+  Float32List af,
+  int nf,
+  int start,
+  ({Float64List padded, int hop, int totalFrames, int minBin, int maxBin}) p,
+  List<PitchFrame> track,
+) {
+  for (var b = 0; b < nf; b++) {
+    final (hz, voiced) = _decodeFrame(af, b * _pitchBins, p.minBin, p.maxBin);
+    track.add(
+      (
+        timeMs: (start + b) * p.hop / _sr * 1000.0,
+        f0Hz: hz,
+        voicedProb: voiced,
+      ),
+    );
+  }
 }
 
 /// The `[minBin, maxBin)` pitch-bin range for `[fmin, fmax]` Hz — the frequency
