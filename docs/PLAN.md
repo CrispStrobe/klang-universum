@@ -9,6 +9,7 @@ This file tracks **what is pending and planned**. What's already built and live
 is recorded in [HISTORY.md](HISTORY.md).
 
 ## 🚧 Actively working on (agent coordination — keep in sync with origin/main)
+- **opus (rendersong-velocity)** · ✅ **SHIPPED — honor MIDI note velocity end-to-end** (`crisp_notation@4792748` + mus `4d1fe394`). Was: the core `scoreFromMidi` DROPPED per-note velocity, so a MIDI's performed dynamics were lost before rendering. Now `NoteElement.velocity` (int? 0..127, additive/backward-compat) is threaded through the MIDI reader (pending→_Note→group→_Ev→NoteElement; a chord takes its loudest) and written back by `scoreToMidi` (explicit velocity > dynamics-derived), so a MIDI's dynamics round-trip (+2 core tests; 300-score sustain-grid + dynamics→velocity suites stay green). mus `renderScoreWithInstrument` voices a note by velocity/127 when present (precedence: velocity > notated DynamicMarkings > full level; no-velocity byte-identical), so rendersong's GM MIDI mixes AND the app's Workshop/Tab "play with instrument" now hear per-note dynamics (114 render/gm/workshop/tab tests green). +mus test. Now idle. **⇒ render quality: correct tempo · notated dynamics · MIDI velocity · stereo · soft-master · per-part GM voicing — all shipped.**
 > **opus** now works in its own worktree `../mus-opus` (branch `feature/opus`),
 > merging to `origin/main` only at checkpoints — no longer editing the shared
 > `mus/` checkout. (Earlier MIDI/learnability/sight-reading work was done in
