@@ -9686,6 +9686,18 @@ abstract class AppLocalizations {
   /// **'Mary\'s Lamb'**
   String get gameMaryLamb;
 
+  /// No description provided for @gameSightReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Sight-sing'**
+  String get gameSightReading;
+
+  /// No description provided for @gameSightReadingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read a fresh tune and sing it'**
+  String get gameSightReadingSubtitle;
+
   /// No description provided for @gameFreeSing.
   ///
   /// In en, this message translates to:

@@ -2083,6 +2083,8 @@
   "midiPlayAlongFailed": "Couldn't read that MIDI file.",
   "gameOdeToJoy": "Ode to Joy",
   "gameMaryLamb": "Mary's Lamb",
+  "gameSightReading": "Sight-sing",
+  "gameSightReadingSubtitle": "Read a fresh tune and sing it",
   "gameFreeSing": "Free Sing",
   "gameFreeSingSubtitle": "Sing a tune and hear it back",
   "freeSingPrompt": "Sing a tune…",

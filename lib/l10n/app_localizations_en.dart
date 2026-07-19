@@ -5295,6 +5295,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameMaryLamb => 'Mary\'s Lamb';
 
   @override
+  String get gameSightReading => 'Sight-sing';
+
+  @override
+  String get gameSightReadingSubtitle => 'Read a fresh tune and sing it';
+
+  @override
   String get gameFreeSing => 'Free Sing';
 
   @override

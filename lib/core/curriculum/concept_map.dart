@@ -611,6 +611,13 @@ const List<Concept> kConcepts = [
     GradeBand.g12,
     ConceptArea.repertoire,
     'Learn and recognise real songs',
-    ['song_book', 'sing_along', 'sing_mary', 'midi_play_along', 'tune_quiz'],
+    [
+      'song_book',
+      'sing_along',
+      'sing_mary',
+      'midi_play_along',
+      'sight_reading',
+      'tune_quiz',
+    ],
   ),
 ];

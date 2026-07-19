@@ -5318,6 +5318,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameMaryLamb => 'Marys Lämmchen';
 
   @override
+  String get gameSightReading => 'Vom-Blatt-Singen';
+
+  @override
+  String get gameSightReadingSubtitle => 'Lies eine neue Melodie und sing sie';
+
+  @override
   String get gameFreeSing => 'Frei singen';
 
   @override

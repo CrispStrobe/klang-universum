@@ -120,6 +120,7 @@ import 'package:comet_beat/features/games/scales/same_diff_screen.dart';
 import 'package:comet_beat/features/games/scales/scale_builder_screen.dart';
 import 'package:comet_beat/features/games/scales/scale_detective_screen.dart';
 import 'package:comet_beat/features/games/scales/sing_back_screen.dart';
+import 'package:comet_beat/features/games/sight_reading/sight_reading_gen.dart';
 import 'package:comet_beat/features/games/songs/instrument_family_screen.dart';
 import 'package:comet_beat/features/games/songs/song_screen.dart';
 import 'package:comet_beat/features/games/songs/tune_quiz_screen.dart';
@@ -1375,6 +1376,20 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         title: AppLocalizations.of(ctx)!.gameMaryLamb,
         gameId: 'sing_mary',
         sriPrefix: 'voice.sing_along',
+      ),
+    ),
+    // Sight-singing: read a FRESH generated in-key tune off the moving score and
+    // sing it — endless, never-repeating (a new seed each time it opens).
+    GameInfo(
+      id: 'sight_reading',
+      icon: Icons.auto_stories,
+      title: (l) => l.gameSightReading,
+      subtitle: (l) => l.gameSightReadingSubtitle,
+      builder: (ctx) => PlayAlongScreen(
+        chart: sightReadingChart(DateTime.now().microsecondsSinceEpoch),
+        title: AppLocalizations.of(ctx)!.gameSightReading,
+        gameId: 'sight_reading',
+        sriPrefix: 'voice.sight_reading',
       ),
     ),
     // Play along to ANY MIDI file — pick a .mid and it becomes a moving-score

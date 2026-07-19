@@ -1797,6 +1797,8 @@
   "midiPlayAlongFailed": "Diese MIDI-Datei konnte nicht gelesen werden.",
   "gameOdeToJoy": "An die Freude",
   "gameMaryLamb": "Marys Lämmchen",
+  "gameSightReading": "Vom-Blatt-Singen",
+  "gameSightReadingSubtitle": "Lies eine neue Melodie und sing sie",
   "gameFreeSing": "Frei singen",
   "gameFreeSingSubtitle": "Sing eine Melodie und hör sie zurück",
   "freeSingPrompt": "Sing eine Melodie…",
