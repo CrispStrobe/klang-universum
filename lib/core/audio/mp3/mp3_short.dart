@@ -8,6 +8,7 @@
 // short scalefactors, subblock_gain 0 — valid + decodable). The decoder already
 // reads all of this. Pure Dart => native + web.
 
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/mp3/mp3_bitstream.dart';
@@ -136,6 +137,41 @@ Float64List mp3ReorderShort(Float64List mdctShort, int srIndex) {
   return flat;
 }
 
+/// Candidate Huffman tables for a region's [maxVal] (ISO `table_candidates`) —
+/// crucially picks the ESC table whose linbits actually cover the value (a
+/// hardcoded list that stops at table 24 (linbits 4, max ~30) silently
+/// truncates larger values and under-counts bits).
+List<int> _tableCandidates(int maxVal) {
+  if (maxVal <= 1) return const [1, 2, 3];
+  if (maxVal <= 2) return const [2, 3];
+  if (maxVal <= 3) return const [5, 6];
+  if (maxVal <= 5) return const [7, 8, 9];
+  if (maxVal <= 7) return const [10, 11, 12];
+  if (maxVal <= 15) return const [13, 15];
+  var bitsNeeded = 0;
+  var tmp = maxVal - 15;
+  while (tmp > 0) {
+    bitsNeeded++;
+    tmp >>= 1;
+  }
+  const lin16 = [1, 2, 3, 4, 6, 8, 10, 13];
+  const lin24 = [4, 5, 6, 7, 8, 9, 11, 13];
+  final out = <int>[];
+  for (var t = 16; t < 24; t++) {
+    if (lin16[t - 16] >= bitsNeeded) {
+      out.add(t);
+      break;
+    }
+  }
+  for (var t = 24; t < 32; t++) {
+    if (lin24[t - 24] >= bitsNeeded) {
+      out.add(t);
+      break;
+    }
+  }
+  return out.isEmpty ? const [31] : out;
+}
+
 /// Cheapest big-values table for [start,end) by actual bit cost.
 int _bestTable(List<int> ix, int start, int end) {
   if (start >= end) return 0;
@@ -145,11 +181,9 @@ int _bestTable(List<int> ix, int start, int end) {
     if (v > maxVal) maxVal = v;
   }
   if (maxVal == 0) return 0;
-  const cands = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 24];
-  var best = 0, bestBits = 1 << 30;
+  final cands = _tableCandidates(maxVal);
+  var best = cands[0], bestBits = 1 << 30;
   for (final t in cands) {
-    final ht = getHuffTable(t);
-    if (ht.linbits == 0 && maxVal > ht.xlen - 1) continue; // can't represent
     var bits = 0;
     for (var i = start; i < end; i += 2) {
       bits += mp3PairBits(t, ix[i], i + 1 < end ? ix[i + 1] : 0);
@@ -255,7 +289,22 @@ Mp3GranuleInfo mp3QuantizeGranuleWs(
   int srIndex,
   int blockType,
 ) {
-  var lo = 0, hi = 255, bestGain = 255;
+  // Minimum global_gain that keeps the peak below the 8191 clip: quantizing
+  // finer clamps large coefficients to 8191 (silently corrupting them). glint's
+  // gain-bound: g > 210 − (16/3)·log2(8190/peak34).
+  var peak34 = 0.0;
+  for (var i = 0; i < 576; i++) {
+    final p = mp3Pow34(mdct[i].abs());
+    if (p > peak34) peak34 = p;
+  }
+  var minGain = 0;
+  if (peak34 > 0.0) {
+    minGain =
+        (210.0 - (16.0 / 3.0) * (math.log(8190.0 / peak34) / math.ln2)).ceil();
+    if (minGain < 0) minGain = 0;
+    if (minGain > 255) minGain = 255;
+  }
+  var lo = minGain, hi = 255, bestGain = 255;
   Int16List? bestIx;
   Mp3HuffRegions? bestReg;
   while (lo <= hi) {

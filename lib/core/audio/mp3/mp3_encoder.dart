@@ -70,6 +70,9 @@ const double _kInvSqrt2 = 0.7071067811865476;
 /// `[blockType, bigValues, globalGain, part23Length, nonzeroIx]`.
 List<List<int>>? mp3EncoderDebugLog;
 
+/// Test hook: full ix per granule.
+List<Int16List>? mp3EncoderIxLog;
+
 /// VBR target global_gain per quality (glint `vbr_target_gain`): 0 = best
 /// (finest), 9 = smallest. Each step is ~1.1 dB of quantization noise.
 const List<int> _kVbrTargetGain = [
@@ -317,6 +320,7 @@ Uint8List _mp3Encode(
             nz,
           ]);
         }
+        mp3EncoderIxLog?.add(Int16List.fromList(gi.ix));
         if (gi.blockType != 0) {
           mp3EncodeGranuleWs(md, gi.ix, gi.regions);
         } else {

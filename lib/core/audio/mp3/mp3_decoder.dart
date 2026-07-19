@@ -36,6 +36,9 @@ Mp3Pcm mp3Decode(Uint8List mp3) => _Mp3Decoder().decode(mp3);
 /// `[blockType, bigValues, globalGain, part23Length, nonzeroIx]`.
 List<List<int>>? mp3DecoderDebugLog;
 
+/// Test hook: full ix per granule.
+List<Int16List>? mp3DecoderIxLog;
+
 const List<int> _kSlen1 = [0, 0, 0, 0, 3, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4];
 const List<int> _kSlen2 = [0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 1, 2, 3, 2, 3];
 const List<int> _kScfBands = [0, 6, 11, 16, 21];
@@ -221,6 +224,7 @@ class _Mp3Decoder {
         final part2Start = br.pos;
         _readScalefactors(br, g, ch, gr, scfsi[ch]);
         _readHuffman(br, g, ch, sfb, part2Start);
+        mp3DecoderIxLog?.add(Int16List.fromList(_ix[ch]));
         if (mp3DecoderDebugLog != null) {
           var nz = 0;
           for (var i = 0; i < 576; i++) {
