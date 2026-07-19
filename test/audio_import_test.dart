@@ -57,7 +57,7 @@ void main() {
     expect(importAudioMono(Uint8List(0)), isNull);
   });
 
-  test('the shared type group offers wav + mp3', () {
-    expect(kAudioImportGroup.extensions, containsAll(['wav', 'mp3']));
+  test('the shared extensions list offers wav + mp3', () {
+    expect(kAudioImportExtensions, containsAll(['wav', 'mp3']));
   });
 }

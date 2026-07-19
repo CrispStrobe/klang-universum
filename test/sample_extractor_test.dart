@@ -9,6 +9,7 @@ import 'package:archive/archive.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
     show convertToMod;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
+import 'package:comet_beat/core/audio/mp3/mp3_encoder.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
 import 'package:flutter/material.dart';
@@ -139,6 +140,24 @@ void main() {
       expect(out.first.sourceFile, 'kit');
       expect(out.first.sampleRate, 22050);
       expect(out.every((s) => s.pcm.isNotEmpty), isTrue);
+    });
+
+    test('pulls MP3 entries out of a pack too (via importAudioMono)', () {
+      final tone = Float64List.fromList([
+        for (var i = 0; i < 8192; i++)
+          0.4 * math.sin(2 * math.pi * 220 * i / 44100),
+      ]);
+      final zip = zipWith({
+        'loops/beat.mp3': mp3EncodeMono(tone),
+        'loops/hit.wav': wavBytesFor([100, -100, 200]),
+        'loops/notes.txt': Uint8List.fromList('hi'.codeUnits),
+      });
+      final out = extractArchiveSamples(zip, sourceFile: 'loops');
+      final names = out.map((s) => s.displayName).toList()..sort();
+      expect(names, ['beat', 'hit']); // both the MP3 and the WAV, not the txt
+      final beat = out.firstWhere((s) => s.displayName == 'beat');
+      expect(beat.pcm.isNotEmpty, isTrue);
+      expect(beat.sampleRate, 44100);
     });
 
     test('carries a pack\'s licence + url onto every extracted sample', () {

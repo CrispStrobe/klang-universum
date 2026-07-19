@@ -8,12 +8,15 @@
 //
 // Format is detected by MAGIC BYTES, not the extension, so a mislabelled file
 // still decodes (or fails cleanly to null rather than mis-parsing).
+//
+// This file is deliberately Flutter-free (only mp3_decoder + wav_io) so it works
+// in pure/headless code too (e.g. the sample-pack extractor). Screens build
+// their own file-picker `XTypeGroup` from [kAudioImportExtensions].
 
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/mp3/mp3_decoder.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
-import 'package:file_selector/file_selector.dart';
 
 /// Mono float PCM (−1..1) plus its sample rate — the common currency the Sound
 /// Lab tools work in.
@@ -24,11 +27,9 @@ class ImportedAudio {
   final int sampleRate;
 }
 
-/// The file-picker type group for importable audio (WAV + MP3).
-const XTypeGroup kAudioImportGroup = XTypeGroup(
-  label: 'Audio (WAV, MP3)',
-  extensions: ['wav', 'mp3'],
-);
+/// Importable audio file extensions (for a picker `XTypeGroup`). Kept as a plain
+/// list so this stays Flutter-free; screens wrap it in an `XTypeGroup`.
+const List<String> kAudioImportExtensions = ['wav', 'mp3'];
 
 /// True if [bytes] looks like a RIFF/WAVE file.
 bool _isWav(Uint8List b) =>

@@ -23,8 +23,8 @@ import 'package:archive/archive.dart';
 import 'package:comet_beat/core/archive/sevenz_reader.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
     show parseAnyModule;
-import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
+import 'package:comet_beat/shared/music_io/audio_import.dart';
 
 /// One sample lifted from a module or sample pack.
 class ExtractedSample {
@@ -159,26 +159,24 @@ List<ExtractedSample> extractArchiveSamples(
 
   final out = <ExtractedSample>[];
   for (final (name, data) in entries) {
-    if (!name.toLowerCase().endsWith('.wav')) continue;
+    final lower = name.toLowerCase();
+    if (!lower.endsWith('.wav') && !lower.endsWith('.mp3')) continue;
     if (data.isEmpty) continue;
-    try {
-      final wav = readWavPcm16(data);
-      final pcm = wavToMonoFloat(wav);
-      if (pcm.isEmpty) continue;
-      out.add(
-        ExtractedSample(
-          name: _entryName(name),
-          sampleRate: wav.sampleRate > 0 ? wav.sampleRate : _kDefaultC5Speed,
-          pcm: pcm,
-          sourceFile: sourceFile,
-          index: out.length + 1,
-          license: license,
-          sourceUrl: sourceUrl,
-        ),
-      );
-    } catch (_) {
-      continue; // unreadable entry — skip, keep the rest of the pack
-    }
+    // importAudioMono decodes WAV or MP3 (by content) to mono float + rate.
+    final imported = importAudioMono(data);
+    if (imported == null || imported.pcm.isEmpty) continue;
+    out.add(
+      ExtractedSample(
+        name: _entryName(name),
+        sampleRate:
+            imported.sampleRate > 0 ? imported.sampleRate : _kDefaultC5Speed,
+        pcm: imported.pcm,
+        sourceFile: sourceFile,
+        index: out.length + 1,
+        license: license,
+        sourceUrl: sourceUrl,
+      ),
+    );
   }
   return out;
 }

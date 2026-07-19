@@ -187,7 +187,12 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
   Future<void> _loadWav() async {
     try {
       final file = await openFile(
-        acceptedTypeGroups: const [kAudioImportGroup],
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: 'Audio (WAV, MP3)',
+            extensions: kAudioImportExtensions,
+          ),
+        ],
       );
       if (file == null || !mounted) return;
       final imported = importAudioMono(await file.readAsBytes());
