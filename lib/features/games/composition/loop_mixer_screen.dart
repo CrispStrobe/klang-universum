@@ -193,6 +193,9 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   late final Ticker _ticker;
   final _step = ValueNotifier<int>(-1);
 
+  /// Smooth loop phase 0..1 for the sweeping playhead; -1 while stopped.
+  final _progress = ValueNotifier<double>(-1);
+
   int _iteration = 0;
   int _lastPhaseMs = 0;
 
@@ -207,6 +210,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _ticker = createTicker((_) {
       if (!_clock.isRunning) {
         _step.value = -1;
+        _progress.value = -1;
         return;
       }
       final t = _engine.timing;
@@ -214,6 +218,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       if (phase < _lastPhaseMs) _onLoopWrap();
       _lastPhaseMs = phase;
       _step.value = phase ~/ t.beatMs;
+      _progress.value = phase / t.totalMs;
     })
       ..start();
   }
@@ -222,6 +227,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void dispose() {
     _ticker.dispose();
     _step.dispose();
+    _progress.dispose();
     _loop.dispose();
     _countInTimer?.cancel();
     _captureStopTimer?.cancel();
@@ -1419,14 +1425,11 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               const SizedBox(height: 8),
               Row(
                 children: [
-                  // The playhead scales down before anything can overflow.
+                  // A smooth sweeping playhead over a bar/beat lane.
                   Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: _Playhead(
-                        beat: _step,
-                        beats: _engine.timing.bars * LoopTiming.beatsPerBar,
-                      ),
+                    child: _ProgressPlayhead(
+                      progress: _progress,
+                      bars: _engine.timing.bars,
                     ),
                   ),
                   if (_foundCombos.isNotEmpty)
@@ -1887,40 +1890,94 @@ class _CaptureButton extends StatelessWidget {
 /// A row of beat dots (grouped per bar) with the sounding beat lit. Only
 /// this leaf listens to the ticker's beat notifier, so the per-frame update
 /// never rebuilds the cards.
-class _Playhead extends StatelessWidget {
-  const _Playhead({required this.beat, required this.beats});
+/// A smooth playhead that sweeps across a lane marked with bar/beat ticks and
+/// fills behind itself, so you can watch the loop breathe. [progress] is the
+/// loop phase 0..1 (negative while stopped).
+class _ProgressPlayhead extends StatelessWidget {
+  const _ProgressPlayhead({required this.progress, required this.bars});
 
-  final ValueListenable<int> beat;
-  final int beats;
+  final ValueListenable<double> progress;
+  final int bars;
 
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).colorScheme.primary;
-    return ValueListenableBuilder<int>(
-      valueListenable: beat,
-      builder: (context, current, _) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          for (var i = 0; i < beats; i++)
-            Container(
-              width: 12,
-              height: 12,
-              margin: EdgeInsets.only(
-                left: i == 0 ? 0 : (i % LoopTiming.beatsPerBar == 0 ? 12 : 5),
-              ),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i == current
-                    ? base
-                    : base.withValues(
-                        alpha: i % LoopTiming.beatsPerBar == 0 ? 0.3 : 0.14,
-                      ),
-              ),
-            ),
-        ],
+    return SizedBox(
+      height: 16,
+      child: ValueListenableBuilder<double>(
+        valueListenable: progress,
+        builder: (context, p, _) => CustomPaint(
+          size: const Size(double.infinity, 16),
+          painter: _PlayheadPainter(
+            progress: p,
+            beats: bars * LoopTiming.beatsPerBar,
+            beatsPerBar: LoopTiming.beatsPerBar,
+            color: base,
+          ),
+        ),
       ),
     );
   }
+}
+
+class _PlayheadPainter extends CustomPainter {
+  _PlayheadPainter({
+    required this.progress,
+    required this.beats,
+    required this.beatsPerBar,
+    required this.color,
+  });
+
+  final double progress;
+  final int beats;
+  final int beatsPerBar;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height, mid = h / 2;
+    final radius = Radius.circular(h / 2);
+    final lane = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, mid - 3, w, 6),
+      radius,
+    );
+    canvas.drawRRect(lane, Paint()..color = color.withValues(alpha: 0.12));
+
+    // Bar/beat ticks — taller and brighter on the downbeat.
+    for (var b = 0; b <= beats; b++) {
+      final x = (w * b / beats).clamp(0.0, w);
+      final down = b % beatsPerBar == 0;
+      canvas.drawLine(
+        Offset(x, mid - (down ? 6 : 4)),
+        Offset(x, mid + (down ? 6 : 4)),
+        Paint()
+          ..color = color.withValues(alpha: down ? 0.5 : 0.22)
+          ..strokeWidth = down ? 1.6 : 1.0,
+      );
+    }
+
+    if (progress < 0) return; // stopped
+    final px = (w * progress).clamp(0.0, w);
+    // Fill behind the head.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(0, mid - 3, px, 6), radius),
+      Paint()..color = color.withValues(alpha: 0.32),
+    );
+    // The head: a bright line + dot.
+    canvas.drawLine(
+      Offset(px, 1),
+      Offset(px, h - 1),
+      Paint()
+        ..color = color
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(Offset(px, mid), 3.5, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_PlayheadPainter old) =>
+      old.progress != progress || old.beats != beats || old.color != color;
 }
 
 /// Wraps a track card so it pulses and glows on every beat while enabled — a
