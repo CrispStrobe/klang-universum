@@ -228,9 +228,14 @@ progression in the commit. (4) Deterministic + skip-if-absent.
 > (Krumhansl-Schmuckler) + `spellMidi` (line-of-fifths, key-correct accidentals,
 > exact octave) + `respell(Score)` (re-spells notes + stamps the KeySignature);
 > wired into `transcription_service` (the Score now carries the right key +
-> accidentals, and TranscriptionResult exposes the key). **Remaining for this
-> worker: voice/staff separation (grand staff + ≤4 voices) below, and the
-> optional PM2S neural slice.**
+> accidentals, and TranscriptionResult exposes the key). ✅ **Slice 2 SHIPPED
+> (`07811aea`): `chooseClef` — bass for a low line, treble otherwise.** ✅
+> **Polyphonic chords SHIPPED (`a26f4f45`): chord-aware `transcribeToScore` —
+> simultaneous notes → one multi-pitch note-head, held chords merge; monophonic
+> unchanged.** **Remaining for this worker: VOICE/STAFF separation (assign
+> overlapping notes to ≤4 voices + a grand staff so independent lines are
+> notated as such, not re-articulated chords), and the optional PM2S neural
+> slice.**
 
 **Role.** Turn a flat `NoteEvent` stream into a READABLE score: separate voices
 and hands/staves, add a key signature, and spell enharmonics correctly. Slice 1
