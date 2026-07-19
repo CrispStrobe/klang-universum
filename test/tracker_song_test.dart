@@ -297,6 +297,27 @@ void main() {
       expect(block.length, 2);
       expect(block[0].length, 2);
     });
+
+    test('copy/paste and transpose carry the per-cell instrument column', () {
+      final song = seeded();
+      // Give the source cells distinct per-cell voices.
+      song.engine.setCellInstrument(0, 0, 3);
+      song.engine.setCellInstrument(0, 1, 5);
+
+      final block = song.copyBlock(0, 0, 0, 1);
+      expect(block[0][0].instrument, 3); // survives the copy
+      expect(block[1][0].instrument, 5);
+
+      song.pasteBlock(block, 0, 8); // overwrite-paste elsewhere
+      expect(song.engine.cellAt(0, 8).instrument, 3);
+      expect(song.engine.cellAt(0, 9).instrument, 5);
+
+      // Transposing the pasted block keeps the voice while shifting the note.
+      song.transposeBlock(0, 8, 0, 9, 12);
+      expect(song.engine.cellAt(0, 8).midi, 72);
+      expect(song.engine.cellAt(0, 8).instrument, 3);
+      expect(song.engine.cellAt(0, 9).instrument, 5);
+    });
   });
 
   group('effect column (replayer)', () {
