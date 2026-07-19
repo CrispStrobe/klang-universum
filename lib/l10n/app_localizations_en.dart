@@ -1036,6 +1036,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerRoll => 'Surprise me — roll a new groove';
 
   @override
+  String loopMixerComboFound(String name) {
+    return 'Combo unlocked: $name!';
+  }
+
+  @override
+  String get loopMixerCombosTip => 'Secret combos found';
+
+  @override
+  String get loopMixerComboRhythmSection => 'Rhythm Section';
+
+  @override
+  String get loopMixerComboDuo => 'Duo';
+
+  @override
+  String get loopMixerComboDreamy => 'Dreamy';
+
+  @override
+  String get loopMixerComboMarching => 'Marching Band';
+
+  @override
+  String get loopMixerComboFullBand => 'Full Band';
+
+  @override
   String get loopMixerScore => 'Show as sheet music';
 
   @override

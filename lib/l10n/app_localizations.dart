@@ -2000,6 +2000,48 @@ abstract class AppLocalizations {
   /// **'Surprise me — roll a new groove'**
   String get loopMixerRoll;
 
+  /// Snackbar when a secret Loop Mixer combo is discovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Combo unlocked: {name}!'**
+  String loopMixerComboFound(String name);
+
+  /// No description provided for @loopMixerCombosTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret combos found'**
+  String get loopMixerCombosTip;
+
+  /// No description provided for @loopMixerComboRhythmSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Rhythm Section'**
+  String get loopMixerComboRhythmSection;
+
+  /// No description provided for @loopMixerComboDuo.
+  ///
+  /// In en, this message translates to:
+  /// **'Duo'**
+  String get loopMixerComboDuo;
+
+  /// No description provided for @loopMixerComboDreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dreamy'**
+  String get loopMixerComboDreamy;
+
+  /// No description provided for @loopMixerComboMarching.
+  ///
+  /// In en, this message translates to:
+  /// **'Marching Band'**
+  String get loopMixerComboMarching;
+
+  /// No description provided for @loopMixerComboFullBand.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Band'**
+  String get loopMixerComboFullBand;
+
   /// No description provided for @loopMixerScore.
   ///
   /// In en, this message translates to:

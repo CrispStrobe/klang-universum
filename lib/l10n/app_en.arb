@@ -384,6 +384,17 @@
   "loopMixerKitLofi": "Lo-fi",
   "loopMixerHarmonyOff": "Free",
   "loopMixerRoll": "Surprise me — roll a new groove",
+  "loopMixerComboFound": "Combo unlocked: {name}!",
+  "@loopMixerComboFound": {
+    "description": "Snackbar when a secret Loop Mixer combo is discovered.",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "loopMixerCombosTip": "Secret combos found",
+  "loopMixerComboRhythmSection": "Rhythm Section",
+  "loopMixerComboDuo": "Duo",
+  "loopMixerComboDreamy": "Dreamy",
+  "loopMixerComboMarching": "Marching Band",
+  "loopMixerComboFullBand": "Full Band",
   "@loopMixerRoll": {
     "description": "Tooltip for the dice button that randomizes the Loop Mixer groove."
   },

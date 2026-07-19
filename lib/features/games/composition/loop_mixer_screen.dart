@@ -41,6 +41,7 @@ import 'package:comet_beat/core/services/loop_player_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
+import 'package:comet_beat/features/games/composition/loop_secrets.dart';
 import 'package:comet_beat/features/games/composition/multipart_to_tracker.dart';
 import 'package:comet_beat/features/games/composition/score_analysis_view.dart'
     show harmonicFunctionColor;
@@ -1133,6 +1134,35 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void _toggle(String id) {
     setState(() => _engine.toggle(id));
     _syncPlayback();
+    _checkCombo();
+  }
+
+  /// Secret combos discovered this session (see loop_secrets.dart).
+  final Set<String> _foundCombos = {};
+
+  String _comboName(AppLocalizations l10n, String id) => switch (id) {
+        'rhythmSection' => l10n.loopMixerComboRhythmSection,
+        'duo' => l10n.loopMixerComboDuo,
+        'dreamy' => l10n.loopMixerComboDreamy,
+        'marching' => l10n.loopMixerComboMarching,
+        _ => l10n.loopMixerComboFullBand,
+      };
+
+  /// If the current layers match a secret combo not yet found, celebrate it.
+  void _checkCombo() {
+    final combo = matchCombo(_engine.enabled);
+    if (combo == null || !_foundCombos.add(combo.id)) return;
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {}); // refresh the found N/M counter
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.loopMixerComboFound(_comboName(l10n, combo.id))),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   final _rng = Random();
@@ -1170,6 +1200,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       _engine.swing = _rng.nextBool() ? 0.0 : (_rng.nextInt(4) + 1) * 0.1;
     });
     _syncPlayback();
+    _checkCombo();
   }
 
   void _cycleVariant(String id) {
@@ -1390,6 +1421,20 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                       ),
                     ),
                   ),
+                  if (_foundCombos.isNotEmpty)
+                    Tooltip(
+                      message: l10n.loopMixerCombosTip,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, size: 16, color: Colors.amber),
+                          Text(
+                            '${_foundCombos.length}/${kLoopCombos.length}',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ],
+                      ),
+                    ),
                   IconButton.filledTonal(
                     icon: const Icon(Icons.casino),
                     tooltip: l10n.loopMixerRoll,
