@@ -18,6 +18,12 @@ void main() {
     expect(loadGlintVorbis(libraryPath: '/no/such/libglint.dylib'), isNull);
   });
 
+  test('ensureGlintVorbisReady completes (false when no decoder)', () async {
+    // Async warm-up parity with the web seam; false here (no bundled lib), no
+    // throw. Returns true where glint's symbols are actually present.
+    expect(await ensureGlintVorbisReady(), isFalse);
+  });
+
   test('a real libglint (if built locally) yields a working decoder', () {
     // Dev check: if the glint dylib is present, the seam returns a usable
     // VorbisDecode. Skipped when glint isn't built (CI has no glint).

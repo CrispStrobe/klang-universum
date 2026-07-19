@@ -5,5 +5,8 @@
 
 import 'package:comet_beat/core/audio/sf2/sf2.dart' show VorbisDecode;
 
-/// No native Vorbis decoder on this platform → null (`.sf3` unsupported).
-VorbisDecode? loadGlintVorbis() => null;
+/// No Vorbis decoder on this platform → null (`.sf3` unsupported).
+VorbisDecode? loadGlintVorbis({String? libraryPath}) => null;
+
+/// No decoder to warm up → always false.
+Future<bool> ensureGlintVorbisReady() async => false;

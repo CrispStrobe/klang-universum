@@ -9,5 +9,9 @@
 // `.sf3` falls back to the clear "needs a Vorbis decoder" rejection. See
 // docs/GLINT_VORBIS_HANDOVER.md.
 
+// Native (dart:ffi) → the glint FFI plugin; web (dart:js_interop) → the glint
+// wasm shim; neither → the null stub. `ffi` is checked first so native never
+// falls into the web path.
 export 'vorbis_capability_stub.dart'
-    if (dart.library.ffi) 'vorbis_capability_ffi.dart';
+    if (dart.library.ffi) 'vorbis_capability_ffi.dart'
+    if (dart.library.js_interop) 'vorbis_capability_web.dart';

@@ -52,3 +52,7 @@ VorbisDecode? loadGlintVorbis({String? libraryPath}) {
   }
   return null;
 }
+
+/// Native decode is synchronous + needs no async warm-up: ready iff the glint
+/// decoder loads. (Parity with the web seam's async loader.)
+Future<bool> ensureGlintVorbisReady() async => loadGlintVorbis() != null;
