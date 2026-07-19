@@ -108,6 +108,41 @@ void main() {
     expect(find.text('7'), findsOneWidget);
   });
 
+  testWidgets('instrument field: typing a digit sets the cursor cell\'s voice',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    game.moveCursor(0, 0);
+    // Field index 3 = the instrument column (note, volume, effect, instrument).
+    game.selectField(3);
+    await tester.pump();
+
+    // A decimal digit in the instrument field assigns the pool voice.
+    game.typeInstrument('2');
+    await tester.pump();
+    expect(game.instrumentAt(0, 0), 2);
+
+    // Backspace resets the cell to the channel default (0).
+    game.debugSetCellInstrument(0, 0, 0);
+    await tester.pump();
+    expect(game.instrumentAt(0, 0), 0);
+  });
+
+  testWidgets('instrument field: typing on an empty cell is a no-op',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.moveCursor(0, 0);
+    game.selectField(3);
+    await tester.pump();
+    // No note → the instrument column belongs to a note, so nothing changes.
+    game.typeInstrument('3');
+    await tester.pump();
+    expect(game.instrumentAt(0, 0), 0);
+    expect(game.noteAt(0, 0), isNull);
+  });
+
   testWidgets('Sound Library browser lists voices and adds one to the pool',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

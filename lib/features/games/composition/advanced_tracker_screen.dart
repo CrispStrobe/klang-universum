@@ -178,7 +178,7 @@ enum _NoteEntry {
 
 /// The sub-column the in-grid cursor edits (FT2's note / volume / effect
 /// columns). Typing digits into [volume]/[effect] edits that column directly.
-enum _CellField { note, volume, effect }
+enum _CellField { note, volume, effect, instrument }
 
 /// FastTracker-2 style computer-keyboard piano map: the typed character ->
 /// semitone offset from the current base octave. Two rows span ~two octaves
@@ -347,6 +347,12 @@ abstract interface class AdvancedTrackerTester {
   /// In-grid effect-column hex entry; read the cell's (cmd, param).
   void typeEffect(String hexChar);
   (int, int) effectAt(int channel, int row);
+
+  /// In-grid instrument-column decimal entry (into the field-cursor cell).
+  void typeInstrument(String digit);
+
+  /// Move the field cursor to a specific column (for keyboard-entry tests).
+  void selectField(int index);
 
   /// The MIDI note at a cell (null = empty).
   int? noteAt(int channel, int row);
@@ -531,6 +537,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   int _fxCmd = 0;
   int _fxParam = 0;
   int _fxDigits = 0;
+
+  /// Two-digit DECIMAL instrument entry (the FT2 instrument column, a 1-based
+  /// pool index; 0 = channel default): accumulator + digits typed (resets on a
+  /// move).
+  int _instAccum = 0;
+  int _instDigits = 0;
 
   /// Pending state for note-name entry ("F" then "2"): the note's semitone and
   /// whether a sharp was typed, awaiting the octave digit. Null = nothing armed.
@@ -1034,6 +1046,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void _moveCursorClearing(int channel, int row) {
     _resetVolEntry();
     _resetFxEntry();
+    _resetInstEntry();
     setState(() {
       _cursorChannel = channel.clamp(0, _song.channelCount - 1);
       _cursorRow = row.clamp(0, _song.rows - 1);
@@ -1048,6 +1061,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void _extendTo(int channel, int row) {
     _resetVolEntry();
     _resetFxEntry();
+    _resetInstEntry();
     setState(() {
       _anchorChannel ??= _cursorChannel;
       _anchorRow ??= _cursorRow;
@@ -1201,6 +1215,27 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _fxDigits = 0;
   }
 
+  void _resetInstEntry() {
+    _instAccum = 0;
+    _instDigits = 0;
+  }
+
+  /// Feeds one decimal digit into the per-cell instrument column (a 1-based
+  /// pool index; value clamps to the pool size, 0 = channel default). No-op on
+  /// a cell without a note — the instrument column belongs to a note.
+  void _enterInstrumentDigit(int d) {
+    if (_song.engine.cellAt(_cursorChannel, _cursorRow).midi == null) return;
+    _pushUndo();
+    final raw = _instDigits == 0 ? d : _instAccum * 10 + d;
+    _instAccum = raw.clamp(0, _song.instruments.length);
+    _instDigits = (_instDigits + 1) % 2;
+    setState(
+      () => _song.engine
+          .setCellInstrument(_cursorChannel, _cursorRow, _instAccum),
+    );
+    _syncPlayback();
+  }
+
   /// Types the effect column in-grid, FT2-style: the first hex digit is the
   /// command nibble, the next two build the parameter byte (resets after 3 or on
   /// a move). Applies progressively so it builds visibly.
@@ -1233,9 +1268,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _syncPlayback();
   }
 
-  /// Field-cursor editing: Tab cycles note→volume→effect; two hex digits in the
-  /// volume field set the cursor note's volume (FT2's 00–40 volume column).
-  /// Returns non-null when the key was part of field editing.
+  /// Field-cursor editing: Tab cycles note→volume→effect→instrument; hex digits
+  /// in the volume/effect fields and a decimal digit in the instrument field
+  /// edit the cursor note's columns. Returns non-null when the key was part of
+  /// field editing.
   KeyEventResult? _handleFieldKey(KeyEvent event, LogicalKeyboardKey key) {
     if (key == LogicalKeyboardKey.tab) {
       const vals = _CellField.values;
@@ -1245,6 +1281,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       setState(() => _field = vals[next]);
       _resetVolEntry();
       _resetFxEntry();
+      _resetInstEntry();
       return KeyEventResult.handled;
     }
     if (_field == _CellField.volume) {
@@ -1276,6 +1313,35 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         return KeyEventResult.handled;
       }
     }
+    if (_field == _CellField.instrument) {
+      final d = _decOf(event.character);
+      if (d != null) {
+        _enterInstrumentDigit(d);
+        return KeyEventResult.handled;
+      }
+      // Backspace/Delete resets the cell to the channel default voice.
+      if (key == LogicalKeyboardKey.backspace ||
+          key == LogicalKeyboardKey.delete) {
+        _resetInstEntry();
+        setState(
+          () => _song.engine.setCellInstrument(_cursorChannel, _cursorRow, 0),
+        );
+        _syncPlayback();
+        return KeyEventResult.handled;
+      }
+      // Swallow other printable keys so they don't become notes here.
+      if (event.character != null && event.character!.trim().isNotEmpty) {
+        return KeyEventResult.handled;
+      }
+    }
+    return null;
+  }
+
+  /// A single decimal digit 0–9 (for the instrument column), or null.
+  int? _decOf(String? ch) {
+    if (ch == null || ch.isEmpty) return null;
+    final c = ch.codeUnitAt(0);
+    if (c >= 0x30 && c <= 0x39) return c - 0x30;
     return null;
   }
 
@@ -2330,6 +2396,16 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     final c = _song.engine.cellAt(channel, row);
     return (c.fxCmd, c.fxParam);
   }
+
+  @override
+  void typeInstrument(String digit) {
+    final d = _decOf(digit);
+    if (d != null) _enterInstrumentDigit(d);
+  }
+
+  @override
+  void selectField(int index) =>
+      setState(() => _field = _CellField.values[index]);
 
   @override
   int? noteAt(int channel, int row) => _song.engine.cellAt(channel, row).midi;
@@ -4480,7 +4556,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   ),
                 ),
                 const SizedBox(width: 2),
-                Text(inst, style: _instColStyle(scheme, cell.instrument > 0)),
+                Text(
+                  inst,
+                  style: _instColStyle(
+                    scheme,
+                    cell.instrument > 0,
+                    isCursor && _field == _CellField.instrument,
+                  ),
+                ),
               ],
             ),
           ),
@@ -4491,7 +4574,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   /// Style for the in-grid instrument column: a distinct accent (so per-cell
   /// voices stand out) when set, a faint dot for the channel default.
-  TextStyle _instColStyle(ColorScheme scheme, bool set) => TextStyle(
+  TextStyle _instColStyle(ColorScheme scheme, bool set, bool active) =>
+      TextStyle(
         fontFeatures: const [FontFeature.tabularFigures()],
         fontSize: 10 * _zoom,
         fontWeight: set ? FontWeight.w700 : FontWeight.w400,
@@ -4500,6 +4584,9 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             : (_classic
                 ? const Color(0xFF2C4A32)
                 : scheme.onSurfaceVariant.withValues(alpha: 0.4)),
+        decoration: active ? TextDecoration.underline : null,
+        decorationColor: _classic ? const Color(0xFFE3B341) : scheme.primary,
+        decorationThickness: 2,
       );
 
   TextStyle _subColStyle(ColorScheme scheme, bool active) => TextStyle(
@@ -4618,6 +4705,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                       _CellField.note => '♪',
                       _CellField.volume => 'vol',
                       _CellField.effect => 'fx',
+                      _CellField.instrument => 'ins',
                     },
                   ),
                 ),
