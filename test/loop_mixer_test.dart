@@ -714,6 +714,32 @@ void main() {
     expect(game.enabledTracks, {'drums', 'bass'}); // drums stayed on
   });
 
+  testWidgets('a band challenge is met by exploring and can be skipped',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    final firstId = game.currentChallengeId;
+    expect(game.currentChallengeMet, isFalse);
+
+    // Skipping moves to a different (still-unmet) prompt.
+    game.nextChallenge();
+    await tester.pump();
+    expect(game.currentChallengeId, isNot(firstId));
+
+    // Land on the "layers" challenge and satisfy it by stacking three.
+    while (game.currentChallengeId != 'layers') {
+      game.nextChallenge();
+    }
+    expect(game.currentChallengeMet, isFalse);
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    game.toggleTrack('melody');
+    await tester.pump();
+    expect(game.currentChallengeMet, isTrue);
+    // The banner celebrates when met.
+    expect(find.text('Nice! Tap for another idea →'), findsOneWidget);
+  });
+
   testWidgets('the master filter knob drives the engine', (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);

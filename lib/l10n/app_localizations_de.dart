@@ -1041,6 +1041,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerQuantize => 'Quantisiert starten (im Takt einsetzen)';
 
   @override
+  String get loopMixerChallengeSparkle =>
+      'Versuch: etwas Hohes und Glitzerndes ✨';
+
+  @override
+  String get loopMixerChallengeBass => 'Versuch: eine tiefe Basslinie';
+
+  @override
+  String get loopMixerChallengeMelody => 'Versuch: eine Melodie obendrauf';
+
+  @override
+  String get loopMixerChallengeLayers => 'Versuch: drei Schichten gleichzeitig';
+
+  @override
+  String get loopMixerChallengeFullBand => 'Versuch: die ganze Band zusammen';
+
+  @override
+  String get loopMixerChallengeDone => 'Super! Tippe für eine neue Idee →';
+
+  @override
   String get loopMixerStyle => 'Stil';
 
   @override

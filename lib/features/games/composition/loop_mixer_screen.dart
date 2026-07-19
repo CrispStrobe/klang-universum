@@ -42,6 +42,7 @@ import 'package:comet_beat/features/games/composition/advanced_tracker_screen.da
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/groove_slots.dart';
+import 'package:comet_beat/features/games/composition/loop_challenges.dart';
 import 'package:comet_beat/features/games/composition/loop_creatures.dart';
 import 'package:comet_beat/features/games/composition/loop_secrets.dart';
 import 'package:comet_beat/features/games/composition/multipart_to_tracker.dart';
@@ -148,6 +149,11 @@ abstract interface class LoopMixerTester {
   bool get quantizeLaunch;
   void toggleQuantize();
   Set<String> get pendingLaunches;
+
+  /// The current no-score band challenge, whether it's met, and a way to skip.
+  String get currentChallengeId;
+  bool get currentChallengeMet;
+  void nextChallenge();
   bool get hasVoiceTrack;
   bool get hasBeatTrack;
   bool get isJamming;
@@ -344,6 +350,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool _quantize = false;
   final Set<String> _pendingLaunches = {};
 
+  // Band challenges (§E-2): a gentle, no-score prompt at a time.
+  int _challengeIndex = 0;
+  BandChallenge get _challenge =>
+      kBandChallenges[_challengeIndex % kBandChallenges.length];
+  bool get _challengeMet => _challenge.check(_engine.enabled);
+
   @override
   bool get isInfinite => _infinite;
   @override
@@ -352,6 +364,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void toggleQuantize() => _toggleQuantize();
   @override
   Set<String> get pendingLaunches => _pendingLaunches;
+  @override
+  String get currentChallengeId => _challenge.id;
+  @override
+  bool get currentChallengeMet => _challengeMet;
+  @override
+  void nextChallenge() => _nextChallenge();
   @override
   void toggleInfinite() => setState(() => _infinite = !_infinite);
 
@@ -1315,6 +1333,20 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _checkCombo();
   }
 
+  // Move to the next challenge that isn't already satisfied (wraps around).
+  void _nextChallenge() {
+    setState(() {
+      for (var i = 1; i <= kBandChallenges.length; i++) {
+        final next = (_challengeIndex + i) % kBandChallenges.length;
+        if (!kBandChallenges[next].check(_engine.enabled)) {
+          _challengeIndex = next;
+          return;
+        }
+      }
+      _challengeIndex = (_challengeIndex + 1) % kBandChallenges.length;
+    });
+  }
+
   void _toggleQuantize() {
     setState(() {
       _quantize = !_quantize;
@@ -1605,6 +1637,46 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         _ => l10n.loopMixerStyleClassic,
       };
 
+  String _challengeLabel(AppLocalizations l10n, String id) => switch (id) {
+        'bass' => l10n.loopMixerChallengeBass,
+        'melody' => l10n.loopMixerChallengeMelody,
+        'layers' => l10n.loopMixerChallengeLayers,
+        'fullBand' => l10n.loopMixerChallengeFullBand,
+        _ => l10n.loopMixerChallengeSparkle,
+      };
+
+  // A gentle, no-score prompt with a check when met; tap to try another.
+  Widget _challengeBanner(AppLocalizations l10n) {
+    final met = _challengeMet;
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: _nextChallenge,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+        child: Row(
+          children: [
+            Icon(
+              met ? Icons.check_circle : Icons.lightbulb_outline,
+              size: 18,
+              color: met ? Colors.green : scheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                met
+                    ? l10n.loopMixerChallengeDone
+                    : _challengeLabel(l10n, _challenge.id),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            Icon(Icons.refresh, size: 16, color: scheme.outline),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1885,6 +1957,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 ),
               ),
               const SizedBox(height: 6),
+              // A gentle band challenge (no score) to nudge exploration.
+              _challengeBanner(l10n),
               // Style: a whole-band flavour preset (re-points every card).
               Row(
                 children: [

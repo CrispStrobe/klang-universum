@@ -2000,6 +2000,42 @@ abstract class AppLocalizations {
   /// **'Quantize launch (drop in on the beat)'**
   String get loopMixerQuantize;
 
+  /// No description provided for @loopMixerChallengeSparkle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: add something high and sparkly ✨'**
+  String get loopMixerChallengeSparkle;
+
+  /// No description provided for @loopMixerChallengeBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: add a deep bassline'**
+  String get loopMixerChallengeBass;
+
+  /// No description provided for @loopMixerChallengeMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: add a tune on top'**
+  String get loopMixerChallengeMelody;
+
+  /// No description provided for @loopMixerChallengeLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: stack three layers at once'**
+  String get loopMixerChallengeLayers;
+
+  /// No description provided for @loopMixerChallengeFullBand.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: play the whole band together'**
+  String get loopMixerChallengeFullBand;
+
+  /// No description provided for @loopMixerChallengeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice! Tap for another idea →'**
+  String get loopMixerChallengeDone;
+
   /// No description provided for @loopMixerStyle.
   ///
   /// In en, this message translates to:
