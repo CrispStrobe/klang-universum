@@ -5,6 +5,7 @@
 // Provider), so a clip sent from the DrumKit or Song Book is still there when
 // you open the arranger, and successive sends accumulate into one project.
 
+import 'package:comet_beat/core/audio/daw_project.dart';
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:flutter/foundation.dart';
 
@@ -323,6 +324,36 @@ class DawService extends ChangeNotifier {
   /// Bake the whole arrangement to one mono PCM buffer (only changed clips
   /// re-render, thanks to the per-source cache).
   Float64List bake() => renderTimeline(timeline, cache: _cache);
+
+  // --- Project save / load ---------------------------------------------------
+
+  /// Serialize the arrangement to a portable project string (every clip baked
+  /// to PCM). Renders through the per-source cache so a save is cheap.
+  String saveProject() => projectToJson(
+        timeline,
+        render: (s) => _cache.putIfAbsent(
+          s.cacheKey,
+          () => s.render(kDawSampleRate),
+        ),
+      );
+
+  /// Replace the arrangement with a saved project. Throws [FormatException] on
+  /// a bad file; on success the timeline, cache and undo history are reset.
+  void loadProject(String json) {
+    final loaded = projectFromJson(json); // may throw before we mutate anything
+    timeline.tracks
+      ..clear()
+      ..addAll(loaded.tracks);
+    if (timeline.tracks.isEmpty) {
+      timeline.tracks.addAll([DawTrack(name: 'A'), DawTrack(name: 'B')]);
+    }
+    _cache.clear();
+    _undo.clear();
+    _redo.clear();
+    _coalesceToken = null;
+    _nextStartMs = 0;
+    notifyListeners();
+  }
 }
 
 /// A structural snapshot of the arrangement for undo/redo.

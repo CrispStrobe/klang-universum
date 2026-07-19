@@ -236,6 +236,27 @@ void main() {
     s.setClipTrim(0, 0, trimStartMs: 0, trimEndMs: 0);
     expect(s.clipDurationMs(0, 0), closeTo(1000, 1));
   });
+
+  test('saveProject / loadProject round-trips the arrangement', () {
+    final s = DawService()
+      ..addClip(_tone(0.5, 200))
+      ..addClip(_tone(0.3, 200), track: 1);
+    s.setClipTrim(0, 0, trimStartMs: 10, trimEndMs: 90);
+    final json = s.saveProject();
+
+    final fresh = DawService()..loadProject(json);
+    expect(fresh.clipCount, 2);
+    expect(fresh.clipTrimStartMs(0, 0), 10);
+    expect(fresh.clipTrimEndMs(0, 0), 90);
+    expect(fresh.isClipFrozen(0, 0), isTrue); // reopened clips are baked takes
+    expect(fresh.canUndo, isFalse); // history reset on load
+  });
+
+  test('loadProject rejects a bad file without wrecking the arrangement', () {
+    final s = DawService()..addClip(_tone(0.5, 100));
+    expect(() => s.loadProject('garbage{'), throwsFormatException);
+    expect(s.clipCount, 1); // unchanged — threw before mutating
+  });
 }
 
 /// A live source whose render reflects a mutable buffer — a stand-in for a

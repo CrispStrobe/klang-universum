@@ -1304,6 +1304,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawSent => 'Added to the Multitrack';
 
   @override
+  String get dawSaveProject => 'Save project';
+
+  @override
+  String get dawOpenProject => 'Open project';
+
+  @override
+  String get dawProjectSaved => 'Project saved';
+
+  @override
+  String get dawProjectSaveFailed => 'Could not save the project';
+
+  @override
+  String get dawProjectOpenFailed => 'Could not open the project';
+
+  @override
   String get dawMergeAll => 'Merge all';
 
   @override

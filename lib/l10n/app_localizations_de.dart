@@ -1311,6 +1311,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawSent => 'Zur Mehrspur hinzugefügt';
 
   @override
+  String get dawSaveProject => 'Projekt speichern';
+
+  @override
+  String get dawOpenProject => 'Projekt öffnen';
+
+  @override
+  String get dawProjectSaved => 'Projekt gespeichert';
+
+  @override
+  String get dawProjectSaveFailed => 'Projekt konnte nicht gespeichert werden';
+
+  @override
+  String get dawProjectOpenFailed => 'Projekt konnte nicht geöffnet werden';
+
+  @override
   String get dawMergeAll => 'Alles zusammenführen';
 
   @override

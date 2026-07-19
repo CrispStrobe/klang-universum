@@ -12,6 +12,7 @@
 // for its inspector (volume + fades, freeze, remove), ✕ to remove; Merge-all,
 // undo/redo, and WAV/MP3 export.
 
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -39,6 +40,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         Pitch,
         Score,
         Step;
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:provider/provider.dart';
@@ -403,6 +405,49 @@ class _DawScreenState extends State<DawScreen>
     showAudioExportSheet(context, pcm: pcm, baseName: 'multitrack');
   }
 
+  static const _kProjectGroup = XTypeGroup(
+    label: 'Multitrack project',
+    extensions: ['cbdaw', 'json'],
+  );
+
+  Future<void> _saveProject() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final json = _daw.saveProject();
+      final loc = await getSaveLocation(
+        suggestedName: 'project.cbdaw',
+        acceptedTypeGroups: const [_kProjectGroup],
+      );
+      if (loc == null) return;
+      await XFile.fromData(
+        Uint8List.fromList(utf8.encode(json)),
+        name: 'project.cbdaw',
+      ).saveTo(loc.path);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.dawProjectSaved)),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.dawProjectSaveFailed)),
+      );
+    }
+  }
+
+  Future<void> _openProject() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await openFile(acceptedTypeGroups: const [_kProjectGroup]);
+      if (file == null) return;
+      _daw.loadProject(utf8.decode(await file.readAsBytes()));
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.dawProjectOpenFailed)),
+      );
+    }
+  }
+
   void _mergeAllWithToast() {
     final l10n = AppLocalizations.of(context)!;
     mergeAll();
@@ -646,6 +691,16 @@ class _DawScreenState extends State<DawScreen>
                     onPressed: daw.clipCount < 2 ? null : _mergeAllWithToast,
                     icon: const Icon(Icons.layers),
                     label: Text(l10n.dawMergeAll),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: daw.clipCount == 0 ? null : _saveProject,
+                    icon: const Icon(Icons.save_outlined),
+                    label: Text(l10n.dawSaveProject),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _openProject,
+                    icon: const Icon(Icons.folder_open),
+                    label: Text(l10n.dawOpenProject),
                   ),
                 ],
               ),

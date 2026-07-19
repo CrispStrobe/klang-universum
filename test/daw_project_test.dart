@@ -1,0 +1,123 @@
+// DAW project persistence: bake the timeline to a portable JSON snapshot and
+// rebuild it. Every clip comes back as a baked SampleSource, with its
+// placement/gain/fades/trim intact.
+
+import 'dart:typed_data';
+
+import 'package:comet_beat/core/audio/daw_project.dart';
+import 'package:comet_beat/core/audio/daw_timeline.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+SampleSource _tone(double level, int n) =>
+    SampleSource(Float64List(n)..fillRange(0, n, level));
+
+void main() {
+  test('round-trips tracks, clips and every placement field', () {
+    final timeline = DawTimeline(
+      tracks: [
+        DawTrack(
+          name: 'Drums',
+          gain: 0.8,
+          clips: [
+            Clip(
+              source: _tone(0.5, 64),
+              startMs: 250,
+              gain: 0.7,
+              fadeInMs: 40,
+              fadeOutMs: 60,
+              trimStartMs: 10,
+              trimEndMs: 30,
+            ),
+          ],
+        ),
+        DawTrack(
+          name: 'Bass',
+          muted: true,
+          clips: [Clip(source: _tone(0.3, 8))],
+        ),
+      ],
+    );
+
+    final back = projectFromJson(projectToJson(timeline));
+
+    expect(back.tracks.length, 2);
+    expect(back.tracks[0].name, 'Drums');
+    expect(back.tracks[0].gain, closeTo(0.8, 1e-9));
+    expect(back.tracks[1].muted, isTrue);
+
+    final clip = back.tracks[0].clips.single;
+    expect(clip.startMs, 250);
+    expect(clip.gain, closeTo(0.7, 1e-9));
+    expect(clip.fadeInMs, 40);
+    expect(clip.fadeOutMs, 60);
+    expect(clip.trimStartMs, 10);
+    expect(clip.trimEndMs, 30);
+    expect(clip.source, isA<SampleSource>()); // baked to audio
+    expect((clip.source as SampleSource).pcm.length, 64);
+    // PCM survives the 16-bit round-trip within a quantization step.
+    expect((clip.source as SampleSource).pcm.first, closeTo(0.5, 1 / 32000));
+  });
+
+  test('a saved project renders identically to the original (within 16-bit)',
+      () {
+    final timeline = DawTimeline(
+      tracks: [
+        DawTrack(clips: [Clip(source: _tone(0.4, 100), startMs: 20)]),
+        DawTrack(clips: [Clip(source: _tone(0.2, 100), startMs: 50)]),
+      ],
+    );
+    final before = renderTimeline(timeline, sampleRate: 1000, limit: false);
+    final after = renderTimeline(
+      projectFromJson(projectToJson(timeline, sampleRate: 1000)),
+      sampleRate: 1000,
+      limit: false,
+    );
+    expect(after.length, before.length);
+    for (var i = 0; i < before.length; i++) {
+      expect(after[i], closeTo(before[i], 1 / 32000));
+    }
+  });
+
+  test('uses the injected render (so the service can bake through its cache)',
+      () {
+    var calls = 0;
+    final timeline = DawTimeline(
+      tracks: [
+        DawTrack(clips: [Clip(source: _tone(0.5, 4))]),
+      ],
+    );
+    projectToJson(
+      timeline,
+      render: (s) {
+        calls++;
+        return s.render(44100);
+      },
+    );
+    expect(calls, 1);
+  });
+
+  group('malformed input throws FormatException, never a raw error', () {
+    test('not JSON', () {
+      expect(() => projectFromJson('nope{'), throwsFormatException);
+    });
+    test('wrong version', () {
+      expect(
+        () => projectFromJson('{"v":99,"tracks":[]}'),
+        throwsFormatException,
+      );
+    });
+    test('no tracks list', () {
+      expect(
+        () => projectFromJson('{"v":1,"tracks":"x"}'),
+        throwsFormatException,
+      );
+    });
+    test('a clip with unreadable PCM is skipped, the load still succeeds', () {
+      final t = projectFromJson(
+        '{"v":1,"tracks":[{"name":"A","clips":['
+        '{"startMs":0,"pcm":"!!not-base64!!"}]}]}',
+      );
+      expect(t.tracks.single.clips, isEmpty); // bad clip dropped
+    });
+  });
+}

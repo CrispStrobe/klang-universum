@@ -2510,6 +2510,36 @@ abstract class AppLocalizations {
   /// **'Added to the Multitrack'**
   String get dawSent;
 
+  /// No description provided for @dawSaveProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Save project'**
+  String get dawSaveProject;
+
+  /// No description provided for @dawOpenProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Open project'**
+  String get dawOpenProject;
+
+  /// No description provided for @dawProjectSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Project saved'**
+  String get dawProjectSaved;
+
+  /// No description provided for @dawProjectSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the project'**
+  String get dawProjectSaveFailed;
+
+  /// No description provided for @dawProjectOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the project'**
+  String get dawProjectOpenFailed;
+
   /// No description provided for @dawMergeAll.
   ///
   /// In en, this message translates to:
