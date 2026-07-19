@@ -7,7 +7,6 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/transcription/note_hmm.dart';
 import 'package:comet_beat/core/audio/transcription/pyin.dart';
 import 'package:comet_beat/core/audio/transcription/tuning.dart';
@@ -87,9 +86,13 @@ void main() {
     ]);
     // The whole point: with the estimated reference the pitch classes snap back.
     expect(
-        [for (final n in tuned) n.midi % 12], song.map((m) => m % 12).toList());
-    expect(notePrf(expected, tuned, onsetTolMs: 200, pitchTol: 0).f,
-        greaterThanOrEqualTo(0.9));
+      [for (final n in tuned) n.midi % 12],
+      song.map((m) => m % 12).toList(),
+    );
+    expect(
+      notePrf(expected, tuned, onsetTolMs: 200).f,
+      greaterThanOrEqualTo(0.9),
+    );
   });
 
   test('silence yields a safe zero', () {
