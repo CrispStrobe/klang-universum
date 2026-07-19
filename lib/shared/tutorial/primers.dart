@@ -246,6 +246,16 @@ Tutorial noteValuesPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerValuesRest,
           play: (a) => a.playNoteLength(1, isRest: true),
         ),
+        // Active recall: the child counts the whole note's beats themselves.
+        TutorialStep(
+          text: l10n.primerValuesTry,
+          score: _notes([60], dur: DurationBase.whole),
+          choices: const [
+            TutorialChoice('4', correct: true),
+            TutorialChoice('2'),
+            TutorialChoice('1'),
+          ],
+        ),
       ],
     );
 

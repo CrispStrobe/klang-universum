@@ -17,6 +17,18 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:crisp_notation/crisp_notation.dart' show Score;
 import 'package:flutter/foundation.dart';
 
+/// One option in a step's [TutorialStep.choices] "try it" practice.
+@immutable
+class TutorialChoice {
+  const TutorialChoice(this.label, {this.correct = false});
+
+  /// The button text (already localized).
+  final String label;
+
+  /// Whether tapping this option is the right answer.
+  final bool correct;
+}
+
 /// One page of a tutorial.
 @immutable
 class TutorialStep {
@@ -26,7 +38,11 @@ class TutorialStep {
     this.play,
     this.beats,
     this.playLabel,
-  });
+    this.choices,
+  }) : assert(
+          choices == null || choices.length >= 2,
+          'a "try it" step needs at least two choices (one of them correct)',
+        );
 
   /// The explanation shown on this step (already localized).
   final String text;
@@ -50,7 +66,16 @@ class TutorialStep {
   /// sheet when null.
   final String? playLabel;
 
+  /// Optional "try it" practice: a small set of tap options (labels already
+  /// localized, one or more marked `correct`). The sheet renders them as
+  /// buttons and gives gentle ✓/✗ feedback — active recall of the fact this
+  /// step teaches, with no score and no gate (the child can always continue).
+  /// [text] doubles as the question.
+  final List<TutorialChoice>? choices;
+
   bool get hasAudio => play != null || beats != null;
+
+  bool get hasChoices => choices != null && choices!.isNotEmpty;
 }
 
 /// A game's tutorial: a titled deck of steps.

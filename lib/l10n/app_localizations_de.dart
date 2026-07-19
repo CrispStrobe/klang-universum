@@ -4529,6 +4529,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tutorialListen => 'Anhören';
 
   @override
+  String get tutorialTryCorrect => 'Richtig! 🎉';
+
+  @override
+  String get tutorialTryAgain => 'Fast — versuch es nochmal!';
+
+  @override
   String get primerReadingTitle => 'Noten lesen';
 
   @override
@@ -4557,6 +4563,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerValuesRest =>
       'Eine Pause ist ein Schlag STILLE. Zähl sie mit, aber spiel nicht. Tippe auf Anhören und hör eine Pause.';
+
+  @override
+  String get primerValuesTry =>
+      'Jetzt du: Wie viele Schläge dauert diese ganze Note?';
 
   @override
   String get primerMeasuresTitle => 'Einen Takt füllen';

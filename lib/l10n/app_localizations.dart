@@ -8372,6 +8372,18 @@ abstract class AppLocalizations {
   /// **'Listen'**
   String get tutorialListen;
 
+  /// No description provided for @tutorialTryCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s right! 🎉'**
+  String get tutorialTryCorrect;
+
+  /// No description provided for @tutorialTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite — try again!'**
+  String get tutorialTryAgain;
+
   /// No description provided for @primerReadingTitle.
   ///
   /// In en, this message translates to:
@@ -8419,6 +8431,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A rest is a beat of SILENCE. Count it in your head, but don\'t play. Tap Listen to hear a beat of rest.'**
   String get primerValuesRest;
+
+  /// No description provided for @primerValuesTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: how many beats does this whole note last?'**
+  String get primerValuesTry;
 
   /// No description provided for @primerMeasuresTitle.
   ///

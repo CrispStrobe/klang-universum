@@ -4511,6 +4511,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialListen => 'Listen';
 
   @override
+  String get tutorialTryCorrect => 'That\'s right! 🎉';
+
+  @override
+  String get tutorialTryAgain => 'Not quite — try again!';
+
+  @override
   String get primerReadingTitle => 'Reading notes';
 
   @override
@@ -4539,6 +4545,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerValuesRest =>
       'A rest is a beat of SILENCE. Count it in your head, but don\'t play. Tap Listen to hear a beat of rest.';
+
+  @override
+  String get primerValuesTry =>
+      'Now you try: how many beats does this whole note last?';
 
   @override
   String get primerMeasuresTitle => 'Filling a measure';
