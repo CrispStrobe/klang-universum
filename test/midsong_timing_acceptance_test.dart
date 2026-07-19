@@ -78,26 +78,35 @@ void main() {
       expect(pcm.fold<int>(0, (m, v) => max(m, v.abs())), greaterThan(500));
     });
 
-    test('mid-song SPEED change alters the render but not the length', () {
-      // Two speeds in play order → routes through the variable path; speed
-      // changes effect granularity, not duration.
+    test('mid-song SPEED change scales the row duration (openmpt-matching)',
+        () {
+      // Two speeds in play order → routes through the variable path. Speed is
+      // ticks/row, so a FINER speed makes each row shorter — a mid-song speed
+      // change DOES change duration (verified against openmpt; the earlier
+      // "speed never changes length" assumption was wrong — see BUG2).
       final s = TrackerSong(
         timing: const TrackerTiming(rows: 8),
         patternCount: 2,
       );
       s.selectPattern(0);
-      s.engine.setCell(0, 0, fxx(0x06)); // speed 6
+      s.engine.setCell(0, 0, fxx(0x06)); // speed 6 (the play-order-first speed)
       s.engine.setCell(1, 0, fx4(0x18)); // a vibrato so granularity is audible
       s.selectPattern(1);
-      s.engine.setCell(0, 0, fxx(0x02)); // speed 2 (finer)
+      s.engine
+          .setCell(0, 0, fxx(0x02)); // speed 2 → pattern 1 rows are 2/6 long
       s.engine.setCell(1, 0, fx4(0x18));
       s.order
         ..clear()
         ..addAll([0, 1]);
       s.syncCurrent();
       final pcm = replaySong(s).pcm;
-      // Length is still the uniform 16 rows (speed never changes duration).
-      expect((pcm.length - s.timing.totalSamples * 2).abs(), lessThan(50));
+      // The render length equals the length accounting (render ↔ songTotalMs
+      // agree through the variable path).
+      expect((pcm.length - s.songTotalSamples).abs(), lessThan(100));
+      // Pattern 1's finer speed shortens its rows, so the whole song is shorter
+      // than the uniform 16 rows would be.
+      expect(pcm.length, lessThan(s.timing.totalSamples * 2));
+      // …and it's still audible.
       expect(pcm.fold<int>(0, (m, v) => max(m, v.abs())), greaterThan(200));
     });
   });
