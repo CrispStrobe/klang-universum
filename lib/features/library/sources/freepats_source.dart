@@ -153,6 +153,52 @@ String freepatsTitleFrom(String page) {
       .join(' ');
 }
 
+/// Why a page didn't produce a browsable pack.
+///
+/// The first two are **licence decisions** — working as designed, and quiet.
+/// The rest are **structural**: the page didn't parse the way we expect, which
+/// usually means the site's layout changed (or it's unreachable). Those must
+/// be loud, or a re-skinned Freepats would silently look like "no packs".
+enum FreepatsSkipReason {
+  licenseBlocked,
+  ambiguousLicense,
+  noLicenseStatement,
+  noArchiveLink,
+  unreachable;
+
+  bool get isStructural =>
+      this != FreepatsSkipReason.licenseBlocked &&
+      this != FreepatsSkipReason.ambiguousLicense;
+}
+
+/// One page that didn't yield a pack, and why.
+class FreepatsSkip {
+  const FreepatsSkip(this.page, this.reason);
+  final String page;
+  final FreepatsSkipReason reason;
+
+  @override
+  String toString() => '$page: ${reason.name}';
+}
+
+/// Thrown when a browse finds nothing AND every page failed structurally —
+/// i.e. this is a site/layout problem, not a licensing one.
+class FreepatsUnavailable implements Exception {
+  const FreepatsUnavailable(this.message, this.skips);
+  final String message;
+  final List<FreepatsSkip> skips;
+
+  @override
+  String toString() => message;
+}
+
+/// The outcome of resolving one instrument page.
+class FreepatsResolution {
+  const FreepatsResolution(this.item, this.reason);
+  final LibraryItem? item;
+  final FreepatsSkipReason? reason;
+}
+
 /// Browses Freepats instrument packs (.7z), licence-gated per instrument.
 class FreepatsSource implements ContentSource {
   FreepatsSource(this._http, {LicensePolicy? policy})
@@ -163,6 +209,13 @@ class FreepatsSource implements ContentSource {
 
   /// Resolved pages, so re-browsing doesn't re-hit the site.
   final Map<String, LibraryItem?> _cache = {};
+  final Map<String, FreepatsSkipReason?> _reasons = {};
+  final List<FreepatsSkip> _skips = [];
+
+  /// Pages the last [browse] left out, and why — licence decisions are
+  /// expected; anything [FreepatsSkipReason.isStructural] means the site's
+  /// layout probably changed.
+  List<FreepatsSkip> get lastSkips => List.unmodifiable(_skips);
 
   @override
   String get id => 'freepats';
@@ -178,9 +231,18 @@ class FreepatsSource implements ContentSource {
 
   /// Resolves one instrument page into an item, or null when it has no usable
   /// download or its licence is ambiguous/unrecognised.
-  Future<LibraryItem?> resolve(String page) async {
-    if (_cache.containsKey(page)) return _cache[page];
+  Future<LibraryItem?> resolve(String page) async =>
+      (await resolveDetailed(page)).item;
+
+  /// Like [resolve], but says WHY a page produced nothing — so a layout change
+  /// can be told apart from a licence decision.
+  Future<FreepatsResolution> resolveDetailed(String page) async {
+    if (_cache.containsKey(page)) {
+      final cached = _cache[page];
+      return FreepatsResolution(cached, _reasons[page]);
+    }
     LibraryItem? item;
+    FreepatsSkipReason? reason;
     try {
       final html = utf8.decode(
         await _http(Uri.parse('$_kBase$page')),
@@ -188,7 +250,11 @@ class FreepatsSource implements ContentSource {
       );
       final href = freepatsDownloadFrom(html);
       final license = freepatsLicenseFrom(html, policy: _policy);
-      if (href != null && license.isNotEmpty) {
+      if (href == null) {
+        reason = FreepatsSkipReason.noArchiveLink;
+      } else if (license.isEmpty) {
+        reason = FreepatsSkipReason.noLicenseStatement;
+      } else {
         final dir = page.contains('/')
             ? page.substring(0, page.lastIndexOf('/') + 1)
             : '';
@@ -204,12 +270,16 @@ class FreepatsSource implements ContentSource {
           downloadUrl: Uri.parse('$_kBase$dir$href'),
           format: freepatsFormatOf(href),
         );
+        if (license == kFreepatsAmbiguous) {
+          reason = FreepatsSkipReason.ambiguousLicense;
+        }
       }
     } catch (_) {
-      item = null; // an unreachable page just drops out of the listing
+      reason = FreepatsSkipReason.unreachable;
     }
     _cache[page] = item;
-    return item;
+    _reasons[page] = reason;
+    return FreepatsResolution(item, reason);
   }
 
   @override
@@ -222,13 +292,42 @@ class FreepatsSource implements ContentSource {
         .toList();
 
     final out = <LibraryItem>[];
+    final skips = <FreepatsSkip>[];
+    var attempted = 0;
+    var structural = 0;
     // Resolving hits one page each, so stay modest even if `limit` is large.
     final budget = limit < 12 ? limit : 12;
     for (final page in pages) {
       if (out.length >= budget) break;
-      final item = await resolve(page);
+      attempted++;
+      final res = await resolveDetailed(page);
+      final item = res.item;
       // The gate is the backstop: ambiguous/unknown/NC never surface.
-      if (item != null && _policy.isAllowed(item)) out.add(item);
+      if (item != null && _policy.isAllowed(item)) {
+        out.add(item);
+        continue;
+      }
+      final reason = res.reason ??
+          (item == null
+              ? FreepatsSkipReason.unreachable
+              : FreepatsSkipReason.licenseBlocked);
+      skips.add(FreepatsSkip(page, reason));
+      if (reason.isStructural) structural++;
+    }
+    _skips
+      ..clear()
+      ..addAll(skips);
+
+    // Loud failure: nothing came back AND every page we tried failed
+    // structurally. That is a site/layout problem — surfacing it as an empty
+    // list would look like "Freepats has no free packs", which is wrong.
+    if (out.isEmpty && attempted > 0 && structural == attempted) {
+      final sample = skips.take(3).join('; ');
+      throw FreepatsUnavailable(
+        'Freepats returned nothing usable for all $attempted page(s) — the '
+        'site may be unreachable or its page layout changed ($sample)',
+        List.of(skips),
+      );
     }
     return out;
   }

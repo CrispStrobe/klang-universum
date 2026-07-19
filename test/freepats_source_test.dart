@@ -163,9 +163,87 @@ void main() {
       );
     });
 
-    test('an unreachable page drops out instead of throwing', () async {
+    test('resolve() reports a single unreachable page without throwing',
+        () async {
       Future<Uint8List> http(Uri url) async => throw const SocketException('x');
-      expect(await FreepatsSource(http).resolve('Ethnic/kalimba.html'), isNull);
+      final res =
+          await FreepatsSource(http).resolveDetailed('Ethnic/kalimba.html');
+      expect(res.item, isNull);
+      expect(res.reason, FreepatsSkipReason.unreachable);
+    });
+  });
+
+  // A layout change must NOT look like "Freepats has no free packs".
+  group('loud failure when the site changes shape', () {
+    test('throws when every page parses but has no archive link', () async {
+      Future<Uint8List> http(Uri url) async => Uint8List.fromList(
+            utf8.encode('<html>CC0 1.0 but no downloads here</html>'),
+          );
+      final src = FreepatsSource(http);
+      await expectLater(
+        src.browse(),
+        throwsA(
+          isA<FreepatsUnavailable>().having(
+            (e) => e.message,
+            'message',
+            contains('layout changed'),
+          ),
+        ),
+      );
+      expect(
+        src.lastSkips.every(
+          (s) => s.reason == FreepatsSkipReason.noArchiveLink,
+        ),
+        isTrue,
+      );
+    });
+
+    test('throws when the site is unreachable', () async {
+      Future<Uint8List> http(Uri url) async => throw const SocketException('x');
+      await expectLater(
+        FreepatsSource(http).browse(),
+        throwsA(isA<FreepatsUnavailable>()),
+      );
+    });
+
+    test('throws when pages carry no licence statement at all', () async {
+      Future<Uint8List> http(Uri url) async => Uint8List.fromList(
+            utf8.encode('<html><a href="x/y-SFZ.7z">dl</a></html>'),
+          );
+      final src = FreepatsSource(http);
+      await expectLater(src.browse(), throwsA(isA<FreepatsUnavailable>()));
+      expect(
+        src.lastSkips.first.reason,
+        FreepatsSkipReason.noLicenseStatement,
+      );
+    });
+
+    test('does NOT throw when pages are merely licence-blocked', () async {
+      // The site is fine; these packs are just not permissively licensed.
+      // Empty-but-quiet is the correct outcome here.
+      Future<Uint8List> http(Uri url) async =>
+          Uint8List.fromList(utf8.encode(drums)); // CC BY 4.0
+      final src = FreepatsSource(http);
+      expect(await src.browse(), isEmpty);
+      expect(
+        src.lastSkips.every(
+          (s) => s.reason == FreepatsSkipReason.licenseBlocked,
+        ),
+        isTrue,
+      );
+      expect(src.lastSkips.every((s) => !s.reason.isStructural), isTrue);
+    });
+
+    test('ambiguous licences are a licence decision, not a site failure',
+        () async {
+      Future<Uint8List> http(Uri url) async =>
+          Uint8List.fromList(utf8.encode(piano)); // CC BY 3.0 *and* CC0
+      final src = FreepatsSource(http);
+      expect(await src.browse(), isEmpty); // no throw
+      expect(
+        src.lastSkips.first.reason,
+        FreepatsSkipReason.ambiguousLicense,
+      );
     });
   });
 

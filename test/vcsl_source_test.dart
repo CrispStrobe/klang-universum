@@ -111,4 +111,33 @@ void main() {
       }
     });
   });
+
+  group('loud failure instead of a silent empty listing', () {
+    test('a rate-limit / error payload throws rather than listing nothing',
+        () async {
+      // What GitHub actually returns when it throttles you.
+      Future<Uint8List> http(Uri url) async => Uint8List.fromList(
+            utf8.encode('{"message":"API rate limit exceeded"}'),
+          );
+      await expectLater(
+        VcslSource(http).browse(),
+        throwsA(
+          isA<VcslUnavailable>().having(
+            (e) => e.message,
+            'message',
+            contains('rate-limiting'),
+          ),
+        ),
+      );
+    });
+
+    test('malformed JSON throws too', () async {
+      Future<Uint8List> http(Uri url) async =>
+          Uint8List.fromList(utf8.encode('<html>502 Bad Gateway</html>'));
+      await expectLater(
+        VcslSource(http).browse(),
+        throwsA(isA<VcslUnavailable>()),
+      );
+    });
+  });
 }

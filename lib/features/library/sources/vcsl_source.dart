@@ -19,6 +19,17 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/features/library/content_source.dart';
 
+/// Thrown when the catalogue request comes back in a shape we can't read —
+/// a rate-limit body, an error payload, or a changed repo layout. Loud on
+/// purpose: an empty listing would look like "the library has nothing".
+class VcslUnavailable implements Exception {
+  const VcslUnavailable(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 const _kRepo = 'sgossner/VCSL';
 const _kBranch = 'master';
 
@@ -113,6 +124,16 @@ class VcslSource implements ContentSource {
       ),
     );
     final parsed = parseTree(utf8.decode(bytes));
+    // A blanket-CC0 repo of thousands of WAVs never legitimately yields zero.
+    // Empty here means the API answered with something we didn't expect — a
+    // rate-limit body, an error payload, or a changed layout — and reporting
+    // "no results" would misrepresent that as "the library is empty".
+    if (parsed.isEmpty) {
+      throw VcslUnavailable(
+        'GitHub returned no VCSL sample entries (${bytes.length} bytes) — the '
+        'API may be rate-limiting or the repository layout changed',
+      );
+    }
     _catalog = parsed;
     return parsed;
   }
