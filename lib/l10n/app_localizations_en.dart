@@ -341,6 +341,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopStop => 'Stop';
 
   @override
+  String get workshopPlayWithInstrument => 'Play with an instrument…';
+
+  @override
   String get workshopMutePart => 'Mute';
 
   @override

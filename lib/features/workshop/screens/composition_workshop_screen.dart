@@ -13,8 +13,14 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
+import 'package:comet_beat/core/audio/score_instrument_render.dart'
+    show renderMultiPartWithInstrument;
+import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/note_naming.dart';
@@ -24,6 +30,8 @@ import 'package:comet_beat/features/games/composition/advanced_tracker_screen.da
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
+    show showMyInstrumentsSheet;
 import 'package:comet_beat/features/workshop/export/score_pdf.dart';
 import 'package:comet_beat/features/workshop/model/multi_part_document.dart';
 import 'package:comet_beat/features/workshop/model/score_document.dart';
@@ -460,6 +468,10 @@ abstract interface class CompositionWorkshopTester {
   /// Test seam: run the inspector on element [id] (as an element tap would).
   void debugInspect(String id);
 
+  /// Test seam: render+play the piece through [inst] (the picker minus the
+  /// sheet).
+  void debugPlayWithInstrument(TrackerInstrument inst);
+
   /// Test seam: id of the first note in the active part (null if none).
   String? get debugFirstNoteId;
 
@@ -697,6 +709,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
 
   @override
   void debugInspect(String id) => _inspectTapped(id);
+
+  @override
+  void debugPlayWithInstrument(TrackerInstrument inst) =>
+      _renderAndPlayWith(inst);
 
   @override
   String? get debugFirstNoteId {
@@ -1481,6 +1497,41 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
       setState(() => _zoom = (_zoom + d).clamp(8.0, 28.0));
 
   void _togglePlay() => _isPlaying ? _stopPlayback() : _startPlayback();
+
+  /// Pick a saved "My Instruments" voice and play the WHOLE piece rendered
+  /// through it — a preview, kept separate from the highlighting transport so
+  /// it doesn't touch the count-in / loop / selection machinery.
+  Future<void> _playWithInstrument() async {
+    final saved = await showMyInstrumentsSheet(context);
+    if (saved == null || !mounted) return;
+    // SoundFont references need font bytes — skip; embedded voices resolve.
+    final inst = saved.instrument;
+    if (inst != null) {
+      _renderAndPlayWith(inst);
+    }
+  }
+
+  void _renderAndPlayWith(TrackerInstrument inst) {
+    final bpm = _doc.tempo?.quarterBpm ?? 100;
+    final quarterMs = (60000 / (bpm <= 0 ? 100 : bpm)).round();
+    final pcm = renderMultiPartWithInstrument(
+      _mpd.buildMultiPart(),
+      inst,
+      quarterMs: quarterMs,
+    );
+    if (pcm.isEmpty) return;
+    var peak = 0.0;
+    for (final s in pcm) {
+      if (s.abs() > peak) peak = s.abs();
+    }
+    final g =
+        peak > 0.9 ? 0.9 / peak : 1.0; // headroom so summed voices don't clip
+    final i16 = Int16List(pcm.length);
+    for (var i = 0; i < pcm.length; i++) {
+      i16[i] = (pcm[i] * g * 32767).round().clamp(-32768, 32767);
+    }
+    unawaited(_audio.playWavBytes(wavBytes(i16)));
+  }
 
   /// A playback-speed multiplier as a compact chip label: `1×`, `0.75×`, `0.5×`.
   static String _speedLabel(double s) =>
@@ -3115,6 +3166,13 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                 // if they emptied the document mid-playback.
                 onPressed:
                     (!_hasPlayableContent && !_isPlaying) ? null : _togglePlay,
+              ),
+              // Hear the whole piece rendered with a saved "My Instruments"
+              // voice (a preview — separate from the highlighting transport).
+              IconButton(
+                icon: const Icon(Icons.piano_outlined),
+                tooltip: l10n.workshopPlayWithInstrument,
+                onPressed: _hasPlayableContent ? _playWithInstrument : null,
               ),
               // Practice speed — the number reads as a chip; picking a slower
               // speed makes the next Play stretch (same pitch) for slow practice.

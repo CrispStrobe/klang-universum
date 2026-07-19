@@ -686,6 +686,12 @@ abstract class AppLocalizations {
   /// **'Stop'**
   String get workshopStop;
 
+  /// No description provided for @workshopPlayWithInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Play with an instrument…'**
+  String get workshopPlayWithInstrument;
+
   /// No description provided for @workshopMutePart.
   ///
   /// In en, this message translates to:

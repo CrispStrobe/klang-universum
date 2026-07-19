@@ -3,6 +3,11 @@
 // and undoes/redoes. Note placement (from the piano) is covered by the
 // ScoreDocument model tests.
 
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show SampleInstrument;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
@@ -246,6 +251,27 @@ void main() {
     await tester.pump();
     expect(editor.noteCount, 1);
     expect(editor.hasSelection, isTrue);
+  });
+
+  testWidgets('play-with-instrument renders the piece through a saved voice',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    await tester.tap(_pianoKey()); // put a note in the piece
+    await tester.pump();
+
+    // A "My Instruments" voice (embedded sample) plays the piece — the picker
+    // minus the sheet. It must render + play without throwing.
+    final pcm = Float64List(1024);
+    for (var i = 0; i < pcm.length; i++) {
+      pcm[i] = 0.4 * math.sin(2 * math.pi * 220 * i / 44100);
+    }
+    expect(
+      () => editor.debugPlayWithInstrument(SampleInstrument('v', pcm)),
+      returnsNormally,
+    );
+    // the transport button is present + enabled with content
+    expect(find.byIcon(Icons.piano_outlined), findsWidgets);
   });
 
   testWidgets('the voice toggle routes note entry to the active voice',
