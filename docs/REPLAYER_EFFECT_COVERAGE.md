@@ -44,10 +44,10 @@ pure via `traceChannel(cells, {ticksPerRow}) → ChannelTrace`
 | EBx | Fine vol down | ✅ |
 | ECx | Note cut | ✅ *(backlog wrongly lists as missing)* |
 | EDx | Note delay | ⚠️ **present but buggy** — see Defect 2 |
-| E3x | Glissando control | ❌ missing |
-| E4x | Vibrato waveform | ❌ missing (LFO is always sine) |
-| E5x | Set finetune | ❌ missing |
-| E7x | Tremolo waveform | ❌ missing (always sine) |
+| E3x | Glissando control | ✅ *(added — tone-porta snaps to semitones)* |
+| E4x | Vibrato waveform | ✅ *(added — sine/saw/square via `trackerLfo`)* |
+| E7x | Tremolo waveform | ✅ *(added — sine/saw/square)* |
+| E5x | Set finetune | ❌ missing (approximate; low value) |
 | EEx | **Pattern delay** | ❌ missing — **timing-significant** |
 | E0x/E8x/EFx | filter / sync / funk-loop | ⬜ rare, low priority |
 
@@ -63,32 +63,37 @@ pure via `traceChannel(cells, {ticksPerRow}) → ChannelTrace`
   (`applyVolumeColumn`, Cxx-equivalent) but not the XM vol-column
   vibrato/porta/pan sub-commands.
 
-## Fix these FIRST — coverage that plays wrong audio (already on the board)
+## Status update (2026-07-19)
 
-Both from the prior read-only audit (`docs/PLAN.md`, "opus (audit) → REPORT for
-@tracker-replayer"), still marked **NOT fixed**. Wrong coverage is worse than a
-gap — reproduce them before adding anything new:
+- The two defects the earlier board report flagged (**6xy** vibrato-memory,
+  **EDx** re-attack) are **now FIXED** by @tracker-replayer — verified in source
+  (armRow leaves the vib memory alone; the render resets `noteStartSample` only
+  at the actual fire tick).
+- **E3x/E4x/E7x added** by opus (libraries-and-tab, cross-lane, maintainer-
+  authorized) — glissando + vibrato/tremolo waveforms, in `ReplayVoice` only,
+  zero-regression (were silent no-ops). Tests: `tracker_effect_coverage_test.dart`.
 
-1. **6xy corrupts vibrato memory** — `armRow` shares the 4xy/6xy nibble parse, so
-   a 6xy volslide param overwrites `_memVibDepth`/`_memVibSpeed` (and invents
-   vibrato with no prior 4xy). Split 6xy to set only `_memVolSlide`.
-2. **EDx re-attacks a still-ringing prior note** — `noteStartSample` is reset at
-   row start for a pending delay, restarting the old note's envelope during ticks
-   0..x-1. Reset only when the note actually fires.
+## Remaining, by value ÷ effort (needs core/model work — @tracker-replayer)
 
-## Then, by value ÷ effort (missing coverage)
+These are deliberately NOT done by the cross-lane pass — each touches the timing/
+render core or the cell model, i.e. exactly the parts that would conflict with
+the active tracker worker:
 
 1. **EEx pattern delay** — repeats the current row x+1 times; a song using it
-   currently plays at the **wrong length/rhythm** (silent no-op today). Belongs in
-   `walkFlow` (row-level flow, like E6x). Highest audible impact of the gaps.
-2. **Fine F-nibble slides (Axy/1xx/2xx)** + **Rxy** — common in S3M/XM; small,
-   local to the slide/retrigger logic. `_isVolSlide` already computes `x,y`
-   nibbles — add the `x==0xF`/`y==0xF` fine-once branch.
-3. **E4x / E7x waveform select** (sine → ramp/square/random) + **E5x finetune** +
-   **E3x glissando** — refinements to existing LFO/porta; each is a small
-   per-tick branch.
+   plays at the **wrong length/rhythm** (silent no-op today). Needs a
+   `repeat`/suppress-retrigger flag on `PlayedRow` + integration with
+   `TrackerTiming` (the render maps rows→samples via `timing`, not the PlayedRow
+   list). Highest audible impact of the gaps.
+2. **Fine F-nibble slides (Axy/1xx/2xx)** — **format-ambiguous**: in MOD, `1F0`
+   is a fast slide; in S3M/XM, `1Fx` is fine. The replayer doesn't track source
+   format, so this needs a format flag (or a decision to assume S3M/XM) before
+   it's safe — otherwise it regresses MOD playback.
+3. **Rxy** retrigger+volslide — a NEW top-level command; needs a `fxCmd` value
+   the cell model + importers can carry (cross-file), not just replayer logic.
 4. **Gxx global / Mxx channel volume** — needs a scalar in the mix stage
    (`mixStems`), not just per-voice; larger, do last.
+5. **E5x finetune** — small but approximate (finetune isn't linear semitones);
+   low value.
 
 ## Test pattern (matches the repo's convention)
 

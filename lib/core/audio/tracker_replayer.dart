@@ -22,7 +22,8 @@
 // keep working). Implemented: Bxx position jump · Dxx pattern break (with the
 // classic decimal row param). The row-timing map maps each flat row back to its
 // (orderIndex, patternIndex, row) so the playhead can follow the non-linear
-// sequence. Implemented too: Exy extended — E1x/E2x fine porta, E9x retrigger,
+// sequence. Implemented too: Exy extended — E1x/E2x fine porta, E3x glissando
+// control, E4x/E7x vibrato/tremolo waveform (sine/saw/square), E9x retrigger,
 // EAx/EBx fine volume, ECx note cut, EDx note delay (per-tick, in ReplayVoice) +
 // E6x pattern loop (a row-level flow, in walkFlow). Fxx SET-SPEED (param <0x20 →
 // ticks/row) AND SET-TEMPO (param ≥0x20 → BPM): [walkFlow] annotates every played
@@ -100,6 +101,10 @@ const int kExFineVolUp = 0xA; // EAx — raise volume by x, once
 const int kExFineVolDown = 0xB; // EBx — lower volume by x, once
 const int kExNoteCut = 0xC; // ECx — cut the note (volume 0) at tick x
 const int kExNoteDelay = 0xD; // EDx — delay the note trigger until tick x
+const int kExGlissando =
+    0x3; // E3x — 1: tone-porta snaps output to whole semitones · 0: off
+const int kExVibratoWaveform = 0x4; // E4x — 0 sine · 1 saw(ramp) · 2 square
+const int kExTremoloWaveform = 0x7; // E7x — 0 sine · 1 saw(ramp) · 2 square
 
 // --- Tuning constants (MUSICAL APPROXIMATIONS, not period-accurate MOD) -------
 //
@@ -158,6 +163,22 @@ class ReplayResult {
 
 /// Mutable per-channel replay state, advanced tick by tick. Public fields are the
 /// trajectory the tests assert against.
+/// The tracker LFO shape for vibrato/tremolo, in [-1, 1], selected by E4x/E7x:
+/// 0 = sine, 1 = ramp-down (sawtooth), 2 = square. Anything else (incl. the
+/// classic "random", 3) falls back to sine so the pure trajectory stays
+/// deterministic for tests.
+double trackerLfo(int waveform, double phase) {
+  switch (waveform & 3) {
+    case 1: // ramp down: +1 at the start of a cycle, sloping to −1
+      final t = ((phase / (2 * pi)) % 1.0 + 1.0) % 1.0;
+      return 1.0 - 2.0 * t;
+    case 2: // square
+      return sin(phase) >= 0 ? 1.0 : -1.0;
+    default: // 0 sine (and 3 random ≈ sine, kept deterministic)
+      return sin(phase);
+  }
+}
+
 class ReplayVoice {
   /// Current base pitch as a FRACTIONAL MIDI note (porta/tone-porta move this).
   double pitch = 0;
@@ -184,6 +205,12 @@ class ReplayVoice {
   int _memTremSpeed = 0;
   int _memTremDepth = 0;
   int _memVolSlide = 0;
+
+  // LFO waveform select (E4x/E7x) + glissando control (E3x) — persist across
+  // rows like a real tracker's per-channel control state.
+  int _vibWave = 0;
+  int _tremWave = 0;
+  bool _glissando = false;
 
   // LFO phases (radians), reset on a new note.
   double _vibPhase = 0;
@@ -313,6 +340,14 @@ class ReplayVoice {
             volume = (volume + _exVal).clamp(0, kMaxVolume);
           case kExFineVolDown:
             volume = (volume - _exVal).clamp(0, kMaxVolume);
+          // Persistent control state (takes effect on later vibrato/tremolo/
+          // tone-porta rows):
+          case kExGlissando:
+            _glissando = _exVal != 0;
+          case kExVibratoWaveform:
+            _vibWave = _exVal;
+          case kExTremoloWaveform:
+            _tremWave = _exVal;
         }
     }
   }
@@ -359,7 +394,8 @@ class ReplayVoice {
       effPitch = pitch;
     }
 
-    // Tone porta: slide toward the target, never overshoot.
+    // Tone porta: slide toward the target, never overshoot. With glissando
+    // (E3x) on, the OUTPUT snaps to whole semitones while the slide continues.
     if (_isTonePorta && k > 0) {
       final step = _memTonePorta * kPortaSemitonesPerUnit;
       if (pitch < targetPitch) {
@@ -369,18 +405,20 @@ class ReplayVoice {
       }
       effPitch = pitch;
     }
+    if (_isTonePorta && _glissando) effPitch = effPitch.roundToDouble();
 
-    // Vibrato: zero-mean sine on pitch; phase advances each tick.
+    // Vibrato: zero-mean LFO (E4x waveform) on pitch; phase advances each tick.
     if (_isVibrato) {
       final depth = _memVibDepth * kVibratoDepthSemitonesPerUnit;
-      effPitch = pitch + depth * sin(_vibPhase);
+      effPitch = pitch + depth * trackerLfo(_vibWave, _vibPhase);
       _vibPhase += _memVibSpeed * kVibratoRadPerSpeedUnit;
     }
 
-    // Tremolo: zero-mean sine on volume; phase advances each tick.
+    // Tremolo: zero-mean LFO (E7x waveform) on volume; phase advances each tick.
     if (_cmd == kFxTremolo) {
       final depth = _memTremDepth * kTremoloDepthPerUnit;
-      effVol = (volume + depth * sin(_tremPhase)).clamp(0.0, kMaxVolume + 0.0);
+      effVol = (volume + depth * trackerLfo(_tremWave, _tremPhase))
+          .clamp(0.0, kMaxVolume + 0.0);
       _tremPhase += _memTremSpeed * kTremoloRadPerSpeedUnit;
     }
 
