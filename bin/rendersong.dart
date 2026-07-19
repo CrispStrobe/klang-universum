@@ -91,14 +91,22 @@ void main(List<String> args) {
   final quarterMs = (60000 / bpm).round();
   final fmt = from ?? _formatOf(inPath);
 
-  // General-MIDI per-part voicing: a multi-track MIDI + a SoundFont, each part
-  // voiced by its OWN GM program (drums → the bank-128 kit). This is the default
-  // for MIDI + --sf2; --preset N or --single forces one voice for the whole song.
-  final gmMode = fmt == 'midi' && sf2 != null && !presetSet && !single;
+  // General-MIDI per-part voicing: with a SoundFont, voice each part by its OWN
+  // GM program (drums → the bank-128 kit) — from a multi-track MIDI's program
+  // changes, or a MultiPart format's per-part <midi-program> metadata. The
+  // default when --sf2 is given; --preset N or --single forces one voice.
+  final gmEligible = sf2 != null && !presetSet && !single;
+  const multiPartFormats = {
+    'abc', 'musicxml', 'mxl', 'mscx', 'mscz', 'mei', 'kern', //
+  };
 
   final Float64List pcm;
-  if (gmMode) {
-    pcm = _renderGm(inPath, sf2, quarterMs);
+  if (gmEligible && fmt == 'midi') {
+    final parts = gmPartsFromMidi(File(inPath).readAsBytesSync());
+    pcm = _renderGmParts(parts, _loadFont(sf2), quarterMs);
+  } else if (gmEligible && multiPartFormats.contains(fmt)) {
+    final mp = _load(inPath, from) as MultiPartScore;
+    pcm = _renderGmParts(gmPartsFromMultiPart(mp), _loadFont(sf2), quarterMs);
   } else {
     // Parse to a Score / MultiPartScore and render it through one voice.
     final loaded = _load(inPath, from);
@@ -238,17 +246,17 @@ TrackerInstrument _soundFontVoice(String sf2Path, int preset) {
   return soundFontInstrument(loaded, p);
 }
 
-/// General-MIDI per-part render: split [inPath] into GM parts, voice each with
-/// its own program from [sf2Path] (drums → the bank-128 kit), and mix.
-Float64List _renderGm(String inPath, String sf2Path, int quarterMs) {
-  final font = _loadFont(sf2Path);
-  final parts = gmPartsFromMidi(File(inPath).readAsBytesSync());
-  if (parts.isEmpty) _fail('no playable tracks in $inPath');
+/// Voice each [parts] entry with its own GM preset from [font] (drums → the
+/// bank-128 kit) and mix. Falls back to bank 0 for the same program, then the
+/// font's first preset, so a sparse SoundFont still plays something.
+Float64List _renderGmParts(
+  List<GmPart> parts,
+  LoadedSoundFont font,
+  int quarterMs,
+) {
+  if (parts.isEmpty) _fail('no playable parts to render');
   final voiced = <(Score, TrackerInstrument)>[];
   for (final p in parts) {
-    // Drums live in bank 128; melodic voices in bank 0. Fall back to bank 0 for
-    // the same program, then to the font's first preset, so a sparse SoundFont
-    // still plays something.
     final preset = findPreset(font, p.isDrum ? 128 : 0, p.program) ??
         findPreset(font, 0, p.program) ??
         font.presets.first;

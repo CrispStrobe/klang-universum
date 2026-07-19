@@ -103,6 +103,40 @@ void main() {
     expect(parts.first.isDrum, isFalse);
   });
 
+  test('gmPartsFromMultiPart reads program + percussion from part metadata',
+      () {
+    // A 2-part MusicXML: Bass (program 33 → 32) + Drums (channel 10).
+    const xml = '''
+<?xml version="1.0"?>
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1"><part-name>Bass</part-name>
+      <midi-instrument id="P1-I1"><midi-channel>1</midi-channel>
+        <midi-program>33</midi-program></midi-instrument></score-part>
+    <score-part id="P2"><part-name>Drums</part-name>
+      <midi-instrument id="P2-I1"><midi-channel>10</midi-channel>
+        <midi-program>1</midi-program></midi-instrument></score-part>
+  </part-list>
+  <part id="P1"><measure number="1">
+    <attributes><divisions>1</divisions>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <clef><sign>G</sign><line>2</line></clef></attributes>
+    <note><pitch><step>C</step><octave>3</octave></pitch>
+      <duration>4</duration><type>whole</type></note></measure></part>
+  <part id="P2"><measure number="1">
+    <attributes><divisions>1</divisions>
+      <time><beats>4</beats><beat-type>4</beat-type></time>
+      <clef><sign>percussion</sign></clef></attributes>
+    <note><pitch><step>C</step><octave>4</octave></pitch>
+      <duration>4</duration><type>whole</type></note></measure></part>
+</score-partwise>''';
+    final parts = gmPartsFromMultiPart(multiPartScoreFromMusicXml(xml));
+    expect(parts.length, 2);
+    expect(parts[0].program, 32, reason: 'MusicXML 33 (1-based) → 32');
+    expect(parts[0].isDrum, isFalse);
+    expect(parts[1].isDrum, isTrue, reason: 'channel 10 → percussion');
+  });
+
   test('renderPartsWithVoices sums each part through its own voice', () {
     final parts = gmPartsFromMidi(_bandMidi());
     final voice = SampleInstrument('v', Float64List(512)..fillRange(0, 8, 0.3));

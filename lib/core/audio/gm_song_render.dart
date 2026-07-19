@@ -111,6 +111,20 @@ class GmPart {
   return (program: program, isDrum: isDrum, name: name);
 }
 
+/// Build [GmPart]s from an already-parsed [MultiPartScore] (MusicXML / MuseScore
+/// / …), reading each part's GM program + percussion from its [ScoreMetadata]
+/// (set by the readers that carry it — MusicXML's `<midi-program>` /
+/// `<midi-channel>10`). A part with no declared program defaults to 0 (piano).
+List<GmPart> gmPartsFromMultiPart(MultiPartScore mp) => [
+      for (final part in mp.parts)
+        GmPart(
+          score: part,
+          program: part.metadata.midiProgram ?? 0,
+          isDrum: part.metadata.isPercussion,
+          name: part.metadata.instrument ?? '',
+        ),
+    ];
+
 /// Split [smf] (a format 0 or 1 SMF) into [GmPart]s — one per `MTrk` that has
 /// notes, each carrying its GM program + percussion flag. Note-less tracks (a
 /// format-1 tempo/meta track 0) are skipped; a single-track MIDI yields one part.
