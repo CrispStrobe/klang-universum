@@ -83,8 +83,13 @@ sealed class LoopPattern {
   const LoopPattern();
 
   /// Render onto [timing]; pitched patterns shift every note by [transpose]
-  /// semitones (drums ignore it).
-  Float64List render(LoopTiming timing, {int transpose = 0});
+  /// semitones (drums ignore it), drum patterns render in [kit]'s timbre
+  /// (pitched patterns ignore it).
+  Float64List render(
+    LoopTiming timing, {
+    int transpose = 0,
+    DrumKit kit = kDrumKitClean,
+  });
 }
 
 /// A pitched pattern: cells laid back-to-back on the step grid.
@@ -97,7 +102,11 @@ class MelodicPattern extends LoopPattern {
   final List<PatternCell> cells;
 
   @override
-  Float64List render(LoopTiming timing, {int transpose = 0}) {
+  Float64List render(
+    LoopTiming timing, {
+    int transpose = 0,
+    DrumKit kit = kDrumKitClean,
+  }) {
     assert(
       cells.fold<int>(0, (sum, c) => sum + c.steps) == kPatternSteps,
       'pattern must fill the 2-bar grid exactly',
@@ -140,7 +149,11 @@ class DrumRowsPattern extends LoopPattern {
   final Map<Drum, List<bool>> rows;
 
   @override
-  Float64List render(LoopTiming timing, {int transpose = 0}) =>
+  Float64List render(
+    LoopTiming timing, {
+    int transpose = 0,
+    DrumKit kit = kDrumKitClean,
+  }) =>
       renderDrumPattern(
         [
           for (final MapEntry(key: drum, value: row) in rows.entries)
@@ -148,6 +161,7 @@ class DrumRowsPattern extends LoopPattern {
               if (row[step]) (timing.boundaryMs(step), drum),
         ],
         totalMs: timing.totalMs,
+        kit: kit,
       );
 }
 
@@ -323,6 +337,7 @@ class GrooveSpec {
     this.progressionId,
     this.key = 0,
     this.scale = GrooveScale.majorPentatonic,
+    this.kitId = 'clean',
     this.userCells,
     this.userInstrument,
     this.beatRows,
@@ -339,6 +354,9 @@ class GrooveSpec {
 
   /// Major or minor pentatonic (minor = the relative-major set, +3 semitones).
   final GrooveScale scale;
+
+  /// The drum-kit timbre id (a [kDrumKits] entry; 'clean' = the synth kit).
+  final String kitId;
 
   /// A [kProgressions] id, or null for the free 2-bar vamp.
   final String? progressionId;
@@ -378,6 +396,7 @@ class GrooveSpec {
         scale: json['sc'] == 'min'
             ? GrooveScale.minorPentatonic
             : GrooveScale.majorPentatonic,
+        kitId: json['kt'] as String? ?? 'clean',
         userCells:
             json['u'] is Map ? _cellsFromJson((json['u'] as Map)['c']) : null,
         userInstrument:
@@ -405,6 +424,7 @@ class GrooveSpec {
         // Omitted at defaults so pre-key `KU1.` tokens stay byte-identical.
         if (key != 0) 'k': key,
         if (scale == GrooveScale.minorPentatonic) 'sc': 'min',
+        if (kitId != 'clean') 'kt': kitId,
         if (userCells != null)
           'u': {
             'c': _cellsToJson(userCells!),
@@ -877,6 +897,16 @@ class LoopEngine {
     _clearRenderCaches();
   }
 
+  DrumKit _kit = kDrumKitClean;
+  DrumKit get kit => _kit;
+  String get kitId => _kit.id;
+  set kitId(String id) {
+    final next = drumKitById(id);
+    if (next.id == _kit.id) return;
+    _kit = next;
+    _clearRenderCaches();
+  }
+
   /// Semitones every pitched note is shifted by. Minor pentatonic borrows the
   /// relative-major set (+3), so the authored C-major-pentatonic content lands
   /// on the requested key's pentatonic collection either way — consonant for
@@ -918,6 +948,7 @@ class LoopEngine {
         progressionId: _progression?.id,
         key: _key,
         scale: _scale,
+        kitId: _kit.id,
         userCells: (_userTrack?.variants.first as MelodicPattern?)?.cells,
         userInstrument: _userTrack == null
             ? null
@@ -964,6 +995,7 @@ class LoopEngine {
     swing = next.swing;
     key = next.key;
     scale = next.scale;
+    kitId = next.kitId;
     Progression? found;
     for (final p in kProgressions) {
       if (p.id == next.progressionId) found = p;
@@ -1091,7 +1123,7 @@ class LoopEngine {
     final prog = _progression;
     final t = pitchTranspose;
     if (prog == null) {
-      return track.variants[variant].render(timing, transpose: t);
+      return track.variants[variant].render(timing, transpose: t, kit: _kit);
     }
 
     final follower = track.chordFollower;
@@ -1115,7 +1147,8 @@ class LoopEngine {
 
     // Everything else tiles its 2-bar pattern across the progression —
     // exact, because the swung step grid is periodic per bar.
-    final twoBars = track.variants[variant].render(_vampTiming, transpose: t);
+    final twoBars =
+        track.variants[variant].render(_vampTiming, transpose: t, kit: _kit);
     final reps = prog.degrees.length ~/ 2;
     final out = Float64List(twoBars.length * reps);
     for (var r = 0; r < reps; r++) {
@@ -1240,7 +1273,7 @@ class LoopEngine {
             },
         ],
     };
-    final stem = DrumRowsPattern(varied).render(_vampTiming);
+    final stem = DrumRowsPattern(varied).render(_vampTiming, kit: _kit);
     final prog = _progression;
     if (prog == null) return stem;
     final reps = prog.degrees.length ~/ 2;
@@ -1296,12 +1329,13 @@ class LoopEngine {
   Float64List _fillStemFor(LoopTrack track) {
     final prog = _progression;
     if (prog == null) {
-      return _stemCache['drums#fill#vamp'] ??= kDrumFillPattern.render(timing);
+      return _stemCache['drums#fill#vamp'] ??=
+          kDrumFillPattern.render(timing, kit: _kit);
     }
     final variant = _variantOf(track);
     return _stemCache['drums#fill#$variant#${prog.id}'] ??= () {
-      final groove = track.variants[variant].render(_vampTiming);
-      final fill = kDrumFillPattern.render(_vampTiming);
+      final groove = track.variants[variant].render(_vampTiming, kit: _kit);
+      final fill = kDrumFillPattern.render(_vampTiming, kit: _kit);
       final out = Float64List(groove.length + fill.length);
       out
         ..setAll(0, groove)

@@ -377,6 +377,11 @@
   "loopMixerScale": "Scale",
   "loopMixerScaleMajor": "Major",
   "loopMixerScaleMinor": "Minor",
+  "loopMixerKit": "Kit",
+  "loopMixerKitClean": "Clean",
+  "loopMixerKitDeep": "Deep",
+  "loopMixerKitWarm": "Warm",
+  "loopMixerKitLofi": "Lo-fi",
   "loopMixerHarmonyOff": "Free",
   "loopMixerRoll": "Surprise me — roll a new groove",
   "@loopMixerRoll": {

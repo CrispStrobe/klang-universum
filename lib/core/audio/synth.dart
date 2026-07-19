@@ -270,6 +270,62 @@ Uint8List wavBytesStereo(
 /// voices are APPENDED so existing index/order mappings stay stable.
 enum Drum { kick, snare, hat, openHat, clap, tom, rim, cowbell }
 
+/// A timbre profile applied to every drum voice — same hit *timing*, different
+/// *sound*. All multipliers are 1.0 (crush 0) for the clean synth kit; other
+/// kits scale the oscillator frequencies ([tune]), the decay rates ([decay];
+/// < 1 = longer/rounder), the noise-component gain ([noise]), the pitch-sweep
+/// depth of kick/tom ([sweep]), and add a soft-saturation "grit" ([crush], the
+/// dusty lo-fi flavour). Pure timbre — the onset grid never moves.
+class DrumKit {
+  const DrumKit(
+    this.id, {
+    this.tune = 1.0,
+    this.decay = 1.0,
+    this.noise = 1.0,
+    this.sweep = 1.0,
+    this.crush = 0.0,
+  });
+
+  final String id;
+  final double tune;
+  final double decay;
+  final double noise;
+  final double sweep;
+  final double crush;
+}
+
+/// The default clean synth kit (the original voices, all multipliers neutral).
+const DrumKit kDrumKitClean = DrumKit('clean');
+
+/// The offered kits: clean synth, a deep round electronic kit, a warm soft kit,
+/// and a dusty/crushed lo-fi kit. Ids are stable (they go in the share token).
+const List<DrumKit> kDrumKits = [
+  kDrumKitClean,
+  DrumKit('deep', tune: 0.80, decay: 0.62, noise: 0.82, sweep: 1.30),
+  DrumKit('warm', tune: 0.94, decay: 0.80, noise: 1.12, sweep: 0.82),
+  DrumKit(
+    'lofi',
+    tune: 0.88,
+    decay: 1.18,
+    noise: 1.28,
+    sweep: 0.90,
+    crush: 0.7,
+  ),
+];
+
+/// Resolve a kit id to its profile (unknown ids → the clean kit).
+DrumKit drumKitById(String id) =>
+    kDrumKits.firstWhere((k) => k.id == id, orElse: () => kDrumKitClean);
+
+/// Soft-saturate [x] by [crush] (0 = passthrough) — adds harmonics/grit.
+double _crush(double x, double crush) =>
+    crush <= 0 ? x : _tanhApprox(x * (1 + 3 * crush));
+
+double _tanhApprox(double x) {
+  final e2 = exp(2 * x);
+  return (e2 - 1) / (e2 + 1);
+}
+
 Float64List _normalizedToUnitPeak(Float64List buffer) {
   var peak = 0.0;
   for (final v in buffer) {
@@ -283,21 +339,40 @@ Float64List _normalizedToUnitPeak(Float64List buffer) {
   return buffer;
 }
 
-/// Renders one unit-peak percussion hit.
-Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
+/// Applies the kit's [crush] grit (if any) then normalizes to unit peak. The
+/// buffer length is kit-independent, so the onset grid never shifts.
+Float64List _finishDrum(Float64List out, double crush) {
+  if (crush > 0) {
+    for (var i = 0; i < out.length; i++) {
+      out[i] = _crush(out[i], crush);
+    }
+  }
+  return _normalizedToUnitPeak(out);
+}
+
+/// Renders one unit-peak percussion hit in the given [kit]'s timbre (default =
+/// the clean synth kit). [kit] changes the *sound* only; the buffer length —
+/// and thus every hit's position in a pattern — is identical across kits.
+Float64List renderDrum(
+  Drum drum, {
+  int sampleRate = kSampleRate,
+  DrumKit kit = kDrumKitClean,
+}) {
+  final tn = kit.tune, dk = kit.decay, nz = kit.noise, sw = kit.sweep;
   switch (drum) {
     case Drum.kick:
       // A sine sweeping 120→40 Hz with a fast decay: the classic synth kick.
       final n = (130 * sampleRate) ~/ 1000;
       final out = Float64List(n);
       var phase = 0.0;
+      final startF = 120 * tn, depth = (120 - 40) * tn * sw;
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
-        final freq = 120 - (120 - 40) * (t / 0.130);
+        final freq = startF - depth * (t / 0.130);
         phase += freq / sampleRate;
-        out[i] = sin(2 * pi * phase) * exp(-18 * t);
+        out[i] = sin(2 * pi * phase) * exp(-18 * dk * t);
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.snare:
       // A 190 Hz body under a noise burst.
       final n = (150 * sampleRate) ~/ 1000;
@@ -305,11 +380,11 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
       final noise = Random(2);
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
-        final body = 0.5 * sin(2 * pi * 190 * t) * exp(-25 * t);
-        final rattle = (noise.nextDouble() * 2 - 1) * exp(-22 * t);
+        final body = 0.5 * sin(2 * pi * 190 * tn * t) * exp(-25 * dk * t);
+        final rattle = (noise.nextDouble() * 2 - 1) * nz * exp(-22 * dk * t);
         out[i] = body + rattle;
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.hat:
       // Differentiated (high-passed) noise, very short.
       final n = (50 * sampleRate) ~/ 1000;
@@ -319,10 +394,10 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
         final white = noise.nextDouble() * 2 - 1;
-        out[i] = (white - prev) * exp(-60 * t);
+        out[i] = (white - prev) * exp(-60 * dk * t);
         prev = white;
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.openHat:
       // Like the hat but a long, sizzling decay (an open hi-hat).
       final n = (280 * sampleRate) ~/ 1000;
@@ -332,10 +407,10 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
         final white = noise.nextDouble() * 2 - 1;
-        out[i] = (white - prev) * exp(-11 * t);
+        out[i] = (white - prev) * exp(-11 * dk * t);
         prev = white;
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.clap:
       // Three quick noise bursts ~9 ms apart (the hand transients) into a
       // slightly longer diffuse tail — the classic clap shape.
@@ -350,25 +425,26 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
         var env = 0.0;
         for (var b = 0; b < 3; b++) {
           final bt = (i - b * burstGap) / sampleRate;
-          if (bt >= 0) env += exp(-140 * bt);
+          if (bt >= 0) env += exp(-140 * dk * bt);
         }
-        final tail = 0.35 * exp(-18 * t);
+        final tail = 0.35 * exp(-18 * dk * t);
         out[i] = white * (env + tail);
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.tom:
       // A mid tom: a sine gliding 190→95 Hz with a medium decay (a softer,
       // higher, longer sibling of the kick).
       final n = (220 * sampleRate) ~/ 1000;
       final out = Float64List(n);
       var phase = 0.0;
+      final startF = 190 * tn, depth = (190 - 95) * tn * sw;
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
-        final freq = 190 - (190 - 95) * (t / 0.220);
+        final freq = startF - depth * (t / 0.220);
         phase += freq / sampleRate;
-        out[i] = sin(2 * pi * phase) * exp(-9 * t);
+        out[i] = sin(2 * pi * phase) * exp(-9 * dk * t);
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.rim:
       // A rimshot: a short ~1700 Hz tone click with a hint of noise, very fast
       // decay.
@@ -377,11 +453,11 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
       final noise = Random(6);
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
-        final tone = sin(2 * pi * 1700 * t);
-        final click = (noise.nextDouble() * 2 - 1) * 0.4;
-        out[i] = (tone + click) * exp(-90 * t);
+        final tone = sin(2 * pi * 1700 * tn * t);
+        final click = (noise.nextDouble() * 2 - 1) * 0.4 * nz;
+        out[i] = (tone + click) * exp(-90 * dk * t);
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
     case Drum.cowbell:
       // Two detuned square-ish tones (~540 + ~800 Hz), medium decay — the 808
       // cowbell.
@@ -390,11 +466,11 @@ Float64List renderDrum(Drum drum, {int sampleRate = kSampleRate}) {
       double sq(double x) => sin(2 * pi * x) >= 0 ? 1.0 : -1.0;
       for (var i = 0; i < n; i++) {
         final t = i / sampleRate;
-        final a = sq(540 * t);
-        final b = sq(800 * t);
-        out[i] = (a + b) * exp(-8 * t);
+        final a = sq(540 * tn * t);
+        final b = sq(800 * tn * t);
+        out[i] = (a + b) * exp(-8 * dk * t);
       }
-      return _normalizedToUnitPeak(out);
+      return _finishDrum(out, kit.crush);
   }
 }
 
@@ -405,12 +481,14 @@ Float64List renderDrumPattern(
   List<(int, Drum)> hits, {
   required int totalMs,
   int sampleRate = kSampleRate,
+  DrumKit kit = kDrumKitClean,
 }) {
   final totalSamples = (totalMs * sampleRate) ~/ 1000;
   final out = Float64List(totalSamples);
   final oneShots = <Drum, Float64List>{};
   for (final (atMs, drum) in hits) {
-    final shot = oneShots[drum] ??= renderDrum(drum, sampleRate: sampleRate);
+    final shot =
+        oneShots[drum] ??= renderDrum(drum, sampleRate: sampleRate, kit: kit);
     final start = (atMs * sampleRate) ~/ 1000;
     final n = min(shot.length, totalSamples - start);
     for (var i = 0; i < n; i++) {

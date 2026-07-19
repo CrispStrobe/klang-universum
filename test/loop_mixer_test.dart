@@ -288,6 +288,29 @@ void main() {
     }
   });
 
+  testWidgets('kit chips swap the drum timbre', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.kitId, 'clean');
+
+    game.toggleTrack('drums');
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Deep'));
+    await tester.pump();
+    expect(game.kitId, 'deep');
+    expect(game.isPlaying, isTrue);
+    expect(tester.takeException(), isNull);
+
+    // Seam round-trips + an unknown id falls back to clean.
+    game.setKit('lofi');
+    await tester.pump();
+    expect(game.kitId, 'lofi');
+    game.setKit('nonsense');
+    await tester.pump();
+    expect(game.kitId, 'clean');
+  });
+
   testWidgets('Save to Song Book is offered only when a pitched track plays',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());

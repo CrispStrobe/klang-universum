@@ -34,6 +34,7 @@ import 'package:comet_beat/core/audio/loop_reference.dart';
 import 'package:comet_beat/core/audio/microphone_pitch_service.dart';
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/play_along.dart';
+import 'package:comet_beat/core/audio/synth.dart' show kDrumKits;
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
@@ -114,6 +115,10 @@ abstract interface class LoopMixerTester {
   void setKey(int key);
   GrooveScale get scale;
   void setScale(GrooveScale scale);
+
+  /// The drum-kit timbre id.
+  String get kitId;
+  void setKit(String id);
 
   /// The master send effect on the whole mix, and a setter.
   LoopSend get send;
@@ -274,6 +279,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   GrooveScale get scale => _engine.scale;
   @override
   void setScale(GrooveScale scale) => _setScale(scale);
+  @override
+  String get kitId => _engine.kitId;
+  @override
+  void setKit(String id) => _setKit(id);
 
   @override
   void stopAll() => _stopAll();
@@ -1247,6 +1256,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _syncPlayback();
   }
 
+  void _setKit(String id) {
+    if (id == _engine.kitId) return;
+    setState(() => _engine.kitId = id);
+    _syncPlayback();
+  }
+
   /// A new grid (tempo or bar count changed) — restart from the top.
   void _restartGroove() {
     _clock
@@ -1337,6 +1352,13 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         75 => l10n.loopMixerTempoChill,
         120 => l10n.loopMixerTempoFast,
         _ => l10n.loopMixerTempoGroove,
+      };
+
+  String _kitLabel(AppLocalizations l10n, String id) => switch (id) {
+        'deep' => l10n.loopMixerKitDeep,
+        'warm' => l10n.loopMixerKitWarm,
+        'lofi' => l10n.loopMixerKitLofi,
+        _ => l10n.loopMixerKitClean,
       };
 
   @override
@@ -1681,6 +1703,30 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                               _setScale(GrooveScale.minorPentatonic),
                           visualDensity: VisualDensity.compact,
                         ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Drum kit: same beat, different timbre (clean/deep/warm/lo-fi).
+              Row(
+                children: [
+                  Text(
+                    l10n.loopMixerKit,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      children: [
+                        for (final kit in kDrumKits)
+                          ChoiceChip(
+                            label: Text(_kitLabel(l10n, kit.id)),
+                            selected: _engine.kitId == kit.id,
+                            onSelected: (_) => _setKit(kit.id),
+                            visualDensity: VisualDensity.compact,
+                          ),
                       ],
                     ),
                   ),

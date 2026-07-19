@@ -1958,6 +1958,36 @@ abstract class AppLocalizations {
   /// **'Minor'**
   String get loopMixerScaleMinor;
 
+  /// No description provided for @loopMixerKit.
+  ///
+  /// In en, this message translates to:
+  /// **'Kit'**
+  String get loopMixerKit;
+
+  /// No description provided for @loopMixerKitClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get loopMixerKitClean;
+
+  /// No description provided for @loopMixerKitDeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep'**
+  String get loopMixerKitDeep;
+
+  /// No description provided for @loopMixerKitWarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm'**
+  String get loopMixerKitWarm;
+
+  /// No description provided for @loopMixerKitLofi.
+  ///
+  /// In en, this message translates to:
+  /// **'Lo-fi'**
+  String get loopMixerKitLofi;
+
   /// No description provided for @loopMixerHarmonyOff.
   ///
   /// In en, this message translates to:

@@ -1020,6 +1020,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerScaleMinor => 'Moll';
 
   @override
+  String get loopMixerKit => 'Set';
+
+  @override
+  String get loopMixerKitClean => 'Klar';
+
+  @override
+  String get loopMixerKitDeep => 'Tief';
+
+  @override
+  String get loopMixerKitWarm => 'Warm';
+
+  @override
+  String get loopMixerKitLofi => 'Lo-fi';
+
+  @override
   String get loopMixerHarmonyOff => 'Frei';
 
   @override
