@@ -10,6 +10,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
+import 'package:comet_beat/shared/widgets/waveform_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -188,7 +189,7 @@ class _MySamplesSheetState extends State<MySamplesSheet>
                           _duration(clip),
                         ].where((s) => s.isNotEmpty).join(' · ');
                         return ListTile(
-                          leading: const Icon(Icons.graphic_eq),
+                          leading: WaveformThumbnail(clip.pcm),
                           title: Text(clip.name),
                           subtitle: detail.isEmpty ? null : Text(detail),
                           onTap: widget.pickable

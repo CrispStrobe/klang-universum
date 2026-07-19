@@ -12,6 +12,7 @@ import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
+import 'package:comet_beat/shared/widgets/waveform_thumbnail.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -303,7 +304,7 @@ class _SampleExtractorScreenState extends State<SampleExtractorScreen>
                     itemBuilder: (ctx, i) {
                       final s = _samples[i];
                       return ListTile(
-                        leading: const Icon(Icons.graphic_eq),
+                        leading: WaveformThumbnail(s.pcm),
                         title: Text(s.displayName),
                         subtitle: Text(
                           l10n.sampleExtractMeta(
