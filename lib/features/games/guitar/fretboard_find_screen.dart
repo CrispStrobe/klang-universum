@@ -4,8 +4,10 @@
 // given a note and taps WHERE it sits on the fretboard (productive recall). Any
 // position of the target counts — a note lives on several strings. A tappable
 // 6-string × 0–4-fret grid; correct cells light up so the whole shape is learnt.
+// Naturals for the first half of the game, then sharps join in (a difficulty
+// ramp). The target is a pitch class, so ANY octave/spelling of it counts.
 //
-// SRI: 'guitar.fret.<note>'.
+// SRI: 'guitar.fret.pc<0-11>'.
 
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
@@ -31,12 +33,13 @@ class FretboardFindScreen extends StatefulWidget {
 
 class _FretboardFindScreenState extends State<FretboardFindScreen>
     with QuizRoundMixin {
-  /// The natural notes are the answer targets — the [Step] enum is exactly
-  /// C D E F G A B.
-  static const List<Step> _targets = Step.values;
+  /// Answer targets are PITCH CLASSES (0 = C … 11 = B). The naturals come first
+  /// (easier); accidentals join once past the halfway mark.
+  static const List<int> _naturals = [0, 2, 4, 5, 7, 9, 11];
+  static const List<int> _all = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
   int _round = 0; // drives the deterministic (test-stable) target rotation.
-  late Step _target;
+  late int _target; // target pitch class
   (int, int)? _tapped;
   bool? _lastAnswer;
 
@@ -58,8 +61,11 @@ class _FretboardFindScreenState extends State<FretboardFindScreen>
 
   @override
   void prepareRound() {
-    // Rotate through the naturals (stable order → testable, still varied).
-    _target = _targets[(_round * 3) % _targets.length];
+    // Naturals-only for the first half, then all twelve — a difficulty ramp.
+    // Round 0 lands on C (pitch class 0), keeping the rotation test-stable.
+    final firstHalf = _round < totalRounds ~/ 2;
+    final pool = firstHalf ? _naturals : _all;
+    _target = pool[(_round * (firstHalf ? 3 : 5)) % pool.length];
     _round++;
     _tapped = null;
     _lastAnswer = null;
@@ -68,11 +74,14 @@ class _FretboardFindScreenState extends State<FretboardFindScreen>
   int _midiAt(int string, int fret) =>
       kGuitarTuning.strings[string].midiNumber + fret;
 
-  /// The natural target lives here iff this fret spells that exact letter
-  /// (a sharp position has `alter == 1`, so it never matches a natural).
-  bool _isTarget(int string, int fret) {
-    final p = Pitch.fromMidi(_midiAt(string, fret));
-    return p.alter == 0 && p.step == _target;
+  /// The target pitch class lives at this fret (any octave, any spelling).
+  bool _isTarget(int string, int fret) => _midiAt(string, fret) % 12 == _target;
+
+  /// The target's display name — a natural letter (honouring the note-name
+  /// style) or that letter plus a sharp for the black notes.
+  String _targetName(BuildContext context) {
+    final p = Pitch.fromMidi(60 + _target);
+    return noteNameFor(context, p.step) + (p.alter == 1 ? '♯' : '');
   }
 
   void _onTap(int string, int fret) {
@@ -83,7 +92,7 @@ class _FretboardFindScreenState extends State<FretboardFindScreen>
     if (_tapped == null || !answeredWrong) {
       context
           .read<SriService>()
-          .recordResponse('guitar.fret.${_target.name}', correct);
+          .recordResponse('guitar.fret.pc$_target', correct);
     }
     if (correct) {
       audio.playMidiNote(_midiAt(string, fret), ms: 900);
@@ -126,9 +135,7 @@ class _FretboardFindScreenState extends State<FretboardFindScreen>
                       correct: _lastAnswer,
                       round: round + 1,
                       totalRounds: totalRounds,
-                      prompt: l10n.fretboardFindPrompt(
-                        noteNameFor(context, _target),
-                      ),
+                      prompt: l10n.fretboardFindPrompt(_targetName(context)),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
