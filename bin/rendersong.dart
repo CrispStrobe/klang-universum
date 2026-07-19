@@ -33,6 +33,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart' show reverbFx;
 import 'package:comet_beat/core/audio/gm_song_render.dart';
 import 'package:comet_beat/core/audio/mp3/mp3_encoder.dart';
 import 'package:comet_beat/core/audio/score_instrument_render.dart';
@@ -57,6 +58,7 @@ void main(List<String> args) {
   var bpm = 120;
   var bitrate = 192;
   var gain = 1.0;
+  var reverb = 0.16; // subtle room by default; --reverb 0 for dry
 
   for (var i = 0; i < args.length; i++) {
     final a = args[i];
@@ -74,6 +76,8 @@ void main(List<String> args) {
         bitrate = int.parse(_next(args, ++i, a));
       case '--gain':
         gain = double.parse(_next(args, ++i, a));
+      case '--reverb':
+        reverb = double.parse(_next(args, ++i, a)).clamp(0.0, 1.0);
       case '--from':
         from = _next(args, ++i, a);
       case '-h':
@@ -149,16 +153,21 @@ void main(List<String> args) {
   final Uint8List bytes;
   final int frames;
   if (gmParts != null && gmParts.length > 1) {
-    final (left, right) = panPartsToStereo(gmParts);
+    var (left, right) = panPartsToStereo(gmParts);
     if (left.isEmpty) _fail('the score produced no notes to render');
+    if (reverb > 0) {
+      left = reverbFx(left, mix: reverb);
+      right = reverbFx(right, mix: reverb);
+    }
     _masterStereo(left, right, target);
     frames = left.length;
     bytes = isMp3
         ? mp3EncodeStereo(left, right, bitrate: bitrate)
         : _wavStereo(left, right);
   } else {
-    final m = (gmParts != null && gmParts.isNotEmpty) ? gmParts.first : mono!;
+    var m = (gmParts != null && gmParts.isNotEmpty) ? gmParts.first : mono!;
     if (m.isEmpty) _fail('the score produced no notes to render');
+    if (reverb > 0) m = reverbFx(m, mix: reverb);
     _master(m, target);
     frames = m.length;
     bytes = isMp3 ? mp3EncodeMono(m, bitrate: bitrate) : wavBytes(_toInt16(m));
@@ -432,6 +441,7 @@ Options:
   --bpm <B>        tempo (default 120)
   --bitrate <K>    MP3 bitrate kbps (default 192)
   --gain <G>       output gain multiplier (default 1.0)
+  --reverb <0..1>  master reverb mix (default 0.16; 0 = dry)
   --from <fmt>     force input format (abc/midi/musicxml/mxl/mscx/mscz/mei/
                    kern/gp3/gp4/gp5/gp/gpx/gpif)
 
