@@ -102,6 +102,7 @@ import 'package:comet_beat/features/games/note_values/tempo_duel_screen.dart';
 import 'package:comet_beat/features/games/note_values/tempo_order_screen.dart';
 import 'package:comet_beat/features/games/note_values/triplet_read_screen.dart';
 import 'package:comet_beat/features/games/note_values/value_order_screen.dart';
+import 'package:comet_beat/features/games/playalong/midi_play_along_screen.dart';
 import 'package:comet_beat/features/games/playalong/play_along_screen.dart';
 import 'package:comet_beat/features/games/scales/command_caller_screen.dart';
 import 'package:comet_beat/features/games/scales/count_notes_screen.dart';
@@ -1353,6 +1354,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
         gameId: 'sing_mary',
         sriPrefix: 'voice.sing_along',
       ),
+    ),
+    // Play along to ANY MIDI file — pick a .mid and it becomes a moving-score
+    // play/sing-along (scoreFromMidi → SongScreen.fromScore). Turns the whole
+    // MIDI import path into game content.
+    GameInfo(
+      id: 'midi_play_along',
+      icon: Icons.piano,
+      title: (l) => l.gameMidiPlayAlong,
+      subtitle: (l) => l.gameMidiPlayAlongSubtitle,
+      builder: (_) => const MidiPlayAlongScreen(),
     ),
     GameInfo(
       id: 'tune_quiz',
