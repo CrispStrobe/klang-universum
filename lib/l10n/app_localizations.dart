@@ -2600,6 +2600,12 @@ abstract class AppLocalizations {
   /// **'Guitar Tab'**
   String get workshopModeTab;
 
+  /// No description provided for @workshopModePerform.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Looper'**
+  String get workshopModePerform;
+
   /// No description provided for @workshopModeLoop.
   ///
   /// In en, this message translates to:
@@ -3775,6 +3781,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved “{title}”'**
   String tabSaved(String title);
+
+  /// No description provided for @performTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Looper'**
+  String get performTitle;
+
+  /// No description provided for @performPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a loop to start, then stack more on top. Mute or undo layers as you build your jam.'**
+  String get performPrompt;
+
+  /// No description provided for @performSeedBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Beat'**
+  String get performSeedBeat;
+
+  /// No description provided for @performSeedBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get performSeedBass;
+
+  /// No description provided for @performSeedChords.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords'**
+  String get performSeedChords;
+
+  /// No description provided for @performSeedMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody'**
+  String get performSeedMelody;
+
+  /// No description provided for @performEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a loop above to start your jam!'**
+  String get performEmptyHint;
+
+  /// No description provided for @performPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get performPlay;
+
+  /// No description provided for @performStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get performStop;
+
+  /// No description provided for @performUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo layer'**
+  String get performUndo;
+
+  /// No description provided for @performRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo layer'**
+  String get performRedo;
+
+  /// No description provided for @performClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get performClear;
+
+  /// No description provided for @performMute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute layer'**
+  String get performMute;
+
+  /// No description provided for @performUnmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute layer'**
+  String get performUnmute;
 
   /// No description provided for @tabUndo.
   ///

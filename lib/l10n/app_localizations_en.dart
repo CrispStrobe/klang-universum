@@ -1362,6 +1362,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopModeTab => 'Guitar Tab';
 
   @override
+  String get workshopModePerform => 'Live Looper';
+
+  @override
   String get workshopModeLoop => 'Loop Mixer';
 
   @override
@@ -1996,6 +1999,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String tabSaved(String title) {
     return 'Saved “$title”';
   }
+
+  @override
+  String get performTitle => 'Live Looper';
+
+  @override
+  String get performPrompt =>
+      'Tap a loop to start, then stack more on top. Mute or undo layers as you build your jam.';
+
+  @override
+  String get performSeedBeat => 'Beat';
+
+  @override
+  String get performSeedBass => 'Bass';
+
+  @override
+  String get performSeedChords => 'Chords';
+
+  @override
+  String get performSeedMelody => 'Melody';
+
+  @override
+  String get performEmptyHint => 'Tap a loop above to start your jam!';
+
+  @override
+  String get performPlay => 'Play';
+
+  @override
+  String get performStop => 'Stop';
+
+  @override
+  String get performUndo => 'Undo layer';
+
+  @override
+  String get performRedo => 'Redo layer';
+
+  @override
+  String get performClear => 'Clear all';
+
+  @override
+  String get performMute => 'Mute layer';
+
+  @override
+  String get performUnmute => 'Unmute layer';
 
   @override
   String get tabUndo => 'Undo';

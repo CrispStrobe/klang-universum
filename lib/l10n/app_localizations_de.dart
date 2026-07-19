@@ -1367,6 +1367,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopModeTab => 'Gitarren-Tabulatur';
 
   @override
+  String get workshopModePerform => 'Live-Looper';
+
+  @override
   String get workshopModeLoop => 'Loop-Mixer';
 
   @override
@@ -2002,6 +2005,49 @@ class AppLocalizationsDe extends AppLocalizations {
   String tabSaved(String title) {
     return '„$title“ gespeichert';
   }
+
+  @override
+  String get performTitle => 'Live-Looper';
+
+  @override
+  String get performPrompt =>
+      'Tippe einen Loop an, dann staple weitere darüber. Ebenen stummschalten oder zurücknehmen, während du jammst.';
+
+  @override
+  String get performSeedBeat => 'Beat';
+
+  @override
+  String get performSeedBass => 'Bass';
+
+  @override
+  String get performSeedChords => 'Akkorde';
+
+  @override
+  String get performSeedMelody => 'Melodie';
+
+  @override
+  String get performEmptyHint => 'Tippe oben einen Loop an, um loszulegen!';
+
+  @override
+  String get performPlay => 'Abspielen';
+
+  @override
+  String get performStop => 'Stopp';
+
+  @override
+  String get performUndo => 'Ebene zurück';
+
+  @override
+  String get performRedo => 'Ebene wieder';
+
+  @override
+  String get performClear => 'Alles löschen';
+
+  @override
+  String get performMute => 'Ebene stumm';
+
+  @override
+  String get performUnmute => 'Ebene laut';
 
   @override
   String get tabUndo => 'Rückgängig';
