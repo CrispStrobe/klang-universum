@@ -8,7 +8,9 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
 import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/instrument_play_screen.dart';
 import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart';
+import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,9 +80,9 @@ void main() {
     expect(find.textContaining('No saved instruments'), findsOneWidget);
   });
 
-  test('renderInstrumentNote is non-silent across the keyboard octave', () {
+  test('renderInstrumentNote is non-silent across an octave', () {
     final inst = _saved('x').instrument!;
-    for (final midi in kKeyboardMidi) {
+    for (final midi in const [60, 62, 64, 65, 67, 69, 71, 72]) {
       final pcm = renderInstrumentNote(inst, midi);
       var peak = 0.0;
       for (final s in pcm) {
@@ -95,7 +97,8 @@ void main() {
     );
   });
 
-  testWidgets('the 🎹 button opens a one-octave keyboard', (tester) async {
+  testWidgets('the 🎹 button opens the live-play keyboard screen',
+      (tester) async {
     final store = InstrumentLibraryStore();
     await store.save(_saved('bell'));
     await pumpGame(
@@ -107,10 +110,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.piano));
     await tester.pumpAndSettle();
 
-    // one labelled button per white key (C D E F G A B C)
-    for (final label in const ['C', 'D', 'E', 'F', 'G', 'A', 'B']) {
-      expect(find.widgetWithText(ElevatedButton, label), findsWidgets);
-    }
-    expect(find.byType(ElevatedButton), findsNWidgets(kKeyboardMidi.length));
+    expect(find.byType(InstrumentPlayScreen), findsOneWidget);
+    expect(find.byType(PianoKeyboard), findsOneWidget);
   });
 }

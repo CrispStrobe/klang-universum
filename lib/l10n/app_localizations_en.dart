@@ -1764,6 +1764,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myInstrumentsPlay => 'Play';
 
   @override
+  String get instrumentPlayOctaveDown => 'Octave down';
+
+  @override
+  String get instrumentPlayOctaveUp => 'Octave up';
+
+  @override
+  String get instrumentPlayHint => 'Tap the keys to play your instrument.';
+
+  @override
   String get myInstrumentsDelete => 'Delete';
 
   @override

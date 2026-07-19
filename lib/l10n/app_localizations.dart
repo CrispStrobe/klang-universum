@@ -3380,6 +3380,24 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get myInstrumentsPlay;
 
+  /// No description provided for @instrumentPlayOctaveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Octave down'**
+  String get instrumentPlayOctaveDown;
+
+  /// No description provided for @instrumentPlayOctaveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Octave up'**
+  String get instrumentPlayOctaveUp;
+
+  /// No description provided for @instrumentPlayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the keys to play your instrument.'**
+  String get instrumentPlayHint;
+
   /// No description provided for @myInstrumentsDelete.
   ///
   /// In en, this message translates to:

@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/instrument_play_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:flutter/material.dart';
@@ -38,10 +39,6 @@ Float64List renderInstrumentNote(TrackerInstrument inst, [int midi = 60]) =>
       [TrackerCell(midi: midi)],
       const TrackerTiming(rows: 4),
     );
-
-/// One octave of white keys, C4..C5 — the play keyboard's notes + labels.
-const List<int> kKeyboardMidi = [60, 62, 64, 65, 67, 69, 71, 72];
-const List<String> kKeyboardLabels = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
 
 /// Test seam — drive the sheet without tapping through the UI.
 abstract class MyInstrumentsTester {
@@ -102,42 +99,13 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
     if (inst != null) _playNote(inst, 60); // references need the font — skip
   }
 
-  /// Opens a one-octave keyboard that plays [s] at each tapped pitch.
+  /// Opens the full-keyboard live-play screen for [s].
   Future<void> _showKeyboard(SavedInstrument s) async {
     final inst = s.instrument;
     if (inst == null) return;
-    final l10n = AppLocalizations.of(context)!;
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${l10n.myInstrumentsPlay} · ${s.name}'),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  for (var i = 0; i < kKeyboardMidi.length; i++)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: SizedBox(
-                          height: 96,
-                          child: ElevatedButton(
-                            onPressed: () => _playNote(inst, kKeyboardMidi[i]),
-                            child: Text(kKeyboardLabels[i]),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => InstrumentPlayScreen(instrument: inst, name: s.name),
       ),
     );
   }
