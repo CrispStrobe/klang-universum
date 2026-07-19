@@ -911,6 +911,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'With a capo, what does the shape sound like?';
 
   @override
+  String get gamePowerChord => 'Power Chords';
+
+  @override
+  String get gamePowerChordSubtitle =>
+      'Name the two-note rock chord (root + fifth)';
+
+  @override
+  String get powerChordPrompt =>
+      'Which power chord is this? (R = root, 5 = fifth)';
+
+  @override
   String get primerFretboardTitle => 'One note, many places';
 
   @override

@@ -40,6 +40,7 @@ import 'package:comet_beat/features/games/guitar/capo_match_screen.dart';
 import 'package:comet_beat/features/games/guitar/fretboard_find_screen.dart';
 import 'package:comet_beat/features/games/guitar/guitar_string_quiz_screen.dart';
 import 'package:comet_beat/features/games/guitar/guitar_tab_read_screen.dart';
+import 'package:comet_beat/features/games/guitar/power_chord_screen.dart';
 import 'package:comet_beat/features/games/guitar/strum_toy_screen.dart';
 import 'package:comet_beat/features/games/harmony/cadence_workshop_screen.dart';
 import 'package:comet_beat/features/games/harmony/function_ear_screen.dart';
@@ -1321,6 +1322,15 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       subtitle: (l) => l.gameCapoMatchSubtitle,
       builder: (_) => const CapoMatchScreen(),
       tutorial: capoMatchPrimer,
+      unlockedWhen: (p) => p.starsFor('fretboard_find') >= 1,
+      lockedHint: (l) => l.advancedGameHint,
+    ),
+    GameInfo(
+      id: 'power_chord',
+      icon: Icons.bolt,
+      title: (l) => l.gamePowerChord,
+      subtitle: (l) => l.gamePowerChordSubtitle,
+      builder: (_) => const PowerChordScreen(),
       unlockedWhen: (p) => p.starsFor('fretboard_find') >= 1,
       lockedHint: (l) => l.advancedGameHint,
     ),

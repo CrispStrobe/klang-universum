@@ -1760,6 +1760,24 @@ abstract class AppLocalizations {
   /// **'With a capo, what does the shape sound like?'**
   String get gameCapoMatchSubtitle;
 
+  /// No description provided for @gamePowerChord.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Chords'**
+  String get gamePowerChord;
+
+  /// No description provided for @gamePowerChordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the two-note rock chord (root + fifth)'**
+  String get gamePowerChordSubtitle;
+
+  /// No description provided for @powerChordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Which power chord is this? (R = root, 5 = fifth)'**
+  String get powerChordPrompt;
+
   /// No description provided for @primerFretboardTitle.
   ///
   /// In en, this message translates to:

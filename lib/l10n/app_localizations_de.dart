@@ -914,6 +914,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameCapoMatchSubtitle => 'Wie klingt der Griff mit Kapodaster?';
 
   @override
+  String get gamePowerChord => 'Power-Akkorde';
+
+  @override
+  String get gamePowerChordSubtitle =>
+      'Benenne den Zwei-Ton-Rockakkord (Grundton + Quinte)';
+
+  @override
+  String get powerChordPrompt =>
+      'Welcher Power-Akkord ist das? (R = Grundton, 5 = Quinte)';
+
+  @override
   String get primerFretboardTitle => 'Eine Note, viele Plätze';
 
   @override

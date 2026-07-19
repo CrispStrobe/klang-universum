@@ -581,6 +581,7 @@ const List<Concept> kConcepts = [
     'guitar_tab_read',
     'fretboard_find',
     'capo_match',
+    'power_chord',
     'guitar_play_along',
     'strum_toy',
   ]),
