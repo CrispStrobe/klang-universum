@@ -1003,6 +1003,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerHarmony => 'Harmony';
 
   @override
+  String get loopMixerKey => 'Key';
+
+  @override
+  String get loopMixerScale => 'Scale';
+
+  @override
+  String get loopMixerScaleMajor => 'Major';
+
+  @override
+  String get loopMixerScaleMinor => 'Minor';
+
+  @override
   String get loopMixerHarmonyOff => 'Free';
 
   @override

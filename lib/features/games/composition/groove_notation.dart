@@ -148,7 +148,8 @@ const grooveTrackOrder = ['voice', 'melody', 'chords', 'sparkle', 'bass'];
   final partNames = <String>[];
   for (final id in grooveTrackOrder) {
     if (!engine.enabled.contains(id)) continue;
-    final cells = engine.cellsFor(id);
+    // Transposed to the current key/scale, so the saved score matches the sound.
+    final cells = engine.engravedCellsFor(id);
     if (cells == null) continue; // defensive: an unpitched id in the order
     parts.add(
       grooveScore(cells, clef: id == 'bass' ? Clef.bass : Clef.treble),

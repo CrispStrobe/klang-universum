@@ -77,6 +77,12 @@ class LoopMixerScreen extends StatefulWidget {
   /// The tempo presets (all keep the step grid integral — see LoopTiming).
   static const tempos = [75, 100, 120];
 
+  /// Root-note labels for the key selector (index 0–11 = the transpose).
+  static const _keyNames = [
+    'C', 'C♯', 'D', 'D♯', 'E', 'F', //
+    'F♯', 'G', 'G♯', 'A', 'A♯', 'B',
+  ];
+
   /// Every 4th loop plays the drum fill.
   static const fillEvery = 4;
 
@@ -101,6 +107,12 @@ abstract interface class LoopMixerTester {
   void setSwing(double value);
   void setTempo(int bpm);
   void setProgression(String? id);
+
+  /// Root key (0–11) + scale of the pitched stems.
+  int get key;
+  void setKey(int key);
+  GrooveScale get scale;
+  void setScale(GrooveScale scale);
 
   /// The master send effect on the whole mix, and a setter.
   LoopSend get send;
@@ -252,6 +264,15 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     }
     _setProgression(found);
   }
+
+  @override
+  int get key => _engine.key;
+  @override
+  void setKey(int key) => _setKey(key);
+  @override
+  GrooveScale get scale => _engine.scale;
+  @override
+  void setScale(GrooveScale scale) => _setScale(scale);
 
   @override
   void stopAll() => _stopAll();
@@ -477,7 +498,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   PlayAlongEngine? _buildFollowEngine() {
     final id = _engravedTrackId;
     if (id == null) return null;
-    final cells = _engine.cellsFor(id);
+    // Transposed cells so the sing-along target matches the current key/scale.
+    final cells = _engine.engravedCellsFor(id);
     if (cells == null) return null;
     final chart = grooveChart(
       cells,
@@ -1173,6 +1195,20 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _restartGroove();
   }
 
+  // Key/scale keep the loop length, only the pitches move — re-render + re-sync
+  // in place (like a master send change), no grid restart needed.
+  void _setKey(int key) {
+    if (key == _engine.key) return;
+    setState(() => _engine.key = key);
+    _syncPlayback();
+  }
+
+  void _setScale(GrooveScale scale) {
+    if (scale == _engine.scale) return;
+    setState(() => _engine.scale = scale);
+    _syncPlayback();
+  }
+
   /// A new grid (tempo or bar count changed) — restart from the top.
   void _restartGroove() {
     _clock
@@ -1547,6 +1583,65 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               // AnaVis: the selected progression, coloured by harmonic function.
               if (_engine.progression != null)
                 _progressionFunctionStrip(_engine.progression!),
+              // Key: rigidly transpose every pitched stem to a new root.
+              Row(
+                children: [
+                  Text(
+                    l10n.loopMixerKey,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 4,
+                      children: [
+                        for (var k = 0;
+                            k < LoopMixerScreen._keyNames.length;
+                            k++)
+                          ChoiceChip(
+                            label: Text(LoopMixerScreen._keyNames[k]),
+                            selected: _engine.key == k,
+                            onSelected: (_) => _setKey(k),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Scale: major = bright, minor = darker (relative-minor set).
+              Row(
+                children: [
+                  Text(
+                    l10n.loopMixerScale,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      children: [
+                        ChoiceChip(
+                          label: Text(l10n.loopMixerScaleMajor),
+                          selected:
+                              _engine.scale == GrooveScale.majorPentatonic,
+                          onSelected: (_) =>
+                              _setScale(GrooveScale.majorPentatonic),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        ChoiceChip(
+                          label: Text(l10n.loopMixerScaleMinor),
+                          selected:
+                              _engine.scale == GrooveScale.minorPentatonic,
+                          onSelected: (_) =>
+                              _setScale(GrooveScale.minorPentatonic),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               Row(
                 children: [
                   Text(

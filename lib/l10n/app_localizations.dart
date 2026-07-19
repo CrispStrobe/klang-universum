@@ -1934,6 +1934,30 @@ abstract class AppLocalizations {
   /// **'Harmony'**
   String get loopMixerHarmony;
 
+  /// No description provided for @loopMixerKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Key'**
+  String get loopMixerKey;
+
+  /// No description provided for @loopMixerScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale'**
+  String get loopMixerScale;
+
+  /// No description provided for @loopMixerScaleMajor.
+  ///
+  /// In en, this message translates to:
+  /// **'Major'**
+  String get loopMixerScaleMajor;
+
+  /// No description provided for @loopMixerScaleMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor'**
+  String get loopMixerScaleMinor;
+
   /// No description provided for @loopMixerHarmonyOff.
   ///
   /// In en, this message translates to:

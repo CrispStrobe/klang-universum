@@ -156,11 +156,25 @@ void main() {
     await tester.pump();
     expect(game.variantOf('drums'), 0);
 
-    // The A badge on the drums card cycles the pattern variant.
-    await tester.tap(find.text('A').first);
+    // The A badge on the drums card cycles the pattern variant. (Scope to the
+    // CircleAvatar badge so the key-chip note letters can't be mistaken for it.)
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(CircleAvatar),
+            matching: find.text('A'),
+          )
+          .first,
+    );
     await tester.pump();
     expect(game.variantOf('drums'), 1);
-    expect(find.text('B'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(CircleAvatar),
+        matching: find.text('B'),
+      ),
+      findsOneWidget,
+    );
 
     game.setTrackLevel('drums', 0.4);
     game.setSwing(0.3);
@@ -220,6 +234,39 @@ void main() {
     game.toggleTrack('melody');
     await tester.pump();
     expect(find.byType(StaffView), findsNothing);
+  });
+
+  testWidgets('key & scale chips transpose the pitched stems', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.key, 0);
+    expect(game.scale, GrooveScale.majorPentatonic);
+
+    // Tapping the 'F' key chip sets the root to 5 (C=0 … F=5).
+    await tester.tap(find.widgetWithText(ChoiceChip, 'F'));
+    await tester.pump();
+    expect(game.key, 5);
+
+    // Tapping 'Minor' switches the scale (relative-minor pentatonic set).
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Minor'));
+    await tester.pump();
+    expect(game.scale, GrooveScale.minorPentatonic);
+
+    // The engraving reflects the transposition: with melody on, a staff shows
+    // and the transposed cells are what's engraved (no crash on re-render).
+    game.toggleTrack('melody');
+    await tester.pump();
+    game.toggleScorePanel();
+    await tester.pump();
+    expect(find.byType(StaffView), findsWidgets);
+    expect(tester.takeException(), isNull);
+
+    // Seams round-trip through the engine too.
+    game.setKey(7);
+    game.setScale(GrooveScale.majorPentatonic);
+    await tester.pump();
+    expect(game.key, 7);
+    expect(game.scale, GrooveScale.majorPentatonic);
   });
 
   testWidgets('Save to Song Book is offered only when a pitched track plays',
