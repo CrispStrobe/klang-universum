@@ -6,10 +6,12 @@
 // MusicXML / MIDI export is free.
 //
 // Pipeline: quantise onto the beat grid (Worker 2's quantizeToGrid) → a
-// monophonic step timeline (rests fill gaps, overlaps truncate) → greedy
-// note-value decomposition + barline splits (same shape as the Loop Mixer's
-// groove_notation) → Score. Split notes re-attack rather than tie — acceptable
-// for a first-pass lead sheet.
+// CHORD-aware step timeline (cut at every note boundary; each slice's sounding
+// notes become one chord note-head; held chords merge) → greedy note-value
+// decomposition + barline splits (same shape as the Loop Mixer's groove_notation)
+// → Score. Monophonic input is unchanged; a polyphonic transcriber's chords now
+// survive. Notes split across barlines tie; independent voices re-articulate at
+// each onset (true voice/staff separation is a W-NOTATION follow-up).
 
 import 'dart:math' as math;
 
@@ -37,8 +39,17 @@ const List<(int, NoteDuration)> _durations = [
 ];
 
 /// Engraves [notes] (from any transcriber) quantised to [grid] as a [Score]:
-/// [beatsPerBar]/4 bars, a monophonic melody line (the highest note wins any
-/// overlap), gaps filled with rests, greedy note values split at barlines.
+/// [beatsPerBar]/4 bars, CHORD-aware (simultaneous notes become one chord
+/// note-head, so a polyphonic transcriber's chords survive), gaps filled with
+/// rests, greedy note values tied across barlines. Monophonic input is
+/// unaffected — every vertical slice then holds at most one note.
+///
+/// It reads the harmony as a homophonic reduction: the timeline is cut at every
+/// note start AND end, each slice engraves all notes sounding through it as a
+/// chord, and adjacent slices with the same pitch set merge into one (held)
+/// note. Independent voices are re-articulated at each new onset rather than
+/// tied per-voice — acceptable for a first-pass lead sheet; true voice/staff
+/// separation is a follow-up (W-NOTATION).
 Score transcribeToScore(
   List<NoteEvent> notes,
   RhythmGrid grid, {
@@ -48,34 +59,40 @@ Score transcribeToScore(
   final stepsPerBar = beatsPerBar * _stepsPerBeat;
   final gridded = quantizeToGrid(notes, grid);
 
-  // One monophonic timeline in steps: (startStep, durSteps, midi), sorted.
+  // Note spans in steps: (startStep, endStep, midi).
   final events = [
     for (final g in gridded)
-      (
-        start: math.max(0, (g.startBeat * _stepsPerBeat).round()),
-        dur: math.max(1, (g.beats * _stepsPerBeat).round()),
-        midi: g.note.midi,
-      ),
-  ]..sort((a, b) => a.start.compareTo(b.start));
+      () {
+        final start = math.max(0, (g.startBeat * _stepsPerBeat).round());
+        final dur = math.max(1, (g.beats * _stepsPerBeat).round());
+        return (start: start, end: start + dur, midi: g.note.midi);
+      }(),
+  ];
 
-  // Collapse to (pitch | rest, steps) cells: rests bridge gaps, a note is
-  // truncated where the next one begins (monophonic).
-  final cells = <({int? midi, int steps})>[];
-  var pos = 0;
-  for (var i = 0; i < events.length; i++) {
-    final e = events[i];
-    if (e.start < pos) continue; // overlaps the note already placed — drop it
-    if (e.start > pos) {
-      cells.add((midi: null, steps: e.start - pos));
-      pos = e.start;
+  // Cut the timeline at every distinct note boundary; each segment's chord is
+  // the set of notes sounding through it. Merge neighbouring segments that hold
+  // the same pitch set (a sustained chord) so it isn't re-struck.
+  final bounds = (<int>{0}..addAll([
+          for (final e in events) ...[e.start, e.end],
+        ]))
+      .toList()
+    ..sort();
+  final cells = <({List<int> midis, int steps})>[];
+  for (var i = 0; i < bounds.length - 1; i++) {
+    final b = bounds[i];
+    final steps = bounds[i + 1] - b;
+    if (steps <= 0) continue;
+    final active = <int>{
+      for (final e in events)
+        if (e.start <= b && b < e.end) e.midi,
+    }.toList()
+      ..sort();
+    if (cells.isNotEmpty && _sameSet(cells.last.midis, active)) {
+      final last = cells.removeLast();
+      cells.add((midis: last.midis, steps: last.steps + steps));
+    } else {
+      cells.add((midis: active, steps: steps));
     }
-    var dur = e.dur;
-    if (i + 1 < events.length && e.start + dur > events[i + 1].start) {
-      dur = events[i + 1].start - e.start;
-    }
-    if (dur < 1) dur = 1;
-    cells.add((midi: e.midi, steps: dur));
-    pos += dur;
   }
 
   // Pack cells into 4/4 bars, decomposing runs into note values. Every element
@@ -85,22 +102,22 @@ Score transcribeToScore(
   var bar = <MusicElement>[];
   var posInBar = 0;
   var nextId = 0;
-  void emit(int? midi, int steps) {
+  void emit(List<int> midis, int steps) {
     var remaining = steps;
     while (remaining > 0) {
       final room = stepsPerBar - posInBar;
       final fit = math.min(remaining, room);
       final (chunk, duration) = _durations.firstWhere((d) => d.$1 <= fit);
       final id = 'e${nextId++}';
-      // A note that needs more than one value (an un-notatable length, or one
-      // that crosses a barline) is TIED, not re-attacked: every chunk but the
-      // last carries the sound into the next. Rests never tie.
-      final tie = midi != null && (remaining - chunk) > 0;
+      // A note/chord that needs more than one value (an un-notatable length, or
+      // one that crosses a barline) is TIED, not re-attacked: every chunk but
+      // the last carries the sound into the next. Rests never tie.
+      final tie = midis.isNotEmpty && (remaining - chunk) > 0;
       bar.add(
-        midi == null
+        midis.isEmpty
             ? RestElement(duration, id: id)
             : NoteElement(
-                pitches: [_pitchFromMidi(midi)],
+                pitches: [for (final m in midis) _pitchFromMidi(m)],
                 duration: duration,
                 id: id,
                 tieToNext: tie,
@@ -117,10 +134,10 @@ Score transcribeToScore(
   }
 
   for (final c in cells) {
-    emit(c.midi, c.steps);
+    emit(c.midis, c.steps);
   }
   // Complete the final bar with a rest so every measure is full.
-  if (posInBar > 0) emit(null, stepsPerBar - posInBar);
+  if (posInBar > 0) emit(const [], stepsPerBar - posInBar);
 
   return Score(
     clef: clef,
@@ -128,6 +145,15 @@ Score transcribeToScore(
     tempo: grid.bpm > 0 ? Tempo(grid.bpm) : null,
     measures: measures,
   );
+}
+
+/// Whether two sorted midi lists hold the same pitch set.
+bool _sameSet(List<int> a, List<int> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 const _naturalStep = {

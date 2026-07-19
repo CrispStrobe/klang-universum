@@ -82,6 +82,31 @@ void main() {
     expect(r.notes, hasLength(2));
   });
 
+  test('a neural chord flows through to a chord note-head in the Score',
+      () async {
+    // A polyphonic transcriber returns a C-major triad struck together.
+    Future<List<NoteEvent>> chordNeural(Float64List mono, int sr) async => [
+          (midi: 60, onMs: 0, offMs: 500, confidence: 0.9),
+          (midi: 64, onMs: 0, offMs: 500, confidence: 0.9),
+          (midi: 67, onMs: 0, offMs: 500, confidence: 0.9),
+        ];
+
+    final chord = Int16List(_sr);
+    for (var i = 0; i < chord.length; i++) {
+      final s = sin(2 * pi * _hz(60) * i / _sr) +
+          sin(2 * pi * _hz(64) * i / _sr) +
+          sin(2 * pi * _hz(67) * i / _sr);
+      chord[i] = (s / 3 * 0.5 * 32767).round();
+    }
+    final r = await transcribeRecording(wavBytes(chord), neural: chordNeural);
+    final chords = [
+      for (final m in r.score.measures)
+        for (final e in m.elements)
+          if (e is NoteElement) e.pitches.length,
+    ];
+    expect(chords, contains(3), reason: 'one 3-note chord note-head');
+  });
+
   test('empty / near-silent audio never throws, yields an empty score',
       () async {
     final r = await transcribeRecording(wavBytes(Int16List(_sr)));

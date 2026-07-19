@@ -99,6 +99,38 @@ void main() {
     expect(transcribeToScore(const [], _grid).measures, isEmpty);
   });
 
+  test('simultaneous notes engrave as ONE chord note-head', () {
+    // A C-major triad struck together for a beat (the polyphonic case).
+    final score = transcribeToScore(
+      [_n(60, 0, 500), _n(64, 0, 500), _n(67, 0, 500)],
+      _grid,
+    );
+    final noteEls =
+        score.measures.first.elements.whereType<NoteElement>().toList();
+    expect(noteEls, hasLength(1), reason: 'one chord, not three notes');
+    expect(noteEls.first.pitches, hasLength(3));
+    expect(
+      noteEls.first.pitches.map((p) => p.midiNumber).toSet(),
+      {60, 64, 67},
+    );
+  });
+
+  test('a sustained note under a moving one is read as chords', () {
+    // Bass C held for the whole bar; melody E then G on top.
+    final score = transcribeToScore(
+      [_n(48, 0, 2000), _n(64, 0, 1000), _n(67, 1000, 2000)],
+      _grid,
+    );
+    final chords = [
+      for (final m in score.measures)
+        for (final e in m.elements)
+          if (e is NoteElement) e.pitches.map((p) => p.midiNumber).toList(),
+    ];
+    // The bass sounds under both halves: {C,E} then {C,G}.
+    expect(chords, contains(unorderedEquals([48, 64])));
+    expect(chords, contains(unorderedEquals([48, 67])));
+  });
+
   test('the transcribed Score exports non-silent MIDI (element ids present)',
       () {
     final score = transcribeToScore(
