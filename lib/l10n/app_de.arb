@@ -404,6 +404,7 @@
   "dawFadeIn": "Einblenden",
   "dawFadeOut": "Ausblenden",
   "dawRemoveClip": "Entfernen",
+  "dawSnap": "Am Raster ausrichten",
   "drumkitTitle": "Schlagzeug",
   "drumkitRecord": "Aufnehmen",
   "drumkitStopRecording": "Aufnahme stoppen",

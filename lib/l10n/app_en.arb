@@ -442,6 +442,7 @@
   "dawFadeIn": "Fade in",
   "dawFadeOut": "Fade out",
   "dawRemoveClip": "Remove",
+  "dawSnap": "Snap to grid",
   "drumkitTitle": "Drum Kit",
   "drumkitRecord": "Record",
   "drumkitStopRecording": "Stop recording",

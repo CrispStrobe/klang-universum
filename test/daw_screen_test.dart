@@ -149,6 +149,24 @@ void main() {
     expect(daw.clipGain(0, 0), lessThan(1.0));
   });
 
+  testWidgets('the snap toggle flips snapping and a ruler labels the timeline',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    await tester.pump();
+
+    // The time ruler labels seconds (0s at the origin).
+    expect(find.text('0s'), findsOneWidget);
+    expect(find.text('1s'), findsWidgets);
+
+    // The grid button toggles snapping.
+    expect(daw.snapOn, isFalse);
+    await tester.tap(find.byTooltip('Snap to grid'));
+    await tester.pump();
+    expect(daw.snapOn, isTrue);
+  });
+
   testWidgets('undo/redo reverse and replay edits', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);

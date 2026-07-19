@@ -6,10 +6,11 @@
 // arranger: each clip references its source MODEL and renders on demand.
 //
 // It seeds demo clips (a beat + a tune) and receives real clips from every
-// module's "Send to DAW". A to-scale timeline: clips are drawn at their render
-// duration and dragged along the lane to reposition in time; per-track mute;
-// tap a clip for its inspector (volume + fades, freeze, remove), ✕ to remove;
-// Merge-all, undo/redo, and WAV/MP3 export.
+// module's "Send to DAW". A to-scale timeline under a second-by-second ruler:
+// clips are drawn at their render duration and dragged along the lane to
+// reposition in time (with optional grid-snapping); per-track mute; tap a clip
+// for its inspector (volume + fades, freeze, remove), ✕ to remove; Merge-all,
+// undo/redo, and WAV/MP3 export.
 
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -84,6 +85,10 @@ abstract interface class DawTester {
   });
   double clipFadeInMs(int track, int index);
   double clipFadeOutMs(int track, int index);
+
+  /// Drag-snapping to the timeline grid.
+  void toggleSnap();
+  bool get snapOn;
 
   /// Test seam: the length (samples) the arrangement bakes to.
   int debugBakeLength();
@@ -232,6 +237,12 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   @override
   double clipFadeOutMs(int track, int index) =>
       _daw.clipFadeOutMs(track, index);
+
+  @override
+  void toggleSnap() => _daw.toggleSnap();
+
+  @override
+  bool get snapOn => _daw.snapOn;
 
   Float64List _bake() => _daw.bake();
 
@@ -418,6 +429,12 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
             onPressed: _playing ? stop : play,
           ),
           IconButton(
+            icon: Icon(daw.snapOn ? Icons.grid_on : Icons.grid_off),
+            color: daw.snapOn ? scheme.primary : null,
+            tooltip: l10n.dawSnap,
+            onPressed: toggleSnap,
+          ),
+          IconButton(
             icon: const Icon(Icons.download),
             tooltip: l10n.audioExportTitle,
             onPressed: daw.clipCount == 0 ? null : _export,
@@ -483,6 +500,7 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   static const double _pxPerSecond = 80;
   static const double _laneHeight = 60;
   static const double _gutterWidth = 84;
+  static const double _rulerHeight = 20;
 
   // The clip's start when a long-press drag begins (offsets are relative to it).
   double _dragOriginMs = 0;
@@ -502,14 +520,15 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Fixed left gutter: per-track name + mute.
+          // Fixed left gutter: a ruler-height spacer, then per-track name + mute.
           Column(
             children: [
+              const SizedBox(height: _rulerHeight, width: _gutterWidth),
               for (var i = 0; i < daw.timeline.tracks.length; i++)
                 _gutterHeader(daw, i, scheme),
             ],
           ),
-          // Shared, horizontally-scrolling lanes (all tracks scroll together).
+          // Shared, horizontally-scrolling ruler + lanes (they scroll together).
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -517,6 +536,7 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                 width: laneWidth,
                 child: Column(
                   children: [
+                    _ruler(laneWidth, scheme),
                     for (var i = 0; i < daw.timeline.tracks.length; i++)
                       _lane(daw, i, scheme, laneWidth),
                   ],
@@ -524,6 +544,43 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // A second-by-second time ruler aligned with the lanes below it.
+  Widget _ruler(double laneWidth, ColorScheme scheme) {
+    final seconds = (laneWidth / _pxPerSecond).ceil();
+    return Container(
+      width: laneWidth,
+      height: _rulerHeight,
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Stack(
+        children: [
+          for (var s = 0; s <= seconds; s++)
+            Positioned(
+              left: s * _pxPerSecond,
+              top: 0,
+              bottom: 0,
+              child: Row(
+                children: [
+                  Container(width: 1, color: scheme.outlineVariant),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: Text(
+                      '${s}s',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -126,12 +126,28 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Move a clip along the timeline (drag-in-time). [startMs] is clamped to ≥ 0.
-  /// Consecutive moves of the same clip coalesce into a single undo entry.
+  /// Drag-snap grid in ms (0 = off). When on, [moveClip] rounds a clip's start
+  /// to the nearest multiple, so clips line up.
+  double snapMs = 0;
+  static const double _defaultSnapMs = 250;
+
+  bool get snapOn => snapMs > 0;
+
+  /// Toggle drag-snapping on/off (a view preference — not an undoable edit).
+  void toggleSnap() {
+    snapMs = snapMs > 0 ? 0 : _defaultSnapMs;
+    notifyListeners();
+  }
+
+  /// Move a clip along the timeline (drag-in-time). [startMs] is clamped to ≥ 0
+  /// and snapped to [snapMs] when snapping is on. Consecutive moves of the same
+  /// clip coalesce into a single undo entry.
   void moveClip(int track, int index, double startMs) {
     _coalesced(('move', track, index));
+    var v = startMs < 0 ? 0.0 : startMs;
+    if (snapMs > 0) v = (v / snapMs).round() * snapMs;
     final clips = timeline.tracks[track].clips;
-    clips[index] = clips[index].copyWith(startMs: startMs < 0 ? 0 : startMs);
+    clips[index] = clips[index].copyWith(startMs: v);
     notifyListeners();
   }
 

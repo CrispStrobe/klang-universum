@@ -1208,6 +1208,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawRemoveClip => 'Entfernen';
 
   @override
+  String get dawSnap => 'Am Raster ausrichten';
+
+  @override
   String get drumkitTitle => 'Schlagzeug';
 
   @override

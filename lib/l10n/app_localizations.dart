@@ -2318,6 +2318,12 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get dawRemoveClip;
 
+  /// No description provided for @dawSnap.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap to grid'**
+  String get dawSnap;
+
   /// No description provided for @drumkitTitle.
   ///
   /// In en, this message translates to:

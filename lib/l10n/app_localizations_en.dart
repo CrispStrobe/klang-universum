@@ -1201,6 +1201,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawRemoveClip => 'Remove';
 
   @override
+  String get dawSnap => 'Snap to grid';
+
+  @override
   String get drumkitTitle => 'Drum Kit';
 
   @override

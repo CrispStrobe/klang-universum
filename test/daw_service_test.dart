@@ -193,6 +193,23 @@ void main() {
     expect(s.clipGain(0, 0), 1.0);
   });
 
+  test('snapping rounds a moved clip to the grid', () {
+    final s = DawService()..addClip(_tone(0.3, 100));
+    expect(s.snapOn, isFalse);
+    s.moveClip(0, 0, 1490); // no snap → exact
+    expect(s.clipStartMs(0, 0), 1490);
+
+    s.toggleSnap();
+    expect(s.snapOn, isTrue);
+    s.moveClip(0, 0, 1490); // nearest 250 ms → 1500
+    expect(s.clipStartMs(0, 0), 1500);
+    s.moveClip(0, 0, 1100); // → 1000
+    expect(s.clipStartMs(0, 0), 1000);
+
+    s.toggleSnap();
+    expect(s.snapOn, isFalse);
+  });
+
   test('undo restores after clear', () {
     final s = DawService()
       ..addClip(_tone(0.3, 100))
