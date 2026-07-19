@@ -65,6 +65,17 @@ void main() {
     // A note from beat 3 to beat 5 crosses the 4/4 barline.
     final score = transcribeToScore([_n(60, 1500, 2500)], grid2);
     expect(score.measures.length, greaterThanOrEqualTo(2));
+
+    // It splits into two note-heads TIED across the barline (one held sound),
+    // not two separately re-attacked notes.
+    final noteEls = [
+      for (final m in score.measures)
+        for (final e in m.elements)
+          if (e is NoteElement) e,
+    ];
+    expect(noteEls.length, greaterThanOrEqualTo(2));
+    expect(noteEls.first.tieToNext, isTrue, reason: 'held into the next bar');
+    expect(noteEls.last.tieToNext, isFalse, reason: 'the note ends here');
   });
 
   test('the transcribed Score renders valid MusicXML', () {

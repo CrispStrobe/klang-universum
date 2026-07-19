@@ -92,6 +92,10 @@ Score transcribeToScore(
       final fit = math.min(remaining, room);
       final (chunk, duration) = _durations.firstWhere((d) => d.$1 <= fit);
       final id = 'e${nextId++}';
+      // A note that needs more than one value (an un-notatable length, or one
+      // that crosses a barline) is TIED, not re-attacked: every chunk but the
+      // last carries the sound into the next. Rests never tie.
+      final tie = midi != null && (remaining - chunk) > 0;
       bar.add(
         midi == null
             ? RestElement(duration, id: id)
@@ -99,6 +103,7 @@ Score transcribeToScore(
                 pitches: [_pitchFromMidi(midi)],
                 duration: duration,
                 id: id,
+                tieToNext: tie,
               ),
       );
       posInBar += chunk;
