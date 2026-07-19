@@ -15,6 +15,28 @@ Uint8List _wav(List<Segment> segments, {int sr = 44100}) =>
 
 Segment _note(int midi, int ms) => (freqs: [midiToFrequency(midi)], ms: ms);
 
+// A melody recording: each note followed by a short rest so note boundaries
+// read cleanly (a straddling window lands on silence, not a pitch smear).
+Uint8List _song(List<int> midis, {int noteMs = 400, int gapMs = 70}) => _wav([
+      for (final m in midis) ...[
+        _note(m, noteMs),
+        (freqs: const <double>[], ms: gapMs),
+      ],
+    ]);
+
+// A chord recording: each triad followed by a rest.
+Uint8List _chords(
+  List<List<int>> triads, {
+  int chordMs = 800,
+  int gapMs = 90,
+}) =>
+    _wav([
+      for (final t in triads) ...[
+        (freqs: [for (final m in t) midiToFrequency(m)], ms: chordMs),
+        (freqs: const <double>[], ms: gapMs),
+      ],
+    ]);
+
 void main() {
   test('a single-note recording transcribes to that note', () {
     final r = analyzeRecording(_wav([_note(69, 800)])); // A4
@@ -62,5 +84,41 @@ void main() {
     final r = analyzeRecording(_wav([_note(69, 5)])); // ~5 ms
     expect(r.frames, isEmpty);
     expect(r.noteRun(), isEmpty);
+  });
+
+  group('real children\'s songs read back as the known melody', () {
+    // Note numbers are middle-C-relative (C4 = 60), the melody as taught.
+    test('C major scale → the full scale', () {
+      final r = analyzeRecording(_song([60, 62, 64, 65, 67, 69, 71, 72]));
+      expect(r.noteRun(), [60, 62, 64, 65, 67, 69, 71, 72]);
+    });
+
+    test('Alle meine Entchen (C D E F G G) → C D E F G', () {
+      final r = analyzeRecording(_song([60, 62, 64, 65, 67, 67]));
+      expect(r.noteRun(), [60, 62, 64, 65, 67]); // repeated G collapses
+    });
+
+    test('Twinkle Twinkle (C C G G A A G) → C G A G', () {
+      final r = analyzeRecording(_song([60, 60, 67, 67, 69, 69, 67]));
+      expect(r.noteRun(), [60, 67, 69, 67]);
+    });
+
+    test('Mary Had a Little Lamb (E D C D E E E) → E D C D E', () {
+      final r = analyzeRecording(_song([64, 62, 60, 62, 64, 64, 64]));
+      expect(r.noteRun(), [64, 62, 60, 62, 64]);
+    });
+  });
+
+  test('a I–IV–V–I progression reads back as C F G C', () {
+    final r = analyzeRecording(
+      _chords([
+        [60, 64, 67], // C
+        [65, 69, 72], // F
+        [67, 71, 74], // G
+        [60, 64, 67], // C
+      ]),
+      detectChords: true,
+    );
+    expect(r.chordRun(), ['C', 'F', 'G', 'C']);
   });
 }

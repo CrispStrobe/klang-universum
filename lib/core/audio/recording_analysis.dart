@@ -36,24 +36,52 @@ class RecordingAnalysis {
 
   /// A rough monophonic transcription: the sequence of detected notes (nearest
   /// MIDI), collapsing consecutive equal notes and dropping unvoiced windows.
-  List<int> noteRun() {
-    final out = <int>[];
+  ///
+  /// [minFrames] drops any note held for fewer than that many consecutive
+  /// windows — the single-window pitch glitch that appears at each note
+  /// boundary (as one note's decaying tail slides into the next note's onset)
+  /// is not a real note. The default of 2 removes those cleanly; pass 1 to keep
+  /// every transient.
+  List<int> noteRun({int minFrames = 2}) {
+    // Maximal runs of identical consecutive voiced notes, with their lengths.
+    final runs = <({int midi, int count})>[];
     for (final f in frames) {
       if (!f.pitch.hasPitch) continue;
       final midi = f.pitch.nearestMidi;
-      if (out.isEmpty || out.last != midi) out.add(midi);
+      if (runs.isNotEmpty && runs.last.midi == midi) {
+        runs[runs.length - 1] = (midi: midi, count: runs.last.count + 1);
+      } else {
+        runs.add((midi: midi, count: 1));
+      }
+    }
+    final out = <int>[];
+    for (final run in runs) {
+      if (run.count < minFrames) continue; // a boundary glitch, not a note
+      if (out.isEmpty || out.last != run.midi) out.add(run.midi);
     }
     return out;
   }
 
-  /// The best chord over time (name per window), collapsing repeats. Empty
-  /// unless the recording was analysed with [detectChords].
-  List<String> chordRun() {
-    final out = <String>[];
+  /// The SUSTAINED chords over time (best-candidate name per window), collapsing
+  /// repeats. [minFrames] drops chords held for fewer than that many consecutive
+  /// windows — the transient guesses at a chord boundary (a straddling window)
+  /// or a momentary harmonic ambiguity (a triad's overtones flickering to a 7th)
+  /// aren't the played chord. Empty unless analysed with [detectChords].
+  List<String> chordRun({int minFrames = 2}) {
+    final runs = <({String name, int count})>[];
     for (final f in frames) {
       final name = f.chord?.best?.name;
       if (name == null) continue;
-      if (out.isEmpty || out.last != name) out.add(name);
+      if (runs.isNotEmpty && runs.last.name == name) {
+        runs[runs.length - 1] = (name: name, count: runs.last.count + 1);
+      } else {
+        runs.add((name: name, count: 1));
+      }
+    }
+    final out = <String>[];
+    for (final run in runs) {
+      if (run.count < minFrames) continue;
+      if (out.isEmpty || out.last != run.name) out.add(run.name);
     }
     return out;
   }
