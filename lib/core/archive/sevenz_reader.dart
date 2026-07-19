@@ -104,10 +104,19 @@ SevenZArchive readSevenZ(Uint8List bytes) {
   final nextHeaderSize = head.getUint64(20, Endian.little);
 
   if (nextHeaderSize == 0) return const SevenZArchive([]); // empty archive
-  final start = 32 + nextHeaderOffset;
-  if (start < 32 || start + nextHeaderSize > bytes.length) {
+  // `getUint64` is SIGNED in Dart — a top-bit-set value reads negative — and a
+  // corrupt header can hold enormous offsets/sizes. Check each against the
+  // space available BEFORE summing, so the arithmetic can never overflow past
+  // int64 and slip through (which would reach `sublistView` as a raw
+  // RangeError, not a clean FormatException).
+  final avail = bytes.length - 32; // ≥ 0 (length checked above)
+  if (nextHeaderOffset < 0 ||
+      nextHeaderSize < 0 ||
+      nextHeaderOffset > avail ||
+      nextHeaderSize > avail - nextHeaderOffset) {
     throw const SevenZFormatException('7z header runs past end of file');
   }
+  final start = 32 + nextHeaderOffset;
   var header = Uint8List.sublistView(
     bytes,
     start,
@@ -540,22 +549,32 @@ Uint8List _decodeFolder(_Folder folder, Uint8List packed) {
 }
 
 Uint8List _runCoder(_Coder coder, Uint8List input, int unpackSize) {
-  final id = coder.id;
-  if (_idIs(id, const [0x00])) return Uint8List.fromList(input); // Copy
-  if (_idIs(id, const [0x21])) return _decodeLzma2(input, unpackSize);
-  if (_idIs(id, const [0x03, 0x01, 0x01])) {
-    return _decodeLzma1(input, coder.props, unpackSize);
+  // The compression codecs come from package:archive and are NOT hardened for
+  // adversarial input — a corrupt LZMA/BZip2/Deflate stream throws a raw
+  // RangeError/StateError from deep inside them. This reader promises only
+  // FormatException, so normalise any such escape here.
+  try {
+    final id = coder.id;
+    if (_idIs(id, const [0x00])) return Uint8List.fromList(input); // Copy
+    if (_idIs(id, const [0x21])) return _decodeLzma2(input, unpackSize);
+    if (_idIs(id, const [0x03, 0x01, 0x01])) {
+      return _decodeLzma1(input, coder.props, unpackSize);
+    }
+    if (_idIs(id, const [0x04, 0x02, 0x02])) {
+      return BZip2Decoder().decodeBytes(input);
+    }
+    if (_idIs(id, const [0x04, 0x01, 0x08])) {
+      return Inflate(input, uncompressedSize: unpackSize).getBytes();
+    }
+    if (_idIs(id, const [0x03])) return _decodeDelta(input, coder.props);
+    throw SevenZUnsupported(
+      '7z coder ${_idHex(id)} is not supported${_hint(id)}',
+    );
+  } on FormatException {
+    rethrow; // our own typed errors (incl. SevenZUnsupported) pass through
+  } catch (e) {
+    throw SevenZFormatException('Corrupt 7z compressed stream ($e)');
   }
-  if (_idIs(id, const [0x04, 0x02, 0x02])) {
-    return BZip2Decoder().decodeBytes(input);
-  }
-  if (_idIs(id, const [0x04, 0x01, 0x08])) {
-    return Inflate(input, uncompressedSize: unpackSize).getBytes();
-  }
-  if (_idIs(id, const [0x03])) return _decodeDelta(input, coder.props);
-  throw SevenZUnsupported(
-    '7z coder ${_idHex(id)} is not supported${_hint(id)}',
-  );
 }
 
 /// The Delta filter: the encoder stored `x[i] - x[i-distance]`, so decoding is

@@ -5,6 +5,7 @@
 // Fixtures are committed so this runs in CI without 7z installed.
 
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/archive/sevenz_reader.dart';
@@ -101,6 +102,50 @@ void main() {
           // expected
         } catch (e) {
           fail('truncation at $cut threw ${e.runtimeType}: $e');
+        }
+      }
+    });
+  });
+
+  group('fuzz — arbitrary corruption escapes only as a FormatException', () {
+    // Truncation only exercises valid-file prefixes; corrupting bytes IN PLACE
+    // reaches the header/coder parse paths (attacker-controlled counts, sizes,
+    // coder ids, compressed streams) where a raw RangeError could otherwise
+    // leak — the class the mp3/sf2/midi hardening caught.
+    test('a flipped byte anywhere yields only a FormatException', () {
+      final full = _fixture('lzma2.7z');
+      final rng = Random(7);
+      for (var i = 0; i < 400; i++) {
+        final bytes = Uint8List.fromList(full);
+        for (var k = 0; k < 1 + rng.nextInt(3); k++) {
+          final p = rng.nextInt(bytes.length);
+          bytes[p] = bytes[p] ^ (1 + rng.nextInt(255));
+        }
+        try {
+          readSevenZ(bytes);
+        } on FormatException {
+          // expected on corruption
+        } catch (e) {
+          fail('bit-flip #$i threw ${e.runtimeType}: $e');
+        }
+      }
+    });
+
+    test('random bytes (with or without a valid signature) never crash', () {
+      const sig = [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C];
+      final rng = Random(11);
+      for (var i = 0; i < 400; i++) {
+        final len = 6 + rng.nextInt(300);
+        final bytes = Uint8List.fromList([
+          for (var j = 0; j < len; j++) rng.nextInt(256),
+        ]);
+        if (i.isEven) bytes.setRange(0, 6, sig); // reach the header parser
+        try {
+          readSevenZ(bytes);
+        } on FormatException {
+          // expected
+        } catch (e) {
+          fail('random #$i (len $len) threw ${e.runtimeType}: $e');
         }
       }
     });
