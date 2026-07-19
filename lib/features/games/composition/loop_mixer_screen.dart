@@ -106,6 +106,7 @@ abstract interface class LoopMixerTester {
   double levelOf(String id);
   void toggleTrack(String id);
   void cycleTrackVariant(String id);
+  void rollTrackVariant(String id);
   void setTrackLevel(String id, double level);
   void setSwing(double value);
   void setTempo(int bpm);
@@ -253,6 +254,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void toggleTrack(String id) => _toggle(id);
   @override
   void cycleTrackVariant(String id) => _cycleVariant(id);
+  @override
+  void rollTrackVariant(String id) => _rollVariant(id);
   @override
   void setTrackLevel(String id, double level) => _setLevel(id, level);
   @override
@@ -1208,6 +1211,11 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     if (_engine.enabled.contains(id)) _syncPlayback();
   }
 
+  void _rollVariant(String id) {
+    setState(() => _engine.rollVariant(id, rng: _rng));
+    if (_engine.enabled.contains(id)) _syncPlayback();
+  }
+
   void _setLevel(String id, double level) {
     setState(() => _engine.levels[id] = level.clamp(0.0, 1.0));
     if (_engine.enabled.contains(id)) _syncPlayback();
@@ -1615,6 +1623,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                               level: _engine.levels[track.id] ?? 1.0,
                               onTap: () => _toggle(track.id),
                               onCycleVariant: () => _cycleVariant(track.id),
+                              onRollVariant: () => _rollVariant(track.id),
                               onLevel: (v) => _setLevel(track.id, v),
                             ),
                           ),
@@ -2014,6 +2023,7 @@ class _TrackCard extends StatelessWidget {
     required this.level,
     required this.onTap,
     required this.onCycleVariant,
+    required this.onRollVariant,
     required this.onLevel,
   });
 
@@ -2026,6 +2036,7 @@ class _TrackCard extends StatelessWidget {
   final double level;
   final VoidCallback onTap;
   final VoidCallback onCycleVariant;
+  final VoidCallback onRollVariant;
   final ValueChanged<double> onLevel;
 
   @override
@@ -2059,10 +2070,12 @@ class _TrackCard extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(width: 12),
-                // The pattern-variant badge: tap to cycle A → B → C.
+                // The pattern-variant badge: tap to cycle A → B → C, long-press
+                // to roll a random variant.
                 if (variantCount > 1)
                   GestureDetector(
                     onTap: onCycleVariant,
+                    onLongPress: onRollVariant,
                     child: CircleAvatar(
                       radius: 13,
                       backgroundColor: foreground.withValues(alpha: 0.22),

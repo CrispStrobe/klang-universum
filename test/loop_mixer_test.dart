@@ -284,8 +284,39 @@ void main() {
       final on = game.enabledTracks;
       expect(on, isNotEmpty, reason: 'roll $i');
       expect(on, contains('drums'), reason: 'roll $i anchors drums');
-      expect(on.any(melodic.contains), isTrue,
-          reason: 'roll $i has a melodic voice');
+      expect(
+        on.any(melodic.contains),
+        isTrue,
+        reason: 'roll $i has a melodic voice',
+      );
+    }
+  });
+
+  testWidgets('long-pressing the variant badge rolls a random variant',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    game.toggleTrack('drums');
+    await tester.pump();
+    expect(game.variantOf('drums'), 0);
+
+    // Long-press the drums variant badge → it rolls to a different variant.
+    await tester.longPress(
+      find
+          .descendant(
+            of: find.byType(CircleAvatar),
+            matching: find.text('A'),
+          )
+          .first,
+    );
+    await tester.pump();
+    expect(game.variantOf('drums'), isNot(0));
+    expect(game.isPlaying, isTrue);
+
+    // The seam rolls too (always lands in range).
+    for (var i = 0; i < 10; i++) {
+      game.rollTrackVariant('drums');
+      expect(game.variantOf('drums'), inInclusiveRange(0, 3));
     }
   });
 

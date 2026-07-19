@@ -541,6 +541,12 @@ final List<LoopTrack> kLoopMixerTracks = [
         Drum.snare: stepRow('........x.......'),
         Drum.hat: stepRow('x.x.x.x.x.x.x.x.'),
       }),
+      // D — busy syncopated kick under running 16th hats.
+      DrumRowsPattern({
+        Drum.kick: stepRow('x..x..x.x..x..x.'),
+        Drum.snare: stepRow('....x.......x...'),
+        Drum.hat: stepRow('xxxxxxxxxxxxxxxx'),
+      }),
     ],
   ),
   const LoopTrack(
@@ -617,6 +623,17 @@ final List<LoopTrack> kLoopMixerTracks = [
         (midis: [_c2], steps: 3),
         (midis: null, steps: 1),
         (midis: [_a2], steps: 2),
+        (midis: [_g2], steps: 2),
+      ]),
+      // D — a rising-then-falling pentatonic walk in steady quarters.
+      MelodicPattern(Instrument.cello, [
+        (midis: [_c2], steps: 2),
+        (midis: [_e2], steps: 2),
+        (midis: [_g2], steps: 2),
+        (midis: [_a2], steps: 2),
+        (midis: [_g2], steps: 2),
+        (midis: [_e2], steps: 2),
+        (midis: [_c2], steps: 2),
         (midis: [_g2], steps: 2),
       ]),
     ],
@@ -1065,6 +1082,21 @@ class LoopEngine {
   int cycleVariant(String id) {
     final track = _track(id);
     final next = ((variants[id] ?? 0) + 1) % track.variants.length;
+    variants[id] = next;
+    return next;
+  }
+
+  /// Rolls [id] to a RANDOM variant, preferring a different one from the current
+  /// when there's a choice; returns the new index. (Per-card "roll" — a fresh
+  /// in-style take for just this stem.)
+  int rollVariant(String id, {Random? rng}) {
+    final track = _track(id);
+    final count = track.variants.length;
+    if (count <= 1) return 0;
+    final r = rng ?? Random();
+    final current = variants[id] ?? 0;
+    var next = r.nextInt(count);
+    if (next == current) next = (next + 1) % count; // guarantee a change
     variants[id] = next;
     return next;
   }

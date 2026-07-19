@@ -5,6 +5,7 @@
 // synth_test.dart: pure Dart, no device audio.
 
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
@@ -178,16 +179,33 @@ void main() {
     }
   });
 
-  test('variants cycle A→B→C→A and change the render', () {
+  test('variants cycle A→B→C→D→A and change the render', () {
     final engine = LoopEngine();
     engine.enabled.add('drums');
     final a = engine.renderLoop();
     expect(engine.cycleVariant('drums'), 1);
     final b = engine.renderLoop();
     expect(b, isNot(equals(a)));
+    // Cycle all the way back around to variant A (drums has 4 variants).
     expect(engine.cycleVariant('drums'), 2);
+    expect(engine.cycleVariant('drums'), 3);
     expect(engine.cycleVariant('drums'), 0);
     expect(identical(engine.renderLoop(), a), isTrue, reason: 'cache hit');
+  });
+
+  test('rollVariant picks an in-range variant and changes the current one', () {
+    final engine = LoopEngine();
+    final rng = Random(42);
+    final count =
+        kLoopMixerTracks.firstWhere((t) => t.id == 'drums').variants.length;
+    expect(count, greaterThan(1));
+    for (var i = 0; i < 30; i++) {
+      final before = engine.variants['drums'] ?? 0;
+      final rolled = engine.rollVariant('drums', rng: rng);
+      expect(rolled, inInclusiveRange(0, count - 1));
+      expect(rolled, isNot(before)); // guaranteed a change when count > 1
+      expect(engine.variants['drums'], rolled);
+    }
   });
 
   test('levels scale a track and swing changes the groove render', () {
