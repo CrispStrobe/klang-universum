@@ -3782,6 +3782,12 @@ abstract class AppLocalizations {
   /// **'Remove step'**
   String get tabRemoveColumn;
 
+  /// No description provided for @tabDuplicateBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate bar'**
+  String get tabDuplicateBar;
+
   /// No description provided for @tabTechnique.
   ///
   /// In en, this message translates to:

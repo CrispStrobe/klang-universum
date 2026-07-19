@@ -84,6 +84,14 @@ class TabColumn {
         techniques: techniques,
         chord: c,
       );
+
+  /// A deep copy (fresh frets/techniques collections) — for duplicating columns.
+  TabColumn copy() => TabColumn(
+        frets: {...frets},
+        duration: duration,
+        techniques: {...techniques},
+        chord: chord,
+      );
 }
 
 /// The selectable note durations, each with its length in eighth-note steps
@@ -247,6 +255,35 @@ class TabDocument {
   void insertColumnsAt(int at, List<TabColumn> cols) {
     if (cols.isEmpty) return;
     columns.insertAll(at.clamp(0, columns.length), cols);
+  }
+
+  /// The `[start, end)` column range of the ≤8-step (4/4) bar containing [col] —
+  /// the same tiling [toScore] uses to lay columns into bars.
+  (int, int) barBoundsAt(int col) {
+    if (columns.isEmpty) return (0, 0);
+    final target = col.clamp(0, columns.length - 1);
+    var start = 0;
+    var steps = 0;
+    for (var c = 0; c < columns.length; c++) {
+      final s = _stepsOf(columns[c].duration);
+      if (steps > 0 && steps + s > 8) {
+        if (target < c) return (start, c); // the bar [start, c) holds `col`
+        start = c;
+        steps = 0;
+      }
+      steps += s;
+    }
+    return (start, columns.length);
+  }
+
+  /// Copies the whole bar containing [col] and inserts the copy right after it.
+  /// Returns the number of columns added.
+  int duplicateBar(int col) {
+    final (s, e) = barBoundsAt(col);
+    if (e <= s) return 0;
+    final copies = [for (var c = s; c < e; c++) columns[c].copy()];
+    columns.insertAll(e, copies);
+    return copies.length;
   }
 
   /// Removes the column at [col] (no-op if out of range or it's the last one).

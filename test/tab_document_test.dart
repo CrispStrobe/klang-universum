@@ -54,6 +54,31 @@ void main() {
     );
   });
 
+  test('barBoundsAt tiles columns into 8-step (4/4) bars', () {
+    // Blank columns are quarters (2 steps each), so four = 8 steps = one bar.
+    final doc = TabDocument.blank(guitar);
+    expect(doc.barBoundsAt(0), (0, 4)); // first bar: cols 0..3
+    expect(doc.barBoundsAt(3), (0, 4));
+    expect(doc.barBoundsAt(4), (4, 8)); // second bar: cols 4..7
+    expect(doc.barBoundsAt(7), (4, 8));
+  });
+
+  test('duplicateBar copies the cursor bar and inserts it after', () {
+    final doc = TabDocument.blank(guitar)
+      ..setFret(0, 0, 3)
+      ..setFret(1, 1, 5); // mark the first bar (cols 0..3)
+
+    final added = doc.duplicateBar(2); // cursor in the first bar
+    expect(added, 4); // a 4-column bar
+    expect(doc.columns, hasLength(12));
+    // The copy lands right after the original bar (cols 4..7) and matches it.
+    expect(doc.columns[4].frets[0], 3);
+    expect(doc.columns[5].frets[1], 5);
+    // …and it's a deep copy — editing the copy leaves the original untouched.
+    doc.setFret(4, 0, 9);
+    expect(doc.columns[0].frets[0], 3);
+  });
+
   test('a chord column pins each string in pitch order', () {
     final doc = TabDocument.blank(guitar, initialColumns: 1)
       ..setFret(0, 0, 0)

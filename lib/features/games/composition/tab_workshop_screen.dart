@@ -105,6 +105,10 @@ abstract class TabWorkshopTester {
   void deleteCell();
   void addColumn();
   void removeColumnAtCursor();
+
+  /// Copies the whole bar the cursor is in and inserts it right after; the
+  /// cursor lands on the first column of the copy. Returns columns added.
+  int duplicateBar();
   void play();
   bool get isPlaying;
 
@@ -327,6 +331,17 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         _doc.removeColumn(_selCol);
         _selCol = _selCol.clamp(0, _doc.columns.length - 1);
       });
+
+  @override
+  int duplicateBar() {
+    final (_, end) = _doc.barBoundsAt(_selCol);
+    final n = _doc.duplicateBar(_selCol);
+    if (n > 0) {
+      // Park the cursor on the first column of the fresh copy.
+      setState(() => _selCol = end.clamp(0, _doc.columns.length - 1));
+    }
+    return n;
+  }
 
   @override
   void play() => _play();
@@ -1433,6 +1448,11 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                 icon: const Icon(Icons.playlist_remove),
                 tooltip: l10n.tabRemoveColumn,
                 onPressed: removeColumnAtCursor,
+              ),
+              IconButton.filledTonal(
+                icon: const Icon(Icons.control_point_duplicate),
+                tooltip: l10n.tabDuplicateBar,
+                onPressed: duplicateBar,
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(

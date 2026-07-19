@@ -1999,6 +1999,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabRemoveColumn => 'Remove step';
 
   @override
+  String get tabDuplicateBar => 'Duplicate bar';
+
+  @override
   String get tabTechnique => 'Technique';
 
   @override

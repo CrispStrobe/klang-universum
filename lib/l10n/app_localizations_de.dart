@@ -2005,6 +2005,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabRemoveColumn => 'Schritt entfernen';
 
   @override
+  String get tabDuplicateBar => 'Takt duplizieren';
+
+  @override
   String get tabTechnique => 'Technik';
 
   @override

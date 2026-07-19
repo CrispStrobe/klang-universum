@@ -735,6 +735,7 @@
   "tabClearCell": "Löschen",
   "tabAddColumn": "Schritt hinzufügen",
   "tabRemoveColumn": "Schritt entfernen",
+  "tabDuplicateBar": "Takt duplizieren",
   "tabTechnique": "Technik",
   "tabTechHammer": "H/P",
   "tabTechSlide": "Slide",

@@ -229,6 +229,19 @@ void main() {
     expect(tab.columnCount, before);
   });
 
+  testWidgets('duplicate bar copies the cursor bar after it', (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+    tab.selectCell(0, 0);
+    await tester.pump();
+    final before = tab.columnCount;
+
+    final added = tab.duplicateBar();
+    await tester.pump();
+    expect(added, greaterThan(0));
+    expect(tab.columnCount, before + added);
+  });
+
   testWidgets('generative insert adds a run after the cursor and moves it',
       (tester) async {
     await pumpGame(tester, const TabWorkshopScreen());

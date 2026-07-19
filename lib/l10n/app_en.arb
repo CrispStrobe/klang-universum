@@ -795,6 +795,7 @@
   "tabClearCell": "Clear",
   "tabAddColumn": "Add step",
   "tabRemoveColumn": "Remove step",
+  "tabDuplicateBar": "Duplicate bar",
   "tabTechnique": "Technique",
   "tabTechHammer": "H/P",
   "tabTechSlide": "Slide",
