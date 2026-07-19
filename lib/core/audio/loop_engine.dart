@@ -24,7 +24,11 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
+import 'package:comet_beat/core/audio/loop_instrument_render.dart'
+    show renderCellsWithInstrument;
 import 'package:comet_beat/core/audio/synth.dart';
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:comet_beat/core/audio/wav_io.dart';
 
 /// An optional master send effect on the whole Loop Mixer output.
@@ -1339,6 +1343,23 @@ class LoopEngine {
     _wavCache.clear();
   }
 
+  /// Per-track voice override: render this pitched track's cells through a saved
+  /// [TrackerInstrument] (a formula OR sampled/soundbank voice) instead of its
+  /// built-in [Instrument] timbre — the same notes-on-a-grid the tracker plays.
+  /// A live control (not in the share token). Drums are unaffected.
+  final Map<String, TrackerInstrument> _trackVoices = {};
+
+  void setTrackVoice(String trackId, TrackerInstrument? voice) {
+    if (voice == null) {
+      _trackVoices.remove(trackId);
+    } else {
+      _trackVoices[trackId] = voice;
+    }
+    _clearRenderCaches();
+  }
+
+  TrackerInstrument? trackVoice(String trackId) => _trackVoices[trackId];
+
   /// A master send effect on the whole mix (a live control; not persisted in the
   /// spec/share token). Different sends cache to different WAV keys.
   LoopSend send = LoopSend.none;
@@ -1544,40 +1565,54 @@ class LoopEngine {
 
   Float64List _stemFor(LoopTrack track) {
     final variant = _variantOf(track);
-    final key = '${track.id}#$variant#${_progression?.id ?? 'vamp'}';
+    final voice = _trackVoices[track.id]?.id ?? '';
+    final key = '${track.id}#$variant#${_progression?.id ?? 'vamp'}#$voice';
     return _stemCache[key] ??= _renderStem(track, variant);
   }
 
   Float64List _renderStem(LoopTrack track, int variant) {
+    // A saved-instrument voice override renders this track's cells through the
+    // instrument instead of its built-in timbre (drums have no midi cells, so
+    // they fall through to the default render).
+    final voice = _trackVoices[track.id];
     final prog = _progression;
     final t = pitchTranspose;
     if (prog == null) {
-      return track.variants[variant].render(timing, transpose: t, kit: _kit);
+      final pat = track.variants[variant];
+      if (voice != null && pat is MelodicPattern) {
+        return renderCellsWithInstrument(
+          pat.cells,
+          voice,
+          timing,
+          transpose: t,
+        );
+      }
+      return pat.render(timing, transpose: t, kit: _kit);
     }
 
     final follower = track.chordFollower;
     if (follower != null) {
       // Re-voice the bar shape on each progression chord.
       final bar = follower.bars[variant.clamp(0, follower.bars.length - 1)];
-      return renderCells(
-        [
-          for (final degree in prog.degrees)
-            ...bar.resolve(
-              degree,
-              baseMidi: follower.baseMidi,
-              foldAbove: follower.foldAbove,
-            ),
-        ],
-        follower.instrument,
-        timing,
-        transpose: t,
-      );
+      final cells = [
+        for (final degree in prog.degrees)
+          ...bar.resolve(
+            degree,
+            baseMidi: follower.baseMidi,
+            foldAbove: follower.foldAbove,
+          ),
+      ];
+      return voice != null
+          ? renderCellsWithInstrument(cells, voice, timing, transpose: t)
+          : renderCells(cells, follower.instrument, timing, transpose: t);
     }
 
     // Everything else tiles its 2-bar pattern across the progression —
     // exact, because the swung step grid is periodic per bar.
-    final twoBars =
-        track.variants[variant].render(_vampTiming, transpose: t, kit: _kit);
+    final pat = track.variants[variant];
+    final twoBars = (voice != null && pat is MelodicPattern)
+        ? renderCellsWithInstrument(pat.cells, voice, _vampTiming, transpose: t)
+        : pat.render(_vampTiming, transpose: t, kit: _kit);
     final reps = prog.degrees.length ~/ 2;
     final out = Float64List(twoBars.length * reps);
     for (var r = 0; r < reps; r++) {
