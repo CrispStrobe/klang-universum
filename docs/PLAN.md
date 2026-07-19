@@ -429,28 +429,20 @@ Song import, Library import. So export is broad and import lands in the editors.
 
 **Opportunities, cleanest → hardest — implement in this order:**
 
-1. ⏳ **Velocity/dynamics fidelity in `scoreToMidi`** *(library, S · highest
-   leverage).* `scoreToMidi` writes a **fixed velocity 80** for every note and
-   ignores the model's dynamics — but `Score` already carries `DynamicMarking`
-   (id→`DynamicLevel`) and `NoteElement.articulations` (accent/marcato/staccato).
-   Map dynamic level → base velocity, accent/marcato → a bump, staccato → a
-   shorter note-off. **One function in `crisp_notation_core`
-   `src/midi/midi_writer.dart` + a test; upgrades ALL seven export surfaces at
-   once**, byte-compatible when a score has no dynamics. Cross-repo (push to
-   `CrispStrobe/crisp_notation` too — CI aligns).
-2. ⏳ **Import a MIDI → play/sing along to it** *(app, S · nearly free).* You can
-   import MIDI into the *editors* but not turn a `.mid` into a play-along level.
-   The pieces already exist: `scoreFromMidi(bytes)` → `chartFromScore` /
-   `SongScreen.fromScore` (`songs/song_play_along.dart`) already derive a
-   `PlayAlongChart` from any `Score`. Just needs an entry point — a "Play along
-   to a MIDI file" pick (file → `scoreFromMidi` → `SongScreen.fromScore`) in the
-   Song Book / play-along area. Any `.mid` becomes a game level.
-3. ⏳ **Transcription → app surface (record/import audio → transcribe → save).**
-   The whole `audio → notes → MIDI/MusicXML` chain (`transcribeToScore`, the CLI
-   `--midi`) is **CLI/core only — no app screen**. A "record or pick audio →
-   transcribe → Song Book / export MIDI" flow is the natural consumer. Engine is
-   done; it's a screen + the export sheet. ⚠️ *Adjacent to the active
-   recorded-song-analysis worker — coordinate/claim before touching that lane.*
+1. ✅ **SHIPPED (`aafef89`, crisp_notation) — Velocity/dynamics in `scoreToMidi`.**
+   Was a fixed velocity 80 ignoring dynamics; now `DynamicMarking` level →
+   velocity (graduated marks last, sf/sfz/fp accent one note), accent/marcato
+   bump the attack, staccato shortens the note-off. mf/no-dynamic stays 80 so
+   unmarked scores are byte-identical. +5 tests. Upgrades every mus MIDI export.
+2. ✅ **SHIPPED (`a3cfd260`) — Import a MIDI → play/sing along.** New "Play a MIDI
+   file" tile: file-pick → `scoreFromMidi` → `SongScreen.fromScore` (the existing
+   note-highway + play/sing charts). `MidiPlayAlongScreen` + 5 EN/DE keys + 3
+   tests; placed in the `learn_songs` concept. Any `.mid` becomes a game level.
+3. 🚧 **CLAIMED by `opus (transcribe-w1)` — Transcription → app surface**
+   (record/import audio → transcribe → Song Book). Their N1 router (`route.dart`)
+   + N2 `transcription_service.dart` (`transcribeRecording(wavBytes)→Score`) are
+   shipped; they're building `features/games/transcribe/transcribe_screen.dart`
+   now. **Don't duplicate** — this MIDI-opp item is covered by that live claim.
 4. 🔭 **Real-time / device MIDI (the strategic prize, L · plugin project).** No
    USB/BLE MIDI input or MIDI-out today (grep for `flutter_midi`/`midi_command`
    is empty); the roadmap lists "MIDI input" as the one real-instrument input
