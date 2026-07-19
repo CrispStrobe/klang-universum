@@ -6,8 +6,9 @@ other) in pure Dart on `onnx_runtime_dart`, fast enough to be useful for the
 Pitch per stem)? The `stems.dart` assembly glue already exists with an injected
 `Separator` typedef; this memo is about whether a concrete separator is viable.
 
-**Verdict: PLAUSIBLE for Open-Unmix (not the htdemucs dead-end), but blocked
-today by a runtime gap, and the quality is mediocre.** Details below.
+**Verdict: PLAUSIBLE for Open-Unmix (not the htdemucs dead-end). It RUNS on
+`onnx_runtime_dart`; the only blockers are an export-side dynamic-shape fix
+(cheap — see the handover) + a Dart STFT + mediocre quality.** Details below.
 
 ## Candidates
 
@@ -54,12 +55,16 @@ unlike htdemucs.
 
 ## Blockers (why it is not a drop-in today)
 
-1. **The full model does not run as-exported on `onnx_runtime_dart`.** Execution
-   throws a `RangeError` at the `Tanh` after the fc1/bn1 reshape
-   (`x.reshape(nb_frames, nb_samples, hidden)`) around the LSTM path — a
-   dynamic-shape / reshape-handling gap for this graph pattern. The standalone
-   BiLSTM runs fine, so the LSTM op itself is OK; the bug is in the reshape glue.
-   **Fixing this is real runtime work (days, not hours)** and is the true gate.
+1. **Dynamic frame length is baked at export time — an EXPORT issue, NOT a
+   runtime bug.** *(Corrected — the first draft mis-attributed this to a runtime
+   reshape gap; see [`TRANSCRIPTION_SEP_HANDOVER.md`](TRANSCRIPTION_SEP_HANDOVER.md).)*
+   The model runs fine on `onnx_runtime_dart` when the frame count matches the
+   export (traced@100, run@100 → runs); it only fails at a *different* length
+   (traced@100, run@150 → `Cannot broadcast [100,…] and [150,…]` at `/Mul_2`,
+   because `input_mean`/`input_scale` were frozen to the trace length despite
+   `dynamic_axes`). The runtime is correctly rejecting a genuinely-mismatched
+   baked constant. **Fix is export-side (fixed-length chunking, or a dynamic
+   export) — cheap, not days of engine work.**
 2. **Quality is mediocre.** umxhq is the oldest/weakest modern separator (vocals
    SDR ~5–6 dB vs Demucs ~7–9 dB). Good enough for "isolate the vocal, then run
    CREPE on it," not for clean stems.
@@ -69,15 +74,16 @@ unlike htdemucs.
 
 ## Recommendation
 
-- **Do NOT build it speculatively now.** The compute is feasible, but the
-  runtime reshape gap + Dart STFT + quality validation make it a multi-day
-  effort, and the payoff (mediocre stems) is modest.
-- **If "melody from a full song" becomes a priority**, the cheapest path is:
-  (a) fix the `onnx_runtime_dart` reshape/dynamic-shape gap (needed anyway for
-  other RNN graphs), (b) wire a Dart STFT, (c) export umxhq's 4 targets, feed
-  `stems.dart`'s `Separator` seam, (d) run **CREPE** (already shipped) on the
-  vocal stem for the lead melody. This single-stem-melody path is the
-  highest-value slice and could ship before full 4-stem multi-part.
+- **Do NOT build it speculatively now.** The compute is feasible and the model
+  runs, but the export-side dynamic-shape fix + Dart STFT + quality validation
+  are still a multi-day effort, and the payoff (mediocre stems) is modest.
+- **If "melody from a full song" becomes a priority**, the cheapest path (see
+  [`TRANSCRIPTION_SEP_HANDOVER.md`](TRANSCRIPTION_SEP_HANDOVER.md)) is:
+  (a) export Open-Unmix dynamic-safe (fixed-`T` chunking, or a dynamic export),
+  (b) wire a Dart STFT, (c) feed `stems.dart`'s `Separator` seam, (d) run
+  **CREPE** (already shipped) on the vocal stem for the lead melody. This
+  single-stem-melody path is the highest-value slice and could ship before full
+  4-stem multi-part.
 - **RMVPE** (see the separate vet) targets the same "vocal pitch from a mix"
   goal in one model, but is heavier (U-Net + GRU + mel front end). Given
   Open-Unmix→CREPE is feasible on speed, neither is a slam-dunk; both are
