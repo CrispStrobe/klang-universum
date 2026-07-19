@@ -12,7 +12,9 @@ import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
+import 'package:comet_beat/features/games/composition/loop_creatures.dart';
 import 'package:comet_beat/features/games/composition/loop_mixer_screen.dart';
+import 'package:comet_beat/features/games/composition/loop_secrets.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:crisp_notation/crisp_notation.dart' show StaffView;
 import 'package:flutter/material.dart';
@@ -367,6 +369,30 @@ void main() {
     game.setKit('nonsense');
     await tester.pump();
     expect(game.kitId, 'clean');
+  });
+
+  testWidgets('every track card shows a shape-creature', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    // The five built-in layers each render their creature.
+    expect(find.byType(LoopCreature), findsNWidgets(5));
+  });
+
+  testWidgets('a secret combo unlocks a reveal + a found counter',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    // Exactly drums + bass matches the "Rhythm Section" combo.
+    game.toggleTrack('drums');
+    await tester.pump();
+    game.toggleTrack('bass');
+    await tester.pump();
+    expect(find.textContaining('Rhythm Section'), findsOneWidget);
+    expect(find.text('1/${kLoopCombos.length}'), findsOneWidget);
+
+    // Breaking the set hides the reveal; the counter persists at 1/N.
+    game.toggleTrack('chords');
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('1/${kLoopCombos.length}'), findsOneWidget);
   });
 
   testWidgets('a groove saves to a slot and loads back', (tester) async {

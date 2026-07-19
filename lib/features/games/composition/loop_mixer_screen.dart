@@ -42,6 +42,7 @@ import 'package:comet_beat/features/games/composition/advanced_tracker_screen.da
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/groove_slots.dart';
+import 'package:comet_beat/features/games/composition/loop_creatures.dart';
 import 'package:comet_beat/features/games/composition/loop_secrets.dart';
 import 'package:comet_beat/features/games/composition/multipart_to_tracker.dart';
 import 'package:comet_beat/features/games/composition/score_analysis_view.dart'
@@ -1509,16 +1510,6 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     );
   }
 
-  static const _trackIcons = <String, IconData>{
-    'drums': Icons.album,
-    'bass': Icons.speaker,
-    'chords': Icons.piano,
-    'melody': Icons.music_note,
-    'sparkle': Icons.auto_awesome,
-    'voice': Icons.mic,
-    'beat': Icons.graphic_eq,
-  };
-
   // One stable colour per card (the drums are unpitched, so a warm brown
   // instead of a pitch-class colour).
   static const _trackColors = <String, Color>{
@@ -1772,7 +1763,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                             color: _trackColors[track.id]!,
                             child: _TrackCard(
                               color: _trackColors[track.id]!,
-                              icon: _trackIcons[track.id]!,
+                              shape: creatureShapeFor(track.id),
                               label: _trackLabel(l10n, track.id),
                               active: _engine.enabled.contains(track.id),
                               variant: _engine.variants[track.id] ?? 0,
@@ -2272,7 +2263,7 @@ class _BeatPulseState extends State<_BeatPulse>
 class _TrackCard extends StatelessWidget {
   const _TrackCard({
     required this.color,
-    required this.icon,
+    required this.shape,
     required this.label,
     required this.active,
     required this.variant,
@@ -2285,7 +2276,7 @@ class _TrackCard extends StatelessWidget {
   });
 
   final Color color;
-  final IconData icon;
+  final CreatureShape shape;
   final String label;
   final bool active;
   final int variant;
@@ -2317,7 +2308,12 @@ class _TrackCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: foreground, size: 26),
+                LoopCreature(
+                  shape: shape,
+                  active: active,
+                  color: foreground,
+                  size: 32,
+                ),
                 const SizedBox(width: 12),
                 Text(
                   label,
