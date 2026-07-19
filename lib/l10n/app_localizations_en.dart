@@ -4566,6 +4566,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'A half note lasts 2 beats, so two half notes also fill a 4/4 measure.';
 
   @override
+  String get primerMeasuresTry =>
+      'Now you try: how many beats fill this 4/4 measure?';
+
+  @override
   String get primerScalesTitle => 'What is a scale?';
 
   @override
@@ -4737,6 +4741,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'A flat ♭ lowers a note by a semitone. D♭ is the very same key as C♯ — it just leans down from D.';
 
   @override
+  String get primerAccidentalsTry => 'Now you try: which sign RAISES a note?';
+
+  @override
   String get primerSpacingTitle => 'Close and open';
 
   @override
@@ -4798,6 +4805,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerTimeSigThree =>
       'Change the top number to 3 and each measure has three beats — the gentle swing of a waltz. Count 1-2-3, 1-2-3.';
+
+  @override
+  String get primerTimeSigTry =>
+      'Now you try: how many beats are in a 3/4 measure?';
 
   @override
   String get primerChartTitle => 'Chord symbols';
@@ -5007,6 +5018,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerAccentThree =>
       'The meter decides which beat is strong. In 3/4 you count 1-2-3, and the 1 is strong again — that\'s the lilt of a waltz.';
+
+  @override
+  String get primerAccentTry =>
+      'Now you try: in 4/4, which beat is the strongest?';
 
   @override
   String get primerSeventhTitle => 'Adding a seventh';

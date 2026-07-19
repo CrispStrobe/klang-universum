@@ -4584,6 +4584,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Eine halbe Note dauert 2 Schläge, also füllen auch zwei Halbe einen 4/4-Takt.';
 
   @override
+  String get primerMeasuresTry =>
+      'Jetzt du: Wie viele Schläge füllen diesen 4/4-Takt?';
+
+  @override
   String get primerScalesTitle => 'Was ist eine Tonleiter?';
 
   @override
@@ -4755,6 +4759,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ein B ♭ senkt eine Note um einen Halbton. Des ist genau dieselbe Taste wie Cis — es lehnt sich nur von D herunter.';
 
   @override
+  String get primerAccidentalsTry =>
+      'Jetzt du: Welches Zeichen ERHÖHT eine Note?';
+
+  @override
   String get primerSpacingTitle => 'Eng und weit';
 
   @override
@@ -4816,6 +4824,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerTimeSigThree =>
       'Setz oben eine 3 und jeder Takt hat drei Schläge — der sanfte Schwung eines Walzers. Zähl 1-2-3, 1-2-3.';
+
+  @override
+  String get primerTimeSigTry =>
+      'Jetzt du: Wie viele Schläge hat ein 3/4-Takt?';
 
   @override
   String get primerChartTitle => 'Akkordsymbole';
@@ -5025,6 +5037,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerAccentThree =>
       'Die Taktart bestimmt, welcher Schlag betont ist. Im 3/4-Takt zählst du 1-2-3, und wieder ist die 1 betont — der Schwung eines Walzers.';
+
+  @override
+  String get primerAccentTry =>
+      'Jetzt du: Welcher Schlag ist im 4/4-Takt am stärksten?';
 
   @override
   String get primerSeventhTitle => 'Die Septime dazu';

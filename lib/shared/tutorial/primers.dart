@@ -274,6 +274,16 @@ Tutorial measuresPrimer(AppLocalizations l10n) => Tutorial(
           score: _notes([60, 64], dur: DurationBase.half),
           beats: _run([60, 64], ms: 960),
         ),
+        // Active recall: count the beats in a full 4/4 bar.
+        TutorialStep(
+          text: l10n.primerMeasuresTry,
+          score: _notes([60, 62, 64, 65]),
+          choices: const [
+            TutorialChoice('4', correct: true),
+            TutorialChoice('3'),
+            TutorialChoice('2'),
+          ],
+        ),
       ],
     );
 
@@ -589,6 +599,14 @@ Tutorial accidentalsPrimer(AppLocalizations l10n) => Tutorial(
           score: _notes([62, 61]), // D then Db (= same key as C#)
           beats: _run([62, 61], ms: 600),
         ),
+        // Active recall: which sign raises the pitch?
+        TutorialStep(
+          text: l10n.primerAccidentalsTry,
+          choices: const [
+            TutorialChoice('♯', correct: true),
+            TutorialChoice('♭'),
+          ],
+        ),
       ],
     );
 
@@ -700,6 +718,19 @@ Tutorial timeSignaturePrimer(AppLocalizations l10n) => Tutorial(
             timeSignature: const TimeSignature(3, 4),
           ),
           play: (a) => a.playCountedNote(3),
+        ),
+        // Active recall: read the top number of a 3/4 signature.
+        TutorialStep(
+          text: l10n.primerTimeSigTry,
+          score: _notes(
+            [60, 62, 64],
+            timeSignature: const TimeSignature(3, 4),
+          ),
+          choices: const [
+            TutorialChoice('3', correct: true),
+            TutorialChoice('4'),
+            TutorialChoice('2'),
+          ],
         ),
       ],
     );
@@ -1000,6 +1031,16 @@ Tutorial strongBeatPrimer(AppLocalizations l10n) => Tutorial(
             await a.playPhrase([60], noteMs: 480);
             await a.playPhrase([60, 60], noteMs: 480, gain: 0.3);
           },
+        ),
+        // Active recall: name the strong beat in 4/4.
+        TutorialStep(
+          text: l10n.primerAccentTry,
+          choices: const [
+            TutorialChoice('1', correct: true),
+            TutorialChoice('2'),
+            TutorialChoice('3'),
+            TutorialChoice('4'),
+          ],
         ),
       ],
     );

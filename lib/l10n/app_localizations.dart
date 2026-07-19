@@ -8462,6 +8462,12 @@ abstract class AppLocalizations {
   /// **'A half note lasts 2 beats, so two half notes also fill a 4/4 measure.'**
   String get primerMeasuresHalf;
 
+  /// No description provided for @primerMeasuresTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: how many beats fill this 4/4 measure?'**
+  String get primerMeasuresTry;
+
   /// No description provided for @primerScalesTitle.
   ///
   /// In en, this message translates to:
@@ -8738,6 +8744,12 @@ abstract class AppLocalizations {
   /// **'A flat ♭ lowers a note by a semitone. D♭ is the very same key as C♯ — it just leans down from D.'**
   String get primerAccidentalsFlat;
 
+  /// No description provided for @primerAccidentalsTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: which sign RAISES a note?'**
+  String get primerAccidentalsTry;
+
   /// No description provided for @primerSpacingTitle.
   ///
   /// In en, this message translates to:
@@ -8839,6 +8851,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change the top number to 3 and each measure has three beats — the gentle swing of a waltz. Count 1-2-3, 1-2-3.'**
   String get primerTimeSigThree;
+
+  /// No description provided for @primerTimeSigTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: how many beats are in a 3/4 measure?'**
+  String get primerTimeSigTry;
 
   /// No description provided for @primerChartTitle.
   ///
@@ -9181,6 +9199,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The meter decides which beat is strong. In 3/4 you count 1-2-3, and the 1 is strong again — that\'s the lilt of a waltz.'**
   String get primerAccentThree;
+
+  /// No description provided for @primerAccentTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: in 4/4, which beat is the strongest?'**
+  String get primerAccentTry;
 
   /// No description provided for @primerSeventhTitle.
   ///

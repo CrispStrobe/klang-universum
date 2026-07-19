@@ -2,12 +2,31 @@
 // gentle ✓/✗ feedback (active recall before the graded game).
 
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/tutorial/primers.dart';
 import 'package:comet_beat/shared/tutorial/tutorial.dart';
 import 'package:comet_beat/shared/tutorial/tutorial_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('foundational primers include a hands-on "try it" step', () async {
+    final l = await AppLocalizations.delegate.load(const Locale('en'));
+    final primers = <Tutorial>[
+      noteValuesPrimer(l),
+      measuresPrimer(l),
+      accidentalsPrimer(l),
+      timeSignaturePrimer(l),
+      strongBeatPrimer(l),
+    ];
+    for (final primer in primers) {
+      expect(
+        primer.steps.any((s) => s.hasChoices),
+        isTrue,
+        reason: '${primer.title} should end with a try-it step',
+      );
+    }
+  });
+
   test('a choices step reports hasChoices and needs at least two options', () {
     final step = TutorialStep(
       text: 'How many beats?',
