@@ -1800,6 +1800,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get libraryNoCredits => 'Noch nichts aus einer Bibliothek importiert';
 
   @override
+  String get libraryCreditsSongs => 'Noten & Lieder';
+
+  @override
+  String get libraryCreditsSamples => 'Samples';
+
+  @override
   String get libraryCreditsIntro =>
       'Aus freien Musik-Bibliotheken importierte Werke mit ihren Lizenzen.';
 

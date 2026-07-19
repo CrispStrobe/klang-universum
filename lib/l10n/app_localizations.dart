@@ -3416,6 +3416,18 @@ abstract class AppLocalizations {
   /// **'Nothing imported from a library yet'**
   String get libraryNoCredits;
 
+  /// No description provided for @libraryCreditsSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores & songs'**
+  String get libraryCreditsSongs;
+
+  /// No description provided for @libraryCreditsSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples'**
+  String get libraryCreditsSamples;
+
   /// No description provided for @libraryCreditsIntro.
   ///
   /// In en, this message translates to:

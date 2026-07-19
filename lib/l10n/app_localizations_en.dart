@@ -1793,6 +1793,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryNoCredits => 'Nothing imported from a library yet';
 
   @override
+  String get libraryCreditsSongs => 'Scores & songs';
+
+  @override
+  String get libraryCreditsSamples => 'Samples';
+
+  @override
   String get libraryCreditsIntro =>
       'Works imported from open music libraries, with their licenses.';
 

@@ -641,6 +641,8 @@
   "libraryNoResults": "Keine Treffer",
   "librarySourcesCredits": "Quellen & Nachweise",
   "libraryNoCredits": "Noch nichts aus einer Bibliothek importiert",
+  "libraryCreditsSongs": "Noten & Lieder",
+  "libraryCreditsSamples": "Samples",
   "libraryCreditsIntro": "Aus freien Musik-Bibliotheken importierte Werke mit ihren Lizenzen.",
   "librarySupportDev": "Entwickler unterstützen",
   "trackerPrompt": "Wähle ein Instrument und tippe deinen Loop!",

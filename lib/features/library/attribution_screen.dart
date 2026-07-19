@@ -1,10 +1,13 @@
-// "Sources & credits" — lists the provenance of every work imported from an
-// external open-music library, so attribution travels with the app. Tapping a
-// credit opens its source URL. Fulfils the compliance-checklist requirement in
+// "Sources & credits" — the one place attribution travels with the app: every
+// work imported from an external open-music library, AND every sample in the
+// library whose licence obliges crediting (CC BY / BY-SA). CC0 / public-domain
+// content creates no obligation, so it isn't listed here. Tapping a credit
+// opens its source URL. Fulfils the compliance-checklist requirement in
 // docs/LIBRARIES_AND_TAB_SCOPING.md §1.7.
 
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/donation.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,13 +18,27 @@ class AttributionScreen extends StatelessWidget {
   /// default). Injectable for tests.
   final DonationConfig donation;
 
-  const AttributionScreen({super.key, this.donation = kDonation});
+  /// The "My Samples" store, whose attribution-required clips are credited
+  /// alongside imported songs. Injectable for tests.
+  final SampleClipStore sampleStore;
+
+  AttributionScreen({
+    super.key,
+    this.donation = kDonation,
+    SampleClipStore? store,
+  }) : sampleStore = store ?? SampleClipStore();
+
+  void _open(String? url) {
+    if (url == null) return;
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final service = context.watch<UserSongsService>();
-    final credited = service.songs.where((s) => s.attribution != null).toList();
+    final songCredits =
+        service.songs.where((s) => s.attribution != null).toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.librarySourcesCredits)),
@@ -31,37 +48,34 @@ class AttributionScreen extends StatelessWidget {
                 leading: const Icon(Icons.local_cafe),
                 title: Text(l10n.librarySupportDev),
                 trailing: const Icon(Icons.open_in_new, size: 18),
-                onTap: () => launchUrl(
-                  Uri.parse(donation.url),
-                  mode: LaunchMode.externalApplication,
-                ),
+                onTap: () => _open(donation.url),
               ),
             )
           : null,
-      body: credited.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
+      body: FutureBuilder<List<SampleClip>>(
+        future: sampleStore.load(),
+        builder: (context, snap) {
+          final sampleCredits = (snap.data ?? const <SampleClip>[])
+              .where((c) => c.needsAttribution)
+              .toList();
+
+          if (songCredits.isEmpty && sampleCredits.isEmpty) {
+            return _empty(context, l10n);
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
                 child: Text(
-                  l10n.libraryNoCredits,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  l10n.libraryCreditsIntro,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(12),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    l10n.libraryCreditsIntro,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-                for (final song in credited)
+              if (songCredits.isNotEmpty) ...[
+                _sectionHeader(context, l10n.libraryCreditsSongs),
+                for (final song in songCredits)
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.music_note),
@@ -71,14 +85,54 @@ class AttributionScreen extends StatelessWidget {
                           : const Icon(Icons.open_in_new, size: 18),
                       onTap: song.sourceUrl == null
                           ? null
-                          : () => launchUrl(
-                                Uri.parse(song.sourceUrl!),
-                                mode: LaunchMode.externalApplication,
-                              ),
+                          : () => _open(song.sourceUrl),
                     ),
                   ),
               ],
-            ),
+              if (sampleCredits.isNotEmpty) ...[
+                _sectionHeader(context, l10n.libraryCreditsSamples),
+                for (final clip in sampleCredits)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.graphic_eq),
+                      title: Text(clip.name),
+                      subtitle: Text(
+                        [
+                          if (clip.source != null) clip.source!,
+                          if (clip.license != null) clip.license!,
+                        ].join(' · '),
+                      ),
+                      trailing: clip.sourceUrl == null
+                          ? null
+                          : const Icon(Icons.open_in_new, size: 18),
+                      onTap: clip.sourceUrl == null
+                          ? null
+                          : () => _open(clip.sourceUrl),
+                    ),
+                  ),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
+
+  Widget _sectionHeader(BuildContext context, String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+        child: Text(text, style: Theme.of(context).textTheme.titleSmall),
+      );
+
+  Widget _empty(BuildContext context, AppLocalizations l10n) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            l10n.libraryNoCredits,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      );
 }

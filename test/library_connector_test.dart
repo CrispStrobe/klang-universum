@@ -356,20 +356,48 @@ void main() {
       (tester) async {
     final svc = UserSongsService();
 
-    await tester.pumpWidget(_wrap(const AttributionScreen(), svc));
+    await tester.pumpWidget(_wrap(AttributionScreen(), svc));
     await tester.pump();
     expect(find.byIcon(Icons.local_cafe), findsNothing);
 
     await tester.pumpWidget(
       _wrap(
-        const AttributionScreen(
-          donation: DonationConfig(enabled: true, url: 'https://ko-fi.com/x'),
+        AttributionScreen(
+          donation:
+              const DonationConfig(enabled: true, url: 'https://ko-fi.com/x'),
         ),
         svc,
       ),
     );
     await tester.pump();
     expect(find.byIcon(Icons.local_cafe), findsOneWidget);
+  });
+
+  testWidgets('credits screen lists attribution-required samples, not CC0',
+      (tester) async {
+    final store = SampleClipStore();
+    await store.save(
+      SampleClip(name: 'freebie', sampleRate: 8000, pcm: Float64List(4)),
+    ); // CC0/unknown → no obligation
+    await store.save(
+      SampleClip(
+        name: 'by loop',
+        sampleRate: 8000,
+        pcm: Float64List(4),
+        source: 'Freepats',
+        license: 'CC BY 4.0',
+        sourceUrl: 'https://freepats.zenvoid.org/x.html',
+      ),
+    );
+
+    await tester.pumpWidget(
+      _wrap(AttributionScreen(store: store), UserSongsService()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('by loop'), findsOneWidget); // credited
+    expect(find.textContaining('Freepats'), findsOneWidget);
+    expect(find.text('freebie'), findsNothing); // CC0 creates no obligation
   });
 
   testWidgets('sample sheet: picking a sound returns decoded PCM',
