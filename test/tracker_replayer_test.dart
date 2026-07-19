@@ -474,6 +474,85 @@ void main() {
     });
   });
 
+  group('global volume (Gxx / Hxy)', () {
+    test('globalVolumeEnvelope: Gxx sets a persistent scale, else null', () {
+      // No global-volume command → null (caller skips the multiply).
+      expect(
+        globalVolumeEnvelope(
+          [
+            [TrackerCell.empty],
+          ],
+          [0],
+          100,
+          1,
+        ),
+        isNull,
+      );
+
+      // G20 (32/64 = 0.5) on row 0 persists across the following rows.
+      final env = globalVolumeEnvelope(
+        [
+          [fx(kFxSetGlobalVolume, 0x20)],
+          [TrackerCell.empty],
+        ],
+        [0, 200],
+        400,
+        1,
+      );
+      expect(env, isNotNull);
+      expect(env![0], closeTo(0.5, 1e-9));
+      expect(env[350], closeTo(0.5, 1e-9)); // still 0.5 on the next row
+    });
+
+    test('globalVolumeEnvelope: Hxy slides down per tick', () {
+      // H04 = down 4/tick over a 4-tick row starting at full (64).
+      final env = globalVolumeEnvelope(
+        [
+          [fx(kFxGlobalVolSlide, 0x04)],
+          [TrackerCell.empty],
+        ],
+        [0, 400],
+        800,
+        4,
+      )!;
+      expect(env[50], closeTo(64 / 64, 1e-9)); // tick 0: no slide yet
+      expect(env[150], closeTo(60 / 64, 1e-9)); // tick 1
+      expect(env[250], closeTo(56 / 64, 1e-9)); // tick 2
+      expect(env[350], closeTo(52 / 64, 1e-9)); // tick 3
+      expect(env[500], closeTo(52 / 64, 1e-9)); // holds into the next row
+    });
+
+    TrackerSong gvSong(int? gxx) {
+      final s = TrackerSong(timing: const TrackerTiming(rows: 4));
+      s.engine.setCell(
+        0,
+        0,
+        gxx == null
+            ? const TrackerCell(midi: 60)
+            : fx(kFxSetGlobalVolume, gxx, midi: 60),
+      );
+      s.syncCurrent();
+      return s;
+    }
+
+    int peak(ReplayResult r) => r.pcm.fold<int>(0, (m, v) => max(m, v.abs()));
+
+    test('G00 silences the whole mix', () {
+      expect(peak(replaySong(gvSong(0x00))), 0);
+    });
+
+    test('G40 (full) is byte-identical to no global-volume command', () {
+      expect(replaySong(gvSong(0x40)).pcm, replaySong(gvSong(null)).pcm);
+    });
+
+    test('G20 (half) is quieter than full but not silent', () {
+      final half = peak(replaySong(gvSong(0x20)));
+      final full = peak(replaySong(gvSong(null)));
+      expect(half, greaterThan(0));
+      expect(half, lessThan(full));
+    });
+  });
+
   group('Fxx set-speed', () {
     TrackerSong speedSong(int? fParam) {
       final song = TrackerSong(timing: const TrackerTiming(rows: 8));

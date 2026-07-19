@@ -117,6 +117,14 @@ const int kExPatternDelay =
 /// classic MOD commands; importers can map XM effect 0x1B onto it.
 const int kFxRetrigVolSlide = 0x1B;
 
+/// Gxx — set GLOBAL volume (0x00–0x40), scaling the whole mix. XM effect 'G'
+/// (0x10). A post-mix scalar, not a per-voice command; persists across rows.
+const int kFxSetGlobalVolume = 0x10;
+
+/// Hxy — GLOBAL volume slide: x raises, y lowers the global volume by that much
+/// per tick (classic volume-slide semantics). XM effect 'H' (0x11).
+const int kFxGlobalVolSlide = 0x11;
+
 /// Txy — tremor: pulse the note ON for x ticks then OFF for y, repeating. A new
 /// non-colliding command (XM effect 0x1D); importers can map XM effect T onto it.
 const int kFxTremor = 0x1D;
@@ -1050,6 +1058,73 @@ Int16List _mixToPcm(Float64List mix) {
   return out;
 }
 
+/// Whether any cell in [rows] (row-major `rows[r][channel]`) carries a global-
+/// volume command (Gxx set or Hxy slide) — the gate that decides whether a
+/// render pays for the [globalVolumeEnvelope] pass.
+bool _hasGlobalVolume(List<List<TrackerCell>> rows) {
+  for (final row in rows) {
+    for (final c in row) {
+      if (c.fxCmd == kFxSetGlobalVolume || c.fxCmd == kFxGlobalVolSlide) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/// The per-sample GLOBAL-volume scale (0..1) over a played row sequence, driven
+/// by Gxx (set, 0x00–0x40) and Hxy (slide: x up / y down per tick). Global
+/// volume persists across rows, starting at full (0x40). [rows] is row-major
+/// (`rows[r][channel]`); [rowStart] gives each row's start sample (length ==
+/// rows.length) and [totalSamples] bounds the last row. Returns null when no
+/// Gxx/Hxy appears, so the caller skips the multiply and the common render stays
+/// byte-identical. First Gxx/Hxy on a row wins (scanned across channels).
+Float64List? globalVolumeEnvelope(
+  List<List<TrackerCell>> rows,
+  List<int> rowStart,
+  int totalSamples,
+  int ticksPerRow, {
+  int startVolume = 64,
+}) {
+  if (!_hasGlobalVolume(rows)) return null;
+  final env = Float64List(totalSamples);
+  final tpr = ticksPerRow < 1 ? 1 : ticksPerRow;
+  var gv = startVolume.clamp(0, 64);
+  for (var r = 0; r < rows.length; r++) {
+    int? setTo;
+    int? slide;
+    for (final c in rows[r]) {
+      if (c.fxCmd == kFxSetGlobalVolume) {
+        setTo ??= c.fxParam;
+      } else if (c.fxCmd == kFxGlobalVolSlide) {
+        slide ??= c.fxParam;
+      }
+    }
+    if (setTo != null) gv = setTo.clamp(0, 64);
+    final rowS = rowStart[r];
+    final rowE = r + 1 < rows.length ? rowStart[r + 1] : totalSamples;
+    if (slide == null) {
+      final s = gv / 64.0;
+      for (var i = rowS; i < rowE && i < totalSamples; i++) {
+        env[i] = s;
+      }
+    } else {
+      final up = (slide >> 4) & 0xF;
+      final down = slide & 0xF;
+      for (var k = 0; k < tpr; k++) {
+        if (k > 0) gv = (gv + up - down).clamp(0, 64); // slide on ticks >= 1
+        final ts = rowS + ((rowE - rowS) * k) ~/ tpr;
+        final te = rowS + ((rowE - rowS) * (k + 1)) ~/ tpr;
+        final s = gv / 64.0;
+        for (var i = ts; i < te && i < totalSamples; i++) {
+          env[i] = s;
+        }
+      }
+    }
+  }
+  return env;
+}
+
 // --- Stereo panning (Feature C) ----------------------------------------------
 //
 // Pan is a purely SPATIAL, post-mix operation: it never changes a voice's mono
@@ -1188,7 +1263,44 @@ ReplayResult replayPattern(
       pool: pool,
     );
   }
+  final (rows, starts) = _rowScan(cells, timing, 0);
+  _applyGlobalVolumeMix(mix, rows, starts, ticks);
   return ReplayResult(_mixToPcm(mix), const [RowTiming(0, 0, 0, 0)]);
+}
+
+/// Row-major channel cells + each row's start sample for one pattern at
+/// [sampleOffset] — the shape [globalVolumeEnvelope] consumes.
+(List<List<TrackerCell>>, List<int>) _rowScan(
+  List<List<TrackerCell>> cells,
+  TrackerTiming timing,
+  int sampleOffset,
+) {
+  final rows = <List<TrackerCell>>[];
+  final starts = <int>[];
+  for (var r = 0; r < timing.rows; r++) {
+    rows.add([
+      for (final col in cells)
+        if (r < col.length) col[r] else TrackerCell.empty,
+    ]);
+    starts.add(sampleOffset + timing.stepStartSample(r));
+  }
+  return (rows, starts);
+}
+
+/// Multiplies the Gxx/Hxy global-volume envelope of [rows] into [mix] in place.
+/// A no-op (and no allocation beyond the scan) when there is no global-volume
+/// command, so the common render stays byte-identical.
+void _applyGlobalVolumeMix(
+  Float64List mix,
+  List<List<TrackerCell>> rows,
+  List<int> starts,
+  int ticks,
+) {
+  final env = globalVolumeEnvelope(rows, starts, mix.length, ticks);
+  if (env == null) return;
+  for (var i = 0; i < mix.length; i++) {
+    mix[i] *= env[i];
+  }
 }
 
 /// The stereo sibling of [replayPattern]: renders each channel mono then pans it
@@ -1677,6 +1789,17 @@ ReplayResult replaySong(
       );
     }
   }
+  // Global volume (Gxx/Hxy) persists across the whole song, so build one
+  // envelope over every order entry's rows rather than per-pattern.
+  final gvRows = <List<TrackerCell>>[];
+  final gvStarts = <int>[];
+  for (var o = 0; o < order.length; o++) {
+    final (rr, ss) =
+        _rowScan(song.patterns[order[o]].cells, timing, patternSamples * o);
+    gvRows.addAll(rr);
+    gvStarts.addAll(ss);
+  }
+  _applyGlobalVolumeMix(mix, gvRows, gvStarts, ticks);
   return ReplayResult(_mixToPcm(mix), timingMap);
 }
 
