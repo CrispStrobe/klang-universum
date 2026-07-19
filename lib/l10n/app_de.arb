@@ -351,6 +351,7 @@
   "loopMixerScenes": "Teile",
   "loopMixerScenesHint": "Tippen zum Starten, halten zum Speichern der Schichten",
   "loopMixerChain": "Teile verketten (automatisch weiter)",
+  "loopMixerExportArrangement": "Teile als einen Track exportieren",
   "loopMixerChallengeSparkle": "Versuch: etwas Hohes und Glitzerndes ✨",
   "loopMixerChallengeBass": "Versuch: eine tiefe Basslinie",
   "loopMixerChallengeMelody": "Versuch: eine Melodie obendrauf",

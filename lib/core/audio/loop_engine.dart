@@ -25,6 +25,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
 import 'package:comet_beat/core/audio/synth.dart';
+import 'package:comet_beat/core/audio/wav_io.dart';
 
 /// An optional master send effect on the whole Loop Mixer output.
 enum LoopSend { none, reverb, delay }
@@ -1427,6 +1428,37 @@ class LoopEngine {
   /// variants), for the section/scene grid (§G-1). Cheaper than a full spec —
   /// a scene launch swaps the layers, not the tempo/key/style.
   GrooveScene captureScene() => GrooveScene({...enabled}, {...variants});
+
+  /// Render a section arrangement (§G-2): play each of [scenes] for
+  /// [loopsPerScene] loops back-to-back and concatenate into one mono buffer —
+  /// the "it's just one loop" → "a whole arranged track" export. Only the layer
+  /// set changes per section (tempo/key/kit/etc. stay), so every section is the
+  /// same loop length. Restores the pre-call layer state; empty in → empty out.
+  Float64List renderArrangement(
+    List<GrooveScene> scenes, {
+    int loopsPerScene = 2,
+  }) {
+    if (scenes.isEmpty || loopsPerScene < 1) return Float64List(0);
+    final saved = captureScene();
+    final sections = <Float64List>[];
+    var total = 0;
+    for (final scene in scenes) {
+      applyScene(scene);
+      final mono = wavToMonoFloat(readWavPcm16(renderLoop()));
+      for (var i = 0; i < loopsPerScene; i++) {
+        sections.add(mono);
+        total += mono.length;
+      }
+    }
+    applyScene(saved);
+    final out = Float64List(total);
+    var offset = 0;
+    for (final section in sections) {
+      out.setRange(offset, offset + section.length, section);
+      offset += section.length;
+    }
+    return out;
+  }
 
   /// Apply a [scene]: replace the enabled set + variants with its snapshot
   /// (unknown ids dropped defensively). Tempo/key/style/etc. are untouched.

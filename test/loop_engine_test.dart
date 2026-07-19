@@ -559,6 +559,32 @@ void main() {
     expect(scene.enabled, {'drums', 'bass'});
   });
 
+  test('renderArrangement bakes the section chain into one long track', () {
+    final e = LoopEngine();
+    // Section A: drums. Section B: drums + bass (a fuller section).
+    e.enabled.add('drums');
+    final a = e.captureScene();
+    e.enabled.add('bass');
+    final b = e.captureScene();
+
+    final oneLoop = e.timing.totalSamples; // mono samples per loop
+    const loopsPerScene = 3;
+    final arr = e.renderArrangement([a, b], loopsPerScene: loopsPerScene);
+
+    // Two sections × loopsPerScene loops each, back-to-back.
+    expect(arr.length, oneLoop * 2 * loopsPerScene);
+    // Both halves carry audio (each section sounds).
+    expect(arr.sublist(0, arr.length ~/ 2).any((s) => s.abs() > 1e-6), isTrue);
+    expect(arr.sublist(arr.length ~/ 2).any((s) => s.abs() > 1e-6), isTrue);
+
+    // The engine's own layer state is unchanged after rendering.
+    expect(e.enabled, {'drums', 'bass'});
+
+    // Degenerate inputs are safe.
+    expect(e.renderArrangement([]), isEmpty);
+    expect(e.renderArrangement([a], loopsPerScene: 0), isEmpty);
+  });
+
   test('the master filter darkens (low-pass) or brightens (high-pass)', () {
     final e = LoopEngine()
       ..toggle('drums')

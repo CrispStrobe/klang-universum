@@ -1052,6 +1052,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerChain => 'Chain sections (auto-advance)';
 
   @override
+  String get loopMixerExportArrangement => 'Export the sections as one track';
+
+  @override
   String get loopMixerChallengeSparkle =>
       'Try: add something high and sparkly ✨';
 

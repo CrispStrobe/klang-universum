@@ -2030,6 +2030,12 @@ abstract class AppLocalizations {
   /// **'Chain sections (auto-advance)'**
   String get loopMixerChain;
 
+  /// No description provided for @loopMixerExportArrangement.
+  ///
+  /// In en, this message translates to:
+  /// **'Export the sections as one track'**
+  String get loopMixerExportArrangement;
+
   /// No description provided for @loopMixerChallengeSparkle.
   ///
   /// In en, this message translates to:

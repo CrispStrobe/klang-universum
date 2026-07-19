@@ -730,6 +730,32 @@ void main() {
     expect(find.text('My voice'), findsOneWidget);
   });
 
+  testWidgets('the captured section chain exports as one arranged track',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.hasScenes, isFalse);
+    expect(game.debugRenderArrangement(), isEmpty); // nothing captured yet
+
+    // Capture two sections.
+    game.toggleTrack('drums');
+    await tester.pump();
+    game.captureScene(0);
+    game.toggleTrack('bass');
+    await tester.pump();
+    game.captureScene(1);
+    await tester.pump();
+    expect(game.hasScenes, isTrue);
+
+    // The arrangement is longer than a single loop (two sections, 2 loops each).
+    final arrangement = game.debugRenderArrangement();
+    expect(arrangement, isNotEmpty);
+    expect(
+      arrangement.length,
+      greaterThan(LoopTiming(tempoBpm: game.tempoBpm).totalSamples),
+    );
+  });
+
   testWidgets('section scenes capture, relaunch, and chain at the seam',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());

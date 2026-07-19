@@ -171,6 +171,11 @@ abstract interface class LoopMixerTester {
   bool get isChaining;
   void toggleChain();
 
+  /// §G-2: bake the captured section chain into one arranged track (for tests,
+  /// the rendered PCM).
+  bool get hasScenes;
+  Float64List debugRenderArrangement();
+
   /// Scale-locked smear pad (§F-1): visibility, whether a lead is recorded, and
   /// keeping it as a layer. Tests: the in-key notes played, playing at a
   /// normalized x, and injecting a timed sample.
@@ -418,6 +423,11 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool get isChaining => _chaining;
   @override
   void toggleChain() => _toggleChain();
+  @override
+  bool get hasScenes => _scenes.any((s) => s != null);
+  @override
+  Float64List debugRenderArrangement() =>
+      _engine.renderArrangement(_capturedScenes());
   @override
   bool get smearPadVisible => _showSmear;
   @override
@@ -1484,6 +1494,20 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     setState(() => _chaining = !_chaining);
   }
 
+  // The captured scenes, in A→D order (skipping empty slots).
+  List<GrooveScene> _capturedScenes() => [
+        for (final s in _scenes)
+          if (s != null) s,
+      ];
+
+  // Bake the section chain into one arranged track and offer WAV/MP3 export.
+  void _exportArrangement() {
+    final scenes = _capturedScenes();
+    if (scenes.isEmpty) return;
+    final pcm = _engine.renderArrangement(scenes);
+    showAudioExportSheet(context, pcm: pcm, baseName: 'my-arrangement');
+  }
+
   // At a seam, advance the chain to the next non-empty scene and launch it.
   void _advanceChain() {
     if (!_chaining) return;
@@ -1852,6 +1876,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
           isSelected: _chaining,
           tooltip: l10n.loopMixerChain,
           onPressed: _toggleChain,
+          visualDensity: VisualDensity.compact,
+        ),
+        IconButton(
+          icon: const Icon(Icons.download),
+          tooltip: l10n.loopMixerExportArrangement,
+          onPressed: hasScenes ? _exportArrangement : null,
           visualDensity: VisualDensity.compact,
         ),
       ],

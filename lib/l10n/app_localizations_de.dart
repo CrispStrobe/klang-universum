@@ -1057,6 +1057,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerChain => 'Teile verketten (automatisch weiter)';
 
   @override
+  String get loopMixerExportArrangement => 'Teile als einen Track exportieren';
+
+  @override
   String get loopMixerChallengeSparkle =>
       'Versuch: etwas Hohes und Glitzerndes ✨';
 

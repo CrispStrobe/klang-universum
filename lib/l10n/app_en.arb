@@ -389,6 +389,7 @@
   "loopMixerScenes": "Sections",
   "loopMixerScenesHint": "Tap to launch, hold to capture the current layers",
   "loopMixerChain": "Chain sections (auto-advance)",
+  "loopMixerExportArrangement": "Export the sections as one track",
   "loopMixerChallengeSparkle": "Try: add something high and sparkly ✨",
   "loopMixerChallengeBass": "Try: add a deep bassline",
   "loopMixerChallengeMelody": "Try: add a tune on top",
