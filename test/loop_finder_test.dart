@@ -47,6 +47,23 @@ void main() {
       }
     });
 
+    test('a DC-biased tone still finds a loop (mean-crossing)', () {
+      // A sine shifted up by 0.9 → range [0.4, 1.4], so it NEVER crosses 0
+      // (a zero-crossing finder would give up); the mean-crossing finder locks
+      // a loop anyway.
+      const n = 4000, periods = 40;
+      final s = sine(n, periods, amp: 0.5);
+      final biased = Float64List(n);
+      for (var i = 0; i < n; i++) {
+        biased[i] = s[i] + 0.9;
+      }
+      final lp = findLoopPoints(biased);
+      expect(lp, isNotNull);
+      const period = n / periods;
+      final k = lp!.loopLength / period;
+      expect((k - k.roundToDouble()).abs(), lessThan(0.03));
+    });
+
     test('noise has no confident loop → null', () {
       final rng = Random(1);
       final noise = Float64List(4000);

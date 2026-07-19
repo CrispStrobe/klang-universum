@@ -49,6 +49,20 @@ void main() {
       expect(inst.loops, isTrue); // a steady tone auto-loops
     });
 
+    test('a DC-biased recording still tunes AND loops (DC removed first)', () {
+      // A real mic recording sitting off-centre: +0.9 bias hides the crossings
+      // the loop finder needs. tunedRecordedSample recentres it first.
+      final t = tone(69);
+      final biased = Float64List(t.length);
+      for (var i = 0; i < t.length; i++) {
+        biased[i] = t[i] + 0.9;
+      }
+      final inst = tunedRecordedSample('rec', biased);
+      expect(inst.baseMidi, 69); // pitch detected despite the bias
+      // A loop is found (would fail without the DC clean — no crossings).
+      expect(inst.loops, isTrue);
+    });
+
     test('a recording with no clear pitch falls back to baseMidi 60', () {
       final rng = Random(2);
       final noise = Float64List(8192);

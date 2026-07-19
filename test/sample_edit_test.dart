@@ -112,6 +112,23 @@ void main() {
     });
   });
 
+  group('removeDcOffset', () {
+    test('subtracts the mean so the result centres on 0; source intact', () {
+      final biased = Float64List.fromList([0.7, 0.3, 0.7, 0.3]); // mean 0.5
+      final out = removeDcOffset(biased);
+      expect(out.reduce((a, b) => a + b) / out.length, closeTo(0, 1e-12));
+      expect(out[0], closeTo(0.2, 1e-12));
+      expect(out[1], closeTo(-0.2, 1e-12));
+      expect(biased[0], closeTo(0.7, 1e-12)); // input not mutated
+    });
+
+    test('an already-centred signal is unchanged; empty stays empty', () {
+      final centred = Float64List.fromList([0.5, -0.5, 0.5, -0.5]);
+      expect(removeDcOffset(centred), centred);
+      expect(removeDcOffset(Float64List(0)), isEmpty);
+    });
+  });
+
   group('reversePcm', () {
     test('reverses; source intact', () {
       final src = Float64List.fromList([1, 2, 3]);

@@ -65,6 +65,25 @@ Float64List normalizePcm(Float64List pcm, {double targetPeak = 1.0}) {
   return out;
 }
 
+/// [pcm] with its DC offset (constant bias) removed — the mean subtracted from
+/// every sample (a new buffer). A real mic recording often sits off-centre,
+/// which wastes headroom, can click on note-on, and hides the zero crossings a
+/// loop finder needs; this recentres it on 0. A silent/empty buffer is returned
+/// unchanged.
+Float64List removeDcOffset(Float64List pcm) {
+  if (pcm.isEmpty) return Float64List.fromList(pcm);
+  var sum = 0.0;
+  for (final v in pcm) {
+    sum += v;
+  }
+  final mean = sum / pcm.length;
+  final out = Float64List(pcm.length);
+  for (var i = 0; i < pcm.length; i++) {
+    out[i] = pcm[i] - mean;
+  }
+  return out;
+}
+
 /// A copy of [pcm] with a linear fade-in over the first [samples] (clamped to
 /// the length). The first sample is silent, ramping to full by the fade's end;
 /// 0 → an identity copy.

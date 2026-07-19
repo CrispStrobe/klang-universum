@@ -42,15 +42,20 @@ LoopPoints? findLoopPoints(
 
   // Reject an overall (near-)silent buffer.
   var energy = 0.0;
+  var sum = 0.0;
   for (var i = 0; i < end; i++) {
     energy += pcm[i] * pcm[i];
+    sum += pcm[i];
   }
   if (energy / end < 1e-8) return null;
+  // Cross the MEAN, not 0, so a DC-biased recording (few/no true zero crossings)
+  // still finds consistent-phase points for the seam.
+  final mean = sum / end;
 
-  // Loop start: ~startFraction in (past a typical attack), at a rising zero
+  // Loop start: ~startFraction in (past a typical attack), at a rising mean
   // crossing so the seam lands on a matching phase.
   final startGuess = (end * startFraction).floor();
-  final loopStart = _risingZeroCrossAtOrAfter(pcm, startGuess, end - window);
+  final loopStart = _risingCrossAtOrAfter(pcm, startGuess, end - window, mean);
   if (loopStart < 0) return null;
 
   // Reference window at the loop start.
@@ -67,7 +72,8 @@ LoopPoints? findLoopPoints(
   var bestEnd = -1;
   var bestCorr = -2.0;
   for (var e = searchFrom; e < maxEnd; e++) {
-    if (!(pcm[e - 1] <= 0 && pcm[e] > 0)) continue; // rising zero crossing
+    final rising = pcm[e - 1] <= mean && pcm[e] > mean; // rising mean crossing
+    if (!rising) continue;
     var dot = 0.0;
     var norm = 0.0;
     for (var w = 0; w < window; w++) {
@@ -87,12 +93,13 @@ LoopPoints? findLoopPoints(
   return (loopStart: loopStart, loopLength: bestEnd - loopStart);
 }
 
-/// The first rising zero crossing (`pcm[i-1] <= 0 < pcm[i]`) in `[from, limit)`,
-/// or -1 if none.
-int _risingZeroCrossAtOrAfter(Float64List pcm, int from, int limit) {
+/// The first rising [level] crossing (`pcm[i-1] <= level < pcm[i]`) in
+/// `[from, limit)`, or -1 if none. [level] is the signal mean, so a DC-biased
+/// recording still crosses.
+int _risingCrossAtOrAfter(Float64List pcm, int from, int limit, double level) {
   final start = from < 1 ? 1 : from;
   for (var i = start; i < limit; i++) {
-    if (pcm[i - 1] <= 0 && pcm[i] > 0) return i;
+    if (pcm[i - 1] <= level && pcm[i] > level) return i;
   }
   return -1;
 }

@@ -6,6 +6,8 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/sample_edit.dart'
+    show removeDcOffset;
 import 'package:comet_beat/core/audio/loop_finder.dart'
     show crossfadeLoop, findLoopPoints;
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
@@ -59,6 +61,9 @@ SampleInstrument tunedRecordedSample(
   bool pingPong = false,
   bool crossfade = false,
 }) {
+  // Recentre on 0 first: a DC-biased mic recording hides the zero/mean crossings
+  // the loop finder needs and wastes headroom on playback.
+  pcm = removeDcOffset(pcm);
   final base = detectSampleBaseMidi(pcm, sampleRate: sampleRate) ?? 60;
   final lp = autoLoop ? findLoopPoints(pcm) : null;
   var sample = pcm;
