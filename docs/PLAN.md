@@ -19,6 +19,7 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
+- **opus (primer-wiring)** · 🚧 **ACTIVE — give my 6 shipped games their own concept primer** (picking up the freed primer-coverage work). connect_degrees→harmonyPrimer, connect_time→timeSignaturePrimer, connect_keysig→keySignaturePrimer, dynamics_order→dynamicsPrimer, tempo_order→tempoTermsPrimer (all EXISTING primers, one-line `tutorial:` each); + author a small text `roadmapPrimer` for connect_roadmap (navigation, no existing primer). Files: `game_registry.dart` + `primers.dart` + EN/DE + a test. Additive; note_reading/note_values lanes free.
 > **🧭 Board reality check (maintainer, 2026-07-19): only THREE workers are
 > active** — **① tracker** (the two `tracker-ui` + `tracker-adv` 🚧 claims below
 > are the *same single* tracker worker), **② tab workshop** (`libraries-and-tab`
