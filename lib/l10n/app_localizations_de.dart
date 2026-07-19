@@ -1317,6 +1317,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawSent => 'Zur Mehrspur hinzugefügt';
 
   @override
+  String dawBpm(int n) {
+    return '$n BPM';
+  }
+
+  @override
+  String get dawTempoUp => 'Schneller';
+
+  @override
+  String get dawTempoDown => 'Langsamer';
+
+  @override
   String get dawAddTrack => 'Spur hinzufügen';
 
   @override
@@ -1357,6 +1368,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dawMerged => 'Zu einer Audiospur zusammengeführt';
+
+  @override
+  String get dawDuplicate => 'Duplizieren';
 
   @override
   String get dawFreeze => 'In Audio umwandeln';

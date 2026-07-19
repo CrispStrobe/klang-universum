@@ -2522,6 +2522,24 @@ abstract class AppLocalizations {
   /// **'Added to the Multitrack'**
   String get dawSent;
 
+  /// No description provided for @dawBpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} BPM'**
+  String dawBpm(int n);
+
+  /// No description provided for @dawTempoUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Faster'**
+  String get dawTempoUp;
+
+  /// No description provided for @dawTempoDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Slower'**
+  String get dawTempoDown;
+
   /// No description provided for @dawAddTrack.
   ///
   /// In en, this message translates to:
@@ -2605,6 +2623,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Merged into one audio take'**
   String get dawMerged;
+
+  /// No description provided for @dawDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get dawDuplicate;
 
   /// No description provided for @dawFreeze.
   ///

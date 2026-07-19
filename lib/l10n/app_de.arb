@@ -438,6 +438,12 @@
   "dawEmpty": "Füge einen Beat oder eine Melodie hinzu und drücke Play — sie überlagern sich.",
   "dawSend": "Zur Mehrspur",
   "dawSent": "Zur Mehrspur hinzugefügt",
+  "dawBpm": "{n} BPM",
+  "@dawBpm": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dawTempoUp": "Schneller",
+  "dawTempoDown": "Langsamer",
   "dawAddTrack": "Spur hinzufügen",
   "dawTrackTitle": "Spur",
   "dawTrackName": "Name",
@@ -452,6 +458,7 @@
   "dawProjectOpenFailed": "Projekt konnte nicht geöffnet werden",
   "dawMergeAll": "Alles zusammenführen",
   "dawMerged": "Zu einer Audiospur zusammengeführt",
+  "dawDuplicate": "Duplizieren",
   "dawFreeze": "In Audio umwandeln",
   "dawFrozen": "In eine Audiospur umgewandelt",
   "dawUndo": "Rückgängig",

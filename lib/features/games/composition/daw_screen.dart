@@ -52,8 +52,11 @@ abstract interface class DawTester {
   int get clipCount;
   bool get isPlaying;
 
-  /// The playhead position (ms) during playback; 0 when stopped.
+  /// The playhead position (ms); rests at the seek marker when stopped.
   double get playheadMs;
+
+  /// Move the play-start / resting playhead (as clicking the ruler does).
+  void seekTo(double ms);
 
   /// Whether playback loops back to the start at the end of the arrangement.
   bool get loopOn;
@@ -87,6 +90,7 @@ abstract interface class DawTester {
   void freezeClip(int track, int index);
   bool isClipFrozen(int track, int index);
   void removeClip(int track, int index);
+  void duplicateClip(int track, int index);
 
   /// Timeline: move a clip in time, and read a clip's start + to-scale duration.
   void moveClip(int track, int index, double startMs);
@@ -125,9 +129,11 @@ abstract interface class DawTester {
   double clipTrimEndMs(int track, int index);
   double clipSourceMs(int track, int index);
 
-  /// Drag-snapping to the timeline grid.
+  /// Drag-snapping to the beat grid, and the project tempo that defines it.
   void toggleSnap();
   bool get snapOn;
+  double get bpm;
+  void setBpm(double value);
 
   /// Test seam: the length (samples) the arrangement bakes to.
   int debugBakeLength();
@@ -166,10 +172,10 @@ class _DawScreenState extends State<DawScreen>
   }
 
   void _onTick(Duration elapsed) {
-    final ms = elapsed.inMilliseconds.toDouble();
+    final ms = _seekMs + elapsed.inMilliseconds.toDouble();
     if (_totalMs > 0 && ms >= _totalMs) {
-      // Reached the end: loop restarts from the top, else stop. The re-bake in
-      // play() is cheap (every clip is served from the per-source cache).
+      // Reached the end: loop restarts (from the seek point), else stop. The
+      // re-bake in play() is cheap (every clip is served from the cache).
       if (_loop) {
         play();
       } else {
@@ -356,6 +362,9 @@ class _DawScreenState extends State<DawScreen>
   void removeClip(int track, int index) => _daw.removeClip(track, index);
 
   @override
+  void duplicateClip(int track, int index) => _daw.duplicateClip(track, index);
+
+  @override
   void moveClip(int track, int index, double startMs) =>
       _daw.moveClip(track, index, startMs);
 
@@ -440,6 +449,12 @@ class _DawScreenState extends State<DawScreen>
   @override
   bool get snapOn => _daw.snapOn;
 
+  @override
+  double get bpm => _daw.bpm;
+
+  @override
+  void setBpm(double value) => _daw.setBpm(value);
+
   Float64List _bake() => _daw.bake();
 
   Int16List _toPcm16(Float64List pcm) {
@@ -453,27 +468,43 @@ class _DawScreenState extends State<DawScreen>
   @override
   int debugBakeLength() => _bake().length;
 
+  // Where playback starts (set by clicking the ruler); the playhead rests here
+  // when stopped and playback resumes from it.
+  double _seekMs = 0;
+
   @override
   void play() {
     final pcm = _bake();
     if (pcm.isEmpty) return;
-    // The transport (playhead) runs whenever Play is engaged; only the audible
-    // output is gated on the sound toggle, so a muted session still scrubs.
-    if (_audio.soundOn) _audio.playWavBytes(wavBytes(_toPcm16(pcm)));
     _totalMs = pcm.length / kDawSampleRate * 1000;
-    _positionMs.value = 0;
+    final from = (_seekMs.clamp(0, _totalMs) * kDawSampleRate / 1000).round();
+    // Play from the seek point onward. The transport (playhead) runs whenever
+    // Play is engaged; only the audible output is gated on the sound toggle.
+    if (_audio.soundOn && from < pcm.length) {
+      _audio
+          .playWavBytes(wavBytes(_toPcm16(Float64List.sublistView(pcm, from))));
+    }
+    _positionMs.value = _seekMs;
     _ticker
       ..stop()
-      ..start(); // elapsed restarts at 0
+      ..start(); // elapsed restarts at 0; _onTick adds _seekMs
     setState(() => _playing = true);
   }
 
   @override
   void stop() {
     _ticker.stop();
-    _positionMs.value = 0;
+    _positionMs.value = _seekMs; // rest at the seek marker
     _audio.stop();
     setState(() => _playing = false);
+  }
+
+  /// Move the play start (and the resting playhead) to [ms] on the timeline.
+  @override
+  void seekTo(double ms) {
+    _seekMs = ms < 0 ? 0 : ms;
+    _positionMs.value = _seekMs;
+    if (_playing) play(); // restart from the new point
   }
 
   @override
@@ -653,6 +684,14 @@ class _DawScreenState extends State<DawScreen>
                         icon: Icon(frozen ? Icons.lock : Icons.ac_unit),
                         label: Text(l10n.dawFreeze),
                       ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetCtx).pop();
+                          duplicateClip(track, index);
+                        },
+                        icon: const Icon(Icons.control_point_duplicate),
+                        label: Text(l10n.dawDuplicate),
+                      ),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: () {
@@ -795,6 +834,23 @@ class _DawScreenState extends State<DawScreen>
                     icon: const Icon(Icons.add_road),
                     label: Text(l10n.dawAddTrack),
                   ),
+                  // Project tempo — defines the beat snap grid.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        tooltip: l10n.dawTempoDown,
+                        onPressed: () => setBpm(daw.bpm - 5),
+                      ),
+                      Text(l10n.dawBpm(daw.bpm.round())),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        tooltip: l10n.dawTempoUp,
+                        onPressed: () => setBpm(daw.bpm + 5),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -845,6 +901,16 @@ class _DawScreenState extends State<DawScreen>
                 width: laneWidth,
                 child: Stack(
                   children: [
+                    // Faint beat gridlines behind the lanes, when snapping.
+                    if (daw.snapOn)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _BeatGridPainter(
+                            beatPx: daw.beatMs / 1000 * _pxPerSecond,
+                            color: scheme.outlineVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
                     Column(
                       children: [
                         _ruler(laneWidth, scheme),
@@ -857,7 +923,10 @@ class _DawScreenState extends State<DawScreen>
                       child: ValueListenableBuilder<double>(
                         valueListenable: _positionMs,
                         builder: (context, ms, _) {
-                          if (!_playing) return const SizedBox.shrink();
+                          // Show while playing, or resting at a seek marker.
+                          if (!_playing && ms <= 0) {
+                            return const SizedBox.shrink();
+                          }
                           return Align(
                             alignment: Alignment.topLeft,
                             child: Padding(
@@ -883,36 +952,41 @@ class _DawScreenState extends State<DawScreen>
   // A second-by-second time ruler aligned with the lanes below it.
   Widget _ruler(double laneWidth, ColorScheme scheme) {
     final seconds = (laneWidth / _pxPerSecond).ceil();
-    return Container(
-      width: laneWidth,
-      height: _rulerHeight,
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
-      ),
-      child: Stack(
-        children: [
-          for (var s = 0; s <= seconds; s++)
-            Positioned(
-              left: s * _pxPerSecond,
-              top: 0,
-              bottom: 0,
-              child: Row(
-                children: [
-                  Container(width: 1, color: scheme.outlineVariant),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 2),
-                    child: Text(
-                      '${s}s',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: scheme.onSurfaceVariant,
+    return GestureDetector(
+      // Click the ruler to move the playhead / play-start marker.
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (d) => seekTo(d.localPosition.dx / _pxPerSecond * 1000),
+      child: Container(
+        width: laneWidth,
+        height: _rulerHeight,
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+        ),
+        child: Stack(
+          children: [
+            for (var s = 0; s <= seconds; s++)
+              Positioned(
+                left: s * _pxPerSecond,
+                top: 0,
+                bottom: 0,
+                child: Row(
+                  children: [
+                    Container(width: 1, color: scheme.outlineVariant),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2),
+                      child: Text(
+                        '${s}s',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1068,6 +1142,26 @@ class _DawScreenState extends State<DawScreen>
       ),
     );
   }
+}
+
+/// Faint vertical lines every [beatPx], marking the beat grid clips snap to.
+class _BeatGridPainter extends CustomPainter {
+  _BeatGridPainter({required this.beatPx, required this.color});
+  final double beatPx;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (beatPx < 4) return; // too dense to be useful
+    final paint = Paint()..color = color;
+    for (var x = beatPx; x < size.width; x += beatPx) {
+      canvas.drawRect(Rect.fromLTWH(x, 0, 1, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BeatGridPainter old) =>
+      old.beatPx != beatPx || old.color != color;
 }
 
 /// Draws a clip's downsampled [peaks] (0..1) as a centre-line waveform that

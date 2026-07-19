@@ -177,16 +177,46 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Duplicate a clip, dropping the copy on the same track right after the
+  /// original (same source/gain/fades/trim). Cheap — the copy shares the
+  /// source's cache entry.
+  void duplicateClip(int track, int index) {
+    _record();
+    final clips = timeline.tracks[track].clips;
+    final clip = clips[index];
+    final pcm = _cache.putIfAbsent(
+      clip.source.cacheKey,
+      () => clip.source.render(kDawSampleRate),
+    );
+    final dur = trimmedDurationMs(clip, pcm);
+    clips.insert(index + 1, clip.copyWith(startMs: clip.startMs + dur));
+    notifyListeners();
+  }
+
+  /// Project tempo — the snap grid is one beat at this tempo, so clips line up
+  /// rhythmically rather than to an arbitrary millisecond grid.
+  double bpm = 120;
+
+  /// One beat in ms at [bpm].
+  double get beatMs => 60000 / bpm;
+
   /// Drag-snap grid in ms (0 = off). When on, [moveClip] rounds a clip's start
-  /// to the nearest multiple, so clips line up.
+  /// to the nearest [beatMs], so clips land on the beat.
   double snapMs = 0;
-  static const double _defaultSnapMs = 250;
 
   bool get snapOn => snapMs > 0;
 
   /// Toggle drag-snapping on/off (a view preference — not an undoable edit).
   void toggleSnap() {
-    snapMs = snapMs > 0 ? 0 : _defaultSnapMs;
+    snapMs = snapMs > 0 ? 0 : beatMs;
+    notifyListeners();
+  }
+
+  /// Set the project tempo (clamped to a sane 40–300 BPM); if snapping is on,
+  /// the grid follows the new beat length.
+  void setBpm(double value) {
+    bpm = value.clamp(40, 300);
+    if (snapMs > 0) snapMs = beatMs;
     notifyListeners();
   }
 

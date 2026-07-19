@@ -1310,6 +1310,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawSent => 'Added to the Multitrack';
 
   @override
+  String dawBpm(int n) {
+    return '$n BPM';
+  }
+
+  @override
+  String get dawTempoUp => 'Faster';
+
+  @override
+  String get dawTempoDown => 'Slower';
+
+  @override
   String get dawAddTrack => 'Add track';
 
   @override
@@ -1350,6 +1361,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dawMerged => 'Merged into one audio take';
+
+  @override
+  String get dawDuplicate => 'Duplicate';
 
   @override
   String get dawFreeze => 'Freeze to audio';

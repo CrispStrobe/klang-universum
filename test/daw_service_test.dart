@@ -199,15 +199,42 @@ void main() {
     s.moveClip(0, 0, 1490); // no snap → exact
     expect(s.clipStartMs(0, 0), 1490);
 
-    s.toggleSnap();
+    s.toggleSnap(); // beat grid at 120 BPM = 500 ms
     expect(s.snapOn, isTrue);
-    s.moveClip(0, 0, 1490); // nearest 250 ms → 1500
+    s.moveClip(0, 0, 1490); // nearest beat → 1500
     expect(s.clipStartMs(0, 0), 1500);
     s.moveClip(0, 0, 1100); // → 1000
     expect(s.clipStartMs(0, 0), 1000);
 
     s.toggleSnap();
     expect(s.snapOn, isFalse);
+  });
+
+  test('the snap grid follows the project tempo', () {
+    final s = DawService()..addClip(_tone(0.3, 100));
+    expect(s.bpm, 120);
+    s.setBpm(60); // one beat = 1000 ms
+    s.toggleSnap();
+    s.moveClip(0, 0, 1400); // nearest second → 1000
+    expect(s.clipStartMs(0, 0), 1000);
+    // Changing tempo while snapping re-grids.
+    s.setBpm(120); // beat = 500 ms
+    s.moveClip(0, 0, 1400); // → 1500
+    expect(s.clipStartMs(0, 0), 1500);
+    // BPM is clamped to a sane range.
+    s.setBpm(9999);
+    expect(s.bpm, 300);
+  });
+
+  test('duplicateClip drops a copy right after the original', () {
+    final s = DawService()..addClip(_tone(0.5, 44100)); // 1000 ms
+    expect(s.clipCount, 1);
+    s.duplicateClip(0, 0);
+    expect(s.clipCount, 2);
+    // The copy sits at the original's end (start 0 + 1000 ms duration).
+    expect(s.clipStartMs(0, 1), closeTo(1000, 1));
+    s.undo();
+    expect(s.clipCount, 1);
   });
 
   test('undo restores after clear', () {

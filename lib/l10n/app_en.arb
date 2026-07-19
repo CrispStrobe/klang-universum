@@ -489,6 +489,12 @@
   "dawEmpty": "Add a beat or a tune, then press play — they layer together.",
   "dawSend": "To Multitrack",
   "dawSent": "Added to the Multitrack",
+  "dawBpm": "{n} BPM",
+  "@dawBpm": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dawTempoUp": "Faster",
+  "dawTempoDown": "Slower",
   "dawAddTrack": "Add track",
   "dawTrackTitle": "Track",
   "dawTrackName": "Name",
@@ -503,6 +509,7 @@
   "dawProjectOpenFailed": "Could not open the project",
   "dawMergeAll": "Merge all",
   "dawMerged": "Merged into one audio take",
+  "dawDuplicate": "Duplicate",
   "dawFreeze": "Freeze to audio",
   "dawFrozen": "Frozen to an audio take",
   "dawUndo": "Undo",

@@ -294,4 +294,27 @@ void main() {
     daw.stop();
     expect(daw.isPlaying, isFalse);
   });
+
+  testWidgets('seekTo moves the playhead and playback starts from it',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    await tester.pump();
+
+    // Click-to-seek (via the seam): the resting playhead moves to the marker.
+    daw.seekTo(400);
+    await tester.pump();
+    expect(daw.playheadMs, 400);
+
+    // Playback begins from the marker (not 0), so after a baseline frame the
+    // playhead is already at/after the seek point.
+    daw.play();
+    await tester.pump(); // ticker baseline
+    expect(daw.playheadMs, greaterThanOrEqualTo(400));
+
+    // Stop rests back at the marker, not 0.
+    daw.stop();
+    expect(daw.playheadMs, 400);
+  });
 }
