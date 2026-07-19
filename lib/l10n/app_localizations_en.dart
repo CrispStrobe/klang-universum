@@ -2376,6 +2376,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerInterpNotes => 'Interpolate notes (run)';
 
   @override
+  String get trackerChord => 'Chord';
+
+  @override
+  String get trackerChordRoot => 'Root';
+
+  @override
+  String get trackerChordAcross => 'Across tracks';
+
+  @override
+  String get trackerChordArp => 'Arpeggio (down)';
+
+  @override
   String get trackerBlockFillVoice => 'Fill voice across block';
 
   @override

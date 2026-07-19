@@ -513,6 +513,59 @@ class TrackerSong {
     }
   }
 
+  /// Lays a chord ACROSS tracks: writes [rootMidi] on [channel] at [row], then
+  /// each higher chord tone (root + [intervals]) on the next channels to the
+  /// right. Tones past the last channel are dropped. [intervals] are semitone
+  /// offsets from the root (e.g. [0,4,7] = major). Each note carries [instrument]
+  /// (0 = channel default). Returns how many tones were placed.
+  int stampChordAcross(
+    int channel,
+    int row,
+    int rootMidi,
+    List<int> intervals, {
+    int instrument = 0,
+  }) {
+    if (row < 0 || row >= rows) return 0;
+    var placed = 0;
+    for (var i = 0; i < intervals.length; i++) {
+      final c = channel + i;
+      if (c < 0 || c >= channelCount) break;
+      final midi = (rootMidi + intervals[i]).clamp(0, 127);
+      _engine.setCell(c, row, TrackerCell(midi: midi, instrument: instrument));
+      placed++;
+    }
+    return placed;
+  }
+
+  /// Lays a chord as an ARPEGGIO down one column: writes the chord tones (root +
+  /// [intervals]) on [channel] starting at [row], each [step] rows apart
+  /// (step≥1). Tones past the pattern end are dropped. Each note carries
+  /// [instrument]. Returns how many tones were placed.
+  int stampArpeggio(
+    int channel,
+    int row,
+    int rootMidi,
+    List<int> intervals, {
+    int step = 1,
+    int instrument = 0,
+  }) {
+    if (channel < 0 || channel >= channelCount) return 0;
+    final s = step < 1 ? 1 : step;
+    var placed = 0;
+    for (var i = 0; i < intervals.length; i++) {
+      final r = row + i * s;
+      if (r < 0 || r >= rows) break;
+      final midi = (rootMidi + intervals[i]).clamp(0, 127);
+      _engine.setCell(
+        channel,
+        r,
+        TrackerCell(midi: midi, instrument: instrument),
+      );
+      placed++;
+    }
+    return placed;
+  }
+
   // --- Mute / solo -------------------------------------------------------
 
   Set<int> _userMuted = {};

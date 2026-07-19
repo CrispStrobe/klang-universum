@@ -574,6 +574,51 @@ void main() {
     });
   });
 
+  group('chord helper (stampChordAcross / stampArpeggio)', () {
+    test('stampChordAcross lays one tone per consecutive track', () {
+      final song = TrackerSong(); // default band, ≥3 channels
+      final placed = song.stampChordAcross(0, 0, 60, const [0, 4, 7]);
+      expect(placed, 3);
+      expect(song.engine.cellAt(0, 0).midi, 60); // C
+      expect(song.engine.cellAt(1, 0).midi, 64); // E
+      expect(song.engine.cellAt(2, 0).midi, 67); // G
+    });
+
+    test('stampChordAcross stops at the last channel (extra tones dropped)',
+        () {
+      final song = TrackerSong();
+      final last = song.channelCount - 1;
+      final placed = song.stampChordAcross(last, 0, 60, const [0, 4, 7]);
+      expect(placed, 1); // only the root fits
+      expect(song.engine.cellAt(last, 0).midi, 60);
+    });
+
+    test('stampArpeggio lays the tones down one column at the step', () {
+      final song = TrackerSong()..setRows(16);
+      final placed = song.stampArpeggio(0, 0, 60, const [0, 4, 7, 12], step: 2);
+      expect(placed, 4);
+      expect(song.engine.cellAt(0, 0).midi, 60);
+      expect(song.engine.cellAt(0, 2).midi, 64);
+      expect(song.engine.cellAt(0, 4).midi, 67);
+      expect(song.engine.cellAt(0, 6).midi, 72);
+      // Rows between the steps stay empty.
+      expect(song.engine.cellAt(0, 1).isEmpty, isTrue);
+    });
+
+    test('stampArpeggio drops tones past the pattern end', () {
+      final song = TrackerSong()..setRows(4);
+      final placed = song.stampArpeggio(0, 2, 60, const [0, 4, 7, 12]);
+      expect(placed, 2); // rows 2, 3 fit; 4, 5 are past the end
+      expect(song.engine.cellAt(0, 3).midi, 64);
+    });
+
+    test('chord notes carry the given instrument voice', () {
+      final song = TrackerSong();
+      song.stampChordAcross(0, 0, 60, const [0, 4, 7], instrument: 3);
+      expect(song.engine.cellAt(1, 0).instrument, 3);
+    });
+  });
+
   group('swing / groove', () {
     test('setSwing re-times off-beat step onsets and clamps the range', () {
       final song = TrackerSong(timing: const TrackerTiming(rows: 8));

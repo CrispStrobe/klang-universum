@@ -4550,6 +4550,30 @@ abstract class AppLocalizations {
   /// **'Interpolate notes (run)'**
   String get trackerInterpNotes;
 
+  /// No description provided for @trackerChord.
+  ///
+  /// In en, this message translates to:
+  /// **'Chord'**
+  String get trackerChord;
+
+  /// No description provided for @trackerChordRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Root'**
+  String get trackerChordRoot;
+
+  /// No description provided for @trackerChordAcross.
+  ///
+  /// In en, this message translates to:
+  /// **'Across tracks'**
+  String get trackerChordAcross;
+
+  /// No description provided for @trackerChordArp.
+  ///
+  /// In en, this message translates to:
+  /// **'Arpeggio (down)'**
+  String get trackerChordArp;
+
   /// No description provided for @trackerBlockFillVoice.
   ///
   /// In en, this message translates to:

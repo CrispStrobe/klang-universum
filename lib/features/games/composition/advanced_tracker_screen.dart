@@ -36,6 +36,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/chroma_analysis.dart'
+    show ChordTemplate, kChordTemplates;
 import 'package:comet_beat/core/audio/crisp_dsp/sample_edit.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
@@ -129,6 +131,22 @@ const _kTempoOptions = [80, 100, 110, 120, 128, 140, 150, 160, 175, 200];
 /// Swing presets: 0 = straight, up to ~0.66 = a triplet shuffle. Delays each
 /// off-beat step by `swing * stepMs` (see [TrackerTiming.swing]).
 const _kSwingOptions = [0.0, 0.16, 0.33, 0.5, 0.66];
+
+/// Pitch-class names for the chord-helper root picker (0 = C … 11 = B).
+const _kRootNames = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+];
 
 /// Per-channel volume-envelope shapes offered in the mixer — the friendly form
 /// of the FT2/IT envelope editor. `null` = flat (no envelope). Breakpoints are
@@ -319,6 +337,15 @@ abstract interface class AdvancedTrackerTester {
 
   /// Fill a chromatic run between the selection's top and bottom notes.
   void interpolateNotesBlock();
+
+  /// Stamp a chord at the cursor: root pitch-class + octave + intervals, either
+  /// across tracks or as an arpeggio down the column.
+  void applyChordAtCursor(
+    int pc,
+    int octave,
+    List<int> intervals, {
+    required bool arp,
+  });
 
   /// Play the current pattern from the cursor row (FT2 F7).
   void playFromCursor();
@@ -1247,6 +1274,151 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       () => _song.interpolateNotesBlock(s.cLo, s.rLo, s.cHi, s.rHi),
     );
     _syncPlayback();
+  }
+
+  /// Stamps a chord at the cursor: root pitch-class [pc] + [octave] set the root
+  /// MIDI, [intervals] the chord shape. [arp] lays it down the cursor column at
+  /// the edit-step spacing; otherwise across consecutive tracks. New notes take
+  /// the active pool voice.
+  void _applyChordAtCursor(
+    int pc,
+    int octave,
+    List<int> intervals, {
+    required bool arp,
+  }) {
+    final rootMidi = ((octave + 1) * 12 + pc).clamp(0, 127);
+    _pushUndo();
+    setState(() {
+      if (arp) {
+        final step = _editStep < 1 ? 1 : _editStep;
+        _song.stampArpeggio(
+          _cursorChannel,
+          _cursorRow,
+          rootMidi,
+          intervals,
+          step: step,
+          instrument: _activeInstrument,
+        );
+      } else {
+        _song.stampChordAcross(
+          _cursorChannel,
+          _cursorRow,
+          rootMidi,
+          intervals,
+          instrument: _activeInstrument,
+        );
+      }
+    });
+    _syncPlayback();
+  }
+
+  String _chordQualityLabel(ChordTemplate t) =>
+      t.suffix.isEmpty ? 'maj' : t.suffix;
+
+  /// A quick chord/arpeggio stamper at the cursor: pick a root + quality, then
+  /// lay it across tracks or as an arpeggio down the column.
+  void _showChordSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    // Seed the root from the cursor note when present.
+    final cur = _song.engine.cellAt(_cursorChannel, _cursorRow).midi;
+    var pc = cur != null ? cur % 12 : 0;
+    var octave = cur != null ? ((cur ~/ 12) - 1).clamp(2, 6) : 4;
+    var quality = 0; // index into kChordTemplates
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.trackerChord,
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text('${l10n.trackerChordRoot}: '),
+                    DropdownButton<int>(
+                      value: pc,
+                      items: [
+                        for (var i = 0; i < 12; i++)
+                          DropdownMenuItem(
+                            value: i,
+                            child: Text(_kRootNames[i]),
+                          ),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setSheet(() => pc = v);
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    DropdownButton<int>(
+                      value: octave,
+                      items: [
+                        for (var o = 2; o <= 6; o++)
+                          DropdownMenuItem(value: o, child: Text('$o')),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setSheet(() => octave = v);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (var i = 0; i < kChordTemplates.length; i++)
+                      ChoiceChip(
+                        label: Text(_chordQualityLabel(kChordTemplates[i])),
+                        selected: quality == i,
+                        onSelected: (_) => setSheet(() => quality = i),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    FilledButton.icon(
+                      icon: const Icon(Icons.view_column, size: 18),
+                      label: Text(l10n.trackerChordAcross),
+                      onPressed: () {
+                        _applyChordAtCursor(
+                          pc,
+                          octave,
+                          kChordTemplates[quality].intervals,
+                          arp: false,
+                        );
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton.tonalIcon(
+                      icon: const Icon(Icons.stairs, size: 18),
+                      label: Text(l10n.trackerChordArp),
+                      onPressed: () {
+                        _applyChordAtCursor(
+                          pc,
+                          octave,
+                          kChordTemplates[quality].intervals,
+                          arp: true,
+                        );
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // --- Keyboard ---
@@ -2367,6 +2539,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void fillInstrumentBlock() => _fillInstrumentBlock();
   @override
   void interpolateNotesBlock() => _interpolateNotesBlock();
+  @override
+  void applyChordAtCursor(
+    int pc,
+    int octave,
+    List<int> intervals, {
+    required bool arp,
+  }) =>
+      _applyChordAtCursor(pc, octave, intervals, arp: arp);
   @override
   void playFromCursor() => _playPattern(fromRow: _cursorRow);
   @override
@@ -4212,6 +4392,13 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 16),
+            // Chord / arpeggio helper — stamp a chord at the cursor.
+            OutlinedButton.icon(
+              icon: const Icon(Icons.queue_music, size: 18),
+              label: Text(l10n.trackerChord),
+              onPressed: _showChordSheet,
             ),
             const SizedBox(width: 16),
             // Endless tracks.

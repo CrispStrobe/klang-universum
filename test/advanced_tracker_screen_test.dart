@@ -905,6 +905,33 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('chord helper stamps a triad across tracks at the cursor',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.moveCursor(0, 0);
+    // C major triad (root pc 0, octave 4) across tracks.
+    game.applyChordAtCursor(0, 4, const [0, 4, 7], arp: false);
+    await tester.pump();
+    expect(game.noteAt(0, 0), 60); // C4
+    expect(game.noteAt(1, 0), 64); // E4
+    expect(game.noteAt(2, 0), 67); // G4
+  });
+
+  testWidgets('chord helper lays an arpeggio down the cursor column',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setRows(16);
+    game.moveCursor(0, 0);
+    game.applyChordAtCursor(0, 4, const [0, 4, 7], arp: true);
+    await tester.pump();
+    // Arp spacing follows the edit step (default 1) down channel 0.
+    expect(game.noteAt(0, 0), 60);
+    expect(game.noteAt(0, 1), 64);
+    expect(game.noteAt(0, 2), 67);
+  });
+
   testWidgets('interpolate notes fills a run across the marked selection',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
