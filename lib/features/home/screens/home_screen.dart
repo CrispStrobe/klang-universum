@@ -24,6 +24,7 @@ import 'package:comet_beat/features/games/note_reading/note_reading_quiz_screen.
 import 'package:comet_beat/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:comet_beat/features/games/scales/scale_detective_screen.dart';
 import 'package:comet_beat/features/games/screens/module_screen.dart';
+import 'package:comet_beat/features/games/transcribe/transcribe_screen.dart';
 import 'package:comet_beat/features/progress/screens/progress_screen.dart';
 import 'package:comet_beat/features/recital/recital_screen.dart';
 import 'package:comet_beat/features/settings/screens/settings_screen.dart';
@@ -203,6 +204,7 @@ class HomeScreen extends StatelessWidget {
                   6 => const VoiceLabScreen(),
                   7 => const SampleExtractorScreen(),
                   8 => const DawScreen(),
+                  9 => const TranscribeScreen(),
                   _ => const CompositionWorkshopScreen(),
                 },
               ),
@@ -295,6 +297,16 @@ class HomeScreen extends StatelessWidget {
                     const Icon(Icons.view_agenda, size: 20),
                     const SizedBox(width: 12),
                     Text(l10n.dawTitle),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 9,
+                child: Row(
+                  children: [
+                    const Icon(Icons.lyrics, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.transcribeTitle),
                   ],
                 ),
               ),

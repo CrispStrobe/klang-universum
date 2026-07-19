@@ -1313,6 +1313,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopModeDrums => 'Drum Kit';
 
   @override
+  String get workshopModeTranscribe => 'Transcribe';
+
+  @override
+  String get transcribeTitle => 'Transcribe a recording';
+
+  @override
+  String get transcribeIntro =>
+      'Turn a recording into notes. Works best on a single clear melody or voice; chords and full songs use the neural engine when it is available.';
+
+  @override
+  String get transcribePickFile => 'Choose an audio file (WAV)';
+
+  @override
+  String get transcribeEngineAuto => 'Auto';
+
+  @override
+  String get transcribeEngineMono => 'Melody';
+
+  @override
+  String get transcribeEngineNeural => 'Neural';
+
+  @override
+  String get transcribeNeuralWebNote =>
+      'The neural engine needs the app (not the web version) — the melody engine will be used here.';
+
+  @override
+  String transcribeResult(int count, int bpm) {
+    return '$count notes · $bpm BPM';
+  }
+
+  @override
+  String transcribeEngineUsed(String engine) {
+    return 'Engine: $engine';
+  }
+
+  @override
+  String get transcribeOpenSongBook => 'Open in Song Book';
+
+  @override
+  String get transcribeNoNotes =>
+      'No notes found — try a clearer solo recording.';
+
+  @override
+  String transcribeError(String message) {
+    return 'Couldn\'t transcribe: $message';
+  }
+
+  @override
   String get dawTitle => 'Multitrack';
 
   @override

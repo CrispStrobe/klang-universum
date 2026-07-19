@@ -1320,6 +1320,54 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopModeDrums => 'Schlagzeug';
 
   @override
+  String get workshopModeTranscribe => 'Notieren';
+
+  @override
+  String get transcribeTitle => 'Aufnahme notieren';
+
+  @override
+  String get transcribeIntro =>
+      'Verwandle eine Aufnahme in Noten. Am besten funktioniert eine einzelne klare Melodie oder Stimme; Akkorde und ganze Lieder nutzen die neuronale Engine, sofern verfügbar.';
+
+  @override
+  String get transcribePickFile => 'Audiodatei wählen (WAV)';
+
+  @override
+  String get transcribeEngineAuto => 'Auto';
+
+  @override
+  String get transcribeEngineMono => 'Melodie';
+
+  @override
+  String get transcribeEngineNeural => 'Neuronal';
+
+  @override
+  String get transcribeNeuralWebNote =>
+      'Die neuronale Engine braucht die App (nicht die Web-Version) – hier wird die Melodie-Engine verwendet.';
+
+  @override
+  String transcribeResult(int count, int bpm) {
+    return '$count Noten · $bpm BPM';
+  }
+
+  @override
+  String transcribeEngineUsed(String engine) {
+    return 'Engine: $engine';
+  }
+
+  @override
+  String get transcribeOpenSongBook => 'Im Liederbuch öffnen';
+
+  @override
+  String get transcribeNoNotes =>
+      'Keine Noten gefunden – versuche eine klarere Solo-Aufnahme.';
+
+  @override
+  String transcribeError(String message) {
+    return 'Konnte nicht notieren: $message';
+  }
+
+  @override
   String get dawTitle => 'Mehrspur';
 
   @override

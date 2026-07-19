@@ -505,6 +505,43 @@
   "workshopModeTab": "Guitar Tab",
   "workshopModeLoop": "Loop Mixer",
   "workshopModeDrums": "Drum Kit",
+  "workshopModeTranscribe": "Transcribe",
+  "transcribeTitle": "Transcribe a recording",
+  "transcribeIntro": "Turn a recording into notes. Works best on a single clear melody or voice; chords and full songs use the neural engine when it is available.",
+  "transcribePickFile": "Choose an audio file (WAV)",
+  "transcribeEngineAuto": "Auto",
+  "transcribeEngineMono": "Melody",
+  "transcribeEngineNeural": "Neural",
+  "transcribeNeuralWebNote": "The neural engine needs the app (not the web version) — the melody engine will be used here.",
+  "transcribeResult": "{count} notes · {bpm} BPM",
+  "@transcribeResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "transcribeEngineUsed": "Engine: {engine}",
+  "@transcribeEngineUsed": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "transcribeOpenSongBook": "Open in Song Book",
+  "transcribeNoNotes": "No notes found — try a clearer solo recording.",
+  "transcribeError": "Couldn't transcribe: {message}",
+  "@transcribeError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "dawTitle": "Multitrack",
   "dawAddBeat": "Add beat",
   "dawAddSample": "Add sample",

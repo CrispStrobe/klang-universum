@@ -445,6 +445,43 @@
   "workshopModeTab": "Gitarren-Tabulatur",
   "workshopModeLoop": "Loop-Mixer",
   "workshopModeDrums": "Schlagzeug",
+  "workshopModeTranscribe": "Notieren",
+  "transcribeTitle": "Aufnahme notieren",
+  "transcribeIntro": "Verwandle eine Aufnahme in Noten. Am besten funktioniert eine einzelne klare Melodie oder Stimme; Akkorde und ganze Lieder nutzen die neuronale Engine, sofern verfügbar.",
+  "transcribePickFile": "Audiodatei wählen (WAV)",
+  "transcribeEngineAuto": "Auto",
+  "transcribeEngineMono": "Melodie",
+  "transcribeEngineNeural": "Neuronal",
+  "transcribeNeuralWebNote": "Die neuronale Engine braucht die App (nicht die Web-Version) – hier wird die Melodie-Engine verwendet.",
+  "transcribeResult": "{count} Noten · {bpm} BPM",
+  "@transcribeResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "transcribeEngineUsed": "Engine: {engine}",
+  "@transcribeEngineUsed": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "transcribeOpenSongBook": "Im Liederbuch öffnen",
+  "transcribeNoNotes": "Keine Noten gefunden – versuche eine klarere Solo-Aufnahme.",
+  "transcribeError": "Konnte nicht notieren: {message}",
+  "@transcribeError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "dawTitle": "Mehrspur",
   "dawAddBeat": "Beat hinzufügen",
   "dawAddSample": "Sample hinzufügen",

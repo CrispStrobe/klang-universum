@@ -2522,6 +2522,84 @@ abstract class AppLocalizations {
   /// **'Drum Kit'**
   String get workshopModeDrums;
 
+  /// No description provided for @workshopModeTranscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe'**
+  String get workshopModeTranscribe;
+
+  /// No description provided for @transcribeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe a recording'**
+  String get transcribeTitle;
+
+  /// No description provided for @transcribeIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn a recording into notes. Works best on a single clear melody or voice; chords and full songs use the neural engine when it is available.'**
+  String get transcribeIntro;
+
+  /// No description provided for @transcribePickFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an audio file (WAV)'**
+  String get transcribePickFile;
+
+  /// No description provided for @transcribeEngineAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get transcribeEngineAuto;
+
+  /// No description provided for @transcribeEngineMono.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody'**
+  String get transcribeEngineMono;
+
+  /// No description provided for @transcribeEngineNeural.
+  ///
+  /// In en, this message translates to:
+  /// **'Neural'**
+  String get transcribeEngineNeural;
+
+  /// No description provided for @transcribeNeuralWebNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The neural engine needs the app (not the web version) — the melody engine will be used here.'**
+  String get transcribeNeuralWebNote;
+
+  /// No description provided for @transcribeResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} notes · {bpm} BPM'**
+  String transcribeResult(int count, int bpm);
+
+  /// No description provided for @transcribeEngineUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine: {engine}'**
+  String transcribeEngineUsed(String engine);
+
+  /// No description provided for @transcribeOpenSongBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Song Book'**
+  String get transcribeOpenSongBook;
+
+  /// No description provided for @transcribeNoNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes found — try a clearer solo recording.'**
+  String get transcribeNoNotes;
+
+  /// No description provided for @transcribeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t transcribe: {message}'**
+  String transcribeError(String message);
+
   /// No description provided for @dawTitle.
   ///
   /// In en, this message translates to:
