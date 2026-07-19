@@ -1112,6 +1112,26 @@ class TrackerEngine {
     );
   }
 
+  /// Sets the per-cell [instrument] column (0 = the channel default, else a
+  /// 1-based index into the song's instrument pool) of the note at [row]. No-op
+  /// on an empty cell — the instrument column rides on a note.
+  void setCellInstrument(int channel, int row, int instrument) {
+    final cur = channels[channel].cells[row];
+    if (cur.isEmpty) return;
+    setCell(
+      channel,
+      row,
+      TrackerCell(
+        midi: cur.midi,
+        volume: cur.volume,
+        effect: cur.effect,
+        fxCmd: cur.fxCmd,
+        fxParam: cur.fxParam,
+        instrument: instrument,
+      ),
+    );
+  }
+
   /// Tap-to-place/remove for the grid: placing [midi] where the same note
   /// already sits clears it; otherwise sets it. Returns the note now at the cell
   /// (null if cleared).
