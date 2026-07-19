@@ -1325,6 +1325,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawFadeIn => 'Fade in';
 
   @override
+  String get dawTrimStart => 'Trim start';
+
+  @override
+  String get dawTrimEnd => 'Trim end';
+
+  @override
   String get dawFadeOut => 'Fade out';
 
   @override

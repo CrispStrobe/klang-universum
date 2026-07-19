@@ -220,6 +220,22 @@ void main() {
     s.undo();
     expect(s.clipCount, 2);
   });
+
+  test('setClipTrim windows a clip and clipDurationMs reflects it', () {
+    final s = DawService()..addClip(_tone(0.5, 44100)); // 1000 ms at 44.1k
+    expect(s.clipDurationMs(0, 0), closeTo(1000, 1));
+    expect(s.clipSourceMs(0, 0), closeTo(1000, 1));
+
+    s.setClipTrim(0, 0, trimStartMs: 200, trimEndMs: 700);
+    expect(s.clipTrimStartMs(0, 0), 200);
+    expect(s.clipTrimEndMs(0, 0), 700);
+    expect(s.clipDurationMs(0, 0), closeTo(500, 1)); // windowed length
+    expect(s.clipSourceMs(0, 0), closeTo(1000, 1)); // source unchanged
+
+    // Clearing restores the full clip (non-destructive).
+    s.setClipTrim(0, 0, trimStartMs: 0, trimEndMs: 0);
+    expect(s.clipDurationMs(0, 0), closeTo(1000, 1));
+  });
 }
 
 /// A live source whose render reflects a mutable buffer — a stand-in for a

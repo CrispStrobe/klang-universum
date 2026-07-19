@@ -4,7 +4,9 @@ import 'package:comet_beat/features/games/composition/groove_slots.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<GrooveSlotsService> _service([Map<String, Object> seed = const {}]) async {
+Future<GrooveSlotsService> _service([
+  Map<String, Object> seed = const {},
+]) async {
   SharedPreferences.setMockInitialValues(seed);
   return GrooveSlotsService(await SharedPreferences.getInstance());
 }

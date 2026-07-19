@@ -98,6 +98,17 @@ abstract interface class DawTester {
   double clipFadeInMs(int track, int index);
   double clipFadeOutMs(int track, int index);
 
+  /// Non-destructive per-clip trim (ms into the source render).
+  void setClipTrim(
+    int track,
+    int index, {
+    double? trimStartMs,
+    double? trimEndMs,
+  });
+  double clipTrimStartMs(int track, int index);
+  double clipTrimEndMs(int track, int index);
+  double clipSourceMs(int track, int index);
+
   /// Drag-snapping to the timeline grid.
   void toggleSnap();
   bool get snapOn;
@@ -309,6 +320,31 @@ class _DawScreenState extends State<DawScreen>
       _daw.clipFadeOutMs(track, index);
 
   @override
+  void setClipTrim(
+    int track,
+    int index, {
+    double? trimStartMs,
+    double? trimEndMs,
+  }) =>
+      _daw.setClipTrim(
+        track,
+        index,
+        trimStartMs: trimStartMs,
+        trimEndMs: trimEndMs,
+      );
+
+  @override
+  double clipTrimStartMs(int track, int index) =>
+      _daw.clipTrimStartMs(track, index);
+
+  @override
+  double clipTrimEndMs(int track, int index) =>
+      _daw.clipTrimEndMs(track, index);
+
+  @override
+  double clipSourceMs(int track, int index) => _daw.clipSourceMs(track, index);
+
+  @override
   void toggleSnap() => _daw.toggleSnap();
 
   @override
@@ -444,6 +480,33 @@ class _DawScreenState extends State<DawScreen>
                     (v) => '${v.round()} ms',
                     (v) => setClipFades(track, index, fadeOutMs: v),
                   ),
+                  // Trim: bound both edges to the untrimmed source length. The
+                  // end slider shows the full length when unset (0 = to end).
+                  ...() {
+                    final srcMs = _daw.clipSourceMs(track, index);
+                    final endMs = _daw.clipTrimEndMs(track, index);
+                    return [
+                      slider(
+                        l10n.dawTrimStart,
+                        _daw.clipTrimStartMs(track, index),
+                        srcMs,
+                        (v) => '${v.round()} ms',
+                        (v) => setClipTrim(track, index, trimStartMs: v),
+                      ),
+                      slider(
+                        l10n.dawTrimEnd,
+                        endMs <= 0 ? srcMs : endMs,
+                        srcMs,
+                        (v) => '${v.round()} ms',
+                        // At or past the full length ⇒ clear the trim (0 = to end).
+                        (v) => setClipTrim(
+                          track,
+                          index,
+                          trimEndMs: v >= srcMs ? 0 : v,
+                        ),
+                      ),
+                    ];
+                  }(),
                   const SizedBox(height: 8),
                   Row(
                     children: [

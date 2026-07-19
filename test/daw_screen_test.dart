@@ -146,7 +146,8 @@ void main() {
     // Tap the clip box → the inspector sheet with a Volume label + sliders.
     await tester.tap(find.text('🥁'));
     await tester.pumpAndSettle();
-    expect(find.byType(Slider), findsNWidgets(3)); // gain + fade-in + fade-out
+    // gain + fade-in + fade-out + trim-start + trim-end
+    expect(find.byType(Slider), findsNWidgets(5));
 
     // Drag the gain slider down; the clip's gain drops below 1.
     await tester.drag(find.byType(Slider).first, const Offset(-80, 0));

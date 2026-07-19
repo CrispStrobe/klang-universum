@@ -443,6 +443,8 @@
   "dawRedo": "Wiederholen",
   "dawGain": "Lautstärke",
   "dawFadeIn": "Einblenden",
+  "dawTrimStart": "Anfang beschneiden",
+  "dawTrimEnd": "Ende beschneiden",
   "dawFadeOut": "Ausblenden",
   "dawRemoveClip": "Entfernen",
   "dawLoop": "Schleife",

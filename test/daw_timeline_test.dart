@@ -144,4 +144,60 @@ void main() {
     expect(out[5], closeTo(0.5, 1e-9)); // full level in the middle
     expect(out[9], closeTo(0.5 * 1 / 4, 1e-9)); // last sample, near the end
   });
+
+  test('a clip trim plays only the [start,end) window of its source', () {
+    // A 100 ms source (1 sample/ms → 100 samples); trim to [20, 60) = 40 ms.
+    final src = _ToneSource(0.5, 100);
+    final t = DawTimeline(
+      tracks: [
+        DawTrack(
+          clips: [Clip(source: src, trimStartMs: 20, trimEndMs: 60)],
+        ),
+      ],
+    );
+    final mix = renderTimeline(t, sampleRate: _sr, limit: false);
+    expect(mix.length, 40); // only the window is placed
+    expect(mix.every((v) => v == 0.5), isTrue); // still the tone
+    expect(
+      src.renders,
+      1,
+    ); // the full source rendered once (cached), then sliced
+  });
+
+  test('trimEndMs 0 means "to the end"; trimStartMs 0 means "from the top"',
+      () {
+    final t = DawTimeline(
+      tracks: [
+        DawTrack(
+          clips: [Clip(source: _ToneSource(0.5, 100), trimStartMs: 30)],
+        ),
+      ],
+    );
+    expect(renderTimeline(t, sampleRate: _sr, limit: false).length, 70);
+  });
+
+  test('an inverted / empty trim window contributes nothing', () {
+    final t = DawTimeline(
+      tracks: [
+        DawTrack(
+          clips: [
+            Clip(source: _ToneSource(0.5, 100), trimStartMs: 60, trimEndMs: 40),
+          ],
+        ),
+      ],
+    );
+    expect(renderTimeline(t, sampleRate: _sr, limit: false), isEmpty);
+  });
+
+  test('trimmedDurationMs reports the windowed length', () {
+    final rendered = Float64List(100)..fillRange(0, 100, 0.5);
+    final src = SampleSource(Float64List(0));
+    final clip = Clip(source: src, trimStartMs: 10, trimEndMs: 50);
+    expect(trimmedDurationMs(clip, rendered, sampleRate: _sr), 40);
+    // Untrimmed → full length.
+    expect(
+      trimmedDurationMs(Clip(source: src), rendered, sampleRate: _sr),
+      100,
+    );
+  });
 }

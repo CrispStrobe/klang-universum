@@ -494,6 +494,8 @@
   "dawRedo": "Redo",
   "dawGain": "Volume",
   "dawFadeIn": "Fade in",
+  "dawTrimStart": "Trim start",
+  "dawTrimEnd": "Trim end",
   "dawFadeOut": "Fade out",
   "dawRemoveClip": "Remove",
   "dawLoop": "Loop",

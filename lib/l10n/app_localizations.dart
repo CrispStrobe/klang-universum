@@ -2552,6 +2552,18 @@ abstract class AppLocalizations {
   /// **'Fade in'**
   String get dawFadeIn;
 
+  /// No description provided for @dawTrimStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim start'**
+  String get dawTrimStart;
+
+  /// No description provided for @dawTrimEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Trim end'**
+  String get dawTrimEnd;
+
   /// No description provided for @dawFadeOut.
   ///
   /// In en, this message translates to:

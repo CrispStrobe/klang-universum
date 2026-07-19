@@ -70,6 +70,8 @@ class Clip {
     this.muted = false,
     this.fadeInMs = 0,
     this.fadeOutMs = 0,
+    this.trimStartMs = 0,
+    this.trimEndMs = 0,
   });
 
   final ClipSource source;
@@ -79,12 +81,20 @@ class Clip {
   final double fadeInMs;
   final double fadeOutMs;
 
+  /// Non-destructive trim: play only the window `[trimStartMs, trimEndMs)` of
+  /// the source's render. [trimStartMs] 0 = from the top; [trimEndMs] 0 = to
+  /// the end. The source is untouched, so a trim is fully reversible.
+  final double trimStartMs;
+  final double trimEndMs;
+
   Clip copyWith({
     double? startMs,
     double? gain,
     bool? muted,
     double? fadeInMs,
     double? fadeOutMs,
+    double? trimStartMs,
+    double? trimEndMs,
   }) =>
       Clip(
         source: source,
@@ -93,6 +103,8 @@ class Clip {
         muted: muted ?? this.muted,
         fadeInMs: fadeInMs ?? this.fadeInMs,
         fadeOutMs: fadeOutMs ?? this.fadeOutMs,
+        trimStartMs: trimStartMs ?? this.trimStartMs,
+        trimEndMs: trimEndMs ?? this.trimEndMs,
       );
 }
 
@@ -139,10 +151,15 @@ Float64List renderTimeline(
     if (track.muted) continue;
     for (final clip in track.clips) {
       if (clip.muted) continue;
-      final pcm = store.putIfAbsent(
+      final rendered = store.putIfAbsent(
         clip.source.cacheKey,
         () => clip.source.render(sampleRate),
       );
+      if (rendered.isEmpty) continue;
+      // Non-destructive trim: view the [trimStart, trimEnd) window of the
+      // (cached) render. The cache still holds the full source, so a trim
+      // change is free and reversible.
+      final pcm = _trimView(rendered, clip, sampleRate);
       if (pcm.isEmpty) continue;
       final start = (clip.startMs * sampleRate / 1000).round();
       placed.add(
@@ -193,3 +210,25 @@ double _tanh(double x) {
   final e2 = math.exp(2 * x);
   return (e2 - 1) / (e2 + 1);
 }
+
+/// The `[trimStartMs, trimEndMs)` window of [rendered] as a zero-copy view; the
+/// full buffer when the clip has no trim.
+Float64List _trimView(Float64List rendered, Clip clip, int sampleRate) {
+  if (clip.trimStartMs <= 0 && clip.trimEndMs <= 0) return rendered;
+  final n = rendered.length;
+  final from = (clip.trimStartMs * sampleRate / 1000).round().clamp(0, n);
+  final to = clip.trimEndMs <= 0
+      ? n
+      : (clip.trimEndMs * sampleRate / 1000).round().clamp(0, n);
+  if (to <= from) return Float64List(0);
+  return Float64List.sublistView(rendered, from, to);
+}
+
+/// The audible length (ms) of [clip] after trim — its render length when
+/// untrimmed. Used to draw a trimmed clip to scale.
+double trimmedDurationMs(
+  Clip clip,
+  Float64List rendered, {
+  int sampleRate = kDawSampleRate,
+}) =>
+    _trimView(rendered, clip, sampleRate).length * 1000 / sampleRate;

@@ -177,6 +177,40 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set a clip's non-destructive trim window (ms into the source render).
+  /// Pass only the edge you're changing; a slider sweep coalesces per side.
+  /// The source is untouched, so clearing the trim restores the full clip.
+  void setClipTrim(
+    int track,
+    int index, {
+    double? trimStartMs,
+    double? trimEndMs,
+  }) {
+    _coalesced(('trim', track, index, trimStartMs != null));
+    final clips = timeline.tracks[track].clips;
+    clips[index] = clips[index].copyWith(
+      trimStartMs:
+          trimStartMs == null ? null : (trimStartMs < 0 ? 0 : trimStartMs),
+      trimEndMs: trimEndMs == null ? null : (trimEndMs < 0 ? 0 : trimEndMs),
+    );
+    notifyListeners();
+  }
+
+  double clipTrimStartMs(int track, int index) =>
+      timeline.tracks[track].clips[index].trimStartMs;
+  double clipTrimEndMs(int track, int index) =>
+      timeline.tracks[track].clips[index].trimEndMs;
+
+  /// The full (untrimmed) source length in ms — the ceiling for a trim slider.
+  double clipSourceMs(int track, int index) {
+    final source = timeline.tracks[track].clips[index].source;
+    final pcm = _cache.putIfAbsent(
+      source.cacheKey,
+      () => source.render(kDawSampleRate),
+    );
+    return pcm.length * 1000 / kDawSampleRate;
+  }
+
   /// A clip's current gain / fade lengths.
   double clipGain(int track, int index) =>
       timeline.tracks[track].clips[index].gain;
@@ -193,12 +227,12 @@ class DawService extends ChangeNotifier {
   /// cache (rendering once if cold, then O(1)). Cheap after the first bake,
   /// which warms the same cache. Used to draw clips to scale.
   double clipDurationMs(int track, int index) {
-    final source = timeline.tracks[track].clips[index].source;
+    final clip = timeline.tracks[track].clips[index];
     final pcm = _cache.putIfAbsent(
-      source.cacheKey,
-      () => source.render(kDawSampleRate),
+      clip.source.cacheKey,
+      () => clip.source.render(kDawSampleRate),
     );
-    return pcm.length * 1000 / kDawSampleRate;
+    return trimmedDurationMs(clip, pcm); // to-scale even when trimmed
   }
 
   /// Whether a clip is already a baked audio take (a [SampleSource]) rather than

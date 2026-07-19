@@ -1332,6 +1332,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawFadeIn => 'Einblenden';
 
   @override
+  String get dawTrimStart => 'Anfang beschneiden';
+
+  @override
+  String get dawTrimEnd => 'Ende beschneiden';
+
+  @override
   String get dawFadeOut => 'Ausblenden';
 
   @override
