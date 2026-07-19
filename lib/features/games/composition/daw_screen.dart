@@ -15,6 +15,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/daw_sources.dart';
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart'
@@ -23,6 +24,8 @@ import 'package:comet_beat/core/audio/synth.dart' show Drum, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
+import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart'
     show showAudioExportSheet;
@@ -49,6 +52,7 @@ abstract interface class DawTester {
   void toggleTrackMute(int track);
   void addDemoBeat();
   void addDemoTune();
+  void addSampleClip(SampleClip clip);
   void clear();
   void play();
   void stop();
@@ -165,6 +169,27 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
 
   @override
   void addDemoTune() => _daw.addClip(ScoreSource.single(_demoTune()), track: 1);
+
+  @override
+  void addSampleClip(SampleClip clip) {
+    // Clips carry their own rate; the timeline renders at kDawSampleRate, so
+    // resample first (SampleSource assumes it's already at the timeline rate).
+    final pcm = clip.sampleRate == kDawSampleRate
+        ? clip.pcm
+        : resampleCubic(clip.pcm, clip.sampleRate / kDawSampleRate);
+    // A fresh lane so a dropped-in sample never lands on top of another clip.
+    _daw.addClip(
+      SampleSource(pcm, key: 'sample:${clip.name}'),
+      track: _daw.timeline.tracks.length,
+    );
+  }
+
+  /// Picks a sample from the shared "My Samples" library and arranges it.
+  Future<void> addSample() async {
+    final clip = await showMySamplesSheet(context);
+    if (clip == null || clip.pcm.isEmpty || !mounted) return;
+    addSampleClip(clip);
+  }
 
   @override
   void clear() => _daw.clear();
@@ -480,6 +505,11 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                     onPressed: addDemoTune,
                     icon: const Icon(Icons.add),
                     label: Text(l10n.dawAddTune),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: addSample,
+                    icon: const Icon(Icons.graphic_eq),
+                    label: Text(l10n.dawAddSample),
                   ),
                   FilledButton.tonalIcon(
                     onPressed: daw.clipCount < 2 ? null : _mergeAllWithToast,

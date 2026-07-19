@@ -1187,6 +1187,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawAddBeat => 'Beat hinzufügen';
 
   @override
+  String get dawAddSample => 'Sample hinzufügen';
+
+  @override
   String get dawAddTune => 'Melodie hinzufügen';
 
   @override

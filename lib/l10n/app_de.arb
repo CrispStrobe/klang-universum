@@ -397,6 +397,7 @@
   "workshopModeDrums": "Schlagzeug",
   "dawTitle": "Mehrspur",
   "dawAddBeat": "Beat hinzufügen",
+  "dawAddSample": "Sample hinzufügen",
   "dawAddTune": "Melodie hinzufügen",
   "dawEmpty": "Füge einen Beat oder eine Melodie hinzu und drücke Play — sie überlagern sich.",
   "dawSend": "Zur Mehrspur",

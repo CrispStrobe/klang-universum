@@ -441,6 +441,7 @@
   "workshopModeDrums": "Drum Kit",
   "dawTitle": "Multitrack",
   "dawAddBeat": "Add beat",
+  "dawAddSample": "Add sample",
   "dawAddTune": "Add tune",
   "dawEmpty": "Add a beat or a tune, then press play — they layer together.",
   "dawSend": "To Multitrack",

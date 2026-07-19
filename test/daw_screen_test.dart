@@ -2,8 +2,13 @@
 // arrangement, mute tracks. Audio is a no-op in the headless binding; assertions
 // are on the arrangement + the bake.
 
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:comet_beat/core/audio/daw_timeline.dart' show kDawSampleRate;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/daw_screen.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -199,5 +204,27 @@ void main() {
     await tester.pump();
     expect(daw.clipCount, 0);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a My Samples clip is arranged, resampled to the timeline rate',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+
+    // 0.5 s at HALF the timeline rate → after resampling it should bake to
+    // ~0.5 s at the timeline rate (twice as many samples as the source).
+    const half = kDawSampleRate ~/ 2;
+    final src = Float64List.fromList([
+      for (var i = 0; i < half ~/ 2; i++)
+        0.3 * math.sin(2 * math.pi * 220 * i / half),
+    ]);
+    daw.addSampleClip(
+      SampleClip(name: 'zap', sampleRate: half, pcm: src),
+    );
+
+    expect(daw.clipCount, 1);
+    expect(daw.trackCount, greaterThan(2)); // landed on a fresh lane
+    // The bake spans the resampled clip: ~2x the source length (half-rate → full).
+    expect(daw.debugBakeLength(), greaterThan(src.length));
   });
 }

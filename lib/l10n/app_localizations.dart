@@ -2276,6 +2276,12 @@ abstract class AppLocalizations {
   /// **'Add beat'**
   String get dawAddBeat;
 
+  /// No description provided for @dawAddSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sample'**
+  String get dawAddSample;
+
   /// No description provided for @dawAddTune.
   ///
   /// In en, this message translates to:

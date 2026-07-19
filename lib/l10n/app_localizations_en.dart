@@ -1180,6 +1180,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawAddBeat => 'Add beat';
 
   @override
+  String get dawAddSample => 'Add sample';
+
+  @override
   String get dawAddTune => 'Add tune';
 
   @override
