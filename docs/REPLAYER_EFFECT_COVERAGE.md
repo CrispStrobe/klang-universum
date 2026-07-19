@@ -47,7 +47,7 @@ pure via `traceChannel(cells, {ticksPerRow}) → ChannelTrace`
 | E3x | Glissando control | ✅ *(added — tone-porta snaps to semitones)* |
 | E4x | Vibrato waveform | ✅ *(added — sine/saw/square via `trackerLfo`)* |
 | E7x | Tremolo waveform | ✅ *(added — sine/saw/square)* |
-| E5x | Set finetune | ❌ missing (approximate; low value) |
+| E5x | Set finetune | ✅ *(added — ±(x−8)/16 semitone nudge)* |
 | EEx | **Pattern delay** | ❌ missing — **timing-significant** |
 | E0x/E8x/EFx | filter / sync / funk-loop | ⬜ rare, low priority |
 
@@ -69,9 +69,14 @@ pure via `traceChannel(cells, {ticksPerRow}) → ChannelTrace`
   **EDx** re-attack) are **now FIXED** by @tracker-replayer — verified in source
   (armRow leaves the vib memory alone; the render resets `noteStartSample` only
   at the actual fire tick).
-- **E3x/E4x/E7x added** by opus (libraries-and-tab, cross-lane, maintainer-
-  authorized) — glissando + vibrato/tremolo waveforms, in `ReplayVoice` only,
-  zero-regression (were silent no-ops). Tests: `tracker_effect_coverage_test.dart`.
+- **E3x/E4x/E7x/E5x + Rxy added** by opus (libraries-and-tab, cross-lane,
+  maintainer-authorized), all zero-regression. E3x glissando + E4x/E7x
+  vibrato/tremolo waveforms + E5x finetune (Extended sub-commands, were no-ops,
+  flow through real `.mod`/`.xm` E-commands); **Rxy** retrigger+volslide on a new
+  non-colliding `fxCmd` (0x1B) with the exact XM volume table. Tests:
+  `tracker_effect_coverage_test.dart`. **Rxy importer wiring TODO (one line):**
+  map XM effect R (0x1B) → `kFxRetrigVolSlide` in the `.xm` reader so real files
+  reach it (replayer side is done + gated into `_hasPerTickEffect`).
 
 ## Remaining, by value ÷ effort (needs core/model work — @tracker-replayer)
 
@@ -88,12 +93,11 @@ the active tracker worker:
    is a fast slide; in S3M/XM, `1Fx` is fine. The replayer doesn't track source
    format, so this needs a format flag (or a decision to assume S3M/XM) before
    it's safe — otherwise it regresses MOD playback.
-3. **Rxy** retrigger+volslide — a NEW top-level command; needs a `fxCmd` value
-   the cell model + importers can carry (cross-file), not just replayer logic.
+3. **Rxy** retrigger+volslide — replayer + `fxCmd 0x1B` + XM table **DONE**;
+   only the `.xm` importer mapping (XM effect R → `kFxRetrigVolSlide`) remains so
+   real files reach it. One line in the reader.
 4. **Gxx global / Mxx channel volume** — needs a scalar in the mix stage
    (`mixStems`), not just per-voice; larger, do last.
-5. **E5x finetune** — small but approximate (finetune isn't linear semitones);
-   low value.
 
 ## Test pattern (matches the repo's convention)
 
