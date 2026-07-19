@@ -2349,6 +2349,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerSampleReverse => 'Reverse';
 
   @override
+  String get trackerSampleSustain => 'Sustain';
+
+  @override
   String get trackerAssignSample => 'Use for this track';
 
   @override

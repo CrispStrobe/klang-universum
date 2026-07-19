@@ -875,6 +875,7 @@
   "trackerSampleTrimDrag": "Drag the handles to trim the sample",
   "trackerSampleNormalize": "Normalize",
   "trackerSampleReverse": "Reverse",
+  "trackerSampleSustain": "Sustain",
   "trackerAssignSample": "Use for this track",
   "trackerLoadWav": "Load WAV file…",
   "trackerMySamples": "From My Samples",

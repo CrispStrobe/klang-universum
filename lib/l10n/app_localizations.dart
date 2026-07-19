@@ -4508,6 +4508,12 @@ abstract class AppLocalizations {
   /// **'Reverse'**
   String get trackerSampleReverse;
 
+  /// No description provided for @trackerSampleSustain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sustain'**
+  String get trackerSampleSustain;
+
   /// No description provided for @trackerAssignSample.
   ///
   /// In en, this message translates to:

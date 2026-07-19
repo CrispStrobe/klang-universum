@@ -824,6 +824,7 @@
   "trackerSampleTrimDrag": "Zum Kürzen die Griffe ziehen",
   "trackerSampleNormalize": "Normalisieren",
   "trackerSampleReverse": "Umkehren",
+  "trackerSampleSustain": "Halten",
   "trackerAssignSample": "Für diese Spur verwenden",
   "trackerLoadWav": "WAV-Datei laden…",
   "trackerMySamples": "Aus Meine Samples",

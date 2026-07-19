@@ -2359,6 +2359,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerSampleReverse => 'Umkehren';
 
   @override
+  String get trackerSampleSustain => 'Halten';
+
+  @override
   String get trackerAssignSample => 'Für diese Spur verwenden';
 
   @override

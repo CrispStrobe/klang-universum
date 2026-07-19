@@ -45,6 +45,7 @@ import 'package:comet_beat/core/audio/mod/module_convert.dart'
 import 'package:comet_beat/core/audio/mod/module_doc.dart' show ModuleFormat;
 import 'package:comet_beat/core/audio/mod/module_notation.dart'
     show multiPartToModuleDoc;
+import 'package:comet_beat/core/audio/sample_pitch.dart';
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart'
@@ -1942,6 +1943,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     bool trim = false,
     bool normalize = false,
     bool reverse = false,
+    bool sustain = false,
     double start = 0.0,
     double end = 1.0,
   }) {
@@ -1952,6 +1954,16 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     if (trim && pcm.isNotEmpty) pcm = trimSilence(pcm);
     if (normalize && pcm.isNotEmpty) pcm = normalizePcm(pcm);
     if (reverse && pcm.isNotEmpty) pcm = reversePcm(pcm);
+    // "Sustain": apply the voice fx, then auto base-pitch (plays in tune) + a
+    // crossfaded auto-loop (a held note rings) → a playable instrument, not a
+    // one-shot. Otherwise the classic one-shot recorded voice.
+    if (sustain && pcm.isNotEmpty) {
+      return tunedRecordedSample(
+        'rec',
+        applyVoiceEffect(pcm, fx),
+        crossfade: true,
+      );
+    }
     return SampleInstrument.recorded('rec', pcm, fx);
   }
 
@@ -2175,6 +2187,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     var fx = VoiceEffect.normal;
     var stretch = 1.0;
     var trim = false, normalize = false, reverse = false;
+    var sustain = false;
     var sampStart = 0.0, sampEnd = 1.0; // manual trim-handle fractions
     String? error;
     await showModalBottomSheet<void>(
@@ -2348,6 +2361,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                         selected: reverse,
                         onSelected: (v) => setSheet(() => reverse = v),
                       ),
+                      FilterChip(
+                        avatar: const Icon(Icons.all_inclusive, size: 18),
+                        label: Text(l10n.trackerSampleSustain),
+                        selected: sustain,
+                        onSelected: (v) => setSheet(() => sustain = v),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -2364,6 +2383,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                             trim: trim,
                             normalize: normalize,
                             reverse: reverse,
+                            sustain: sustain,
                             start: sampStart,
                             end: sampEnd,
                           ),
@@ -2381,6 +2401,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                               trim: trim,
                               normalize: normalize,
                               reverse: reverse,
+                              sustain: sustain,
                               start: sampStart,
                               end: sampEnd,
                             ),
