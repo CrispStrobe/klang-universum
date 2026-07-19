@@ -1143,6 +1143,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopModeScore => 'Score Workshop';
 
   @override
+  String get workshopModeTracker => 'Tracker';
+
+  @override
   String get workshopModeTab => 'Guitar Tab';
 
   @override
@@ -2161,6 +2164,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trackerLoadWav => 'Load WAV file…';
+
+  @override
+  String get trackerMySamples => 'From My Samples';
 
   @override
   String get trackerFreeSounds => 'Browse free sounds…';

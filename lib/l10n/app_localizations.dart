@@ -2204,6 +2204,12 @@ abstract class AppLocalizations {
   /// **'Score Workshop'**
   String get workshopModeScore;
 
+  /// No description provided for @workshopModeTracker.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracker'**
+  String get workshopModeTracker;
+
   /// No description provided for @workshopModeTab.
   ///
   /// In en, this message translates to:
@@ -4153,6 +4159,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load WAV file…'**
   String get trackerLoadWav;
+
+  /// No description provided for @trackerMySamples.
+  ///
+  /// In en, this message translates to:
+  /// **'From My Samples'**
+  String get trackerMySamples;
 
   /// No description provided for @trackerFreeSounds.
   ///

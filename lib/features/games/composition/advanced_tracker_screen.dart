@@ -67,6 +67,7 @@ import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/library/modarchive_sheet.dart';
 import 'package:comet_beat/features/library/sample_library_sheet.dart';
 import 'package:comet_beat/features/library/starter_pattern.dart';
+import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart'
     show CompositionWorkshopScreen;
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -2221,6 +2222,26 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                           }
                           setSheet(() {
                             clip = loaded;
+                            sampStart = 0.0;
+                            sampEnd = 1.0;
+                            error = null;
+                          });
+                        },
+                ),
+                const SizedBox(height: 8),
+                // Anything the user already collected — samples extracted from
+                // their own modules/packs, or a voice shaped in the Voice Lab.
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.bookmarks_outlined),
+                  label: Text(l10n.trackerMySamples),
+                  onPressed: recording
+                      ? null
+                      : () async {
+                          final picked = await showMySamplesSheet(ctx);
+                          if (!ctx.mounted) return;
+                          if (picked == null || picked.pcm.isEmpty) return;
+                          setSheet(() {
+                            clip = picked.pcm;
                             sampStart = 0.0;
                             sampEnd = 1.0;
                             error = null;

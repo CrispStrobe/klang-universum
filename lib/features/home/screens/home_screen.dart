@@ -224,7 +224,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.grid_view, size: 20),
                     const SizedBox(width: 12),
-                    Text(l10n.gameTrackerAdvanced),
+                    Text(l10n.workshopModeTracker),
                   ],
                 ),
               ),
