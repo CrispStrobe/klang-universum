@@ -43,7 +43,7 @@ void main() {
       final voices = {for (final d in Drum.values) d: renderDrum(d)};
       // Every pair differs — either a different duration or clearly different
       // samples over the shared span (no two voices are the same buffer).
-      final list = Drum.values;
+      const list = Drum.values;
       for (var i = 0; i < list.length; i++) {
         for (var j = i + 1; j < list.length; j++) {
           final a = voices[list[i]]!, b = voices[list[j]]!;
@@ -63,8 +63,10 @@ void main() {
 
     test('open hat rings longer than the closed hat', () {
       // The defining difference: a much longer tail.
-      expect(renderDrum(Drum.openHat).length,
-          greaterThan(renderDrum(Drum.hat).length * 3));
+      expect(
+        renderDrum(Drum.openHat).length,
+        greaterThan(renderDrum(Drum.hat).length * 3),
+      );
     });
   });
 }
