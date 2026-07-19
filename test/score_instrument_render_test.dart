@@ -120,6 +120,14 @@ void main() {
     expect(_peak(none), greaterThan(_peak(loud)));
   });
 
+  test('a note carries a release tail beyond its notated length', () {
+    // A whole note at the default 500 ms/quarter = 2000 ms; the render extends
+    // past that by the release fade instead of stopping hard.
+    final pcm = renderScoreWithInstrument(oneVel(100), _voice());
+    const notatedSamples = 2000 * 44100 ~/ 1000; // 2 s
+    expect(pcm.length, greaterThan(notatedSamples));
+  });
+
   test('panPartsToStereo places part 0 left, part 1 right', () {
     final loud = Float64List(64)..fillRange(0, 64, 0.5);
     final silent = Float64List(64);

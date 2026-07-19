@@ -64,15 +64,45 @@ const Set<DynamicLevel> _momentary = {
 };
 
 /// Render a single held note (a rest is caller-handled): the note on step 0,
-/// sustained across enough empty rows to cover [durMs].
-Float64List _renderNote(TrackerInstrument inst, int midi, int durMs) {
-  final rows = (durMs / _stepMs).round().clamp(1, 100000);
+/// A generic amplitude-envelope release, in ms — the note sustains for its
+/// notated length then fades over this tail instead of stopping hard (the true
+/// per-instrument SF2 release is the event-accurate synth's job). ~140 ms reads
+/// as a natural instrument release without smearing fast passages.
+const double _releaseMs = 140;
+
+/// Render a single held note (a rest is caller-handled): the note on step 0,
+/// sustained across enough empty rows to cover [durMs], then a [releaseMs] fade
+/// so the note-off is a natural decay rather than a hard stop. [gain] scales the
+/// whole note (velocity/dynamics), applied here so it rides the envelope.
+Float64List _renderNote(
+  TrackerInstrument inst,
+  int midi,
+  int durMs, {
+  double gain = 1.0,
+  double releaseMs = _releaseMs,
+}) {
+  final rows = ((durMs + releaseMs) / _stepMs).round().clamp(1, 100000);
   final cells = <TrackerCell>[
     TrackerCell(midi: midi),
     for (var i = 1; i < rows; i++) TrackerCell.empty,
   ];
   // TrackerTiming defaults are 120 BPM / 4 steps-per-beat (= our 125 ms/step).
-  return inst.renderChannel(cells, TrackerTiming(rows: rows));
+  final pcm = inst.renderChannel(cells, TrackerTiming(rows: rows));
+
+  // Full [gain] through the sustain, then a quadratic fade over the last
+  // releaseMs samples (a gentle, click-free decay).
+  final relSamples = (releaseMs * kSampleRate / 1000).round();
+  final sustainEnd = pcm.length - relSamples;
+  for (var i = 0; i < pcm.length; i++) {
+    var env = gain;
+    if (relSamples > 0 && i >= sustainEnd) {
+      final t = (i - sustainEnd) / relSamples; // 0..1
+      final k = 1 - t;
+      env *= k * k;
+    }
+    pcm[i] *= env;
+  }
+  return pcm;
 }
 
 void _placeVoice(
@@ -126,12 +156,7 @@ void _placeVoice(
       }
 
       for (final p in e.pitches) {
-        final pcm = _renderNote(inst, p.midiNumber, playMs);
-        if (gain != 1.0) {
-          for (var i = 0; i < pcm.length; i++) {
-            pcm[i] *= gain;
-          }
-        }
+        final pcm = _renderNote(inst, p.midiNumber, playMs, gain: gain);
         out.add((startSample, pcm));
         grow(startSample + pcm.length);
       }
