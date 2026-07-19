@@ -98,6 +98,38 @@ void main() {
     expect(daw.clipCount, 0);
   });
 
+  testWidgets('clips draw to scale and can be dragged along the lane',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat(); // track A @ 0 ms
+    await tester.pump();
+
+    // A real, non-zero duration (drawn to scale), and it starts at 0.
+    expect(daw.clipDurationMs(0, 0), greaterThan(0));
+    expect(daw.clipStartMs(0, 0), 0);
+    expect(daw.canExport, isTrue);
+
+    // Long-press then drag the clip box to the right → later in time.
+    final center = tester.getCenter(find.text('🥁'));
+    final gesture = await tester.startGesture(center);
+    await tester.pump(const Duration(milliseconds: 600)); // arm the long press
+    await gesture.moveBy(const Offset(160, 0));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(daw.clipStartMs(0, 0), greaterThan(0));
+  });
+
+  testWidgets('export is gated on having content', (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    expect(daw.canExport, isFalse);
+    daw.addDemoBeat();
+    await tester.pump();
+    expect(daw.canExport, isTrue);
+  });
+
   testWidgets('clear empties every track', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);

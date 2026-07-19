@@ -50,6 +50,29 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Move a clip along the timeline (drag-in-time). [startMs] is clamped to ≥ 0.
+  void moveClip(int track, int index, double startMs) {
+    final clips = timeline.tracks[track].clips;
+    clips[index] = clips[index].copyWith(startMs: startMs < 0 ? 0 : startMs);
+    notifyListeners();
+  }
+
+  /// A clip's start on the timeline, in ms.
+  double clipStartMs(int track, int index) =>
+      timeline.tracks[track].clips[index].startMs;
+
+  /// A clip's duration in ms — its render length, taken from the per-source
+  /// cache (rendering once if cold, then O(1)). Cheap after the first bake,
+  /// which warms the same cache. Used to draw clips to scale.
+  double clipDurationMs(int track, int index) {
+    final source = timeline.tracks[track].clips[index].source;
+    final pcm = _cache.putIfAbsent(
+      source.cacheKey,
+      () => source.render(kDawSampleRate),
+    );
+    return pcm.length * 1000 / kDawSampleRate;
+  }
+
   /// Whether a clip is already a baked audio take (a [SampleSource]) rather than
   /// a live "vector" source that re-renders on edit.
   bool isClipFrozen(int track, int index) =>

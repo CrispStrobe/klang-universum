@@ -651,8 +651,11 @@ Games built on crisp_notation capabilities the app didn't use before.
   into a fixed `SampleSource` take (it stops tracking its source module and
   needs no re-render), and *Merge all* flattens every clip into one baked take
   (preserving relative timing) — the arranger surfaces both (a Merge-all button;
-  tap a clip chip to freeze, delete to remove). ~32 headless tests; design in
-  `docs/DAW_SCOPING.md`.
+  tap a clip chip to freeze, delete to remove). The arranger is a **to-scale,
+  draggable timeline**: clips are drawn at their render duration on a shared
+  horizontally-scrolling lane, long-press a clip then drag to move it in time
+  (a plain drag still scrolls the lane), and a Download action bakes the whole
+  mix to **WAV or MP3**. ~37 headless tests; design in `docs/DAW_SCOPING.md`.
 - **DrumKit undo/redo** — a snapshot history (deep-copied pattern before each
   mutation) backs app-bar Undo/Redo across grid edits, whole record takes, and
   clear; a fresh edit drops the redo branch. Fills the gap left by the new

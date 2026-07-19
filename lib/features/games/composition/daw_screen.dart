@@ -5,10 +5,12 @@
 // (renderTimeline, per-source cache) and plays it. A "vector, not bitmap"
 // arranger: each clip references its source MODEL and renders on demand.
 //
-// This first surface seeds demo clips (a beat + a tune) so the arranger is
-// usable before the per-module "Send to DAW" bridges land. Per-track mute + a
-// clip strip; drag-in-time and pixel-accurate widths are polish follow-ups.
+// It seeds demo clips (a beat + a tune) and receives real clips from every
+// module's "Send to DAW". A to-scale timeline: clips are drawn at their render
+// duration and dragged along the lane to reposition in time; per-track mute;
+// tap a clip to freeze it to audio, ✕ to remove; Merge-all + WAV/MP3 export.
 
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_sources.dart';
@@ -20,6 +22,8 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart'
+    show showAudioExportSheet;
 import 'package:crisp_notation/crisp_notation.dart'
     show
         Clef,
@@ -53,6 +57,14 @@ abstract interface class DawTester {
   void freezeClip(int track, int index);
   bool isClipFrozen(int track, int index);
   void removeClip(int track, int index);
+
+  /// Timeline: move a clip in time, and read a clip's start + to-scale duration.
+  void moveClip(int track, int index, double startMs);
+  double clipStartMs(int track, int index);
+  double clipDurationMs(int track, int index);
+
+  /// Whether the arrangement can be exported (has audible content).
+  bool get canExport;
 
   /// Test seam: the length (samples) the arrangement bakes to.
   int debugBakeLength();
@@ -148,6 +160,20 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
   @override
   void removeClip(int track, int index) => _daw.removeClip(track, index);
 
+  @override
+  void moveClip(int track, int index, double startMs) =>
+      _daw.moveClip(track, index, startMs);
+
+  @override
+  double clipStartMs(int track, int index) => _daw.clipStartMs(track, index);
+
+  @override
+  double clipDurationMs(int track, int index) =>
+      _daw.clipDurationMs(track, index);
+
+  @override
+  bool get canExport => _daw.clipCount > 0;
+
   Float64List _bake() => _daw.bake();
 
   Int16List _toPcm16(Float64List pcm) {
@@ -178,6 +204,12 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
 
   // --- UI --------------------------------------------------------------------
 
+  // Bake the arrangement and offer WAV/MP3 export via the shared sheet.
+  void _export() {
+    final pcm = _bake();
+    showAudioExportSheet(context, pcm: pcm, baseName: 'multitrack');
+  }
+
   void _mergeAllWithToast() {
     final l10n = AppLocalizations.of(context)!;
     mergeAll();
@@ -195,9 +227,9 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
     );
   }
 
-  String _clipLabel(Clip clip) {
+  String _clipKind(Clip clip) {
     final s = clip.source;
-    final kind = s is DrumSource
+    return s is DrumSource
         ? '🥁'
         : s is ScoreSource
             ? '🎼'
@@ -206,7 +238,6 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                 : s is TrackerSource
                     ? '🎹'
                     : '🎵';
-    return '$kind ${(clip.startMs / 1000).toStringAsFixed(1)}s';
   }
 
   @override
@@ -223,6 +254,11 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
             icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
             tooltip: _playing ? l10n.songStop : l10n.myMelodyPlay,
             onPressed: _playing ? stop : play,
+          ),
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: l10n.audioExportTitle,
+            onPressed: daw.clipCount == 0 ? null : _export,
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -246,13 +282,7 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
                         ),
                       ),
                     )
-                  : ListView(
-                      padding: const EdgeInsets.all(12),
-                      children: [
-                        for (var i = 0; i < daw.timeline.tracks.length; i++)
-                          _trackRow(daw, i, scheme),
-                      ],
-                    ),
+                  : _timeline(daw, scheme),
             ),
             const Divider(height: 1),
             Padding(
@@ -286,56 +316,150 @@ class _DawScreenState extends State<DawScreen> implements DawTester {
     );
   }
 
-  Widget _trackRow(DawService daw, int i, ColorScheme scheme) {
-    final track = daw.timeline.tracks[i];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 40,
-              child: Text(
-                track.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            IconButton(
-              icon: Icon(track.muted ? Icons.volume_off : Icons.volume_up),
-              color: track.muted ? scheme.error : null,
-              onPressed: () => toggleTrackMute(i),
-            ),
-            Expanded(
+  // --- Timeline (to-scale clips, draggable in time) --------------------------
+
+  static const double _pxPerSecond = 80;
+  static const double _laneHeight = 60;
+  static const double _gutterWidth = 84;
+
+  // The clip's start when a long-press drag begins (offsets are relative to it).
+  double _dragOriginMs = 0;
+
+  Widget _timeline(DawService daw, ColorScheme scheme) {
+    // Total arrangement length → the shared lane width.
+    var maxEndMs = 0.0;
+    for (var i = 0; i < daw.timeline.tracks.length; i++) {
+      for (var j = 0; j < daw.timeline.tracks[i].clips.length; j++) {
+        final end = daw.clipStartMs(i, j) + daw.clipDurationMs(i, j);
+        if (end > maxEndMs) maxEndMs = end;
+      }
+    }
+    final laneWidth = math.max(320.0, maxEndMs / 1000 * _pxPerSecond + 48);
+
+    return SingleChildScrollView(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Fixed left gutter: per-track name + mute.
+          Column(
+            children: [
+              for (var i = 0; i < daw.timeline.tracks.length; i++)
+                _gutterHeader(daw, i, scheme),
+            ],
+          ),
+          // Shared, horizontally-scrolling lanes (all tracks scroll together).
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: SizedBox(
-                height: 40,
-                child: track.clips.isEmpty
-                    ? null
-                    : ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          for (var j = 0; j < track.clips.length; j++)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 2),
-                              child: InputChip(
-                                avatar: daw.isClipFrozen(i, j)
-                                    ? const Icon(Icons.lock, size: 16)
-                                    : null,
-                                label: Text(_clipLabel(track.clips[j])),
-                                tooltip: daw.isClipFrozen(i, j)
-                                    ? null
-                                    : AppLocalizations.of(context)!.dawFreeze,
-                                onPressed: daw.isClipFrozen(i, j)
-                                    ? null
-                                    : () => _freezeWithToast(i, j),
-                                onDeleted: () => removeClip(i, j),
-                              ),
-                            ),
-                        ],
-                      ),
+                width: laneWidth,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < daw.timeline.tracks.length; i++)
+                      _lane(daw, i, scheme, laneWidth),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _gutterHeader(DawService daw, int i, ColorScheme scheme) {
+    final track = daw.timeline.tracks[i];
+    return SizedBox(
+      width: _gutterWidth,
+      height: _laneHeight,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: Text(
+              track.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          IconButton(
+            icon: Icon(track.muted ? Icons.volume_off : Icons.volume_up),
+            color: track.muted ? scheme.error : null,
+            tooltip: track.name,
+            onPressed: () => toggleTrackMute(i),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _lane(DawService daw, int i, ColorScheme scheme, double laneWidth) {
+    final clips = daw.timeline.tracks[i].clips;
+    return Container(
+      width: laneWidth,
+      height: _laneHeight,
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Stack(
+        children: [
+          for (var j = 0; j < clips.length; j++) _clipBox(daw, i, j, scheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _clipBox(DawService daw, int i, int j, ColorScheme scheme) {
+    final clip = daw.timeline.tracks[i].clips[j];
+    final frozen = daw.isClipFrozen(i, j);
+    final startPx = daw.clipStartMs(i, j) / 1000 * _pxPerSecond;
+    final widthPx =
+        math.max(30.0, daw.clipDurationMs(i, j) / 1000 * _pxPerSecond);
+    final bg = frozen ? scheme.secondaryContainer : scheme.primaryContainer;
+    final fg = frozen ? scheme.onSecondaryContainer : scheme.onPrimaryContainer;
+
+    return Positioned(
+      left: startPx,
+      top: 6,
+      height: _laneHeight - 12,
+      width: widthPx,
+      child: GestureDetector(
+        // Long-press then drag to reposition in time (a plain drag over the lane
+        // still scrolls it); tap to freeze to audio.
+        onLongPressStart: (_) => _dragOriginMs = daw.clipStartMs(i, j),
+        onLongPressMoveUpdate: (d) => moveClip(
+          i,
+          j,
+          _dragOriginMs + d.localOffsetFromOrigin.dx / _pxPerSecond * 1000,
+        ),
+        onTap: frozen ? null : () => _freezeWithToast(i, j),
+        child: Container(
+          padding: const EdgeInsets.only(left: 6),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: scheme.outline),
+          ),
+          child: Row(
+            children: [
+              if (frozen)
+                Padding(
+                  padding: const EdgeInsets.only(right: 2),
+                  child: Icon(Icons.lock, size: 14, color: fg),
+                ),
+              Expanded(
+                child: Text(
+                  _clipKind(clip),
+                  overflow: TextOverflow.clip,
+                  softWrap: false,
+                  style: TextStyle(color: fg),
+                ),
+              ),
+              InkWell(
+                onTap: () => removeClip(i, j),
+                child: Icon(Icons.close, size: 16, color: fg),
+              ),
+            ],
+          ),
         ),
       ),
     );

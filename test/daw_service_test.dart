@@ -103,6 +103,21 @@ void main() {
     expect(s.isClipFrozen(1, 0), isTrue);
     expect(s.timeline.tracks[0].clips.length, 1); // untouched
   });
+
+  test('moveClip repositions in time and clamps below zero', () {
+    final s = DawService()..addClip(_tone(0.3, 100));
+    expect(s.clipStartMs(0, 0), 0);
+    s.moveClip(0, 0, 1500);
+    expect(s.clipStartMs(0, 0), 1500);
+    s.moveClip(0, 0, -400); // clamped
+    expect(s.clipStartMs(0, 0), 0);
+  });
+
+  test('clipDurationMs is the render length in ms', () {
+    // 44100 samples @ 44100 Hz = exactly 1000 ms.
+    final s = DawService()..addClip(_tone(0.3, 44100));
+    expect(s.clipDurationMs(0, 0), closeTo(1000, 0.001));
+  });
 }
 
 /// A live source whose render reflects a mutable buffer — a stand-in for a
