@@ -33,6 +33,7 @@ class DocSample {
     this.loopLength = 0,
     this.c5speed = 8363,
     this.pingPong = false,
+    this.sixteenBit = false,
     required this.pcm,
   });
 
@@ -44,6 +45,12 @@ class DocSample {
   final int loopLength; // in samples (0 = no loop)
   final int c5speed; // playback rate (Hz) at the C-5 reference
   final bool pingPong; // bidirectional ("ping-pong") loop (IT/XM flag)
+
+  /// Store the sample at 16-bit depth where the container supports it (XM/IT).
+  /// Default false = the classic 8-bit sample (byte-identical export). MOD/S3M
+  /// ignore this (MOD is 8-bit only); the XM/IT writers honour it.
+  final bool sixteenBit;
+
   final Float64List pcm;
 
   bool get isEmpty => pcm.isEmpty;

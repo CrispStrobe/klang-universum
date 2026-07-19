@@ -269,6 +269,9 @@ DocSample _docSampleForInstrument(TrackerInstrument inst, int engineRate) {
       loopStart: (inst.loopStart * ratio).round(),
       loopLength: (inst.loopLength * ratio).round(),
       pingPong: inst.pingPong,
+      // App samples are full-precision — keep 16-bit where the format allows
+      // (XM/IT); MOD/S3M ignore it and stay 8-bit.
+      sixteenBit: true,
     );
   }
   // A procedural voice has no PCM → render ~1s of MIDI 60 as a one-shot sample.
@@ -278,7 +281,11 @@ DocSample _docSampleForInstrument(TrackerInstrument inst, int engineRate) {
     ...List<TrackerCell>.filled(3, TrackerCell.empty),
   ];
   final pcm = inst.renderChannel(cells, timing);
-  return DocSample(pcm: _trimTrailingSilence(pcm), c5speed: engineRate);
+  return DocSample(
+    pcm: _trimTrailingSilence(pcm),
+    c5speed: engineRate,
+    sixteenBit: true,
+  );
 }
 
 /// Drop a trailing run of near-silence (keeps rendered one-shots compact).
