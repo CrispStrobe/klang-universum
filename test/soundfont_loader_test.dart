@@ -127,4 +127,94 @@ void main() {
       expect(buf, isNotEmpty);
     });
   });
+
+  group('SoundFont reference-based persistence', () {
+    Uint8List sampleFont() => oneSampleSf2(
+          pcm: sineI16(880, 20),
+          sampleRate: 44100,
+          rootKey: 60,
+          loopStart: 0,
+          loopEnd: 0,
+        );
+
+    test('SoundFontRef round-trips through JSON', () {
+      const ref = SoundFontRef(
+        path: '/sf/Fluid.sf2',
+        bank: 0,
+        program: 40,
+        name: 'Violin',
+      );
+      final back = SoundFontRef.fromJson(ref.toJson());
+      expect(back.path, ref.path);
+      expect(back.bank, ref.bank);
+      expect(back.program, ref.program);
+      expect(back.name, ref.name);
+      expect(ref.toJson()['type'], 'soundfont_ref');
+    });
+
+    test('SoundFontRef.ofPreset captures bank/program/name', () {
+      final loaded = loadSoundFont(sampleFont());
+      final ref = SoundFontRef.ofPreset('/sf/x.sf2', loaded.presets.first);
+      expect(ref.bank, loaded.presets.first.bank);
+      expect(ref.program, loaded.presets.first.program);
+      expect(ref.path, '/sf/x.sf2');
+    });
+
+    test('resolveSoundFontRef rebuilds the instrument from bytes', () {
+      final bytes = sampleFont();
+      const ref = SoundFontRef(path: '/sf/x.sf2', bank: 0, program: 0);
+      final inst = resolveSoundFontRef(ref, bytes);
+      const timing = TrackerTiming(rows: 2, stepsPerBeat: 2);
+      final buf = inst.renderChannel(
+        const [TrackerCell(midi: 60), TrackerCell.empty],
+        timing,
+      );
+      expect(buf.any((v) => v != 0), isTrue);
+    });
+
+    test('resolveSoundFontRef throws when the preset is gone', () {
+      final bytes = sampleFont(); // only bank 0 / program 0
+      const ref = SoundFontRef(path: '/sf/x.sf2', bank: 5, program: 99);
+      expect(
+        () => resolveSoundFontRef(ref, bytes),
+        throwsA(isA<SoundFontLoadException>()),
+      );
+    });
+
+    test('findPreset locates by bank/program, null when absent', () {
+      final loaded = loadSoundFont(sampleFont());
+      expect(findPreset(loaded, 0, 0), isNotNull);
+      expect(findPreset(loaded, 9, 9), isNull);
+    });
+
+    test('resolveInstrumentJson resolves a ref via loadBytes', () async {
+      final bytes = sampleFont();
+      const ref = SoundFontRef(path: '/sf/x.sf2', bank: 0, program: 0);
+      var loadedPath = '';
+      final inst = await resolveInstrumentJson(
+        ref.toJson(),
+        loadBytes: (path) async {
+          loadedPath = path;
+          return bytes;
+        },
+      );
+      expect(loadedPath, '/sf/x.sf2'); // re-read the referenced file
+      expect(inst, isA<TrackerInstrument>());
+    });
+
+    test('resolveInstrumentJson delegates embedded voices to the codec',
+        () async {
+      // An embedded (non-ref) instrument doesn't touch loadBytes.
+      var loaderCalled = false;
+      final inst = await resolveInstrumentJson(
+        {'type': 'percussion', 'id': 'drum'},
+        loadBytes: (_) async {
+          loaderCalled = true;
+          return Uint8List(0);
+        },
+      );
+      expect(loaderCalled, isFalse);
+      expect(inst, isA<TrackerInstrument>());
+    });
+  });
 }

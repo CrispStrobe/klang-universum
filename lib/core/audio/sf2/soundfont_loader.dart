@@ -15,6 +15,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/sf2/sf2.dart';
 import 'package:comet_beat/core/audio/sf2/vorbis_capability.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
 
 /// A parsed SoundFont ready to browse: the backing [font] plus its presets in a
 /// stable display order. [compressed] is true when it was a `.sf3` (decoded via
@@ -99,4 +100,99 @@ String soundFontPresetLabel(Sf2Preset p) {
   final kind = p.bank == 128 ? 'Drum' : 'GM ${p.program}';
   final name = p.name.trim().isEmpty ? 'Preset ${p.program}' : p.name.trim();
   return '$kind · $name';
+}
+
+// ── Reference-based persistence (loaded SoundFont voices) ────────────────────
+//
+// A loaded GM voice is megabytes of multi-sample PCM — wrong to embed in a
+// per-sound library entry. Instead persist a tiny [SoundFontRef] (the file +
+// bank/program) and rebuild the instrument on demand with [resolveSoundFontRef]
+// once the file's bytes are available again. [resolveInstrumentJson] lets a
+// library hold BOTH embedded voices (via tracker_instrument_codec) and these
+// references uniformly.
+
+/// A lightweight, persistable pointer to a SoundFont preset (the file [path] +
+/// its GM [bank]/[program]), stored instead of the voice's PCM.
+class SoundFontRef {
+  const SoundFontRef({
+    required this.path,
+    required this.bank,
+    required this.program,
+    this.name = '',
+  });
+
+  /// The `.sf2`/`.sf3` file location (or any stable key the caller can re-read).
+  final String path;
+  final int bank;
+  final int program;
+
+  /// The preset name (display / instrument id); optional.
+  final String name;
+
+  Map<String, dynamic> toJson() => {
+        'type': 'soundfont_ref',
+        'path': path,
+        'bank': bank,
+        'program': program,
+        'name': name,
+      };
+
+  factory SoundFontRef.fromJson(Map<String, dynamic> m) => SoundFontRef(
+        path: (m['path'] as String?) ?? '',
+        bank: (m['bank'] as num?)?.toInt() ?? 0,
+        program: (m['program'] as num?)?.toInt() ?? 0,
+        name: (m['name'] as String?) ?? '',
+      );
+
+  /// The reference to the [preset] of a font at [path].
+  factory SoundFontRef.ofPreset(String path, Sf2Preset preset) => SoundFontRef(
+        path: path,
+        bank: preset.bank,
+        program: preset.program,
+        name: preset.name,
+      );
+}
+
+/// The preset in [loaded] matching [bank]/[program], or null if the font no
+/// longer has it.
+Sf2Preset? findPreset(LoadedSoundFont loaded, int bank, int program) {
+  for (final p in loaded.presets) {
+    if (p.bank == bank && p.program == program) return p;
+  }
+  return null;
+}
+
+/// Rebuild the instrument [ref] points at, from the SoundFont's [bytes] (the
+/// caller re-reads them from `ref.path`). Throws [SoundFontLoadException] if the
+/// font can't be parsed or no longer has that preset.
+TrackerInstrument resolveSoundFontRef(
+  SoundFontRef ref,
+  Uint8List bytes, {
+  VorbisDecode? vorbis,
+  String? id,
+}) {
+  final loaded = loadSoundFont(bytes, vorbis: vorbis);
+  final preset = findPreset(loaded, ref.bank, ref.program);
+  if (preset == null) {
+    throw SoundFontLoadException(
+      'preset ${ref.bank}/${ref.program} not found in ${ref.path}',
+    );
+  }
+  return soundFontInstrument(loaded, preset, id: id);
+}
+
+/// Resolve any persisted instrument JSON uniformly: a `soundfont_ref` is
+/// rebuilt asynchronously ([loadBytes] re-reads the referenced file, then
+/// [resolveSoundFontRef]); every other type is an embedded voice decoded by
+/// [instrumentFromJson]. So a mixed sound library round-trips through one path.
+Future<TrackerInstrument> resolveInstrumentJson(
+  Map<String, dynamic> json, {
+  required Future<Uint8List> Function(String path) loadBytes,
+  VorbisDecode? vorbis,
+}) async {
+  if (json['type'] == 'soundfont_ref') {
+    final ref = SoundFontRef.fromJson(json);
+    return resolveSoundFontRef(ref, await loadBytes(ref.path), vorbis: vorbis);
+  }
+  return instrumentFromJson(json);
 }
