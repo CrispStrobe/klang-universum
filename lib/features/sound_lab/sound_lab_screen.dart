@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sfx_engine.dart';
 import 'package:comet_beat/features/sound_lab/sound_preset_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -49,6 +50,7 @@ abstract class SoundLabTester {
   Future<void> saveAs(String name);
   void loadMyPreset(int index);
   Future<void> deleteMyPreset(int index);
+  Future<void> saveToSamples(String name);
 }
 
 class SoundLabScreen extends StatefulWidget {
@@ -68,6 +70,7 @@ class _SoundLabScreenState extends State<SoundLabScreen>
   late Float64List _pcm = _render();
 
   final _store = SoundPresetStore();
+  final _sampleStore = SampleClipStore();
   List<SoundPreset> _saved = const [];
 
   @override
@@ -119,6 +122,16 @@ class _SoundLabScreenState extends State<SoundLabScreen>
     if (mounted) setState(() => _saved = list);
   }
 
+  @override
+  Future<void> saveToSamples(String name) => _sampleStore.save(
+        SampleClip(
+          name: name,
+          sampleRate: kSampleRate,
+          pcm: _pcm,
+          source: 'Sound Lab',
+        ),
+      );
+
   // ── Actions ──────────────────────────────────────────────────────────────
   Uint8List _wav() {
     final i16 = Int16List(_pcm.length);
@@ -143,15 +156,14 @@ class _SoundLabScreenState extends State<SoundLabScreen>
       );
   }
 
-  Future<void> _saveDialog() async {
+  /// Prompts for a name (pre-filled with [initial]); null/blank = cancelled.
+  Future<String?> _promptName(String title, String initial) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(
-      text: l10n.soundLabDefaultName(_saved.length + 1),
-    );
+    final controller = TextEditingController(text: initial);
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.soundLabSaveTitle),
+        title: Text(title),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -171,12 +183,37 @@ class _SoundLabScreenState extends State<SoundLabScreen>
       ),
     );
     final trimmed = name?.trim();
-    if (trimmed == null || trimmed.isEmpty) return;
-    await saveAs(trimmed);
+    return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+  }
+
+  /// Saves the current PARAMS as a re-editable recipe (My Sounds).
+  Future<void> _saveDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await _promptName(
+      l10n.soundLabSaveTitle,
+      l10n.soundLabDefaultName(_saved.length + 1),
+    );
+    if (name == null) return;
+    await saveAs(name);
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l10n.soundLabSaved(trimmed))));
+      ..showSnackBar(SnackBar(content: Text(l10n.soundLabSaved(name))));
+  }
+
+  /// Renders the current sound to PCM and stores it in the shared "My Samples"
+  /// library, so a designed SFX can become a Tracker / DAW / Voice-Lab
+  /// instrument — not just a re-editable recipe.
+  Future<void> _saveAsSample() async {
+    final l10n = AppLocalizations.of(context)!;
+    final name =
+        await _promptName(l10n.soundLabToSamples, l10n.soundLabSfxName);
+    if (name == null) return;
+    await saveToSamples(name);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(l10n.soundLabSaved(name))));
   }
 
   Future<void> _openMySounds() async {
@@ -241,10 +278,14 @@ class _SoundLabScreenState extends State<SoundLabScreen>
             tooltip: l10n.soundLabShare,
             onPressed: _copyToken,
           ),
-          IconButton(
+          PopupMenuButton<int>(
             icon: const Icon(Icons.bookmark_add_outlined),
             tooltip: l10n.soundLabSaveTitle,
-            onPressed: _saveDialog,
+            onSelected: (v) => v == 0 ? _saveDialog() : _saveAsSample(),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 0, child: Text(l10n.soundLabSaveRecipe)),
+              PopupMenuItem(value: 1, child: Text(l10n.soundLabToSamples)),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.bookmarks_outlined),

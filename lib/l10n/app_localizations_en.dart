@@ -1339,7 +1339,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get soundLabSaveTitle => 'Save to My Sounds';
+  String get soundLabSaveTitle => 'Save…';
+
+  @override
+  String get soundLabSaveRecipe => 'Save recipe (My Sounds)';
+
+  @override
+  String get soundLabToSamples => 'Save as sample (My Samples)';
+
+  @override
+  String get soundLabSfxName => 'Sample name';
 
   @override
   String get soundLabMyTitle => 'My Sounds';

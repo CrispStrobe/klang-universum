@@ -2591,8 +2591,26 @@ abstract class AppLocalizations {
   /// No description provided for @soundLabSaveTitle.
   ///
   /// In en, this message translates to:
-  /// **'Save to My Sounds'**
+  /// **'Save…'**
   String get soundLabSaveTitle;
+
+  /// No description provided for @soundLabSaveRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Save recipe (My Sounds)'**
+  String get soundLabSaveRecipe;
+
+  /// No description provided for @soundLabToSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as sample (My Samples)'**
+  String get soundLabToSamples;
+
+  /// No description provided for @soundLabSfxName.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample name'**
+  String get soundLabSfxName;
 
   /// No description provided for @soundLabMyTitle.
   ///

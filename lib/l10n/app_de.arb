@@ -452,7 +452,10 @@
   "@soundLabSavedTo": {
     "placeholders": { "path": { "type": "String" } }
   },
-  "soundLabSaveTitle": "In Meine Klänge speichern",
+  "soundLabSaveTitle": "Speichern…",
+  "soundLabSaveRecipe": "Rezept speichern (Meine Klänge)",
+  "soundLabToSamples": "Als Sample speichern (Meine Samples)",
+  "soundLabSfxName": "Sample-Name",
   "soundLabMyTitle": "Meine Klänge",
   "soundLabSaveName": "Name",
   "soundLabCancel": "Abbrechen",

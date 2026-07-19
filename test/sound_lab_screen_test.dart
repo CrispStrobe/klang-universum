@@ -1,5 +1,7 @@
 // Sound Lab screen — presets, sliders, randomize all re-render the sound.
 
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sfx_engine.dart';
 import 'package:comet_beat/features/sound_lab/sound_lab_screen.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +50,24 @@ void main() {
     lab.randomizeSound();
     await tester.pump();
     expect(lab.params.toJson(), isNot(before));
+  });
+
+  testWidgets('Save as sample: the current SFX lands in My Samples',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await pumpGame(tester, const SoundLabScreen());
+    final lab = _lab(tester);
+
+    lab.loadPreset('laser');
+    await tester.pump();
+    await lab.saveToSamples('my zap');
+    await tester.pump();
+
+    final clips = await SampleClipStore().load();
+    expect(clips.single.name, 'my zap');
+    expect(clips.single.source, 'Sound Lab');
+    expect(clips.single.pcm, isNotEmpty);
+    expect(clips.single.sampleRate, kSampleRate);
   });
 
   testWidgets('My Sounds: save, recall, delete via the seam', (tester) async {
