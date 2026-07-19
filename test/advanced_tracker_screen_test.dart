@@ -9,10 +9,13 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
-    show AdditiveInstrument;
+    show AdditiveInstrument, SampleInstrument;
+import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
+    show instrumentToJsonString;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show multiPartScoreFromMusicXml;
 import 'package:flutter/material.dart';
@@ -56,6 +59,29 @@ void main() {
     game.setNote(0, 0, 60);
     await tester.pump();
     expect(game.instrumentAt(0, 0), before + 1);
+  });
+
+  testWidgets('My Instruments adds a saved library voice to the pool',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    final before = game.instrumentPoolSize;
+
+    // A voice saved in the shared library (like a shaped Voice Lab voice).
+    final pcm = Float64List(1024);
+    for (var i = 0; i < pcm.length; i++) {
+      pcm[i] = 0.4 * sin(2 * pi * 220 * i / 44100);
+    }
+    final saved = SavedInstrument(
+      name: 'My Voice',
+      json: instrumentToJsonString(SampleInstrument('v', pcm)),
+      source: 'Voice Lab',
+    );
+    game.debugAddSavedInstrument(saved);
+    await tester.pump();
+
+    expect(game.instrumentPoolSize, before + 1);
+    expect(game.activeInstrument, before + 1); // becomes the active voice
   });
 
   testWidgets('removing a pool voice shrinks the pool + fixes the active index',

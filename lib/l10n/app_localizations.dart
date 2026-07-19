@@ -4934,6 +4934,12 @@ abstract class AppLocalizations {
   /// **'Load SoundFont…'**
   String get trackerLoadSoundFont;
 
+  /// No description provided for @trackerMyInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'My Instruments'**
+  String get trackerMyInstruments;
+
   /// No description provided for @trackerSoundLibrary.
   ///
   /// In en, this message translates to:

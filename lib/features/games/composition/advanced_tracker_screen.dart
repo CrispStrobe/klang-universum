@@ -71,6 +71,8 @@ import 'package:comet_beat/features/library/modarchive_sheet.dart';
 import 'package:comet_beat/features/library/sample_library_sheet.dart';
 import 'package:comet_beat/features/library/soundfont_sheet.dart';
 import 'package:comet_beat/features/library/starter_pattern.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart';
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart'
     show CompositionWorkshopScreen;
@@ -413,6 +415,10 @@ abstract interface class AdvancedTrackerTester {
   /// Append [inst] to the pool + select it (what "Load SoundFont" does with the
   /// picked preset, minus the file dialog).
   void debugAddInstrument(TrackerInstrument inst);
+
+  /// Resolve a "My Instruments" library entry + add it to the pool (what the
+  /// picker does, minus the sheet).
+  void debugAddSavedInstrument(SavedInstrument saved);
 
   /// The song's shareable CBS1. token; [debugLoadToken] loads one back (true on
   /// success). What "Share song" / "Load song" do minus the dialogs.
@@ -2018,6 +2024,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _loadSoundFont();
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.bookmarks_outlined),
+                title: Text(l10n.trackerMyInstruments),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _loadFromMyInstruments();
+                },
+              ),
               const Divider(height: 1),
               for (var i = 0; i <= _song.instruments.length; i++)
                 ListTile(
@@ -2331,6 +2345,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     if (inst != null && mounted) _addPoolInstrument(inst);
   }
 
+  /// Pick a voice saved in the shared "My Instruments" library and add it to
+  /// the pool (Voice Lab voices etc. — embedded, so they resolve synchronously;
+  /// a SoundFont reference would need its font bytes and is skipped here).
+  Future<void> _loadFromMyInstruments() async {
+    final saved = await showMyInstrumentsSheet(context);
+    if (saved == null || !mounted) return;
+    _addSavedInstrument(saved);
+  }
+
+  void _addSavedInstrument(SavedInstrument saved) {
+    final inst = saved.instrument;
+    if (inst != null) _addPoolInstrument(inst);
+  }
+
   /// Append [inst] to the 1-based pool and make it the active instrument.
   void _addPoolInstrument(TrackerInstrument inst) {
     setState(() {
@@ -2342,6 +2370,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   void debugAddInstrument(TrackerInstrument inst) => _addPoolInstrument(inst);
+
+  @override
+  void debugAddSavedInstrument(SavedInstrument saved) =>
+      _addSavedInstrument(saved);
 
   /// Audition any instrument — render a middle-C note and loop-preview it.
   void _auditionInstrument(TrackerInstrument inst) {

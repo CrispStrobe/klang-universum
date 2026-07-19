@@ -2584,6 +2584,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerLoadSoundFont => 'SoundFont laden…';
 
   @override
+  String get trackerMyInstruments => 'Meine Instrumente';
+
+  @override
   String get trackerSoundLibrary => 'Klangbibliothek';
 
   @override
