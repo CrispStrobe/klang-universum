@@ -19,7 +19,7 @@ and push to origin/main** before/after touching shared files. Format:
 > [HISTORY.md → "Agent coordination board — shipped log"](HISTORY.md#agent-coordination-board--shipped-log-chronological).
 > **Pending, actionable work is scoped in the two blocks immediately below.**
 
-- **opus (connect-time)** · 🚧 **ACTIVE — new minigame: Connect the Time Signatures** (`ConnectMode.timeSignatures` — match a time signature 4/4·3/4·2/4·6/8 to what its numbers mean, e.g. "four quarter beats"; 2/2·9/8·12/8·5/4 at 2 stars). A distinct matching-modality drill for the core "reading the time signature" skill. Files: `connect_line_screen.dart` (one enum case + item builder) + one `GameInfo` + `concept_map` placement + EN/DE ARBs + a `pumpGame` widget test. Low-collision additive.
+- **opus (connect-time)** · ✅ **SHIPPED — new minigame: Connect the Time Signatures** (`7b4b34ee`, `connect_time`). `ConnectMode.timeSignatures`: match a time signature to what its numbers mean (4/4 → four quarter beats); simple metres for beginners, 2/2·9/8·12/8·5/4 at 2★. Reuses the ConnectLine scaffold (shared star bracket); placed in the `time_signature` concept; +EN/DE + widget test; connect/consistency/coverage green. Now idle.
 - **opus (connect-degrees)** · ✅ **SHIPPED — new minigame: Connect the Scale Degrees** (`3042bd37`, `connect_degrees`). Fresh `ConnectMode.degrees`: match degree number 1-7 to its name (Tonic…Leading tone) + hear it in C major; pillars 1/4/5/7 for beginners, colour tones 2/3/6 at 2★. Reuses the ConnectLine scaffold (shared star bracket); placed in the `harmonic_function` concept; +EN/DE + widget test; consistency/coverage/home smoke green. Now idle.
 ### 📋 Handoff — items for other agents (raised by @tracker-replayer)
 
