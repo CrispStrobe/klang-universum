@@ -58,6 +58,31 @@ void main() {
     expect(game.instrumentAt(0, 0), before + 1);
   });
 
+  testWidgets('Share/Load song round-trips via the CBS1. token',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    final token = game.debugSongToken(); // a 1-note song
+    expect(token.startsWith('CBS1.'), isTrue);
+
+    game.setNote(0, 1, 62); // now 2 notes
+    await tester.pump();
+    expect(game.noteCount, 2);
+
+    // Loading the token replaces the song with the 1-note version.
+    expect(game.debugLoadToken(token), isTrue);
+    await tester.pump();
+    expect(game.noteCount, 1);
+
+    // A garbage token is rejected and leaves the song untouched.
+    expect(game.debugLoadToken('not a real token'), isFalse);
+    await tester.pump();
+    expect(game.noteCount, 1);
+  });
+
   testWidgets('placing a chromatic note starts playback; clearing empties',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

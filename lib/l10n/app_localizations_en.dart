@@ -2364,6 +2364,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerLoadSoundFont => 'Load SoundFont…';
 
   @override
+  String get trackerShareSong => 'Share song (token)';
+
+  @override
+  String get trackerLoadSong => 'Load song (token)';
+
+  @override
+  String get trackerSongCopied => 'Song token copied to clipboard';
+
+  @override
+  String get trackerCopy => 'Copy';
+
+  @override
+  String get trackerClose => 'Close';
+
+  @override
+  String get trackerPasteToken => 'Paste a song token (CBS1.…)';
+
+  @override
+  String get trackerLoad => 'Load';
+
+  @override
+  String get trackerTokenInvalid => 'That\'s not a valid song token.';
+
+  @override
   String get trackerModArchive => 'Browse The Mod Archive…';
 
   @override

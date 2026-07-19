@@ -50,6 +50,7 @@ import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart'
     show RowTiming, resolveTimingMap, rowIndexAtMs;
 import 'package:comet_beat/core/audio/tracker_song.dart';
+import 'package:comet_beat/core/audio/tracker_song_codec.dart';
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/audio/wav_io.dart'
@@ -365,6 +366,11 @@ abstract interface class AdvancedTrackerTester {
   /// Append [inst] to the pool + select it (what "Load SoundFont" does with the
   /// picked preset, minus the file dialog).
   void debugAddInstrument(TrackerInstrument inst);
+
+  /// The song's shareable CBS1. token; [debugLoadToken] loads one back (true on
+  /// success). What "Share song" / "Load song" do minus the dialogs.
+  String debugSongToken();
+  bool debugLoadToken(String token);
 
   /// The midis the on-screen piano lights up for pattern [row] (un-muted
   /// channels) — the "keys glow as they play" highlight.
@@ -2625,6 +2631,87 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void importModuleBytes(Uint8List bytes) =>
       _replaceSong(songFromModuleBytes(bytes));
 
+  // --- Native lossless save / share (the CBS1. token, tracker_song_codec) ---
+
+  @override
+  String debugSongToken() => trackerSongToToken(_song);
+
+  @override
+  bool debugLoadToken(String token) {
+    final song = tryTrackerSongFromToken(token);
+    if (song == null) return false;
+    _replaceSong(song);
+    return true;
+  }
+
+  /// Show the song's shareable [CBS1.] token (copy to clipboard). Lossless — the
+  /// exact document (notes, effects, per-cell instruments, channels, envelopes).
+  Future<void> _shareSong() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final token = trackerSongToToken(_song);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.trackerShareSong),
+        content: SingleChildScrollView(
+          child: SelectableText(token),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: token));
+              if (ctx.mounted) Navigator.of(ctx).pop();
+              messenger.showSnackBar(
+                SnackBar(content: Text(l10n.trackerSongCopied)),
+              );
+            },
+            child: Text(l10n.trackerCopy),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.trackerClose),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Paste a [CBS1.] token to load a shared song (replaces the current one).
+  Future<void> _loadSong() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController();
+    final token = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.trackerLoadSong),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: InputDecoration(hintText: l10n.trackerPasteToken),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l10n.trackerCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text),
+            child: Text(l10n.trackerLoad),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (token == null || !mounted) return;
+    if (!debugLoadToken(token.trim())) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.trackerTokenInvalid)),
+      );
+    }
+  }
+
   /// BYOK browse of The Mod Archive's CC0/Public-Domain modules → import the
   /// picked one via the same [importModuleBytes] seam as file/module import.
   Future<void> _browseModArchive() async {
@@ -3099,6 +3186,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _applyStarterBeat();
                 case 'loadSoundFont':
                   _loadSoundFont();
+                case 'shareSong':
+                  _shareSong();
+                case 'loadSong':
+                  _loadSong();
                 case 'saveSong':
                   _saveToSongBook();
                 case 'exportMidi':
@@ -3145,6 +3236,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 'saveSong',
                 Icons.bookmark_add_outlined,
                 l10n.trackerSaveSong,
+              ),
+              _menuRow('shareSong', Icons.ios_share, l10n.trackerShareSong),
+              _menuRow(
+                'loadSong',
+                Icons.download_outlined,
+                l10n.trackerLoadSong,
               ),
               _menuRow('exportMidi', Icons.piano, l10n.trackerExportMidi),
               _menuRow('exportXml', Icons.description, l10n.trackerExportXml),

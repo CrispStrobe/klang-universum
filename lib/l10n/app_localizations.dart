@@ -4538,6 +4538,54 @@ abstract class AppLocalizations {
   /// **'Load SoundFont…'**
   String get trackerLoadSoundFont;
 
+  /// No description provided for @trackerShareSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Share song (token)'**
+  String get trackerShareSong;
+
+  /// No description provided for @trackerLoadSong.
+  ///
+  /// In en, this message translates to:
+  /// **'Load song (token)'**
+  String get trackerLoadSong;
+
+  /// No description provided for @trackerSongCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Song token copied to clipboard'**
+  String get trackerSongCopied;
+
+  /// No description provided for @trackerCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get trackerCopy;
+
+  /// No description provided for @trackerClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get trackerClose;
+
+  /// No description provided for @trackerPasteToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a song token (CBS1.…)'**
+  String get trackerPasteToken;
+
+  /// No description provided for @trackerLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get trackerLoad;
+
+  /// No description provided for @trackerTokenInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s not a valid song token.'**
+  String get trackerTokenInvalid;
+
   /// No description provided for @trackerModArchive.
   ///
   /// In en, this message translates to:
