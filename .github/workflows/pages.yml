@@ -1,17 +1,17 @@
 name: Pages
 
 # Publishes the web build to GitHub Pages (https://crispstrobe.github.io/cometbeat/)
-# after CI passes on main — the sibling of deploy.yml, which ships the same build
-# to Vercel. Runs only when the "CI" workflow completes successfully (so we never
-# publish a red commit) and can be triggered by hand. It pushes the built site to
-# the `gh-pages` branch, which is the repo's Pages source.
+# on EVERY commit to main — the sibling of deploy.yml, which ships the same build
+# to Vercel (but only on version tags). Pages has no per-day deploy quota, so it
+# runs on every push; the `flutter build web` step self-gates a broken build (a
+# failed build never deploys, so the last good site stays up), and
+# cancel-in-progress means rapid commits just redeploy the latest. Also runnable
+# by hand. It pushes the built site to the `gh-pages` branch (the Pages source).
 #
 # The project is served under /cometbeat/, so the web build sets that base href.
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -24,16 +24,14 @@ permissions:
 
 jobs:
   pages:
-    # Manual runs always deploy; automatic runs only on a green CI.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout cometbeat
         uses: actions/checkout@v5
         with:
           path: cometbeat
-          # For an automatic run, deploy the exact commit CI validated.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # Deploy the pushed commit (or the current tip for a manual run).
+          ref: ${{ github.sha }}
 
       # crisp_notation + crisp_notation_core resolve via ../crisp_notation/... path deps.
       - name: Checkout crisp_notation (sibling path dependency)
@@ -85,4 +83,4 @@ jobs:
           publish_dir: cometbeat/pages_site
           publish_branch: gh-pages
           # A Flutter web build has no Jekyll; .nojekyll is added by default.
-          commit_message: "Deploy web build to Pages (${{ github.event.workflow_run.head_sha || github.sha }})"
+          commit_message: "Deploy web build to Pages (${{ github.sha }})"
