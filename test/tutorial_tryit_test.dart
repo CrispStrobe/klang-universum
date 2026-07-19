@@ -20,6 +20,9 @@ void main() {
       readingPrimer(l),
       scalesPrimer(l),
       intervalsPrimer(l),
+      chordsPrimer(l),
+      seventhPrimer(l),
+      keySignaturePrimer(l),
     ];
     for (final primer in primers) {
       expect(

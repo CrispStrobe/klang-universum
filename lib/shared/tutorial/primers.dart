@@ -349,6 +349,16 @@ Tutorial chordsPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerChordsArpeggio,
           play: (a) => a.playArpeggioThenChord([60, 64, 67]),
         ),
+        // Active recall: how many notes build a triad?
+        TutorialStep(
+          text: l10n.primerChordsTry,
+          score: _chord([60, 64, 67]),
+          choices: const [
+            TutorialChoice('3', correct: true),
+            TutorialChoice('2'),
+            TutorialChoice('4'),
+          ],
+        ),
       ],
     );
 
@@ -728,6 +738,15 @@ Tutorial keySignaturePrimer(AppLocalizations l10n) => Tutorial(
           // C major has none; listen for the one note that differs (F vs F#).
           beats: _run(_cMajor),
         ),
+        // Active recall: C major's key signature is empty.
+        TutorialStep(
+          text: l10n.primerKeySigTry,
+          choices: const [
+            TutorialChoice('0', correct: true),
+            TutorialChoice('1'),
+            TutorialChoice('2'),
+          ],
+        ),
       ],
     );
 
@@ -851,6 +870,16 @@ Tutorial seventhPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerSeventhAdd,
           score: _chord([60, 64, 67, 70]), // + B♭ = a dominant seventh
           play: (a) => a.playMidiChord([60, 64, 67, 70]),
+        ),
+        // Active recall: a seventh chord stacks one more note on the triad.
+        TutorialStep(
+          text: l10n.primerSeventhTry,
+          score: _chord([60, 64, 67, 70]),
+          choices: const [
+            TutorialChoice('4', correct: true),
+            TutorialChoice('3'),
+            TutorialChoice('5'),
+          ],
         ),
       ],
     );

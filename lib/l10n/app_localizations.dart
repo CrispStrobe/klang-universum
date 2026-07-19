@@ -8648,6 +8648,12 @@ abstract class AppLocalizations {
   /// **'You can also play a chord one note at a time, bottom to top — that\'s an arpeggio.'**
   String get primerChordsArpeggio;
 
+  /// No description provided for @primerChordsTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: how many notes build a triad (a basic chord)?'**
+  String get primerChordsTry;
+
   /// No description provided for @primerHarmonyTitle.
   ///
   /// In en, this message translates to:
@@ -8965,6 +8971,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'C major has no sharps or flats at all. Listen to C major — every note is a plain white key.'**
   String get primerKeySigCompare;
+
+  /// No description provided for @primerKeySigTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: how many sharps does C major have?'**
+  String get primerKeySigTry;
 
   /// No description provided for @primerTimeSigTitle.
   ///
@@ -9355,6 +9367,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add one MORE note the same way (skip one, take the next) and you get a seventh chord: C E G B♭. It sounds restless — as if it wants to move on.'**
   String get primerSeventhAdd;
+
+  /// No description provided for @primerSeventhTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: how many notes are in a seventh chord?'**
+  String get primerSeventhTry;
 
   /// No description provided for @primerRomanTitle.
   ///

@@ -4675,6 +4675,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can also play a chord one note at a time, bottom to top — that\'s an arpeggio.';
 
   @override
+  String get primerChordsTry =>
+      'Now you try: how many notes build a triad (a basic chord)?';
+
+  @override
   String get primerHarmonyTitle => 'Chords have jobs';
 
   @override
@@ -4869,6 +4873,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerKeySigCompare =>
       'C major has no sharps or flats at all. Listen to C major — every note is a plain white key.';
+
+  @override
+  String get primerKeySigTry =>
+      'Now you try: how many sharps does C major have?';
 
   @override
   String get primerTimeSigTitle => 'Time signatures';
@@ -5108,6 +5116,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerSeventhAdd =>
       'Add one MORE note the same way (skip one, take the next) and you get a seventh chord: C E G B♭. It sounds restless — as if it wants to move on.';
+
+  @override
+  String get primerSeventhTry =>
+      'Now you try: how many notes are in a seventh chord?';
 
   @override
   String get primerRomanTitle => 'Numbering the chords';

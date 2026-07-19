@@ -4694,6 +4694,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Du kannst einen Akkord auch Ton für Ton von unten nach oben spielen — das ist ein Arpeggio.';
 
   @override
+  String get primerChordsTry =>
+      'Jetzt du: Aus wie vielen Tönen besteht ein Dreiklang?';
+
+  @override
   String get primerHarmonyTitle => 'Akkorde haben Aufgaben';
 
   @override
@@ -4889,6 +4893,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerKeySigCompare =>
       'C-Dur hat gar keine Vorzeichen. Hör dir C-Dur an — lauter weiße Tasten.';
+
+  @override
+  String get primerKeySigTry => 'Jetzt du: Wie viele Kreuze hat C-Dur?';
 
   @override
   String get primerTimeSigTitle => 'Taktarten';
@@ -5128,6 +5135,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerSeventhAdd =>
       'Nimm auf dieselbe Weise NOCH einen Ton dazu (überspring einen, nimm den nächsten): C E G B. Das ist ein Septakkord — er klingt unruhig, als wollte er weiter.';
+
+  @override
+  String get primerSeventhTry =>
+      'Jetzt du: Aus wie vielen Tönen besteht ein Septakkord?';
 
   @override
   String get primerRomanTitle => 'Akkorde nummerieren';
