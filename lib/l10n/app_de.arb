@@ -759,6 +759,14 @@
   "performCancel": "Abbrechen",
   "performMute": "Ebene stumm",
   "performUnmute": "Ebene laut",
+  "performSceneSave": "Szene sichern",
+  "performSceneLabel": "Szene {number} · {active} an",
+  "@performSceneLabel": {
+    "placeholders": {
+      "number": { "type": "int" },
+      "active": { "type": "int" }
+    }
+  },
   "tabUndo": "Rückgängig",
   "tabRedo": "Wiederholen",
   "tabPlay": "Abspielen",

@@ -3926,6 +3926,18 @@ abstract class AppLocalizations {
   /// **'Unmute layer'**
   String get performUnmute;
 
+  /// No description provided for @performSceneSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save scene'**
+  String get performSceneSave;
+
+  /// No description provided for @performSceneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Scene {number} · {active} on'**
+  String performSceneLabel(int number, int active);
+
   /// No description provided for @tabUndo.
   ///
   /// In en, this message translates to:

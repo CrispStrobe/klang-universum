@@ -126,6 +126,67 @@ void main() {
     expect(p.layerCount, 1); // nothing added
   });
 
+  testWidgets('scenes snapshot active layers; launch + arm reapply them',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    p.addSeed('beat');
+    p.addSeed('bass');
+    p.addSeed('chords');
+    await tester.pump();
+    expect(p.layerCount, 3);
+
+    // Scene A = all three on.
+    p.saveScene();
+    // Scene B = just the beat (mute bass + chords, snapshot, then restore).
+    p.toggleMute(1);
+    p.toggleMute(2);
+    p.saveScene();
+    p.toggleMute(1);
+    p.toggleMute(2);
+    await tester.pump();
+
+    expect(p.sceneCount, 2);
+    expect(p.sceneActiveCount(0), 3);
+    expect(p.sceneActiveCount(1), 1);
+
+    // Launch scene B → only the beat is unmuted.
+    p.launchScene(1);
+    await tester.pump();
+    expect(p.isMuted(0), isFalse);
+    expect(p.isMuted(1), isTrue);
+    expect(p.isMuted(2), isTrue);
+
+    // Launch scene A → all back on.
+    p.launchScene(0);
+    await tester.pump();
+    expect([p.isMuted(0), p.isMuted(1), p.isMuted(2)], everyElement(isFalse));
+
+    // Arm queues without applying; launchArmed applies + clears.
+    p.armScene(1);
+    await tester.pump();
+    expect(p.armedScene, 1);
+    expect(p.isMuted(1), isFalse); // not applied yet
+    p.launchArmed();
+    await tester.pump();
+    expect(p.armedScene, isNull);
+    expect(p.isMuted(1), isTrue); // scene B applied
+    expect(p.isMuted(2), isTrue);
+
+    // Arm again toggles off.
+    p.armScene(0);
+    p.armScene(0);
+    await tester.pump();
+    expect(p.armedScene, isNull);
+
+    // Remove a scene.
+    p.removeScene(0);
+    await tester.pump();
+    expect(p.sceneCount, 1);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

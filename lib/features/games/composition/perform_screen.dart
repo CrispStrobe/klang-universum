@@ -10,6 +10,7 @@
 // S1 seeds layers from a few built-in loops (beat/bass/chords/melody); later
 // slices add recording your own (sing / beatbox / play-in keyboard + pads).
 
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -59,6 +60,18 @@ abstract class PerformTester {
   void stop();
   bool get isPlaying;
 
+  /// Scenes (S4): snapshot which layers are active, then relaunch that mix.
+  /// [launchScene] applies it instantly; [armScene] queues it to swap at the
+  /// next bar (the clip-launch feel), fired by [launchArmed].
+  void saveScene();
+  int get sceneCount;
+  int sceneActiveCount(int i);
+  void launchScene(int i);
+  void armScene(int i);
+  int? get armedScene;
+  void launchArmed();
+  void removeScene(int i);
+
   /// The current summed mix (active layers) — for tests.
   Float64List debugMix();
 }
@@ -91,8 +104,31 @@ class _PerformScreenState extends State<PerformScreen>
   /// The seed loops S1 offers (kind → label key builder).
   static const List<String> _kinds = ['beat', 'bass', 'chords', 'melody'];
 
+  // Scenes (S4): each is a per-layer "is-active" snapshot; `_armed` is the scene
+  // queued to launch at the next bar boundary.
+  final List<List<bool>> _scenes = [];
+  int? _armed;
+  Timer? _boundaryTimer;
+  int _lastPhaseMs = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fire an armed scene when the loop crosses a bar boundary (phase wraps).
+    _boundaryTimer = Timer.periodic(const Duration(milliseconds: 40), (_) {
+      if (!_playing || _armed == null) {
+        _lastPhaseMs = _phaseNow;
+        return;
+      }
+      final now = _phaseNow;
+      if (now < _lastPhaseMs) launchArmed();
+      _lastPhaseMs = now;
+    });
+  }
+
   @override
   void dispose() {
+    _boundaryTimer?.cancel();
     _loop.dispose();
     super.dispose();
   }
@@ -272,7 +308,68 @@ class _PerformScreenState extends State<PerformScreen>
   @override
   void clearAll() {
     _stack.clear();
+    _scenes.clear();
+    _armed = null;
     _refresh();
+  }
+
+  // ── Scenes / clip-launch (S4) ─────────────────────────────────────────────
+  @override
+  int get sceneCount => _scenes.length;
+  @override
+  int sceneActiveCount(int i) => _scenes[i].where((on) => on).length;
+  @override
+  int? get armedScene => _armed;
+
+  @override
+  void saveScene() {
+    _scenes.add([for (var i = 0; i < _stack.layers.length; i++) !isMuted(i)]);
+    setState(() {});
+  }
+
+  /// Set each layer's mute to match a scene's active-flags (new layers past the
+  /// snapshot stay on).
+  void _applyScene(List<bool> active) {
+    for (var i = 0; i < _stack.layers.length; i++) {
+      final wantMuted = i < active.length ? !active[i] : false;
+      if (_stack.isMuted(i) != wantMuted) _stack.toggleMute(i);
+    }
+  }
+
+  @override
+  void launchScene(int i) {
+    _armed = null;
+    _applyScene(_scenes[i]);
+    _refresh();
+  }
+
+  @override
+  void armScene(int i) {
+    _armed = _armed == i ? null : i; // tap again to disarm
+    setState(() {});
+  }
+
+  @override
+  void launchArmed() {
+    final i = _armed;
+    _armed = null;
+    if (i != null && i < _scenes.length) {
+      _applyScene(_scenes[i]);
+      _refresh();
+    } else {
+      setState(() {});
+    }
+  }
+
+  @override
+  void removeScene(int i) {
+    _scenes.removeAt(i);
+    if (_armed == i) {
+      _armed = null;
+    } else if (_armed != null && _armed! > i) {
+      _armed = _armed! - 1;
+    }
+    setState(() {});
   }
 
   // ── Playback ──────────────────────────────────────────────────────────────
@@ -528,6 +625,51 @@ class _PerformScreenState extends State<PerformScreen>
                         },
                       ),
               ),
+              if (_stack.layers.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 40,
+                  child: Row(
+                    children: [
+                      ActionChip(
+                        avatar: const Icon(Icons.add_a_photo, size: 18),
+                        label: Text(l10n.performSceneSave),
+                        onPressed: saveScene,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _scenes.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, i) {
+                            final armed = _armed == i;
+                            return InputChip(
+                              selected: armed,
+                              showCheckmark: false,
+                              avatar: Icon(
+                                armed
+                                    ? Icons.hourglass_top
+                                    : Icons.play_circle_outline,
+                                size: 18,
+                              ),
+                              label: Text(
+                                l10n.performSceneLabel(
+                                  i + 1,
+                                  sceneActiveCount(i),
+                                ),
+                              ),
+                              onSelected: (_) =>
+                                  _playing ? armScene(i) : launchScene(i),
+                              onDeleted: () => removeScene(i),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (isPlayingIn) ...[
                 const SizedBox(height: 8),
                 Row(

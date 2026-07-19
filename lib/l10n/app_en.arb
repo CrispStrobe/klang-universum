@@ -822,6 +822,14 @@
   "performCancel": "Cancel",
   "performMute": "Mute layer",
   "performUnmute": "Unmute layer",
+  "performSceneSave": "Save scene",
+  "performSceneLabel": "Scene {number} · {active} on",
+  "@performSceneLabel": {
+    "placeholders": {
+      "number": { "type": "int" },
+      "active": { "type": "int" }
+    }
+  },
   "tabUndo": "Undo",
   "tabRedo": "Redo",
   "tabPlay": "Play",

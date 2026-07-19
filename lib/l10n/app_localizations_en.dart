@@ -2076,6 +2076,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performUnmute => 'Unmute layer';
 
   @override
+  String get performSceneSave => 'Save scene';
+
+  @override
+  String performSceneLabel(int number, int active) {
+    return 'Scene $number · $active on';
+  }
+
+  @override
   String get tabUndo => 'Undo';
 
   @override

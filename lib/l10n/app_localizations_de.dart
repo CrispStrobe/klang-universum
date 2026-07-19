@@ -2082,6 +2082,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get performUnmute => 'Ebene laut';
 
   @override
+  String get performSceneSave => 'Szene sichern';
+
+  @override
+  String performSceneLabel(int number, int active) {
+    return 'Szene $number · $active an';
+  }
+
+  @override
   String get tabUndo => 'Rückgängig';
 
   @override
