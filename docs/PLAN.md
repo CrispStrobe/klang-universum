@@ -305,14 +305,14 @@ Order within a group = rough value ÷ effort.
 The new post-mix effects landed on the primary render paths; extend them to the
 remaining paths so playback is consistent regardless of song shape. All
 engine-lane / collision-free.
-- **D1 — Global volume (Gxx/Hxy) on the remaining render paths.** Shipped on
+- ✅ **D1 SHIPPED** (`233ead40`): global volume now on the mono flow/variable paths + ALL stereo paths (shared _applyGlobalVolumeStereo + _flatRowScan helpers; null-gated → byte-identical without the command). Was: Shipped on
   `replayPattern` + uniform mono `replaySong`; still missing on `_replayFlow`
   (mono flow), `_replayVariable` (mono mid-song-tempo), and ALL stereo paths
   (`replayPatternStereo`, uniform `replaySongStereo`, `_replayFlowStereo`,
   `_replayVariableStereo`). Fix: build the row scan each path already has
   (`_rowScan` / a flat scan from `walkFlow`'s `played`) and multiply the
   `globalVolumeEnvelope` into `mix` (mono) or `left`+`right` (stereo).
-- **D2 — Pan slide (Pxy) on the variable-timing stereo path.** Shipped in
+- ✅ **D2 SHIPPED** (`233ead40`): _panRegionsVariable now handles Pxy (+ticksPerRow), so a variable-timing panned song slides too. Was: Shipped in
   `_panRegions` (uniform stereo); `_panRegionsVariable` still only reads 8xx.
   Fix: mirror the Pxy step into `_panRegionsVariable`.
 - **D3 — Authoring UI for the extended effects.** Gxx/Hxy/Txx/Pxy (+ the already-
