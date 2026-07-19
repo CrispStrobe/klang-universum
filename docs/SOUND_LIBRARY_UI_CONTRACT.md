@@ -83,7 +83,42 @@ already exposes). No engine work is needed; this is a screen + wiring job.
 - (If you wire SF2 download) a fake `ByteFetcher` returning a fixture soundfont
   yields pickable presets — see `test/sf2_remote_test.dart` for the pattern.
 
+## "Load SoundFont" — READY TO WIRE (shipped by @tracker-replayer, `58aa85d`)
+
+The whole "load a `.sf2`/`.sf3` file → browse presets → pick a GM voice" flow is
+already built as a **self-contained, value-returning sheet** (mirrors
+`showSampleLibrarySheet`). You add it with **one line** — no parse/decode/browse
+code on your side:
+
+```dart
+import 'package:comet_beat/features/library/soundfont_sheet.dart';
+
+final inst = await showSoundFontSheet(context); // Future<TrackerInstrument?>
+if (inst != null) {
+  setState(() => _song.instruments.add(inst)); // drop into the pool
+  // …then point the active instrument / channel at it as you already do.
+}
+```
+
+- Handles `.sf2` directly and `.sf3` via the platform glint Vorbis decoder
+  (auto-selected); a compressed font on a platform with no decoder shows a
+  friendly in-sheet error (mentions `.sf2`) rather than failing.
+- File pick is `file_selector` (`.sf2`/`.sf3`); audition renders middle C through
+  the ambient `AudioService` (a no-op if none is provided).
+- Returns the full **key/velocity-split** GM voice as a plain `TrackerInstrument`,
+  so it drops into `TrackerSong.instruments` like any other sound.
+- **Headless facade** (if you want to skip the sheet UI):
+  `lib/core/audio/sf2/soundfont_loader.dart` — `loadSoundFont(bytes)` →
+  `LoadedSoundFont` (`.presets`), `soundFontInstrument(loaded, preset)`,
+  `soundFontPresetLabel(preset)`.
+- **l10n:** the sheet ships English literals; localize its strings when you wire
+  it (that's the only thing left, and it's screen-side/yours).
+- Tests: `test/soundfont_loader_test.dart` (facade + real-font dev check) and
+  `test/soundfont_sheet_test.dart` (widget flow) are the pattern.
+
 ## Coordination
 - **HANDS OFF** `tracker_engine.dart` / `tracker_song.dart` / `sf2/*` /
-  `sound_library*.dart` — those are @tracker-replayer's; the APIs above are frozen.
+  `sound_library*.dart` / `soundfont_loader.dart` — those are @tracker-replayer's;
+  the APIs above are frozen. `features/library/soundfont_sheet.dart` is yours to
+  localize/restyle when you wire it.
 - Claim the browser on the PLAN board before you touch the tracker screens, as usual.
