@@ -19,7 +19,7 @@ parallel. Recommended ordering by leverage:
 | Wave | Worker | What | Why now |
 |---|---|---|---|
 | **1** | **W-CREPE** | CREPE F0 (MIT, ONNX) behind `PitchTrack` | highest quality-per-effort; fixes sung-voice octave-doubling + drift |
-| **1** | **W-METRE** | downbeat + time-signature + metrical quantisation | correct barlines/anacrusis/meter, not assumed 4/4 |
+| **1** | **W-METRE** | ✅ *slice 1 (`estimateMeter`) SHIPPED* — remaining: metrical quantisation | correct barlines/anacrusis/meter, not assumed 4/4 |
 | **1** | **W-SEP** | source separation → per-stem multi-part transcription | the single biggest jump: "transcribe a whole song" |
 | **2** | **W-HARMONY** | neural chord + key estimation | lead sheets; enharmonic spelling input |
 | **2** | **W-NOTATION** | score-level: voice/staff separation + spelling (+ PM2S later) | turns a note dump into a READABLE engraving |
@@ -120,10 +120,18 @@ real-recording win: the sung "Row Your Boat" / "Mary" F-number vs pYIN.
 
 ### W-METRE — downbeat, time-signature, metrical quantisation
 
+> ✅ **Slice 1 SHIPPED (`abb81a5c`, `metre.dart`, 6 tests):** `estimateMeter(
+> RhythmGrid) → Meter{beatsPerBar, beatUnit, downbeatMs}` (downbeat/phase +
+> triple-vs-duple; default candidates `{4,3}` since onset TIMES can't split 4/4
+> from 2/4 — needs onset strengths). Wired into `transcription_service` (the
+> Score gets the detected time signature). **Remaining for this worker: the
+> metrical quantiser below.**
+
 **Role.** Our Ellis DP beat (`rhythm.dart`, patent-free) finds the pulse but not
-bar 1 or the meter, and S5 assumes 4/4 with greedy note-values. Add a downbeat +
-time-signature estimator and a proper metrical quantiser so the output has
-correct barlines, anacrusis, and real note durations/tuplets/ties.
+bar 1 or the meter, and S5 assumes 4/4 with greedy note-values. Slice 1 added the
+downbeat + time-signature estimator; the remaining slice is a proper metrical
+quantiser so the output has real note durations/tuplets/ties (not greedy
+note-values), using `estimateMeter`'s `downbeatMs` for bar-aligned splitting.
 
 **Files.** `lib/core/audio/transcription/metre.dart` +
 `test/transcription/metre_test.dart`. You MAY extend `rhythm.dart` (coordinate on
