@@ -11,7 +11,11 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
-import 'package:crisp_notation/crisp_notation.dart';
+// The Flutter-free notation core (a dependency_override, re-exported via
+// crisp_notation) — import it directly so this stays usable under plain
+// `dart run` (the CLI bin/rendersong.dart), matching bin/notaconv.dart.
+// ignore: depend_on_referenced_packages
+import 'package:crisp_notation_core/crisp_notation_core.dart';
 
 // A note is rendered on a fixed 120 BPM / 4-steps-per-beat grid (125 ms/step);
 // the row count is chosen so the note sustains for its notated length.
