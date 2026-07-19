@@ -2341,6 +2341,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerBlockFillVoice => 'Stimme über Block füllen';
 
   @override
+  String get trackerBlockFillVoiceHelp =>
+      'Block-Menü — füllt jede Spalte ab der obersten Stimme';
+
+  @override
+  String get trackerInstColumn => 'Instrument-Spalte';
+
+  @override
+  String get trackerInstColumnHelp =>
+      'Mit Tab anwählen, Pool-Nummer tippen (Rücktaste = Spur-Standard)';
+
+  @override
   String get trackerField => 'Spalte (Note / Lautst. / FX)';
 
   @override

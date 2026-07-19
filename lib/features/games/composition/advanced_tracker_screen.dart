@@ -4847,6 +4847,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               _helpRow(ctx, l10n.trackerClear, 'Delete / Backspace'),
               _helpRow(ctx, l10n.trackerEditStep, l10n.trackerEditStepHelp),
               _helpRow(ctx, l10n.trackerField, 'Tab / Shift+Tab'),
+              _helpRow(ctx, l10n.trackerInstColumn, l10n.trackerInstColumnHelp),
               const Divider(height: 20),
               _helpRow(ctx, l10n.trackerPlay, 'F5 song · F6 pattern'),
               _helpRow(
@@ -4872,6 +4873,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 ctx,
                 l10n.trackerBlockTransUp,
                 'Alt + ↑↓  ·  Alt + PgUp/PgDn',
+              ),
+              _helpRow(
+                ctx,
+                l10n.trackerBlockFillVoice,
+                l10n.trackerBlockFillVoiceHelp,
               ),
               const Divider(height: 20),
               _helpRow(ctx, l10n.trackerFxColumn, l10n.trackerFxHelp),

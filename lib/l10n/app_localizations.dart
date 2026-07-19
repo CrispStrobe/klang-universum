@@ -4472,6 +4472,24 @@ abstract class AppLocalizations {
   /// **'Fill voice across block'**
   String get trackerBlockFillVoice;
 
+  /// No description provided for @trackerBlockFillVoiceHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Block menu — fills each column from its top voice'**
+  String get trackerBlockFillVoiceHelp;
+
+  /// No description provided for @trackerInstColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument column'**
+  String get trackerInstColumn;
+
+  /// No description provided for @trackerInstColumnHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab to it, type a pool number (Backspace = channel default)'**
+  String get trackerInstColumnHelp;
+
   /// No description provided for @trackerField.
   ///
   /// In en, this message translates to:

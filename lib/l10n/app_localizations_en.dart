@@ -2333,6 +2333,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerBlockFillVoice => 'Fill voice across block';
 
   @override
+  String get trackerBlockFillVoiceHelp =>
+      'Block menu — fills each column from its top voice';
+
+  @override
+  String get trackerInstColumn => 'Instrument column';
+
+  @override
+  String get trackerInstColumnHelp =>
+      'Tab to it, type a pool number (Backspace = channel default)';
+
+  @override
   String get trackerField => 'Column (note / vol / fx)';
 
   @override
