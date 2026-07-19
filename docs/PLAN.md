@@ -240,8 +240,9 @@ still free on the board before starting** (search the agent name / feature).
    rest/bar-attribute *editing* rows in the inspector (the Structure view is
    read-only + Change-from-here today).
 
-**Blocked on crisp_notation (need a library change first — CI tracks public
-`CrispStrobe/crisp_notation@main`):** ~~app-wide `showNoteNames`~~ **DONE** —
+**~~Blocked on crisp_notation~~ — ✅ ALL CLEARED (2026-07-19: the three former
+library blockers are all shipped; nothing here blocks anymore):** ~~app-wide
+`showNoteNames`~~ **DONE** —
 `showNoteNames` / `noteNameStyle` are now on every multi-part view:
 `MultiSystemView` + `InteractiveGrandStaffView` + `InteractiveMultiPartView`
 (crisp_notation 0.4.2) and the static `MultiPartView` (0.4.4, `044891d`); the
