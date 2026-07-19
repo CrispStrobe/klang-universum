@@ -526,7 +526,7 @@ packages:
       path: "../onnx_runtime_dart"
       relative: true
     source: path
-    version: "0.10.0"
+    version: "0.10.2"
   package_config:
     dependency: transitive
     description:
