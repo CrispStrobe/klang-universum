@@ -12181,6 +12181,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download failed — tap to retry'**
   String get ttsHdVoiceFailed;
+
+  /// No description provided for @transcriptionEngineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription engine'**
+  String get transcriptionEngineTitle;
+
+  /// No description provided for @transcriptionEngineIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'How a recording is turned into notes. Neural engines are more accurate but download a model and run in the app (not the web version). Rhythm, drums and the written notes always run on-device.'**
+  String get transcriptionEngineIntro;
+
+  /// No description provided for @transcriptionQualityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model quality'**
+  String get transcriptionQualityLabel;
+
+  /// No description provided for @transcriptionQualityFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get transcriptionQualityFast;
+
+  /// No description provided for @transcriptionQualityBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get transcriptionQualityBalanced;
+
+  /// No description provided for @transcriptionQualityAccurate.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate'**
+  String get transcriptionQualityAccurate;
+
+  /// No description provided for @transcriptionAdvancedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced — engine per step'**
+  String get transcriptionAdvancedLabel;
+
+  /// No description provided for @transcriptionStepF0.
+  ///
+  /// In en, this message translates to:
+  /// **'Melody pitch'**
+  String get transcriptionStepF0;
+
+  /// No description provided for @transcriptionStepPoly.
+  ///
+  /// In en, this message translates to:
+  /// **'Chords & piano'**
+  String get transcriptionStepPoly;
+
+  /// No description provided for @transcriptionStepSep.
+  ///
+  /// In en, this message translates to:
+  /// **'Split a song'**
+  String get transcriptionStepSep;
+
+  /// No description provided for @transcriptionBackendAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get transcriptionBackendAuto;
+
+  /// No description provided for @transcriptionBackendDart.
+  ///
+  /// In en, this message translates to:
+  /// **'On-device'**
+  String get transcriptionBackendDart;
+
+  /// No description provided for @transcriptionBackendNeural.
+  ///
+  /// In en, this message translates to:
+  /// **'Neural'**
+  String get transcriptionBackendNeural;
 }
 
 class _AppLocalizationsDelegate

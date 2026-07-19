@@ -5,6 +5,7 @@ import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
+import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/core/services/tts_service.dart';
 import 'package:comet_beat/features/games/game_registry.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
@@ -40,6 +41,9 @@ class CometBeatApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsService()..load(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => TranscriptionConfigService()..load(),
         ),
         Provider<AudioService>(
           // Route playback to the speaker up front (see configurePlaybackRoute:

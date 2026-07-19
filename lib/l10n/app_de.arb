@@ -2247,5 +2247,18 @@
   "ttsHdVoiceReady": "An — Vorlesen nutzt die natürliche Stimme",
   "ttsHdVoiceDownload": "Herunterladen (~135 MB)",
   "ttsHdVoiceDownloading": "Wird heruntergeladen …",
-  "ttsHdVoiceFailed": "Download fehlgeschlagen – zum Wiederholen tippen"
+  "ttsHdVoiceFailed": "Download fehlgeschlagen – zum Wiederholen tippen",
+  "transcriptionEngineTitle": "Notierungs-Engine",
+  "transcriptionEngineIntro": "Wie aus einer Aufnahme Noten werden. Neuronale Engines sind genauer, laden aber ein Modell und laufen in der App (nicht in der Web-Version). Rhythmus, Schlagzeug und die geschriebenen Noten laufen immer auf dem Gerät.",
+  "transcriptionQualityLabel": "Modellqualität",
+  "transcriptionQualityFast": "Schnell",
+  "transcriptionQualityBalanced": "Ausgewogen",
+  "transcriptionQualityAccurate": "Genau",
+  "transcriptionAdvancedLabel": "Erweitert – Engine pro Schritt",
+  "transcriptionStepF0": "Melodie-Tonhöhe",
+  "transcriptionStepPoly": "Akkorde & Klavier",
+  "transcriptionStepSep": "Song aufteilen",
+  "transcriptionBackendAuto": "Auto",
+  "transcriptionBackendDart": "Auf dem Gerät",
+  "transcriptionBackendNeural": "Neuronal"
 }

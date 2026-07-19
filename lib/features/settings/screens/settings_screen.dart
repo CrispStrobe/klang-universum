@@ -3,11 +3,13 @@
 // Language override (system/EN/DE) and a compact SRI statistics summary.
 
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
+import 'package:comet_beat/core/audio/transcription/engine_config.dart';
 import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
+import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/core/services/tts_service.dart';
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
@@ -141,7 +143,8 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const _HdVoiceTile(),
-          const SizedBox(height: 12),
+          const _TranscriptionEngineSection(),
+          const SizedBox(height: 20),
           Card(
             child: SwitchListTile(
               title: Text(l10n.showTimerLabel),
@@ -413,3 +416,140 @@ class _HdVoiceTileState extends State<_HdVoiceTile> {
     );
   }
 }
+
+/// Backend + model-quality picker for the transcription pipeline. The quality
+/// preset drives model size/quant; the advanced expander lets a user pin a
+/// backend per step (falls back to on-device when a neural backend isn't
+/// present). Dart-only steps (rhythm/drums/notation) aren't shown — they never
+/// go neural.
+class _TranscriptionEngineSection extends StatelessWidget {
+  const _TranscriptionEngineSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    // No-op when the config service isn't in scope (e.g. a widget test that
+    // pumps SettingsScreen without it) — mirrors the HD-voice tile.
+    final TranscriptionConfigService svc;
+    try {
+      svc = context.watch<TranscriptionConfigService>();
+    } on ProviderNotFoundException {
+      return const SizedBox.shrink();
+    }
+    final cfg = svc.config;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Text(
+          l10n.transcriptionEngineTitle,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.transcriptionEngineIntro,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.transcriptionQualityLabel,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final q in ModelQuality.values)
+                      ChoiceChip(
+                        label: Text(_qualityName(l10n, q)),
+                        selected: cfg.quality == q,
+                        onSelected: (_) => svc.setQuality(q),
+                      ),
+                  ],
+                ),
+                ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  title: Text(
+                    l10n.transcriptionAdvancedLabel,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  children: [
+                    _stepPicker(
+                      context,
+                      svc,
+                      l10n.transcriptionStepF0,
+                      TranscriptionStep.f0,
+                      const [Backend.auto, Backend.pureDart, Backend.crispasr],
+                    ),
+                    _stepPicker(
+                      context,
+                      svc,
+                      l10n.transcriptionStepPoly,
+                      TranscriptionStep.polyphonic,
+                      const [Backend.auto, Backend.onnx],
+                    ),
+                    _stepPicker(
+                      context,
+                      svc,
+                      l10n.transcriptionStepSep,
+                      TranscriptionStep.separation,
+                      const [Backend.auto, Backend.crispasr],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _stepPicker(
+    BuildContext context,
+    TranscriptionConfigService svc,
+    String label,
+    TranscriptionStep step,
+    List<Backend> offered,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final cur = svc.config.backendFor(step);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final b in offered)
+                ChoiceChip(
+                  label: Text(_backendName(l10n, b)),
+                  selected: cur == b,
+                  onSelected: (_) => svc.setBackend(step, b),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _qualityName(AppLocalizations l10n, ModelQuality q) => switch (q) {
+      ModelQuality.fast => l10n.transcriptionQualityFast,
+      ModelQuality.balanced => l10n.transcriptionQualityBalanced,
+      ModelQuality.accurate => l10n.transcriptionQualityAccurate,
+    };
+
+String _backendName(AppLocalizations l10n, Backend b) => switch (b) {
+      Backend.auto => l10n.transcriptionBackendAuto,
+      Backend.pureDart => l10n.transcriptionBackendDart,
+      Backend.onnx || Backend.crispasr => l10n.transcriptionBackendNeural,
+    };

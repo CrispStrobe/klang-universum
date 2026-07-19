@@ -6673,4 +6673,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ttsHdVoiceFailed => 'Download failed — tap to retry';
+
+  @override
+  String get transcriptionEngineTitle => 'Transcription engine';
+
+  @override
+  String get transcriptionEngineIntro =>
+      'How a recording is turned into notes. Neural engines are more accurate but download a model and run in the app (not the web version). Rhythm, drums and the written notes always run on-device.';
+
+  @override
+  String get transcriptionQualityLabel => 'Model quality';
+
+  @override
+  String get transcriptionQualityFast => 'Fast';
+
+  @override
+  String get transcriptionQualityBalanced => 'Balanced';
+
+  @override
+  String get transcriptionQualityAccurate => 'Accurate';
+
+  @override
+  String get transcriptionAdvancedLabel => 'Advanced — engine per step';
+
+  @override
+  String get transcriptionStepF0 => 'Melody pitch';
+
+  @override
+  String get transcriptionStepPoly => 'Chords & piano';
+
+  @override
+  String get transcriptionStepSep => 'Split a song';
+
+  @override
+  String get transcriptionBackendAuto => 'Auto';
+
+  @override
+  String get transcriptionBackendDart => 'On-device';
+
+  @override
+  String get transcriptionBackendNeural => 'Neural';
 }

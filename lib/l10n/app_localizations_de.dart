@@ -6710,4 +6710,44 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get ttsHdVoiceFailed =>
       'Download fehlgeschlagen – zum Wiederholen tippen';
+
+  @override
+  String get transcriptionEngineTitle => 'Notierungs-Engine';
+
+  @override
+  String get transcriptionEngineIntro =>
+      'Wie aus einer Aufnahme Noten werden. Neuronale Engines sind genauer, laden aber ein Modell und laufen in der App (nicht in der Web-Version). Rhythmus, Schlagzeug und die geschriebenen Noten laufen immer auf dem Gerät.';
+
+  @override
+  String get transcriptionQualityLabel => 'Modellqualität';
+
+  @override
+  String get transcriptionQualityFast => 'Schnell';
+
+  @override
+  String get transcriptionQualityBalanced => 'Ausgewogen';
+
+  @override
+  String get transcriptionQualityAccurate => 'Genau';
+
+  @override
+  String get transcriptionAdvancedLabel => 'Erweitert – Engine pro Schritt';
+
+  @override
+  String get transcriptionStepF0 => 'Melodie-Tonhöhe';
+
+  @override
+  String get transcriptionStepPoly => 'Akkorde & Klavier';
+
+  @override
+  String get transcriptionStepSep => 'Song aufteilen';
+
+  @override
+  String get transcriptionBackendAuto => 'Auto';
+
+  @override
+  String get transcriptionBackendDart => 'Auf dem Gerät';
+
+  @override
+  String get transcriptionBackendNeural => 'Neuronal';
 }
