@@ -124,6 +124,16 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set a whole track's linear volume [gain] (0 = silent). A fader sweep
+  /// coalesces to one undo entry.
+  void setTrackGain(int track, double gain) {
+    _coalesced(('trackGain', track));
+    timeline.tracks[track].gain = gain < 0 ? 0 : gain;
+    notifyListeners();
+  }
+
+  double trackGain(int track) => timeline.tracks[track].gain;
+
   /// Remove one clip.
   void removeClip(int track, int index) {
     _record();

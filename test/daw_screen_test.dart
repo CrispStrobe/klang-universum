@@ -143,14 +143,17 @@ void main() {
     await tester.pump();
     expect(daw.clipGain(0, 0), 1.0);
 
-    // Tap the clip box → the inspector sheet with a Volume label + sliders.
+    // Tap the clip box → the inspector sheet. Besides the gutter track faders
+    // in the body, the inspector adds 5 sliders (gain, 2 fades, 2 trims); the
+    // modal renders after the body, so those are the LAST 5.
     await tester.tap(find.text('🥁'));
     await tester.pumpAndSettle();
-    // gain + fade-in + fade-out + trim-start + trim-end
-    expect(find.byType(Slider), findsNWidgets(5));
+    final sliders = find.byType(Slider);
+    final total = tester.widgetList(sliders).length;
+    expect(total, greaterThanOrEqualTo(5));
 
-    // Drag the gain slider down; the clip's gain drops below 1.
-    await tester.drag(find.byType(Slider).first, const Offset(-80, 0));
+    // Drag the gain slider (first of the inspector's 5) down; gain drops.
+    await tester.drag(sliders.at(total - 5), const Offset(-80, 0));
     await tester.pump();
     expect(daw.clipGain(0, 0), lessThan(1.0));
   });

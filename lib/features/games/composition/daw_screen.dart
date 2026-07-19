@@ -60,6 +60,10 @@ abstract interface class DawTester {
   void toggleLoop();
   bool isTrackMuted(int track);
   void toggleTrackMute(int track);
+
+  /// Per-track volume fader (linear gain).
+  void setTrackGain(int track, double gain);
+  double trackGain(int track);
   void addDemoBeat();
   void addDemoTune();
   void addSampleClip(SampleClip clip);
@@ -188,6 +192,15 @@ class _DawScreenState extends State<DawScreen>
     _daw.toggleTrackMute(track);
     if (_playing) play(); // re-bake with the change
   }
+
+  @override
+  void setTrackGain(int track, double gain) {
+    _daw.setTrackGain(track, gain);
+    if (_playing) play(); // re-bake with the level change
+  }
+
+  @override
+  double trackGain(int track) => _daw.trackGain(track);
 
   DrumRowsPattern _demoBeat() {
     final rows = {
@@ -829,20 +842,40 @@ class _DawScreenState extends State<DawScreen>
     return SizedBox(
       width: _gutterWidth,
       height: _laneHeight,
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 24,
-            child: Text(
-              track.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  track.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              InkWell(
+                onTap: () => toggleTrackMute(i),
+                child: Icon(
+                  track.muted ? Icons.volume_off : Icons.volume_up,
+                  size: 18,
+                  color: track.muted ? scheme.error : null,
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(track.muted ? Icons.volume_off : Icons.volume_up),
-            color: track.muted ? scheme.error : null,
-            tooltip: track.name,
-            onPressed: () => toggleTrackMute(i),
+          // Per-track volume fader (0 – 150%).
+          SliderTheme(
+            data: const SliderThemeData(
+              trackHeight: 2,
+              thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+              overlayShape: RoundSliderOverlayShape(overlayRadius: 10),
+            ),
+            child: Slider(
+              value: track.gain.clamp(0.0, 1.5),
+              max: 1.5,
+              onChanged: (v) => setTrackGain(i, v),
+            ),
           ),
         ],
       ),

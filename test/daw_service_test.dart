@@ -252,6 +252,28 @@ void main() {
     expect(fresh.canUndo, isFalse); // history reset on load
   });
 
+  test('setTrackGain scales the whole track and coalesces one undo', () {
+    final s = DawService()
+      ..addClip(_tone(0.5, 100)) // track 0
+      ..addClip(_tone(0.5, 100), track: 1);
+    expect(s.trackGain(0), 1.0);
+
+    // A fader sweep: several sets coalesce to a single undo entry.
+    s.setTrackGain(0, 0.8);
+    s.setTrackGain(0, 0.5);
+    expect(s.trackGain(0), 0.5);
+    final loud = renderTimeline(s.timeline, limit: false);
+
+    // Halving track 0's gain must lower the mix where its clip plays.
+    s.setTrackGain(0, 1.0);
+    final restored = renderTimeline(s.timeline, limit: false);
+    expect(restored[0].abs(), greaterThan(loud[0].abs()));
+
+    // The whole sweep undoes in one step (coalesced), back to 1.0.
+    s.undo();
+    expect(s.trackGain(0), 1.0);
+  });
+
   test('clipPeaks summarizes a clip and reflects its trim', () {
     // A ramp 0..1 so peaks grow across the clip.
     final ramp = Float64List(1000);
