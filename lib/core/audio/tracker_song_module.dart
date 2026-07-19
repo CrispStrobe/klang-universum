@@ -268,6 +268,7 @@ DocSample _docSampleForInstrument(TrackerInstrument inst, int engineRate) {
       c5speed: (engineRate * ratio).round(),
       loopStart: (inst.loopStart * ratio).round(),
       loopLength: (inst.loopLength * ratio).round(),
+      pingPong: inst.pingPong,
     );
   }
   // A procedural voice has no PCM → render ~1s of MIDI 60 as a one-shot sample.

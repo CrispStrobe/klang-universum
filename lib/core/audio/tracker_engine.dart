@@ -427,6 +427,28 @@ Float64List _renderPerNote(
 /// note is capped at its run length (a one-shot note-off). [baseMidi] is the
 /// pitch the recorded sample represents (default C4). This is the payload behind
 /// "record your voice → play a tune with it".
+/// Fold a monotonically-increasing read position [pos] into the actual (still
+/// fractional, for interpolation) sample position for a loop
+/// `[loopStart, loopStart+loopLen)`. Before the loop end it is [pos] unchanged
+/// (the one-shot lead-in + first pass). After it, a FORWARD loop wraps
+/// (`% loopLen`); a [pingPong] loop bounces — a triangle over period `2·loopLen`
+/// (forward loopStart→loopEnd, then backward loopEnd→loopStart, repeat). The
+/// returned position is a real point in sample space, so linear interpolation
+/// between its floor/ceil neighbours is correct in either direction.
+double foldLoopPosition(
+  double pos,
+  int loopStart,
+  int loopLen, {
+  required bool pingPong,
+}) {
+  final loopEnd = loopStart + loopLen;
+  if (pos < loopEnd || loopLen <= 0) return pos;
+  if (!pingPong) return loopStart + ((pos - loopStart) % loopLen);
+  final period = 2 * loopLen;
+  final q = (pos - loopStart) % period;
+  return q < loopLen ? loopStart + q : loopStart + (period - q);
+}
+
 class SampleInstrument implements TrackerInstrument {
   const SampleInstrument(
     this.id,
@@ -436,6 +458,7 @@ class SampleInstrument implements TrackerInstrument {
     this.loopStart = 0,
     this.loopLength = 0,
     this.offsetScale = 1.0,
+    this.pingPong = false,
   });
 
   /// Records-once: applies [fx] to [raw] and keeps the result as the sample.
@@ -468,6 +491,11 @@ class SampleInstrument implements TrackerInstrument {
   /// one-shot lead-in, so a sustained note doesn't cut off at the sample's end.
   final int loopStart;
   final int loopLength;
+
+  /// A bidirectional ("ping-pong") loop bounces forward → backward → forward
+  /// through `[loopStart, loopStart+loopLength)` instead of wrapping (the IT/XM
+  /// bidi-loop flag). Default false = the plain forward loop (byte-identical).
+  final bool pingPong;
 
   /// Converts a `9xx` sample-offset param (in ORIGINAL module-sample units) to
   /// this buffer's units. When the module PCM was resampled to the engine rate
@@ -542,11 +570,10 @@ class SampleInstrument implements TrackerInstrument {
   /// than the sample sustains instead of falling silent.
   Float64List _resampleLooping(double ratio, int outLen, int startPos) {
     final out = Float64List(outLen);
-    final loopEnd = loopStart + loopLength;
     var pos = startPos.toDouble();
     for (var i = 0; i < outLen; i++) {
-      var p = pos;
-      if (p >= loopEnd) p = loopStart + ((p - loopStart) % loopLength);
+      final p =
+          foldLoopPosition(pos, loopStart, loopLength, pingPong: pingPong);
       final idx = p.floor();
       if (idx >= sample.length - 1) {
         out[i] = idx < sample.length ? sample[idx] : 0.0;

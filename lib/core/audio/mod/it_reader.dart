@@ -210,6 +210,7 @@ ItSample _parseSample(
   final sixteenBit = (flg & 0x02) != 0;
   final compressed = (flg & 0x08) != 0;
   final hasSample = (flg & 0x01) != 0;
+  final pingPong = (flg & 0x40) != 0; // bidirectional loop
 
   Float64List pcm;
   if (!hasSample || length == 0) {
@@ -231,6 +232,7 @@ ItSample _parseSample(
     loopStart: loopStart,
     loopEnd: loopEnd,
     c5speed: c5speed == 0 ? 8363 : c5speed,
+    pingPong: pingPong,
     pcm: pcm,
   );
 }

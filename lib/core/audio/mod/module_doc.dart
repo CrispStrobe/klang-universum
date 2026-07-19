@@ -32,6 +32,7 @@ class DocSample {
     this.loopStart = 0,
     this.loopLength = 0,
     this.c5speed = 8363,
+    this.pingPong = false,
     required this.pcm,
   });
 
@@ -42,6 +43,7 @@ class DocSample {
   final int loopStart; // in samples
   final int loopLength; // in samples (0 = no loop)
   final int c5speed; // playback rate (Hz) at the C-5 reference
+  final bool pingPong; // bidirectional ("ping-pong") loop (IT/XM flag)
   final Float64List pcm;
 
   bool get isEmpty => pcm.isEmpty;

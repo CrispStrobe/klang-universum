@@ -436,6 +436,7 @@ ModuleDoc docFromIt(ItModule m) {
         loopStart: s.loopStart,
         loopLength: looped ? (s.loopEnd - s.loopStart) : 0,
         c5speed: s.c5speed,
+        pingPong: looped && s.pingPong,
         pcm: Float64List.fromList(s.pcm),
       );
       samples.add(ds);

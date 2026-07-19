@@ -629,6 +629,7 @@ void _renderSampleChannelInto(
     final baseMidi = cur.baseMidi;
     final s = cur.sample;
     final loops = cur.loops;
+    final pingPong = cur.pingPong;
     final loopStart = cur.loopStart;
     final loopLen = cur.loopLength;
     final loopEnd = loopStart + loopLen;
@@ -647,12 +648,17 @@ void _renderSampleChannelInto(
       final ratio = pow(2.0, (state.pitch - baseMidi) / 12.0).toDouble();
       final vol = (state.volume / kMaxVolume) * voice.noteVolume;
       for (var i = ts; i < te && i < stem.length; i++) {
-        if (loops && readPos >= loopEnd) {
+        // Forward loop wraps readPos in place (byte-identical); a ping-pong loop
+        // keeps readPos monotonic and folds it into a bouncing read position.
+        if (loops && !pingPong && readPos >= loopEnd) {
           readPos = loopStart + ((readPos - loopStart) % loopLen);
         }
-        final idx = readPos.floor();
+        final src = loops && pingPong
+            ? foldLoopPosition(readPos, loopStart, loopLen, pingPong: true)
+            : readPos;
+        final idx = src.floor();
         if (idx >= s.length - 1 && !loops) break; // one-shot: sample exhausted
-        final frac = readPos - idx;
+        final frac = src - idx;
         final next =
             idx + 1 < s.length ? s[idx + 1] : (loops ? s[loopStart] : 0.0);
         final sampleVal = s[idx] * (1 - frac) + next * frac;
@@ -729,6 +735,7 @@ void _renderSampleChannelIntoVariable(
     final baseMidi = cur.baseMidi;
     final s = cur.sample;
     final loops = cur.loops;
+    final pingPong = cur.pingPong;
     final loopStart = cur.loopStart;
     final loopLen = cur.loopLength;
     final loopEnd = loopStart + loopLen;
@@ -747,12 +754,17 @@ void _renderSampleChannelIntoVariable(
       final ratio = pow(2.0, (state.pitch - baseMidi) / 12.0).toDouble();
       final vol = (state.volume / kMaxVolume) * voice.noteVolume;
       for (var i = ts; i < te && i < stem.length; i++) {
-        if (loops && readPos >= loopEnd) {
+        // Forward loop wraps readPos in place (byte-identical); a ping-pong loop
+        // keeps readPos monotonic and folds it into a bouncing read position.
+        if (loops && !pingPong && readPos >= loopEnd) {
           readPos = loopStart + ((readPos - loopStart) % loopLen);
         }
-        final idx = readPos.floor();
+        final src = loops && pingPong
+            ? foldLoopPosition(readPos, loopStart, loopLen, pingPong: true)
+            : readPos;
+        final idx = src.floor();
         if (idx >= s.length - 1 && !loops) break; // one-shot: sample exhausted
-        final frac = readPos - idx;
+        final frac = src - idx;
         final next =
             idx + 1 < s.length ? s[idx + 1] : (loops ? s[loopStart] : 0.0);
         final sampleVal = s[idx] * (1 - frac) + next * frac;

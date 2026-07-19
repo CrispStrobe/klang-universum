@@ -80,6 +80,7 @@ class ItSample {
     this.loopStart = 0,
     this.loopEnd = 0,
     this.c5speed = 8363,
+    this.pingPong = false,
     required this.pcm,
   });
 
@@ -92,6 +93,7 @@ class ItSample {
   final int length; // declared length in samples
   final int loopStart, loopEnd;
   final int c5speed; // playback rate at C-5
+  final bool pingPong; // Flg 0x40 — bidirectional loop
   final Float64List pcm;
 
   bool get isEmpty => pcm.isEmpty;
