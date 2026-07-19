@@ -25,6 +25,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/aec_offline.dart';
 import 'package:comet_beat/core/audio/chroma_analysis.dart';
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
+import 'package:comet_beat/core/audio/recording_analysis.dart';
 import 'package:comet_beat/core/audio/streaming_analyzer.dart';
 import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
@@ -87,22 +88,18 @@ Future<void> main(List<String> argv) async {
       exitCode = 2;
       return;
     }
-    final wav = readWavPcm16(file.readAsBytesSync());
-    final mono = wavToMonoFloat(wav);
-    stderr.writeln(
-      'Loaded ${wav.samples.length ~/ (wav.channels < 1 ? 1 : wav.channels)} '
-      'frames @ ${wav.sampleRate} Hz, ${wav.channels}ch  '
-      '(${(mono.length / wav.sampleRate).toStringAsFixed(2)}s)',
+    // Shared with the app: one tested file-analysis path (recording_analysis).
+    final result = analyzeRecording(
+      file.readAsBytesSync(),
+      a4: a4,
+      detectChords: withChords,
     );
-    final analyzer = analyzerFor(wav.sampleRate);
-    // Feed in small chunks so this exercises the exact streaming path the mic
-    // uses (chunk boundaries land mid-window).
-    const chunk = 1024;
-    for (var i = 0; i < mono.length; i += chunk) {
-      final end = (i + chunk < mono.length) ? i + chunk : mono.length;
-      for (final f in analyzer.addSamples(mono.sublist(i, end))) {
-        _printFrame(f, printAll);
-      }
+    stderr.writeln(
+      'Loaded @ ${result.sampleRate} Hz, ${result.channels}ch  '
+      '(${result.durationSeconds.toStringAsFixed(2)}s)',
+    );
+    for (final f in result.frames) {
+      _printFrame(f, printAll);
     }
     return;
   }
