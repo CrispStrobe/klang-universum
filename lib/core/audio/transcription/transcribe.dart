@@ -16,8 +16,10 @@ import 'dart:math' as math;
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/transcription/rhythm.dart'
     show quantizeToGrid;
-import 'package:comet_beat/shared/midi_pitch.dart' show pitchFromMidi;
-import 'package:crisp_notation/crisp_notation.dart';
+// The pure core (NOT the Flutter barrel, which reaches Flutter via midi_pitch)
+// so this module — and the whole pipeline — runs under `dart run` in the
+// bin/listen.dart CLI. Score, the MusicXML writer, etc. all live in core.
+import 'package:crisp_notation_core/crisp_notation_core.dart';
 
 /// Sixteenth-note resolution: 4 steps per beat.
 const int _stepsPerBeat = 4;
@@ -89,7 +91,7 @@ Score transcribeToScore(
       bar.add(
         midi == null
             ? RestElement(duration)
-            : NoteElement(pitches: [pitchFromMidi(midi)], duration: duration),
+            : NoteElement(pitches: [_pitchFromMidi(midi)], duration: duration),
       );
       posInBar += chunk;
       remaining -= chunk;
@@ -113,4 +115,25 @@ Score transcribeToScore(
     tempo: grid.bpm > 0 ? Tempo(grid.bpm) : null,
     measures: measures,
   );
+}
+
+const _naturalStep = {
+  0: Step.c,
+  2: Step.d,
+  4: Step.e,
+  5: Step.f,
+  7: Step.g,
+  9: Step.a,
+  11: Step.b,
+};
+
+/// MIDI number → [Pitch]; a chromatic pitch class is spelled as a sharp.
+/// (A local copy of the app's `pitchFromMidi` — kept here so this module stays
+/// Flutter-free for the `dart run` CLI.)
+Pitch _pitchFromMidi(int midi) {
+  final pc = midi % 12;
+  final octave = midi ~/ 12 - 1;
+  final step = _naturalStep[pc];
+  if (step != null) return Pitch(step, octave: octave);
+  return Pitch(_naturalStep[pc - 1]!, alter: 1, octave: octave);
 }

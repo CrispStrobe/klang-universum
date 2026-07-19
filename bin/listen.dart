@@ -32,8 +32,12 @@ import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/transcription/note_hmm.dart';
 import 'package:comet_beat/core/audio/transcription/pyin.dart';
+import 'package:comet_beat/core/audio/transcription/rhythm.dart';
+import 'package:comet_beat/core/audio/transcription/transcribe.dart';
 import 'package:comet_beat/core/audio/transcription/tuning.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
+import 'package:crisp_notation_core/crisp_notation_core.dart'
+    show MultiPartScore, multiPartToMusicXml;
 
 const _usage = '''
 Play-along detector CLI.
@@ -55,8 +59,15 @@ Options:
   --chords        Also run chord recognition.
   --all           Print silent frames too (default: only frames with a result).
   --melody        With --wav: print the smoothed melody transcription, not frames.
-  --transcribe    With --wav: run the pYIN + note-HMM pipeline (S1+S2) and print
-                  the segmented NoteEvents (the monophonic transcriber).
+  --transcribe    Full transcription: audio -> pYIN + note-HMM notes (+ auto
+                  tuning) + rhythm -> a score -> MusicXML. Uses --wav <file>,
+                  else a synthesized self-test melody. The segmented notes are
+                  printed to stderr; MusicXML goes to --out (or stdout).
+  --out <file>    Where --transcribe writes the MusicXML (default: stdout).
+  --smooth <n>    Median-smooth the pYIN F0 over an n-frame window (odd; e.g. 5)
+                  before note segmentation — removes single-frame octave jumps.
+  --switch <c>    Note-HMM pitch-switch cost (default 1.8; higher = fewer notes).
+  --minframes <n> Drop notes shorter than n pYIN frames (default 5).
   -h, --help      Show this help.
 ''';
 
@@ -72,7 +83,6 @@ Future<void> main(List<String> argv) async {
   final withChords = args.flag('chords');
   final printAll = args.flag('all');
   final melodyOnly = args.flag('melody');
-  final transcribe = args.flag('transcribe');
 
   StreamingAudioAnalyzer analyzerFor(int sr) => StreamingAudioAnalyzer(
         detector: PitchDetector(sampleRate: sr, a4: a4),
@@ -90,24 +100,17 @@ Future<void> main(List<String> argv) async {
     return;
   }
 
+  if (args.flag('transcribe')) {
+    _transcribe(args, a4);
+    return;
+  }
+
   final wavPath = args.value('wav');
   if (wavPath != null) {
     final file = File(wavPath);
     if (!file.existsSync()) {
       stderr.writeln('No such file: $wavPath');
       exitCode = 2;
-      return;
-    }
-    if (transcribe) {
-      _transcribe(
-        file.readAsBytesSync(),
-        a4,
-        switchCost: double.tryParse(args.value('switch') ?? ''),
-        minFrames: int.tryParse(args.value('minframes') ?? ''),
-        smoothWindow: int.tryParse(args.value('smooth') ?? ''),
-        // Auto-estimate the tuning offset (S3) unless the user pinned --a4.
-        autoTune: !args.flag('a4') && !args.flag('no-autotune'),
-      );
       return;
     }
     // Shared with the app: one tested file-analysis path (recording_analysis).
@@ -197,29 +200,44 @@ void _selftest(
 
 double _midi(int m) => midiToFrequency(m);
 
-/// Run the monophonic transcription pipeline (S1 pYIN → S2 note-HMM) over a WAV
-/// and print the segmented notes. This is the real-audio validation path for the
-/// transcription work (e.g. a sung "Mary Had a Little Lamb").
-void _transcribe(
-  Uint8List wavBytes,
-  double a4, {
-  double? switchCost,
-  int? minFrames,
-  int? smoothWindow,
-  bool autoTune = true,
-}) {
-  final wav = readWavPcm16(wavBytes);
-  final mono = wavToMonoFloat(wav);
-  stderr.writeln(
-    'Loaded @ ${wav.sampleRate} Hz, ${wav.channels}ch  '
-    '(${(mono.length / wav.sampleRate).toStringAsFixed(2)}s)  → pYIN+HMM',
-  );
-  var track = pyinF0(mono, sampleRate: wav.sampleRate);
-  if (smoothWindow != null && smoothWindow > 1) {
-    track = _medianSmoothF0(track, smoothWindow);
+/// Full transcription pipeline: audio → pYIN pitch → auto-tuning → note-HMM
+/// segmentation → rhythm → a crisp_notation Score → MusicXML. With `--wav
+/// FILE` it reads the recording (e.g. a sung "Mary Had a Little Lamb");
+/// otherwise it synthesizes a self-test melody so the wiring runs today. The
+/// segmented notes are printed to stderr; the MusicXML goes to `--out` (or
+/// stdout). This runs headless under `dart run` — the whole chain is Flutter-
+/// free (pure core, no barrel).
+void _transcribe(_Args args, double a4) {
+  final Float64List mono;
+  final int sr;
+  final wavPath = args.value('wav');
+  if (wavPath != null) {
+    final file = File(wavPath);
+    if (!file.existsSync()) {
+      stderr.writeln('No such file: $wavPath');
+      exitCode = 2;
+      return;
+    }
+    final wav = readWavPcm16(file.readAsBytesSync());
+    mono = wavToMonoFloat(wav);
+    sr = wav.sampleRate;
+    stderr.writeln(
+      'Loaded $wavPath: ${wav.sampleRate} Hz, ${wav.channels}ch, '
+      '${(mono.length / sr).toStringAsFixed(2)}s  → pYIN+HMM',
+    );
+  } else {
+    mono = _synthTestMelody();
+    sr = kSampleRate;
+    stderr.writeln('Self-test melody: C D E F G A G (quarters @ 120 BPM)');
   }
+
+  // S1 pYIN F0 → optional median smooth → S3 auto-tuning → S2 note-HMM.
+  var track = pyinF0(mono, sampleRate: sr);
+  final smooth = int.tryParse(args.value('smooth') ?? '');
+  if (smooth != null && smooth > 1) track = _medianSmoothF0(track, smooth);
   var ref = a4;
-  if (autoTune) {
+  // Auto-estimate the tuning offset (S3) unless the user pinned --a4.
+  if (!args.flag('a4') && !args.flag('no-autotune')) {
     final cents = estimateTuningCents(track, a4: a4);
     ref = a4 * pow(2, cents / 1200);
     stderr.writeln('estimated tuning: ${cents >= 0 ? '+' : ''}'
@@ -228,24 +246,58 @@ void _transcribe(
   final notes = segmentNotes(
     track,
     a4: ref,
-    switchCost: switchCost ?? 1.8,
-    minFrames: minFrames ?? 5,
+    switchCost: double.tryParse(args.value('switch') ?? '') ?? 1.8,
+    minFrames: int.tryParse(args.value('minframes') ?? '') ?? 5,
   );
+
+  // S2 rhythm grid → S5 engraving → MusicXML.
+  final grid = detectRhythm(mono, sampleRate: sr);
+  final score = transcribeToScore(notes, grid);
+
   const names = [
     'C', 'C#', 'D', 'D#', 'E', 'F', //
     'F#', 'G', 'G#', 'A', 'A#', 'B',
   ];
   String name(int m) => '${names[m % 12]}${m ~/ 12 - 1}';
   for (final n in notes) {
-    stdout.writeln(
-      '${(n.onMs / 1000).toStringAsFixed(2)}s  '
+    stderr.writeln(
+      '  ${(n.onMs / 1000).toStringAsFixed(2)}s  '
       '${name(n.midi).padRight(4)}  '
       '${noteDurationMs(n).toStringAsFixed(0).padLeft(4)}ms  '
       'conf ${n.confidence.toStringAsFixed(2)}',
     );
   }
-  stdout.writeln('— ${notes.length} notes: '
-      '${notes.map((n) => name(n.midi)).join(' ')}');
+  stderr.writeln(
+    '→ ${notes.length} notes · ${grid.bpm.toStringAsFixed(1)} BPM · '
+    '${score.measures.length} bars'
+    '${notes.isEmpty ? '' : ':  ${notes.map((n) => name(n.midi)).join(' ')}'}',
+  );
+
+  final xml = multiPartToMusicXml(
+    MultiPartScore([score]),
+    partNames: const ['Transcription'],
+  );
+  final out = args.value('out');
+  if (out != null) {
+    File(out).writeAsStringSync(xml);
+    stderr.writeln('Wrote MusicXML → $out');
+  } else {
+    stdout.write(xml);
+  }
+}
+
+/// C4 D4 E4 F4 G4 A4 G4 as quarter notes at 120 BPM (500 ms each) — the
+/// self-test input when --transcribe runs without a --wav file.
+Float64List _synthTestMelody() {
+  const midis = [60, 62, 64, 65, 67, 69, 67];
+  final pcm = renderSegments([
+    for (final m in midis) (freqs: [_midi(m)], ms: 500),
+  ]);
+  final mono = Float64List(pcm.length);
+  for (var i = 0; i < pcm.length; i++) {
+    mono[i] = pcm[i] / 32768.0;
+  }
+  return mono;
 }
 
 /// Sliding-window median filter over the voiced F0 values of a PitchTrack.

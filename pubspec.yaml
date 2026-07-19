@@ -57,6 +57,10 @@ dependencies:
   # main ahead of the pub.dev releases (see ../crisp_notation/docs/CONTRACT.md).
   crisp_notation:
     path: ../crisp_notation/packages/crisp_notation
+  # The pure model + MusicXML writer, imported Flutter-free by the transcription
+  # CLI (bin/listen.dart --transcribe) and transcription/transcribe.dart so the
+  # whole pipeline runs under `dart run`. Pinned to the path by the override.
+  crisp_notation_core: any
   record: ^7.1.1
   # Platform text-to-speech (AVSpeechSynthesizer / Android TTS / web
   # SpeechSynthesis) — on-device, offline, free de+en voices. Reached only
@@ -106,8 +110,6 @@ dev_dependencies:
   # Test-only: fake the file picker to drive the import file-pick paths.
   file_selector_platform_interface: ^2.7.0
   plugin_platform_interface: ^2.1.8
-
-  crisp_notation_core: any
 flutter_launcher_icons:
   android: true
   ios: true
