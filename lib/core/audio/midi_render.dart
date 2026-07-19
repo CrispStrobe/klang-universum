@@ -7,9 +7,10 @@
 //   • note velocity, CC7 volume, CC11 expression, CC10 pan
 //   • sustain pedal (CC64): a note held past its note-off until the pedal lifts
 //   • channel 10 → the bank-128 drum kit
+//   • velocity → low-pass cutoff (soft notes duller, hard notes bright)
 // Each note is voiced by its SoundFont preset (via renderChannel) with a release
-// tail, panned constant-power into the stereo field. Pitch-bend + per-voice
-// filter/LFO are the next slice.
+// tail, panned constant-power into the stereo field. Pitch-bend + LFO vibrato
+// (which need a resampling voice) are the remaining frontier.
 //
 // Pure Dart, Flutter-free (crisp_notation_core split helper + the SF2 loader).
 
@@ -44,6 +45,7 @@ class _Note {
     this.endSample,
     this.key,
     this.gain,
+    this.velNorm,
     this.pan,
     this.bank,
     this.program,
@@ -53,6 +55,7 @@ class _Note {
   final int endSample;
   final int key;
   final double gain; // velocity × CC7 × CC11
+  final double velNorm; // velocity / 127 (drives the filter cutoff)
   final double pan; // −1..1
   final int bank;
   final int program;
@@ -127,7 +130,8 @@ class _Note {
     final s = sampleAt(startTick).round();
     final e = sampleAt(endTick).round();
     if (e <= s) return;
-    notes.add(_Note(s, e, key, gain * (vel / 127.0), pn, bk, prog, ch == 9));
+    final vn = vel / 127.0;
+    notes.add(_Note(s, e, key, gain * vn, vn, pn, bk, prog, ch == 9));
   }
 
   for (final ev in events) {
@@ -216,7 +220,10 @@ class _Note {
     final voice = _voiceFor(font, n, voices);
     if (voice == null) continue;
     final durMs = (n.endSample - n.startSample) / sampleRate * 1000;
-    final pcm = _renderNote(voice, n.key, durMs, n.gain, sampleRate);
+    // Drums keep their full brightness (a filtered kick/cymbal sounds wrong).
+    final brightness = n.isDrum ? 1.0 : n.velNorm;
+    final pcm =
+        _renderNote(voice, n.key, durMs, n.gain, brightness, sampleRate);
     final theta = (n.pan.clamp(-1.0, 1.0) + 1) * 0.25 * math.pi;
     final lg = math.cos(theta);
     final rg = math.sin(theta);
@@ -287,6 +294,7 @@ Float64List _renderNote(
   int midi,
   double durMs,
   double gain,
+  double brightness, // 0..1 (velocity) → filter cutoff
   int sampleRate,
 ) {
   final rows = ((durMs + _releaseMs) / _stepMs).round().clamp(1, 100000);
@@ -305,6 +313,18 @@ Float64List _renderNote(
       env *= k * k;
     }
     pcm[i] *= env;
+  }
+
+  // Velocity → cutoff low-pass: soft notes are duller, hard notes bright — the
+  // timbral half of dynamics that a fixed sample can't give. A one-pole filter
+  // (cutoff ~900 Hz at pp … ~16 kHz at ff); ff barely filters.
+  final b = brightness.clamp(0.0, 1.0);
+  final cutoff = 900 + b * b * 15100;
+  final a = 1 - math.exp(-2 * math.pi * cutoff / sampleRate);
+  var y = 0.0;
+  for (var i = 0; i < pcm.length; i++) {
+    y += a * (pcm[i] - y);
+    pcm[i] = y;
   }
   return pcm;
 }

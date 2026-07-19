@@ -62,6 +62,27 @@ void main() {
     expect(_peak(r1), greaterThan(_peak(l1)));
   });
 
+  test('velocity → cutoff: a soft note is duller than a loud note', () {
+    List<int> note(int vel) => [0, 0x90, 60, vel, 0x83, 0x60, 0x80, 60, 0];
+    // A crude high-frequency proxy: mean |x[n] − x[n−1]| relative to level.
+    double brightnessOf(Float64List x) {
+      var hf = 0.0, energy = 0.0;
+      for (var i = 1; i < x.length; i++) {
+        hf += (x[i] - x[i - 1]).abs();
+        energy += x[i].abs();
+      }
+      return energy == 0 ? 0 : hf / energy;
+    }
+
+    final (soft, _) = renderMidiFile(_midi(note(24)), font);
+    final (loud, _) = renderMidiFile(_midi(note(120)), font);
+    expect(
+      brightnessOf(loud),
+      greaterThan(brightnessOf(soft)),
+      reason: 'the louder note keeps more high frequencies',
+    );
+  });
+
   test('empty / non-MIDI input yields empty output', () {
     final (l, r) = renderMidiFile(Uint8List.fromList([1, 2, 3]), font);
     expect(l, isEmpty);
