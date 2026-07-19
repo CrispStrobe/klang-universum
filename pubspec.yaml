@@ -10,6 +10,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Pure-Dart ONNX runtime (no FFI). Used by the polyphonic transcriber
+  # (lib/core/audio/transcription/basic_pitch.dart, Worker 3) and the headless
+  # AECMOS eval (bin/aecmos.dart). Its `_io` loader pulls dart:io, so the
+  # transcription feature is NATIVE-only — integration (S5) must guard any
+  # web-facing entry behind !kIsWeb. Sibling path dep (CI/deploy check out
+  # CrispStrobe/onnx_runtime_dart too).
+  onnx_runtime_dart:
+    path: ../onnx_runtime_dart
   flutter_localizations:
     sdk: flutter
 
@@ -98,13 +106,6 @@ dev_dependencies:
   # Test-only: fake the file picker to drive the import file-pick paths.
   file_selector_platform_interface: ^2.7.0
   plugin_platform_interface: ^2.1.8
-  # Headless AEC-eval only (bin/aecmos.dart): pure-Dart ONNX runtime for AECMOS
-  # neural MOS scoring. A dev_dependency on purpose — its `_io` model loader pulls
-  # in dart:io, which must never reach the app / web build; keeping it dev-only +
-  # confining the scorer to bin/ guarantees that. Resolved as a sibling path dep,
-  # like crisp_notation (CI/deploy check out CrispStrobe/onnx_runtime_dart too).
-  onnx_runtime_dart:
-    path: ../onnx_runtime_dart
 
   crisp_notation_core: any
 flutter_launcher_icons:
