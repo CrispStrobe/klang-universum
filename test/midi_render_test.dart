@@ -83,6 +83,30 @@ void main() {
     );
   });
 
+  test('pitch bend raises the note pitch (more zero-crossings)', () {
+    // Zero-crossings over the sounding head — a monotone proxy for pitch. (The
+    // fixture sample is short + non-looping, so the sound lives at the start.)
+    int zc(Float64List x) {
+      final n = x.length < 2000 ? x.length : 2000;
+      var z = 0;
+      for (var i = 1; i < n; i++) {
+        if ((x[i] >= 0) != (x[i - 1] >= 0)) z++;
+      }
+      return z;
+    }
+
+    final plain = _midi(_note(0, 60, 496));
+    // Pitch bend to +2 semitones at tick 0, then the same note.
+    final bent = _midi([
+      0, 0xE0, 0x00, 0x7F, // pitch bend ≈ max (+2 st) at tick 0
+      ..._note(0, 60, 496),
+    ]);
+    final (pl, _) = renderMidiFile(plain, font);
+    final (bt, _) = renderMidiFile(bent, font);
+    expect(bt, isNot(pl), reason: 'the bend changes the audio');
+    expect(zc(bt), greaterThan(zc(pl)), reason: 'bent up → higher pitch');
+  });
+
   test('empty / non-MIDI input yields empty output', () {
     final (l, r) = renderMidiFile(Uint8List.fromList([1, 2, 3]), font);
     expect(l, isEmpty);

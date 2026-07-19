@@ -1,16 +1,18 @@
 // Event-accurate MIDI → stereo audio through a SoundFont — the faithful-MIDI
 // path the notation route (scoreFromMidi → quantized Score) can't be. Instead of
-// snapping to a 16th grid, this schedules every message on a SAMPLE clock:
+// snapping to a 16th grid, this schedules every message on a SAMPLE clock and
+// voices each note by RESAMPLING its SF2 zone directly (a real synth voice, not
+// a fixed-pitch sample trigger), so it does:
 //   • exact event timing (swing, groove, off-grid tuplets, human micro-timing)
 //   • a tempo MAP (accel/rit), not just the first tempo
 //   • per-channel program + bank select, with mid-song program changes
 //   • note velocity, CC7 volume, CC11 expression, CC10 pan
 //   • sustain pedal (CC64): a note held past its note-off until the pedal lifts
 //   • channel 10 → the bank-128 drum kit
+//   • continuous PITCH BEND (glides mid-note) — pitch-bend range ±2 semitones
+//   • CC1 mod-wheel → LFO VIBRATO (with a short onset)
 //   • velocity → low-pass cutoff (soft notes duller, hard notes bright)
-// Each note is voiced by its SoundFont preset (via renderChannel) with a release
-// tail, panned constant-power into the stereo field. Pitch-bend + LFO vibrato
-// (which need a resampling voice) are the remaining frontier.
+//   • the zone's loop region for sustain + its tuning/attenuation
 //
 // Pure Dart, Flutter-free (crisp_notation_core split helper + the SF2 loader).
 
@@ -19,14 +21,18 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/sf2/sf2.dart'
+    show Sf2Preset, Sf2SoundFont, Sf2Zone;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
-import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show splitMultiTrackMidi;
 
-const double _stepMs = 125; // TrackerTiming default: 120 BPM / 4 steps-per-beat
 const double _releaseMs = 140;
+const double _bendRangeSemis = 2; // GM default (RPN 0 not yet read)
+const double _vibratoRateHz = 5.5;
+const double _vibratoMaxCents = 50; // at full mod wheel
+const double _vibratoOnsetSec = 0.25;
 
 /// A decoded MIDI channel event at an absolute tick (tempo/meta carried too).
 class _Evt {
@@ -35,18 +41,40 @@ class _Evt {
   final int kind; // 0x80/0x90/0xB0/0xC0/0xE0, or 0x51 for a tempo meta
   final int channel;
   final int d1;
-  final int d2; // for tempo: microseconds-per-quarter
+  final int d2;
 }
 
-/// A resolved sounding note ready to render.
+/// A note-on awaiting its off, with the controller state captured at onset.
+class _Pending {
+  _Pending(
+    this.startTick,
+    this.vel,
+    this.gain,
+    this.pan,
+    this.modCents,
+    this.bank,
+    this.program,
+  );
+  final int startTick;
+  final int vel;
+  final double gain; // CC7 × CC11
+  final double pan; // −1..1
+  final double modCents; // vibrato depth from CC1 at onset
+  final int bank;
+  final int program;
+}
+
+/// A resolved sounding note.
 class _Note {
   _Note(
     this.startSample,
     this.endSample,
     this.key,
+    this.channel,
     this.gain,
     this.velNorm,
     this.pan,
+    this.modCents,
     this.bank,
     this.program,
     this.isDrum,
@@ -54,9 +82,11 @@ class _Note {
   final int startSample;
   final int endSample;
   final int key;
+  final int channel;
   final double gain; // velocity × CC7 × CC11
-  final double velNorm; // velocity / 127 (drives the filter cutoff)
+  final double velNorm; // velocity / 127 (filter cutoff)
   final double pan; // −1..1
+  final double modCents; // vibrato depth
   final int bank;
   final int program;
   final bool isDrum;
@@ -72,10 +102,9 @@ class _Note {
   final (events, tpq) = _parseAllEvents(smf);
   if (events.isEmpty || tpq <= 0) return (Float64List(0), Float64List(0));
 
-  // Tick → sample, honouring the tempo map. Precompute breakpoints so lookups
-  // are a walk over a short list.
+  // Tick → sample, honouring the tempo map.
   final tempoTicks = <int>[0];
-  final tempoUs = <int>[500000]; // 120 BPM until the first tempo meta
+  final tempoUs = <int>[500000];
   for (final e in events) {
     if (e.kind == 0x51) {
       if (e.tick == tempoTicks.last) {
@@ -87,86 +116,99 @@ class _Note {
     }
   }
   double sampleAt(int tick) {
-    var acc = 0.0; // samples
+    var acc = 0.0;
     for (var i = 0; i < tempoTicks.length; i++) {
       final segStart = tempoTicks[i];
       final segEnd = i + 1 < tempoTicks.length ? tempoTicks[i + 1] : 1 << 62;
       if (tick <= segStart) break;
       final upto = tick < segEnd ? tick : segEnd;
-      final ticks = upto - segStart;
-      final secPerTick = tempoUs[i] / 1000000 / tpq;
-      acc += ticks * secPerTick * sampleRate;
+      acc += (upto - segStart) * (tempoUs[i] / 1000000 / tpq) * sampleRate;
       if (tick < segEnd) break;
     }
     return acc;
   }
 
-  // Per-channel controller state + pending/pedal-held note-ons.
   final program = List<int>.filled(16, 0);
   final bank = List<int>.filled(16, 0);
-  final volume = List<double>.filled(16, 100 / 127); // CC7
-  final expression = List<double>.filled(16, 1.0); // CC11
-  final pan = List<double>.filled(16, 0.0); // CC10 → −1..1
-  final sustain = List<bool>.filled(16, false); // CC64
-  // key → queue of (startTick, velocity, gain, pan, bank, program)
-  final pending = <int, List<(int, int, double, double, int, int)>>{};
-  // notes whose note-off arrived while the pedal was down: (note, offTick)
-  final pedalHeld = <int, List<(int, int, double, double, int, int)>>{};
+  final volume = List<double>.filled(16, 100 / 127);
+  final expression = List<double>.filled(16, 1.0);
+  final pan = List<double>.filled(16, 0.0);
+  final sustain = List<bool>.filled(16, false);
+  final modCents = List<double>.filled(16, 0.0); // CC1 → vibrato depth
+  // Per-channel pitch-bend curve: (absolute sample, semitones), time-ordered.
+  final bendByChannel = List.generate(16, (_) => <(int, double)>[]);
 
+  final pending = <int, List<_Pending>>{};
+  final pedalHeld = <int, List<_Pending>>{};
   final notes = <_Note>[];
   var lastTick = 0;
 
-  void finalize(
-    int ch,
-    int key,
-    int startTick,
-    int endTick,
-    int vel,
-    double gain,
-    double pn,
-    int bk,
-    int prog,
-  ) {
-    final s = sampleAt(startTick).round();
+  void finalize(int ch, int key, int endTick, _Pending p) {
+    final s = sampleAt(p.startTick).round();
     final e = sampleAt(endTick).round();
     if (e <= s) return;
-    final vn = vel / 127.0;
-    notes.add(_Note(s, e, key, gain * vn, vn, pn, bk, prog, ch == 9));
+    final vn = p.vel / 127.0;
+    final note = _Note(
+      s,
+      e,
+      key,
+      ch,
+      p.gain * vn,
+      vn,
+      p.pan,
+      p.modCents,
+      p.bank,
+      p.program,
+      ch == 9,
+    );
+    notes.add(note);
+  }
+
+  void release(int ch, int key, int tick) {
+    final q = pending[ch << 8 | key];
+    if (q == null || q.isEmpty) return;
+    final p = q.removeAt(0);
+    if (sustain[ch]) {
+      (pedalHeld[ch << 8 | key] ??= []).add(p);
+    } else {
+      finalize(ch, key, tick, p);
+    }
+  }
+
+  void liftPedal(int ch, int tick) {
+    for (final k in pedalHeld.keys.where((k) => k >> 8 == ch).toList()) {
+      for (final p in pedalHeld.remove(k)!) {
+        finalize(ch, k & 0xff, tick, p);
+      }
+    }
   }
 
   for (final ev in events) {
     lastTick = ev.tick;
     final ch = ev.channel;
     switch (ev.kind) {
-      case 0x90: // note-on (vel 0 = off)
+      case 0x90:
         if (ev.d2 > 0) {
-          final g = volume[ch] * expression[ch];
           (pending[ch << 8 | ev.d1] ??= []).add(
-            (ev.tick, ev.d2, g, pan[ch], bank[ch], program[ch]),
+            _Pending(
+              ev.tick,
+              ev.d2,
+              volume[ch] * expression[ch],
+              pan[ch],
+              modCents[ch],
+              bank[ch],
+              program[ch],
+            ),
           );
         } else {
-          _release(
-            ch,
-            ev.d1,
-            ev.tick,
-            sustain[ch],
-            pending,
-            pedalHeld,
-            finalize,
-          );
+          release(ch, ev.d1, ev.tick);
         }
-      case 0x80: // note-off
-        _release(
-          ch,
-          ev.d1,
-          ev.tick,
-          sustain[ch],
-          pending,
-          pedalHeld,
-          finalize,
-        );
-      case 0xB0: // control change
+      case 0x80:
+        release(ch, ev.d1, ev.tick);
+      case 0xB0:
         switch (ev.d1) {
+          case 1:
+            modCents[ch] = ev.d2 / 127.0 * _vibratoMaxCents;
           case 7:
             volume[ch] = ev.d2 / 127.0;
           case 11:
@@ -177,156 +219,174 @@ class _Note {
             bank[ch] = ev.d2;
           case 64:
             final down = ev.d2 >= 64;
-            // Pedal up → release everything it was holding, at this tick.
-            if (!down) _liftPedal(ch, ev.tick, pedalHeld, finalize);
+            if (!down) liftPedal(ch, ev.tick);
             sustain[ch] = down;
         }
-      case 0xC0: // program change
+      case 0xC0:
         program[ch] = ev.d1;
-      case 0xE0: // pitch bend — captured; applied in the next slice
-        break;
+      case 0xE0:
+        final value = (ev.d2 << 7) | ev.d1; // 0..16383, 8192 = centre
+        final semis = (value - 8192) / 8192.0 * _bendRangeSemis;
+        bendByChannel[ch].add((sampleAt(ev.tick).round(), semis));
     }
   }
 
-  // Flush anything still sounding at the end.
-  final endTick = lastTick + tpq; // a beat of tail
+  // Flush anything still sounding.
+  final endTick = lastTick + tpq;
   for (final entry in pending.entries) {
-    final ch = entry.key >> 8;
-    final key = entry.key & 0xff;
-    for (final (startTick, vel, g, pn, bk, prog) in entry.value) {
-      finalize(ch, key, startTick, endTick, vel, g, pn, bk, prog);
+    for (final p in entry.value) {
+      finalize(entry.key >> 8, entry.key & 0xff, endTick, p);
     }
   }
   for (final entry in pedalHeld.entries) {
-    final ch = entry.key >> 8;
-    final key = entry.key & 0xff;
-    for (final (startTick, vel, g, pn, bk, prog) in entry.value) {
-      finalize(ch, key, startTick, endTick, vel, g, pn, bk, prog);
+    for (final p in entry.value) {
+      finalize(entry.key >> 8, entry.key & 0xff, endTick, p);
     }
   }
 
-  // Render + mix.
+  // Render each note by resampling its zone.
   var maxLen = 0;
+  final relSamples = (_releaseMs * sampleRate / 1000).round();
   for (final n in notes) {
-    if (n.endSample + (_releaseMs * sampleRate / 1000).round() > maxLen) {
-      maxLen = n.endSample + (_releaseMs * sampleRate / 1000).round();
-    }
+    if (n.endSample + relSamples > maxLen) maxLen = n.endSample + relSamples;
   }
   final left = Float64List(maxLen);
   final right = Float64List(maxLen);
-  final voices = <String, TrackerInstrument>{};
+  final presetCache = <String, Sf2Preset?>{};
 
   for (final n in notes) {
-    final voice = _voiceFor(font, n, voices);
-    if (voice == null) continue;
-    final durMs = (n.endSample - n.startSample) / sampleRate * 1000;
-    // Drums keep their full brightness (a filtered kick/cymbal sounds wrong).
-    final brightness = n.isDrum ? 1.0 : n.velNorm;
-    final pcm =
-        _renderNote(voice, n.key, durMs, n.gain, brightness, sampleRate);
-    final theta = (n.pan.clamp(-1.0, 1.0) + 1) * 0.25 * math.pi;
-    final lg = math.cos(theta);
-    final rg = math.sin(theta);
-    for (var i = 0; i < pcm.length; i++) {
-      final j = n.startSample + i;
-      if (j >= maxLen) break;
-      left[j] += pcm[i] * lg;
-      right[j] += pcm[i] * rg;
-    }
+    final preset = _presetFor(font, n, presetCache);
+    if (preset == null) continue;
+    _resampleNote(
+      font.font,
+      preset,
+      n,
+      bendByChannel[n.channel],
+      left,
+      right,
+      sampleRate,
+    );
   }
   return (left, right);
 }
 
-void _release(
-  int ch,
-  int key,
-  int tick,
-  bool sustainDown,
-  Map<int, List<(int, int, double, double, int, int)>> pending,
-  Map<int, List<(int, int, double, double, int, int)>> pedalHeld,
-  void Function(int, int, int, int, int, double, double, int, int) finalize,
-) {
-  final q = pending[ch << 8 | key];
-  if (q == null || q.isEmpty) return;
-  final note = q.removeAt(0);
-  if (sustainDown) {
-    // Keep sounding until the pedal lifts (store with its would-be off tick).
-    (pedalHeld[ch << 8 | key] ??= []).add(note);
-  } else {
-    final (startTick, vel, g, pn, bk, prog) = note;
-    finalize(ch, key, startTick, tick, vel, g, pn, bk, prog);
-  }
-}
-
-void _liftPedal(
-  int ch,
-  int tick,
-  Map<int, List<(int, int, double, double, int, int)>> pedalHeld,
-  void Function(int, int, int, int, int, double, double, int, int) finalize,
-) {
-  final keys = pedalHeld.keys.where((k) => k >> 8 == ch).toList();
-  for (final k in keys) {
-    final key = k & 0xff;
-    for (final (startTick, vel, g, pn, bk, prog) in pedalHeld.remove(k)!) {
-      finalize(ch, key, startTick, tick, vel, g, pn, bk, prog);
-    }
-  }
-}
-
-TrackerInstrument? _voiceFor(
+Sf2Preset? _presetFor(
   LoadedSoundFont font,
   _Note n,
-  Map<String, TrackerInstrument> cache,
+  Map<String, Sf2Preset?> cache,
 ) {
   final bank = n.isDrum ? 128 : n.bank;
   final key = '$bank/${n.program}';
-  final cached = cache[key];
-  if (cached != null) return cached;
-  final preset = findPreset(font, bank, n.program) ??
-      findPreset(font, 0, n.program) ??
-      (font.presets.isEmpty ? null : font.presets.first);
-  if (preset == null) return null;
-  return cache[key] = soundFontInstrument(font, preset);
+  return cache.putIfAbsent(
+    key,
+    () =>
+        findPreset(font, bank, n.program) ??
+        findPreset(font, 0, n.program) ??
+        (font.presets.isEmpty ? null : font.presets.first),
+  );
 }
 
-Float64List _renderNote(
-  TrackerInstrument inst,
-  int midi,
-  double durMs,
-  double gain,
-  double brightness, // 0..1 (velocity) → filter cutoff
-  int sampleRate,
+/// Resample the note's zone into [left]/[right] at its start, with continuous
+/// pitch bend, mod-wheel vibrato, loop-sustain, a release tail, a velocity
+/// low-pass, and constant-power pan.
+void _resampleNote(
+  Sf2SoundFont font,
+  Sf2Preset preset,
+  _Note n,
+  List<(int, double)> bendCurve,
+  Float64List left,
+  Float64List right,
+  int sr,
 ) {
-  final rows = ((durMs + _releaseMs) / _stepMs).round().clamp(1, 100000);
-  final cells = <TrackerCell>[
-    TrackerCell(midi: midi),
-    for (var i = 1; i < rows; i++) TrackerCell.empty,
-  ];
-  final pcm = inst.renderChannel(cells, TrackerTiming(rows: rows));
-  final relSamples = (_releaseMs * sampleRate / 1000).round();
-  final sustainEnd = pcm.length - relSamples;
-  for (var i = 0; i < pcm.length; i++) {
-    var env = gain;
-    if (relSamples > 0 && i >= sustainEnd) {
-      final t = (i - sustainEnd) / relSamples;
+  final vel = (n.velNorm * 127).round();
+  Sf2Zone? zone;
+  for (final z in preset.zones) {
+    if (z.coversKeyVel(n.key, vel)) {
+      zone = z;
+      break;
+    }
+  }
+  zone ??= preset.zones.isEmpty ? null : preset.zones.first;
+  if (zone == null) return;
+  final sample = font.sampleAt(zone.sampleIndex);
+  if (sample == null || sample.pcm.isEmpty) return;
+
+  final pcm = sample.pcm;
+  final len = pcm.length;
+  final root = zone.rootKey >= 0 ? zone.rootKey : sample.originalPitch;
+  final baseRatio = sample.sampleRate / sr;
+  // Fixed pitch offset (semitones) for this key: key vs root + zone/sample tune.
+  final semisFixed = (n.key - root + zone.coarseTune) +
+      (zone.fineTune + sample.pitchCorrection) / 100.0;
+
+  final loop = sample.loops && !n.isDrum;
+  final loopStart = sample.loopStart.toDouble();
+  final loopEnd = sample.loopEnd.toDouble();
+
+  final durSamples = n.endSample - n.startSample;
+  final relSamples = (_releaseMs * sr / 1000).round();
+  final total = durSamples + relSamples;
+
+  final theta = (n.pan.clamp(-1.0, 1.0) + 1) * 0.25 * math.pi;
+  final lg = math.cos(theta);
+  final rg = math.sin(theta);
+  final baseGain = n.gain * zone.gain;
+
+  final cutoff = n.isDrum ? 20000.0 : 900 + n.velNorm * n.velNorm * 15100;
+  final a = 1 - math.exp(-2 * math.pi * cutoff / sr);
+  var filt = 0.0;
+
+  final vibOnset = (_vibratoOnsetSec * sr).round();
+  var bi = 0;
+  var phase = 0.0;
+
+  for (var i = 0; i < total; i++) {
+    final outIdx = n.startSample + i;
+    if (outIdx >= left.length) break;
+    if (phase >= len) break; // one-shot ran out
+
+    // Pitch: fixed + continuous bend (from the channel curve) + vibrato.
+    while (bi + 1 < bendCurve.length && bendCurve[bi + 1].$1 <= outIdx) {
+      bi++;
+    }
+    final bend = bendCurve.isEmpty ? 0.0 : bendCurve[bi].$2;
+    var vib = 0.0;
+    if (n.modCents > 0) {
+      final depth = i < vibOnset ? n.modCents * (i / vibOnset) : n.modCents;
+      vib = depth / 100.0 * math.sin(2 * math.pi * _vibratoRateHz * i / sr);
+    }
+    final ratio =
+        baseRatio * math.pow(2, (semisFixed + bend + vib) / 12.0).toDouble();
+
+    // Linear-interpolated sample read.
+    final i0 = phase.floor();
+    final frac = phase - i0;
+    final s0 = i0 < len ? pcm[i0] : 0.0;
+    final s1 = i0 + 1 < len ? pcm[i0 + 1] : s0;
+    var v = s0 + (s1 - s0) * frac;
+
+    // Amplitude envelope (sustain then a quadratic release).
+    var env = baseGain;
+    if (i >= durSamples && relSamples > 0) {
+      final t = (i - durSamples) / relSamples;
       final k = 1 - t;
       env *= k * k;
     }
-    pcm[i] *= env;
-  }
+    v *= env;
 
-  // Velocity → cutoff low-pass: soft notes are duller, hard notes bright — the
-  // timbral half of dynamics that a fixed sample can't give. A one-pole filter
-  // (cutoff ~900 Hz at pp … ~16 kHz at ff); ff barely filters.
-  final b = brightness.clamp(0.0, 1.0);
-  final cutoff = 900 + b * b * 15100;
-  final a = 1 - math.exp(-2 * math.pi * cutoff / sampleRate);
-  var y = 0.0;
-  for (var i = 0; i < pcm.length; i++) {
-    y += a * (pcm[i] - y);
-    pcm[i] = y;
+    // Velocity low-pass.
+    filt += a * (v - filt);
+    v = filt;
+
+    left[outIdx] += v * lg;
+    right[outIdx] += v * rg;
+
+    // Advance the read head, wrapping the loop for sustain.
+    phase += ratio;
+    if (loop && phase >= loopEnd && loopEnd > loopStart) {
+      phase = loopStart + (phase - loopEnd);
+    }
   }
-  return pcm;
 }
 
 /// Parse every track's events into one absolute-tick, tick-sorted list.
@@ -336,7 +396,7 @@ Float64List _renderNote(
   final all = <_Evt>[];
   for (final track in splitMultiTrackMidi(smf)) {
     if (track.length < 22) continue;
-    var offset = 22; // 14 MThd + 8 MTrk header
+    var offset = 22;
     var tick = 0;
     var runningStatus = 0;
     int varLen() {
@@ -393,7 +453,6 @@ Float64List _renderNote(
       }
     }
   }
-  // Stable sort by tick (mergeSort-style via sort with an index tiebreak).
   all.sort((a, b) => a.tick - b.tick);
   return (all, tpq);
 }
