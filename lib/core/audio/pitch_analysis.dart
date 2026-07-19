@@ -169,6 +169,10 @@ class PitchDetector {
     }
     final rms = sqrt(energy / n);
     final zcr = crossings / n;
+    // A bad plugin frame (NaN/Inf samples) makes rms non-finite; `NaN < 1e-3`
+    // is false, so without this guard the reading would leak a NaN/Inf rms into
+    // downstream onset detection. Treat a non-finite frame as clean silence.
+    if (!rms.isFinite) return PitchReading.silent(a4: a4);
     if (rms < 1e-3) return PitchReading.silent(a4: a4, rms: rms, zcr: zcr);
 
     // Normalized square difference function (NSDF), lags 0..maxLag.
@@ -254,7 +258,9 @@ class PitchDetector {
     }
 
     final freq = sampleRate / refinedLag;
-    if (freq < minFrequency || freq > maxFrequency) {
+    // `!freq.isFinite` is defensive (a zero/NaN refined lag would otherwise
+    // slip past the range check, since NaN comparisons are false).
+    if (!freq.isFinite || freq < minFrequency || freq > maxFrequency) {
       return PitchReading.silent(a4: a4, rms: rms, zcr: zcr);
     }
     return PitchReading(
