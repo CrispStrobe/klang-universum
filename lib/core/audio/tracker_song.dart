@@ -182,6 +182,12 @@ class TrackerSong {
   /// the rendered WAV and the transport loops/stops at the right time. The common
   /// flow-free, tempo-free case short-circuits with no allocation.
   int get songTotalMs {
+    // Persist live engine edits first (like the render methods do) so a just-
+    // authored Fxx tempo/speed or flow command is reflected in the length —
+    // otherwise the current pattern's snapshot lags and the transport loops at
+    // the wrong time. syncCurrent is a cheap shallow copy of the current
+    // pattern only.
+    syncCurrent();
     if (songUsesVariableTiming(this)) return variableSongTotalMs(this);
     final t = effectiveTiming(this);
     // Uniform tempo throughout (Feature B changes row COUNT, not tempo), so the

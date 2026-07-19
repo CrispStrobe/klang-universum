@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_replayer.dart' show kFxSetSpeed;
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -470,6 +471,28 @@ void main() {
         ..clear()
         ..addAll([0, 1, 0]);
       expect(song.songTotalMs, song.timing.totalMs * 3);
+    });
+  });
+
+  group('songTotalMs reflects live engine edits', () {
+    test(
+        'a just-authored mid-song Fxx tempo lengthens the song (no manual '
+        'sync)', () {
+      // Regression: songTotalMs read snapshots without syncing the live engine,
+      // so a GUI-authored Fxx tempo (edited via engine.setCell on the current
+      // pattern) was invisible until a render/selectPattern synced it — the
+      // transport then looped at the wrong length. songTotalMs now syncs first,
+      // like the render methods.
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      final base = song.songTotalMs;
+      // Author a mid-song tempo drop (120 → 80 BPM) at row 4 on the live engine.
+      song.engine.setCell(
+        4,
+        0,
+        const TrackerCell(fxCmd: kFxSetSpeed, fxParam: 0x50),
+      );
+      // No explicit syncCurrent() — songTotalMs must still see it.
+      expect(song.songTotalMs, greaterThan(base));
     });
   });
 }
