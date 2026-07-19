@@ -650,6 +650,8 @@
   "mySamplesEmpty": "No saved samples yet. Extract some from a module or pack, or save a voice.",
   "mySamplesCredits": "Credits",
   "mySamplesClose": "Close",
+  "mySamplesImport": "Import file",
+  "mySamplesImportFailed": "Couldn't read that audio file.",
   "mySamplesPreview": "Preview",
   "mySamplesDelete": "Delete",
   "sampleExtractPreview": "Preview",

@@ -3326,6 +3326,18 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get mySamplesClose;
 
+  /// No description provided for @mySamplesImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import file'**
+  String get mySamplesImport;
+
+  /// No description provided for @mySamplesImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read that audio file.'**
+  String get mySamplesImportFailed;
+
   /// No description provided for @mySamplesPreview.
   ///
   /// In en, this message translates to:

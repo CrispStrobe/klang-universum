@@ -1735,6 +1735,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mySamplesClose => 'Close';
 
   @override
+  String get mySamplesImport => 'Import file';
+
+  @override
+  String get mySamplesImportFailed => 'Couldn\'t read that audio file.';
+
+  @override
   String get mySamplesPreview => 'Preview';
 
   @override

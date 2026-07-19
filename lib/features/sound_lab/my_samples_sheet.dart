@@ -6,11 +6,15 @@
 // screen. Preview and delete work everywhere; whether tapping a row PICKS the
 // clip is up to the host (the Voice Lab loads it, the Extractor just manages).
 
+import 'dart:typed_data';
+
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
+import 'package:comet_beat/shared/music_io/audio_import.dart';
 import 'package:comet_beat/shared/widgets/waveform_thumbnail.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -37,6 +41,10 @@ abstract class MySamplesTester {
   List<SampleClip> get clips;
   Future<void> deleteAt(int index);
   List<SampleClip> get attributionRequired;
+
+  /// Decode [bytes] (WAV/MP3) and add it to the library under a name derived
+  /// from [filename]. Returns false if the bytes aren't readable audio.
+  Future<bool> importAudio(Uint8List bytes, String filename);
 }
 
 @visibleForTesting
@@ -79,6 +87,70 @@ class _MySamplesSheetState extends State<MySamplesSheet>
   Future<void> deleteAt(int index) async {
     final list = await widget.store.delete(_clips[index].name);
     if (mounted) setState(() => _clips = list);
+  }
+
+  @override
+  Future<bool> importAudio(Uint8List bytes, String filename) async {
+    final imported = importAudioMono(bytes);
+    if (imported == null || imported.pcm.isEmpty) return false;
+    final name = _uniqueName(_baseName(filename));
+    final list = await widget.store.save(
+      SampleClip(
+        name: name,
+        sampleRate: imported.sampleRate,
+        pcm: imported.pcm,
+        source: 'Imported',
+      ),
+    );
+    if (mounted) setState(() => _clips = list);
+    return true;
+  }
+
+  /// Filename → a clean sample name (basename, no extension, safe characters).
+  String _baseName(String filename) {
+    var s = filename;
+    final slash = s.lastIndexOf(RegExp(r'[/\\]'));
+    if (slash >= 0) s = s.substring(slash + 1);
+    final dot = s.lastIndexOf('.');
+    if (dot > 0) s = s.substring(0, dot);
+    s = s.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
+    return s.isEmpty ? 'sample' : s;
+  }
+
+  /// Disambiguate against existing clips so an import never overwrites one.
+  String _uniqueName(String base) {
+    final taken = _clips.map((c) => c.name).toSet();
+    if (!taken.contains(base)) return base;
+    for (var i = 2;; i++) {
+      final candidate = '$base $i';
+      if (!taken.contains(candidate)) return candidate;
+    }
+  }
+
+  Future<void> _pickAndImport() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: 'Audio (WAV, MP3)',
+            extensions: kAudioImportExtensions,
+          ),
+        ],
+      );
+      if (file == null) return;
+      final ok = await importAudio(await file.readAsBytes(), file.name);
+      if (!ok) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.mySamplesImportFailed)),
+        );
+      }
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.mySamplesImportFailed)),
+      );
+    }
   }
 
   @override
@@ -155,6 +227,11 @@ class _MySamplesSheetState extends State<MySamplesSheet>
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const Spacer(),
+                  TextButton.icon(
+                    icon: const Icon(Icons.file_upload_outlined, size: 18),
+                    label: Text(l10n.mySamplesImport),
+                    onPressed: _pickAndImport,
+                  ),
                   if (_needAttribution.isNotEmpty)
                     TextButton.icon(
                       icon: const Icon(Icons.copyright, size: 18),

@@ -4,8 +4,10 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/mp3/mp3_encoder.dart';
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -130,5 +132,65 @@ void main() {
 
     final tile = tester.widget<ListTile>(find.byType(ListTile).first);
     expect(tile.onTap, isNotNull);
+  });
+
+  testWidgets('imports a WAV file into the library (via the seam)',
+      (tester) async {
+    await pumpGame(tester, _hosted(MySamplesSheet(store: SampleClipStore())));
+    await tester.pumpAndSettle();
+
+    final ok = await _sheet(tester).importAudio(
+      pcmFloatToWav(_tone(4410)),
+      '/downloads/My Loop.wav',
+    );
+    await tester.pumpAndSettle();
+
+    expect(ok, isTrue);
+    expect(_sheet(tester).clips.map((c) => c.name), ['My Loop']);
+    // persisted, not just shown
+    expect((await SampleClipStore().load()).single.name, 'My Loop');
+  });
+
+  testWidgets('imports an MP3 file into the library', (tester) async {
+    await pumpGame(tester, _hosted(MySamplesSheet(store: SampleClipStore())));
+    await tester.pumpAndSettle();
+
+    final ok = await _sheet(tester).importAudio(
+      mp3EncodeMono(_tone(8192)),
+      'beat.mp3',
+    );
+    await tester.pumpAndSettle();
+
+    expect(ok, isTrue);
+    expect(_sheet(tester).clips.single.name, 'beat');
+    expect(_sheet(tester).clips.single.pcm, isNotEmpty);
+  });
+
+  testWidgets('non-audio bytes are rejected (returns false, nothing added)',
+      (tester) async {
+    await pumpGame(tester, _hosted(MySamplesSheet(store: SampleClipStore())));
+    await tester.pumpAndSettle();
+
+    final ok = await _sheet(tester).importAudio(
+      Uint8List.fromList(List<int>.generate(512, (i) => i % 256)),
+      'notes.txt',
+    );
+    await tester.pumpAndSettle();
+
+    expect(ok, isFalse);
+    expect(_sheet(tester).clips, isEmpty);
+  });
+
+  testWidgets(
+      'a second import of the same name is disambiguated, not clobbered',
+      (tester) async {
+    await pumpGame(tester, _hosted(MySamplesSheet(store: SampleClipStore())));
+    await tester.pumpAndSettle();
+
+    await _sheet(tester).importAudio(pcmFloatToWav(_tone(2205)), 'loop.wav');
+    await _sheet(tester).importAudio(pcmFloatToWav(_tone(2205)), 'loop.wav');
+    await tester.pumpAndSettle();
+
+    expect(_sheet(tester).clips.map((c) => c.name), ['loop', 'loop 2']);
   });
 }

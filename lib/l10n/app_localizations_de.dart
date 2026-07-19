@@ -1742,6 +1742,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get mySamplesClose => 'Schließen';
 
   @override
+  String get mySamplesImport => 'Datei importieren';
+
+  @override
+  String get mySamplesImportFailed => 'Audiodatei konnte nicht gelesen werden.';
+
+  @override
   String get mySamplesPreview => 'Vorhören';
 
   @override

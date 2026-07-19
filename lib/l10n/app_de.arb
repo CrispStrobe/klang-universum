@@ -599,6 +599,8 @@
   "mySamplesEmpty": "Noch keine Samples. Extrahiere welche aus einem Modul oder Paket, oder speichere eine Stimme.",
   "mySamplesCredits": "Credits",
   "mySamplesClose": "Schließen",
+  "mySamplesImport": "Datei importieren",
+  "mySamplesImportFailed": "Audiodatei konnte nicht gelesen werden.",
   "mySamplesPreview": "Vorhören",
   "mySamplesDelete": "Löschen",
   "sampleExtractPreview": "Vorhören",
