@@ -4532,6 +4532,12 @@ abstract class AppLocalizations {
   /// **'Add a starter beat'**
   String get trackerStarterBeat;
 
+  /// No description provided for @trackerLoadSoundFont.
+  ///
+  /// In en, this message translates to:
+  /// **'Load SoundFont…'**
+  String get trackerLoadSoundFont;
+
   /// No description provided for @trackerModArchive.
   ///
   /// In en, this message translates to:

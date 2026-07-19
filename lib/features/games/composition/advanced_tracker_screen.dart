@@ -66,6 +66,7 @@ import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/features/library/modarchive_sheet.dart';
 import 'package:comet_beat/features/library/sample_library_sheet.dart';
+import 'package:comet_beat/features/library/soundfont_sheet.dart';
 import 'package:comet_beat/features/library/starter_pattern.dart';
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart'
@@ -360,6 +361,10 @@ abstract interface class AdvancedTrackerTester {
   void setActiveInstrument(int index);
   int get instrumentPoolSize;
   int instrumentAt(int channel, int row);
+
+  /// Append [inst] to the pool + select it (what "Load SoundFont" does with the
+  /// picked preset, minus the file dialog).
+  void debugAddInstrument(TrackerInstrument inst);
 
   /// The midis the on-screen piano lights up for pattern [row] (un-muted
   /// channels) — the "keys glow as they play" highlight.
@@ -1949,6 +1954,26 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _syncPlayback();
   }
 
+  /// Load a SoundFont (.sf2/.sf3) and add the chosen GM preset to the shared
+  /// instrument pool as the active instrument (so notes placed next use it).
+  /// The whole browse/decode flow lives in showSoundFontSheet.
+  Future<void> _loadSoundFont() async {
+    final inst = await showSoundFontSheet(context);
+    if (inst != null && mounted) _addPoolInstrument(inst);
+  }
+
+  /// Append [inst] to the 1-based pool and make it the active instrument.
+  void _addPoolInstrument(TrackerInstrument inst) {
+    setState(() {
+      _song.instruments.add(inst);
+      _activeInstrument = _song.instruments.length;
+    });
+    _syncPlayback();
+  }
+
+  @override
+  void debugAddInstrument(TrackerInstrument inst) => _addPoolInstrument(inst);
+
   /// Audition an edited sample before assigning it — plays its PCM (voice fx +
   /// trim/stretch already baked into `inst.sample`) once on the preview player.
   void _playPreview(SampleInstrument inst) {
@@ -3072,6 +3097,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _loadDemo();
                 case 'starterBeat':
                   _applyStarterBeat();
+                case 'loadSoundFont':
+                  _loadSoundFont();
                 case 'saveSong':
                   _saveToSongBook();
                 case 'exportMidi':
@@ -3107,6 +3134,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                 'starterBeat',
                 Icons.auto_fix_high,
                 l10n.trackerStarterBeat,
+              ),
+              _menuRow(
+                'loadSoundFont',
+                Icons.piano,
+                l10n.trackerLoadSoundFont,
               ),
               const PopupMenuDivider(),
               _menuRow(

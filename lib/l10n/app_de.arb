@@ -828,6 +828,7 @@
   "trackerMySamples": "Aus Meine Samples",
   "trackerFreeSounds": "Freie Klänge durchsuchen…",
   "trackerStarterBeat": "Starter-Beat hinzufügen",
+  "trackerLoadSoundFont": "SoundFont laden…",
   "trackerModArchive": "The Mod Archive durchsuchen…",
   "modArchiveTitle": "The Mod Archive",
   "modArchiveKeyPrompt": "Durchsucht nur CC0-/Public-Domain-Module und benötigt deinen eigenen kostenlosen API-Schlüssel von modarchive.org.",

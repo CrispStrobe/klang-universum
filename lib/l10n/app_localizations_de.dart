@@ -2371,6 +2371,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerStarterBeat => 'Starter-Beat hinzufügen';
 
   @override
+  String get trackerLoadSoundFont => 'SoundFont laden…';
+
+  @override
   String get trackerModArchive => 'The Mod Archive durchsuchen…';
 
   @override

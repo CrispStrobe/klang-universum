@@ -2361,6 +2361,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerStarterBeat => 'Add a starter beat';
 
   @override
+  String get trackerLoadSoundFont => 'Load SoundFont…';
+
+  @override
   String get trackerModArchive => 'Browse The Mod Archive…';
 
   @override

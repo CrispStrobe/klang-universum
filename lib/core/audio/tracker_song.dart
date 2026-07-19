@@ -70,11 +70,13 @@ class TrackerPattern {
 /// built-in additive voices, so an authored song can reference an instrument
 /// number 1..4 out of the box. Module import replaces this with the module's
 /// own instruments.
-List<TrackerInstrument> defaultInstrumentPool() => const [
-      AdditiveInstrument('piano', Instrument.piano),
-      AdditiveInstrument('cello', Instrument.cello),
-      AdditiveInstrument('flute', Instrument.flute),
-      AdditiveInstrument('musicBox', Instrument.musicBox),
+List<TrackerInstrument> defaultInstrumentPool() => <TrackerInstrument>[
+      // A GROWABLE list (not const) so a screen can append a loaded voice
+      // (e.g. a SoundFont preset) to the pool at runtime.
+      const AdditiveInstrument('piano', Instrument.piano),
+      const AdditiveInstrument('cello', Instrument.cello),
+      const AdditiveInstrument('flute', Instrument.flute),
+      const AdditiveInstrument('musicBox', Instrument.musicBox),
     ];
 
 class TrackerSong {

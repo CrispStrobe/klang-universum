@@ -7,6 +7,9 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:comet_beat/core/audio/synth.dart' show Instrument;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show AdditiveInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
@@ -32,6 +35,27 @@ void main() {
     expect(trackerNoteName(61), 'C#4');
     expect(trackerNoteName(69), 'A-4');
     expect(trackerNoteName(72), 'C-5');
+  });
+
+  testWidgets('Load SoundFont adds the voice to the pool + stamps new notes',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    final before = game.instrumentPoolSize; // the 4 default voices
+
+    // What "Load SoundFont" does with the picked preset (minus the file dialog).
+    game.debugAddInstrument(
+      const AdditiveInstrument('sf2.0.40.Violin', Instrument.cello),
+    );
+    await tester.pump();
+
+    expect(game.instrumentPoolSize, before + 1);
+    expect(game.activeInstrument, before + 1); // the new voice is now active
+
+    // A note placed afterwards is stamped with that new pool instrument.
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    expect(game.instrumentAt(0, 0), before + 1);
   });
 
   testWidgets('placing a chromatic note starts playback; clearing empties',
