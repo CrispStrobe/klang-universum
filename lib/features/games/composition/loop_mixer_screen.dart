@@ -154,6 +154,14 @@ abstract interface class LoopMixerTester {
   String get currentChallengeId;
   bool get currentChallengeMet;
   void nextChallenge();
+
+  /// Section/scene grid: capture the live layers into slot [i], relaunch a
+  /// slot, whether a slot is empty, and the auto-advancing chain.
+  void captureScene(int i);
+  void launchScene(int i);
+  bool sceneIsEmpty(int i);
+  bool get isChaining;
+  void toggleChain();
   bool get hasVoiceTrack;
   bool get hasBeatTrack;
   bool get isJamming;
@@ -350,6 +358,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool _quantize = false;
   final Set<String> _pendingLaunches = {};
 
+  // Section/scene grid (§G-1): 4 snapshot slots of the live layer set. Tap a
+  // filled scene to relaunch it; a chain plays them in sequence at each seam.
+  final List<GrooveScene?> _scenes = List<GrooveScene?>.filled(4, null);
+  bool _chaining = false;
+  int _chainIndex = 0;
+
   // Band challenges (§E-2): a gentle, no-score prompt at a time.
   int _challengeIndex = 0;
   BandChallenge get _challenge =>
@@ -370,6 +384,16 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool get currentChallengeMet => _challengeMet;
   @override
   void nextChallenge() => _nextChallenge();
+  @override
+  void captureScene(int i) => _captureScene(i);
+  @override
+  void launchScene(int i) => _launchScene(i);
+  @override
+  bool sceneIsEmpty(int i) => _scenes[i] == null;
+  @override
+  bool get isChaining => _chaining;
+  @override
+  void toggleChain() => _toggleChain();
   @override
   void toggleInfinite() => setState(() => _infinite = !_infinite);
 
@@ -1287,6 +1311,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   /// the downbeat kick masks the restart.
   void _onLoopWrap() {
     _iteration++;
+    // A running scene chain advances to its next section on the beat.
+    _advanceChain();
     // Armed (quantized) card changes land here, on the beat.
     if (_applyPendingLaunches() && _engine.enabled.isEmpty) {
       _clock
@@ -1345,6 +1371,41 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       }
       _challengeIndex = (_challengeIndex + 1) % kBandChallenges.length;
     });
+  }
+
+  // --- Section/scene grid (§G-1) -------------------------------------------
+
+  void _captureScene(int i) =>
+      setState(() => _scenes[i] = _engine.captureScene());
+
+  void _launchScene(int i) {
+    final scene = _scenes[i];
+    if (scene == null) return;
+    setState(() {
+      _engine.applyScene(scene);
+      _chainIndex = i;
+    });
+    _syncPlayback();
+    _checkCombo();
+  }
+
+  void _toggleChain() {
+    setState(() => _chaining = !_chaining);
+  }
+
+  // At a seam, advance the chain to the next non-empty scene and launch it.
+  void _advanceChain() {
+    if (!_chaining) return;
+    for (var step = 1; step <= _scenes.length; step++) {
+      final next = (_chainIndex + step) % _scenes.length;
+      if (_scenes[next] != null) {
+        setState(() {
+          _engine.applyScene(_scenes[next]!);
+          _chainIndex = next;
+        });
+        return;
+      }
+    }
   }
 
   void _toggleQuantize() {
@@ -1644,6 +1705,67 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         'fullBand' => l10n.loopMixerChallengeFullBand,
         _ => l10n.loopMixerChallengeSparkle,
       };
+
+  // §G-1 arrangement: 4 scene pads (tap = launch, long-press = capture) + a
+  // chain toggle that auto-advances the captured scenes at each seam.
+  Widget _sceneRow(AppLocalizations l10n) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Text(
+          l10n.loopMixerScenes,
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(width: 8),
+        for (var i = 0; i < _scenes.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Tooltip(
+              message: l10n.loopMixerScenesHint,
+              child: GestureDetector(
+                onTap: () => _launchScene(i),
+                onLongPress: () => _captureScene(i),
+                // A rounded square (NOT a CircleAvatar) so these scene letters
+                // stay distinct from the variant badges in widget finders.
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _scenes[i] == null
+                        ? scheme.surfaceContainerHighest
+                        : (_chaining && _chainIndex == i
+                            ? scheme.primary
+                            : scheme.primaryContainer),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    String.fromCharCode(65 + i),
+                    style: TextStyle(
+                      color: _scenes[i] == null
+                          ? scheme.outline
+                          : scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const Spacer(),
+        IconButton(
+          icon: Icon(
+            Icons.repeat,
+            color: _chaining ? scheme.primary : null,
+          ),
+          isSelected: _chaining,
+          tooltip: l10n.loopMixerChain,
+          onPressed: _toggleChain,
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
 
   // A gentle, no-score prompt with a check when met; tap to try another.
   Widget _challengeBanner(AppLocalizations l10n) {
@@ -1957,6 +2079,8 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 ),
               ),
               const SizedBox(height: 6),
+              // Section grid: capture/launch/chain scenes into an arrangement.
+              _sceneRow(l10n),
               // A gentle band challenge (no score) to nudge exploration.
               _challengeBanner(l10n),
               // Style: a whole-band flavour preset (re-points every card).

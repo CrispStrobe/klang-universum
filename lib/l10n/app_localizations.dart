@@ -2000,6 +2000,24 @@ abstract class AppLocalizations {
   /// **'Quantize launch (drop in on the beat)'**
   String get loopMixerQuantize;
 
+  /// No description provided for @loopMixerScenes.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get loopMixerScenes;
+
+  /// No description provided for @loopMixerScenesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to launch, hold to capture the current layers'**
+  String get loopMixerScenesHint;
+
+  /// No description provided for @loopMixerChain.
+  ///
+  /// In en, this message translates to:
+  /// **'Chain sections (auto-advance)'**
+  String get loopMixerChain;
+
   /// No description provided for @loopMixerChallengeSparkle.
   ///
   /// In en, this message translates to:

@@ -678,6 +678,46 @@ void main() {
     expect(game.loopIteration, 6);
   });
 
+  testWidgets('section scenes capture, relaunch, and chain at the seam',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.sceneIsEmpty(0), isTrue);
+
+    // Capture scene A = {drums, bass}.
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    await tester.pump();
+    game.captureScene(0);
+    await tester.pump();
+    expect(game.sceneIsEmpty(0), isFalse);
+
+    // Capture scene B = {melody} only.
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    game.toggleTrack('melody');
+    await tester.pump();
+    game.captureScene(1);
+
+    // Relaunch A → the drums+bass layer set comes back.
+    game.launchScene(0);
+    await tester.pump();
+    expect(game.enabledTracks, {'drums', 'bass'});
+
+    // Chain auto-advances to the next captured scene (B) at the seam.
+    game.toggleChain();
+    await tester.pump();
+    expect(game.isChaining, isTrue);
+    game.debugLoopWrap();
+    await tester.pump();
+    expect(game.enabledTracks, {'melody'});
+
+    // Launching an empty slot is a no-op.
+    game.launchScene(3);
+    await tester.pump();
+    expect(game.enabledTracks, {'melody'});
+  });
+
   testWidgets('quantized launch arms a card and fires it at the seam',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());

@@ -1031,6 +1031,15 @@ final List<LoopTrack> _chillTracks = [
   ),
 ];
 
+/// A section/scene snapshot for the arrangement grid (§G-1): just which layers
+/// are on and their variants, so tapping a scene relaunches that whole layer
+/// set at once.
+class GrooveScene {
+  const GrooveScene(this.enabled, this.variants);
+  final Set<String> enabled;
+  final Map<String, int> variants;
+}
+
 /// One selectable band flavour: a whole-band [tracks] set plus the tempo /
 /// swing / kit / scale it defaults to.
 class GrooveStyle {
@@ -1412,6 +1421,26 @@ class LoopEngine {
       return true;
     }
     return false;
+  }
+
+  /// A lightweight snapshot of just the live layer state (enabled set +
+  /// variants), for the section/scene grid (§G-1). Cheaper than a full spec —
+  /// a scene launch swaps the layers, not the tempo/key/style.
+  GrooveScene captureScene() => GrooveScene({...enabled}, {...variants});
+
+  /// Apply a [scene]: replace the enabled set + variants with its snapshot
+  /// (unknown ids dropped defensively). Tempo/key/style/etc. are untouched.
+  void applyScene(GrooveScene scene) {
+    final known = tracks.map((t) => t.id).toSet();
+    enabled
+      ..clear()
+      ..addAll(scene.enabled.where(known.contains));
+    variants
+      ..clear()
+      ..addAll({
+        for (final e in scene.variants.entries)
+          if (known.contains(e.key)) e.key: e.value,
+      });
   }
 
   /// Advances [id] to its next pattern variant; returns the new index.

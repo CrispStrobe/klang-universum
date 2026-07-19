@@ -1041,6 +1041,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerQuantize => 'Quantisiert starten (im Takt einsetzen)';
 
   @override
+  String get loopMixerScenes => 'Teile';
+
+  @override
+  String get loopMixerScenesHint =>
+      'Tippen zum Starten, halten zum Speichern der Schichten';
+
+  @override
+  String get loopMixerChain => 'Teile verketten (automatisch weiter)';
+
+  @override
   String get loopMixerChallengeSparkle =>
       'Versuch: etwas Hohes und Glitzerndes ✨';
 

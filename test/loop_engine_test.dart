@@ -538,6 +538,27 @@ void main() {
     }
   });
 
+  test('a scene snapshots + restores just the layer set and variants', () {
+    final e = LoopEngine()
+      ..enabled.addAll({'drums', 'bass'})
+      ..variants['drums'] = 2;
+    final scene = e.captureScene();
+
+    // Change the live state completely.
+    e.enabled
+      ..clear()
+      ..add('melody');
+    e.variants['drums'] = 0;
+
+    e.applyScene(scene);
+    expect(e.enabled, {'drums', 'bass'});
+    expect(e.variants['drums'], 2);
+
+    // A scene is a snapshot — later live edits don't mutate it.
+    e.enabled.add('sparkle');
+    expect(scene.enabled, {'drums', 'bass'});
+  });
+
   test('the master filter darkens (low-pass) or brightens (high-pass)', () {
     final e = LoopEngine()
       ..toggle('drums')
