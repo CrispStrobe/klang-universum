@@ -35,10 +35,12 @@ class _PerformLayer {
 abstract class PerformTester {
   void addSeed(String kind);
 
-  /// Play-in a melody: start capturing, tap notes, then finish — the played
-  /// notes render into a new melodic loop layer.
+  /// Play-in a layer: start capturing, tap notes (melody) or pads (beat), then
+  /// finish — the played taps render into a new loop layer.
   void startPlayIn();
+  void startPlayInBeat();
   void playInNote(int midi);
+  void playInPad(String drum);
   void finishPlayIn();
   void cancelPlayIn();
   bool get isPlayingIn;
@@ -75,9 +77,11 @@ class _PerformScreenState extends State<PerformScreen>
   final Stopwatch _clock = Stopwatch();
   bool _playing = false;
 
-  // Play-in recording: captured `(midi, loop-phase ms)` while the keyboard is up.
-  bool _playIn = false;
+  // Play-in recording: which panel is up ('melody' keyboard / 'beat' pads), and
+  // the captured taps with their loop-phase.
+  String? _playInMode;
   final List<(int midi, int phaseMs)> _playInNotes = [];
+  final List<(String drum, int phaseMs)> _playInHits = [];
 
   static const int _bpm = 120;
 
@@ -100,14 +104,14 @@ class _PerformScreenState extends State<PerformScreen>
     _refresh();
   }
 
-  // ── Play-in a melody (S2) ─────────────────────────────────────────────────
+  // ── Play-in a layer: melody (S2) / beat pads (S3) ─────────────────────────
   @override
-  bool get isPlayingIn => _playIn;
+  bool get isPlayingIn => _playInMode != null;
 
-  @override
-  void startPlayIn() {
+  void _startPlayIn(String mode) {
     _playInNotes.clear();
-    _playIn = true;
+    _playInHits.clear();
+    _playInMode = mode;
     // Run the clock so taps get a loop-phase; if there are layers, play along.
     if (!_clock.isRunning) {
       _clock
@@ -119,27 +123,90 @@ class _PerformScreenState extends State<PerformScreen>
   }
 
   @override
-  void playInNote(int midi) {
-    if (!_playIn) return;
+  void startPlayIn() => _startPlayIn('melody');
+  @override
+  void startPlayInBeat() => _startPlayIn('beat');
+
+  int get _phaseNow {
     final loopMs = _loopSamples / kSampleRate * 1000;
-    _playInNotes.add((midi, (_clock.elapsedMilliseconds % loopMs).round()));
+    return (_clock.elapsedMilliseconds % loopMs).round();
+  }
+
+  @override
+  void playInNote(int midi) {
+    if (_playInMode != 'melody') return;
+    _playInNotes.add((midi, _phaseNow));
+  }
+
+  @override
+  void playInPad(String drum) {
+    if (_playInMode != 'beat') return;
+    _playInHits.add((drum, _phaseNow));
   }
 
   @override
   void finishPlayIn() {
-    _playIn = false;
-    if (_playInNotes.isNotEmpty) {
+    final mode = _playInMode;
+    _playInMode = null;
+    if (mode == 'melody' && _playInNotes.isNotEmpty) {
       _stack.add(_PerformLayer('melody', _renderMelody(_playInNotes)));
+    } else if (mode == 'beat' && _playInHits.isNotEmpty) {
+      _stack.add(_PerformLayer('beat', _renderBeat(_playInHits)));
     }
     _playInNotes.clear();
+    _playInHits.clear();
     _refresh();
   }
 
   @override
   void cancelPlayIn() {
-    _playIn = false;
+    _playInMode = null;
     _playInNotes.clear();
+    _playInHits.clear();
     setState(() {});
+  }
+
+  /// Render captured `(drum, phaseMs)` hits into a one-bar loop — each hit
+  /// snapped to the nearest 16th and synthesised as kick/snare/hat.
+  Float64List _renderBeat(List<(String, int)> hits) {
+    final n = _loopSamples;
+    final buf = Float64List(n);
+    final sixteenth = n ~/ 16;
+    final rng = Random(7);
+    for (final (drum, ms) in hits) {
+      final start =
+          ((ms / 1000 * kSampleRate) / sixteenth).round() * sixteenth % n;
+      switch (drum) {
+        case 'kick':
+          _tone(buf, 55, start, sixteenth * 2, gain: 0.6, decay: 22);
+        case 'snare':
+          _noise(buf, start, sixteenth * 2, rng, gain: 0.4);
+        default: // hat
+          _noise(buf, start, sixteenth, rng, gain: 0.12, decay: 90);
+      }
+    }
+    return buf;
+  }
+
+  /// The three play-in drum pads: `(kind, label)`.
+  static final List<(String, String Function(AppLocalizations))> _kPads = [
+    ('kick', (l) => l.performPadKick),
+    ('snare', (l) => l.performPadSnare),
+    ('hat', (l) => l.performPadHat),
+  ];
+
+  /// Audition a single drum hit (a short one-shot) when a pad is tapped.
+  void _playHit(String drum) {
+    final buf = Float64List((kSampleRate * 0.25).round());
+    switch (drum) {
+      case 'kick':
+        _tone(buf, 55, 0, buf.length, gain: 0.6, decay: 22);
+      case 'snare':
+        _noise(buf, 0, buf.length, Random(7), gain: 0.4);
+      default: // hat
+        _noise(buf, 0, buf.length ~/ 3, Random(9), gain: 0.12, decay: 90);
+    }
+    context.read<AudioService>().playWavBytes(wavBytes(_toInt16(buf)));
   }
 
   /// Render captured `(midi, phaseMs)` notes into a one-bar loop: each note is
@@ -413,7 +480,12 @@ class _PerformScreenState extends State<PerformScreen>
                   FilledButton.icon(
                     icon: const Icon(Icons.piano),
                     label: Text(l10n.performPlayIn),
-                    onPressed: _playIn ? null : startPlayIn,
+                    onPressed: isPlayingIn ? null : startPlayIn,
+                  ),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.grid_view),
+                    label: Text(l10n.performPlayInBeat),
+                    onPressed: isPlayingIn ? null : startPlayInBeat,
                   ),
                 ],
               ),
@@ -456,13 +528,15 @@ class _PerformScreenState extends State<PerformScreen>
                         },
                       ),
               ),
-              if (_playIn) ...[
+              if (isPlayingIn) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        l10n.performPlayInHint,
+                        _playInMode == 'beat'
+                            ? l10n.performPlayInBeatHint
+                            : l10n.performPlayInHint,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -479,16 +553,42 @@ class _PerformScreenState extends State<PerformScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  height: 140,
-                  child: PianoKeyboard(
-                    whiteKeyCount: 8,
-                    onKeyTap: (midi) {
-                      context.read<AudioService>().playMidiNote(midi, ms: 400);
-                      playInNote(midi);
-                    },
+                if (_playInMode == 'beat')
+                  Row(
+                    children: [
+                      for (final pad in _kPads)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: FilledButton.tonal(
+                              onPressed: () {
+                                _playHit(pad.$1);
+                                playInPad(pad.$1);
+                              },
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 24,
+                                ),
+                              ),
+                              child: Text(pad.$2(l10n)),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                else
+                  SizedBox(
+                    height: 140,
+                    child: PianoKeyboard(
+                      whiteKeyCount: 8,
+                      onKeyTap: (midi) {
+                        context
+                            .read<AudioService>()
+                            .playMidiNote(midi, ms: 400);
+                        playInNote(midi);
+                      },
+                    ),
                   ),
-                ),
               ],
             ],
           ),

@@ -2051,6 +2051,22 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe die Tasten, um deine Melodie zu spielen — sie wird zu einer neuen Ebene.';
 
   @override
+  String get performPlayInBeat => 'Beat spielen';
+
+  @override
+  String get performPlayInBeatHint =>
+      'Tippe die Pads, um einen Beat zu spielen — er wird zu einer neuen Ebene.';
+
+  @override
+  String get performPadKick => 'Kick';
+
+  @override
+  String get performPadSnare => 'Snare';
+
+  @override
+  String get performPadHat => 'Hi-Hat';
+
+  @override
   String get performDone => 'Fertig';
 
   @override

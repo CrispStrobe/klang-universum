@@ -3866,6 +3866,36 @@ abstract class AppLocalizations {
   /// **'Tap the keys to play your melody — it becomes a new layer.'**
   String get performPlayInHint;
 
+  /// No description provided for @performPlayInBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a beat'**
+  String get performPlayInBeat;
+
+  /// No description provided for @performPlayInBeatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the pads to play a beat — it becomes a new layer.'**
+  String get performPlayInBeatHint;
+
+  /// No description provided for @performPadKick.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick'**
+  String get performPadKick;
+
+  /// No description provided for @performPadSnare.
+  ///
+  /// In en, this message translates to:
+  /// **'Snare'**
+  String get performPadSnare;
+
+  /// No description provided for @performPadHat.
+  ///
+  /// In en, this message translates to:
+  /// **'Hat'**
+  String get performPadHat;
+
   /// No description provided for @performDone.
   ///
   /// In en, this message translates to:

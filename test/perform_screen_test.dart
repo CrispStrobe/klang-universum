@@ -97,6 +97,35 @@ void main() {
     expect(p.layerCount, 1); // still just the first melody
   });
 
+  testWidgets('play-in a beat via pads becomes a new layer', (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    p.startPlayInBeat();
+    await tester.pump();
+    expect(p.isPlayingIn, isTrue);
+
+    // Tap a little kick/snare/hat pattern.
+    for (final pad in ['kick', 'hat', 'snare', 'hat']) {
+      p.playInPad(pad);
+    }
+    p.finishPlayIn();
+    await tester.pump();
+
+    expect(p.isPlayingIn, isFalse);
+    expect(p.layerCount, 1);
+    expect(p.layerLabel(0), 'beat');
+    expect(_peak(p.debugMix()), greaterThan(0.0)); // the beat sounds
+
+    // A melody tap while in beat mode is ignored (wrong mode).
+    p.startPlayInBeat();
+    p.playInNote(60); // ignored
+    p.cancelPlayIn();
+    await tester.pump();
+    expect(p.layerCount, 1); // nothing added
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

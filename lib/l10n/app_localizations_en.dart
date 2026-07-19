@@ -2045,6 +2045,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap the keys to play your melody — it becomes a new layer.';
 
   @override
+  String get performPlayInBeat => 'Play a beat';
+
+  @override
+  String get performPlayInBeatHint =>
+      'Tap the pads to play a beat — it becomes a new layer.';
+
+  @override
+  String get performPadKick => 'Kick';
+
+  @override
+  String get performPadSnare => 'Snare';
+
+  @override
+  String get performPadHat => 'Hat';
+
+  @override
   String get performDone => 'Done';
 
   @override
