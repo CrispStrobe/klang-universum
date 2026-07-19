@@ -131,6 +131,10 @@ abstract interface class LoopMixerTester {
   /// The master send effect on the whole mix, and a setter.
   LoopSend get send;
   void setSend(LoopSend value);
+
+  /// One-knob master filter (−1 low-pass … 0 off … +1 high-pass).
+  double get masterFilter;
+  void setMasterFilter(double value);
   void stopAll();
   bool get scoreVisible;
   void toggleScorePanel();
@@ -285,6 +289,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   LoopSend get send => _engine.send;
   @override
   void setSend(LoopSend value) => _setSend(value);
+  @override
+  double get masterFilter => _engine.masterFilter;
+  @override
+  void setMasterFilter(double value) => _setMasterFilter(value);
   @override
   void setTempo(int bpm) => _setTempo(bpm);
   @override
@@ -1358,6 +1366,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _syncPlayback();
   }
 
+  // One-knob master filter: same grid, only the mix-bus tone changes.
+  void _setMasterFilter(double value) {
+    setState(() => _engine.masterFilter = value);
+    _syncPlayback();
+  }
+
   void _setSend(LoopSend value) {
     if (value == _engine.send) return;
     setState(() => _engine.send = value);
@@ -1968,6 +1982,28 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                       // continuous slider only offered indistinguishable values.
                       divisions: 12,
                       onChanged: _setSwing,
+                    ),
+                  ),
+                ],
+              ),
+              // One-knob master filter: left = low-pass (dark), right = high-pass
+              // (thin); centred = off. A big musical breakdown/drop gesture.
+              Row(
+                children: [
+                  Text(
+                    l10n.loopMixerFilter,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _engine.masterFilter,
+                      min: -1,
+                      divisions: 20,
+                      onChanged: _setMasterFilter,
+                      onChangeEnd: (v) {
+                        // Snap back to "off" near the centre detent.
+                        if (v.abs() < 0.06) _setMasterFilter(0);
+                      },
                     ),
                   ),
                 ],

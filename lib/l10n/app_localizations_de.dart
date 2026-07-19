@@ -1035,6 +1035,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerKitLofi => 'Lo-fi';
 
   @override
+  String get loopMixerFilter => 'Filter';
+
+  @override
   String get loopMixerStyle => 'Stil';
 
   @override

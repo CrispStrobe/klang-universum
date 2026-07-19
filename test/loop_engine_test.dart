@@ -24,6 +24,16 @@ int _peak(Uint8List wav) {
   return peak;
 }
 
+// Zero-crossing count — a cheap "brightness" proxy (more crossings = brighter).
+int _zeroCrossings(Uint8List wav) {
+  final p = _pcm(wav);
+  var c = 0;
+  for (var i = 1; i < p.length; i++) {
+    if ((p[i - 1] < 0) != (p[i] < 0)) c++;
+  }
+  return c;
+}
+
 void main() {
   test('supported tempos keep the step grid integral in ms and samples', () {
     for (final bpm in [75, 100, 120]) {
@@ -526,5 +536,28 @@ void main() {
             '${(maxDev / peak * 100).toStringAsFixed(1)}%',
       );
     }
+  });
+
+  test('the master filter darkens (low-pass) or brightens (high-pass)', () {
+    final e = LoopEngine()
+      ..toggle('drums')
+      ..toggle('bass');
+    final flatZc = _zeroCrossings(e.renderLoop());
+
+    e.masterFilter = -1; // full low-pass → fewer high-freq crossings
+    expect(_zeroCrossings(e.renderLoop()), lessThan(flatZc));
+
+    e.masterFilter = 1; // full high-pass → strips lows, brighter
+    expect(_zeroCrossings(e.renderLoop()), greaterThan(flatZc));
+
+    // Centered = off = the untouched mix (identical bytes, cache-safe).
+    final flat = e.renderLoop().length; // warm the cache with filter=1
+    e.masterFilter = 0;
+    expect(e.renderLoop().length, flat);
+    expect(_zeroCrossings(e.renderLoop()), flatZc);
+
+    // Out-of-range knob is clamped.
+    e.masterFilter = 5;
+    expect(e.masterFilter, 1);
   });
 }

@@ -1988,6 +1988,12 @@ abstract class AppLocalizations {
   /// **'Lo-fi'**
   String get loopMixerKitLofi;
 
+  /// No description provided for @loopMixerFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get loopMixerFilter;
+
   /// No description provided for @loopMixerStyle.
   ///
   /// In en, this message translates to:

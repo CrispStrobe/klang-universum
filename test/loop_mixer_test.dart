@@ -652,6 +652,24 @@ void main() {
     expect(game.loopIteration, 6);
   });
 
+  testWidgets('the master filter knob drives the engine', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    game.toggleTrack('drums');
+    await tester.pump();
+    expect(game.masterFilter, 0);
+
+    game.setMasterFilter(-0.8); // pull toward low-pass
+    await tester.pump();
+    expect(game.masterFilter, closeTo(-0.8, 1e-9));
+    expect(game.isPlaying, isTrue);
+
+    game.setMasterFilter(0);
+    await tester.pump();
+    expect(game.masterFilter, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('the master send effect can be set and cleared', (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);

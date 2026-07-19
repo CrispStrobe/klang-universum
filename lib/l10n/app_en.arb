@@ -382,6 +382,7 @@
   "loopMixerKitDeep": "Deep",
   "loopMixerKitWarm": "Warm",
   "loopMixerKitLofi": "Lo-fi",
+  "loopMixerFilter": "Filter",
   "loopMixerStyle": "Style",
   "loopMixerStyleClassic": "Classic",
   "loopMixerStyleFour": "Four-on-floor",

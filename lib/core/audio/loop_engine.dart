@@ -21,6 +21,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart';
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart';
 import 'package:comet_beat/core/audio/synth.dart';
@@ -1332,9 +1333,44 @@ class LoopEngine {
   /// spec/share token). Different sends cache to different WAV keys.
   LoopSend send = LoopSend.none;
 
-  /// Applies the [send] effect to a mixed [pcm] via a Float64 round-trip.
+  /// One-knob master filter (a live "make it sound produced" sweep, not
+  /// persisted): −1 = full low-pass (dark/muffled, for a breakdown) … 0 = off …
+  /// +1 = full high-pass (thin/opened-up, for a drop). Clamped on set.
+  double _masterFilter = 0;
+  double get masterFilter => _masterFilter;
+  set masterFilter(double value) => _masterFilter = value.clamp(-1.0, 1.0);
+
+  // Cache-key suffix for the master bus (send + filter) — both are live controls
+  // outside the spec, so the WAV cache must distinguish them.
+  String get _masterBusKey =>
+      (send == LoopSend.none ? '' : '#send:${send.name}') +
+      (_masterFilter == 0 ? '' : '#filt:${_masterFilter.toStringAsFixed(2)}');
+
+  // The mix-bus cutoff for the current knob: a log sweep so the move feels even.
+  Float64List _applyMasterFilter(Float64List f) {
+    final v = _masterFilter;
+    if (v == 0) return f;
+    const sr = kSampleRate * 1.0;
+    if (v < 0) {
+      // Low-pass from ~18 kHz (barely there) down to ~250 Hz (deep muffle).
+      final cutoff = 18000 * pow(250 / 18000, -v).toDouble();
+      return biquadFx(f, sampleRate: sr, freq: cutoff, q: 0.9);
+    }
+    // High-pass from ~20 Hz (open) up to ~3.5 kHz (thin).
+    final cutoff = 20 * pow(3500 / 20, v).toDouble();
+    return biquadFx(
+      f,
+      kind: BiquadKind.highpass,
+      sampleRate: sr,
+      freq: cutoff,
+      q: 0.9,
+    );
+  }
+
+  /// Applies the [send] effect + the master filter to a mixed [pcm] via a
+  /// Float64 round-trip.
   Int16List _applySend(Int16List pcm) {
-    if (send == LoopSend.none) return pcm;
+    if (send == LoopSend.none && _masterFilter == 0) return pcm;
     final n = pcm.length;
     // Pre-roll one full loop: reverb/delay start with zero-initialized state and
     // truncate the tail at the buffer end, so a single-pass render is NOT the
@@ -1350,11 +1386,14 @@ class LoopEngine {
       f[i] = s;
       f[n + i] = s;
     }
-    final wet = switch (send) {
+    var wet = switch (send) {
       LoopSend.reverb => reverbFx(f, mix: 0.28),
       LoopSend.delay => delayFx(f, delayMs: 300, feedback: 0.3, mix: 0.28),
       LoopSend.none => f,
     };
+    // The filter runs on the two-copy buffer too, so its state has converged by
+    // the second copy — the seam stays click-free.
+    wet = _applyMasterFilter(wet);
     final out = Int16List(n);
     for (var i = 0; i < n; i++) {
       // The second copy is the converged, seam-continuous loop.
@@ -1492,8 +1531,7 @@ class LoopEngine {
   /// scheduler uses this every 4th loop.
   Uint8List renderLoop({bool fill = false}) {
     final filling = fill && enabled.contains('drums');
-    final sendKey = send == LoopSend.none ? '' : '#send:${send.name}';
-    final key = '${spec.cacheKey}${filling ? '#fill' : ''}$sendKey';
+    final key = '${spec.cacheKey}${filling ? '#fill' : ''}$_masterBusKey';
     return _wavCache[key] ??= wavBytes(
       _applySend(
         mixStems(
