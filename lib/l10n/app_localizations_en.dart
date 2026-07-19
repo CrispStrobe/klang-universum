@@ -2327,6 +2327,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerInterpolate => 'Interpolate volumes';
 
   @override
+  String get trackerBlockFillVoice => 'Fill voice across block';
+
+  @override
   String get trackerField => 'Column (note / vol / fx)';
 
   @override

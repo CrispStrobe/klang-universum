@@ -310,6 +310,9 @@ abstract interface class AdvancedTrackerTester {
   void toggleRecord();
   void interpolateBlock();
 
+  /// Fill each selected channel's per-cell instrument from its top selected row.
+  void fillInstrumentBlock();
+
   /// Play the current pattern from the cursor row (FT2 F7).
   void playFromCursor();
 
@@ -1196,6 +1199,25 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           final t = (r - s.rLo) / (s.rHi - s.rLo);
           final v = (v0 + (v1 - v0) * t).clamp(0.0, 1.0);
           _song.engine.setCellVolume(c, r, v >= 0.999 ? null : v);
+        }
+      }
+    });
+    _syncPlayback();
+  }
+
+  /// Fill each selected channel's per-cell instrument from its TOP selected
+  /// row down over the block (the cursor cell alone when nothing is marked) —
+  /// set a voice once at the top, then stamp it across the whole column. Like
+  /// interpolate, it works per-channel; empty cells are left untouched.
+  void _fillInstrumentBlock() {
+    final s = _selRect;
+    _pushUndo();
+    setState(() {
+      for (var c = s.cLo; c <= s.cHi; c++) {
+        final inst = _song.engine.cellAt(c, s.rLo).instrument;
+        for (var r = s.rLo; r <= s.rHi; r++) {
+          if (_song.engine.cellAt(c, r).midi == null) continue;
+          _song.engine.setCellInstrument(c, r, inst);
         }
       }
     });
@@ -2316,6 +2338,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void toggleRecord() => setState(() => _recording = !_recording);
   @override
   void interpolateBlock() => _interpolateBlock();
+  @override
+  void fillInstrumentBlock() => _fillInstrumentBlock();
   @override
   void playFromCursor() => _playPattern(fromRow: _cursorRow);
   @override
@@ -3747,6 +3771,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               _transposeBlock(-12);
             case 'interp':
               _interpolateBlock();
+            case 'fillVoice':
+              _fillInstrumentBlock();
             case 'insRow':
               _insertRow();
             case 'delRow':
@@ -3790,6 +3816,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             child: Text(l10n.trackerBlockOctDown),
           ),
           PopupMenuItem(value: 'interp', child: Text(l10n.trackerInterpolate)),
+          PopupMenuItem(
+            value: 'fillVoice',
+            child: Text(l10n.trackerBlockFillVoice),
+          ),
           const PopupMenuDivider(),
           PopupMenuItem(value: 'insRow', child: Text(l10n.trackerInsertRow)),
           PopupMenuItem(value: 'delRow', child: Text(l10n.trackerDeleteRow)),

@@ -2335,6 +2335,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerInterpolate => 'Lautstärken interpolieren';
 
   @override
+  String get trackerBlockFillVoice => 'Stimme über Block füllen';
+
+  @override
   String get trackerField => 'Spalte (Note / Lautst. / FX)';
 
   @override

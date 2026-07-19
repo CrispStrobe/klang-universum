@@ -826,6 +826,7 @@
   "trackerShowKeys": "Tastenhinweise zeigen",
   "trackerRecordLive": "Live-Aufnahme (ins Pattern jammen)",
   "trackerInterpolate": "Lautstärken interpolieren",
+  "trackerBlockFillVoice": "Stimme über Block füllen",
   "trackerField": "Spalte (Note / Lautst. / FX)",
   "trackerPlayFromCursor": "Ab Cursor abspielen",
   "trackerMetronome": "Metronom",

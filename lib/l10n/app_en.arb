@@ -877,6 +877,7 @@
   "trackerShowKeys": "Show key hints",
   "trackerRecordLive": "Live record (jam into the pattern)",
   "trackerInterpolate": "Interpolate volumes",
+  "trackerBlockFillVoice": "Fill voice across block",
   "trackerField": "Column (note / vol / fx)",
   "trackerPlayFromCursor": "Play from cursor",
   "trackerMetronome": "Metronome",

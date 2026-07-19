@@ -905,6 +905,35 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('fill voice stamps the top row\'s instrument across the block',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setRows(16);
+    game.setNote(0, 0, 60);
+    game.setNote(0, 1, 62);
+    game.setNote(0, 3, 64); // a gap at row 2 (empty) is skipped
+    await tester.pump();
+
+    // Set the TOP cell's voice; the others inherit the channel default.
+    game.debugSetCellInstrument(0, 0, 3);
+    await tester.pump();
+    expect(game.instrumentAt(0, 1), 0);
+
+    game.moveCursor(0, 0);
+    game.selectTrack();
+    game.fillInstrumentBlock();
+    await tester.pump();
+
+    // Every noted cell in the column now carries the top row's voice.
+    expect(game.instrumentAt(0, 0), 3);
+    expect(game.instrumentAt(0, 1), 3);
+    expect(game.instrumentAt(0, 3), 3);
+    // The empty row 2 was left untouched (no note = no instrument column).
+    expect(game.noteAt(0, 2), isNull);
+    expect(game.instrumentAt(0, 2), 0);
+  });
+
   testWidgets('undo/redo restores and reapplies cell edits', (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
     final game = _game(tester);

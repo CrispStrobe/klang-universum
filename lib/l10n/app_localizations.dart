@@ -4460,6 +4460,12 @@ abstract class AppLocalizations {
   /// **'Interpolate volumes'**
   String get trackerInterpolate;
 
+  /// No description provided for @trackerBlockFillVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill voice across block'**
+  String get trackerBlockFillVoice;
+
   /// No description provided for @trackerField.
   ///
   /// In en, this message translates to:
