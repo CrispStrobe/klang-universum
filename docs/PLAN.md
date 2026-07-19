@@ -500,6 +500,81 @@ via a documented `ffmpeg`/`sox` download recipe (no audio bundled; CI has no
 network → gate model/real paths skip-if-absent). Report the F-number in each
 commit.
 
+### ✅ Status (2026-07-19): BOTH transcribers ship; next slices + SOTA roadmap
+
+**Shipped & validated on 10 diverse PD/CC recordings** (see the `transcribe-w1`
+board entry): **Track A** pure-Dart monophonic (pYIN → note-HMM → tuning →
+`removeOctaveArtifacts` → rhythm → MusicXML) and **Track B** neural polyphonic
+(Basic Pitch ONNX, `transcribe-basicpitch`). Head-to-head verdict: mono wins on
+clean SOLO/VOICE (+ web + zero-asset + fast); neural wins on POLYPHONY, plucked/
+decaying, and inharmonic percussion. They're complementary behind one `NoteEvent`
+contract. **AMT is not a solved problem** — even SOTA vocal note-F is ~0.7–0.8 —
+so "product SOTA" = best engine per input + confidence surfacing + human-in-the-
+loop correction, not one magic model.
+
+**⚪ NEXT SLICES (unclaimed):**
+
+- **N1 · Auto-router `transcription/route.dart`** (pure Dart, testable, no assets).
+  One `transcribe(mono)` that estimates the input and dispatches: a cheap
+  **polyphony/voicing probe** — spectral flatness + count of simultaneous strong
+  harmonic partials (reuse `chroma_analysis.fft`) + `pyin` voicedProb + a
+  harmonic-vs-inharmonic score (are partials near-integer multiples?) → route to
+  Track A (monophonic/voice) or Track B (polyphonic/inharmonic), Track A on web
+  (no ONNX). Lock with synth mono-tone vs triad vs noise; validate on the corpus
+  (should pick neural for Für Elise/brass/glockenspiel, mono for the sung takes).
+- **N2 · In-app "Transcribe a recording"** surface (UI, device-gated). File-picker
+  / mic-record → `route.transcribe` → a `crisp_notation` Score → **open in Song
+  Book / Workshop** (both already accept a `Score`) for playback + edit + re-save.
+  Guard the neural path behind `!kIsWeb` (onnx pulls `dart:io`); web falls back to
+  monophonic. Per-note **confidence** (already on `NoteEvent`) tints low-confidence
+  notes so the kid knows what to check. This is what makes the whole chain a
+  user-facing feature.
+
+**🚀 HOW WE REACH INDUSTRY SOTA** (all options vetted patent-free + MIT/Apache;
+AVOID Melodia patent · madmom-DBN beat/downbeat patents+non-commercial ·
+SuperFlux patent · GPL/AGPL aubio/Essentia/Vamp/Tony). Ordered by leverage:
+
+*Tier 1 — near-term, high leverage (same ONNX+pure-Dart architecture):*
+1. **CREPE F0 (MIT, ONNX)** as an upgrade/alt to pYIN behind the same `PitchTrack`
+   contract — a small CNN, more accurate + timbre-robust on expressive/noisy
+   audio; directly fixes the sung-voice octave-doubling + pitch-drift we saw. Same
+   download-on-demand pattern as Basic Pitch. **Single highest-leverage upgrade.**
+2. **Downbeat-aware metre.** Our Ellis DP beat finds the pulse but not bar 1 or
+   the time signature. Add a bar-level DP over the beat grid (downbeat from onset
+   strength on strong beats + a metre prior) → correct barlines, anacrusis, and a
+   real `TimeSignature` instead of assumed 4/4. Keep it clean-room (NOT madmom).
+3. **Metrical rhythm quantisation** to replace greedy note-values: a small
+   dynamic-programming grid model (tempo + subdivision + swing) → cleaner
+   durations, tuplets, ties across barlines. Reuse `rhythm_quantize.dart`.
+
+*Tier 2 — the big SOTA lever (opt-in, desktop/native):*
+4. **Source separation** (Demucs/HTDemucs or Open-Unmix — both MIT — exported to
+   ONNX; heavy, so opt-in download). Split a full song into stems (vocals/bass/
+   drums/other) → transcribe EACH with the right engine (vocal→CREPE-mono,
+   bass→mono, other→Basic-Pitch-poly, drums→onset classifier) → assemble a
+   **multi-part score**. This is what turns "transcribe a whole song" from a demo
+   into industry-grade.
+5. **Neural chord + key** estimation (a small CRNN, permissive) for lead sheets —
+   upgrades our chroma-template chords; feeds enharmonic spelling.
+6. **Score-level modelling** — voice/staff separation (assign notes to voices &
+   hands), key-signature detection + enharmonic spelling, so the output is a
+   READABLE engraving, not a note dump. This is the MIDI→Score gap.
+
+*Tier 3 — frontier (opt-in, larger models):*
+7. **Piano-specialist** high-resolution onset/offset regression model
+   (ByteDance/Kong, MIT `piano_transcription_inference`) for near-SOTA solo piano.
+8. **Seq2seq multi-instrument** (MT3-style, Apache-2.0) distilled/quantised to a
+   feasible ONNX — one model, many instruments — if a small-enough export exists.
+9. **Drum transcription** (per-drum onset classification) — pairs with our
+   existing beatbox classifier (`beat_capture.dart`).
+10. **Performance-MIDI→Score (PM2S)** neural model — expressive timing → clean
+    notated rhythm, the last mile to publishable sheet music.
+
+Every tier stays behind the frozen `contracts.dart` seam (`PitchTrack` /
+`NoteEvent` / `RhythmGrid`) so engines swap without touching consumers, and every
+neural piece is download-on-demand + `!kIsWeb`-guarded so the web build always has
+the pure-Dart fallback.
+
 ## Principles
 
 1. **Minigames, not lessons.** Every skill is drilled through a game with
