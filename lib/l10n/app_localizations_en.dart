@@ -3231,6 +3231,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gameValueOrder => 'Longest First';
 
   @override
+  String get gameTempoOrder => 'Slow to Fast';
+
+  @override
+  String get gameTempoOrderSubtitle =>
+      'Put the tempo words in order from slowest to fastest';
+
+  @override
+  String get tempoOrderPrompt => 'Tap the tempo words from slowest to fastest!';
+
+  @override
+  String get tempoOrderHint => 'Largo is the slowest, Presto is the fastest.';
+
+  @override
   String get gameDynamicsOrder => 'Soft to Loud';
 
   @override

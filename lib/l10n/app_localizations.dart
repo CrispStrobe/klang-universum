@@ -6104,6 +6104,30 @@ abstract class AppLocalizations {
   /// **'Longest First'**
   String get gameValueOrder;
 
+  /// No description provided for @gameTempoOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow to Fast'**
+  String get gameTempoOrder;
+
+  /// No description provided for @gameTempoOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Put the tempo words in order from slowest to fastest'**
+  String get gameTempoOrderSubtitle;
+
+  /// No description provided for @tempoOrderPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the tempo words from slowest to fastest!'**
+  String get tempoOrderPrompt;
+
+  /// No description provided for @tempoOrderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Largo is the slowest, Presto is the fastest.'**
+  String get tempoOrderHint;
+
   /// No description provided for @gameDynamicsOrder.
   ///
   /// In en, this message translates to:

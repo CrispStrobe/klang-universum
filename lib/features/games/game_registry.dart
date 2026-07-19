@@ -98,6 +98,7 @@ import 'package:comet_beat/features/games/note_values/dynamics_order_screen.dart
 import 'package:comet_beat/features/games/note_values/note_value_quiz_screen.dart';
 import 'package:comet_beat/features/games/note_values/rhythm_tap_screen.dart';
 import 'package:comet_beat/features/games/note_values/tempo_duel_screen.dart';
+import 'package:comet_beat/features/games/note_values/tempo_order_screen.dart';
 import 'package:comet_beat/features/games/note_values/triplet_read_screen.dart';
 import 'package:comet_beat/features/games/note_values/value_order_screen.dart';
 import 'package:comet_beat/features/games/playalong/play_along_screen.dart';
@@ -366,6 +367,14 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDynamicsOrder,
       subtitle: (l) => l.gameDynamicsOrderSubtitle,
       builder: (_) => const DynamicsOrderScreen(),
+    ),
+    // Order Italian tempo words slowest → fastest — the Largo…Presto ladder.
+    GameInfo(
+      id: 'tempo_order',
+      icon: Icons.speed,
+      title: (l) => l.gameTempoOrder,
+      subtitle: (l) => l.gameTempoOrderSubtitle,
+      builder: (_) => const TempoOrderScreen(),
     ),
     GameInfo(
       id: 'connect_symbols',

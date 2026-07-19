@@ -99,6 +99,7 @@ const Map<String, List<int>> kStarThresholds = {
   // Longest First (order note values by length): 8 rounds x 100.
   'value_order': [100, 600, 900],
   'dynamics_order': [100, 600, 900],
+  'tempo_order': [100, 600, 900],
   // Odd One Out: 8 rounds x 100, max 800; 3 stars rewards a flawless run.
   'odd_one_out': [100, 500, 800],
   // Note Whack: 12 whacks x 10 x combo multiplier (1..5); a flawless combo run

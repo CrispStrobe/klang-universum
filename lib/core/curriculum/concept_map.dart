@@ -203,7 +203,7 @@ const List<Concept> kConcepts = [
     GradeBand.g34,
     ConceptArea.tempo,
     'Italian tempo words',
-    ['tempo_duel', 'connect_tempo'],
+    ['tempo_duel', 'connect_tempo', 'tempo_order'],
   ),
   Concept(
     'rhythm_echo',

@@ -3247,6 +3247,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gameValueOrder => 'Von lang nach kurz';
 
   @override
+  String get gameTempoOrder => 'Von langsam nach schnell';
+
+  @override
+  String get gameTempoOrderSubtitle =>
+      'Bringe die Tempowörter von am langsamsten nach am schnellsten';
+
+  @override
+  String get tempoOrderPrompt =>
+      'Tippe die Tempowörter von langsam nach schnell!';
+
+  @override
+  String get tempoOrderHint =>
+      'Largo ist am langsamsten, Presto am schnellsten.';
+
+  @override
   String get gameDynamicsOrder => 'Von leise nach laut';
 
   @override
