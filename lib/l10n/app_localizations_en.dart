@@ -1039,6 +1039,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerSolo => 'Solo pad (drag to play in key)';
 
   @override
+  String get loopMixerSoloKeep => 'Keep';
+
+  @override
   String get loopMixerScenes => 'Sections';
 
   @override

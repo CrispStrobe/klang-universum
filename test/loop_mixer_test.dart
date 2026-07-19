@@ -702,6 +702,34 @@ void main() {
     expect(game.debugSmearNotes.last, greaterThan(game.debugSmearNotes.first));
   });
 
+  testWidgets('keeping a smeared solo turns it into a voice layer',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.hasVoiceTrack, isFalse);
+
+    game.toggleSmearPad();
+    await tester.pump();
+    expect(game.hasSmearRecording, isFalse);
+
+    // Play a timed run across two bars (the loop grid) at rising positions.
+    final total = LoopTiming(tempoBpm: game.tempoBpm).totalMs;
+    for (var s = 0; s < 8; s++) {
+      game.debugSmearSample(total * s / 8, s / 7);
+    }
+    await tester.pump();
+    expect(game.hasSmearRecording, isTrue);
+
+    // Keep it → the improvisation becomes the sung-voice card, enabled + playing.
+    game.keepSmear();
+    await tester.pump();
+    expect(game.hasVoiceTrack, isTrue);
+    expect(game.enabledTracks, contains('voice'));
+    expect(game.smearPadVisible, isFalse); // pad closes after keeping
+    expect(game.hasSmearRecording, isFalse); // recording consumed
+    expect(find.text('My voice'), findsOneWidget);
+  });
+
   testWidgets('section scenes capture, relaunch, and chain at the seam',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());

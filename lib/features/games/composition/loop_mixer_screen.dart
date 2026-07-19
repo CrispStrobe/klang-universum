@@ -171,12 +171,16 @@ abstract interface class LoopMixerTester {
   bool get isChaining;
   void toggleChain();
 
-  /// Scale-locked smear pad (§F-1): visibility, and — for tests — the in-key
-  /// notes played and a way to play the note at a normalized x position.
+  /// Scale-locked smear pad (§F-1): visibility, whether a lead is recorded, and
+  /// keeping it as a layer. Tests: the in-key notes played, playing at a
+  /// normalized x, and injecting a timed sample.
   bool get smearPadVisible;
   void toggleSmearPad();
+  bool get hasSmearRecording;
+  void keepSmear();
   List<int> get debugSmearNotes;
   void debugSmearAt(double x);
+  void debugSmearSample(double ms, double x);
   bool get hasVoiceTrack;
   bool get hasBeatTrack;
   bool get isJamming;
@@ -368,10 +372,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   bool _showScore = false;
   bool _infinite = false;
 
-  // §F-1 smear pad: a scale-locked solo surface. Notes played this session are
-  // recorded so a "keep it" could capture them into a layer (follow-up).
+  // §F-1 smear pad: a scale-locked solo surface. Each played note is recorded
+  // with its loop phase so "Keep" can quantize the improvisation into a layer.
   bool _showSmear = false;
-  final List<int> _smearNotes = [];
+  final List<PitchSample> _smearSamples = [];
 
   // Quantized launch: when on, toggling a playing card queues the change until
   // the next loop seam (it "arms") so layers always drop in on the beat.
@@ -419,15 +423,24 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   @override
   void toggleSmearPad() => _toggleSmearPad();
   @override
-  List<int> get debugSmearNotes => _smearNotes;
+  bool get hasSmearRecording => _smearSamples.isNotEmpty;
   @override
-  void debugSmearAt(double x) => _playSmearNote(
-        smearMidi(
-          x,
-          key: _engine.key,
-          minor: _engine.scale == GrooveScale.minorPentatonic,
-        ),
+  void keepSmear() => _keepSmear();
+  @override
+  List<int> get debugSmearNotes => [
+        for (final s in _smearSamples)
+          if (s.$2 != null) s.$2!,
+      ];
+  int _smearMidiAt(double x) => smearMidi(
+        x,
+        key: _engine.key,
+        minor: _engine.scale == GrooveScale.minorPentatonic,
       );
+  @override
+  void debugSmearAt(double x) => _playSmearNote(_smearMidiAt(x));
+  @override
+  void debugSmearSample(double ms, double x) =>
+      _playSmearNote(_smearMidiAt(x), atMs: ms);
   @override
   void toggleInfinite() => setState(() => _infinite = !_infinite);
 
@@ -1411,9 +1424,15 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
 
   void _toggleSmearPad() => setState(() => _showSmear = !_showSmear);
 
-  // Play an in-key note as a short blip over the running groove, and remember it.
-  void _playSmearNote(int midi) {
-    _smearNotes.add(midi);
+  // The current position within the loop, for timestamping a smeared note.
+  double _smearPhaseMs() => _clock.isRunning
+      ? (_clock.elapsedMilliseconds % _engine.timing.totalMs).toDouble()
+      : 0.0;
+
+  // Play an in-key note as a short blip over the running groove, and record it
+  // (with its loop phase) so the improvisation can be kept as a layer.
+  void _playSmearNote(int midi, {double? atMs}) {
+    _smearSamples.add((atMs ?? _smearPhaseMs(), midi));
     final audio = context.read<AudioService>();
     if (!audio.soundOn) return;
     final pcm = renderSegments(
@@ -1424,6 +1443,25 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
       gain: 0.7,
     );
     audio.playWavBytes(wavBytes(pcm));
+  }
+
+  // "Keep" the improvised lead: quantize the recorded notes onto the groove
+  // grid (pentatonic-snapped) and install them as the sung-voice layer, so the
+  // solo becomes a real, toggleable card in the band.
+  void _keepSmear() {
+    final cells = quantizeToGroove(
+      _smearSamples,
+      totalMs: _engine.timing.totalMs,
+    );
+    if (cells == null) return;
+    setState(() {
+      _engine.setUserTrack(cells, instrument: Instrument.musicBox);
+      _engine.enabled.add(LoopEngine.userTrackId);
+      _smearSamples.clear();
+      _showSmear = false;
+    });
+    _syncPlayback();
+    _checkCombo();
   }
 
   // --- Section/scene grid (§G-1) -------------------------------------------
@@ -2144,16 +2182,29 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 ),
               ),
               const SizedBox(height: 6),
-              // §F-1 solo pad: drag to improvise an in-key lead over the groove.
+              // §F-1 solo pad: drag to improvise an in-key lead over the groove,
+              // then Keep it to turn the improvisation into a band layer.
               if (_showSmear)
                 SizedBox(
                   height: 72,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 6),
-                    child: SmearPad(
-                      keyRoot: _engine.key,
-                      minor: _engine.scale == GrooveScale.minorPentatonic,
-                      onNote: _playSmearNote,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SmearPad(
+                            keyRoot: _engine.key,
+                            minor: _engine.scale == GrooveScale.minorPentatonic,
+                            onNote: _playSmearNote,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton.tonalIcon(
+                          onPressed: _smearSamples.isEmpty ? null : _keepSmear,
+                          icon: const Icon(Icons.add),
+                          label: Text(l10n.loopMixerSoloKeep),
+                        ),
+                      ],
                     ),
                   ),
                 ),

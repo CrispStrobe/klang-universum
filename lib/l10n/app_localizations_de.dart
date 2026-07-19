@@ -1044,6 +1044,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerSolo => 'Solo-Pad (ziehen für Töne in der Tonart)';
 
   @override
+  String get loopMixerSoloKeep => 'Behalten';
+
+  @override
   String get loopMixerScenes => 'Teile';
 
   @override

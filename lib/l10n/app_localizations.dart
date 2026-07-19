@@ -2006,6 +2006,12 @@ abstract class AppLocalizations {
   /// **'Solo pad (drag to play in key)'**
   String get loopMixerSolo;
 
+  /// No description provided for @loopMixerSoloKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get loopMixerSoloKeep;
+
   /// No description provided for @loopMixerScenes.
   ///
   /// In en, this message translates to:
