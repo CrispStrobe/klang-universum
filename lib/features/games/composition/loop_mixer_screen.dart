@@ -1453,17 +1453,23 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: _TrackCard(
-                            color: _trackColors[track.id]!,
-                            icon: _trackIcons[track.id]!,
-                            label: _trackLabel(l10n, track.id),
+                          child: _BeatPulse(
+                            step: _step,
                             active: _engine.enabled.contains(track.id),
-                            variant: _engine.variants[track.id] ?? 0,
-                            variantCount: track.variants.length,
-                            level: _engine.levels[track.id] ?? 1.0,
-                            onTap: () => _toggle(track.id),
-                            onCycleVariant: () => _cycleVariant(track.id),
-                            onLevel: (v) => _setLevel(track.id, v),
+                            beatsPerBar: LoopTiming.beatsPerBar,
+                            color: _trackColors[track.id]!,
+                            child: _TrackCard(
+                              color: _trackColors[track.id]!,
+                              icon: _trackIcons[track.id]!,
+                              label: _trackLabel(l10n, track.id),
+                              active: _engine.enabled.contains(track.id),
+                              variant: _engine.variants[track.id] ?? 0,
+                              variantCount: track.variants.length,
+                              level: _engine.levels[track.id] ?? 1.0,
+                              onTap: () => _toggle(track.id),
+                              onCycleVariant: () => _cycleVariant(track.id),
+                              onLevel: (v) => _setLevel(track.id, v),
+                            ),
                           ),
                         ),
                       ),
@@ -1674,6 +1680,95 @@ class _Playhead extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Wraps a track card so it pulses and glows on every beat while enabled — a
+/// fuller flash on the bar's downbeat — driven by the shared [step] beat
+/// notifier. Purely cosmetic and paint-only (a [Transform] + shadow), so it
+/// never affects layout or the tap target.
+class _BeatPulse extends StatefulWidget {
+  const _BeatPulse({
+    required this.step,
+    required this.active,
+    required this.beatsPerBar,
+    required this.color,
+    required this.child,
+  });
+
+  final ValueListenable<int> step;
+  final bool active;
+  final int beatsPerBar;
+  final Color color;
+  final Widget child;
+
+  @override
+  State<_BeatPulse> createState() => _BeatPulseState();
+}
+
+class _BeatPulseState extends State<_BeatPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+    value: 1, // settled (no flash) at rest
+  );
+  int _lastBeat = -1;
+  double _strength = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.step.addListener(_onBeat);
+  }
+
+  @override
+  void dispose() {
+    widget.step.removeListener(_onBeat);
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  void _onBeat() {
+    final beat = widget.step.value;
+    if (beat == _lastBeat) return;
+    _lastBeat = beat;
+    if (!widget.active || beat < 0) return;
+    // A fuller flash on the downbeat, a gentler one off the beat.
+    _strength = beat % widget.beatsPerBar == 0 ? 1.0 : 0.5;
+    _pulse.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      child: widget.child,
+      builder: (context, child) {
+        // Envelope peaks the instant a beat lands, then decays over ~300 ms.
+        final env = widget.active
+            ? (1 - Curves.easeOut.transform(_pulse.value)) * _strength
+            : 0.0;
+        return Transform.scale(
+          scale: 1 + 0.045 * env,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: env > 0.01
+                  ? [
+                      BoxShadow(
+                        color: widget.color.withValues(alpha: 0.45 * env),
+                        blurRadius: 18 * env,
+                        spreadRadius: 1.5 * env,
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
