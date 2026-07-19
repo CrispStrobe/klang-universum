@@ -662,6 +662,8 @@
   "tabChordNone": "Kein Akkord",
   "tabPattern": "Einfügen…",
   "tabPatternChord": "Akkord",
+  "tabPatternProgression": "Abfolge",
+  "tabPatternRepeat": "Wiederholen",
   "tabPatternScale": "Tonleiter",
   "tabPatternStyle": "Stil",
   "tabPatternStrum": "Anschlag",

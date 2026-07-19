@@ -3578,6 +3578,18 @@ abstract class AppLocalizations {
   /// **'Chord'**
   String get tabPatternChord;
 
+  /// No description provided for @tabPatternProgression.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression'**
+  String get tabPatternProgression;
+
+  /// No description provided for @tabPatternRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get tabPatternRepeat;
+
   /// No description provided for @tabPatternScale.
   ///
   /// In en, this message translates to:

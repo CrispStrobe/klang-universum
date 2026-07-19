@@ -713,6 +713,8 @@
   "tabChordNone": "No chord",
   "tabPattern": "Insert…",
   "tabPatternChord": "Chord",
+  "tabPatternProgression": "Progression",
+  "tabPatternRepeat": "Repeat",
   "tabPatternScale": "Scale",
   "tabPatternStyle": "Style",
   "tabPatternStrum": "Strum",

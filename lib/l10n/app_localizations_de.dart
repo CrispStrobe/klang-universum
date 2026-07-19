@@ -1880,6 +1880,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabPatternChord => 'Akkord';
 
   @override
+  String get tabPatternProgression => 'Abfolge';
+
+  @override
+  String get tabPatternRepeat => 'Wiederholen';
+
+  @override
   String get tabPatternScale => 'Tonleiter';
 
   @override

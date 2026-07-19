@@ -107,6 +107,53 @@ void main() {
     expect(rests, [1, 4]);
   });
 
+  test('chordStyleColumns routes each style to its generator', () {
+    expect(
+      chordStyleColumns(cMajor, ChordStyle.strum, q).length,
+      strumColumns(cMajor, q).length,
+    );
+    expect(
+      chordStyleColumns(cMajor, ChordStyle.up, q).length,
+      arpeggioColumns(cMajor, ArpStyle.up, q).length,
+    );
+    expect(
+      chordStyleColumns(cMajor, ChordStyle.travis, q).length,
+      patternColumns(cMajor, PickPattern.travis).length,
+    );
+  });
+
+  test('progression strums one column per chord, repeated', () {
+    final pop = kProgressions['Pop (C–G–Am–F)']!; // 4 chords
+    final once = progressionColumns(pop, kGuitarChords, ChordStyle.strum, q);
+    expect(once, hasLength(4));
+    expect(once.every((c) => c.chord != null), isTrue); // strum keeps the badge
+    final twice =
+        progressionColumns(pop, kGuitarChords, ChordStyle.strum, q, repeat: 2);
+    expect(twice, hasLength(8));
+    // Repeats must be fresh instances, never shared (later edits mutate frets).
+    expect(identical(twice[0], twice[4]), isFalse);
+  });
+
+  test('progression skips chords missing from the library', () {
+    final cols = progressionColumns(
+      ['C', 'Zz', 'G'],
+      kGuitarChords,
+      ChordStyle.strum,
+      q,
+    );
+    expect(cols, hasLength(2)); // Zz dropped
+  });
+
+  test('every built-in progression resolves to real chords', () {
+    for (final chords in kProgressions.values) {
+      expect(
+        chords.every(kGuitarChords.containsKey),
+        isTrue,
+        reason: 'a progression names a chord not in the library',
+      );
+    }
+  });
+
   test('scale run ascends by the interval set and lands on the octave', () {
     // C major from C3 (MIDI 48), one octave.
     final cols = scaleColumns(guitar, 48, kScales['Major']!, q);

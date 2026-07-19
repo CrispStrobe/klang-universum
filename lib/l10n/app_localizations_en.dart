@@ -1873,6 +1873,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabPatternChord => 'Chord';
 
   @override
+  String get tabPatternProgression => 'Progression';
+
+  @override
+  String get tabPatternRepeat => 'Repeat';
+
+  @override
   String get tabPatternScale => 'Scale';
 
   @override

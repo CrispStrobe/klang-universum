@@ -219,7 +219,7 @@ void main() {
     final before = tab.columnCount;
 
     // Strum = one column; the cursor lands on it (the fret keypad now shows it).
-    final strummed = tab.insertStrum('C');
+    final strummed = tab.insertChordStyle('C', ChordStyle.strum);
     await tester.pump();
     expect(strummed, 1);
     expect(tab.columnCount, before + 1);
@@ -230,11 +230,17 @@ void main() {
     expect(scaled, 8);
     expect(tab.columnCount, before + 1 + 8);
 
-    // A Travis roll = 8 eighth-note columns.
-    final travis = tab.insertPattern('C', PickPattern.travis);
+    // A Travis roll = 8 eighth-note columns, ×2 = 16.
+    final travis = tab.insertChordStyle('C', ChordStyle.travis, repeat: 2);
     await tester.pump();
-    expect(travis, 8);
-    expect(tab.columnCount, before + 1 + 8 + 8);
+    expect(travis, 16);
+    expect(tab.columnCount, before + 1 + 8 + 16);
+
+    // A progression voiced as a strum = one column per chord (Pop = 4).
+    final prog = tab.insertProgression('Pop (C–G–Am–F)', ChordStyle.strum);
+    await tester.pump();
+    expect(prog, 4);
+    expect(tab.columnCount, before + 1 + 8 + 16 + 4);
   });
 
   testWidgets('tapping a fret keypad button writes to the selected cell',

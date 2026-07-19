@@ -110,17 +110,18 @@ abstract class TabWorkshopTester {
   void setChordByName(String? name);
   String? chordNameAt(int col);
 
-  /// Generative insert (after the cursor): strum a chord, arpeggiate it in a
-  /// picking pattern, or lay a scale across the fretboard. The cursor lands on
-  /// the last inserted column. All three return the number of columns added.
-  int insertStrum(String chordName);
-  int insertArpeggio(String chordName, ArpStyle style);
-  int insertPattern(String chordName, PickPattern pattern);
+  /// Generative insert (after the cursor): voice a chord in a [ChordStyle],
+  /// lay down a named progression (each chord in that style), or run a scale
+  /// across the fretboard — each optionally [repeat]ed. The cursor lands on the
+  /// last inserted column. All return the number of columns added.
+  int insertChordStyle(String chordName, ChordStyle style, {int repeat});
+  int insertProgression(String progressionName, ChordStyle style, {int repeat});
   int insertScale(
     int rootMidi,
     String scaleName, {
     int octaves,
     bool descending,
+    int repeat,
   });
   void saveToSongBook(String title);
   int get bpm;
@@ -354,24 +355,27 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   }
 
   @override
-  int insertStrum(String chordName) {
+  int insertChordStyle(String chordName, ChordStyle style, {int repeat = 1}) {
     final c = kGuitarChords[chordName];
     if (c == null) return 0;
-    return _insertRun(strumColumns(c, _dur));
+    // Regenerate per repeat so every column is a fresh instance (later edits
+    // mutate a column's fret map in place — shared instances would corrupt).
+    return _insertRun([
+      for (var i = 0; i < repeat; i++) ...chordStyleColumns(c, style, _dur),
+    ]);
   }
 
   @override
-  int insertArpeggio(String chordName, ArpStyle style) {
-    final c = kGuitarChords[chordName];
-    if (c == null) return 0;
-    return _insertRun(arpeggioColumns(c, style, _dur));
-  }
-
-  @override
-  int insertPattern(String chordName, PickPattern pattern) {
-    final c = kGuitarChords[chordName];
-    if (c == null) return 0;
-    return _insertRun(patternColumns(c, pattern));
+  int insertProgression(
+    String progressionName,
+    ChordStyle style, {
+    int repeat = 1,
+  }) {
+    final chords = kProgressions[progressionName];
+    if (chords == null) return 0;
+    return _insertRun(
+      progressionColumns(chords, kGuitarChords, style, _dur, repeat: repeat),
+    );
   }
 
   @override
@@ -380,19 +384,21 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     String scaleName, {
     int octaves = 1,
     bool descending = false,
+    int repeat = 1,
   }) {
     final intervals = kScales[scaleName];
     if (intervals == null) return 0;
-    return _insertRun(
-      scaleColumns(
-        _doc.tuning,
-        rootMidi,
-        intervals,
-        _dur,
-        octaves: octaves,
-        descending: descending,
-      ),
-    );
+    return _insertRun([
+      for (var i = 0; i < repeat; i++)
+        ...scaleColumns(
+          _doc.tuning,
+          rootMidi,
+          intervals,
+          _dur,
+          octaves: octaves,
+          descending: descending,
+        ),
+    ]);
   }
 
   @override
@@ -1453,18 +1459,34 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     'B',
   ];
 
-  /// A bottom sheet that generates a run of columns from a chord (strum or
-  /// picking-pattern arpeggio) or a scale (root + type + octaves + direction),
-  /// inserting it after the cursor at the current note length.
+  /// A bottom sheet that generates a run of columns — a chord voiced as a
+  /// strum/arpeggio/pattern, a named progression in that voicing, or a scale
+  /// (root + type + octaves + direction), optionally repeated — inserting it
+  /// after the cursor at the current note length.
   Future<void> _pickPattern() async {
     final l10n = AppLocalizations.of(context)!;
-    var chordMode = true; // false = scale mode
+    var mode = 0; // 0 = chord · 1 = progression · 2 = scale
     var chord = kGuitarChords.keys.first;
-    var styleIdx = 0; // index into the chord-mode style list below
+    var progName = kProgressions.keys.first;
+    var styleIdx = 0; // index into [styles] (shared by chord + progression)
     var rootPc = 0; // 0 = C
     var scaleName = kScales.keys.first;
     var octaves = 1;
     var descending = false;
+    var repeat = 1;
+
+    // The chord voicings, in chip order — labels paired with their [ChordStyle].
+    final styles = <(String, ChordStyle)>[
+      (l10n.tabPatternStrum, ChordStyle.strum),
+      (l10n.tabPatternUp, ChordStyle.up),
+      (l10n.tabPatternDown, ChordStyle.down),
+      (l10n.tabPatternUpDown, ChordStyle.upDown),
+      (l10n.tabPatternDownUp, ChordStyle.downUp),
+      (l10n.tabPatternTravis, ChordStyle.travis),
+      (l10n.tabPatternBoomChuck, ChordStyle.boomChuck),
+      (l10n.tabPatternStrumEighths, ChordStyle.strumEighths),
+      (l10n.tabPatternIsland, ChordStyle.island),
+    ];
 
     final inserted = await showModalBottomSheet<int>(
       context: context,
@@ -1476,150 +1498,133 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                 selected: on,
                 onSelected: (_) => setSheet(onTap),
               );
-          // Chord-mode styles: a strum, the four arpeggio directions, then the
-          // fingerstyle/strum patterns. Each thunk inserts using the currently
-          // selected [chord] and returns the number of columns added.
-          final chordStyles = <(String, int Function())>[
-            (l10n.tabPatternStrum, () => insertStrum(chord)),
-            (l10n.tabPatternUp, () => insertArpeggio(chord, ArpStyle.up)),
-            (l10n.tabPatternDown, () => insertArpeggio(chord, ArpStyle.down)),
-            (
-              l10n.tabPatternUpDown,
-              () => insertArpeggio(chord, ArpStyle.upDown)
-            ),
-            (
-              l10n.tabPatternDownUp,
-              () => insertArpeggio(chord, ArpStyle.downUp)
-            ),
-            (
-              l10n.tabPatternTravis,
-              () => insertPattern(chord, PickPattern.travis)
-            ),
-            (
-              l10n.tabPatternBoomChuck,
-              () => insertPattern(chord, PickPattern.boomChuck)
-            ),
-            (
-              l10n.tabPatternStrumEighths,
-              () => insertPattern(chord, PickPattern.strumEighths)
-            ),
-            (
-              l10n.tabPatternIsland,
-              () => insertPattern(chord, PickPattern.islandStrum)
-            ),
-          ];
+          Widget heading(String t) => Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 6),
+                child: Text(t, style: Theme.of(ctx).textTheme.labelLarge),
+              );
+          Widget modeTab(String label, int m) => Expanded(
+                child: seg(label, mode == m, () => mode = m),
+              );
+          // The strum/arp/pattern chips, shared by chord + progression modes.
+          Widget styleChips() => Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (var i = 0; i < styles.length; i++)
+                    seg(styles[i].$1, styleIdx == i, () => styleIdx = i),
+                ],
+              );
           final children = <Widget>[
             Row(
               children: [
-                Expanded(
-                  child: seg(
-                    l10n.tabPatternChord,
-                    chordMode,
-                    () => chordMode = true,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: seg(
-                    l10n.tabPatternScale,
-                    !chordMode,
-                    () => chordMode = false,
-                  ),
-                ),
+                modeTab(l10n.tabPatternChord, 0),
+                const SizedBox(width: 6),
+                modeTab(l10n.tabPatternProgression, 1),
+                const SizedBox(width: 6),
+                modeTab(l10n.tabPatternScale, 2),
               ],
             ),
-            const SizedBox(height: 12),
           ];
-          if (chordMode) {
-            children.addAll([
-              Text(
-                l10n.tabChordPick,
-                style: Theme.of(ctx).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final name in kGuitarChords.keys)
-                    ChoiceChip(
-                      label: Text(name),
-                      selected: chord == name,
-                      onSelected: (_) => setSheet(() => chord = name),
+          switch (mode) {
+            case 0:
+              children.addAll([
+                heading(l10n.tabChordPick),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final name in kGuitarChords.keys)
+                      ChoiceChip(
+                        label: Text(name),
+                        selected: chord == name,
+                        onSelected: (_) => setSheet(() => chord = name),
+                      ),
+                  ],
+                ),
+                heading(l10n.tabPatternStyle),
+                styleChips(),
+              ]);
+            case 1:
+              children.addAll([
+                heading(l10n.tabPatternProgression),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final name in kProgressions.keys)
+                      ChoiceChip(
+                        label: Text(name),
+                        selected: progName == name,
+                        onSelected: (_) => setSheet(() => progName = name),
+                      ),
+                  ],
+                ),
+                heading(l10n.tabPatternStyle),
+                styleChips(),
+              ]);
+            default:
+              children.addAll([
+                heading(l10n.tabPatternRoot),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (var pc = 0; pc < 12; pc++)
+                      ChoiceChip(
+                        label: Text(_rootNames[pc]),
+                        selected: rootPc == pc,
+                        onSelected: (_) => setSheet(() => rootPc = pc),
+                      ),
+                  ],
+                ),
+                heading(l10n.tabPatternScaleType),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final name in kScales.keys)
+                      ChoiceChip(
+                        label: Text(name),
+                        selected: scaleName == name,
+                        onSelected: (_) => setSheet(() => scaleName = name),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(l10n.tabPatternOctaves),
+                    const SizedBox(width: 8),
+                    for (final o in [1, 2])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: seg('$o', octaves == o, () => octaves = o),
+                      ),
+                    const SizedBox(width: 16),
+                    seg(
+                      l10n.tabPatternUp,
+                      !descending,
+                      () => descending = false,
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.tabPatternStyle,
-                style: Theme.of(ctx).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (var i = 0; i < chordStyles.length; i++)
-                    seg(chordStyles[i].$1, styleIdx == i, () => styleIdx = i),
-                ],
-              ),
-            ]);
-          } else {
-            children.addAll([
-              Text(
-                l10n.tabPatternRoot,
-                style: Theme.of(ctx).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (var pc = 0; pc < 12; pc++)
-                    ChoiceChip(
-                      label: Text(_rootNames[pc]),
-                      selected: rootPc == pc,
-                      onSelected: (_) => setSheet(() => rootPc = pc),
+                    const SizedBox(width: 6),
+                    seg(
+                      l10n.tabPatternDown,
+                      descending,
+                      () => descending = true,
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.tabPatternScaleType,
-                style: Theme.of(ctx).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final name in kScales.keys)
-                    ChoiceChip(
-                      label: Text(name),
-                      selected: scaleName == name,
-                      onSelected: (_) => setSheet(() => scaleName = name),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text(l10n.tabPatternOctaves),
-                  const SizedBox(width: 8),
-                  for (final o in [1, 2])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: seg('$o', octaves == o, () => octaves = o),
-                    ),
-                  const SizedBox(width: 16),
-                  seg(l10n.tabPatternUp, !descending, () => descending = false),
-                  const SizedBox(width: 6),
-                  seg(l10n.tabPatternDown, descending, () => descending = true),
-                ],
-              ),
-            ]);
+                  ],
+                ),
+              ]);
           }
           children.addAll([
+            heading(l10n.tabPatternRepeat),
+            Wrap(
+              spacing: 6,
+              children: [
+                for (final n in [1, 2, 4])
+                  seg('×$n', repeat == n, () => repeat = n),
+              ],
+            ),
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerRight,
@@ -1627,14 +1632,18 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
                 icon: const Icon(Icons.add),
                 label: Text(l10n.tabPatternInsert),
                 onPressed: () {
-                  final n = chordMode
-                      ? chordStyles[styleIdx].$2()
-                      : insertScale(
-                          48 + rootPc,
-                          scaleName,
-                          octaves: octaves,
-                          descending: descending,
-                        );
+                  final style = styles[styleIdx].$2;
+                  final n = switch (mode) {
+                    0 => insertChordStyle(chord, style, repeat: repeat),
+                    1 => insertProgression(progName, style, repeat: repeat),
+                    _ => insertScale(
+                        48 + rootPc,
+                        scaleName,
+                        octaves: octaves,
+                        descending: descending,
+                        repeat: repeat,
+                      ),
+                  };
                   Navigator.of(ctx).pop(n);
                 },
               ),

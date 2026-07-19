@@ -4,6 +4,7 @@
 // cursor. The note VALUE (quarter/eighth/…) plus the editor's playback BPM give
 // the "same shape at different tempi" the patterns are for.
 
+import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 
@@ -118,6 +119,76 @@ const Map<String, List<int>> kScales = {
   'Dorian': [0, 2, 3, 5, 7, 9, 10],
   'Mixolydian': [0, 2, 4, 5, 7, 9, 10],
 };
+
+/// Every way the sheet can voice a single chord — a strum, one of the four
+/// arpeggio directions, or a named fingerstyle/strum pattern. Lets one code
+/// path drive both a single chord and each chord of a progression.
+enum ChordStyle {
+  strum,
+  up,
+  down,
+  upDown,
+  downUp,
+  travis,
+  boomChuck,
+  strumEighths,
+  island,
+}
+
+/// Voice chord [c] as [style]. Arpeggio/strum honour [dur]; the named patterns
+/// carry their own rhythm and ignore it.
+List<TabColumn> chordStyleColumns(
+  ChordDiagram c,
+  ChordStyle style,
+  NoteDuration dur,
+) =>
+    switch (style) {
+      ChordStyle.strum => strumColumns(c, dur),
+      ChordStyle.up => arpeggioColumns(c, ArpStyle.up, dur),
+      ChordStyle.down => arpeggioColumns(c, ArpStyle.down, dur),
+      ChordStyle.upDown => arpeggioColumns(c, ArpStyle.upDown, dur),
+      ChordStyle.downUp => arpeggioColumns(c, ArpStyle.downUp, dur),
+      ChordStyle.travis => patternColumns(c, PickPattern.travis),
+      ChordStyle.boomChuck => patternColumns(c, PickPattern.boomChuck),
+      ChordStyle.strumEighths => patternColumns(c, PickPattern.strumEighths),
+      ChordStyle.island => patternColumns(c, PickPattern.islandStrum),
+    };
+
+/// Common chord progressions, as sequences of [kGuitarChords] names so every
+/// chord resolves to a real open shape. Named by their feel + the chords used.
+const Map<String, List<String>> kProgressions = {
+  'Pop (C–G–Am–F)': ['C', 'G', 'Am', 'F'],
+  'I–IV–V (G–C–D)': ['G', 'C', 'D'],
+  '50s (C–Am–F–G)': ['C', 'Am', 'F', 'G'],
+  'ii–V–I (Dm–G–C)': ['Dm', 'G', 'C'],
+  'Andalusian (Am–G–F–E)': ['Am', 'G', 'F', 'E'],
+  'Blues in A (12-bar)': [
+    'A', 'A', 'A', 'A', //
+    'D', 'D', 'A', 'A', //
+    'E', 'D', 'A', 'E', //
+  ],
+};
+
+/// Expand a chord-name progression into columns: each chord voiced as [style],
+/// the whole sequence repeated [repeat] times. Chords absent from [library] are
+/// skipped (every column is freshly built, so repeats never share instances).
+List<TabColumn> progressionColumns(
+  List<String> chordNames,
+  Map<String, ChordDiagram> library,
+  ChordStyle style,
+  NoteDuration dur, {
+  int repeat = 1,
+}) {
+  final out = <TabColumn>[];
+  for (var r = 0; r < repeat; r++) {
+    for (final name in chordNames) {
+      final c = library[name];
+      if (c == null) continue;
+      out.addAll(chordStyleColumns(c, style, dur));
+    }
+  }
+  return out;
+}
 
 /// A scale run over [octaves] (capped by the root an octave up), each note laid
 /// on [tuning] at its lowest fret; notes unreachable on the tuning are skipped.
