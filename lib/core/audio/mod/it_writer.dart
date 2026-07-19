@@ -140,8 +140,12 @@ Uint8List writeIt(ItModule module) {
     sampleHeaderOffsets.add(out.length);
     final empty = s.pcm.isEmpty;
     final loop = s.loopEnd > s.loopStart;
-    final flg =
-        empty ? 0 : (0x01 | (s.sixteenBit ? 0x02 : 0) | (loop ? 0x10 : 0));
+    final flg = empty
+        ? 0
+        : (0x01 |
+            (s.sixteenBit ? 0x02 : 0) |
+            (loop ? 0x10 : 0) |
+            (loop && s.pingPong ? 0x40 : 0)); // 0x40 = bidirectional loop
     final length = empty ? 0 : s.pcm.length;
 
     writeString('IMPS', 4); // 0x00

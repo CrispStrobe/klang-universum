@@ -327,6 +327,7 @@ ModuleDoc docFromXm(XmModule m) {
         loopStart: s.loopStart,
         loopLength: s.loopLength,
         c5speed: xmTuningToC5speed(s.relativeNote, s.finetune),
+        pingPong: s.loopLength > 0 && s.pingPong,
         pcm: Float64List.fromList(s.pcm),
       );
       samples.add(ds);
@@ -570,6 +571,7 @@ XmModule docToXm(ModuleDoc doc) {
             relativeNote: rel,
             loopStart: ds.loopStart,
             loopLength: ds.loopLength,
+            pingPong: ds.pingPong,
             pcm: Float64List.fromList(ds.pcm),
           ),
         ],
@@ -714,6 +716,7 @@ ItModule docToIt(ModuleDoc doc) {
         loopStart: ds.loopStart,
         loopEnd: ds.loopStart + ds.loopLength,
         c5speed: ds.c5speed,
+        pingPong: ds.pingPong,
         pcm: Float64List.fromList(ds.pcm),
       ),
     );

@@ -61,6 +61,7 @@ class XmSample {
     this.loopStart = 0,
     this.loopLength = 0,
     this.sixteenBit = false,
+    this.pingPong = false,
     required this.pcm,
   });
 
@@ -72,6 +73,7 @@ class XmSample {
   final int relativeNote; // signed semitone transpose
   final int loopStart, loopLength;
   final bool sixteenBit;
+  final bool pingPong; // loop-type 2 (bidirectional)
   final Float64List pcm;
 
   bool get isEmpty => pcm.isEmpty;

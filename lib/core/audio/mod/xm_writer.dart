@@ -35,8 +35,9 @@
 //     u32 sampleHeaderSize = 40 · zero-fill up to the 263-byte header · then
 //     numSamples × 40-byte sample headers · then the sample DATA blocks in order.
 //   Sample header (40): u32 lengthInBytes · u32 loopStart · u32 loopLength ·
-//     u8 volume(0..64) · s8 finetune · u8 type ((loopLength>0?0x01:0) |
-//     (sixteenBit?0x10:0)) · u8 panning=128 · s8 relativeNote · u8 reserved=0 ·
+//     u8 volume(0..64) · s8 finetune · u8 type (loop type bits0-1: 0 none /
+//     1 forward / 2 ping-pong, from XmSample.pingPong | (sixteenBit?0x10:0)) ·
+//     u8 panning=128 · s8 relativeNote · u8 reserved=0 ·
 //     22 name.
 //   Sample data: DELTA-encoded. Quantize the normalized pcm first:
 //     8-bit  → (v*128).round().clamp(-128,127)   (byte = (cur-prev)&0xFF)
@@ -193,7 +194,10 @@ Uint8List writeXm(XmModule module) {
       shb.setUint32(8, sample.loopLength, Endian.little);
       sh[12] = sample.volume.clamp(0, 64);
       shb.setInt8(13, sample.finetune);
-      sh[14] = (sample.loopLength > 0 ? 0x01 : 0) | (sixteen ? 0x10 : 0);
+      // Loop type: bits 0-1 (0 none / 1 forward / 2 ping-pong) | bit4 16-bit.
+      final loopType =
+          sample.loopLength > 0 ? (sample.pingPong ? 0x02 : 0x01) : 0;
+      sh[14] = loopType | (sixteen ? 0x10 : 0);
       sh[15] = 128; // panning
       shb.setInt8(16, sample.relativeNote);
       sh[17] = 0; // reserved

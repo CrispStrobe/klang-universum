@@ -158,6 +158,7 @@ XmModule parseXm(Uint8List bytes) {
           finetune: finetune,
           relativeNote: relativeNote,
           sixteenBit: (type & 0x10) != 0,
+          pingPong: (type & 0x03) == 2, // loop type: 0 none, 1 fwd, 2 pingpong
           name: sName,
         ),
       );
@@ -178,6 +179,7 @@ XmModule parseXm(Uint8List bytes) {
           loopStart: meta.loopStart,
           loopLength: meta.loopLength,
           sixteenBit: meta.sixteenBit,
+          pingPong: meta.pingPong,
           pcm: pcm,
         ),
       );
@@ -300,6 +302,7 @@ class _SampleMeta {
     required this.finetune,
     required this.relativeNote,
     required this.sixteenBit,
+    required this.pingPong,
     required this.name,
   });
 
@@ -307,5 +310,6 @@ class _SampleMeta {
   final int loopStart, loopLength;
   final int volume, finetune, relativeNote;
   final bool sixteenBit;
+  final bool pingPong;
   final String name;
 }

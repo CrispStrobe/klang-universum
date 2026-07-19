@@ -5,10 +5,14 @@
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/envelope.dart';
+import 'package:comet_beat/core/audio/mod/module_convert.dart'
+    show convertToIt, convertToXm, parseAnyModule;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:comet_beat/core/audio/mod/module_instrument_bridge.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+const _emptyRow = <DocCell>[DocCell.empty];
 
 void main() {
   group('foldLoopPosition', () {
@@ -118,6 +122,48 @@ void main() {
 
       final fwd = DocSample(pcm: pcm, loopStart: 8, loopLength: 16);
       expect(sampleInstrumentFromDoc('s', fwd).pingPong, isFalse);
+    });
+  });
+
+  group('export round-trip (the writers emit the bidi flag)', () {
+    // A minimal 1-sample module carrying a looping sample with the given mode.
+    ModuleDoc docWith({required bool pingPong}) {
+      final pcm = Float64List(64);
+      for (var i = 0; i < pcm.length; i++) {
+        pcm[i] = (i % 16 < 8) ? 0.5 : -0.5;
+      }
+      return ModuleDoc(
+        channelCount: 1,
+        sourceFormat: ModuleFormat.it,
+        order: [0],
+        patterns: const [
+          DocPattern([_emptyRow], 1),
+        ],
+        samples: [
+          DocSample(
+            pcm: pcm,
+            c5speed: 44100,
+            loopStart: 8,
+            loopLength: 32,
+            pingPong: pingPong,
+          ),
+        ],
+      );
+    }
+
+    test('IT write→read preserves a ping-pong loop', () {
+      final back = parseAnyModule(convertToIt(docWith(pingPong: true)));
+      expect(back.usedSamples.first.pingPong, isTrue);
+      // …and a forward loop stays forward.
+      final fwd = parseAnyModule(convertToIt(docWith(pingPong: false)));
+      expect(fwd.usedSamples.first.pingPong, isFalse);
+    });
+
+    test('XM write→read preserves a ping-pong loop', () {
+      final back = parseAnyModule(convertToXm(docWith(pingPong: true)));
+      expect(back.usedSamples.first.pingPong, isTrue);
+      final fwd = parseAnyModule(convertToXm(docWith(pingPong: false)));
+      expect(fwd.usedSamples.first.pingPong, isFalse);
     });
   });
 }
