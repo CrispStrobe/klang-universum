@@ -172,3 +172,12 @@ high effort for diminishing returns.
 64 kbps frame carrying "Xing" + frame count + byte count + a 100-entry seek TOC).
 Players report exact duration and can seek. Verified: ffprobe reads 4.02 s for a
 4 s clip (was an inaccurate estimate before the header).
+
+## Decoder (mp3Decode) — the codec now round-trips in pure Dart
+`mp3_decoder.dart` is the inverse of the encoder (MPEG-1, long blocks, mono/
+stereo/joint): reservoir reassembly → scalefactors → Huffman → requantize → M/S
+→ antialias → 36-pt IMDCT + window + overlap + frequency inversion → synthesis
+polyphase filterbank. It detects and skips the Xing header frame like a standard
+decoder. Cross-checked against ffmpeg: our decoder reads 19.9 dB on a broadband
+192k file, EXACTLY matching ffmpeg's 19.9 dB. Pure-Dart encode→decode round-trip
+(no external tools, CI-safe): mono 73, stereo 76/74, joint 75/74 dB.
