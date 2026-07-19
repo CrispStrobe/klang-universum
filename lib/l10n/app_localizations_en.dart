@@ -2420,6 +2420,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerMetronome => 'Metronome';
 
   @override
+  String get trackerQuantize => 'Quantize (snap to beat)';
+
+  @override
   String get trackerFollow => 'Follow the playhead';
 
   @override

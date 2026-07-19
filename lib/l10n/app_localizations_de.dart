@@ -2429,6 +2429,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerMetronome => 'Metronom';
 
   @override
+  String get trackerQuantize => 'Quantisieren (auf Beat einrasten)';
+
+  @override
   String get trackerFollow => 'Abspielposition folgen';
 
   @override

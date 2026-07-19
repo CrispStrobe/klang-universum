@@ -931,6 +931,19 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('quantize toggle round-trips through the screen seam',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    expect(game.isQuantize, isFalse);
+    game.toggleQuantize();
+    await tester.pump();
+    expect(game.isQuantize, isTrue);
+    game.toggleQuantize();
+    await tester.pump();
+    expect(game.isQuantize, isFalse);
+  });
+
   testWidgets('chord helper stamps a triad across tracks at the cursor',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

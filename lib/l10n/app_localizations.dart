@@ -4634,6 +4634,12 @@ abstract class AppLocalizations {
   /// **'Metronome'**
   String get trackerMetronome;
 
+  /// No description provided for @trackerQuantize.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantize (snap to beat)'**
+  String get trackerQuantize;
+
   /// No description provided for @trackerFollow.
   ///
   /// In en, this message translates to:

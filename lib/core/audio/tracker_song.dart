@@ -737,3 +737,20 @@ class TrackerSong {
   /// Classic pattern names: 00, 01, 02, … (two-digit like tracker order lists).
   static String _patternName(int i) => i.toString().padLeft(2, '0');
 }
+
+/// Snaps [row] (plus its sub-row fraction [phaseInRow] ∈ [0,1)) to the nearest
+/// BEAT boundary — a multiple of [stepsPerBeat] rows — wrapping within
+/// [totalRows]. Used by the tracker's live-record quantize so a slightly-off
+/// jam hit lands on the beat. A no-op (returns [row]) when [stepsPerBeat] ≤ 1
+/// or [totalRows] ≤ 0.
+int quantizeRowToBeat(
+  int row,
+  double phaseInRow,
+  int stepsPerBeat,
+  int totalRows,
+) {
+  if (stepsPerBeat <= 1 || totalRows <= 0) return row;
+  final nearest = ((row + phaseInRow) / stepsPerBeat).round() * stepsPerBeat;
+  final wrapped = nearest % totalRows;
+  return wrapped < 0 ? wrapped + totalRows : wrapped;
+}

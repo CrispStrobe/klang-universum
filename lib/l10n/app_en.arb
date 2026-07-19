@@ -908,6 +908,7 @@
   "trackerField": "Column (note / vol / fx)",
   "trackerPlayFromCursor": "Play from cursor",
   "trackerMetronome": "Metronome",
+  "trackerQuantize": "Quantize (snap to beat)",
   "trackerFollow": "Follow the playhead",
   "trackerScope": "Toggle the oscilloscope",
   "trackerLoadDemo": "Load a demo song",

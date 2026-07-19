@@ -334,6 +334,10 @@ abstract interface class AdvancedTrackerTester {
   void toggleRecord();
   void interpolateBlock();
 
+  /// Live-record quantize: snap a jammed note to the nearest beat.
+  bool get isQuantize;
+  void toggleQuantize();
+
   /// Fill each selected channel's per-cell instrument from its top selected row.
   void fillInstrumentBlock();
 
@@ -561,6 +565,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   bool _metronome = false;
   int _lastTickStep = -1;
 
+  /// Live-record quantize: snap a jammed note to the nearest beat instead of
+  /// the exact sounding row.
+  bool _quantize = false;
+
+  /// The playhead's fractional position within the current row (0..1), updated
+  /// each tick — feeds [quantizeRowToBeat] so a slightly-early hit rounds up.
+  double _rowPhase = 0.0;
+
   /// Whether the grid auto-scrolls to follow the playhead during playback.
   bool _followPlay = true;
 
@@ -669,11 +681,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
           }
           // Position within the currently-sounding pattern (for the meters).
           posInPattern = e.row * t.stepMs + (pos - e.startMs);
+          // Sub-row phase for live-record quantize (uniform step assumption).
+          _rowPhase = t.stepMs > 0 ? (pos - e.startMs) / t.stepMs : 0.0;
         }
       } else {
         if (_playingOrder.value != -1) _playingOrder.value = -1;
         posInPattern = _elapsedMs % t.totalMs;
         final step = posInPattern ~/ t.stepMs;
+        _rowPhase = t.stepMs > 0 ? (posInPattern % t.stepMs) / t.stepMs : 0.0;
         if (step != _row.value) {
           _row.value = step;
           _followPlayhead(step);
@@ -999,7 +1014,14 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     _preview(midi);
     _pushUndo();
     if (_recording && _clock.isRunning && _row.value >= 0) {
-      final row = _row.value;
+      final row = _quantize
+          ? quantizeRowToBeat(
+              _row.value,
+              _rowPhase,
+              _song.timing.stepsPerBeat,
+              _song.rows,
+            )
+          : _row.value;
       final cur = _song.engine.cellAt(_cursorChannel, row);
       _song.engine.setCell(
         _cursorChannel,
@@ -2565,6 +2587,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   bool get isRecording => _recording;
   @override
   void toggleRecord() => setState(() => _recording = !_recording);
+  @override
+  bool get isQuantize => _quantize;
+  @override
+  void toggleQuantize() => setState(() => _quantize = !_quantize);
   @override
   void interpolateBlock() => _interpolateBlock();
   @override
@@ -4175,6 +4201,12 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               tooltip: l10n.trackerMetronome,
               color: _metronome ? scheme.primary : null,
               onPressed: () => setState(() => _metronome = !_metronome),
+            ),
+            IconButton(
+              icon: Icon(_quantize ? Icons.grid_on : Icons.grid_off),
+              tooltip: l10n.trackerQuantize,
+              color: _quantize ? scheme.primary : null,
+              onPressed: () => setState(() => _quantize = !_quantize),
             ),
             IconButton(
               icon: Icon(

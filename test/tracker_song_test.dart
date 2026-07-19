@@ -619,6 +619,28 @@ void main() {
     });
   });
 
+  group('quantizeRowToBeat', () {
+    // stepsPerBeat 4, 16 rows: beats at 0, 4, 8, 12.
+    test('snaps back to the nearest earlier beat', () {
+      expect(quantizeRowToBeat(1, 0.2, 4, 16), 0);
+      expect(quantizeRowToBeat(5, 0.0, 4, 16), 4);
+    });
+
+    test('a late hit rounds forward to the next beat', () {
+      expect(quantizeRowToBeat(2, 0.5, 4, 16), 4); // 2.5/4 -> 1 -> 4
+      expect(quantizeRowToBeat(6, 0.0, 4, 16), 8); // 6/4 -> 2 -> 8
+    });
+
+    test('the last beat wraps to the pattern start', () {
+      expect(quantizeRowToBeat(15, 0.9, 4, 16), 0); // 15.9/4 -> 4 -> 16 % 16
+    });
+
+    test('no-op when there is no beat grid', () {
+      expect(quantizeRowToBeat(3, 0.4, 1, 16), 3);
+      expect(quantizeRowToBeat(3, 0.4, 4, 0), 3);
+    });
+  });
+
   group('swing / groove', () {
     test('setSwing re-times off-beat step onsets and clamps the range', () {
       final song = TrackerSong(timing: const TrackerTiming(rows: 8));

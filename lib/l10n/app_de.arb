@@ -857,6 +857,7 @@
   "trackerField": "Spalte (Note / Lautst. / FX)",
   "trackerPlayFromCursor": "Ab Cursor abspielen",
   "trackerMetronome": "Metronom",
+  "trackerQuantize": "Quantisieren (auf Beat einrasten)",
   "trackerFollow": "Abspielposition folgen",
   "trackerScope": "Oszilloskop ein/aus",
   "trackerLoadDemo": "Demo-Song laden",
