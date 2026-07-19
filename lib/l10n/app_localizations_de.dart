@@ -4919,6 +4919,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'In der WEITEN Lage sind die Oberstimmen gespreizt — die höchste Note liegt mehr als eine Oktave über dem Tenor.';
 
   @override
+  String get primerSpacingTry =>
+      'Jetzt du: Sind diese Oberstimmen eng oder weit?';
+
+  @override
   String get primerStepSkipTitle => 'Schritt und Sprung';
 
   @override
@@ -5138,6 +5142,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerToneWhole =>
       'Ein Ganzton sind zwei Halbtöne. C zu D ist ein Ganzton — dazwischen LIEGT eine schwarze Taste.';
+
+  @override
+  String get primerToneTry => 'Jetzt du: E zu F — Ganzton oder Halbton?';
 
   @override
   String get primerClefTitle => 'Welcher Schlüssel?';

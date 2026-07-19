@@ -29,6 +29,8 @@ void main() {
       beamPrimer(l),
       articulationPrimer(l),
       enharmonicPrimer(l),
+      wholeHalfPrimer(l),
+      spacingPrimer(l),
     ];
     for (final primer in primers) {
       expect(

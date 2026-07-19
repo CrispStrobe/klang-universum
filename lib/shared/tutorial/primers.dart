@@ -684,6 +684,16 @@ Tutorial spacingPrimer(AppLocalizations l10n) => Tutorial(
           score: _chord([60, 67, 76]), // C–G–E: spread over an octave
           play: (a) => a.playMidiChord([48, 60, 67, 76]),
         ),
+        // Active recall: the upper voices are bunched → close position.
+        TutorialStep(
+          text: l10n.primerSpacingTry,
+          score: _chord([60, 64, 67]), // C–E–G bunched
+          play: (a) => a.playMidiChord([48, 60, 64, 67]),
+          choices: [
+            TutorialChoice(l10n.spacingClose, correct: true),
+            TutorialChoice(l10n.spacingOpen),
+          ],
+        ),
       ],
     );
 
@@ -1245,6 +1255,16 @@ Tutorial wholeHalfPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerToneWhole,
           score: _notes([60, 62]), // C–D: a black key sits between
           play: (a) => a.playPhrase([60, 62], noteMs: 650),
+        ),
+        // Active recall: E–F are neighbours with no key between → a half step.
+        TutorialStep(
+          text: l10n.primerToneTry,
+          score: _notes([64, 65]), // E–F
+          play: (a) => a.playPhrase([64, 65], noteMs: 650),
+          choices: [
+            TutorialChoice(l10n.halfStepLabel, correct: true),
+            TutorialChoice(l10n.wholeStepLabel),
+          ],
         ),
       ],
     );

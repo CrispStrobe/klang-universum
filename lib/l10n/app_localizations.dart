@@ -9032,6 +9032,12 @@ abstract class AppLocalizations {
   /// **'In OPEN position the top voices are spread out — the highest note is more than an octave above the tenor.'**
   String get primerSpacingOpen;
 
+  /// No description provided for @primerSpacingTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: are these upper voices close or open?'**
+  String get primerSpacingTry;
+
   /// No description provided for @primerStepSkipTitle.
   ///
   /// In en, this message translates to:
@@ -9391,6 +9397,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A whole step is two half steps. C to D is a whole step — there IS a black key between them.'**
   String get primerToneWhole;
+
+  /// No description provided for @primerToneTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: E to F — whole step or half step?'**
+  String get primerToneTry;
 
   /// No description provided for @primerClefTitle.
   ///

@@ -4899,6 +4899,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'In OPEN position the top voices are spread out — the highest note is more than an octave above the tenor.';
 
   @override
+  String get primerSpacingTry =>
+      'Now you try: are these upper voices close or open?';
+
+  @override
   String get primerStepSkipTitle => 'Steps and skips';
 
   @override
@@ -5118,6 +5122,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerToneWhole =>
       'A whole step is two half steps. C to D is a whole step — there IS a black key between them.';
+
+  @override
+  String get primerToneTry => 'Now you try: E to F — whole step or half step?';
 
   @override
   String get primerClefTitle => 'Which clef?';
