@@ -1348,6 +1348,17 @@ Tutorial dynamicsPrimer(AppLocalizations l10n) => Tutorial(
       ],
     );
 
+/// Musical road signs — how to navigate repeats (Da Capo, Dal Segno, Fine,
+/// Coda). Text-only: these are printed directions, not sounds. Game:
+/// connect_roadmap.
+Tutorial roadmapPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.primerRoadmapTitle,
+      steps: [
+        TutorialStep(text: l10n.primerRoadmapDaCapo),
+        TutorialStep(text: l10n.primerRoadmapCoda),
+      ],
+    );
+
 /// The augmentation dot: it adds HALF the note's value again. Shown as a half
 /// note (2 beats) beside a dotted half (3 beats), and heard at those lengths.
 /// Game: dotted_sort.

@@ -4634,6 +4634,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'The other part is how loud (dynamics): the same phrase soft (p), then loud (f). Charades asks you to name what you heard.';
 
   @override
+  String get primerRoadmapTitle => 'Musical road signs';
+
+  @override
+  String get primerRoadmapDaCapo =>
+      'Some signs tell you where to go. Da Capo (D.C.) means \"from the top\" — jump back to the very beginning and play again.';
+
+  @override
+  String get primerRoadmapCoda =>
+      'Fine marks the end. Dal Segno (D.S.) jumps back to the sign, and a Coda is a special ending section you leap to. Match each sign to what it does!';
+
+  @override
   String get primerTempoTitle => 'How fast? Tempo words';
 
   @override

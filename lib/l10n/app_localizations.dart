@@ -8540,6 +8540,24 @@ abstract class AppLocalizations {
   /// **'The other part is how loud (dynamics): the same phrase soft (p), then loud (f). Charades asks you to name what you heard.'**
   String get primerExpressionDynamics;
 
+  /// No description provided for @primerRoadmapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Musical road signs'**
+  String get primerRoadmapTitle;
+
+  /// No description provided for @primerRoadmapDaCapo.
+  ///
+  /// In en, this message translates to:
+  /// **'Some signs tell you where to go. Da Capo (D.C.) means \"from the top\" — jump back to the very beginning and play again.'**
+  String get primerRoadmapDaCapo;
+
+  /// No description provided for @primerRoadmapCoda.
+  ///
+  /// In en, this message translates to:
+  /// **'Fine marks the end. Dal Segno (D.S.) jumps back to the sign, and a Coda is a special ending section you leap to. Match each sign to what it does!'**
+  String get primerRoadmapCoda;
+
   /// No description provided for @primerTempoTitle.
   ///
   /// In en, this message translates to:

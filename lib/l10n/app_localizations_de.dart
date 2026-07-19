@@ -4652,6 +4652,17 @@ class AppLocalizationsDe extends AppLocalizations {
       'Der andere Teil ist die Lautstärke (Dynamik): dieselbe Phrase leise (p), dann laut (f). Bei Charade nennst du, was du gehört hast.';
 
   @override
+  String get primerRoadmapTitle => 'Musikalische Wegweiser';
+
+  @override
+  String get primerRoadmapDaCapo =>
+      'Manche Zeichen sagen dir, wohin. Da Capo (D.C.) heißt „von vorn“ — spring zurück zum Anfang und spiel noch einmal.';
+
+  @override
+  String get primerRoadmapCoda =>
+      'Fine ist das Ende. Dal Segno (D.S.) springt zurück zum Zeichen, und eine Coda ist ein besonderer Schlussteil, zu dem du springst. Ordne jedem Zeichen seine Bedeutung zu!';
+
+  @override
   String get primerTempoTitle => 'Wie schnell? Tempo-Wörter';
 
   @override

@@ -303,6 +303,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConnectDegrees,
       subtitle: (l) => l.gameConnectDegreesSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.degrees),
+      tutorial: harmonyPrimer,
     ),
     // Match a time signature to what its numbers mean (4/4 ↔ four quarter
     // beats) — a matching drill for reading the time signature.
@@ -312,6 +313,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConnectTime,
       subtitle: (l) => l.gameConnectTimeSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.timeSignatures),
+      tutorial: timeSignaturePrimer,
     ),
     // Match a key signature to how many sharps/flats it has (the circle-of-
     // fifths count, not the key name) — thickens key-signature reading.
@@ -321,6 +323,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConnectKeysig,
       subtitle: (l) => l.gameConnectKeysigSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.keySignatures),
+      tutorial: keySignaturePrimer,
     ),
     // Match each navigation "road sign" (Da Capo, Coda, Fine…) to what it tells
     // you to do — reading the map through a piece.
@@ -330,6 +333,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameConnectRoadmap,
       subtitle: (l) => l.gameConnectRoadmapSubtitle,
       builder: (_) => const ConnectLineScreen(mode: ConnectMode.navigation),
+      tutorial: roadmapPrimer,
     ),
     GameInfo(
       id: 'rhythm_tap',
@@ -367,6 +371,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameDynamicsOrder,
       subtitle: (l) => l.gameDynamicsOrderSubtitle,
       builder: (_) => const DynamicsOrderScreen(),
+      tutorial: dynamicsPrimer,
     ),
     // Order Italian tempo words slowest → fastest — the Largo…Presto ladder.
     GameInfo(
@@ -375,6 +380,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTempoOrder,
       subtitle: (l) => l.gameTempoOrderSubtitle,
       builder: (_) => const TempoOrderScreen(),
+      tutorial: tempoTermsPrimer,
     ),
     GameInfo(
       id: 'connect_symbols',
