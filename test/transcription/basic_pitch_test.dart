@@ -17,6 +17,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/transcription/basic_pitch.dart';
+import 'package:comet_beat/core/audio/transcription/basic_pitch_model_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'note_metrics.dart';
@@ -135,14 +136,15 @@ void main() {
     test(
       'a synthetic C-major triad → C/E/G, note-F ≥ 0.9',
       () async {
-        final file = await BasicPitchModel.ensureFile();
+        final store = BasicPitchModelStore();
+        final file = await store.ensureFile();
         if (file == null) {
           markTestSkipped(
             'Basic Pitch model unavailable (offline) — skipping.',
           );
           return;
         }
-        final model = await BasicPitchModel.instance();
+        final model = await store.load();
         // 1.5 s C-major triad (C4 E4 G4) — a near-sine flute timbre so the
         // additive harmonics don't spawn octave ghosts; normalised to ±0.9.
         final audio = _normalize(
@@ -153,9 +155,9 @@ void main() {
             timbre: timbreFor(Instrument.flute),
           ),
         );
-        final result = await basicPitchTranscribe(
+        final result = basicPitchTranscribe(
           audio,
-          model: model.model,
+          model: model,
           frameThreshold: 0.4,
           melodiaTrick:
               true, // struck-together notes share one onset; fill them

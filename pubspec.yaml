@@ -10,12 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Pure-Dart ONNX runtime (no FFI). Used by the polyphonic transcriber
-  # (lib/core/audio/transcription/basic_pitch.dart, Worker 3) and the headless
-  # AECMOS eval (bin/aecmos.dart). Its `_io` loader pulls dart:io, so the
-  # transcription feature is NATIVE-only — integration (S5) must guard any
-  # web-facing entry behind !kIsWeb. Sibling path dep (CI/deploy check out
-  # CrispStrobe/onnx_runtime_dart too).
+  # Pure-Dart ONNX runtime (no FFI, runs on web/WASM). Used by the polyphonic
+  # transcriber (lib/core/audio/transcription/basic_pitch.dart, Worker 3 — which
+  # is web-safe: it imports only the core lib and takes a preloaded model) and
+  # the headless AECMOS eval (bin/aecmos.dart). dart:io is confined to the model
+  # STORE (basic_pitch_model_store.dart, download/cache) — native callers only.
+  # Sibling path dep (CI/deploy check out CrispStrobe/onnx_runtime_dart too).
   onnx_runtime_dart:
     path: ../onnx_runtime_dart
   flutter_localizations:

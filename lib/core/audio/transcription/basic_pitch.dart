@@ -8,22 +8,25 @@
 // Basic Pitch — spotify/basic-pitch — is Apache-2.0 for BOTH code and weights,
 // so this file is a faithful PORT of the Python (constants.py / inference.py /
 // note_creation.py), not a clean-room reimplementation. Attribution + the
-// Apache-2.0 LICENSE ship next to the downloaded model (see BasicPitchModel).
+// Apache-2.0 NOTICE ship next to the downloaded model (see the native
+// basic_pitch_model_store.dart).
 //
 // The shipped ONNX model takes RAW AUDIO windows `[1, 43844, 1]` — the CQT /
 // harmonic-stacking front-end lives inside the graph (as convolutions), so
 // there is no DSP front-end to port. Verified: nmp.onnx runs on our runtime at
 // cosine 1.0 vs onnxruntime on all three output heads.
+// WEB-SAFE by design: this transcriber imports only the web-safe
+// `onnx_runtime_dart` core (pure Dart, no `dart:io`) and takes a preloaded
+// [OnnxModel]. Model download/caching (which needs `dart:io`) lives in the
+// separate native `basic_pitch_model_store.dart`, so the transcription logic
+// itself compiles for web/WASM too.
 library;
 
-import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
-import 'package:onnx_runtime_dart/onnx_runtime_dart_io.dart';
 
 // ── Constants (basic_pitch/constants.py — verified against the model) ────────
 const int _fftHop = 256;
@@ -52,22 +55,23 @@ const int _defaultMinNoteLen = 11;
 typedef _FrameNote = ({int startFrame, int endFrame, int midi, double amp});
 
 /// Transcribe polyphonic [mono] audio to notes with Basic Pitch. Resamples to
-/// 22050 Hz, windows into overlapping 43844-sample frames, runs the ONNX model,
-/// stitches the frame/onset posteriorgrams, and decodes notes. Returns notes in
-/// onset order. Pass a preloaded [model] to avoid reloading; if none is given
-/// and the cached model is absent this throws — callers that want a soft path
-/// should resolve [BasicPitchModel] first (it is download-on-demand).
-Future<List<NoteEvent>> basicPitchTranscribe(
+/// 22050 Hz, windows into overlapping 43844-sample frames, runs the ONNX
+/// [model], stitches the frame/onset posteriorgrams, and decodes notes.
+/// Returns notes in onset order. The caller supplies a loaded [model] — obtain
+/// it natively via `BasicPitchModelStore` (`basic_pitch_model_store.dart`) or,
+/// on web, from bytes you fetched yourself + `OnnxModel.fromBytes`. Pure /
+/// synchronous / web-safe.
+List<NoteEvent> basicPitchTranscribe(
   Float64List mono, {
+  required OnnxModel model,
   int sampleRate = 44100,
-  OnnxModel? model,
   double onsetThreshold = 0.5,
   double frameThreshold = 0.3,
   int minNoteLenFrames = _defaultMinNoteLen,
   bool inferOnsets = true,
   bool melodiaTrick = false, // named after (not the patented) Melodia; off.
-}) async {
-  final m = model ?? (await BasicPitchModel.instance()).model;
+}) {
+  final m = model;
 
   // 1 · Resample to 22050 Hz mono (ratio = inRate/outRate; 44100 → 2.0).
   final audio = sampleRate == _sampleRate
@@ -352,86 +356,5 @@ void _melodiaTrick(
         amp: _meanColumn(frames, iStart, iEnd, mf),
       ),
     );
-  }
-}
-
-/// Download-on-demand store for the Apache-2.0 Basic Pitch ONNX model
-/// (`nmp.onnx`, ~230 KB). Kept OUT of the app bundle; fetched once to a cache
-/// dir. Override the location with `COMET_BASICPITCH_DIR` (tests use this).
-class BasicPitchModel {
-  BasicPitchModel._(this.model);
-
-  /// The loaded runtime model — feed it to [basicPitchTranscribe].
-  final OnnxModel model;
-
-  static BasicPitchModel? _cached;
-
-  static const _modelUrl =
-      'https://raw.githubusercontent.com/spotify/basic-pitch/main/'
-      'basic_pitch/saved_models/icassp_2022/nmp.onnx';
-  static const _noticeUrl =
-      'https://raw.githubusercontent.com/spotify/basic-pitch/main/NOTICE';
-
-  /// Cache directory for the model + its `NOTICE`.
-  static String cacheDir() {
-    final override = Platform.environment['COMET_BASICPITCH_DIR'];
-    if (override != null && override.isNotEmpty) return override;
-    final home = Platform.environment['HOME'] ??
-        Platform.environment['USERPROFILE'] ??
-        Directory.systemTemp.path;
-    return '$home/.cache/comet_beat/models';
-  }
-
-  /// The model file path (may not yet exist — see [ensureFile]).
-  static File modelFile() => File('${cacheDir()}/nmp.onnx');
-
-  /// Returns the cached model file, downloading it (and the Apache-2.0 NOTICE)
-  /// on first use. Returns null if absent and the download fails (offline CI) —
-  /// callers gate the model path skip-if-absent.
-  static Future<File?> ensureFile() async {
-    final file = modelFile();
-    if (file.existsSync() && file.lengthSync() > 100000) return file;
-    try {
-      Directory(cacheDir()).createSync(recursive: true);
-      final bytes = await _get(_modelUrl);
-      if (bytes == null || bytes.length < 100000) return null;
-      await file.writeAsBytes(bytes);
-      final notice = await _get(_noticeUrl);
-      if (notice != null) {
-        await File('${cacheDir()}/NOTICE.basic_pitch').writeAsBytes(notice);
-      }
-      return file;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Loads (and memoises) the model, downloading it if needed. Throws a
-  /// [StateError] if the model can't be obtained.
-  static Future<BasicPitchModel> instance() async {
-    if (_cached != null) return _cached!;
-    final file = await ensureFile();
-    if (file == null) {
-      throw StateError(
-        'Basic Pitch model unavailable (offline?). Expected at ${modelFile().path}',
-      );
-    }
-    return _cached = BasicPitchModel._(loadOnnxModel(file.path));
-  }
-
-  static Future<Uint8List?> _get(String url) async {
-    final client = HttpClient();
-    try {
-      final req = await client.getUrl(Uri.parse(url));
-      final resp = await req.close();
-      if (resp.statusCode != 200) return null;
-      final b = BytesBuilder(copy: false);
-      await for (final chunk in resp) {
-        b.add(chunk);
-      }
-      return b.takeBytes();
-    } finally {
-      client.close();
-    }
   }
 }

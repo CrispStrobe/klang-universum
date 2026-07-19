@@ -11,13 +11,14 @@
 //   ffmpeg -i in.ogg -ac 1 -ar 44100 -c:a pcm_s16le out.wav
 //
 // The Apache-2.0 Basic Pitch model is downloaded on first run (see
-// BasicPitchModel); attribution ships next to it.
+// BasicPitchModelStore); attribution ships next to it.
 library;
 
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:comet_beat/core/audio/transcription/basic_pitch.dart';
+import 'package:comet_beat/core/audio/transcription/basic_pitch_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 
@@ -65,12 +66,12 @@ Future<void> main(List<String> args) async {
   stderr.writeln('loaded $path — ${wav.sampleRate} Hz, ${wav.channels}ch, '
       '${(mono.length / wav.sampleRate).toStringAsFixed(2)} s');
 
-  final model = await BasicPitchModel.instance();
+  final model = await BasicPitchModelStore().load();
   final sw = Stopwatch()..start();
-  final List<NoteEvent> events = await basicPitchTranscribe(
+  final List<NoteEvent> events = basicPitchTranscribe(
     mono,
+    model: model,
     sampleRate: wav.sampleRate,
-    model: model.model,
     onsetThreshold: _optD(args, '--onset', 0.5),
     frameThreshold: _optD(args, '--frame', 0.3),
     minNoteLenFrames: _optI(args, '--min-len', 11),
