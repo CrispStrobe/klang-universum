@@ -20,7 +20,8 @@ import 'package:crisp_notation/crisp_notation.dart'
         Pitch,
         RestElement,
         Score,
-        Step;
+        Step,
+        Tempo;
 
 class _MidiNote {
   final int startTicks;
@@ -54,18 +55,23 @@ Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
   // out-of-bounds RangeError.
   var offset = 8 + data.getUint32(4);
   List<_MidiNote>? notes;
-  while (offset + 8 <= bytes.length && notes == null) {
+  int? usPerQuarter; // the initial tempo, if any track declares one
+  // Scan until we have BOTH notes and a tempo (a format-1 file keeps the tempo
+  // on a note-less track 0, so we can't stop at the first note track).
+  while (
+      offset + 8 <= bytes.length && (notes == null || usPerQuarter == null)) {
     final chunkType = String.fromCharCodes(bytes.sublist(offset, offset + 4));
     final chunkLength = data.getUint32(offset + 4);
     final chunkEnd = offset + 8 + chunkLength;
     if (chunkType == 'MTrk') {
-      final track = _readTrack(
+      final (track, tempo) = _readTrack(
         bytes.sublist(
           offset + 8,
           chunkEnd <= bytes.length ? chunkEnd : bytes.length,
         ),
       );
-      if (track.isNotEmpty) notes = track;
+      usPerQuarter ??= tempo;
+      if (notes == null && track.isNotEmpty) notes = track;
     }
     offset = chunkEnd;
   }
@@ -138,7 +144,12 @@ Score scoreFromMidi(Uint8List bytes, {int maxNotes = 64}) {
       ),
     );
   }
-  return Score(clef: Clef.treble, measures: measures);
+  // Recover the notated tempo so playback / play-along / re-export run at the
+  // file's speed instead of a default (the mirror of scoreToMidi writing it).
+  final tempo = (usPerQuarter != null && usPerQuarter > 0)
+      ? Tempo(60000000 / usPerQuarter)
+      : null;
+  return Score(clef: Clef.treble, tempo: tempo, measures: measures);
 }
 
 /// Sharp-preferring spelling for a MIDI number.
@@ -161,8 +172,11 @@ Pitch _pitchFromMidi(int midi) {
   return Pitch(step, alter: alter, octave: midi ~/ 12 - 1);
 }
 
-List<_MidiNote> _readTrack(Uint8List track) {
+/// Parses one MTrk into its notes and (the first) tempo it declares in
+/// microseconds-per-quarter, or null if it carries no tempo meta.
+(List<_MidiNote>, int?) _readTrack(Uint8List track) {
   final notes = <_MidiNote>[];
+  int? usPerQuarter;
   final open = <int, _MidiNote>{}; // midi -> sounding note
   var offset = 0;
   var ticks = 0;
@@ -189,8 +203,16 @@ List<_MidiNote> _readTrack(Uint8List track) {
     }
 
     if (status == 0xff) {
+      final metaType = offset < track.length ? track[offset] : 0;
       offset++; // meta type
       final length = readVarLen();
+      // Set-tempo meta (FF 51 03 tttttt) = microseconds per quarter note. Keep
+      // the first one — the initial tempo.
+      if (metaType == 0x51 && length == 3 && offset + 3 <= track.length) {
+        usPerQuarter ??= (track[offset] << 16) |
+            (track[offset + 1] << 8) |
+            track[offset + 2];
+      }
       offset += length;
       continue;
     }
@@ -218,5 +240,5 @@ List<_MidiNote> _readTrack(Uint8List track) {
       }
     }
   }
-  return notes;
+  return (notes, usPerQuarter);
 }
