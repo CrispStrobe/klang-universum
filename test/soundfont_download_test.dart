@@ -41,6 +41,7 @@ void main() {
   test('size hint formats megabytes', () {
     expect(soundFontSizeHint(kFluidR3MonoGm), '~14 MB');
     expect(soundFontSizeHint(kMuseScoreGeneralSf3), '~38 MB');
+    expect(soundFontSizeHint(kFluidR3GmSf2), '~141 MB');
     expect(soundFontSizeHint(kMuseScoreGeneralSf2), '~206 MB');
   });
 

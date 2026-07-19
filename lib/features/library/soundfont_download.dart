@@ -54,6 +54,18 @@ const kMuseScoreGeneralSf3 = SoundFontSource(
   approxBytes: 39900972,
 );
 
+/// The classic FluidR3 GM as an UNCOMPRESSED `.sf2` (~141 MB) — Frank Wen's
+/// original full General-MIDI bank, no decoder needed. MIT. (The old archive.org
+/// mirror in core `kFluidR3Gm` is dead; this GitHub-raw copy is verified live.)
+const kFluidR3GmSf2 = SoundFontSource(
+  id: 'fluidr3_gm_sf2',
+  name: 'FluidR3 GM (classic, uncompressed)',
+  url: 'https://github.com/urish/cinto/raw/master/media/FluidR3%20GM.sf2',
+  license: 'MIT',
+  attribution: 'FluidR3 GM by Frank Wen — MIT',
+  approxBytes: 148358590,
+);
+
 /// MuseScore General as an UNCOMPRESSED `.sf2` — the no-decoder fallback: large,
 /// but plays even where the glint Vorbis decoder isn't available (so a `.sf3`
 /// would be rejected). MIT, same source as [kMuseScoreGeneralSf3].
@@ -67,13 +79,16 @@ const kMuseScoreGeneralSf2 = SoundFontSource(
   approxBytes: 215614036,
 );
 
-/// The curated download catalog, smallest first: the ~14 MB compact `.sf3` as
-/// the recommended default, then the fuller ~38 MB `.sf3`, then the ~206 MB
-/// uncompressed `.sf2` that needs no Vorbis decoder. All are complete
-/// General-MIDI sets under the MIT licence, verified reachable at authoring.
+/// The curated download catalog, smallest first: two compact `.sf3` fonts
+/// (needing the glint Vorbis decoder) then two uncompressed `.sf2` fonts (no
+/// decoder needed). All are complete General-MIDI sets under the MIT licence,
+/// each URL verified reachable + serving a real RIFF/sfbk soundfont at
+/// authoring: FluidR3 Mono `.sf3` ~14 MB · MuseScore General `.sf3` ~38 MB ·
+/// FluidR3 GM `.sf2` ~141 MB · MuseScore General `.sf2` ~206 MB.
 const List<SoundFontSource> kGmSoundFonts = [
   kFluidR3MonoGm,
   kMuseScoreGeneralSf3,
+  kFluidR3GmSf2,
   kMuseScoreGeneralSf2,
 ];
 
