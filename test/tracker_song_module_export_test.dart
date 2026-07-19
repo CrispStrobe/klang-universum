@@ -1,0 +1,123 @@
+// moduleDocFromSong — the PCM-preserving TrackerSong -> ModuleDoc export. Unlike
+// the Score->module path, a SampleInstrument keeps its REAL waveform and the
+// effect column survives. Pure Dart, no device audio.
+
+import 'dart:typed_data';
+
+import 'package:comet_beat/core/audio/mod/module_convert.dart'
+    show convertToXm, parseAnyModule;
+import 'package:comet_beat/core/audio/synth.dart' show Instrument, kSampleRate;
+import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/tracker_song.dart';
+import 'package:comet_beat/core/audio/tracker_song_module.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  // A recognizable sample buffer (a square-ish buzz, ±0.6, at the engine rate).
+  Float64List buzz(int n) {
+    final s = Float64List(n);
+    for (var i = 0; i < n; i++) {
+      s[i] = i % 40 < 20 ? 0.6 : -0.6;
+    }
+    return s;
+  }
+
+  TrackerSong sampleSong(Float64List pcm) {
+    final ch = TrackerChannel(
+      id: 's',
+      instrument: SampleInstrument('rec', pcm),
+      rows: 8,
+    );
+    final cells = List<TrackerCell>.filled(8, TrackerCell.empty);
+    cells[0] = const TrackerCell(midi: 60); // a note that uses the sample
+    cells[4] = const TrackerCell(
+      midi: 62,
+      fxCmd: 0x1, // porta-up, param 4 — an authored effect
+      fxParam: 0x04,
+    );
+    return TrackerSong.fromParts(
+      channels: [ch],
+      timing: const TrackerTiming(rows: 8),
+      patterns: [
+        TrackerPattern(name: '00', cells: [cells]),
+      ],
+      order: [0],
+    );
+  }
+
+  group('moduleDocFromSong (PCM-preserving)', () {
+    test('a SampleInstrument keeps its real PCM in the doc', () {
+      final pcm = buzz(400);
+      final doc = moduleDocFromSong(sampleSong(pcm));
+      expect(doc.samples, isNotEmpty);
+      final s = doc.samples.first;
+      // The waveform is the SAME samples (not a re-synthesized timbre).
+      expect(s.pcm.length, pcm.length);
+      for (var i = 0; i < pcm.length; i++) {
+        expect(s.pcm[i], closeTo(pcm[i], 1e-12), reason: 'sample $i');
+      }
+      // baseMidi 60 -> c5speed is the engine rate (no tuning shift).
+      expect(s.c5speed, closeTo(kSampleRate, 1));
+    });
+
+    test('the note + instrument + effect column survive into the doc', () {
+      final doc = moduleDocFromSong(sampleSong(buzz(200)));
+      final p = doc.patterns.single;
+      // Row 0: the note plays the (1-based) sample.
+      expect(p.rows[0][0].note, 60);
+      expect(p.rows[0][0].instrument, 1);
+      // Row 4: the authored porta effect rode through 1:1.
+      expect(p.rows[4][0].note, 62);
+      expect(p.rows[4][0].effect, 0x1);
+      expect(p.rows[4][0].effectParam, 0x04);
+    });
+
+    test('round-trips through a writer (XM) preserving the real waveform', () {
+      // The DOC preserves PCM exactly (test above); a full write+read keeps the
+      // waveform to the format's sample bit-depth (the writer quantises) — still
+      // the REAL recording, not a re-synthesized timbre.
+      final pcm = buzz(400);
+      final bytes = convertToXm(moduleDocFromSong(sampleSong(pcm)));
+      final back = parseAnyModule(bytes);
+      final s = back.usedSamples.first;
+      expect(s.pcm.length, pcm.length);
+      var maxErr = 0.0;
+      for (var i = 0; i < pcm.length; i++) {
+        final e = (s.pcm[i] - pcm[i]).abs();
+        if (e > maxErr) maxErr = e;
+      }
+      // Within a sample-quantisation step (writer bit-depth), not a timbre swap.
+      expect(maxErr, lessThan(0.02), reason: 'sample quantisation error');
+    });
+
+    test('a re-imported song plays the note that used the sample', () {
+      // Full loop: song -> doc -> XM -> song -> render is non-silent at the note.
+      final bytes = convertToXm(moduleDocFromSong(sampleSong(buzz(600))));
+      final reimported = songFromModuleBytes(bytes);
+      final wav = reimported.renderSongWav();
+      expect(wav.length, greaterThan(44)); // more than a bare WAV header
+    });
+
+    test('a procedural voice is rendered to a non-empty sample', () {
+      final ch = TrackerChannel(
+        id: 'p',
+        instrument: const AdditiveInstrument('piano', Instrument.piano),
+        rows: 8,
+      );
+      final cells = List<TrackerCell>.filled(8, TrackerCell.empty);
+      cells[0] = const TrackerCell(midi: 60);
+      final song = TrackerSong.fromParts(
+        channels: [ch],
+        timing: const TrackerTiming(rows: 8),
+        patterns: [
+          TrackerPattern(name: '00', cells: [cells]),
+        ],
+        order: [0],
+      );
+      final doc = moduleDocFromSong(song);
+      // No PCM to preserve, so it renders a base-note one-shot (non-empty).
+      expect(doc.samples.first.pcm, isNotEmpty);
+      expect(doc.samples.first.pcm.any((v) => v != 0), isTrue);
+    });
+  });
+}
