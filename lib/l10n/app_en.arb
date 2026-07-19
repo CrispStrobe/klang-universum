@@ -645,6 +645,11 @@
   },
   "tabImportFailed": "Couldn't open that file",
   "libraryTitle": "Free music libraries",
+  "librarySaveToMy": "Save to My Samples",
+  "librarySavedToMy": "Saved “{name}” to My Samples",
+  "@librarySavedToMy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "librarySearchHint": "Search by title or composer",
   "libraryImport": "Import",
   "libraryImported": "Imported “{title}”",

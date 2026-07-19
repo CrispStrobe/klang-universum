@@ -604,6 +604,11 @@
   },
   "tabImportFailed": "Datei konnte nicht geöffnet werden",
   "libraryTitle": "Freie Musik-Bibliotheken",
+  "librarySaveToMy": "In Meine Samples speichern",
+  "librarySavedToMy": "„{name}“ in Meine Samples gespeichert",
+  "@librarySavedToMy": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "librarySearchHint": "Nach Titel oder Komponist suchen",
   "libraryImport": "Importieren",
   "libraryImported": "„{title}“ importiert",

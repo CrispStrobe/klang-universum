@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/library/source_registry.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +30,7 @@ Future<Float64List?> showSampleLibrarySheet(
   BuildContext context, {
   List<ContentSource>? sources,
   WavDecode decode = _defaultDecode,
+  SampleClipStore? store,
 }) {
   return showModalBottomSheet<Float64List>(
     context: context,
@@ -36,6 +38,7 @@ Future<Float64List?> showSampleLibrarySheet(
     builder: (_) => _SampleLibrarySheet(
       sources: sources ?? buildSampleSources(),
       decode: decode,
+      store: store ?? SampleClipStore(),
     ),
   );
 }
@@ -43,7 +46,12 @@ Future<Float64List?> showSampleLibrarySheet(
 class _SampleLibrarySheet extends StatefulWidget {
   final List<ContentSource> sources;
   final WavDecode decode;
-  const _SampleLibrarySheet({required this.sources, required this.decode});
+  final SampleClipStore store;
+  const _SampleLibrarySheet({
+    required this.sources,
+    required this.decode,
+    required this.store,
+  });
 
   @override
   State<_SampleLibrarySheet> createState() => _SampleLibrarySheetState();
@@ -102,6 +110,42 @@ class _SampleLibrarySheetState extends State<_SampleLibrarySheet> {
       setState(() {
         _fetching = false;
         _error = AppLocalizations.of(context)!.libraryImportFailed;
+      });
+    }
+  }
+
+  /// Saves [item] into the shared "My Samples" library (with its provenance)
+  /// instead of returning it — so a browsed sound can be collected for reuse,
+  /// not just dropped into the one instrument that opened the sheet.
+  Future<void> _saveToLibrary(LibraryItem item) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _fetching = true);
+    try {
+      final bytes = await _source.fetch(item);
+      final wav = readWavPcm16(bytes);
+      await widget.store.save(
+        SampleClip(
+          name: item.title,
+          sampleRate: wav.sampleRate,
+          pcm: wavToMonoFloat(wav),
+          source: _source.name,
+          license: item.declaredLicense,
+          sourceUrl: item.sourceUrl,
+        ),
+      );
+      if (!mounted) return;
+      setState(() => _fetching = false);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(l10n.librarySavedToMy(item.title))),
+        );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _fetching = false;
+        _error = l10n.libraryImportFailed;
       });
     }
   }
@@ -201,6 +245,11 @@ class _SampleLibrarySheetState extends State<_SampleLibrarySheet> {
           leading: const Icon(Icons.music_note),
           title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(item.declaredLicense),
+          trailing: IconButton(
+            icon: const Icon(Icons.bookmark_add_outlined),
+            tooltip: l10n.librarySaveToMy,
+            onPressed: () => _saveToLibrary(item),
+          ),
           onTap: () => _pick(item),
         );
       },

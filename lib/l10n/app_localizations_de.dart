@@ -1700,6 +1700,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get libraryTitle => 'Freie Musik-Bibliotheken';
 
   @override
+  String get librarySaveToMy => 'In Meine Samples speichern';
+
+  @override
+  String librarySavedToMy(String name) {
+    return '„$name“ in Meine Samples gespeichert';
+  }
+
+  @override
   String get librarySearchHint => 'Nach Titel oder Komponist suchen';
 
   @override

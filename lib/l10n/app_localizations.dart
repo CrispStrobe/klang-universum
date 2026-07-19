@@ -3230,6 +3230,18 @@ abstract class AppLocalizations {
   /// **'Free music libraries'**
   String get libraryTitle;
 
+  /// No description provided for @librarySaveToMy.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to My Samples'**
+  String get librarySaveToMy;
+
+  /// No description provided for @librarySavedToMy.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved “{name}” to My Samples'**
+  String librarySavedToMy(String name);
+
   /// No description provided for @librarySearchHint.
   ///
   /// In en, this message translates to:

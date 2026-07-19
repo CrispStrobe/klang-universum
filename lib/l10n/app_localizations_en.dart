@@ -1693,6 +1693,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get libraryTitle => 'Free music libraries';
 
   @override
+  String get librarySaveToMy => 'Save to My Samples';
+
+  @override
+  String librarySavedToMy(String name) {
+    return 'Saved “$name” to My Samples';
+  }
+
+  @override
   String get librarySearchHint => 'Search by title or composer';
 
   @override

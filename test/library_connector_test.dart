@@ -18,6 +18,7 @@ import 'package:comet_beat/features/library/license_policy.dart';
 import 'package:comet_beat/features/library/sample_library_sheet.dart';
 import 'package:comet_beat/features/library/sources/commons_source.dart';
 import 'package:comet_beat/features/library/sources/openscore_source.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 import 'package:flutter/material.dart';
@@ -404,6 +405,63 @@ void main() {
     expect(result, isNotNull);
     expect(result!.length, 4); // decoded PCM handed back to the caller
     expect(src.fetchCount, 1);
+  });
+
+  testWidgets('sample sheet: "Save to My Samples" stores it with provenance',
+      (tester) async {
+    // A real mono PCM16 WAV so the save path's readWavPcm16 succeeds.
+    final wav = BytesBuilder();
+    void u32(int v) => wav
+        .add([v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff]);
+    void u16(int v) => wav.add([v & 0xff, (v >> 8) & 0xff]);
+    const data = [1, 0, 2, 0, 3, 0]; // 3 samples
+    wav.add('RIFF'.codeUnits);
+    u32(36 + data.length);
+    wav.add('WAVE'.codeUnits);
+    wav.add('fmt '.codeUnits);
+    u32(16);
+    u16(1);
+    u16(1);
+    u32(8000);
+    u32(16000);
+    u16(2);
+    u16(16);
+    wav.add('data'.codeUnits);
+    u32(data.length);
+    wav.add(data);
+    final wavBytes = wav.toBytes();
+
+    final src = _FakeSource([_item()], () => wavBytes);
+    final store = SampleClipStore();
+    await tester.pumpWidget(
+      _wrap(
+        Builder(
+          builder: (ctx) => Center(
+            child: ElevatedButton(
+              onPressed: () => showSampleLibrarySheet(
+                ctx,
+                sources: [src],
+                store: store,
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+        UserSongsService(),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bookmark_add_outlined));
+    await tester.pumpAndSettle();
+
+    final saved = await store.load();
+    expect(saved.single.name, 'Test Song');
+    expect(saved.single.license, 'CC0'); // provenance carried
+    expect(saved.single.sourceUrl, contains('example.org'));
+    expect(saved.single.sampleRate, 8000);
+    expect(saved.single.pcm, isNotEmpty);
   });
 
   testWidgets('browser lists items and imports one into the Song Book',
