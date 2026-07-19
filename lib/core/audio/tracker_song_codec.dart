@@ -24,7 +24,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:archive/archive.dart' show ZLibDecoder, ZLibEncoder;
+import 'package:archive/archive.dart'
+    show Inflate, OutputMemoryStream, ZLibEncoder;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
 import 'package:comet_beat/core/audio/tracker_song.dart';
@@ -144,7 +145,7 @@ TrackerSong trackerSongFromToken(String token) {
   final body = _tokenBody(token);
   final Uint8List jsonBytes;
   try {
-    jsonBytes = const ZLibDecoder().decodeBytes(base64Url.decode(body));
+    jsonBytes = _inflateBounded(base64Url.decode(body), kMaxTokenJsonBytes);
   } on TrackerSongCodecException {
     rethrow;
   } catch (_) {
@@ -157,6 +158,56 @@ TrackerSong trackerSongFromToken(String token) {
     throw TrackerSongCodecException('corrupt song token (bad text)');
   }
   return trackerSongFromJsonString(jsonStr);
+}
+
+/// Hard cap on a token's DECOMPRESSED JSON — far above any real song (a few
+/// seconds of embedded 16-bit sample PCM is ~a few MB), but a firm bound so a
+/// crafted token can't decompress to gigabytes (a zip bomb) and OOM the app.
+const int kMaxTokenJsonBytes = 64 << 20; // 64 MiB
+
+/// Thrown internally when the decompressed output exceeds the cap.
+class _TokenBomb implements Exception {
+  const _TokenBomb();
+}
+
+/// An [OutputMemoryStream] that aborts once it has written more than [maxBytes],
+/// so a decompression bomb stops near the cap instead of exhausting memory.
+class _CappedOutputStream extends OutputMemoryStream {
+  _CappedOutputStream(this.maxBytes);
+  final int maxBytes;
+
+  @override
+  void writeByte(int value) {
+    super.writeByte(value);
+    if (length > maxBytes) throw const _TokenBomb();
+  }
+
+  @override
+  void writeBytes(List<int> bytes, {int? length}) {
+    super.writeBytes(bytes, length: length);
+    if (this.length > maxBytes) throw const _TokenBomb();
+  }
+}
+
+/// Zlib-inflate [compressed] with a hard cap on the DECOMPRESSED size. Uses
+/// package:archive's pure-Dart [Inflate] with a size-capped output — portable
+/// across native + web (a capping stream on the platform ZLib decoder isn't
+/// honoured by the native path, which buffers the whole output first). Skips the
+/// 2-byte zlib header; Inflate reads the raw DEFLATE body and ignores the
+/// trailing adler32. Throws [TrackerSongCodecException] on a bomb.
+Uint8List _inflateBounded(Uint8List compressed, int maxBytes) {
+  if (compressed.length < 2) {
+    throw TrackerSongCodecException('corrupt song token (truncated)');
+  }
+  final out = _CappedOutputStream(maxBytes);
+  try {
+    Inflate(compressed.sublist(2), output: out);
+  } on _TokenBomb {
+    throw TrackerSongCodecException(
+      'song token too large (possible decompression bomb)',
+    );
+  }
+  return out.getBytes();
 }
 
 /// Like [trackerSongFromToken] but returns null on ANY foreign/corrupt input
@@ -213,7 +264,7 @@ TrackerSongInfo trackerSongInfo(Map<String, dynamic> json) {
 TrackerSongInfo trackerSongInfoFromToken(String token) {
   final body = _tokenBody(token);
   try {
-    final bytes = const ZLibDecoder().decodeBytes(base64Url.decode(body));
+    final bytes = _inflateBounded(base64Url.decode(body), kMaxTokenJsonBytes);
     final json = jsonDecode(utf8.decode(bytes));
     if (json is! Map<String, dynamic>) {
       throw TrackerSongCodecException('token is not a song');

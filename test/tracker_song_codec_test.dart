@@ -4,6 +4,7 @@
 // (SampleInstrument PCM is Float32-lossy; covered in the instrument codec test).
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart' show ZLibEncoder;
 import 'package:comet_beat/core/audio/crisp_dsp/fm.dart';
@@ -273,6 +274,20 @@ void main() {
           reason: 'timing $timing',
         );
       }
+    });
+
+    test('a decompression bomb is rejected at the size cap, not OOM', () {
+      // ~70 MB of zeros compresses to a tiny payload — a classic zip bomb. The
+      // decoder must abort near the 64 MiB cap, not inflate the whole thing.
+      final huge = Uint8List(70 * 1024 * 1024); // all zeros, ~1000:1 ratio
+      final token = kTrackerSongTokenPrefix +
+          base64UrlEncode(const ZLibEncoder().encodeBytes(huge));
+      expect(token.length, lessThan(200 * 1024)); // the token itself is tiny
+      expect(
+        () => trackerSongFromToken(token),
+        throwsA(isA<TrackerSongCodecException>()),
+      );
+      expect(tryTrackerSongFromToken(token), isNull);
     });
 
     test('a pasted token with a bomb rows count returns null, never OOMs', () {
