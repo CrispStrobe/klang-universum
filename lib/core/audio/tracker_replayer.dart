@@ -125,6 +125,13 @@ const int kFxSetGlobalVolume = 0x10;
 /// per tick (classic volume-slide semantics). XM effect 'H' (0x11).
 const int kFxGlobalVolSlide = 0x11;
 
+/// Txy — TEMPO slide (XM effect 'T', 0x1D): high nibble 1 slides the tempo (BPM)
+/// UP by the low nibble, else DOWN. Modelled at ROW granularity in [walkFlow] —
+/// each row carrying Txx steps the tempo by `amount × (speed−1)` (the per-tick
+/// slide summed over the row's non-first ticks), so it rides the existing
+/// per-row-tempo variable-timing render. Clamped to a valid BPM (32–255).
+const int kFxTempoSlide = 0x1D;
+
 /// Txy — tremor: pulse the note ON for x ticks then OFF for y, repeating. A new
 /// non-colliding command (XM effect 0x1D); importers can map XM effect T onto it.
 const int kFxTremor = 0x1D;
@@ -1404,11 +1411,16 @@ bool songHasUniformPatternLengths(TrackerSong song) {
 bool songNeedsWalkRender(TrackerSong song) =>
     songUsesFlow(song) || !songHasUniformPatternLengths(song);
 
-/// Whether any cell in [song] carries an `Fxx` speed/tempo command at all — a
-/// cheap pre-filter so the common command-free/single-tempo song never pays for
-/// the [walkFlow] scan in [songUsesVariableTiming].
+/// Whether any cell in [song] carries an `Fxx` speed/tempo OR a `Txx` tempo-slide
+/// command at all — a cheap pre-filter so the common command-free/single-tempo
+/// song never pays for the [walkFlow] scan in [songUsesVariableTiming]. Both
+/// change the per-row tempo, so both must arm the variable-timing render.
 bool _songHasFxx(TrackerSong song) => song.patterns.any(
-      (p) => p.cells.any((col) => col.any((c) => c.fxCmd == kFxSetSpeed)),
+      (p) => p.cells.any(
+        (col) => col.any(
+          (c) => c.fxCmd == kFxSetSpeed || c.fxCmd == kFxTempoSlide,
+        ),
+      ),
     );
 
 /// Whether [song] has a MID-SONG tempo/speed change — i.e. its played rows do
@@ -1519,8 +1531,11 @@ List<PlayedRow> walkFlow(TrackerSong song, {int maxRows = 4096}) {
       row = rows - 1;
     }
 
-    // Apply any Fxx on this row BEFORE recording it (effect is on its own row):
-    // param < 0x20 → speed (min 1); param >= 0x20 → tempo (BPM). (Feature A)
+    // Apply any Fxx (set-speed/tempo) or Txx (tempo SLIDE) on this row BEFORE
+    // recording it (effect is on its own row): Fxx param < 0x20 → speed (min 1),
+    // >= 0x20 → tempo (BPM) (Feature A); Txx steps the tempo by amount×(speed−1),
+    // row-granular. First Txx across channels wins.
+    var slidThisRow = false;
     for (final col in cells) {
       final c = col[row];
       if (c.fxCmd == kFxSetSpeed) {
@@ -1529,6 +1544,12 @@ List<PlayedRow> walkFlow(TrackerSong song, {int maxRows = 4096}) {
         } else if (c.fxParam > 0) {
           curSpeed = c.fxParam; // already >= 1
         }
+      } else if (c.fxCmd == kFxTempoSlide && !slidThisRow) {
+        slidThisRow = true;
+        final up = ((c.fxParam >> 4) & 0xF) == 1;
+        final amount = c.fxParam & 0xF;
+        final ticks = curSpeed > 1 ? curSpeed - 1 : 1;
+        curTempo = (curTempo + (up ? amount : -amount) * ticks).clamp(32, 255);
       }
     }
     played.add(PlayedRow(oi, patternIndex, row, curSpeed, curTempo));

@@ -553,6 +553,53 @@ void main() {
     });
   });
 
+  group('Txx tempo slide', () {
+    TrackerSong slideSong({required bool slide}) {
+      final s = TrackerSong(
+        timing: const TrackerTiming(rows: 8, tempoBpm: 150),
+      );
+      for (var r = 0; r < 8; r++) {
+        s.engine.setCell(
+          0,
+          r,
+          slide
+              ? fx(kFxTempoSlide, 0x02, midi: 60) // T02 = down 2/tick
+              : const TrackerCell(midi: 60),
+        );
+      }
+      s.syncCurrent();
+      return s;
+    }
+
+    test('a Txx row steps the per-row tempo down (walkFlow)', () {
+      final played = walkFlow(slideSong(slide: true));
+      // The down-slide lowers the tempo row over row.
+      expect(played.first.tempoBpm, greaterThan(played.last.tempoBpm));
+      expect(played.last.tempoBpm, greaterThanOrEqualTo(32)); // clamped valid
+    });
+
+    test('an up-slide raises it; the direction nibble flips the sign', () {
+      final s = TrackerSong(
+        timing: const TrackerTiming(rows: 4, tempoBpm: 100),
+      );
+      for (var r = 0; r < 4; r++) {
+        s.engine.setCell(0, r, fx(kFxTempoSlide, 0x12)); // T12 = up 2/tick
+      }
+      s.syncCurrent();
+      final played = walkFlow(s);
+      expect(played.last.tempoBpm, greaterThan(played.first.tempoBpm));
+      expect(played.last.tempoBpm, lessThanOrEqualTo(255));
+    });
+
+    test('a down-slide lengthens the render (slower = longer)', () {
+      int len(TrackerSong s) => replaySong(s).pcm.length;
+      expect(
+        len(slideSong(slide: true)),
+        greaterThan(len(slideSong(slide: false))),
+      );
+    });
+  });
+
   group('Fxx set-speed', () {
     TrackerSong speedSong(int? fParam) {
       final song = TrackerSong(timing: const TrackerTiming(rows: 8));
