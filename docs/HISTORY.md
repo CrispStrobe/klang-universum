@@ -799,12 +799,753 @@ Games built on crisp_notation capabilities the app didn't use before.
   naming toggle. Star-gated (C/F/G/D → +A/E/B); correct answer plays the tonic
   triad. SRI `key_sig.<tonic>`.
 
+## Loop Mixer 2.0 — the groovebox ladder (roadmap)
+
+**STATUS 2026-07-17: ALL SLICES SHIPPED — the ladder is complete** (slices
+1–10; slice 5 deferred to the Tracker by design). See the board + HISTORY.md.
+Follow-ups (groove→score export, native-AEC jam grading) are specced in
+[`LOOP_MIXER_FOLLOWUPS_HANDOVER.md`](LOOP_MIXER_FOLLOWUPS_HANDOVER.md).
+
+Evolve the shipped Loop Mixer (`32ebb96`) from kid toy into something adults
+find genuinely fascinating. Guiding idea: **kids love cause-and-effect; adults
+love depth that reveals itself** — a toy that turns out to be an instrument,
+a system that responds to *you* (the mic!), and output worth keeping. The
+ladder is also a stealth curriculum: layers → arrangement → harmony → rhythm
+design → ear-to-instrument. Depth stays behind the shelf (Sandbox/Studio
+philosophy): the five-cards surface never gets harder. Division of labour vs.
+the **Tracker** (opus, `TRACKER_HANDOVER.md`): the Tracker is the *editing*
+surface (pattern grids, sample instruments); the Loop Mixer is the *playing*
+surface (layering, feel, harmony, generativity, the mic). Both sit on the same
+`loop_engine.dart`/`mixStems` foundation — engine work here is additive and
+keeps existing signatures stable.
+
+**Architecture spine** (decides everything else):
+- **`GrooveSpec`** — one small serializable value object = the entire groove
+  state (enabled set, tempo, swing, per-track variant + level, progression,
+  seed). Engine renders `spec → WAV` (pure, cached). Makes the share token,
+  save slots and tests trivial.
+- **Patterns become DATA, not closures** (drums = per-voice hit rows; melodic
+  = (midis, lengthSteps) cells) so variants, engraving, sing-a-track and
+  generative variation all operate on one model — and the Tracker can reuse it.
+- **Seam scheduler** — the single looping player stays for the steady state
+  (native loop = perfectly gapless); a second player only swaps a *changed*
+  render at the next loop boundary (fills, variation, infinite mode). Instant
+  toggles keep the shipped phase-preserving `play(position:)` path.
+- Stay offline-render + audioplayers until an actual wall (live filter sweeps
+  / continuous tempo bend would need a streaming path — flag, don't build).
+
+**Slices** (each independently shippable, in order):
+1. ✅ v1 shipped (`32ebb96`).
+2. **Engine v2** — GrooveSpec + data patterns + **swing** (off-eighth delay
+   0–60%, the biggest feel-per-LOC win) + **per-track variants** (A/B/C) +
+   **euclidean drum generator** (Bjorklund; hits/rotation per voice) +
+   per-card **level**. Pure Dart + tests; screen keeps the v1 surface.
+3. **Screen v2 + seam scheduler** — swing slider, variant cycling on cards,
+   level control, bar-quantized "armed" apply for seam-timed changes, auto
+   drum-fill every 4th loop.
+4. **Chord progression lane** — pick I–V–vi–IV / I–IV–V–I / vi–IV–I–V; loop
+   becomes 4 bars (1 per chord); bass + chords render chord-relative, melody
+   stays C-pentatonic (works over the axis progressions). Suddenly it's a song.
+5. ~~Step editor~~ — **deferred to the Tracker** (its Sandbox view IS the
+   step editor, over the same engine). No duplicate grid UI here.
+6. **Live engraving** — the groove as a real multi-part crisp_notation score
+   in a collapsible panel (the app's signature "you're writing notation" trick).
+7. **Keep it** — WAV export/share (bytes already exist), groove **share
+   token** (GrooveSpec → short base64 string, serverless, matches the
+   no-tracking stance), save slots (mirror `user_songs_service`).
+8. **Infinite mode** — seeded per-iteration variation via the seam scheduler
+   (ghost notes, melody ornaments, arrangement drift). Never the same twice.
+9. **Sing a track into existence** — hum a riff → MPM pitch track → quantize
+   to key + step grid → a sixth card plays it on the synth (reuse Free Sing /
+   melody recorder pipeline). The headline feature. (Distinct from the
+   Tracker's record-your-voice-as-*instrument* — this is melody *capture*.)
+10. **Beatbox → drum card** (onset + crude kick/snare/hat classification) and
+    **Jam mode** (groove plays, child plays cello over it through the AEC
+    path, app shows what they play vs. the harmony — the loop mixer becomes a
+    play-along backing band). Big; needs the AEC on-device path.
+
 ## Agent coordination board — shipped log (chronological)
 
 These are the `✅ idle / SHIPPED` entries that accumulated on the top-of-
 [PLAN.md](PLAN.md) coordination board as parallel agents finished work. Moved
 here verbatim (2026-07-17) to keep PLAN.md focused on pending work. Newest-ish
 first, as they sat on the board.
+
+_The next batch, moved 2026-07-19 — the board entries that accumulated after
+the 2026-07-17 sweep (newest at the top of this batch):_
+
+- **opus** · ✅ **SHIPPED — layout-engine crash-hardening** (crisp_notation `443be86`). Fuzzed `layoutPages`/`layoutMultiPartPages`/`layoutStaffSystemSystems` against degenerate scores (empty measures, extreme durations, huge/tiny page metrics, unusual + additive meters, chords/tuplets/voice2). One real internal crash found + fixed: an empty (0-measure) score threw `StateError: Bad state: No element` (`layoutSystems` read `measureRegions.last`) — reachable from the PDF export of an empty Workshop doc; now paginates to zero pages. All other throws are the documented `ArgumentError` preconditions (unequal measure counts, empty multi-part). Locked with a `pagination robustness` group in `layout_edge_test.dart` (empty-score regression + 150-iter valid-input fuzz + precondition contract). **Then** scoped the **Loop Mixer 3.0** arc into PLAN.md (§ "Loop Mixer 3.0 — from mixer to instrument") — content variety (chosen lead), live-performance FX, visual juice, discovery/combos, improvise, arrangement — and flagged the **broken "show as sheet music" panel** as §A (bug, do first). Docs only. Now idle.
+
+- **opus (library-import-multipart)** · ✅ **idle / SHIPPED — fixed online-library import data-loss.** The OpenScore/Commons fetch pipeline decoded `.mscx` via single-part `scoreFromMscx` + MIDI via single-track `scoreFromMidi` → a 4-part OpenScore string quartet / multi-track MIDI lost all but the first part on import. Added **`multiPartScoreFromMscx`/`staffSystemFromMscx`** to `crisp_notation` (**`crisp_notation@516dcd2`**, per-staff id prefixes + per-`<Part>` instrument names) + fixed `bytesToMusicXml` to decode mscx/MIDI via the multi-part readers → `multiPartToMusicXml` (**`02d114d`**). +2 tests (lib reader + app 2-part mscx/midi import); 1675 core + 21 library tests green. So import AND export now keep every part for the multi-capable formats. **+ robustness follow-up (`crisp_notation@ba74b01`):** extended `reader_robustness_test.dart` to fuzz the multi-part reader entry points (`multiPartScoreFrom*`, the actual import surface + the new mscx reader) — 2000 mutations each of a genuine 2-part doc, all reject cleanly with FormatException (no RangeError/hang).
+
+- **opus (multipart-kern)** · ✅ **idle / SHIPPED — multi-part kern export (columnar N-way time-merge).** `multiPartToKern` (**`crisp_notation@af10bcb`**) emits one `**kern` spine per part, voice-1 events **time-merged** row by row (sustains → `.`), generalizing the 2-voice `_multiVoiceRows` via a new `_kernEvents` helper (onset+token, tuplet-scaled, tie state across measures). Verified via `staffSystemFromKern` with two parts of DIFFERENT rhythms — both note sequences exact. Wired into the export sheet + Workshop (**`6b13055`**). +1 test; 1674 core green; app analyze clean. **⇒ ALL multi-capable engrave formats now keep every part on export: MusicXML, MEI, MuseScore, kern** (LilyPond/Braille/PDF remain single-Score by nature). **↓ prior ✅ SHIPPED — multi-part MuseScore export** (same data-loss fix as MEI). Added **`multiPartToMscx(MultiPartScore)`** (**`crisp_notation@ac68a08`**) — one `<Part>`/`<Staff>` per part; mscx staves are independent + its slur/dynamic/lyric markup is positional (not id-referenced), so each part is written self-contained (no cross-part id handling). Verified per-staff via `scoreFromMscx(staffIndex:)` (mscx has no multi-part reader). Wired into the export sheet + Workshop (**`a67ef5c`**). +1 lib test; 1673 core green; app analyze clean. **⇒ MEI, MuseScore AND MusicXML now keep every part on export.** **`multiPartToKern` DEFERRED** (unclaimed, lower-value): kern spines are columnar so N parts need an N-way time-merge (generalizing the 2-voice `_multiVoiceRows`) — real complexity + bug risk for an analysis format, vs. MEI/mscx's clean independent staves. kern/LilyPond/Braille still export the first part. **↓ prior: ✅ SHIPPED — multi-part MEI export (fixed a real export data-loss).** The app's export sheet + Workshop dropped all-but-the-first part on MEI export. Added **`multiPartToMei(MultiPartScore)`** to `crisp_notation` (**`crisp_notation@f613c9f`**) — one `<staffDef>`/`<staff>` per part, each keeping its own clef, element ids part-prefixed so control events stay unique, repeats/voltas/nav from the lead; round-trips through the existing `multiPartScoreFromMei`. Written as a NEW function (single-part `scoreToMei` untouched → zero regression; the shared helpers gained only a default-`''` prefix param). Wired into `lib/shared/music_io/music_export.dart` + the Workshop MEI case (**`8bf75a2`**) so a 4-part score now exports all 4 staves. +1 lib test; 1672 core green; app analyze clean. **Follow-up (unclaimed):** `multiPartToKern` (multi-`**kern`-spine) + `multiPartToMscx` (multi-`<Staff>`) — kern/MuseScore readers are already multi-part, so same pattern. **(codec-gaps arc below is SHIPPED/idle.)**
+
+- **opus (codec-gaps)** · ✅ **idle / SHIPPED — EVERY closeable codec round-trip gap the sweep found is now closed** (writer+reader → probe → flip the `roundtrip_features_test` matrix cell → ship to public `crisp_notation@main`; library only, no app hot files). **MEI (all):** ornaments (`d688a43`), dynamics `<dynam>` (`2c9011b`), repeats+voltas `@left/@right`+`<ending>` (`32c17c7`), navigation `<repeatMark>` (`5abfb69`), lyrics `<verse>/<syl>` (`5f2f82b`), tremolo `@stem.mod` (`af6c80d`). **kern (all):** repeats barline `:|`/`|:` (`c0176ff`), lyrics parallel `**text` spines (`0ab5646`), dynamics `**dynam` spine (`19decf9`), voltas `*>N` + navigation `!!nav:` comment (`4b01f18`) — the spine work is conditional (emitted only when the marking exists) so every other kern doc stays byte-identical. **Only remaining droppedBy cell:** tremolo in **kern/ABC** — a genuine format limitation (tremolo isn't standard there; carried in MusicXML `<tremolo>` + MEI `@stem.mod` only). All 1642 core tests green throughout; the matrix now guards every fix. **Then added MuseScore as a 5th matrix codec** (`0fa7379`): the `.mscx` codec is a documented note-content subset dropping grace/dynamics/repeats/voltas/navigation/lyrics/tremolo — all extendable like MEI/kern were. **Then closed ALL of them:** grace `<acciaccatura>/<appoggiatura>` (`79f4619`), repeats `<startRepeat/>/<endRepeat/>` (`1746c2a`), dynamics `<Dynamic><subtype>` (`b18ce60`), tremolo `<Tremolo><subtype>` (`1da4685`), lyrics `<Lyrics><text>` (`d0f5891`), navigation `<Marker><subtype>` (`14ef4f0`), voltas `<Volta><endings>` (`8a34e5c`). **⇒ MusicXML, MEI and MuseScore now carry EVERY marking in the 125-cell matrix; ABC carries all but tremolo; kern all but tremolo. The single remaining `droppedBy` cell is tremolo in kern/ABC — a genuine format limitation (not standard there).** 1667 core tests green throughout; the matrix guards all 18 marking types × 5 codecs. **Capstone (`f7965f7`): a fuzzing property test** (`roundtrip_markings_property_test.dart`) generates 120 seeded scores with RANDOM marking combinations (a note carrying grace+tremolo+dynamic+lyrics, stacked repeats+voltas, etc.) and asserts every marking survives write→read on the 3 full-coverage codecs — 360 round-trips, plus a corpus sanity check so it can't pass vacuously. **CODEC ROUND-TRIP EFFORT COMPLETE + FUZZ-VALIDATED** across the 5 general interchange formats. (Probed GPIF too — it's a documented *tab* subset by design, so its general-marking drops are scope, not bugs; not treated as gaps. MIDI is inherently lossy.) 1671 core green. **(CI-fixes work below also SHIPPED/idle.)**
+
+- **opus (looper-core)** · ✅ **idle / SHIPPED — roadmap item 4 "a much better Looper": the pure core (`06b1849`).** `lib/core/audio/loop_record.dart` (pure, 9 tests): `quantizeLoopBars` (snap a take to a whole number of bars → **seamless loop lengths**), `snapPunch` (snap a raw record window to bar boundaries → **quantised punch-in/out**), and a generic `LoopStack<T>` overdub layer stack (add · **undo/redo** with add-clears-redo · per-layer mute → `activeLayers` vs `layers`). NO hot-file touch. **Remaining item 4:** a surface — the natural application is turning the DrumKit's record into a **layered overdub looper** (each take a `LoopStack` layer: record→layer, undo removes a take, mute silences one, playback sums `activeLayers`) — a real refactor of the DrumKit's single-pattern model, so a claimed slice of its own; or wiring the quantisers into the Loop Mixer.
+
+- **opus (ci-fixes)** · ✅ **idle / SHIPPED — GitHub Actions health.** CI-infra only (no product hot files). ✅ **Deploy fixed** (`27f928a`): Vercel free tier caps prod deploys at 100/day; the old `workflow_run: [CI]` trigger fired on every green CI (>100/day under heavy multi-agent pushes → `api-deployments-free-per-day`). Switched to an **hourly `schedule` + `workflow_dispatch`** (≤24/day, 4× under cap). Residual quota reds self-heal as the pre-change backlog ages out of the rolling 24h window. ✅ **aec-native** confirmed green (my earlier DTD-deadlock C fix passed CI). ✅ **ios-release** confirmed green (pub-get sibling-checkout fix held; all signing secrets present). ✅ **App Store screenshots GREEN** — the 60-min iPhone-Capture hangs were on older code; current main captures in ~20min. Added a **per-step wall-clock timeout** as a safety net (`2e3605b`) that names any future hang (`SHOT_STEP_TIMEOUT`). One real gap found + fixed (`6472679`): the Workshop step's bare `find.byIcon(Icons.piano)` was ambiguous on the wider iPad layout (game cards also show a piano) → iPad missed `03_workshop`; scoped the tap to the AppBar's single piano. **Verified GREEN — full 5+5 set captured (both `*_03_workshop.png` present, no skips/timeouts).** Files: `.github/workflows/deploy.yml`, `integration_test/screenshots_test.dart`, `lib/core/services/tts_service.dart`. ✅ **BONUS — fixed the pre-existing `crisp_notation` GPIF meter bug** the libraries-and-tab agent flagged as unclaimed (**`crisp_notation@5bfb0b3`**, public main): the master-bar writer re-stamped the *initial* meter on every bar without an explicit `timeChange`, so a mid-score `4/4→3/4→3/4` read back a spurious `3/4→4/4`. Now tracks a running meter — byte-preserving (the single-track golden is unaffected). The long-failing `gpif_test: a mid-score time-signature change round-trips` passes; 22 gpif + 1537 core tests green. ✅ **BONUS 2 — fixed an ABC mid-score clef-change round-trip bug** found by a targeted codec sweep (**`crisp_notation@a08089d`**, public main): the ABC writer emitted mid-tune key/meter changes but **never a clef change**, so a switch to bass mid-piece was silently dropped (the reader already parsed `[K:… clef=…]`). Writer now emits the clef (header + mid-tune, always re-stating the running key so the reader has a tonic to anchor `clef=`); reader now recognizes `clef=treble` (a change *back* to treble) and only records a key change when the key actually differs. MusicXML/MEI/kern already round-tripped clef+key changes — ABC was the sole gap. +3 regression tests; 1540 core green. ✅ **BONUS 3 — fixed ABC dropping grace notes from any id-less note** (**`crisp_notation@7c4f054`**, public main): the writer gated `{…}` grace output on `id != null` (copied from the adjacent id-keyed chord-symbol/dynamics branches), but grace notes live on the NoteElement itself (like articulations/ornaments, which aren't gated) — so a note without an id silently lost its grace, though the reader parses `{…}` positionally and MusicXML round-trips the same note fine. Dropped the id gate; +1 regression test (id-less/id-bearing × both grace styles); 1541 core green. **These 3 codec fixes came from a systematic write→read self-round-trip sweep (meter/clef/key/articulation/ornament/grace/tie × MusicXML/MEI/kern/ABC); the remaining probed attributes all round-trip cleanly.** ✅ **BONUS 4 — a permanent round-trip regression matrix** (**`crisp_notation@e8314a1`**, public main): new `test/roundtrip_features_test.dart` — **100 generated cases** pinning every musical marking (meter/clef/key changes, 5 articulations, 3 ornaments, grace, tie, slur, dynamics, tuplet, chord, double-dot, repeats, volta, navigation, voice 2, lyrics, tremolo) through write→read on all 4 codecs. Each feature declares which codecs legitimately drop it (`droppedBy`): supported cells are regression locks; dropped cells are explicit expectations that fail loudly if support is later added. Complements `roundtrip_property_test.dart` (note *content*) by locking the *markings*. 1641 core tests green. **Documented codec gaps surfaced (unclaimed follow-ups, real library features not one-liners):** neither MEI nor kern carry **dynamics / repeats / voltas / navigation / lyrics**; ABC/MEI/kern don't emit **tremolo**. MusicXML carries everything. ✅ **BONUS 5 — fixed the MEI ornament gap** (**`crisp_notation@d688a43`**, public main): MEI ornaments are `<trill>`/`<mordent>`/`<turn>` control events anchored by `startid`, and the writer emitted them only for a note with an xml:id — so an ornamented **id-less** note lost its ornament (same class as the ABC grace drop); it also only scanned voices 1–2. Now an ornamented id-less note gets a deterministic position-derived id (`o<measure>_<voice>_<index>`, unique so no collision) stamped on both the `<note>` and its control event, across all 4 voices. Flips the matrix's 3 ornament×MEI cells to preserved; +1 mei_test; 1642 core green. **So all three interchange formats now round-trip ornaments; MEI's remaining gaps (dynamics/repeats/voltas/navigation/lyrics) are larger features.**
+
+- **opus (rhythm-quantise)** · ✅ **idle / SHIPPED — the beginner rhythm "Relevanzschwelle" engine (roadmap step 2 DONE; `04fc357`).** New **pure, Flutter-free** `lib/core/audio/rhythm_quantize.dart`: `detectOnsets(energy frames)` (rms floor + rise factor + refractory, strength = attack peak; mirrors `beat_capture`'s rule but generic) → `chooseResolution` **auto-picks the coarsest grid the player can actually feel** (finest needed within tolerance, no two onsets colliding, never finer than a **skill `cap`** of `RhythmResolution` quarter/eighth/tripletEighth/sixteenth — so loose 1/8 settles on 1/8, and a beginner cap collapses stray 1/16 flams) → `quantizeRhythm` drops sub-strength noise, snaps, and collapses same-step hits (strongest kept) → `{resolution, hits[step, snappedMs, originalMs]}`. 15 tests (subdivision maths, auto-picker across all four grids + loose-feel + cap + single-onset, snap/collapse/strength-filter, onset detection, detect→quantise end-to-end); analyze clean. NO hot-file touch; complements the fixed-grid `beat_capture.quantizeToBeat`. **This is the shared front-end for the rest of the roadmap** (DrumKit record → model conversion → Looper). Recorded in HISTORY. ✅ **Roadmap step 3 CORE also SHIPPED (`994f5b2`): `lib/core/audio/rhythm_convert.dart`** — `beatOfHit`/`hitToStep` (a hit's musical position is grid-independent, so it re-places onto any subdivision) + `toTrackerColumn` (→ a Tracker channel, which already exports Score/MusicXML/MIDI/module + Song Book) + `toDrumPattern` (→ a Loop Mixer `DrumRowsPattern`). Per-hit pitch/drum are caller-supplied. 7 tests. So a recorded rhythm now converts to the grid models and reaches every notation/export path via existing bridges. ✅ **Roadmap item 1 (record UI) also SHIPPED (`cb1ba49`): DrumKit tap-to-record** — a Record button captures pad taps at their loop position, on stop quantises the take onto the step grid (`quantizeToResolution(eighth)` → `toDrumPattern`, overdub) and adds the fixed-grid `quantizeToResolution` to the engine. Device-free, `debugRecordTaps` seam, +3 tests. **Remaining roadmap: item 1 polish (mic beatbox record · Save-to-Song-Book from the DrumKit · skill-tier setting · more voices) + item 4 (Looper).**
+
+- **opus (spot-the-parallels)** · ✅ **idle / SHIPPED — new voice-leading minigame (`63fcd17`).** "Spot the Parallels": a two-chord SATB progression is engraved on a grand staff; tap **Clean** or **Parallels!**. The answer key is the library's `checkVoiceLeading` (parallel 5ths/8ves) — the engine is **ground truth**, so the 9 authored templates (4 clean + 5 parallel-only) are verified-correct in the test and transposed for variety (parallels are interval-invariant, so the label survives transposition). Correct answers play the chord pair so you HEAR the motion; SRI under `harmony.parallels.<template>`. New `lib/features/games/harmony/spot_parallels_screen.dart` (screen + pure `ParallelsTemplate`/`buildRound` generator) + a `GameInfo` under 'harmony' + `kStarThresholds['spot_parallels']` + a new **g9-10 `voice_leading` curriculum concept** (so the coverage audit places it) + 6 tests (template-labels-vs-library, parallel-only crispness, transposition invariance, widget render+SRI). Curriculum/consistency/layout audits green; whole-project analyze clean. Top of the harmony ladder — the app's first part-writing drill.
+
+- **opus (anavis-intelligence)** · ✅ **idle / SHIPPED — intelligent AnaVis everywhere (a real analysis engine, not hand-authored).** Turning AnaVis into an engine that reads ANY score and annotates it, adaptive for kids ↔ experts. ✅ **Slice 1 SHIPPED — the brain, IN THE LIBRARY** (`crisp_notation@8502508`, pushed to public main; `../crisp_notation` fast-forwarded). New `crisp_notation_core/src/theory/analysis.dart`: `analyze(Score,{Key?}) → ScoreAnalysis{key, segments, cadences}`. Slices the score into vertical sonorities across all 4 voices → `identifyChord` → `romanNumeralFor` in the detected key (`keyOf`) → **T/S/D function** (`functionOf`, secondaries=dominant); flags **non-chord tones** (remove-one-and-reidentify → recovers suspensions/passing tones); reads an **implied chord** from a purely melodic/arpeggiated bar; **merges** repeated chords; detects **cadences** (authentic/half/plagal/deceptive). 8 library tests. Phrase/form detection deliberately deferred. ✅ **Slice 2 SHIPPED — the computed view** (`6f1b05b`). `lib/features/games/composition/score_analysis_view.dart`: `ScoreAnalysisView` feeds a real `Score` through `analyze()` and renders key chip + engraved staff + **function-coloured chord blocks** (tap to hear) + **roman numerals** + **cadence markers** + legend, with an **`AnalysisDepth` dial (kids/learner/expert)** — kids=colours only, learner=+romans/cadences, expert=+chord symbols. Wired a "Read from the notes (auto-analysis)" section into `AnalysisHubScreen` (`kAnalysisExamples`). +11 EN/DE keys; 19 app tests. ✅ **Library follow-up (`crisp_notation@8646658`): `HarmonicSegment.elementIds`** — analyze() now returns the NoteElement ids per segment, so a consumer can colour/highlight the notes of a chord. ✅ **Slice 3 SHIPPED — the Workshop "Analysis" toggle** (`afaf7c5`, the killer feature). An **Analysis** item in the Workshop overflow menu runs `analyze(_doc.buildScore())` live and (a) **tints every note by harmonic function** (green/blue/orange) via the existing `elementColors` seam (base layer; selection amber + playback green still override), using the new segment `elementIds`; (b) shows a **compact banner** above the score — detected key + roman progression + cadences. Additive + guarded by `_showAnalysis` (default off), auto-detects the key. Rebased cleanly onto the `libraries-and-tab` agent's concurrent Workshop edits. +1 ARB key; 64 workshop tests. ✅ **Slice 5 (part 1) SHIPPED — Song Book host** (`9f6cba6`). The song player gained an **"Analyse the harmony"** action → the computed `ScoreAnalysisView` over the song's real `Score`, so any built-in public-domain song OR imported/user song is readable for key + romans + function colours + cadences at the kids/learner/expert depth. Pure reuse + `_SongAnalysisScreen` host + 1 ARB key + test. ✅ **Slice 6 SHIPPED — the expert layer** (`01146bf`). `ScoreAnalysisView` grows over the same analysis: a **tension curve** (learner+, a sparkline tonic-low→dominant-high so you SEE the home→away→tension→home arc, `_TensionPainter`); a **voice-leading check** (expert — feeds the chord segments top-voice→bass to the library's `checkVoiceLeading`, flags parallel 5ths/8ves or "clean ✓", only for a ≥3-voice texture); and a **non-chord-tone list** (expert). +6 EN/DE keys; 5 tests. ✅ **Slice 5b SHIPPED — Loop Mixer host** (`0f2b4f1`). Selecting a song progression now shows a strip under the harmony chips with its chords **coloured by function** (I/IV/V/vi → tonic/subdominant/dominant) + roman labels, so the kid sees the home→away→tension→home shape of the vamp. Made the colour helper public (`harmonicFunctionColor`). ✅ **Slice 4 SHIPPED — computed form** (library `crisp_notation@b575a9b` `detectForm()` + app `dc412fe`). `detectForm(Score)` fingerprints each measure's top-voice melody transpose-invariantly → letters A/B/C (same letter = the tune came back) → merged sections. `ScoreAnalysisView` gained a **Form row** (coloured sections, widths ∝ measure count) shown only when the piece repeats material, so through-composed pieces stay quiet. Completes the "AnaVis" name (visualising form). +1 key; 3 library + 1 app test. **THE ANAVIS EFFORT IS COMPLETE:** engine (`analyze` harmony + `detectForm` form + `elementIds`) across FIVE surfaces — the hub, the computed view, the Workshop (live note-tint + banner), the Song Book, the Loop Mixer — with a kids↔learner↔expert dial (colours → romans/cadences/tension-curve → chord-symbols/voice-leading/NCTs). ✅ **Flourishes SHIPPED:** a **circle-of-fifths key wheel** in the expert layer (`cdf1000`, `_KeyWheelPainter`, key highlighted, minor→relative-major position); and **phrase-level form grouping** (`crisp_notation@e859e57`) — `detectForm` now tries phrase lengths and picks the one exposing the most repetition, so a recurring 4-bar phrase reads as ONE section (a real A-B-A, not A-B-C-D-A-B), falling back to bar-level; the app form row upgrades automatically (no app change). **Remaining (deep-expert only, if ever wanted):** figured-bass display; pc-set/Forte labels (library `set_theory` already has them); modulation regions on the wheel (library `localKeys`); memoize `analyze()` in the Workshop if a big score ever lags. **AnaVis went from hand-authored examples to a real engine that reads the music, from pre-reader colours to expert voice-leading.** **Perf note:** analyze() runs per-rebuild while the toggle is on — fine for bounded scores; memoize on doc-change if it ever lags. Worktree `../mus-textbook`, branch `feature/textbook-prose-anavis`; engine in the shared `../crisp_notation` clone.
+
+- **opus (inspect / looking-glass)** · ✅ **idle / SHIPPED — 🔍 Looking Glass EVERYWHERE (all surfaces + all hover spots + the composition sandboxes).** The "do it all" pass is done. ✅ **Multi-part full-score canvas hover** (`2ca6b0b`) — `MultiPartCanvas` gained `onElementHover(globalId?)` resolving the note inside its own scroll space; the card pins to a fixed corner (the canvas scrolls). ✅ **Tracker grid hover** (`8a5e947`) — per-cell `MouseRegion` → the note + row-chord in a corner card; leaving the grid clears it. ✅ **Tab grid hover** (`5c40199`) — per-cell hover → fretted note + column chord in a corner card. ✅ **Games** (`012802b`) — the toggle on the two composition SANDBOXES (My Melody, Melody Doodle: tap a note → its card; My Melody also suppresses placement on that tap). **Deliberately NOT on quiz games** (Roman Numerals, Function/Chord/Cadence quizzes, note-reading drills) — the card would reveal the answer; Inspect belongs on editing/reading/sandbox surfaces, not the challenge. (StaffView has no region controller, so the sandboxes are tap-only; hover lives on the score-views + editor grids.) Every touched suite green; analyze clean. **NOW TRULY COMPLETE.** Was: Worktree `../mus-textbook`, branch `feature/textbook-prose-anavis`. A toggle-activated "Looking Glass": flip it on, tap a note/cell, and a card tells you what it is — note name(s), scale degree in the key, chord symbol + roman numeral + T/S/D function + non-chord-tone status — all computed from the shared `analyze()` engine (no hand-authoring). UX decision: an **icon toggle**, not bare long-press/double-press (avoids gesture conflicts, discoverable). Reusable core is **`lib/features/games/composition/music_inspect.dart`** (`InspectInfo` + `inspectElement(score,id,analysis)` + `showInspect()` bottom sheet; the chord row shows even without a key, plus a free `detail` line). ✅ **Slice 1 — Song Book** (`5dcf492`; 🔍 app-bar toggle; tap a note → card, else play). ✅ **Slice 2 — Composition Workshop** (`c79796d`; 🔍 in the ⋮ menu; resolves single-part local ids AND full-score `p<part>:<rawId>` globals). ✅ **Drag-safety** (`28dfec5`) — in the Workshop placed notes are draggable, so all six drag handlers early-return in Inspect mode (a poke must never nudge a note — per the maintainer's call). ✅ **Slice 3 — Advanced Tracker** (`ed30fe6`; 🔍 app-bar toggle; a cell reports its note + the CHORD the whole row sounds via the new **library `Pitch.fromMidi`** `crisp_notation@09d9ab3` → `chordSymbolFor` + its instrument/effect). ✅ **Slice 4 — Tab Workshop** (`4adf7b3`; 🔍 app-bar toggle; a string×fret cell → fretted note + column chord + string/fret/diagram-name; capo is display-only so it reads the sounding pitch playback does). Rebased cleanly onto the `libraries-and-tab` agent's tree (no collision). ✅ **Slice 5 — desktop HOVER** (`63cad36` Workshop, `7b4623f` Song Book) — the original "mouse on hover" ask: with Inspect on, sweeping the mouse over the score raises a small **floating card** describing the note under the cursor (a true looking glass). A `MouseRegion` resolves the element via the existing `ElementRegionController.elementIdsIn`, re-running `analyze()` only when the hovered element changes (cheap pixel sweep); the card is `IgnorePointer` so it never steals the hover; **no-op on touch** (tap still opens the full sheet). Refactored the card body into a shared `music_inspect.inspectBody()` used by both the tap sheet and the hover overlay. Each slice unit-tested (incl. drag-suppression + hover-shows/clears seams); every app suite green (Song Book, 66 Workshop, 45 Tracker, 20 Tab); analyze clean. **THE INSPECT EFFORT IS COMPLETE** — one reusable core, four surfaces + desktop hover on both score views, kids-to-expert depth (note name → degree → chord/roman/function/NCT). **Remaining (optional, if ever wanted):** hover on the multi-part full-score canvas + the Tab/Tracker grids; the same card on games.
+
+- **opus (crisp_notation-musicxml)** · ✅ **idle / SHIPPED (in the LIBRARY,
+  `crisp_notation@54538a5`, bumped 0.4.5→0.4.6; `../crisp_notation` fast-forwarded
+  so local+CI use it).** An audit of the MusicXML reader/writer (the format the
+  Workshop saves/reopens a child's score in) found **2 silent-corruption bugs**,
+  both in gaps the 150-score roundtrip property suite doesn't generate:
+  (1) **voice-2/3/4 tuplets corrupted BOTH voices** on save/reopen — the writer
+  stamped an inner voice's triplet onto voice 1 and wrote the inner voice with no
+  time-modification (voice 1 read 3/4 not 4/4); now routed per-voice via
+  `Measure.tupletsForVoice`. (2) **a tempo change in a score with no initial
+  tempo** was relocated to bar 1 and lost as a change; the reader now treats a
+  metronome as the initial tempo only in the first measure. Regression test
+  verified to fail on the old code; full MusicXML + 150-score property suite
+  green. **@tracker-ui / anyone using `multiPartToMusicXml`/`scoreToMusicXml`:**
+  no API change — inner-voice tuplets and mid-piece tempo changes now round-trip
+  correctly. MIDI reader audited clean. ✅ **ABC FOLLOW-UPS SHIPPED
+  (`crisp_notation@0caafdf`, 0.4.6→0.4.7, `../crisp_notation` fast-forwarded):**
+  (a) **octave-specific accidental carry** — `^c c,` no longer imports the lower
+  `c,` as C♯ (reader+writer now key the in-bar accidental by pitch+octave per
+  ABC 2.1); (b) **sparse-lyric alignment** — a lyric on notes 1 & 3 no longer
+  shifts onto note 2 (writer emits one token per note, `*` for unsung); (c) a
+  **mid-piece `|]`** keeps its final-barline style. All verified to fail on the
+  old code; ABC + 150-score property suite green; mus `import_test` green vs
+  0.4.7. **NOT changed (correct-by-design):** the MusicXML endRepeat+bar-style
+  item — the reader deliberately ignores `<bar-style>` under a `<repeat>` because
+  standard MusicXML writes backward repeats *with* light-heavy, so reading it
+  would spuriously mark every imported repeat as a final barline (the field loss
+  is cosmetic). **The MusicXML + MIDI + ABC interchange audit is complete.**
+
+- **opus (native-aec-dtd)** · ✅ **idle / SHIPPED — the native C AEC had the same DTD
+  deadlock I fixed in Dart.** `native/aec/src/aec_dsp.c`'s `aec_dtd_update` is a
+  byte-for-byte port of the pre-fix Dart `DoubleTalkDetector`: `block += 1` ran
+  unconditionally before the far-end gate, so warmup burned during far-end-silent
+  blocks; warmup then expired with W still zero → echoEst=0 → rho=0 → freeze →
+  re-arms forever. Applied the same fix (count warmup only on far-end-active
+  blocks; treat ee==0 as "no info, don't freeze"; hold the full hangover on arm).
+  Added a native regression test (silent far-end lead-in, echo only) verified to
+  fail on the old C: **plain 44.5 dB → +DTD 5.2 dB (deadlock)** — matching the
+  Dart ~39 dB regression; now 13/13 native tests green via `bash native/aec/
+  build.sh`. Zero collision (no agent touches `native/aec/`). Files:
+  `native/aec/src/aec_dsp.c`, `native/aec/test/aec_engine_test.dart`.
+
+- **opus (playing-staff)** · ✅ **idle / SHIPPED — "notes light up as they play" across the manual + examples** (`a576ee7`, `9d50d70`). Fixes the gap that examples/lessons played audio with no visible progress. crisp_notation's `StaffView` already exposes `highlightedIds` (repaint-only), and the schedule is always known (each note has a ms duration) — so no library change was needed; the missing piece was a reusable app-side driver. New **`lib/features/games/widgets/playing_staff.dart`**: `ScorePlayback` (ChangeNotifier; `play(List<PlayStep>)` where `PlayStep = ({Set<String> ids, int ms})`) + **`PlayingStaffView`** (a StaffView that lights its scheduled ids on a Ticker created in initState) + `stepsForSequence()`. Wired into: (1) **the whole tutorial/manual** — `TutorialStep` gained a `beats` field; the sheet now uses `PlayingStaffView` and, on Listen, plays `beats` AND lights the score's notes in time (id scheme `n{i}`); **all 41 primer melody steps converted** `playSequence(_run(X))` → `beats: _run(X)`, so every textbook lesson + every game's "?" how-to animates from one change; (2) **both analysis views** — form lights each section's notes, harmony lights each chord. Tests: PlayingStaffView timing (n0→n1→cleared), tutorial Listen lights the score, schedule ids line up with engraved ids. Full suite **1304 green**, analyze clean. ⚠ touched hot shared `primers.dart` (41 mechanical step edits) + `tutorial.dart`/`tutorial_sheet.dart` — rebased. ✅ **In-game sweep started (`1fb36a1`):** `ending_detective` (melody lights note-by-note; `Score.simple` ids e0,e1,…) + `spot_upbeat` converted; **enabler added** so reading-scaffold games can highlight WITHOUT losing the note-name overlay — `PlayingStaffView` gained `showNoteNames`/`noteNameStyle`, and **`ReadingStaffView` gained an optional `playback` controller** that delegates to it. `melody_echo` already had karaoke highlight. Full suite **1321 green**. ✅ **FULL in-game sweep SHIPPED** — every minigame that shows a score and plays a melody now lights its notes as they sound: `ending_detective`, `spot_upbeat`, `melody_echo` (pre-existing), + this batch: **`question_answer`** (two staves — the question lights during the question, the tapped answer during the answer, via one highlighter per staff and a leading empty-id delay step), **`tie_slur`/`beam_flag`/`whole_half`/`articulation_read`/`sync_read`/`triplet_read`/`ornament_read`** (ReadingStaffView + `playback:`), **`enharmonic`/`step_skip`** (StaffView→PlayingStaffView), **`rhythm_tap`** (Score.simple e-ids ↔ beats), **`my_melody`** (dual InteractiveStaff/StaffView — both support `highlightedIds`, driven by a local timer chain since PlayingStaffView is StaffView-only). Only `interval_ladder` is deferred (an N-rung ladder of one-note mini-staves — a per-rung-controller job like question_answer×N, low payoff). **The playback-progress gap is closed** across the manual, the analysis views, and the games. ✅ **Responsive layout pass:** answer buttons that flung the two options to the far left/right on wide screens now sit centered — new **`AnswerRow`** (`game_widgets.dart`, the binary counterpart to `AnswerGrid`: `Center` + `maxWidth: 480`) wired into **12 binary games** (tie_slur, beam_flag, enharmonic, whole_half, same_diff, modulation_ear, direction_ear, run_direction, spot_upbeat, sync_read, triplet_read, triad_seventh) — a plain `Row(` → `AnswerRow(` swap, unaffected on phones. A new **`test/layout_audit_test.dart`** pumps EVERY game at SE 375×667 + iPad 810×1080 × EN/DE and asserts **no RenderFlex overflow** (via `takeException`, no taps); it caught + fixed a `_PlayRow` overflow in the analysis views on a 375px phone (long localized "Play the whole piece" button — now a Column so the hint wraps below). **⚠ tracker agent:** the audit flags a small **~9px overflow in the `tracker` tile at 375px (both locales)** — excluded from the audit (your hot file) so it doesn't block; please trim it. Worktree `../mus-textbook`, branch `feature/textbook-prose-anavis`.
+
+- **opus (textbook-prose)** · ✅ **idle / SHIPPED — richer per-concept textbook prose + AnaVis-style form-analysis view** (`2f63709`). Two connected pieces in the **Textbook reader** (the read-through manual). (A) **Per-concept lesson prose** beyond the game primers: `conceptProse(l10n,id)` (`textbook_i18n.dart`) returns the textbook's own teaching paragraph (its voice, our words), rendered atop each expanded `_ConceptTile` above "Read the lesson"; **fallback-safe → null where unauthored**, so coverage grows concept by concept. First tranche = the **17 most abstract concepts** (intervals, triads, key sigs, enharmonics, circle of fifths, minor scales, 7th chords, cadences, harmonic function, roman numerals, modulation, modes, syncopation, triplets, song/musical form, transposing instruments), EN+DE. (B) **AnaVis-style form-analysis view** (fills PLAN §AnaVis as lesson content): reusable `FormAnalysisView` (built on the existing `FormTimeline`) plays a piece's sections section-by-section — tap a coloured block to hear that section (highlight ring), or play the whole; worked `kFormExamples` are **our own abstract A/B/C/D motif renditions → no melody licensing risk** (ternary + rondo for `musical_form`; verse-chorus + AABA for `song_form`), wired into the form concept tiles as a **"See the form"** action. `FormTimeline` gained an optional `onTapSection` (additive; the game stays inert). New `form_analysis_view.dart` + `form_analysis_view_test.dart` (example invariants, screen render+tap, prose authored/null + de/en). **Full suite 1242 green, analyze clean.** Touched shared `app_en.arb`/`app_de.arb` + `textbook_i18n.dart`/`textbook_screen.dart` (additive only). ✅ **Follow-up SHIPPED (`84a553d`): per-concept prose now covers ALL 70 concepts (100%, EN+DE)** — the remaining 53 authored (grade 1–2 opposites; grade 3–4 reading/rhythm/scale fundamentals + the technique/aural/creating/repertoire strands; grade 5–6 clefs/accidentals/articulation; grade 7–10 chord-quality/dictation/phrasing/score-reading/ornaments). `form_analysis_view_test` now pins full coverage (every `kConcepts` id → non-null prose in both locales). Full suite **1264 green**, analyze clean. ✅ **Follow-up SHIPPED (`d3cb309`): the three remaining AnaVis items — score-above-timeline + harmonic-function view + standalone tile.** (1) `FormExample.scoreOf()` builds a real `crisp_notation` Score (one 4/4 bar per section) engraved on a `StaffView` **above** the coloured blocks (barlines line up with sections). (2) New **`HarmonyAnalysisView`** colours a chord progression by function — tonic=home/green, subdominant=away/blue, dominant=tension/orange — with a legend; tap a chord to hear the C-major triad. `kHarmonyExamples`: I–IV–V–I + ii–V–I for `harmonic_function`; perfect (…V–I) vs half (…V) cadence for `cadences`; wired into those tiles as **"See the harmony"**. (3) New **`analysis_view`** sandbox tile (composition module, no stars) → **`AnalysisHubScreen`** ("See the Music") shows every form + harmony example in one page; placed under `musical_form` so coverage stays orphan-free. +20 EN/DE keys; full suite **1272 green**, analyze clean. ✅ **Final follow-up SHIPPED (`6107392`): the deeper harmonic-function overlay.** `HarmonyExample.scoreOf()` engraves the progression as a real score (one 4/4 bar per chord = a whole-note chord via `NoteElement` stacked pitches); the T/S/D colour spans now sit **under that engraved score**, bar-for-bar. Cadence examples gained a **marker under the final chord** (up-bracket + label: perfect = "comes to rest", half = "left open"). +4 keys; full suite **1292 green**, analyze clean. **The textbook prose + AnaVis arc is now COMPLETELY closed — nothing optional remains.** Worktree `../mus-textbook`, branch `feature/textbook-prose-anavis`.
+
+- **opus (tts-macos)** · ✅ **idle / SHIPPED — TTS slice 4: macOS `libcrispasr` bundling (dev-verified).** `tool/bundle_macos_tts.sh` collects `libcrispasr` + its **8 deps** (ggml ×5, Homebrew opus/ogg) into a **self-contained** set (copy-by-referenced-name → `@rpath`, strip foreign rpaths to `@loader_path`, sign, + a static self-containment check). `KokoroModelStore.libPath()` gains a cascade (override → `.app` Frameworks → `~/.cache/crispasr` → default). **Verified: synth runs through the bundled set with only `@loader_path`** (loads the bundle's ggml, not the machine's) → portable. Dev: run the script → `flutter run macos` → HD tile appears. `docs/TTS_MACOS.md` (dev + release Frameworks embed + App-Store caveats); cascade unit-tested; analyze clean. **Shared `macos/` Xcode project NOT touched** (multi-agent safety) — new files only (`tool/`, `docs/`, store cascade). Remaining: release `.app` embed + iOS/Android/web.
+
+- **opus (tts-settings)** · ✅ **idle / SHIPPED — TTS slice 3: the "Natural voice (HD)" settings tile.** A tile in Settings (below the sound switch) that opt-in **downloads the ~135 MB Kokoro model** (`backend.download()` → CrispASR's registry+`cacheEnsureFile`) with a spinner, then "On ✓"; once cached, narration auto-upgrades to the neural voice. `TtsService` gains `hasNeural`/`neuralSupported`/`neuralReady`/`downloadNeuralVoice`; `NeuralTts` holder carries `supported`+`download`. **Shown only where libcrispasr loads** (invisible until it's bundled per platform), and degrades gracefully with no TtsService (settings tests untouched). EN/DE ARB; 24 TTS/settings tests green; analyze clean. Touched shared `main.dart`+ARBs+settings — rebased. Remaining TTS work: per-platform lib bundling (macOS first).
+
+- **opus (tts-crispasr)** · ✅ **idle / SHIPPED — TTS slice 2: CrispASR/Kokoro NEURAL backend via CrispASR's OWN registry + downloader.** Behind the `TtsBackend` seam: `crispasr_tts_backend.dart` (crispasr pub FFI → libcrispasr → **Kokoro**, Apache-2.0; a background-isolate `runKokoroJob` resolves via `registryLookup` + downloads via `cacheEnsureFile` = the CLI's `-m auto` path; `synthesize` → PCM16 → `wavBytes` → `AudioService.playWavBytes`) + `kokoro_model_store.dart` (**no hand-rolled URLs** — the GGUFs are already published at `cstr/kokoro-82m-GGUF` + `cstr/kokoro-voices-GGUF`; cached into `~/.cache/crispasr`; `isReady` = lib+model cached) + `tts_neural.dart` conditional facade (**web null stub**). Download is **consent-gated** (playback never fetches; `backend.download(lang)` is the opt-in). `TtsService` prefers neural when ready, else flutter_tts. **Verified**: registry→published cstr URL resolves from the app dep, + REAL macOS synth (libcrispasr.dylib → valid German audio); download ABI symbols present. 16 TTS tests green, analyze clean. Dep `crispasr: ^0.8.11` (pub.dev) → CI needs no native lib. Remaining: a settings "Download voice" trigger; per-platform lib bundling (macOS first). Detail in TTS section. Touched shared `main.dart`+`pubspec` — rebased.
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — multi-part MIDI/ABC export in the
+  Workshop** (`4210a62`). MIDI + ABC now write EVERY instrument part, not just the
+  active one. New pure-notation `lib/core/notation/multi_part_export.dart`
+  (`multiPartToMidi` = format-1 SMF one track/part; `multiPartToAbc` = one `V:`
+  voice/part; + split/merge), `module_notation.dart` re-exports it.
+  `composition_workshop_screen._generateExport` routes mid→multiPartToMidi,
+  abc→multiPartToAbc when partCount>1; `kExportFormats` marks MIDI+ABC multiPart;
+  new `debugGenerateExport` seam. MEI/kern/MuseScore/LilyPond stay single-Score
+  (library writers). 63 workshop + 30 notation tests green. **Follow-up
+  (`7455c14`): multi-track MIDI IMPORT** — `multiTrackMidiToMultiPart` (one part
+  per MTrk); wired into `notaconv` (a `.mid` with >1 track → all parts →
+  module/xml/abc) + the Workshop's `importMultiPart`. MIDI import/export now
+  symmetric. Live: 24-track MIDI → 24 channels/parts/voices. **Follow-up
+  (`67655a3`): Tracker → Song Book** — a "Save to Song Book" menu item saves the
+  groove's pitched channels as multi-part MusicXML (`trackerToScoreParts` →
+  `multiPartToMusicXml` → `UserSongsService`), mirroring the Loop Mixer;
+  `debugSaveToSongBook` seam + 3 ARB keys. The Tracker now exports to MOD / MIDI /
+  Song Book.
+
+- **opus (modes)** · ✅ **idle / SHIPPED — "Which Mode?" ear game (`mode_ear`, scales module).** 3-way ear game: a scale plays ascending as Major (Ionian) / natural Minor (Aeolian) / **Dorian** (minor with a raised 6th, built from exact semitone steps); child taps which. `modePrimer` teaches the three colours (shown + heard). **Closes the `modes` gap** in concept_map. Scales module; EN/DE; [100,600,900]; analyze clean; mode_ear + tutorial + curriculum_coverage + consistency tests green (14). New: `mode_ear_screen.dart`, `test/mode_ear_test.dart`, `modePrimer`. (Also fixed a stray pre-existing import-order lint in game_registry.)
+
+- **opus (modulation)** · ✅ **idle / SHIPPED — "Key Change?" ear game (`modulation_ear`, scales module).** Binary ear game: a C-major phrase either stays in one key or has its second half lifted a perfect 4th/5th to a new tonic; child taps Same key / Key changed. Correct replays the phrase; own SRI `scales.modulation.<same|changed>`. `modulationPrimer` teaches it by ear (stay vs move). **Closes the `modulation` gap** in concept_map (2 gaps left: modes, instrument families). EN/DE; analyze clean (pre-existing composition import-order info untouched); modulation_ear + tutorial + curriculum_coverage + consistency tests green.
+
+- **opus (tts)** · ✅ **idle / SHIPPED — TTS narration, slice 1 (read lessons/instructions aloud).** New `core/services/tts_service.dart`: a `TtsBackend`-abstracted, locale-aware (de-DE/en-US), sound-gated `TtsService` on `flutter_tts` (platform voices — on-device, offline, free). A **🗣 read-aloud button in the shared tutorial sheet** narrates the current step, so **both** textbook lessons and every game's how-to primer get it from one change. Provided in `main.dart` (soundOn synced from settings); degrades safely when unprovided. New dep `flutter_tts: ^4.2.2` (⚠ `pod install` before next Apple build; CI unaffected). Touched shared `main.dart`+ARBs+pubspec — rebased. `tts_service_test` (fake backend) + tutorial tests green; analyze clean (lib+test). CrispTTS = Python-CLI neural engines; the `TtsBackend` seam is left ready for a lightweight ONNX voice (Kokoro/Piper via onnx_runtime_dart) later.
+
+- **opus (textbook-p3)** · ✅ **idle / SHIPPED — Textbook phase 3: narrative + full i18n.** New `features/textbook/textbook_i18n.dart` (ARB-backed, de/en) localises **all 70 concept titles**, the **19 concept-area sub-headers** and **5 grade-band short labels**, plus a **narrative intro paragraph per grade band**. The reader now groups each band's concepts **by area** (sub-headers, first-appearance order) with an italic band intro on top, so it reads like a book. +94 ARB keys ×2 (concept/area/band) +5 label keys ×2, generated from one source of truth. Touched shared ARBs — kept both key sets on rebase. Analyze clean (lib+test); textbook (now incl. a **de-locale** assertion) + curriculum tests green. Also logged the **TTS-narration (CrispASR)** follow-up in PLAN.
+
+- **opus (textbook-ui)** · ✅ **idle / SHIPPED — read-through Textbook reader.** New `features/textbook/textbook_screen.dart` walks the grade-1–10 concept map band by band; each concept expands to its **lesson** (the game's primer via `showTutorial`/`helpPrimerFor`) + **practise** links (`gameRoute`) to its games; untrained concepts show "coming soon", so the reader stays honest as gaps fill. Home app-bar gets a 📖 Textbook button. Reuses the primers as lesson content (phase 0 work). EN/DE chrome; concept titles English for now (l10n a follow-up). New files + home entry + 5 ARB keys; analyze clean; 2 widget tests green. (Textbook phase 4 — the reader UI.)
+
+- **opus (form-view)** · ✅ **idle / SHIPPED — AnaVis-style form view + "Label the Form".** Reusable `FormTimeline` widget (colour-coded, labelled section blocks — same colour = same tune; `showLabels` off at 2★). `form_read` game: hear a piece's sections (each a distinct motif) as a coloured timeline and pick the form (ABA/AAB/ABC at 1★; AABA/ABAB/ABAC/rondo at 2★). `formPrimer` teaches A-B-A by ear. **Closes 2 gaps** (`musical_form` + `song_form`) in concept_map. Composition module; EN/DE; 19 tests green; analyze clean. **3 gaps left:** modes, modulation, instrument families.
+
+- **opus (bughunt-2)** · ✅ **idle / SHIPPED — 2nd bug-hunt wave (new subsystems).**
+  Four reviewers over scoring/SRI, Workshop serializers, crisp_notation theory,
+  and game answer-generation. **crisp_notation theory core = clean** (verified the
+  enharmonic edges: B dim7→A♭, ø7 vs °7, 6–7-accidental keys, secondary-dominant
+  labels — all correct + test-pinned). **5 real defects found, fixed + pinned:**
+  1. **Streak breaks on spring-forward DST** (`50fbdd4`) — `currentStreak` walked
+     back with `subtract(Duration(days:1))` (24 h absolute); the day after
+     spring-forward has 23 h, so it skipped the short day and the streak silently
+     broke. German (CET/CEST) audience → every spring. Now walks by calendar day.
+  2. **Scale Detective could be unsolvable** (`29d5c6d`) — a harmonic-minor round
+     could pick the raised 7th as the odd note and neutralize its accidental
+     (G♯→G in A minor), rendering a plain valid natural-minor scale with no odd
+     note. ~1/6 of minor rounds, every minor tonic. Wrong-note pick now excludes
+     the raised leading tone (keeps it as the intended distractor).
+  3–5. **Workshop silent data loss** (`34d01de`) — `_splitPiece` dropped
+     ornament/grace/accidental/fingerings from every tied piece; `_reid` dropped
+     the same for every note in multi-part assembly; `_reindex` left voice-2 ids
+     unprefixed so voice-2 dynamics/lyrics detached (and collided across parts).
+     All three lost data on render/export/reopen. Fixed + regression-tested.
+  Grand total across both waves: **13 real defects found, fixed, and pinned;
+  theory core + most game/scoring paths verified clean.**
+
+- **opus (instrfam-game)** · ✅ **idle / SHIPPED — "Which Family?" (`instrument_family`, songs module) closes the `instrument_families` gap.** Reading/knowledge MC quiz: an instrument is named (~19 well-known ones) → tap its orchestral family (Strings/Woodwind/Brass/Percussion/Keyboard); deliberately no timbre-ID audio. `instrumentFamilyPrimer` names the families with examples. SRI `timbre.family.<family>`; 10 rounds, [100,600,900]; EN/DE. `concept_map` now trains instrument_families (0 orphans; only modulation + modes remain untrained). 14 tests green (incl. curriculum_coverage + consistency + tutorial); analyze clean (one pre-existing `form_read` import-order info in game_registry is not ours).
+
+- **opus (textbook-p2)** · ✅ **idle / SHIPPED — song mnemonics + orphan-game
+  placement.** (1) `core/curriculum/interval_songs.dart` — interval-mnemonic table
+  (Kuckuck = falling minor 3rd; Alle-meine-Entchen = major 2nd up; …) with a test
+  that each demo's notes span exactly the stated interval + direction; a Kuckuck
+  step added to `intervalsPrimer` (shown + heard). (2) **Placed all 56 orphan
+  games** — not Zeitvertreib but the practical strands the theory map omitted:
+  added `ConceptArea.technique` (keyboard/cello/guitar/percussion corners),
+  `aural` (sing/echo), `creating` (compose/arrange), `repertoire` (real songs), a
+  `reading_fluency` concept, and attached the bass/theory twins to their existing
+  concept. **Coverage 74/130 → 130/130 placed (0 orphans), 70 concepts**; the gap
+  report now shows only the 8 truly-untrained concepts. EN/DE; analyze clean; 9
+  tests green.
+
+- **opus (textbook-p1)** · ✅ **idle / SHIPPED — Textbook phase 1: concept inventory + gap analysis.** `core/curriculum/concept_map.dart` (60 grade-1–10 concepts, our words) + `coverage_gaps.dart` + a test that PRINTS the gap report and guards no-dangling-refs. **Reveals the 8 untrained concepts** (verse/chorus form, syncopation, triplets, ABA/rondo form, modulation, ornaments, modes, instrument families), many thin (1-game) concepts, and 56 orphan games; 74/130 games placed. Also wrote up the **bachelor-level extension + OER-source licence registry** (GFDL/NC = facts-only; CC-BY(-SA) = adaptable) and an **AnaVis-style form-analysis view** idea (fills the form gap). Pure Dart + test, no game/UI touch. Analyze clean; 3 tests green.
+
+- **opus (primer-quality)** · ✅ **idle / SHIPPED — primers revised to the 9yo bar + textbook-mode spec**. Audit found `cadencePrimer` had NO notation (both steps audio-only) and unexplained "V/I"; `upbeat`/`enharmonic`/`voices` each had an audio-only step; `seventh`/`phrase` used jargon. Fixed: **every step now has an engraved example** (new helpers `_progression` cadences, `_pickup` shows a real anacrusis bar, `_spelled` shows F♯ vs G♭ at their true staff spots), and the jargon ("V then I", "the tonic", "a third apart: root/third/fifth") is now concrete kid language. Also **wrote up the Textbook / read-through curriculum vision** (new section above `## Delivery`) incl. the Bundesländer-licensing constraint, the song-mnemonic examples (Kuckuck = descending minor 3rd), and the gap-analysis method. Analyze clean; tutorial + gate green.
+
+- **opus (bughunt)** · ✅ **idle / SHIPPED — 4 real defects found by an adversarial
+  audit of the numeric core.** Each verified by running the code before/after,
+  each pinned by a regression test proven to fail on the old code:
+  1. **`pitch_analysis`: octave-halving above ~1503 Hz** (`ff5dde1`). The
+     key-maxima scan started at `minLag`, not 1; the NSDF crossing that opens the
+     fundamental's segment sits at ~3T/4, which for short periods is *below*
+     minLag → the peak at T was skipped and 2T won. `1600→800, 1760→880,
+     2000→1000, 2100→1050`, all at **clarity 1.00**. Broke the top quarter of the
+     detector's own declared range; the suite topped out at A5 so it never saw it.
+  2. **`chroma_analysis`: the silence gate gated nothing** (`ff5dde1`). It summed
+     the *peak-normalized* chroma → scale-invariant → only bit-exact silence ever
+     gated. A triad at amp 1e-9 scored identically to 0.5; near-silent noise was
+     emitted as a confident "A#maj7 (68%)". Now gated on absolute band level.
+  3. **`loop_engine`: unvalidated tempo from a share token** (`a0a94e5`). Every
+     other spec field is validated; tempo passed raw into `60000 ~/ tempoBpm`.
+     `t:0`→IntegerDivisionByZero, `t:-100`→negative buffer RangeError,
+     `t:60001`→ticker modulo-by-zero every frame, `t:1`→42 MB WAV on the UI
+     thread. Clamped to 40..240 at both entry points.
+  4. **`aec_offline`: DTD deadlocked the filter** (`8d803ee`). Warmup counted
+     far-end-*silent* blocks (where the filter can't converge), so it expired with
+     W zero → ee=0 → rho=0 → freeze → W can never adapt → frozen forever. ~280 ms
+     of capture-before-playback (the normal case) cost **~28 dB for the session**.
+     Every existing DTD test had the far-end active from block 0.
+
+  ✅ **FOLLOW-UP SHIPPED — formantShift is now a real formant shifter.** It scaled
+  *time-domain* indices (= a resample = a PITCH shift), breaking `voice_fx`'s
+  pitch-preserving contract: a recorded C4 came back at chipmunk +608¢, monster
+  −1893¢, deep −368¢, demon −1892¢. Time-domain resampling *cannot* decouple
+  envelope from pitch, so it's now a real STFT method (Hann 75% overlap →
+  cepstral-liftered envelope → warp → magnitude-only gain, phase untouched →
+  harmonics stay put → pitch preserved; ifft → COLA overlap-add). All four are now
+  **0¢** and the centroid moves the right way (dry 1130 Hz → +0.5: 1527, −0.5:
+  755). Also fixed en route: a 0.7-peak voice came out at **2.12** (hard clipping
+  in PCM16) → capped to the input peak, attenuate-only; and clips under 512
+  samples returned **pure silence** (`frameCount = len ~/ hop` skipped the loop)
+  → now processed. **Honest split recorded in the contract:** `robot`/`alien`/
+  `cyborg` use ring modulation (f → f ± carrier), which *by construction* cannot
+  preserve pitch — the old "ALL presets are pitch-preserving" doc was a lie about
+  those three independently of this bug. New `kPitchPreservingVoiceEffects` makes
+  the in-tune subset testable, and a test pins that every preset is classified.
+  `sample_dsp_test` grew the pitch/centroid/level/short-input assertions it never
+  had (the old "changes the content" check passed happily on a transposed
+  signal); verified to fail on the old code ("shift 0.5 moved the pitch by 608¢").
+  84 consumer tests green.
+
+  ✅ **FOLLOW-UPS SHIPPED — the three smaller open items are all fixed:**
+  • `siSdrDb` floored a silent estimate to **−120 dB** (was a false 0 dB that
+    out-ranked a noisy-but-real estimate).
+  • `LoopSend.delay/reverb` now **pre-roll one loop** so the render is the
+    periodic steady state (was 36.9 %/5.5 % off; now 0.00 % vs a 3-copy
+    reference) — no more "echo drops out on the downbeat".
+  • Swing **snaps to the 10 ms grid** in `LoopTiming._swingMs`, so every stem is
+    sample-exact at all tempos/swing (was ≤8-sample drift; the guarding test
+    passed by luck). Slider gained `divisions: 12`. The swing test now sweeps the
+    drift-prone tempo×swing grid; a new seam test pins the send steady state.
+  **The core bug hunt is now fully closed — 8 defects found, all fixed + pinned.**
+
+- **opus (aec-rate)** · ✅ **idle / SHIPPED (layers 1,2,3,4 of 4) —
+  self-tuning AEC: Valin closed-loop rate + automatic tuner + REAL corpus**. The
+  full automatic-tuning answer, end to end, now on real acoustics.
+  **Layer 3 (real corpus) DONE**: `buildCorpusFromAssets` (corpus.dart) builds
+  ground-truth scenarios from **real measured room IRs** (MIT IR Survey, CC-BY) ×
+  **real cello** (U. Iowa MIS, unrestricted) — `--rir-dir/--cello-dir`. RIR
+  truncated to its early field (~90 ms, the cancellable part), echo
+  level-calibrated (measured IRs aren't normalized), near-end note DETECTED (not
+  assumed). **On the real corpus (6 rooms × 3 cello runs, 54 notes): untuned
+  adaptive 3.4 dB SI-SDR / 74% notes → tuned 9.0 dB / 94%** (+5.6 dB). Lower than
+  synthetic (honest — real rooms are harder); rateGamma settles INTERIOR (0.36),
+  not pinned. Assets on `/Volumes/backups/ai/aec_corpus/` (never checked in;
+  eval-only). CI-safe loader test (synthetic WAVs in a temp dir).
+  **Modelled loudspeaker nonlinearity (`--nonlin clip|tanh --drive N`)**: a
+  memoryless Hammerstein distortion on the reference before the echo path (how
+  the AEC Challenge synthesizes nonlinear echo; RMS-held so the cost is
+  distortion not gain). AEC sees the clean ref → harmonics uncancellable by a
+  linear filter. The CLI reports the cost + whether RES recovers it. **On the
+  real corpus, hard-clip drive 4: note-survival 74% → 30% (SI-SDR 3.4 → 0.2 dB),
+  then +RES recovers to 87% / 4.7 dB** — a concrete case for RES under a driven
+  speaker. It's a MODEL not measured. 3 tests (passthrough, RMS-held+shape-
+  changed, distortion-costs-then-RES-recovers). **Only realism gap left: MEASURED
+  speaker/mic nonlinearity → a real device capture (on-device milestone (e)).**
+  **Layer 4 (CMA-ES auto-tuner) DONE**: `bin/aec_tune.dart` + `bin/aec_tune/`
+  (CLI-only, out of the app). A ground-truth corpus (`corpus.dart`, parametric
+  rooms — measured-RIR swap is drop-in), a domain objective (`objective.dart` —
+  note-survival + double-talk SI-SDR, NOT speech-MOS, per the handover's
+  "judge by the decoded outcome"), and a separable CMA-ES (`cmaes.dart`,
+  verified against sphere + ill-conditioned ellipsoid). Tunes the rate's own
+  hand-picked constants (rateGamma/rateBeta0/rateMuMax — the paper leaves
+  gamma/beta0 unspecified). **Result on the synthetic corpus:** untuned adaptive
+  8.9 dB SI-SDR / 83% notes → tuned **20.4 dB / 100%** (+11.5 dB), also +10.5 dB
+  over fixed-`mu`. gamma/beta0 pin to their bounds (corpus wants extremes → real
+  corpus + wider bounds is the follow-up). 5 tests (optimizer correctness,
+  corpus/objective sanity, end-to-end loop ≥ baseline).
+  **Layer 2 (C port) DONE** (`610acb2`): `AecRate` in `native/aec/src/aec_dsp.c`
+  mirrors the Dart `AdaptiveLearningRate`; attach via `aec_dsp_set_rate` (NULL =
+  fixed-`mu` path, byte-identical — the property `aec_erle_test` pins). FFI
+  binding + 2 new cross-check tests. NOT wired into `aec_shim`/`aec_engine`
+  (on-device milestone (e)).
+  Layer 1 detail: Instead of hand-picking
+  `mu`, the filter derives its own step per bin per block from its live leakage
+  estimate — Valin, "On Adjusting the Learning Rate in Frequency Domain Echo
+  Cancellation With Double-Talk" (IEEE TASLP 2007, arXiv:1602.08044), written
+  from the paper, not SpeexDSP (MIT-clean). New `AdaptiveLearningRate`
+  (echo_canceller.dart): `mu_opt(k)=min(eta·|Yhat(k)|²/|E(k)|², muMax)` with eta
+  (=1/ERLE) estimated by regressing DC-rejected error power on echo-estimate
+  power. Opt-in via `EchoCanceller(rate:)` / `AecTuning(adaptiveRate:true)` /
+  `--adaptive-rate`; the fixed-`mu` path (which the C port + `aec_erle_test`
+  pin) is byte-identical when off. **Result:** on synthetic double-talk the
+  *linear* canceller alone jumps 8.8→33.1 dB SI-SDR — beating fixed-`mu`+DTD
+  (15.9 dB) by 17 dB with NO DTD/freeze/threshold, and the rate collapses on
+  near-end (mean step 0.40→0.13) then recovers. Trade-off: slower convergence
+  (~0.9 s vs ~0.1 s), hence opt-in. 6 new tests pin the behaviour (rate
+  collapse, filter-survives-DT, subsumes-DTD, 1/ERLE identity, off-by-default).
+  Files: `lib/core/audio/echo_canceller.dart`, `aec_offline.dart`, `bin/aec.dart`,
+  `test/aec_offline_test.dart`. Worktree `../mus-aec-rate`, branch
+  `feature/aec-adaptive-rate`. **Next in this arc:** port the rate control to
+  `native/aec/src/aec_dsp.c` (keep `aec_erle_test` green); then a real corpus
+  (record-separately-and-sum through the physical speaker→mic path, + measured
+  RIRs / AEC-Challenge set) and a CMA-ES sweep over surviving constants scored on
+  note-survival + SI-SDR (AECMOS as cross-check via the existing `bin/aecmos`).
+
+- **opus (aec-tune)** · ✅ **idle / SHIPPED — AEC tuning knobs reachable from the
+  CLI / pipe**. The pipe harness existed but only exposed `--delay/--rate/--dtd/
+  --res`: `cancelEcho` and `StreamingEchoCanceller` built `EchoCanceller()`,
+  `DoubleTalkDetector()` and `ResidualEchoSuppressor()` with hard-coded defaults
+  and forwarded nothing, so a sweep over `mu`/`leak`/`blockSize`/DTD/RES meant
+  editing source. New **`AecTuning`** (aec_offline.dart) mirrors all 16 stage
+  knobs + `createCanceller/Detector/Suppressor()` + `describe()` (names only the
+  non-defaults — every CLI run prints it, so a sweep's output says which point
+  produced which number). Both entry points take `tuning:`; `blockSize` moved
+  into it (the one caller updated). `bin/aec.dart` gained a flag per knob
+  (`--mu`, `--block`, `--leak`, `--dtd-threshold`, `--res-gain-floor`, …) in all
+  three modes (selftest/files/stdin). Verified over a real pipe: mu 0→0.0 dB,
+  0.1→7.2, 0.3→12.7, 0.7→16.0, 1.5→15.6 (overshoot); `--block 256 --res`→20.4 dB.
+  6 new tests pin that each knob *reaches* its stage (a knob that silently
+  doesn't is worse than none) + streaming≡batch on a non-default tuning. Files:
+  `lib/core/audio/aec_offline.dart`, `bin/aec.dart`, `test/aec_offline_test.dart`
+  — no app/native code touched. Analyze clean, full suite green.
+  **Not done:** the native Tier-3b path (`aec_shim.h`) still exposes only
+  `set_period/set_dtd/set_res` — the C DSP keeps its own constants, so a tuning
+  found here doesn't yet transfer to the on-device engine.
+
+- **opus (coverage)** · ✅ **idle / SHIPPED — regression tests for untested parser
+  branches** (test-only, no lib changes). Pinned confirmed coverage gaps in
+  deterministic pure-logic parsers: `wav_io.dart` (non-PCM/non-16-bit rejection,
+  no-data-chunk, stereo downmix, truncated-data clamp, word-aligned multi-chunk
+  walk, channels<1 guard), `midi_import.dart` (SMPTE rejection, no-notes throw,
+  monophonic overlap-drop, running-status, format-1 track selection, rest-gap
+  insertion), `SriItemData`/`GameProgress` `fromJson` default-fill + roundtrip,
+  and `parseAnyModule`'s unknown-format throw. 19 new cases across 4 new test
+  files; whole-project analyze clean. **Follow-up shipped:** `mod_signature_test`
+  closes the last item on that shortlist — `mod_reader`'s signature→channelCount
+  map (the 4/6/8-channel tags, the generic `%dCHN`/`%dCH` regexes, the
+  unknown-signature throw, and that the count shapes each pattern row); the
+  golden fixture only ever covered `M.K.`/4ch. All mappings verified correct —
+  no bug, now pinned. **The confirmed coverage-gap shortlist is now fully
+  closed.**
+
+- **opus (primers-mine)** · ✅ **idle / SHIPPED — per-game tutorial primers for 3
+  games** (learnability §1). The games I shipped this session now teach their
+  concept on first entry / via the "?": **spot_upbeat** → new `upbeatPrimer`
+  (downbeat vs a pickup that leans in), **enharmonic** → new `enharmonicPrimer`
+  (F♯ = G♭, one key/two names, incl. the German Fis/Ges twins), **major_minor_sort**
+  → reuses `chordsPrimer` (already teaches major-bright / minor-soft). Both new
+  primers hang on their game via `GameInfo.tutorial`, EN/DE, and are covered by the
+  `tutorial_test` build/render loop. (`transpose_write` already had
+  `transposePrimer`.) Analyze clean; tutorial + consistency suites green.
+
+- **opus (spacing)** · ✅ **idle / SHIPPED — "Close or Open?" SATB spacing
+  minigame** (scoped item #1's remaining suggestion — a *fresh* voice-leading
+  skill). Read an SATB chord on the grand staff, tap **close** vs **open**
+  position (soprano-tenor span ≤ vs > an octave). Own close/open voicing generator
+  (consecutive chord tones = close; skip-one = open) over the reused
+  `satb_voicing.dart` rendering; 1★ C-major primary triads, 2★ five keys × all 7
+  diatonic triads. Per-game `spacingPrimer` (close/open primer), SRI
+  `note_reading.spacing.<close|open>`, unlocks at `duet ≥ 2★`. Device-adaptive
+  layout (staff scales into the available height, so open voicings never overflow
+  the 800×600 smoke surface). `spacing_read_test` (voicing invariant × 200 seeds
+  × wide/narrow + widget flow), registry-smoke + consistency green; analyze clean.
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — Score↔ModuleDoc bridge + full round-trips
+  (§D)**. Filled the notation-conversion gaps end-to-end.
+  (1) `lib/core/audio/mod/module_notation.dart` (Flutter-free, imports
+  crisp_notation_core): module→Score (`moduleChannelToScore`) + module→multi-part
+  (`moduleToMultiPart`, staff-per-channel, clef auto); reverse `scoreToModuleDoc`/
+  `multiPartToModuleDoc` (chord split; rests survive via a new additive
+  `DocCell.off`); `multiPartToMidi`+`splitMultiTrackMidi` (format-1 SMF the
+  library can't write); module↔MusicXML via the lib's readers/writers.
+  (2) `bin/notaconv.dart` now BIDIRECTIONAL by extension: module→(.mid/.xml),
+  .mid/.xml→module, `--multi`=multi-track. Old in-CLI Score port removed.
+  (3) note-off through the XM(97)/IT(255)/S3M(254) codecs (`module_convert.dart`)
+  so a rest survives real module bytes; MOD can't (documented).
+  16 round-trip tests (`module_notation_test`), N×N matrix unaffected.
+  Commits `808dc74`+`efd4b6a`. Files: `module_notation.dart`, `module_doc.dart`
+  (DocCell.noteOff), `module_convert.dart`, `bin/notaconv.dart`,
+  `docs/TRACKER_IDEAS.md` §D. Remaining §D = app plumbing (Workshop↔Tracker
+  handoff, module-pattern→tracker-grid import).
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — full converter matrix + Sampling §B**.
+  (1) **Converter matrix** (`2946016`): `convertModule(bytes, target)` /
+  `convertDocTo(doc, target)` is now the single MOD/XM/S3M/IT dispatch point
+  (`module_convert.dart`; `bin/modconv.dart` funnels through it). Full 4×4 test —
+  every golden → every target incl. S3M-as-source + identity cells the old suite
+  never hit; invariant is source-agnostic (re-parse each output, compare title +
+  note in MIDI space + sample peak). Live-verified an s3m→xm→it→mod chain.
+  (2) **Sampling §B** (`9316b1f`): `sample_edit.dart` (non-destructive trim/
+  trimSilence/normalize/fade/reverse) + `multi_sample_instrument.dart`
+  (`MultiSampleInstrument`/`SampleZone` XM/IT keymap; `.mapped()` auto-splits key
+  ranges; NEW file, tracker_engine.dart untouched). 57 tests green (matrix +
+  sample_edit + multi_sample). Also corrected the stale LOOP_MIXER_FOLLOWUPS doc
+  (both follow-ups were already shipped). Next candidate: §D multi-channel module
+  → multi-part Score (reuses grooveParts' MultiPartScore + multiPartToMusicXml).
+  Files: `lib/core/audio/mod/module_convert.dart`, `bin/modconv.dart`,
+  `lib/core/audio/crisp_dsp/sample_edit.dart`,
+  `lib/core/audio/multi_sample_instrument.dart` + tests + `docs/TRACKER_IDEAS.md`.
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — FX extensions** (all four). **Bell (FM)
+  instrument** in the picker; a **multi-effect per-channel chain** (`TrackerChannel.
+  effects` list + `applyChannelEffects` fold + multi-select FilterChip sheet); a
+  **pitch envelope** on sampled instruments (`resampleGlide` + `Envelope.pitchStart/
+  pitchTime`, scoop/fall); a **Loop Mixer master send** (`LoopSend{none,reverb,delay}`
+  + `_applySend` on the mix + a `surround_sound` cycle button). Each its own commit
+  + test; all engine/screen/loop suites green. **The whole FX effort — FX_HANDOVER
+  §1–§5 + these extensions — is done.**
+
+- **opus (smufl)** · ✅ **idle / SHIPPED — Leland + Leipzig notation faces**. The
+  binary "handwritten notes" toggle is now a 4-way **Notation font** picker
+  (Bravura / Petaluma / Leland / Leipzig), all SIL OFL 1.1. New `ScoreFont` enum +
+  `musicFontFor` in `shared/score_theme.dart`; `SettingsService.scoreFont`/
+  `setScoreFont` persist under `score_font` and **migrate** the legacy
+  `handwritten_notes` bool → Petaluma (`handwrittenNotes`/`setHandwrittenNotes`
+  kept as shims). Assets vendored under `assets/smufl/` (`.otf`/`.ttf` + metadata +
+  OFL), declared in `pubspec.yaml`, OFL registered in `custom_licenses_registry`.
+  ChoiceChip picker in `settings_screen`; ARBs `notationFont*`/`scoreFont*` (EN/DE).
+  `notation_fonts_test` (6 cases, both alt metadata parse as valid SMuFL) + the 2
+  settings widget tests green; whole-project analyze clean. ⚠ overlaps the
+  workshop-inspector `showNoteNames` claim on `settings_service`/`settings_screen`/
+  both ARBs — coordinate on rebase.
+
+- **opus (aecmos)** · ✅ **idle / SHIPPED — AECMOS neural MOS scoring in the AEC
+  eval CLI**. `onnx_runtime_dart` (pure-Dart, public sibling) gained the conv/GRU
+  ops AECMOS needs, so the metric `AEC_TIER3B.md` rejected as "needs a native ORT"
+  now runs in pure Dart. Wired **dev-only / headless** (zero app or web-bundle
+  impact): `onnx_runtime_dart` as a **dev_dependency** (path `../onnx_runtime_dart`),
+  the copied `AecmosScorer` + `MelFrontEnd` under `bin/aecmos/` (with an
+  `ignore_for_file: depend_on_referenced_packages` — the dev-dep is the intended
+  boundary), and `bin/aecmos.dart <model|run-id> <lpb> <mic> <enh> <st|nst|dt>`.
+  The model is a **user-provided** Microsoft AEC-Challenge artifact (run ids
+  1663915512/1663829550 @ 16k, 1668423760 @ 48k) in
+  `~/.cache/onnx_runtime_dart_models/` — never bundled, so full scoring is a
+  local/dev tool (not CI). `test/aecmos_smoke_test.dart` (model-free: mel
+  front-end shape/finiteness + scorer rejects an unknown run id — the DSP is
+  exhaustively tested upstream). CI + deploy check out `CrispStrobe/onnx_runtime_dart`
+  as a sibling (every `pub get` resolves dev deps). `AEC_TIER3B.md` corrected.
+  Full-project analyze clean (bar one pre-existing `roman_numeral_test` lint, not
+  mine); smoke test green. NOT touching the app / native plugin / game registry.
+  ✅ **Now turnkey:** the 16 kHz + 48 kHz models are mirrored (MIT, attributed to
+  microsoft/AEC-Challenge) at <https://huggingface.co/cstr/aecmos-onnx> with a
+  model card; the CLI's run-id shortcut resolves `aecmos_<run-id>.onnx` from the
+  cache and its "model not found" message prints the `hf download` command. (Run
+  id `1663829550` not mirrored — available upstream.)
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — FX remainder (FX_HANDOVER §1/§4/§5)**.
+  **Swing** (`TrackerTiming.swing` + swing-aware onsets across every renderer + an
+  app-bar toggle); **sfxr FM/LFO** (`crisp_dsp/sfxr.dart` fmDepth/fmRatio/lfoDepth/
+  lfoSpeed, gated on depth>0 so presets stay byte-identical; a 'bell' preset);
+  **per-note volume envelopes** (`crisp_dsp/envelope.dart` + `SampleInstrument`
+  declick). Each its own commit + test; all engine/screen suites green.
+  **FX_HANDOVER §1–§5 essentially complete** (only extensions remain). ⚠ avoid
+  backticks in `git commit -m "…"` under zsh — they command-substitute (dropped a
+  word in `651c2c2`).
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — record voice slow/fast (time-stretch)**.
+  A Slow/Normal/Fast chip row in the record sheet applies the shipped `timeStretch`
+  (pitch-preserving) to a clip before it becomes the voice instrument
+  (`_voiceStretch` in `tracker_screen.dart` + tester seam `voiceStretch`/
+  `setVoiceStretch`/`voiceSampleLength` + ARBs `trackerSpeed{Slow,Normal,Fast}`).
+  Screen test: inject at 1.5× → voice sample ~1.5× longer. **FX_HANDOVER §3 complete.**
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — voicelab voice presets** (alien/cyborg/
+  radio/demon). `VoiceEffect` in `voice_fx.dart` gains 4 presets composing formant +
+  the shipped `ring_mod`/`distortion` + a 1-pole bandpass (radio); record-sheet icons
+  + labels + ARBs (EN/DE). The applyVoiceEffect test (iterating `VoiceEffect.values`,
+  now asserting length-preserving too) auto-covers them. **Record voice menu: Normal/
+  Chipmunk/Monster/Deep/Robot/Alien/Cyborg/Radio/Demon.** 31 screen + voice tests
+  green; analyze clean.
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — note-name reading scaffold**
+  (`4052f00`, user-requested; the "showNoteNames" item was NO LONGER
+  crisp_notation-blocked — `StaffView` supports the boolean). A persisted
+  `SettingsService.showNoteNames` (default off, sibling of `colorScaffold`) + a
+  Settings toggle; a shared `ReadingStaffView` wrapper (`features/games/widgets/`)
+  reads the setting so games opt in with a one-line `StaffView`→`ReadingStaffView`
+  swap. Wired into 9 games where the note's NAME is NOT the task (`whole_half`,
+  `tie_slur`, `articulation_read`, `beam_flag`, `note_value_quiz`, `measure_fill`,
+  `spot_upbeat`, `bowing`, `beat_count`) — **deliberately NOT the naming quizzes**
+  (printing the letter reveals the answer) **nor the read-to-produce games**
+  (`perform_it`/`cello_play_it` — the shown note IS what you must sing/play, so the
+  name would reveal it). That's the safe+valuable set; the rest are unsafe or
+  low-value (rhythm on a single repeated pitch). **Per-locale spelling now works**
+  (`252acd6`): added a
+  `noteNameStyle` param to `StaffView` in the **public crisp_notation lib**
+  (`7b72632`, mirrors `MultiSystemView`; default `letter` → byte-identical for
+  existing callers), and `ReadingStaffView` passes `noteNameStyleFor(context)`, so
+  on-staff names honour the English / German-H / solfège setting. Library +
+  app both green; `test/reading_staff_test.dart` asserts germanH → German. Rebased
+  through the concurrent `ScoreFont` refactor of SettingsService/settings ARBs.
+  Follow-up (optional): extend the wrapper to more name-safe games (one line each).
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — ring-mod + crunch in the channel FX
+  picker**. DSP units `9b1b4c8`; `TrackerChannelEffect` now has `ringMod` (Robot) +
+  `crunch` (distortion) with `applyChannelEffect` cases; labels + ARBs (EN/DE); the
+  picker sheet + the engine test (now iterating the enum) auto-cover them. 50
+  engine+screen tests green; analyze clean. **Channel FX menu: none/Echo/Chorus/
+  Flanger/Reverb/Robot/Crunch.**
+
+- **opus (majmin-sort)** · ✅ **idle / SHIPPED — "Major or Minor?" triad-sort
+  minigame** (backlog §B — the *reading* counterpart to the aural
+  `major_minor_ear`). A two-basket drag-sort on the `accidental_sort` scaffold:
+  each card renders a **triad** on the staff; drag it into the Major / Minor
+  basket (Diminished joins as a 3rd basket at 2★, mirroring accidental_sort's ♮).
+  Built with crisp_notation `Triad(root, ChordQuality)`; the chord sounds on a
+  correct drop. New `features/games/chords/major_minor_sort_screen.dart` +
+  `GameInfo` (chords module) + tuning `[100,400,550]` + EN/DE ARBs (reuses the
+  existing `majorLabel`/`minorLabel`/`diminishedLabel`) + `test/major_minor_sort_test.dart`
+  (real drag gestures + the 2★ three-basket widen). SRI
+  `chords.quality.<major|minor|diminished>`. Analyze clean; consistency + star
+  suites green.
+
+- **opus (enharmonic)** · ✅ **idle / SHIPPED — "Enharmonic Twins" minigame**
+  (item 1, a genuine gap — nothing else drills enharmonic equivalence). A binary
+  staff-read on the `tie_slur` scaffold: two whole notes are shown (each with its
+  accidental) across two bars; same sound spelled two ways (F♯/G♭) or genuinely
+  different? Graded by `midiNumber` equality (exact — the child must read past the
+  spelling). Five sharp/flat twins at 1★; the white-key twins (E♯=F, F♭=E) join at
+  2★; "different" rounds are guaranteed non-enharmonic and non-trivial (adjacent
+  steps, ≥1 accidental). Correct → both notes play. New
+  `features/games/note_reading/enharmonic_screen.dart` + `GameInfo` + tuning
+  `[100,600,900]` + EN/DE ARBs + `test/enharmonic_test.dart` (3 tests incl. a
+  per-round invariant `answerSame ⇔ notesShareMidi`). Analyze clean; consistency +
+  star suites green.
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — per-channel FX chain (Tracker)**. The
+  shipped DSP units (`crisp_dsp/modulated_delay.dart` + `reverb.dart`) are now wired
+  in: `TrackerChannelEffect{none,delay,chorus,flanger,reverb}` + `applyChannelEffect`
+  + a mutable `effect` on `TrackerChannel`, applied to the stem in
+  `_renderWithDynamics` before `mixStems`; `setChannelEffect` invalidates the cache.
+  UI: a `graphic_eq` app-bar button → an effect-picker bottom sheet (localized
+  EN/DE). Engine test (applyChannelEffect: none=identity, each effect ≠ dry;
+  setChannelEffect changes the mix, none restores it) + a screen tester-seam test.
+  analyze clean; 50 engine+screen tests green.
+
+- **opus (transpose-write)** · ✅ **idle / SHIPPED — "Write It for the Instrument"
+  minigame** (remaining-work item 1). The inverse of Concert Pitch, doubling the
+  thin Transpose corner: a **concert pitch** (what sounds) is shown on the staff;
+  name the note a B♭/E♭/F instrument must **read** to produce it. B♭ only at 1★,
+  +E♭/F at 2★; correct → the concert pitch plays. SRI `transpose.<instr>.write_<step>`
+  (distinct leaf, never clobbers the forward game's SM-2 items). New
+  `features/games/transpose/transpose_write_screen.dart` + `GameInfo` + tuning
+  `[100,600,900]` + EN/DE ARBs (parameterized prompt) + `test/transpose_write_test.dart`
+  (3 tests incl. a round-trip pinning the transposition inverse vs the forward
+  maths). Built during the `CometBeat` rename window (held the push, rebased onto
+  the renamed tree). Analyze clean; consistency + star suites green.
+
+- **opus (rename)** · ✅ **idle / SHIPPED — responsive layout audit + 10 overflow
+  fixes.** Pumped every registered game + home/curriculum/progress at iPhone SE
+  (375×667), iPhone 6.9" (440×956) and iPad 13" (1024×1366), collecting RenderFlex
+  overflows. **18 → 8 findings.** Fixed: `play_along_screen` button row → `Wrap`
+  (the play button's label is the game title; overflowed 41px — hit **5** games:
+  cello/guitar/sing/keyboard play-alongs + keyboard_ode); `chord_grip_hero` +
+  `command_caller` unconstrained hint `Text` after a `Spacer` → `Flexible`+ellipsis
+  (107/90px on SE, 42/25px on 6.9"); `_ModuleCard` title 2-line cap + card ratio
+  1.15→1.05. iPad is clean at every screen. Analyze + affected suites green.
+  ✅ **Layout audit — 0 overflows across 828 checks** (138 screens × SE 375×667 /
+  6.9" 440×956 / iPad 13" × **EN + DE**). Every `kGamesByModule` screen + home/
+  curriculum/progress verified clean in both languages. Fix patterns applied:
+  • button/control Row→Wrap: 5 play-alongs, `chord_play_along`, `cello_play_it`,
+    `tracker` body (tempo+Record/Clear);
+  • unconstrained Text→Flexible+ellipsis: `chord_grip_hero`, `command_caller`,
+    `note_snake`, `beat_runner`, `_curriculum` title, `_ModuleCard` title;
+  • vertical fill-else-scroll (LayoutBuilder+ConstrainedBox(minHeight)+
+    IntrinsicHeight+SingleChildScrollView): `accidental_sort`(+bass), `pitch_sort`
+    (+bass), `roman_numeral`;
+  • `tracker` app bar: Swing→overflow menu (~9 actions didn't fit 375px).
+  KEY LESSON: **German amplifies overflows** — 6 findings only showed in de-DE on
+  SE (`../testing_dart.md` §6); an EN-only audit misses them. `_curriculum` was
+  NOT a false positive after all — a latent unconstrained Text that only fit in
+  settled English. Also an **a11y audit** (tap-target/contrast/label) came back
+  clean bar one fix (debug-title `excludeFromSemantics`). Re-run: pump
+  `kGamesByModule` × sizes × locales, collect `takeException()` /
+  `AccessibilityGuideline.evaluate`; probe file:line via `FlutterError.onError`.
+  Full method: `../testing_dart.md`.
+
+- **opus (rename)** · ✅ **idle / SHIPPED — full app rename `KlangUniversum` →
+  `CometBeat`** (new working name; checked clear on app stores / web / TM search).
+  Package id `klang_universum`→`comet_beat` (**342 Dart files, ~1,768 imports**),
+  display names (iOS/macOS/Android/Linux/Windows/web/l10n `appTitle`), bundle ids →
+  `com.crispstrobe.cometBeat` (app not yet published), XM-writer tracker stamp,
+  README + this header + active docs. `flutter analyze` clean; rename-sensitive
+  tests green (widget/home/about/settings/live-flow/xm). GitHub repo renamed
+  `klang-universum`→**`CrispStrobe/cometbeat`** (remote + CI checkout `path:` in
+  `ci.yml`/`deploy.yml` updated). **Only remaining external item:** rename the
+  Apple provisioning profile in the Developer portal, then update
+  `ios-release.yml:PROFILE_NAME` (still `Klang Universum AppStore CI`). `HISTORY.md`
+  keeps the old name by design (historical log).
+
+- **opus (upbeat)** · ✅ **idle / SHIPPED — "Spot the Upbeat" minigame**
+  (remaining-work item 1). A binary staff-read (Takte module): a short two-bar
+  melody starts either on the downbeat (a full first measure) or with a pickup /
+  anacrusis (an incomplete first measure), and the child taps **Upbeat** vs **On
+  the beat**. The pickup is a real `Measure(..., pickup: true)` so the first bar
+  genuinely holds less than the meter (proper anacrusis — the pickup is borrowed
+  from the last bar). At 2★ the note-count shortcut is defeated (mixed-rhythm full
+  bars: half+quarter+quarter shows 3 noteheads but fills 4/4; pickup of 1–2
+  notes). Correct → the melody plays. SRI `measures.upbeat.<yes|no>`;
+  `kStarThresholds` `[100,600,900]`. `features/games/measures/spot_upbeat_screen.dart`
+  + `GameInfo` + tuning + EN/DE ARBs + `test/spot_upbeat_test.dart` (3 tests, incl.
+  a per-round structural invariant: upbeat ⇔ short pickup first bar). Analyze clean;
+  registry/consistency + star-score suites green.
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — the last two voice-2 gaps:
+  meter changes + cross-voice tap-select** (`9ceadac` model + `3da6ad2` model+screen).
+  (1) **Meter changes desynced the voices** — a time change anchors to one element
+  id, in one voice's stream, so the other voice's `reflow` never re-barred (a 2/4
+  change gave bar 1 two quarters in v1 but three in v2). `_timeChangesFor(voice,
+  scale)` re-keys `_timeChanges` onto each voice by cumulative onset, so a change in
+  either voice re-bars both; identity for single-voice → byte-identical goldens.
+  `test/voice2_time_change_test.dart`. (2) **Cross-voice tap-select** — crisp_notation
+  hit-testing IS voice-agnostic (verified: `staff_view.dart:393`, regions from all
+  voices), so `onElementTap` fires with v2 ids; but mutations resolve ids in the
+  active voice only. Added `ScoreDocument.voiceOfId`; `_onElementTap` now follows the
+  caret to the tapped note's voice (`setActiveVoice` then select). Inert on the
+  single-voice Sandbox surface. `test/voice2_cross_voice_test.dart` + a widget test.
+  **The voice-2 v1-limit arc is now FULLY CLOSED** — voice 2 is a first-class voice
+  for render, persistence, and editing.
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 mid-*bar* clef
+  changes** (`5071194`). MODEL-only (`score_document.dart`). `_withInlineClefs`
+  walked voice-1 elements only, so a mid-bar clef anchored on a voice-2 note was
+  stored but never emitted — the **last voice-1-only harvest in `buildScore`**. Now
+  collects the onset walk (`_collectInlineClefs`) from both voices, merged
+  onset-sorted; `loadScore` recovers a voice-2 anchor whose onset has no matching
+  voice-1 boundary (`_recoverInlineClef`, try v1 then v2). Empty-v2 → byte-identical
+  (inline-clef + packing goldens hold). `test/voice2_inline_clef_test.dart`. **With
+  this, `buildScore` harvests every voice-anchored attribute from BOTH voices**
+  (dynamics, lyrics, tuplets, bar changes, mid-bar clefs). Only two voice-2 gaps
+  remain, both niche/ambiguous: a **TIME change** anchored on voice 2 (feeds
+  reflow's bar capacity by id — genuinely hairy) and **cross-voice tap-select**
+  (screen; may be blocked on crisp_notation hit-testing returning v2 ids on tap).
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 mid-score bar
+  changes** (`27c8568`). MODEL-only (`score_document.dart`). A clef/key/tempo/
+  repeat/volta/nav change anchored on a voice-2 note (the setters run on the active
+  voice) was stored but never stamped — `_withMidScoreChanges` scanned voice-1 bars
+  only. It now builds a per-bar voice-2 id list (`_v2IdsByBar`, same-grid so bar
+  indices align) and `_anchoredIn`/`_anchoredInSet` fall back to it (voice-1 anchor
+  still wins). Round-trips (reopen re-anchors to the bar's first voice-1 element).
+  Empty-v2 → byte-identical (goldens hold). `test/voice2_midscore_test.dart`.
+  **Out of scope (documented):** a TIME change anchored on voice 2 (feeds reflow's
+  bar capacity by id) and mid-*bar* inline clefs on voice 2. This closes the
+  voice-2 v1-limit arc except those two + cross-voice tap-select (screen).
+  *(Also, in passing: fixed 6 files that raced the rename with stale
+  `klang_universum` imports — landed upstream as `3a4d5db`, so my dup was deduped.)*
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 tuplets** (`fdf1d6a`).
+  MODEL-only (`score_document.dart`; no screen overlap). A tuplet made while voice 2
+  was active was doubly broken — `_withVoice2`'s reflow omitted `durationScale`
+  (triplet members overflowed the bar) and `_withTuplets` positioned only voice-1
+  members (no bracket). Fix: v2 reflow now passes `durationScale: _tupletScale()`;
+  the per-bar span emitter is factored to `_tupletSpansByBar(voiceBars, voice:)`,
+  reused by `_withTuplets` (voice 0) and `_withVoice2` (voice 1, so crisp_notation
+  brackets it as an inner voice — `layout_tuplets.dart:33`); `loadScore` recovers
+  `span.voice==1` via a per-bar voice-2 id list. Empty-v2 fast path untouched →
+  packing goldens byte-identical. `test/voice2_tuplet_test.dart` (packs scaled +
+  emits a voice-1 3:2 span + save→reopen round-trip); 178 Workshop-model tests +
+  analyze green. **Remaining voice-2 v1 gaps (unclaimed):** mid-score bar changes
+  anchored on a voice-2 note don't stamp (bar-level stamps read voice-1 bars; note
+  a *time* change anchored to v2 is extra-hairy — it also drives reflow bar
+  capacity); cross-voice tap-select (screen).
+
+- **opus (tracker)** · ✅ **idle / SHIPPED — "borrow a sample from a module"**
+  (core `7dd8ab2` + UI). A "Borrow instrument…" item in the Tracker app-bar menu:
+  pick a `.mod/.s3m/.xm/.it`, choose one of its samples from a dialog, and it
+  becomes the selected channel's instrument (`sampleInstrumentFromModule` +
+  `setChannelInstrument` → setState → `_syncPlayback`). Touched
+  `tracker_screen.dart` (menu case + `_borrowInstrument` handler + picker) + both
+  ARBs (`trackerBorrowSample`/`trackerBorrowEmpty`) + regenerated l10n. Core is
+  pitch-accurate (MPM-detector acceptance); 17 tracker-screen tests + analyze green.
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — voice-2 dynamics + lyrics
+  render and round-trip** (`9163d19`, closes a voice-2 v1-limit / silent-loss bug).
+  MODEL-only (`score_document.dart`; no screen overlap). `buildScore` now harvests
+  dynamics + lyrics from `[..._v1, ..._v2]`, and `loadScore`'s voice-2 loop applies
+  `dynamics[el.id]` + records `remap[old]=new` so id-keyed lyrics/slurs re-anchor
+  onto voice 2. crisp_notation resolves markings by id across voices
+  (`layout_spans.dart:284`, `layout_annotations.dart:122`), so a v2 dynamic/lyric
+  now renders on the v2 note and survives save→reopen. Empty-v2 fast path keeps
+  single-voice goldens byte-identical (packing golden green). Snapshots already
+  capture `_v1/_v2/_lyrics`, so undo is free. `test/voice2_markings_test.dart` (4
+  tests); 187 Workshop-model tests + analyze green. **Remaining voice-2 v1 gaps
+  (unclaimed):** tuplets / mid-score changes anchored while voice 2 is active still
+  don't stamp (the `_withMidScoreChanges`/`_withInlineClefs`/`_withTuplets` passes
+  read voice-1 bars only); cross-voice tap-select isn't wired (screen).
+
+- **opus (studio-polish)** · ✅ **idle / SHIPPED — categorized ⌃ insertion palette**
+  (remaining-work item 3, the palette half; `opus (workshop-inspector)` did the
+  inspector Structure half). The flat property popup on the ⌃ button now reads as
+  labelled sections — **Articulations & ties / Dynamics / Ornament / Structure** —
+  via non-selectable `_menuHeader` rows; item labels dropped their redundant
+  `Category:` prefix now a header names the group ("Ornament: Trill" → "Trill"
+  under the ORNAMENT header, "Dynamics: mf" → "mf" under DYNAMICS). Reuses the
+  existing `workshopStructure` key. Only `_paletteButton`/`itemBuilder` +
+  `_menuHeader` touched (no overlap with the inspector work I rebased onto). 61
+  workshop widget tests green (palette test asserts the section headers), analyze
+  clean.
+
+- **opus (workshop-inspector)** · ✅ **idle / SHIPPED — inspector "Structure" view;
+  a rest is no longer a dead end** (`4a55600`, a slice of item 3). Added an
+  id-anchored **Structure** section to `_inspectorPanel` in
+  `composition_workshop_screen.dart`: for any single selection (note OR rest) it
+  summarises the bar-anchored changes at the focused element (clef / mid-bar clef /
+  key / time / tempo / repeat start-end / volta / navigation) as read-only chips
+  (or "No change") and hosts **"Change from here…"** — moved out of the notes-only
+  branch, so a rest can now anchor bar changes. Grace stays note-only. Additive,
+  Studio-only (inspector opt-in, off by default) — Sandbox surface unchanged. New
+  l10n key `workshopStructure` (de/en). Green (61 workshop widget tests +
+  analyze clean). **@opus (studio-polish): please `git pull --rebase` onto this —
+  the rest/bar-attribute inspector slice is now done; your remaining inspector
+  work is the multi-select depth beyond note props + categorized insertion
+  palettes. Small, self-contained diff to `_inspectorPanel`.**
 
 - **opus (articulation)** · ✅ **SHIPPED — "Read the Mark" articulation minigame**
   (`cedf4da`, Noten lesen). Fills a real gap: ties/slurs + note values were
