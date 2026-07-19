@@ -130,6 +130,64 @@ void main() {
     });
   });
 
+  group('Pxy pan slide (replayer path)', () {
+    // Energy of [channel] over the last quarter of a stereo WAV's frames.
+    double tailEnergy(Uint8List wav, {required int channel}) {
+      final data = ByteData.sublistView(wav);
+      final frames = (wav.length - 44) ~/ 4;
+      var e = 0.0;
+      for (var f = (frames * 3) ~/ 4; f < frames; f++) {
+        final i = 44 + f * 4 + (channel == 0 ? 0 : 2);
+        e += data.getInt16(i, Endian.little).abs();
+      }
+      return e;
+    }
+
+    test('PF0 slides the pan right over the pattern; usesPan flips true', () {
+      final s = TrackerSong(timing: const TrackerTiming(rows: 8));
+      // Retrigger a note each row and slide the pan hard right (PF0).
+      for (var r = 0; r < 8; r++) {
+        s.engine.setCell(
+          0,
+          r,
+          const TrackerCell(midi: 60, fxCmd: kFxPanSlide, fxParam: 0xF0),
+        );
+      }
+      s.syncCurrent();
+      expect(s.usesPan, isTrue); // Pxy arms the stereo render
+      final wav = s.renderCurrentPatternWav();
+      expect(_u16(wav, 22), 2); // stereo
+      // By the tail the pan has slid hard right → right louder than left.
+      expect(
+        tailEnergy(wav, channel: 1),
+        greaterThan(tailEnergy(wav, channel: 0)),
+      );
+    });
+
+    test('PxY (leftward) is the mirror; a plain song stays mono', () {
+      final s = TrackerSong(timing: const TrackerTiming(rows: 8));
+      for (var r = 0; r < 8; r++) {
+        s.engine.setCell(
+          0,
+          r,
+          const TrackerCell(midi: 60, fxCmd: kFxPanSlide, fxParam: 0x0F),
+        );
+      }
+      s.syncCurrent();
+      final wav = s.renderCurrentPatternWav();
+      expect(
+        tailEnergy(wav, channel: 0),
+        greaterThan(tailEnergy(wav, channel: 1)),
+      );
+
+      // No pan command anywhere → mono, byte-cheap.
+      final plain = TrackerSong(timing: const TrackerTiming(rows: 4));
+      plain.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      plain.syncCurrent();
+      expect(plain.usesPan, isFalse);
+    });
+  });
+
   group('mono regression (byte-identity)', () {
     test('a plain song renders byte-identical with the feature added', () {
       Uint8List render() {

@@ -125,6 +125,12 @@ const int kFxSetGlobalVolume = 0x10;
 /// per tick (classic volume-slide semantics). XM effect 'H' (0x11).
 const int kFxGlobalVolSlide = 0x11;
 
+/// Pxy — PAN slide (XM effect 'P', 0x19): high nibble x slides the pan RIGHT, low
+/// nibble y slides it LEFT, per tick. Modelled at ROW granularity in
+/// [_panRegions] (like [kFxTempoSlide]): each row carrying Pxy steps the pan by
+/// `(x−y) × (speed) / 128`, clamped to −1..1. Stereo-only.
+const int kFxPanSlide = 0x19;
+
 /// Txy — TEMPO slide (XM effect 'T', 0x1D): high nibble 1 slides the tempo (BPM)
 /// UP by the low nibble, else DOWN. Modelled at ROW granularity in [walkFlow] —
 /// each row carrying Txx steps the tempo by `amount × (speed−1)` (the per-tick
@@ -1163,23 +1169,31 @@ List<({int start, int end, double pan})> _panRegions(
   double basePan,
   List<TrackerCell> cells,
   TrackerTiming timing,
-  int totalSamples,
-) {
+  int totalSamples, {
+  int ticksPerRow = kDefaultTicksPerRow,
+}) {
   final regions = <({int start, int end, double pan})>[];
   var pan = basePan;
   var regionStart = 0;
   for (var r = 0; r < cells.length; r++) {
     final c = cells[r];
+    // 8xx sets the pan outright; Pxy slides it (row-granular step, like Txx).
+    double? newPan;
     if (c.fxCmd == kFxSetPan) {
-      final newPan = _panFromParam(c.fxParam);
-      if (newPan != pan) {
-        final s = timing.stepStartSample(r);
-        if (s > regionStart) {
-          regions.add((start: regionStart, end: s, pan: pan));
-        }
-        regionStart = s;
-        pan = newPan;
+      newPan = _panFromParam(c.fxParam);
+    } else if (c.fxCmd == kFxPanSlide) {
+      final rightAmt = (c.fxParam >> 4) & 0xF;
+      final leftAmt = c.fxParam & 0xF;
+      final ticks = ticksPerRow > 1 ? ticksPerRow : 1;
+      newPan = (pan + (rightAmt - leftAmt) * ticks / 128.0).clamp(-1.0, 1.0);
+    }
+    if (newPan != null && newPan != pan) {
+      final s = timing.stepStartSample(r);
+      if (s > regionStart) {
+        regions.add((start: regionStart, end: s, pan: pan));
       }
+      regionStart = s;
+      pan = newPan;
     }
   }
   regions.add((start: regionStart, end: totalSamples, pan: pan));
@@ -1233,7 +1247,13 @@ void _renderChannelIntoStereo(
     return;
   }
 
-  for (final reg in _panRegions(channel.pan, cells, timing, total)) {
+  for (final reg in _panRegions(
+    channel.pan,
+    cells,
+    timing,
+    total,
+    ticksPerRow: ticksPerRow,
+  )) {
     final theta = (reg.pan.clamp(-1.0, 1.0) + 1) / 2 * (pi / 2);
     final lGain = cos(theta);
     final rGain = sin(theta);

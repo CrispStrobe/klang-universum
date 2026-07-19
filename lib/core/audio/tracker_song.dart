@@ -237,7 +237,11 @@ class TrackerSong {
         (c) => c.pan != 0 || (c.panEnvelope != null && !c.panEnvelope!.isEmpty),
       ) ||
       patterns.any(
-        (p) => p.cells.any((col) => col.any((c) => c.fxCmd == kFxSetPan)),
+        (p) => p.cells.any(
+          (col) => col.any(
+            (c) => c.fxCmd == kFxSetPan || c.fxCmd == kFxPanSlide,
+          ),
+        ),
       );
 
   /// Whether any channel carries a (non-empty) [VolumeEnvelope] — a reason to
