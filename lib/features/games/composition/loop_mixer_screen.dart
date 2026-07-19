@@ -124,6 +124,10 @@ abstract interface class LoopMixerTester {
   String get kitId;
   void setKit(String id);
 
+  /// The band-flavour (style) id.
+  String get styleId;
+  void setStyle(String id);
+
   /// The master send effect on the whole mix, and a setter.
   LoopSend get send;
   void setSend(LoopSend value);
@@ -304,6 +308,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   String get kitId => _engine.kitId;
   @override
   void setKit(String id) => _setKit(id);
+  @override
+  String get styleId => _engine.styleId;
+  @override
+  void setStyle(String id) => _setStyle(id);
 
   @override
   void stopAll() => _stopAll();
@@ -1425,6 +1433,14 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _syncPlayback();
   }
 
+  // A style re-points the whole band + biases tempo/kit/scale, so it may change
+  // the grid — restart from the top like a tempo change.
+  void _setStyle(String id) {
+    if (id == _engine.styleId) return;
+    setState(() => _engine.styleId = id);
+    _restartGroove();
+  }
+
   /// A new grid (tempo or bar count changed) — restart from the top.
   void _restartGroove() {
     _clock
@@ -1522,6 +1538,12 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         'warm' => l10n.loopMixerKitWarm,
         'lofi' => l10n.loopMixerKitLofi,
         _ => l10n.loopMixerKitClean,
+      };
+
+  String _styleLabel(AppLocalizations l10n, String id) => switch (id) {
+        'four' => l10n.loopMixerStyleFour,
+        'chill' => l10n.loopMixerStyleChill,
+        _ => l10n.loopMixerStyleClassic,
       };
 
   @override
@@ -1791,6 +1813,30 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 ),
               ),
               const SizedBox(height: 6),
+              // Style: a whole-band flavour preset (re-points every card).
+              Row(
+                children: [
+                  Text(
+                    l10n.loopMixerStyle,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      children: [
+                        for (final style in kGrooveStyles)
+                          ChoiceChip(
+                            label: Text(_styleLabel(l10n, style.id)),
+                            selected: _engine.styleId == style.id,
+                            onSelected: (_) => _setStyle(style.id),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               // The harmony lane: free vamp, or a 4-chord song progression.
               Row(
                 children: [

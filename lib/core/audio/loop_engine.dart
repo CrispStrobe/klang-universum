@@ -338,6 +338,7 @@ class GrooveSpec {
     this.key = 0,
     this.scale = GrooveScale.majorPentatonic,
     this.kitId = 'clean',
+    this.styleId = 'default',
     this.userCells,
     this.userInstrument,
     this.beatRows,
@@ -357,6 +358,9 @@ class GrooveSpec {
 
   /// The drum-kit timbre id (a [kDrumKits] entry; 'clean' = the synth kit).
   final String kitId;
+
+  /// The band-flavour id (a [kGrooveStyles] entry; 'default' = the original).
+  final String styleId;
 
   /// A [kProgressions] id, or null for the free 2-bar vamp.
   final String? progressionId;
@@ -397,6 +401,7 @@ class GrooveSpec {
             ? GrooveScale.minorPentatonic
             : GrooveScale.majorPentatonic,
         kitId: json['kt'] as String? ?? 'clean',
+        styleId: json['st'] as String? ?? 'default',
         userCells:
             json['u'] is Map ? _cellsFromJson((json['u'] as Map)['c']) : null,
         userInstrument:
@@ -425,6 +430,7 @@ class GrooveSpec {
         if (key != 0) 'k': key,
         if (scale == GrooveScale.minorPentatonic) 'sc': 'min',
         if (kitId != 'clean') 'kt': kitId,
+        if (styleId != 'default') 'st': styleId,
         if (userCells != null)
           'u': {
             'c': _cellsToJson(userCells!),
@@ -793,6 +799,275 @@ final List<LoopTrack> kLoopMixerTracks = [
   ),
 ];
 
+// --- Styles: alternate whole-band pattern sets ("many flavours") ---
+//
+// A [GrooveStyle] re-points the five cards at a different pattern set and biases
+// the tempo/swing/kit/scale toward that flavour. Every style keeps the SAME
+// track ids (so enabled/variant/level state carries across a switch) and every
+// pitched note stays in the C-pentatonic set, so any combination is consonant —
+// the same guarantee the key/scale transposition then preserves.
+
+/// A driving four-on-the-floor band: kick every beat, octave-pump bass, stabby
+/// pad, bright hook.
+final List<LoopTrack> _fourTracks = [
+  LoopTrack(
+    id: 'drums',
+    gain: 0.50,
+    variants: [
+      DrumRowsPattern({
+        Drum.kick: stepRow('x.x.x.x.x.x.x.x.'),
+        Drum.snare: stepRow('..x...x...x...x.'),
+        Drum.hat: stepRow('.x.x.x.x.x.x.x.x'),
+      }),
+      DrumRowsPattern({
+        Drum.kick: stepRow('x.x.x.x.x.x.x.x.'),
+        Drum.clap: stepRow('..x...x...x...x.'),
+        Drum.hat: stepRow('xxxxxxxxxxxxxxxx'),
+      }),
+    ],
+  ),
+  const LoopTrack(
+    id: 'bass',
+    gain: 0.55,
+    chordFollower: ChordFollower(
+      instrument: Instrument.cello,
+      baseMidi: 36,
+      foldAbove: 45,
+      bars: [
+        ChordBar([
+          (tones: [0], steps: 1),
+          (tones: [3], steps: 1),
+          (tones: [0], steps: 1),
+          (tones: [3], steps: 1),
+          (tones: [0], steps: 1),
+          (tones: [3], steps: 1),
+          (tones: [0], steps: 1),
+          (tones: [3], steps: 1),
+        ]),
+      ],
+    ),
+    variants: [
+      MelodicPattern(Instrument.cello, [
+        (midis: [_c2], steps: 1), (midis: [_c3], steps: 1), //
+        (midis: [_c2], steps: 1), (midis: [_c3], steps: 1),
+        (midis: [_g2], steps: 1), (midis: [_g3], steps: 1),
+        (midis: [_g2], steps: 1), (midis: [_g3], steps: 1),
+        (midis: [_a2], steps: 1), (midis: [_a3], steps: 1),
+        (midis: [_a2], steps: 1), (midis: [_a3], steps: 1),
+        (midis: [_g2], steps: 1), (midis: [_g3], steps: 1),
+        (midis: [_e2], steps: 1), (midis: [_g2], steps: 1),
+      ]),
+      MelodicPattern(Instrument.cello, [
+        (midis: [_c2], steps: 2), (midis: [_c2], steps: 2), //
+        (midis: [_g2], steps: 2), (midis: [_a2], steps: 2),
+        (midis: [_c2], steps: 2), (midis: [_c2], steps: 2),
+        (midis: [_a2], steps: 2), (midis: [_g2], steps: 2),
+      ]),
+    ],
+  ),
+  const LoopTrack(
+    id: 'chords',
+    gain: 0.30,
+    chordFollower: ChordFollower(
+      instrument: Instrument.flute,
+      baseMidi: 60,
+      foldAbove: 67,
+      bars: [
+        ChordBar([
+          (tones: [0, 1, 2], steps: 2),
+          (tones: null, steps: 2),
+          (tones: [0, 1, 2], steps: 2),
+          (tones: null, steps: 2),
+        ]),
+      ],
+    ),
+    variants: [
+      MelodicPattern(Instrument.flute, [
+        (midis: [_c4, _e4, _g4], steps: 2), (midis: null, steps: 2), //
+        (midis: [_c4, _e4, _g4], steps: 2), (midis: null, steps: 2),
+        (midis: [_a3, _c4, _e4], steps: 2), (midis: null, steps: 2),
+        (midis: [_a3, _c4, _e4], steps: 2), (midis: null, steps: 2),
+      ]),
+      MelodicPattern(Instrument.flute, [
+        (midis: [_c4, _e4, _g4], steps: 8),
+        (midis: [_a3, _c4, _e4], steps: 8),
+      ]),
+    ],
+  ),
+  const LoopTrack(
+    id: 'melody',
+    gain: 0.34,
+    variants: [
+      MelodicPattern(Instrument.piano, [
+        (midis: [_e4], steps: 2), (midis: [_g4], steps: 2), //
+        (midis: [_a4], steps: 2), (midis: [_g4], steps: 2),
+        (midis: [_e4], steps: 2), (midis: [_c4], steps: 2),
+        (midis: [_d4], steps: 2), (midis: [_e4], steps: 2),
+      ]),
+      MelodicPattern(Instrument.piano, [
+        (midis: [_g4], steps: 4), (midis: [_a4], steps: 4), //
+        (midis: [_g4], steps: 4), (midis: [_e4], steps: 4),
+      ]),
+    ],
+  ),
+  LoopTrack(
+    id: 'sparkle',
+    gain: 0.26,
+    variants: [
+      const MelodicPattern(Instrument.musicBox, [
+        (midis: [_c6], steps: 1), (midis: null, steps: 3), //
+        (midis: [_a5], steps: 1), (midis: null, steps: 3),
+        (midis: [_g5], steps: 1), (midis: null, steps: 3),
+        (midis: [_c6], steps: 1), (midis: null, steps: 3),
+      ]),
+      MelodicPattern(Instrument.musicBox, [
+        for (var i = 0; i < 4; i++) ...[
+          (midis: [_c6], steps: 1), (midis: [_a5], steps: 1), //
+          (midis: [_g5], steps: 1), (midis: [_a5], steps: 1),
+        ],
+      ]),
+    ],
+  ),
+];
+
+/// A laid-back lo-fi band: sparse kick, long mellow roots, warm pad, gentle
+/// sparse melody.
+final List<LoopTrack> _chillTracks = [
+  LoopTrack(
+    id: 'drums',
+    gain: 0.46,
+    variants: [
+      DrumRowsPattern({
+        Drum.kick: stepRow('x.......x..x....'),
+        Drum.snare: stepRow('....x.......x...'),
+        Drum.hat: stepRow('x.x.x.x.x.x.x.x.'),
+      }),
+      DrumRowsPattern({
+        Drum.kick: stepRow('x.......x.......'),
+        Drum.rim: stepRow('....x.......x...'),
+        Drum.hat: stepRow('..x...x...x...x.'),
+      }),
+    ],
+  ),
+  const LoopTrack(
+    id: 'bass',
+    gain: 0.52,
+    chordFollower: ChordFollower(
+      instrument: Instrument.cello,
+      baseMidi: 36,
+      foldAbove: 45,
+      bars: [
+        ChordBar([
+          (tones: [0], steps: 4),
+          (tones: [2], steps: 4),
+        ]),
+      ],
+    ),
+    variants: [
+      MelodicPattern(Instrument.cello, [
+        (midis: [_c2], steps: 4), (midis: [_g2], steps: 4), //
+        (midis: [_a2], steps: 4), (midis: [_g2], steps: 4),
+      ]),
+      MelodicPattern(Instrument.cello, [
+        (midis: [_c2], steps: 6), (midis: null, steps: 2), //
+        (midis: [_a2], steps: 6), (midis: null, steps: 2),
+      ]),
+    ],
+  ),
+  const LoopTrack(
+    id: 'chords',
+    gain: 0.28,
+    chordFollower: ChordFollower(
+      instrument: Instrument.flute,
+      baseMidi: 60,
+      foldAbove: 67,
+      bars: [
+        ChordBar([
+          (tones: [0, 1, 2], steps: 8),
+        ]),
+      ],
+    ),
+    variants: [
+      MelodicPattern(Instrument.flute, [
+        (midis: [_c4, _e4, _g4], steps: 8),
+        (midis: [_a3, _c4, _e4], steps: 8),
+      ]),
+      MelodicPattern(Instrument.flute, [
+        (midis: [_e4, _g4], steps: 8),
+        (midis: [_c4, _e4], steps: 8),
+      ]),
+    ],
+  ),
+  const LoopTrack(
+    id: 'melody',
+    gain: 0.32,
+    variants: [
+      MelodicPattern(Instrument.musicBox, [
+        (midis: [_g4], steps: 4), (midis: [_e4], steps: 4), //
+        (midis: [_a4], steps: 4), (midis: [_g4], steps: 4),
+      ]),
+      MelodicPattern(Instrument.musicBox, [
+        (midis: null, steps: 2), (midis: [_e4], steps: 2), //
+        (midis: [_g4], steps: 4),
+        (midis: null, steps: 2), (midis: [_a4], steps: 2),
+        (midis: [_g4], steps: 4),
+      ]),
+    ],
+  ),
+  const LoopTrack(
+    id: 'sparkle',
+    gain: 0.24,
+    variants: [
+      MelodicPattern(Instrument.musicBox, [
+        (midis: null, steps: 7), (midis: [_c6], steps: 1), //
+        (midis: null, steps: 7), (midis: [_g5], steps: 1),
+      ]),
+      MelodicPattern(Instrument.musicBox, [
+        (midis: [_a5], steps: 4), (midis: null, steps: 4), //
+        (midis: [_g5], steps: 4), (midis: null, steps: 4),
+      ]),
+    ],
+  ),
+];
+
+/// One selectable band flavour: a whole-band [tracks] set plus the tempo /
+/// swing / kit / scale it defaults to.
+class GrooveStyle {
+  const GrooveStyle(
+    this.id, {
+    required this.tracks,
+    this.tempoBpm = 100,
+    this.swing = 0,
+    this.kitId = 'clean',
+    this.scale = GrooveScale.majorPentatonic,
+  });
+
+  final String id;
+  final List<LoopTrack> tracks;
+  final int tempoBpm;
+  final double swing;
+  final String kitId;
+  final GrooveScale scale;
+}
+
+/// The offered styles. `default` is the original band; ids are stable (they go
+/// in the share token). Adding a style is pure data — author its `tracks`.
+final List<GrooveStyle> kGrooveStyles = [
+  GrooveStyle('default', tracks: kLoopMixerTracks),
+  GrooveStyle('four', tracks: _fourTracks, tempoBpm: 120, kitId: 'deep'),
+  GrooveStyle(
+    'chill',
+    tracks: _chillTracks,
+    tempoBpm: 75,
+    swing: 0.33,
+    kitId: 'lofi',
+  ),
+];
+
+/// Resolve a style id to its band (unknown ids → the default style).
+GrooveStyle grooveStyleById(String id) =>
+    kGrooveStyles.firstWhere((s) => s.id == id, orElse: () => kGrooveStyles[0]);
+
 /// The drum fill that replaces the drum track every 4th loop (any variant):
 /// bar 1 stays a groove, bar 2 opens up and lands a snare run into the wrap.
 final DrumRowsPattern kDrumFillPattern = DrumRowsPattern({
@@ -819,9 +1094,26 @@ class LoopEngine {
   /// The beatboxed layer's track id.
   static const beatTrackId = 'beat';
 
-  final List<LoopTrack> _baseTracks;
+  List<LoopTrack> _baseTracks;
+  String _styleId = 'default';
   LoopTrack? _userTrack;
   LoopTrack? _userBeatTrack;
+
+  /// The selected band flavour ([kGrooveStyles]). Setting it re-points the five
+  /// cards at that style's pattern set and biases the tempo/swing/kit/scale
+  /// toward the flavour; enabled/variant/level state carries across (same ids).
+  String get styleId => _styleId;
+  set styleId(String id) {
+    final style = grooveStyleById(id);
+    if (style.id == _styleId) return;
+    _styleId = style.id;
+    _baseTracks = style.tracks;
+    _tempoBpm = style.tempoBpm.clamp(kMinTempoBpm, kMaxTempoBpm);
+    _swing = style.swing;
+    _kit = drumKitById(style.kitId);
+    _scale = style.scale;
+    _clearRenderCaches();
+  }
 
   /// The built-in band plus the captured user tracks (voice / beatbox).
   List<LoopTrack> get tracks => [
@@ -966,6 +1258,7 @@ class LoopEngine {
         key: _key,
         scale: _scale,
         kitId: _kit.id,
+        styleId: _styleId,
         userCells: (_userTrack?.variants.first as MelodicPattern?)?.cells,
         userInstrument: _userTrack == null
             ? null
@@ -975,6 +1268,10 @@ class LoopEngine {
 
   /// Restores a snapshot (unknown track ids are dropped defensively).
   void applySpec(GrooveSpec next) {
+    // Select the style FIRST (swaps the pattern set + applies its tempo/swing/
+    // kit/scale bias); the explicit fields below then override that bias, so a
+    // saved groove restores its exact tempo/kit/etc. rather than the default.
+    styleId = next.styleId;
     // Install the sung layer first so 'voice' counts as a known id below.
     final userCells = next.userCells;
     if (userCells != null) {

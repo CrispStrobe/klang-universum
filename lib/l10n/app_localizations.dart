@@ -1988,6 +1988,30 @@ abstract class AppLocalizations {
   /// **'Lo-fi'**
   String get loopMixerKitLofi;
 
+  /// No description provided for @loopMixerStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get loopMixerStyle;
+
+  /// No description provided for @loopMixerStyleClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get loopMixerStyleClassic;
+
+  /// No description provided for @loopMixerStyleFour.
+  ///
+  /// In en, this message translates to:
+  /// **'Four-on-floor'**
+  String get loopMixerStyleFour;
+
+  /// No description provided for @loopMixerStyleChill.
+  ///
+  /// In en, this message translates to:
+  /// **'Lounge'**
+  String get loopMixerStyleChill;
+
   /// No description provided for @loopMixerHarmonyOff.
   ///
   /// In en, this message translates to:

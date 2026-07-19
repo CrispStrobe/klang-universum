@@ -291,6 +291,61 @@ void main() {
     }
   });
 
+  testWidgets('long-pressing the variant badge rolls a random variant',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    game.toggleTrack('drums');
+    await tester.pump();
+    expect(game.variantOf('drums'), 0);
+
+    // Long-press the drums variant badge → it rolls to a different variant.
+    await tester.longPress(
+      find
+          .descendant(
+            of: find.byType(CircleAvatar),
+            matching: find.text('A'),
+          )
+          .first,
+    );
+    await tester.pump();
+    expect(game.variantOf('drums'), isNot(0));
+    expect(game.isPlaying, isTrue);
+
+    // The seam rolls too (always lands in range).
+    for (var i = 0; i < 10; i++) {
+      game.rollTrackVariant('drums');
+      expect(game.variantOf('drums'), inInclusiveRange(0, 3));
+    }
+  });
+
+  testWidgets('style chips swap the whole-band flavour + bias', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.styleId, 'default');
+    expect(game.tempoBpm, 100);
+
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    await tester.pump();
+
+    // Picking "Lounge" re-points the band and biases tempo/kit.
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Lounge'));
+    await tester.pump();
+    expect(game.styleId, 'chill');
+    expect(game.tempoBpm, 75);
+    expect(game.kitId, 'lofi');
+    // State carried across: the same layers stay enabled.
+    expect(game.enabledTracks, {'drums', 'bass'});
+    expect(game.isPlaying, isTrue);
+    expect(tester.takeException(), isNull);
+
+    // Back to Classic via the seam.
+    game.setStyle('default');
+    await tester.pump();
+    expect(game.styleId, 'default');
+  });
+
   testWidgets('kit chips swap the drum timbre', (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);
