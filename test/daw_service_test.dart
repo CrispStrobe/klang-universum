@@ -252,6 +252,27 @@ void main() {
     expect(fresh.canUndo, isFalse); // history reset on load
   });
 
+  test('clipPeaks summarizes a clip and reflects its trim', () {
+    // A ramp 0..1 so peaks grow across the clip.
+    final ramp = Float64List(1000);
+    for (var i = 0; i < 1000; i++) {
+      ramp[i] = i / 1000;
+    }
+    final s = DawService()..addClip(SampleSource(ramp));
+    final peaks = s.clipPeaks(0, 0, buckets: 10);
+    expect(peaks.length, 10);
+    expect(
+      peaks.first,
+      lessThan(peaks.last),
+    ); // amplitude rises across the clip
+    expect(peaks.every((p) => p >= 0 && p <= 1), isTrue);
+
+    // Trimming to the loud tail lifts the first bucket's peak.
+    s.setClipTrim(0, 0, trimStartMs: 900 * 1000 / 44100); // last ~100 samples
+    final trimmed = s.clipPeaks(0, 0, buckets: 10);
+    expect(trimmed.first, greaterThan(peaks.first));
+  });
+
   test('loadProject rejects a bad file without wrecking the arrangement', () {
     final s = DawService()..addClip(_tone(0.5, 100));
     expect(() => s.loadProject('garbage{'), throwsFormatException);

@@ -19,6 +19,10 @@ class DawService extends ChangeNotifier {
   // served from here instead of re-rendering on every bake.
   final Map<Object, Float64List> _cache = {};
 
+  // Downsampled peaks per (source, trim, resolution) for drawing a clip's
+  // waveform without re-scanning the PCM on every rebuild.
+  final Map<String, List<double>> _peaks = {};
+
   // Where the next sent clip lands, so successive sends lay out along the
   // timeline rather than stacking at 0.
   double _nextStartMs = 0;
@@ -212,6 +216,37 @@ class DawService extends ChangeNotifier {
     return pcm.length * 1000 / kDawSampleRate;
   }
 
+  /// Peak amplitudes (0..1) for a clip's audible (trimmed) audio, downsampled
+  /// to [buckets] — for drawing its waveform. Memoised per source/trim/res, so
+  /// a rebuild is O(1) after the first scan; recomputed only when the source or
+  /// trim changes (its key changes).
+  List<double> clipPeaks(int track, int index, {int buckets = 120}) {
+    final clip = timeline.tracks[track].clips[index];
+    final n = buckets < 1 ? 1 : buckets;
+    final key =
+        '${clip.source.cacheKey}|${clip.trimStartMs}|${clip.trimEndMs}|$n';
+    return _peaks.putIfAbsent(key, () {
+      final rendered = _cache.putIfAbsent(
+        clip.source.cacheKey,
+        () => clip.source.render(kDawSampleRate),
+      );
+      final pcm = trimmedPcm(clip, rendered);
+      final out = List<double>.filled(n, 0);
+      if (pcm.isEmpty) return out;
+      for (var b = 0; b < n; b++) {
+        final lo = pcm.length * b ~/ n;
+        final hi = pcm.length * (b + 1) ~/ n;
+        var peak = 0.0;
+        for (var i = lo; i < hi; i++) {
+          final a = pcm[i].abs();
+          if (a > peak) peak = a;
+        }
+        out[b] = peak > 1 ? 1 : peak;
+      }
+      return out;
+    });
+  }
+
   /// A clip's current gain / fade lengths.
   double clipGain(int track, int index) =>
       timeline.tracks[track].clips[index].gain;
@@ -318,6 +353,7 @@ class DawService extends ChangeNotifier {
     }
     _nextStartMs = 0;
     _cache.clear();
+    _peaks.clear();
     notifyListeners();
   }
 
@@ -348,6 +384,7 @@ class DawService extends ChangeNotifier {
       timeline.tracks.addAll([DawTrack(name: 'A'), DawTrack(name: 'B')]);
     }
     _cache.clear();
+    _peaks.clear();
     _undo.clear();
     _redo.clear();
     _coalesceToken = null;

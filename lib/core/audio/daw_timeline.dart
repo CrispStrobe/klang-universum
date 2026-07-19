@@ -211,8 +211,16 @@ double _tanh(double x) {
   return (e2 - 1) / (e2 + 1);
 }
 
-/// The `[trimStartMs, trimEndMs)` window of [rendered] as a zero-copy view; the
-/// full buffer when the clip has no trim.
+/// The `[trimStartMs, trimEndMs)` window of a clip's [rendered] audio as a
+/// zero-copy view — the full buffer when the clip has no trim. What actually
+/// plays / draws for a (possibly trimmed) clip.
+Float64List trimmedPcm(
+  Clip clip,
+  Float64List rendered, {
+  int sampleRate = kDawSampleRate,
+}) =>
+    _trimView(rendered, clip, sampleRate);
+
 Float64List _trimView(Float64List rendered, Clip clip, int sampleRate) {
   if (clip.trimStartMs <= 0 && clip.trimEndMs <= 0) return rendered;
   final n = rendered.length;
@@ -231,4 +239,6 @@ double trimmedDurationMs(
   Float64List rendered, {
   int sampleRate = kDawSampleRate,
 }) =>
-    _trimView(rendered, clip, sampleRate).length * 1000 / sampleRate;
+    trimmedPcm(clip, rendered, sampleRate: sampleRate).length *
+    1000 /
+    sampleRate;

@@ -890,35 +890,80 @@ class _DawScreenState extends State<DawScreen>
         ),
         onTap: () => _openClipInspector(i, j),
         child: Container(
-          padding: const EdgeInsets.only(left: 6),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: scheme.outline),
           ),
-          child: Row(
-            children: [
-              if (frozen)
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Stack(
+              children: [
+                // The clip's audio shape, filling the box behind the label.
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _ClipWaveformPainter(
+                      daw.clipPeaks(i, j, buckets: math.max(8, widthPx ~/ 2)),
+                      fg.withValues(alpha: 0.35),
+                    ),
+                  ),
+                ),
                 Padding(
-                  padding: const EdgeInsets.only(right: 2),
-                  child: Icon(Icons.lock, size: 14, color: fg),
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Row(
+                    children: [
+                      if (frozen)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 2),
+                          child: Icon(Icons.lock, size: 14, color: fg),
+                        ),
+                      Expanded(
+                        child: Text(
+                          _clipKind(clip),
+                          overflow: TextOverflow.clip,
+                          softWrap: false,
+                          style: TextStyle(color: fg),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => removeClip(i, j),
+                        child: Icon(Icons.close, size: 16, color: fg),
+                      ),
+                    ],
+                  ),
                 ),
-              Expanded(
-                child: Text(
-                  _clipKind(clip),
-                  overflow: TextOverflow.clip,
-                  softWrap: false,
-                  style: TextStyle(color: fg),
-                ),
-              ),
-              InkWell(
-                onTap: () => removeClip(i, j),
-                child: Icon(Icons.close, size: 16, color: fg),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Draws a clip's downsampled [peaks] (0..1) as a centre-line waveform that
+/// fills the clip box. Repaints only when the peak list identity changes.
+class _ClipWaveformPainter extends CustomPainter {
+  _ClipWaveformPainter(this.peaks, this.color);
+  final List<double> peaks;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (peaks.isEmpty) return;
+    final paint = Paint()..color = color;
+    final mid = size.height / 2;
+    final dx = size.width / peaks.length;
+    for (var i = 0; i < peaks.length; i++) {
+      final h = (peaks[i] * size.height).clamp(1.0, size.height);
+      canvas.drawRect(
+        Rect.fromLTWH(i * dx, mid - h / 2, dx <= 1 ? 1 : dx - 0.5, h),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ClipWaveformPainter old) =>
+      !identical(old.peaks, peaks) || old.color != color;
 }
