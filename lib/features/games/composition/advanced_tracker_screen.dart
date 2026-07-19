@@ -4387,6 +4387,9 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         : (hasNote && cell.effect != TrackerEffect.none
             ? _effectCode(cell.effect)
             : '·');
+    // Instrument column: the 1-based pool voice this note uses (blank/dot = the
+    // channel default), so per-cell voices are visible at a glance.
+    final inst = cell.instrument > 0 ? cell.instrument.toString() : '·';
     return MouseRegion(
       onEnter:
           _inspect ? (_) => _onCellHover(channel, row) : null, // 🔍 desktop
@@ -4455,6 +4458,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                     isCursor && _field == _CellField.effect,
                   ),
                 ),
+                const SizedBox(width: 2),
+                Text(inst, style: _instColStyle(scheme, cell.instrument > 0)),
               ],
             ),
           ),
@@ -4462,6 +4467,19 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       ),
     );
   }
+
+  /// Style for the in-grid instrument column: a distinct accent (so per-cell
+  /// voices stand out) when set, a faint dot for the channel default.
+  TextStyle _instColStyle(ColorScheme scheme, bool set) => TextStyle(
+        fontFeatures: const [FontFeature.tabularFigures()],
+        fontSize: 10 * _zoom,
+        fontWeight: set ? FontWeight.w700 : FontWeight.w400,
+        color: set
+            ? (_classic ? const Color(0xFF7CE38B) : scheme.tertiary)
+            : (_classic
+                ? const Color(0xFF2C4A32)
+                : scheme.onSurfaceVariant.withValues(alpha: 0.4)),
+      );
 
   TextStyle _subColStyle(ColorScheme scheme, bool active) => TextStyle(
         fontFeatures: const [FontFeature.tabularFigures()],

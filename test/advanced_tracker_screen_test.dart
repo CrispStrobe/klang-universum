@@ -93,6 +93,21 @@ void main() {
     expect(game.instrumentAt(0, 0), 2);
   });
 
+  testWidgets('the grid shows a cell\'s per-cell instrument number',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setNote(0, 0, 60);
+    await tester.pump();
+    // A distinctive value not otherwise shown in the UI.
+    expect(find.text('7'), findsNothing);
+
+    game.debugSetCellInstrument(0, 0, 7);
+    await tester.pump();
+    // The instrument sub-column now paints the pool index.
+    expect(find.text('7'), findsOneWidget);
+  });
+
   testWidgets('Sound Library browser lists voices and adds one to the pool',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
