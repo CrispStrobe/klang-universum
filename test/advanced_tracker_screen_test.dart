@@ -905,6 +905,29 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('grid header mute + solo toggles round-trip through the screen',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    // Mute channel 0 from the header seam — reflected in the screen state.
+    expect(game.isMuted(0), isFalse);
+    game.toggleMute(0);
+    await tester.pump();
+    expect(game.isMuted(0), isTrue);
+    game.toggleMute(0);
+    await tester.pump();
+    expect(game.isMuted(0), isFalse);
+
+    // Solo channel 0 — it stays audible, others are solo-suppressed.
+    game.toggleSolo(0);
+    await tester.pump();
+    expect(game.isSoloed(0), isTrue);
+    game.toggleSolo(0);
+    await tester.pump();
+    expect(game.isSoloed(0), isFalse);
+  });
+
   testWidgets('fill voice stamps the top row\'s instrument across the block',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());
