@@ -378,7 +378,7 @@ void main() {
     await tester.pump();
     await tester.runAsync(() => game.debugSaveGroove('MyJam'));
     expect(
-      await tester.runAsync(() => game.debugSlotNames()),
+      await tester.runAsync(game.debugSlotNames),
       contains('MyJam'),
     );
 
