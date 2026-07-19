@@ -842,6 +842,7 @@
   "trackerShowKeys": "Tastenhinweise zeigen",
   "trackerRecordLive": "Live-Aufnahme (ins Pattern jammen)",
   "trackerInterpolate": "Lautstärken interpolieren",
+  "trackerInterpNotes": "Noten interpolieren (Lauf)",
   "trackerBlockFillVoice": "Stimme über Block füllen",
   "trackerBlockFillVoiceHelp": "Block-Menü — füllt jede Spalte ab der obersten Stimme",
   "trackerInstColumn": "Instrument-Spalte",

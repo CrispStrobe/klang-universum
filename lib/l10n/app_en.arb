@@ -893,6 +893,7 @@
   "trackerShowKeys": "Show key hints",
   "trackerRecordLive": "Live record (jam into the pattern)",
   "trackerInterpolate": "Interpolate volumes",
+  "trackerInterpNotes": "Interpolate notes (run)",
   "trackerBlockFillVoice": "Fill voice across block",
   "trackerBlockFillVoiceHelp": "Block menu — fills each column from its top voice",
   "trackerInstColumn": "Instrument column",

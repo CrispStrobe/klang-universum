@@ -283,6 +283,33 @@ void main() {
       expect(song.engine.cellAt(0, 2).midi, 72); // filled
     });
 
+    test('interpolateNotesBlock fills a chromatic run between top and bottom',
+        () {
+      final song = TrackerSong()..setRows(16);
+      // C4 at row 0, C5 at row 4 (an octave up), rows 1-3 empty.
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60, instrument: 2));
+      song.engine.setCell(0, 4, const TrackerCell(midi: 72));
+
+      song.interpolateNotesBlock(0, 0, 0, 4);
+      // Linear semitone ramp fills every row 0..4.
+      expect(song.engine.cellAt(0, 0).midi, 60);
+      expect(song.engine.cellAt(0, 1).midi, 63); // 60 + 12*0.25
+      expect(song.engine.cellAt(0, 2).midi, 66);
+      expect(song.engine.cellAt(0, 3).midi, 69);
+      expect(song.engine.cellAt(0, 4).midi, 72);
+      // The top note's instrument is carried onto the filled rows.
+      expect(song.engine.cellAt(0, 2).instrument, 2);
+    });
+
+    test('interpolateNotesBlock skips a channel missing an endpoint note', () {
+      final song = TrackerSong()..setRows(16);
+      song.engine.setCell(0, 0, const TrackerCell(midi: 60));
+      // No note at the bottom row -> the run is a no-op for this channel.
+      song.interpolateNotesBlock(0, 0, 0, 4);
+      expect(song.engine.cellAt(0, 1).isEmpty, isTrue);
+      expect(song.engine.cellAt(0, 4).isEmpty, isTrue);
+    });
+
     test('transposeBlock shifts notes and clamps, leaving rests', () {
       final song = seeded();
       song.transposeBlock(0, 0, 0, 1, 12); // up an octave

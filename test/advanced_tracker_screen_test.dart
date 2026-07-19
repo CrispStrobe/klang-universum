@@ -905,6 +905,26 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('interpolate notes fills a run across the marked selection',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    game.setRows(5); // rows 0..4 so selectTrack spans exactly the endpoints
+    game.setNote(0, 0, 60); // C4
+    game.setNote(0, 4, 72); // C5
+    await tester.pump();
+
+    game.moveCursor(0, 0);
+    game.selectTrack(); // marks channel 0, rows 0..4
+    game.interpolateNotesBlock();
+    await tester.pump();
+
+    // The gap between the two endpoints is filled with a chromatic ramp.
+    expect(game.noteAt(0, 1), 63);
+    expect(game.noteAt(0, 2), 66);
+    expect(game.noteAt(0, 3), 69);
+  });
+
   testWidgets('swing control re-times the groove through the screen seam',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

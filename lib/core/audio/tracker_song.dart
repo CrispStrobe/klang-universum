@@ -479,6 +479,40 @@ class TrackerSong {
     }
   }
 
+  /// Fills a chromatic run down each selected channel: from the note at the
+  /// TOP selected row to the note at the BOTTOM selected row, placing a note on
+  /// every row in between (linear semitone ramp, rounded, clamped 0..127) — a
+  /// glissando/run. Skips a channel whose top or bottom row has no note. The
+  /// top note's volume/effect/instrument are carried onto every filled row.
+  void interpolateNotesBlock(int ch0, int row0, int ch1, int row1) {
+    final (cLo, cHi) = _order2(ch0, ch1);
+    final (rLo, rHi) = _order2(row0, row1);
+    if (rHi <= rLo) return;
+    for (var c = cLo; c <= cHi && c < channelCount; c++) {
+      final top = _engine.cellAt(c, rLo);
+      final bot = _engine.cellAt(c, rHi);
+      if (top.midi == null || bot.midi == null) continue;
+      final m0 = top.midi!;
+      final m1 = bot.midi!;
+      for (var r = rLo; r <= rHi; r++) {
+        final t = (r - rLo) / (rHi - rLo);
+        final midi = (m0 + (m1 - m0) * t).round().clamp(0, 127);
+        _engine.setCell(
+          c,
+          r,
+          TrackerCell(
+            midi: midi,
+            volume: top.volume,
+            effect: top.effect,
+            fxCmd: top.fxCmd,
+            fxParam: top.fxParam,
+            instrument: top.instrument,
+          ),
+        );
+      }
+    }
+  }
+
   // --- Mute / solo -------------------------------------------------------
 
   Set<int> _userMuted = {};

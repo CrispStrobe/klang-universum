@@ -4544,6 +4544,12 @@ abstract class AppLocalizations {
   /// **'Interpolate volumes'**
   String get trackerInterpolate;
 
+  /// No description provided for @trackerInterpNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Interpolate notes (run)'**
+  String get trackerInterpNotes;
+
   /// No description provided for @trackerBlockFillVoice.
   ///
   /// In en, this message translates to:

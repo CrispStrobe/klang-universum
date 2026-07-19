@@ -317,6 +317,9 @@ abstract interface class AdvancedTrackerTester {
   /// Fill each selected channel's per-cell instrument from its top selected row.
   void fillInstrumentBlock();
 
+  /// Fill a chromatic run between the selection's top and bottom notes.
+  void interpolateNotesBlock();
+
   /// Play the current pattern from the cursor row (FT2 F7).
   void playFromCursor();
 
@@ -1229,6 +1232,20 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
         }
       }
     });
+    _syncPlayback();
+  }
+
+  /// Fills a chromatic run down the selection: from each channel's top selected
+  /// note to its bottom selected note (a glissando). No-op without a marked
+  /// block spanning ≥2 rows.
+  void _interpolateNotesBlock() {
+    if (!_hasSelection) return;
+    final s = _selRect;
+    if (s.rHi <= s.rLo) return;
+    _pushUndo();
+    setState(
+      () => _song.interpolateNotesBlock(s.cLo, s.rLo, s.cHi, s.rHi),
+    );
     _syncPlayback();
   }
 
@@ -2348,6 +2365,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void interpolateBlock() => _interpolateBlock();
   @override
   void fillInstrumentBlock() => _fillInstrumentBlock();
+  @override
+  void interpolateNotesBlock() => _interpolateNotesBlock();
   @override
   void playFromCursor() => _playPattern(fromRow: _cursorRow);
   @override
@@ -3786,6 +3805,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               _transposeBlock(-12);
             case 'interp':
               _interpolateBlock();
+            case 'interpNotes':
+              _interpolateNotesBlock();
             case 'fillVoice':
               _fillInstrumentBlock();
             case 'insRow':
@@ -3831,6 +3852,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
             child: Text(l10n.trackerBlockOctDown),
           ),
           PopupMenuItem(value: 'interp', child: Text(l10n.trackerInterpolate)),
+          PopupMenuItem(
+            value: 'interpNotes',
+            child: Text(l10n.trackerInterpNotes),
+          ),
           PopupMenuItem(
             value: 'fillVoice',
             child: Text(l10n.trackerBlockFillVoice),
