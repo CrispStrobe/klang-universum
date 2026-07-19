@@ -29,6 +29,33 @@ void main() {
     expect(pitchFromMidi(61), const Pitch(Step.c, alter: 1));
   });
 
+  test('drumGrooveScore reduces a beat to one rhythm staff', () {
+    // Kick + hat together on step 0; snare on step 4; silent after.
+    final pattern = _pattern({
+      Drum.kick: 'x',
+      Drum.hat: 'x',
+      Drum.snare: '....x',
+    });
+    final score = drumGrooveScore(pattern);
+    // 16 eighth-steps = two 4/4 bars.
+    expect(score.measures, hasLength(2));
+    // Step 0 is a two-note chord (kick F2 + hat G5), not two separate notes.
+    final first = score.measures.first.elements.first;
+    expect(first, isA<NoteElement>());
+    expect((first as NoteElement).pitches, hasLength(2));
+    // The snare (C4) lands as a note within bar 1.
+    final bar1Notes = score.measures.first.elements.whereType<NoteElement>();
+    expect(
+      bar1Notes.any((n) => n.pitches.contains(const Pitch(Step.c))),
+      isTrue,
+    );
+    // Bar 2 is all silence → only rests.
+    expect(
+      score.measures[1].elements.every((e) => e is RestElement),
+      isTrue,
+    );
+  });
+
   test('cells pack into 4/4 bars with greedy durations', () {
     final score = grooveScore(const [
       (midis: [60], steps: 8), // a whole-note bar

@@ -83,6 +83,45 @@ Score grooveScore(List<PatternCell> cells, {Clef clef = Clef.treble}) {
   return Score(clef: clef, measures: measures);
 }
 
+/// A drum pattern as ONE rhythm-reduction staff for the live panel: every
+/// eighth-step that has any hit becomes a notehead chord on the drums' distinct
+/// lines (kick low, snare middle, hat high — see [_drumMidi]); silent steps
+/// merge into one rest. A compact "your beat, as notes" view — a reduction, not
+/// real percussion notation (the kid theme has no drum staff yet). Treble clef
+/// keeps it consistent with [drumParts]'s shipped export.
+Score drumGrooveScore(DrumRowsPattern pattern, {Clef clef = Clef.treble}) {
+  final steps = pattern.rows.values.fold<int>(
+    0,
+    (m, row) => row.length > m ? row.length : m,
+  );
+  bool hit(Drum d, int step) {
+    final row = pattern.rows[d];
+    return row != null && step < row.length && row[step];
+  }
+
+  bool anyHit(int step) => Drum.values.any((d) => hit(d, step));
+  final cells = <PatternCell>[];
+  var i = 0;
+  while (i < steps) {
+    if (anyHit(i)) {
+      final hits = [
+        for (final d in Drum.values)
+          if (hit(d, i)) _drumMidi(d),
+      ]..sort();
+      cells.add((midis: hits, steps: 1));
+      i++;
+    } else {
+      var j = i;
+      while (j < steps && !anyHit(j)) {
+        j++;
+      }
+      cells.add((midis: null, steps: j - i));
+      i = j;
+    }
+  }
+  return grooveScore(cells, clef: clef);
+}
+
 /// The pitched Loop Mixer tracks, in the engraving priority the live score
 /// panel already uses (voice · melody · chords · sparkle · bass). Drums/beat
 /// are unpitched and deliberately absent.

@@ -337,6 +337,7 @@
   "loopMixerHarmony": "Harmonie",
   "loopMixerHarmonyOff": "Frei",
   "loopMixerScore": "Als Noten zeigen",
+  "loopMixerScoreEmpty": "Schalte eine Spur ein, um sie als Noten zu sehen.",
   "loopMixerShare": "Teile deinen Groove",
   "loopMixerCopyCode": "Groove-Code kopieren",
   "loopMixerPasteCode": "Groove-Code einfügen",

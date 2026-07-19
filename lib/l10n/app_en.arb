@@ -375,6 +375,10 @@
   "loopMixerHarmony": "Harmony",
   "loopMixerHarmonyOff": "Free",
   "loopMixerScore": "Show as sheet music",
+  "loopMixerScoreEmpty": "Turn on a layer to see it written as notes.",
+  "@loopMixerScoreEmpty": {
+    "description": "Hint shown in the Loop Mixer score panel when no track is enabled to engrave."
+  },
   "loopMixerShare": "Share your groove",
   "loopMixerCopyCode": "Copy groove code",
   "loopMixerPasteCode": "Paste a groove code",

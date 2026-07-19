@@ -51,7 +51,7 @@ import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:comet_beat/shared/music_io/music_export.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show Clef, HarmonicFunction, StaffView, multiPartToMusicXml;
+    show Clef, HarmonicFunction, Score, StaffView, multiPartToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -984,6 +984,87 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     return null;
   }
 
+  /// The live-engraving panel: one small labelled staff per enabled track
+  /// (pitched tracks as real notes, drums/beat as a rhythm reduction), or a
+  /// hint when nothing is enabled yet — so the toggle always shows something.
+  Widget _buildScorePanel(AppLocalizations l10n) {
+    final rows = <Widget>[];
+    for (final track in _engine.tracks) {
+      if (!_engine.enabled.contains(track.id)) continue;
+      final cells = _engine.cellsFor(track.id);
+      Score? score;
+      Clef clef = Clef.treble;
+      if (cells != null) {
+        clef = track.id == 'bass' ? Clef.bass : Clef.treble;
+        score = grooveScore(cells, clef: clef);
+      } else {
+        // Unpitched (drums / beatbox): a one-staff rhythm reduction.
+        final variant = (_engine.variants[track.id] ?? 0)
+            .clamp(0, track.variants.length - 1);
+        final pattern = track.variants[variant];
+        if (pattern is DrumRowsPattern) score = drumGrooveScore(pattern);
+      }
+      if (score == null) continue;
+      rows.add(_scoreStaffRow(l10n, track.id, score));
+    }
+    // Show up to three staves at once; more scroll. Each row is a fixed height
+    // so the whole band is visible together, not one tall staff at a time.
+    final visible = rows.length < 3 ? rows.length : 3;
+    return Card(
+      child: SizedBox(
+        height: rows.isEmpty ? 52 : (visible * 46 + 8).toDouble(),
+        child: rows.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    l10n.loopMixerScoreEmpty,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Column(mainAxisSize: MainAxisSize.min, children: rows),
+              ),
+      ),
+    );
+  }
+
+  Widget _scoreStaffRow(AppLocalizations l10n, String id, Score score) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 56,
+            child: Text(
+              _trackLabel(l10n, id),
+              style: Theme.of(context).textTheme.labelSmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            child: SizedBox(
+              height: 42,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: StaffView(
+                  score: score,
+                  staffSpace: 7,
+                  theme: kidsScoreTheme,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   bool get _fillDue =>
       _engine.enabled.contains('drums') &&
       _iteration % LoopMixerScreen.fillEvery == LoopMixerScreen.fillEvery - 1;
@@ -1358,29 +1439,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                     );
                   },
                 ),
-              // Live engraving: the leading enabled track as a real score.
-              if (_showScore && _engravedTrackId != null)
-                SizedBox(
-                  height: 96,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: StaffView(
-                          score: grooveScore(
-                            _engine.cellsFor(_engravedTrackId!)!,
-                            clef: _engravedTrackId == 'bass'
-                                ? Clef.bass
-                                : Clef.treble,
-                          ),
-                          staffSpace: 8,
-                          theme: kidsScoreTheme,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              // Live engraving: EVERY enabled track as its own small staff
+              // (drums/beat as a rhythm reduction), or a hint when nothing is
+              // on yet — so the toggle always shows something.
+              if (_showScore) _buildScorePanel(l10n),
               const SizedBox(height: 8),
               Expanded(
                 child: Column(

@@ -1946,6 +1946,12 @@ abstract class AppLocalizations {
   /// **'Show as sheet music'**
   String get loopMixerScore;
 
+  /// Hint shown in the Loop Mixer score panel when no track is enabled to engrave.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on a layer to see it written as notes.'**
+  String get loopMixerScoreEmpty;
+
   /// No description provided for @loopMixerShare.
   ///
   /// In en, this message translates to:

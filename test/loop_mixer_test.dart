@@ -189,20 +189,34 @@ void main() {
     expect(game.progressionId, isNull);
   });
 
-  testWidgets('the score panel engraves the leading enabled track',
+  testWidgets('the score panel engraves EVERY enabled track (incl. drums)',
       (tester) async {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);
     expect(game.scoreVisible, isFalse);
 
-    game.toggleTrack('melody');
-    await tester.pump();
+    // Toggling Score with nothing enabled still shows something — a hint, so
+    // the button never silently no-ops — but no staves yet.
     game.toggleScorePanel();
     await tester.pump();
     expect(game.scoreVisible, isTrue);
-    expect(find.byType(StaffView), findsOneWidget);
+    expect(find.byType(StaffView), findsNothing);
+    expect(
+      find.text('Turn on a layer to see it written as notes.'),
+      findsOneWidget,
+    );
 
-    // No pitched track enabled → the panel collapses gracefully.
+    // A full band engraves one staff PER enabled track — the drum rhythm
+    // reduction + bass + melody, not just the single leading pitched track.
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
+    game.toggleTrack('melody');
+    await tester.pump();
+    expect(find.byType(StaffView), findsNWidgets(3));
+
+    // All off → back to the hint, no staves.
+    game.toggleTrack('drums');
+    game.toggleTrack('bass');
     game.toggleTrack('melody');
     await tester.pump();
     expect(find.byType(StaffView), findsNothing);

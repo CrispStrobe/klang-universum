@@ -1009,6 +1009,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerScore => 'Show as sheet music';
 
   @override
+  String get loopMixerScoreEmpty =>
+      'Turn on a layer to see it written as notes.';
+
+  @override
   String get loopMixerShare => 'Share your groove';
 
   @override

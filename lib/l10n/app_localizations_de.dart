@@ -1014,6 +1014,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerScore => 'Als Noten zeigen';
 
   @override
+  String get loopMixerScoreEmpty =>
+      'Schalte eine Spur ein, um sie als Noten zu sehen.';
+
+  @override
   String get loopMixerShare => 'Teile deinen Groove';
 
   @override
