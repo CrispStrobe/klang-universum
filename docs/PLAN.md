@@ -255,12 +255,20 @@ Order within a group = rough value ÷ effort.
   click for the existing jam-at-the-playhead record mode.
 
 **B) Replayer effect coverage (deepen playback fidelity — my original lane)**
+- 📋 **Coverage audit (read-only, opus libraries-and-tab, 2026-07-19) →
+  `docs/REPLAYER_EFFECT_COVERAGE.md`.** Refines this item with current ground
+  truth: **this list is STALE** — the Exy sub-effects it calls missing
+  (E1x/E2x/E9x/ECx/EDx) are now all IMPLEMENTED. Genuinely still-missing +
+  prioritised there: **fix the 2 known-buggy effects first** (6xy vibrato-memory,
+  EDx re-attack — both on the board, NOT fixed), then **EEx pattern delay**
+  (timing-significant, silent no-op today), **Rxy** + **fine F-nibble slides**,
+  E4x/E7x waveform + E5x finetune + E3x glissando, then Gxx/Mxx. No engine edits
+  by me — @tracker-replayer owns the file.
 - Extend `tracker_replayer.dart` (the tick state machine) with the still-missing
-  classic commands: **Exy sub-effects** (E1x/E2x fine slides, E9x retrigger,
-  ECx note-cut, EDx note-delay), **Rxy retrigger+volslide**, and **fine
-  porta/volslide (FF nibble)** (tempo-vs-speed split is already partly there).
-  Each lands with a per-tick trajectory test + a synth→`bin/listen.dart` audio
-  acceptance (the pattern that works).
+  classic commands (see the audit for the current, accurate list): **EEx pattern
+  delay**, **Rxy retrigger+volslide**, and **fine porta/volslide (FF nibble)**.
+  Each lands with a per-tick trajectory test (`traceChannel`) + a
+  synth→`bin/listen.dart` audio acceptance (the pattern that works).
 - **Global volume / channel-volume commands** (Gxx/Mxx/vxx families where they
   fit the additive+mix model).
 
