@@ -43,8 +43,6 @@ import 'package:comet_beat/core/audio/daw_sources.dart' show TrackerSource;
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
     show convertDocTo;
 import 'package:comet_beat/core/audio/mod/module_doc.dart' show ModuleFormat;
-import 'package:comet_beat/core/audio/mod/module_notation.dart'
-    show multiPartToModuleDoc;
 import 'package:comet_beat/core/audio/sample_pitch.dart';
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
@@ -2857,13 +2855,11 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   @override
   Uint8List? debugExportModule(String format) {
-    final mp = _songMultiPart();
-    if (mp == null) return null;
+    _song.syncCurrent(); // fold live edits into the snapshot before isEmpty
+    if (_song.isEmpty) return null;
     final fmt = ModuleFormat.values.firstWhere((f) => f.name == format);
-    return convertDocTo(
-      multiPartToModuleDoc(mp.score, title: 'TRACKER', format: fmt),
-      fmt,
-    );
+    // PCM-preserving: straight from the song (real sample PCM + effect column).
+    return convertDocTo(moduleDocFromSong(_song), fmt);
   }
 
   Future<void> _saveToSongBook() async {
@@ -2982,20 +2978,21 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
-  /// Exports the whole song as a tracker MODULE (.mod/.xm/.s3m/.it). Goes via
-  /// the Score → ModuleDoc bridge, so notes + structure + a generated sample
-  /// timbre carry; the authored effect COLUMN (not in the Score) does not.
+  /// Exports the whole song as a tracker MODULE (.mod/.xm/.s3m/.it). Built
+  /// DIRECTLY from the song via moduleDocFromSong, so each SampleInstrument's
+  /// REAL PCM and the authored effect column survive (unlike the Score bridge,
+  /// which re-synthesizes a timbre and drops effects). Also exports drum-only
+  /// songs the Score path couldn't.
   Future<void> _exportModule(ModuleFormat fmt) async {
-    final mp = _songMultiPart();
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
-    if (mp == null) {
+    _song.syncCurrent(); // fold live edits into the snapshot before isEmpty
+    if (_song.isEmpty) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.trackerSaveEmpty)));
       return;
     }
     try {
-      final doc = multiPartToModuleDoc(mp.score, title: 'TRACKER', format: fmt);
-      final bytes = convertDocTo(doc, fmt);
+      final bytes = convertDocTo(moduleDocFromSong(_song), fmt);
       await _saveBytes(bytes, 'tracker.${fmt.name}', fmt.name.toUpperCase(), [
         fmt.name,
       ]);
