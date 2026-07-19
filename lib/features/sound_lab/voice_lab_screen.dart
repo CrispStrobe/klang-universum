@@ -131,6 +131,12 @@ abstract class VoiceLabTester {
   void setEffect(VoiceEffect e);
   void setParam(String key, double value);
   void surprise(int seed);
+
+  /// Undo/redo of the effect settings (preset + sliders).
+  void undo();
+  void redo();
+  bool get canUndo;
+  bool get canRedo;
   Future<void> saveToLibrary(String name);
   Future<void> saveAsInstrument(String name);
   List<SampleClip> get library;
@@ -163,6 +169,64 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
   double _gate = 0;
   double _echo = 0;
   double _reverb = 0;
+
+  // ── Undo/redo of the effect settings (the preset + 8 sliders). ────────────
+  final List<_VoiceParams> _undoStack = [];
+  final List<_VoiceParams> _redoStack = [];
+  static const _maxUndo = 50;
+
+  _VoiceParams _captureParams() => _VoiceParams(
+        _effect,
+        _pitch,
+        _speed,
+        _alien,
+        _crunch,
+        _tremolo,
+        _gate,
+        _echo,
+        _reverb,
+      );
+
+  /// Snapshot the current settings before a change so [undo] can restore them.
+  /// A fresh change invalidates the redo history.
+  void _snapshot() {
+    _undoStack.add(_captureParams());
+    if (_undoStack.length > _maxUndo) _undoStack.removeAt(0);
+    _redoStack.clear();
+  }
+
+  void _restoreParams(_VoiceParams p) {
+    _effect = p.effect;
+    _pitch = p.pitch;
+    _speed = p.speed;
+    _alien = p.alien;
+    _crunch = p.crunch;
+    _tremolo = p.tremolo;
+    _gate = p.gate;
+    _echo = p.echo;
+    _reverb = p.reverb;
+  }
+
+  @override
+  bool get canUndo => _undoStack.isNotEmpty;
+  @override
+  bool get canRedo => _redoStack.isNotEmpty;
+
+  @override
+  void undo() {
+    if (_undoStack.isEmpty) return;
+    _redoStack.add(_captureParams());
+    _restoreParams(_undoStack.removeLast());
+    _reprocess(); // setState + re-render the output for the restored settings
+  }
+
+  @override
+  void redo() {
+    if (_redoStack.isEmpty) return;
+    _undoStack.add(_captureParams());
+    _restoreParams(_redoStack.removeLast());
+    _reprocess();
+  }
 
   @override
   void initState() {
@@ -211,12 +275,15 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
   VoiceEffect get effect => _effect;
   @override
   void setEffect(VoiceEffect e) {
+    if (e == _effect) return;
+    _snapshot();
     _effect = e;
     _reprocess();
   }
 
   @override
   void setParam(String key, double value) {
+    _snapshot();
     switch (key) {
       case 'pitch':
         _pitch = value;
@@ -240,6 +307,7 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
 
   @override
   void surprise(int seed) {
+    _snapshot();
     final p = randomVoice(math.Random(seed));
     _effect = p.effect;
     _pitch = p.pitch;
@@ -449,6 +517,16 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
         title: Text(l10n.voiceLabTitle),
         actions: [
           IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: l10n.voiceLabUndo,
+            onPressed: canUndo ? undo : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            tooltip: l10n.voiceLabRedo,
+            onPressed: canRedo ? redo : null,
+          ),
+          IconButton(
             icon: const Icon(Icons.casino_outlined),
             tooltip: l10n.voiceLabSurprise,
             onPressed:
@@ -595,4 +673,29 @@ class _VoiceLabScreenState extends State<VoiceLabScreen>
       ],
     );
   }
+}
+
+/// A snapshot of the Voice Lab effect settings, for undo/redo.
+class _VoiceParams {
+  const _VoiceParams(
+    this.effect,
+    this.pitch,
+    this.speed,
+    this.alien,
+    this.crunch,
+    this.tremolo,
+    this.gate,
+    this.echo,
+    this.reverb,
+  );
+
+  final VoiceEffect effect;
+  final double pitch;
+  final double speed;
+  final double alien;
+  final double crunch;
+  final double tremolo;
+  final double gate;
+  final double echo;
+  final double reverb;
 }

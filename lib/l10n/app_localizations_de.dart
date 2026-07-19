@@ -1762,6 +1762,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get voiceLabPlay => 'Abspielen';
 
   @override
+  String get voiceLabUndo => 'Rückgängig';
+
+  @override
+  String get voiceLabRedo => 'Wiederholen';
+
+  @override
   String get voiceLabSurprise => 'Überrasch mich';
 
   @override

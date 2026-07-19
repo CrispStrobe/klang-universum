@@ -3350,6 +3350,18 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get voiceLabPlay;
 
+  /// No description provided for @voiceLabUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get voiceLabUndo;
+
+  /// No description provided for @voiceLabRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get voiceLabRedo;
+
   /// No description provided for @voiceLabSurprise.
   ///
   /// In en, this message translates to:

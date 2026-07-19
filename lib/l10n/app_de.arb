@@ -626,6 +626,8 @@
   "soundLabEcho": "Echo",
   "voiceLabTitle": "Stimmlabor",
   "voiceLabPlay": "Abspielen",
+  "voiceLabUndo": "Rückgängig",
+  "voiceLabRedo": "Wiederholen",
   "voiceLabSurprise": "Überrasch mich",
   "voiceLabExport": "WAV exportieren",
   "voiceLabRecord": "Aufnehmen",

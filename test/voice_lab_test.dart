@@ -126,6 +126,37 @@ void main() {
     expect(lab.output!.length, greaterThan(before)); // slower = longer
   });
 
+  testWidgets('undo/redo reverts and reapplies the effect settings',
+      (tester) async {
+    await pumpGame(tester, const VoiceLabScreen());
+    final lab = _lab(tester);
+    lab.debugSetClip(_tone(4410));
+    await tester.pump();
+    expect(lab.canUndo, isFalse);
+
+    lab.setEffect(VoiceEffect.chipmunk);
+    await tester.pump();
+    expect(lab.effect, VoiceEffect.chipmunk);
+    expect(lab.canUndo, isTrue);
+
+    lab.undo();
+    await tester.pump();
+    expect(lab.effect, VoiceEffect.normal); // back to the plain voice
+    expect(lab.canUndo, isFalse);
+    expect(lab.canRedo, isTrue);
+
+    lab.redo();
+    await tester.pump();
+    expect(lab.effect, VoiceEffect.chipmunk); // reapplied
+    expect(lab.canRedo, isFalse);
+
+    // A new change clears the redo history.
+    lab.undo();
+    lab.setParam('speed', 1.2);
+    await tester.pump();
+    expect(lab.canRedo, isFalse);
+  });
+
   testWidgets('🎲 Surprise applies a random voice to the clip', (tester) async {
     await pumpGame(tester, const VoiceLabScreen());
     final lab = _lab(tester);

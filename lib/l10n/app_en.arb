@@ -689,6 +689,8 @@
   "soundLabEcho": "Echo",
   "voiceLabTitle": "Voice Lab",
   "voiceLabPlay": "Play",
+  "voiceLabUndo": "Undo",
+  "voiceLabRedo": "Redo",
   "voiceLabSurprise": "Surprise me",
   "voiceLabExport": "Export WAV",
   "voiceLabRecord": "Record",

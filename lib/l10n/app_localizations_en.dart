@@ -1757,6 +1757,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceLabPlay => 'Play';
 
   @override
+  String get voiceLabUndo => 'Undo';
+
+  @override
+  String get voiceLabRedo => 'Redo';
+
+  @override
   String get voiceLabSurprise => 'Surprise me';
 
   @override
