@@ -72,8 +72,9 @@ Map<String, dynamic> trackerSongToJson(TrackerSong song, {String? title}) {
 /// Rebuild a [TrackerSong] from [json] (as produced by [trackerSongToJson]).
 /// Throws [TrackerSongCodecException] on anything malformed.
 TrackerSong trackerSongFromJson(Map<String, dynamic> json) {
-  final data = _migrate(json);
   try {
+    // Inside the try so any migration/cast failure maps to the typed exception.
+    final data = _migrate(json);
     final timing = _timingFromJson(_map(data, 'timing'));
     final patterns = [
       for (final p in _list(data, 'patterns'))
@@ -194,9 +195,13 @@ class TrackerSongInfo {
 TrackerSongInfo trackerSongInfo(Map<String, dynamic> json) {
   final data = _migrate(json);
   int len(String k) => (data[k] is List) ? (data[k] as List).length : 0;
+  // Type-safe reads: an untrusted token's metadata may be any JSON type; a raw
+  // cast would throw a TypeError (an Error) instead of degrading to a default.
+  final rawTitle = data['title'];
+  final rawVer = data['version'];
   return TrackerSongInfo(
-    title: (data['title'] as String?) ?? '',
-    version: (data['version'] as num?)?.toInt() ?? kTrackerSongVersion,
+    title: rawTitle is String ? rawTitle : '',
+    version: rawVer is num ? rawVer.toInt() : kTrackerSongVersion,
     channelCount: len('channels'),
     patternCount: len('patterns'),
     orderLength: len('order'),
@@ -231,7 +236,11 @@ Map<String, dynamic> _migrate(Map<String, dynamic> json) {
   if (fmt != null && fmt != kTrackerSongFormat) {
     throw TrackerSongCodecException('not a CometBeat song (format "$fmt")');
   }
-  final ver = (json['version'] as num?)?.toInt() ?? kTrackerSongVersion;
+  // Type-safe read: a hostile token could carry a non-num `version` (bool,
+  // string …); a raw `as num?` cast would throw a TypeError (an Error) instead
+  // of the decoder's typed exception.
+  final rawVer = json['version'];
+  final ver = rawVer is num ? rawVer.toInt() : kTrackerSongVersion;
   if (ver > kTrackerSongVersion) {
     throw TrackerSongCodecException(
       'this song is version $ver but the app supports up to '
