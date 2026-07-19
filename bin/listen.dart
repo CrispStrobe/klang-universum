@@ -37,7 +37,7 @@ import 'package:comet_beat/core/audio/transcription/transcribe.dart';
 import 'package:comet_beat/core/audio/transcription/tuning.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:crisp_notation_core/crisp_notation_core.dart'
-    show MultiPartScore, multiPartToMusicXml, scoreToMidi;
+    show MultiPartScore, multiPartToMusicXml, scoreToAbc, scoreToMidi;
 
 const _usage = '''
 Play-along detector CLI.
@@ -64,9 +64,10 @@ Options:
                   else a synthesized self-test melody. The segmented notes are
                   printed to stderr; MusicXML goes to --out (or stdout).
   --out <file>    Where --transcribe writes the MusicXML (default: stdout,
-                  unless only --midi is given).
+                  unless a --midi/--abc file is given).
   --midi <file>   Also write a Standard MIDI File of the transcription (carries
                   the detected tempo) — the handier hand-off for a DAW.
+  --abc <file>    Also write ABC notation — the folk/session-tune interchange.
   --smooth <n>    Median-smooth the pYIN F0 over an n-frame window (odd; e.g. 5)
                   before note segmentation — removes single-frame octave jumps.
   --switch <c>    Note-HMM pitch-switch cost (default 1.8; higher = fewer notes).
@@ -297,8 +298,16 @@ void _transcribe(_Args args, double a4) {
     stderr.writeln('Wrote MIDI → $midiPath');
   }
 
-  // MusicXML to --out, or (when neither --out nor --midi asked for a file) to
-  // stdout so the pipe-to-a-viewer path still works.
+  // ABC notation — the folk/session-tune interchange (importable by MuseScore,
+  // thesession.org, …); a natural fit for the monophonic tunes this transcribes.
+  final abcPath = args.value('abc');
+  if (abcPath != null) {
+    File(abcPath).writeAsStringSync(scoreToAbc(score, title: 'Transcription'));
+    stderr.writeln('Wrote ABC → $abcPath');
+  }
+
+  // MusicXML to --out, or (when no file output was requested at all) to stdout
+  // so the pipe-to-a-viewer path still works.
   final xml = multiPartToMusicXml(
     MultiPartScore([score]),
     partNames: const ['Transcription'],
@@ -307,7 +316,7 @@ void _transcribe(_Args args, double a4) {
   if (out != null) {
     File(out).writeAsStringSync(xml);
     stderr.writeln('Wrote MusicXML → $out');
-  } else if (midiPath == null) {
+  } else if (midiPath == null && abcPath == null) {
     stdout.write(xml);
   }
 }

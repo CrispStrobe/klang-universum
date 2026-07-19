@@ -127,4 +127,21 @@ void main() {
         .toList();
     expect(pitches, [60, 62, 64, 65]);
   });
+
+  test('the transcribed Score serializes to ABC', () {
+    final score = transcribeToScore(
+      [
+        _n(60, 0, 500),
+        _n(62, 500, 1000),
+        _n(64, 1000, 1500),
+        _n(65, 1500, 2000),
+      ],
+      _grid,
+    );
+    final abc = scoreToAbc(score, title: 'Tune');
+    expect(abc, contains('X:1'));
+    expect(abc, contains('T:Tune'));
+    // Four quarters at the default L:1/8 → each note is 2 units.
+    expect(abc, contains('C2 D2 E2 F2'));
+  });
 }
