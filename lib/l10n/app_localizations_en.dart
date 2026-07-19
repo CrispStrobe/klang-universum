@@ -2329,6 +2329,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerTempo => 'Tempo';
 
   @override
+  String get trackerSwingOff => 'Off';
+
+  @override
+  String get trackerSwingHelp =>
+      'Groove: delays every off-beat step for a shuffle feel (0 = straight)';
+
+  @override
   String get trackerCustomLength => 'Custom…';
 
   @override

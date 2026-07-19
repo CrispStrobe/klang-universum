@@ -4460,6 +4460,18 @@ abstract class AppLocalizations {
   /// **'Tempo'**
   String get trackerTempo;
 
+  /// No description provided for @trackerSwingOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get trackerSwingOff;
+
+  /// No description provided for @trackerSwingHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Groove: delays every off-beat step for a shuffle feel (0 = straight)'**
+  String get trackerSwingHelp;
+
   /// No description provided for @trackerCustomLength.
   ///
   /// In en, this message translates to:

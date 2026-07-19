@@ -558,6 +558,15 @@ class TrackerSong {
     _engine.timing = timing.copyWith(tempoBpm: bpm);
   }
 
+  /// Sets the swing (0 = straight … up to a triplet shuffle) — re-times the
+  /// engine's off-beat onsets, cells unchanged. Clamped to the timing's valid
+  /// range [0, 0.9]; the loop length is unaffected.
+  void setSwing(double swing) {
+    final s = swing.clamp(0.0, 0.9);
+    if (s == timing.swing) return;
+    _engine.timing = timing.copyWith(swing: s);
+  }
+
   // --- Audio -------------------------------------------------------------
 
   /// The current pattern mixed to one loop-ready WAV. When the pattern carries

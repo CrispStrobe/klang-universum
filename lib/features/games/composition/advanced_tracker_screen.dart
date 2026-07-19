@@ -126,6 +126,10 @@ const _kLengthOptions = [16, 32, 48, 64, 96, 128, 192, 200, 256];
 /// Common tempos (BPM) offered in the toolbar.
 const _kTempoOptions = [80, 100, 110, 120, 128, 140, 150, 160, 175, 200];
 
+/// Swing presets: 0 = straight, up to ~0.66 = a triplet shuffle. Delays each
+/// off-beat step by `swing * stepMs` (see [TrackerTiming.swing]).
+const _kSwingOptions = [0.0, 0.16, 0.33, 0.5, 0.66];
+
 /// Per-channel volume-envelope shapes offered in the mixer — the friendly form
 /// of the FT2/IT envelope editor. `null` = flat (no envelope). Breakpoints are
 /// `(ms, level 0..1)`; the replayer holds the last level after the final point,
@@ -364,6 +368,10 @@ abstract interface class AdvancedTrackerTester {
   /// pattern's rows — so patterns can differ in length (tracker-style).
   void setPatternLength(int rows);
   int patternRows(int patternIndex);
+
+  /// Groove/swing (0 = straight … ~0.66 = triplet shuffle) — set + read.
+  void setSwing(double swing);
+  double get swing;
 
   /// The instrument-picker state: the active pool instrument stamped on new
   /// notes (0 = channel default), the pool size, and a cell's stamped instrument.
@@ -2437,6 +2445,13 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void setPatternLength(int rows) => _setPatternLength(rows);
   @override
   int patternRows(int patternIndex) => _song.patterns[patternIndex].rows;
+  @override
+  double get swing => _song.timing.swing;
+  @override
+  void setSwing(double swing) {
+    setState(() => _song.setSwing(swing));
+    _syncPlayback();
+  }
 
   @override
   int get activeInstrument => _activeInstrument;
@@ -4137,6 +4152,41 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _syncPlayback();
                 }
               },
+            ),
+            const SizedBox(width: 16),
+            // Swing / groove — delays off-beat steps for a shuffle feel.
+            Tooltip(
+              message: l10n.trackerSwingHelp,
+              child: Row(
+                children: [
+                  const Icon(Icons.waves, size: 16),
+                  const SizedBox(width: 2),
+                  Text('${l10n.trackerSwing}: '),
+                  DropdownButton<double>(
+                    value: _kSwingOptions.contains(_song.timing.swing)
+                        ? _song.timing.swing
+                        : null,
+                    hint: Text('${(_song.timing.swing * 100).round()}%'),
+                    items: [
+                      for (final s in _kSwingOptions)
+                        DropdownMenuItem(
+                          value: s,
+                          child: Text(
+                            s == 0
+                                ? l10n.trackerSwingOff
+                                : '${(s * 100).round()}%',
+                          ),
+                        ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() => _song.setSwing(v));
+                        _syncPlayback();
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(width: 16),
             // Endless tracks.

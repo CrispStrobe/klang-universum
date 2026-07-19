@@ -905,6 +905,22 @@ void main() {
     expect(game.noteCount, greaterThanOrEqualTo(9));
   });
 
+  testWidgets('swing control re-times the groove through the screen seam',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    expect(game.swing, 0.0);
+
+    game.setSwing(0.33);
+    await tester.pump();
+    expect(game.swing, closeTo(0.33, 0.001));
+
+    // Reset to straight.
+    game.setSwing(0.0);
+    await tester.pump();
+    expect(game.swing, 0.0);
+  });
+
   testWidgets('grid header mute + solo toggles round-trip through the screen',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

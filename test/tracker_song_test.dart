@@ -546,4 +546,32 @@ void main() {
       expect(song.instruments.length, n);
     });
   });
+
+  group('swing / groove', () {
+    test('setSwing re-times off-beat step onsets and clamps the range', () {
+      final song = TrackerSong(timing: const TrackerTiming(rows: 8));
+      expect(song.timing.swing, 0.0);
+      // Straight: every step falls on its exact grid slot.
+      final straightOdd = song.timing.stepOnsetMs(1);
+      expect(straightOdd, closeTo(song.timing.stepMs.toDouble(), 0.001));
+
+      song.setSwing(0.5);
+      expect(song.timing.swing, 0.5);
+      // Off-beats (odd steps) are delayed; even steps stay put.
+      expect(
+        song.timing.stepOnsetMs(2),
+        closeTo(2.0 * song.timing.stepMs, 0.5),
+      );
+      expect(
+        song.timing.stepOnsetMs(1),
+        closeTo(1.5 * song.timing.stepMs, 0.5),
+      );
+      // The loop length is unchanged by swing.
+      expect(song.timing.totalMs, 8 * song.timing.stepMs);
+
+      // Clamps above the valid range, and a repeat set is a no-op.
+      song.setSwing(5.0);
+      expect(song.timing.swing, 0.9);
+    });
+  });
 }
