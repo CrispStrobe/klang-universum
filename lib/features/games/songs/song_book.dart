@@ -6,7 +6,7 @@
 
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:crisp_notation/crisp_notation.dart'
-    show NoteElement, Score, TimeSignature;
+    show MultiPartScore, NoteElement, RestElement, Score, TimeSignature;
 
 /// Playable sequence for any single-voice [score]:
 /// (elementId, midi, milliseconds) in reading order.
@@ -131,5 +131,158 @@ const kSongs = <Song>[
         'e4:q d4 c4:h',
     lyrics: 'Hot cross buns, hot cross buns, one a pen- ny, '
         'two a pen- ny, hot cross buns.',
+  ),
+];
+
+// ─── Ensemble songs (2–5 voices) ─────────────────────────────────────────────
+
+/// One voice of an [EnsembleSong]: a monophonic melodic line as DSL, with an
+/// optional lyric line (only voice 1 of a round usually carries the words).
+class EnsembleVoice {
+  final String name;
+  final String dsl;
+  final String? lyrics;
+
+  const EnsembleVoice({required this.name, required this.dsl, this.lyrics});
+
+  Score get score => lyrics == null
+      ? Score.simple(notes: dsl)
+      : Score.simple(notes: dsl, lyrics: lyrics!);
+}
+
+/// A public-domain song for several voices — a round/canon or a harmonised
+/// part-song. Each [EnsembleVoice] is one staff; together they form a
+/// [MultiPartScore] (exportable, and rendered as stacked staves).
+class EnsembleSong {
+  final String id;
+  final String title;
+  final List<EnsembleVoice> voices;
+
+  /// Milliseconds per quarter note when playing.
+  final int quarterMs;
+
+  const EnsembleSong({
+    required this.id,
+    required this.title,
+    required this.voices,
+    this.quarterMs = 500,
+  });
+
+  MultiPartScore get score => MultiPartScore([for (final v in voices) v.score]);
+
+  List<String> get partNames => [for (final v in voices) v.name];
+}
+
+/// Playback for one ensemble voice — like [playbackOf] but REST-AWARE: rests
+/// become silent `([], ms)` gaps so a canon's staggered entries line up. Feed
+/// the per-voice lists straight to `AudioService.playMixedTimedChords`.
+List<(List<int>, int)> ensembleVoicePlayback(
+  Score score, {
+  int quarterMs = 500,
+}) {
+  final out = <(List<int>, int)>[];
+  for (final measure in score.measures) {
+    for (final e in measure.elements) {
+      if (e is NoteElement) {
+        final (n, d) = e.duration.fraction;
+        final ms = (4 * quarterMs * n / d).round();
+        out.add(([e.pitches.first.midiNumber], ms));
+      } else if (e is RestElement) {
+        final (n, d) = e.duration.fraction;
+        final ms = (4 * quarterMs * n / d).round();
+        out.add((const <int>[], ms));
+      }
+    }
+  }
+  return out;
+}
+
+// The 8-bar Bruder Jakob melody, reused staggered for the round.
+const _bruderMelody = 'c4:q d4 e4 c4 | c4 d4 e4 c4 | e4 f4 g4:h | '
+    'e4:q f4 g4:h | g4:e a4 g4 f4 e4:q c4 | g4:e a4 g4 f4 e4:q c4 | '
+    'c4:q g3 c4:h | c4:q g3 c4:h';
+const _bruderLyrics = 'Bru- der Ja- kob, Bru- der Ja- kob, schläfst du noch, '
+    'schläfst du noch, hörst du nicht die Glo- cken, '
+    'hörst du nicht die Glo- cken, ding dang dong, ding dang dong.';
+
+/// A [voices]-part round of [melody]: each voice enters [staggerBars] bars after
+/// the previous one (leading/trailing whole-rest bars keep every voice the same
+/// length), so it plays back as a true canon. Voice 1 carries [lyrics].
+EnsembleSong _round({
+  required String id,
+  required String title,
+  required String melody,
+  required String lyrics,
+  required int voices,
+  int staggerBars = 2,
+}) {
+  String restBars(int n) => List.filled(n, 'r:w').join(' | ');
+  final totalRest = (voices - 1) * staggerBars;
+  final vs = <EnsembleVoice>[
+    for (var i = 0; i < voices; i++)
+      EnsembleVoice(
+        name: '${i + 1}',
+        dsl: [
+          if (i * staggerBars > 0) restBars(i * staggerBars),
+          melody,
+          if (totalRest - i * staggerBars > 0)
+            restBars(totalRest - i * staggerBars),
+        ].join(' | '),
+        lyrics: i == 0 ? lyrics : null,
+      ),
+  ];
+  return EnsembleSong(id: id, title: title, voices: vs);
+}
+
+final kEnsembleSongs = <EnsembleSong>[
+  _round(
+    id: 'bruder_jakob_canon2',
+    title: 'Bruder Jakob (Kanon, 2 Stimmen)',
+    melody: _bruderMelody,
+    lyrics: _bruderLyrics,
+    voices: 2,
+  ),
+  _round(
+    id: 'bruder_jakob_canon4',
+    title: 'Bruder Jakob (Kanon, 4 Stimmen)',
+    melody: _bruderMelody,
+    lyrics: _bruderLyrics,
+    voices: 4,
+  ),
+  const EnsembleSong(
+    id: 'ode_to_joy_duet',
+    title: 'Ode an die Freude (2 Stimmen)',
+    voices: [
+      EnsembleVoice(
+        name: 'Melodie',
+        dsl: 'e4:q e4 f4 g4 | g4 f4 e4 d4 | c4 c4 d4 e4 | e4 d4 d4:h',
+        lyrics: 'Freu- de, schö- ner Göt- ter- fun- ken, '
+            'Toch- ter aus E- ly- si- um.',
+      ),
+      EnsembleVoice(
+        name: 'Bass',
+        dsl: 'c3:w | g3:w | c3:w | g3:h c3:h',
+      ),
+    ],
+  ),
+  const EnsembleSong(
+    id: 'alle_meine_entchen_duet',
+    title: 'Alle meine Entchen (2 Stimmen)',
+    voices: [
+      EnsembleVoice(
+        name: 'Melodie',
+        dsl: 'c4:q d4 e4 f4 | g4:h g4 | a4:q a4 a4 a4 | g4:w | '
+            'a4:q a4 a4 a4 | g4:w | f4:q f4 f4 f4 | e4:h e4 | '
+            'g4:q g4 g4 g4 | c4:w',
+        lyrics: 'Al- le mei- ne Ent- chen schwim- men auf dem See, '
+            'schwim- men auf dem See, Köpf- chen in das Was- ser, '
+            'Schwänz- chen in die Höh.',
+      ),
+      EnsembleVoice(
+        name: 'Bass',
+        dsl: 'c3:w | g3:w | c3:w | g3:w | c3:w | g3:w | f3:w | c3:w | '
+            'g3:w | c3:w',
+      ),
+    ],
   ),
 ];

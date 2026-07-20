@@ -6350,6 +6350,18 @@ abstract class AppLocalizations {
   /// **'Children\'s songs'**
   String get songbookBuiltinSongs;
 
+  /// No description provided for @songbookEnsembleSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'For several voices'**
+  String get songbookEnsembleSongs;
+
+  /// No description provided for @ensembleVoiceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'For {count} voices'**
+  String ensembleVoiceCount(int count);
+
   /// No description provided for @songbookEmpty.
   ///
   /// In en, this message translates to:

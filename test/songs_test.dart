@@ -7,6 +7,7 @@ import 'package:comet_beat/core/services/progress_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/games/songs/chord_sheet_screen.dart';
+import 'package:comet_beat/features/games/songs/ensemble_song_screen.dart';
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
 import 'package:comet_beat/features/games/songs/import_screen.dart';
 import 'package:comet_beat/features/games/songs/song_book.dart';
@@ -175,6 +176,33 @@ void main() {
     }
   });
 
+  test('ensemble songs parse to 2–5 aligned voices with rest-aware playback',
+      () {
+    expect(kEnsembleSongs, isNotEmpty);
+    for (final song in kEnsembleSongs) {
+      final parts = song.score.parts;
+      expect(parts.length, song.voices.length, reason: song.id);
+      expect(parts.length, inInclusiveRange(2, 5), reason: song.id);
+
+      // Every voice plays (rest-aware), and all voices span the same total time
+      // — a canon's staggered entries and a part-song's bars must line up.
+      final totals = <int>[];
+      for (final v in song.voices) {
+        final pb = ensembleVoicePlayback(v.score);
+        expect(pb, isNotEmpty, reason: '${song.id}/${v.name}');
+        for (final (midis, ms) in pb) {
+          expect(ms, greaterThan(0));
+          for (final midi in midis) {
+            expect(midi, inInclusiveRange(40, 84), reason: song.id);
+          }
+        }
+        totals.add(pb.fold<int>(0, (a, e) => a + e.$2));
+      }
+      expect(totals.toSet(), hasLength(1),
+          reason: '${song.id}: voices must be equal length');
+    }
+  });
+
   testWidgets('song book lists all songs; song screen renders systems',
       (tester) async {
     // A tall window so the whole (now longer) song list renders — the ListView
@@ -189,12 +217,34 @@ void main() {
     for (final song in kSongs) {
       expect(find.text(song.title), findsOneWidget);
     }
+    // The multi-voice ensemble samples are listed in their own section.
+    for (final song in kEnsembleSongs) {
+      expect(find.text(song.title), findsOneWidget);
+    }
 
     await tester.tap(find.text('Alle meine Entchen'));
     await tester.pumpAndSettle();
 
     expect(find.byType(MultiSystemView), findsOneWidget);
     expect(find.text('Play'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ensemble screen stacks a staff per voice and plays',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final song = kEnsembleSongs.firstWhere((s) => s.voices.length == 4);
+    await tester.pumpWidget(_wrap(EnsembleSongScreen(song: song), sri));
+    await tester.pumpAndSettle();
+
+    // One staff (system view) per voice.
+    expect(find.byType(MultiSystemView), findsNWidgets(song.voices.length));
+    // Play mixes all voices without throwing.
+    await tester.tap(find.text('Play'));
+    await tester.pump();
     expect(tester.takeException(), isNull);
   });
 

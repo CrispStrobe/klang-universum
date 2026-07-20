@@ -3351,6 +3351,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get songbookBuiltinSongs => 'Children\'s songs';
 
   @override
+  String get songbookEnsembleSongs => 'For several voices';
+
+  @override
+  String ensembleVoiceCount(int count) {
+    return 'For $count voices';
+  }
+
+  @override
   String get songbookEmpty => 'No songs yet — tap Add songs.';
 
   @override

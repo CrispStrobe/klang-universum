@@ -1282,6 +1282,15 @@
   "songbookDelete": "Delete songbook",
   "songbookAddSongs": "Add songs",
   "songbookBuiltinSongs": "Children's songs",
+  "songbookEnsembleSongs": "For several voices",
+  "ensembleVoiceCount": "For {count} voices",
+  "@ensembleVoiceCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "songbookEmpty": "No songs yet — tap Add songs.",
   "songbookNoImports": "Import or compose a song first, then add it here.",
   "songbookRemoveFromBook": "Remove from songbook",

@@ -14,6 +14,7 @@ import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/score_analysis_view.dart';
 import 'package:comet_beat/features/games/playalong/play_along_screen.dart';
 import 'package:comet_beat/features/games/songs/chord_sheet_screen.dart';
+import 'package:comet_beat/features/games/songs/ensemble_song_screen.dart';
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
 import 'package:comet_beat/features/games/songs/import_screen.dart';
 import 'package:comet_beat/features/games/songs/song_book.dart';
@@ -389,6 +390,29 @@ class SongListScreen extends StatelessWidget {
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => SongScreen(song: song),
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 16, 4, 4),
+            child: Text(
+              l10n.songbookEnsembleSongs,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          for (final song in kEnsembleSongs)
+            Card(
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                leading: const CircleAvatar(child: Icon(Icons.groups)),
+                title: Text(song.title),
+                subtitle: Text(l10n.ensembleVoiceCount(song.voices.length)),
+                trailing: const Icon(Icons.play_circle_outline),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EnsembleSongScreen(song: song),
                   ),
                 ),
               ),
