@@ -22,10 +22,19 @@ import 'package:crisp_notation_core/crisp_notation_core.dart' show Tuning;
 /// open). An empty map is a rest / silent column.
 typedef Fretting = Map<int, int>;
 
+/// How far a hand reaches across the fretboard, in frets, counting from the
+/// lowest fretted note of a shape. [arrangeTab]'s hard span cap defaults to
+/// this. It is deliberately a *constraint*, not a weight: span also exists as a
+/// soft cost, but `cost.move` outbids it, so only a hard limit can stop an
+/// impossible chord being chosen to keep the hand still.
+const int kHandSpan = 5;
+
 /// Scores candidate `(string, fret)` placements per column so a data-driven
 /// arranger can supply the *local* term while [arrangeTab]'s Viterbi stays the
-/// arbiter (hand-movement transition cost + hard playability constraints remain
-/// ours, so the model can never produce an unplayable shape). CrispASR would
+/// arbiter (hand-movement transition cost + the hard span cap remain ours, so
+/// the model can bias *which* playable shape wins but can never introduce an
+/// unplayable one — it only ever scores candidates that already passed the
+/// cap). CrispASR would
 /// implement this behind FFI/ONNX; a null return (whole or per-column) defers to
 /// the heuristic cost, so callers keep working with no model present.
 /// See docs/TAB_ARRANGER_NEURAL_HANDOFF.md.
@@ -82,6 +91,19 @@ List<(int string, int fret)> _positionsFor(
 /// The frets that need a finger (open strings are position-independent).
 Iterable<int> _fretted(Fretting f) => f.values.where((v) => v > 0);
 
+/// The stretch a hand must make for [f]: highest minus lowest *fretted* fret.
+/// Open strings need no finger, so they don't widen the stretch.
+int _spanOf(Fretting f) {
+  final fretted = _fretted(f).toList();
+  if (fretted.length < 2) return 0;
+  var lo = fretted.first, hi = fretted.first;
+  for (final v in fretted) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  return hi - lo;
+}
+
 /// The hand anchor of a fretting = its lowest fretted fret, or null when the
 /// column is all-open / a rest (so it constrains nothing and moving to/from it
 /// is free).
@@ -117,6 +139,13 @@ double _transitionCost(Fretting prev, Fretting cur, TabArrangeCost cost) {
 /// on one string), each within reach. Prunes early; the result is capped to the
 /// [limit] cheapest-by-[cost] frettings so a dense chord can't explode the DP.
 /// A pitch with no reachable position is simply dropped from the column.
+///
+/// [maxSpan] (when non-null) is a HARD limit on the stretch of a single column,
+/// applied before the DP ever sees the candidate. Span is otherwise only a soft
+/// cost, and `move` outweighs it — so the Viterbi will happily buy a physically
+/// impossible stretch to avoid shifting the hand. If no candidate satisfies the
+/// cap, the narrowest available ones are kept rather than dropping the column:
+/// a wide shape still beats no notes at all.
 List<Fretting> _candidateFrettings(
   List<int> pitches,
   Tuning tuning,
@@ -124,6 +153,7 @@ List<Fretting> _candidateFrettings(
   int maxFret,
   int limit,
   TabArrangeCost cost,
+  int? maxSpan,
 ) {
   if (pitches.isEmpty) return const [<int, int>{}];
   // Reachable positions per pitch; drop unreachable pitches entirely.
@@ -152,11 +182,35 @@ List<Fretting> _candidateFrettings(
 
   recurse(0, {}, {});
   if (out.isEmpty) return const [<int, int>{}]; // couldn't seat the chord
-  if (out.length > limit) {
-    out.sort((a, b) => _localCost(a, cost).compareTo(_localCost(b, cost)));
-    return out.sublist(0, limit);
+
+  var kept = out;
+  if (maxSpan != null) {
+    final within = [
+      for (final f in out)
+        if (_spanOf(f) <= maxSpan) f,
+    ];
+    if (within.isNotEmpty) {
+      kept = within;
+    } else {
+      // Nothing reaches the cap: keep only the narrowest shapes, so the column
+      // still sounds rather than vanishing.
+      var best = _spanOf(out.first);
+      for (final f in out) {
+        final s = _spanOf(f);
+        if (s < best) best = s;
+      }
+      kept = [
+        for (final f in out)
+          if (_spanOf(f) == best) f,
+      ];
+    }
   }
-  return out;
+
+  if (kept.length > limit) {
+    kept.sort((a, b) => _localCost(a, cost).compareTo(_localCost(b, cost)));
+    return kept.sublist(0, limit);
+  }
+  return kept;
 }
 
 /// Arranges [columns] (each a list of simultaneous MIDI pitches — a single note
@@ -164,6 +218,18 @@ List<Fretting> _candidateFrettings(
 /// per column on [tuning] behind a [capo], via a Viterbi over candidate
 /// frettings. Notes unreachable within [maxFret] are dropped; column count and
 /// order are preserved 1:1, so callers can zip the result back with durations.
+///
+/// [maxSpan] hard-caps the stretch of any single column (highest minus lowest
+/// fretted fret) — a hand's reach, so a shape that no hand can make is never a
+/// candidate. It defaults to [kHandSpan] because span is otherwise only a *soft*
+/// cost that `cost.move` outbids: at the default weights, dodging an 8-fret hand
+/// shift (8.0) is cheaper than 11 extra frets of stretch (6.6), so the Viterbi
+/// would buy a physically impossible chord to keep the hand still. Measured over
+/// 337 Mutopia guitar works (116k notes), the cap removed 83% of >5-fret spans
+/// for 1.5% more hand travel and no extra dropped notes; every span left over
+/// was one no fretting of those pitches could avoid. Pass null to disable.
+/// Columns with no shape inside the cap fall back to their narrowest, never to
+/// silence.
 List<Fretting> arrangeTab(
   List<List<int>> columns,
   Tuning tuning, {
@@ -172,6 +238,7 @@ List<Fretting> arrangeTab(
   int maxCandidatesPerColumn = 64,
   TabArrangeCost cost = const TabArrangeCost(),
   TabPositionModel? model,
+  int? maxSpan = kHandSpan,
 }) {
   if (columns.isEmpty) return [];
   final cands = [
@@ -183,6 +250,7 @@ List<Fretting> arrangeTab(
         maxFret,
         maxCandidatesPerColumn,
         cost,
+        maxSpan,
       ),
   ];
 

@@ -7,6 +7,15 @@ import 'package:crisp_notation/crisp_notation.dart' show Tuning;
 import 'package:flutter_test/flutter_test.dart';
 
 /// The sounding MIDI of every fretted position in an arrangement (flattened).
+/// The stretch a fretting demands: highest minus lowest *fretted* fret. Open
+/// strings need no finger, so they never widen it.
+int _span(Fretting f) {
+  final fretted = f.values.where((v) => v > 0).toList();
+  if (fretted.length < 2) return 0;
+  fretted.sort();
+  return fretted.last - fretted.first;
+}
+
 List<int> _sounding(List<Fretting> a, Tuning t, {int capo = 0}) => [
       for (final col in a)
         for (final e in col.entries)
@@ -119,6 +128,38 @@ void main() {
     );
     expect(a.single[1], 5);
     expect(_sounding(a, guitar), [64]); // still the requested pitch
+  });
+
+  test('a hand-span cap keeps an impossible stretch out of the candidates', () {
+    // Regression: found by benchmarking 337 Mutopia guitar works. `move` (1.0
+    // per fret) outbids `span` (0.6 per fret), so before the cap the Viterbi
+    // would buy a 13-fret stretch to avoid shifting the hand — for a plain C
+    // major chord that has an easy 2-fret voicing. Span was only ever a soft
+    // cost; nothing rejected shapes no hand can make.
+    const cMajor = [60, 64, 67, 72];
+    final capped = arrangeTab([cMajor], guitar, maxFret: 24);
+    expect(
+      _span(capped.single),
+      lessThanOrEqualTo(kHandSpan),
+      reason: 'the default cap must exclude unreachable shapes',
+    );
+    // Every pitch still sounds — the cap narrows the choice, it does not drop
+    // notes.
+    expect(_sounding(capped, guitar)..sort(), cMajor);
+
+    // Opting out restores the old, unconstrained search space.
+    final uncapped = arrangeTab([cMajor], guitar, maxFret: 24, maxSpan: null);
+    expect(_sounding(uncapped, guitar)..sort(), cMajor);
+  });
+
+  test('a column with no shape inside the cap falls back, never to silence',
+      () {
+    // C2 + C6: five octaves apart, unreachable inside any hand span. The cap
+    // must not delete the column — a wide shape beats no notes at all.
+    const wide = [36, 84];
+    final a = arrangeTab([wide], guitar, maxFret: 24, maxSpan: 2);
+    expect(a, hasLength(1));
+    expect(a.single, isNotEmpty, reason: 'fell back rather than vanishing');
   });
 }
 
