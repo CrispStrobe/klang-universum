@@ -57,8 +57,17 @@ abstract class PerformTester {
   bool get hasSampleVoice;
   String? get voiceName;
 
+  /// Pad voices (P2): give a drum pad your own sound instead of the synth drum.
+  void setPadVoice(String drum, Float64List pcm, {String name});
+  void clearPadVoice(String drum);
+  bool hasPadVoice(String drum);
+  String? padVoiceName(String drum);
+
   /// A single note of the current sample voice, pitched — for tests.
   Float64List debugPitched(int midi);
+
+  /// The beat layer rendered from [hits] (uses pad voices) — for tests.
+  Float64List debugBeat(List<(String, int)> hits);
   void finishPlayIn();
   void cancelPlayIn();
   bool get isPlayingIn;
@@ -121,6 +130,10 @@ class _PerformScreenState extends State<PerformScreen>
   Float64List? _voicePcm;
   int _voiceBase = 60;
   String? _voiceName;
+
+  // Pad voices (P2): drum → your own sound (at loop rate). Absent = synth drum.
+  final Map<String, Float64List> _padVoices = {};
+  final Map<String, String> _padVoiceNames = {};
 
   static const int _bpm = 120;
 
@@ -231,6 +244,29 @@ class _PerformScreenState extends State<PerformScreen>
     setState(() {});
   }
 
+  // ── Pad voices (P2) ───────────────────────────────────────────────────────
+  @override
+  bool hasPadVoice(String drum) => _padVoices[drum]?.isNotEmpty ?? false;
+  @override
+  String? padVoiceName(String drum) => _padVoiceNames[drum];
+
+  @override
+  void setPadVoice(String drum, Float64List pcm, {String name = 'sample'}) {
+    _padVoices[drum] = pcm;
+    _padVoiceNames[drum] = name;
+    setState(() {});
+  }
+
+  @override
+  void clearPadVoice(String drum) {
+    _padVoices.remove(drum);
+    _padVoiceNames.remove(drum);
+    setState(() {});
+  }
+
+  @override
+  Float64List debugBeat(List<(String, int)> hits) => _renderBeat(hits);
+
   /// The sample voice resampled so [midi] plays in tune (base pitch → [midi]),
   /// optionally capped to [maxSamples]. Empty when no sample voice is set.
   Float64List _pitched(int midi, {int? maxSamples}) {
@@ -289,10 +325,16 @@ class _PerformScreenState extends State<PerformScreen>
     final n = _loopSamples;
     final buf = Float64List(n);
     final sixteenth = n ~/ 16;
+    final beat = n ~/ 4;
     final rng = Random(7);
     for (final (drum, ms) in hits) {
       final start =
           ((ms / 1000 * kSampleRate) / sixteenth).round() * sixteenth % n;
+      final voice = _padVoices[drum];
+      if (voice != null && voice.isNotEmpty) {
+        _place(buf, voice, start, beat); // your own sound (P2)
+        continue;
+      }
       switch (drum) {
         case 'kick':
           _tone(buf, 55, start, sixteenth * 2, gain: 0.6, decay: 22);
@@ -312,8 +354,17 @@ class _PerformScreenState extends State<PerformScreen>
     ('hat', (l) => l.performPadHat),
   ];
 
-  /// Audition a single drum hit (a short one-shot) when a pad is tapped.
+  /// Audition a single drum hit (a short one-shot) when a pad is tapped — the
+  /// pad's own sound if one is assigned (P2), else the built-in synth drum.
   void _playHit(String drum) {
+    final voice = _padVoices[drum];
+    if (voice != null && voice.isNotEmpty) {
+      final cap = (kSampleRate * 0.5).round();
+      final clip =
+          voice.length > cap ? Float64List.sublistView(voice, 0, cap) : voice;
+      context.read<AudioService>().playWavBytes(wavBytes(_toInt16(clip)));
+      return;
+    }
     final buf = Float64List((kSampleRate * 0.25).round());
     switch (drum) {
       case 'kick':
@@ -513,6 +564,21 @@ class _PerformScreenState extends State<PerformScreen>
         ? clip.pcm
         : resampleCubic(clip.pcm, clip.sampleRate / kSampleRate);
     setSampleVoice(pcm, name: clip.name);
+  }
+
+  /// Pick a sound from "My Samples" to play on drum pad [drum] (resampled to
+  /// the loop rate). Tapping the label again with a voice set clears it.
+  Future<void> _pickPadVoice(String drum) async {
+    if (hasPadVoice(drum)) {
+      clearPadVoice(drum);
+      return;
+    }
+    final clip = await showMySamplesSheet(context);
+    if (clip == null || clip.pcm.isEmpty || !mounted) return;
+    final pcm = clip.sampleRate == kSampleRate
+        ? clip.pcm
+        : resampleCubic(clip.pcm, clip.sampleRate / kSampleRate);
+    setPadVoice(drum, pcm, name: clip.name);
   }
 
   // ── Playback ──────────────────────────────────────────────────────────────
@@ -855,17 +921,35 @@ class _PerformScreenState extends State<PerformScreen>
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: FilledButton.tonal(
-                              onPressed: () {
-                                _playHit(pad.$1);
-                                playInPad(pad.$1);
-                              },
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 24,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FilledButton.tonal(
+                                  onPressed: () {
+                                    _playHit(pad.$1);
+                                    playInPad(pad.$1);
+                                  },
+                                  style: FilledButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                    ),
+                                  ),
+                                  child: Text(pad.$2(l10n)),
                                 ),
-                              ),
-                              child: Text(pad.$2(l10n)),
+                                TextButton(
+                                  onPressed: () => _pickPadVoice(pad.$1),
+                                  child: Text(
+                                    hasPadVoice(pad.$1)
+                                        ? (padVoiceName(pad.$1) ??
+                                            l10n.performVoiceSample)
+                                        : l10n.performVoiceSynth,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

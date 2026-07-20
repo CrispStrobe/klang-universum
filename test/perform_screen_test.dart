@@ -259,6 +259,31 @@ void main() {
     expect(p.debugPitched(60), isEmpty);
   });
 
+  testWidgets('pad voices: a pad plays your own sound in the beat layer',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    expect(p.hasPadVoice('kick'), isFalse);
+    // Synth kick starts at ~0 (a sine's first sample).
+    expect(p.debugBeat([('kick', 0)])[0].abs(), lessThan(0.05));
+
+    // Assign a constant sample → the beat renders THAT sound at the hit.
+    final sample = Float64List(2205)..fillRange(0, 2205, 0.5);
+    p.setPadVoice('kick', sample, name: 'boom');
+    await tester.pump();
+    expect(p.hasPadVoice('kick'), isTrue);
+    expect(p.padVoiceName('kick'), 'boom');
+    expect(p.debugBeat([('kick', 0)])[0], greaterThan(0.3));
+
+    // Clearing returns the synth drum.
+    p.clearPadVoice('kick');
+    await tester.pump();
+    expect(p.hasPadVoice('kick'), isFalse);
+    expect(p.debugBeat([('kick', 0)])[0].abs(), lessThan(0.05));
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));
