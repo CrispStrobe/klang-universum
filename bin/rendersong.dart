@@ -143,9 +143,16 @@ void main(List<String> args) {
     // quantized route). The file's tempo map is used, so --bpm is ignored here.
     final bytes = File(inPath).readAsBytesSync();
     effBpm = midiTempoBpm(bytes) ?? 120;
-    stereoPair = renderMidiFile(bytes, _loadFont(sf2));
+    // The synth applies per-channel reverb/chorus sends (CC91/CC93) scaled by
+    // these, so the CLI must NOT double them on the master below.
+    stereoPair = renderMidiFile(
+      bytes,
+      _loadFont(sf2),
+      reverbMix: reverb,
+      chorusMix: chorus,
+    );
     stderr.writeln('  event-accurate MIDI synth '
-        '(exact timing · tempo map · CC · sustain pedal)');
+        '(exact timing · tempo map · CC · sustain pedal · CC91/93 sends)');
   } else if (gmEligible && fmt == 'midi') {
     final bytes = File(inPath).readAsBytesSync();
     effBpm = bpmExplicit(args) ? bpm : (midiTempoBpm(bytes) ?? 120);
@@ -191,13 +198,17 @@ void main(List<String> args) {
   if (isStereo) {
     var (left, right) = stereoPair ?? panPartsToStereo(gmParts!);
     if (left.isEmpty) _fail('the score produced no notes to render');
-    if (chorus > 0) {
-      left = chorusFx(left, mix: chorus);
-      right = chorusFx(right, mix: chorus);
-    }
-    if (reverb > 0) {
-      left = reverbFx(left, mix: reverb);
-      right = reverbFx(right, mix: reverb);
+    // The event-accurate synth already applied per-channel reverb/chorus sends;
+    // only the notation-GM stereo path gets the master FX here.
+    if (stereoPair == null) {
+      if (chorus > 0) {
+        left = chorusFx(left, mix: chorus);
+        right = chorusFx(right, mix: chorus);
+      }
+      if (reverb > 0) {
+        left = reverbFx(left, mix: reverb);
+        right = reverbFx(right, mix: reverb);
+      }
     }
     _masterStereo(left, right, target);
     frames = left.length;

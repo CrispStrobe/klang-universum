@@ -107,6 +107,22 @@ void main() {
     expect(zc(bt), greaterThan(zc(pl)), reason: 'bent up → higher pitch');
   });
 
+  test('reverb send (CC91) wets the output when a master mix is set', () {
+    final smf = _midi([..._cc(0, 91, 127), ..._note(0, 60, 240)]);
+    final (dry, _) = renderMidiFile(smf, font); // reverbMix 0 → dry
+    final (wet, _) = renderMidiFile(smf, font, reverbMix: 0.6);
+    expect(wet, isNot(dry));
+    double energy(Float64List x) {
+      var s = 0.0;
+      for (final v in x) {
+        s += v * v;
+      }
+      return s;
+    }
+
+    expect(energy(wet), greaterThan(energy(dry)), reason: 'reverb adds energy');
+  });
+
   test('empty / non-MIDI input yields empty output', () {
     final (l, r) = renderMidiFile(Uint8List.fromList([1, 2, 3]), font);
     expect(l, isEmpty);

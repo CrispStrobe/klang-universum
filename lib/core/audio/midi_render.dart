@@ -23,6 +23,9 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart'
     show Biquad, BiquadKind;
+import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
+    show chorusFx;
+import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart' show reverbFx;
 import 'package:comet_beat/core/audio/sf2/sf2.dart'
     show Sf2Preset, Sf2Sample, Sf2SoundFont, Sf2Zone;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
@@ -54,6 +57,8 @@ class _Pending {
     this.gain,
     this.pan,
     this.modCents,
+    this.reverb,
+    this.chorus,
     this.bank,
     this.program,
   );
@@ -62,6 +67,8 @@ class _Pending {
   final double gain; // CC7 × CC11
   final double pan; // −1..1
   final double modCents; // vibrato depth from CC1 at onset
+  final double reverb; // CC91 send 0..1
+  final double chorus; // CC93 send 0..1
   final int bank;
   final int program;
 }
@@ -77,6 +84,8 @@ class _Note {
     this.velNorm,
     this.pan,
     this.modCents,
+    this.reverb,
+    this.chorus,
     this.bank,
     this.program,
     this.isDrum,
@@ -89,6 +98,8 @@ class _Note {
   final double velNorm; // velocity / 127 (filter cutoff)
   final double pan; // −1..1
   final double modCents; // vibrato depth
+  final double reverb; // CC91 reverb send 0..1
+  final double chorus; // CC93 chorus send 0..1
   final int bank;
   final int program;
   final bool isDrum;
@@ -104,6 +115,8 @@ class _Note {
   Uint8List smf,
   LoadedSoundFont font, {
   int sampleRate = kSampleRate,
+  double reverbMix = 0,
+  double chorusMix = 0,
 }) {
   final (events, tpq) = _parseAllEvents(smf);
   if (events.isEmpty || tpq <= 0) return (Float64List(0), Float64List(0));
@@ -141,6 +154,8 @@ class _Note {
   final pan = List<double>.filled(16, 0.0);
   final sustain = List<bool>.filled(16, false);
   final modCents = List<double>.filled(16, 0.0); // CC1 → vibrato depth
+  final reverbSend = List<double>.filled(16, 40 / 127); // CC91 (GM default)
+  final chorusSend = List<double>.filled(16, 0.0); // CC93
   // Pitch-bend range (RPN 0), default ±2 st; RPN select + data-entry state.
   final bendRange = List<double>.filled(16, _bendRangeSemis);
   final rpnMsb = List<int>.filled(16, 127);
@@ -167,6 +182,8 @@ class _Note {
       vn,
       p.pan,
       p.modCents,
+      p.reverb,
+      p.chorus,
       p.bank,
       p.program,
       ch == 9,
@@ -206,6 +223,8 @@ class _Note {
               volume[ch] * expression[ch],
               pan[ch],
               modCents[ch],
+              reverbSend[ch],
+              chorusSend[ch],
               bank[ch],
               program[ch],
             ),
@@ -227,6 +246,10 @@ class _Note {
             pan[ch] = (ev.d2 - 64) / 64.0;
           case 0:
             bank[ch] = ev.d2;
+          case 91:
+            reverbSend[ch] = ev.d2 / 127.0;
+          case 93:
+            chorusSend[ch] = ev.d2 / 127.0;
           case 64:
             final down = ev.d2 >= 64;
             if (!down) liftPedal(ch, ev.tick);
@@ -275,6 +298,14 @@ class _Note {
   }
   final left = Float64List(maxLen);
   final right = Float64List(maxLen);
+  // Per-channel reverb/chorus send buses (CC91/CC93), summed here and wetted
+  // once at the end — only when a master mix is requested.
+  final wantRev = reverbMix > 0;
+  final wantChor = chorusMix > 0;
+  final revL = wantRev ? Float64List(maxLen) : null;
+  final revR = wantRev ? Float64List(maxLen) : null;
+  final chorL = wantChor ? Float64List(maxLen) : null;
+  final chorR = wantChor ? Float64List(maxLen) : null;
   final presetCache = <String, Sf2Preset?>{};
 
   // Exclusive class (gen 57): within a (channel, class) group, each note is cut
@@ -303,8 +334,30 @@ class _Note {
       bendByChannel[n.channel],
       left,
       right,
+      revL,
+      revR,
+      chorL,
+      chorR,
       sampleRate,
     );
+  }
+
+  // Wet the send buses once and fold them into the master.
+  if (wantRev) {
+    final wl = reverbFx(revL!, mix: 1, sampleRate: sampleRate);
+    final wr = reverbFx(revR!, mix: 1, sampleRate: sampleRate);
+    for (var i = 0; i < maxLen; i++) {
+      left[i] += wl[i] * reverbMix;
+      right[i] += wr[i] * reverbMix;
+    }
+  }
+  if (wantChor) {
+    final wl = chorusFx(chorL!, mix: 1, sampleRate: sampleRate);
+    final wr = chorusFx(chorR!, mix: 1, sampleRate: sampleRate);
+    for (var i = 0; i < maxLen; i++) {
+      left[i] += wl[i] * chorusMix;
+      right[i] += wr[i] * chorusMix;
+    }
   }
   return (left, right);
 }
@@ -344,6 +397,10 @@ void _resampleNote(
   List<(int, double)> bendCurve,
   Float64List left,
   Float64List right,
+  Float64List? revL,
+  Float64List? revR,
+  Float64List? chorL,
+  Float64List? chorR,
   int sr,
 ) {
   final vel = (n.velNorm * 127).round();
@@ -366,7 +423,20 @@ void _resampleNote(
       if (sample.isRight) zpan = 1;
     }
     final notePan = (n.pan + zpan).clamp(-1.0, 1.0);
-    _renderZone(zone, sample, n, notePan, bendCurve, left, right, sr);
+    _renderZone(
+      zone,
+      sample,
+      n,
+      notePan,
+      bendCurve,
+      left,
+      right,
+      revL,
+      revR,
+      chorL,
+      chorR,
+      sr,
+    );
   }
 }
 
@@ -381,6 +451,10 @@ void _renderZone(
   List<(int, double)> bendCurve,
   Float64List left,
   Float64List right,
+  Float64List? revL,
+  Float64List? revR,
+  Float64List? chorL,
+  Float64List? chorR,
   int sr,
 ) {
   final pcm = sample.pcm;
@@ -534,8 +608,19 @@ void _renderZone(
     // The SF2 low-pass filter.
     v = filter.process(v);
 
-    left[outIdx] += v * lg;
-    right[outIdx] += v * rg;
+    final vl = v * lg;
+    final vr = v * rg;
+    left[outIdx] += vl;
+    right[outIdx] += vr;
+    // Per-channel reverb/chorus send contributions.
+    if (revL != null && n.reverb > 0) {
+      revL[outIdx] += vl * n.reverb;
+      revR![outIdx] += vr * n.reverb;
+    }
+    if (chorL != null && n.chorus > 0) {
+      chorL[outIdx] += vl * n.chorus;
+      chorR![outIdx] += vr * n.chorus;
+    }
 
     // Advance the read head, wrapping the loop for sustain. Loop-until-release
     // (mode 3) stops wrapping after note-off so the tail plays to the end.
