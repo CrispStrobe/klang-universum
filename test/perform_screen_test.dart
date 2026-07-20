@@ -27,6 +27,14 @@ Widget _wrap(Widget home) => MaterialApp(
 double _peak(List<double> x) =>
     x.fold(0.0, (m, v) => v.abs() > m ? v.abs() : m);
 
+bool _same(Float64List a, Float64List b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if ((a[i] - b[i]).abs() > 1e-9) return false;
+  }
+  return true;
+}
+
 void main() {
   testWidgets('stack layers, mute/undo/redo, and the mix reflects it',
       (tester) async {
@@ -282,6 +290,43 @@ void main() {
     await tester.pump();
     expect(p.hasPadVoice('kick'), isFalse);
     expect(p.debugBeat([('kick', 0)])[0].abs(), lessThan(0.05));
+  });
+
+  testWidgets('groove setup: tempo + key change the seeds, lock once building',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    expect(p.bpm, 120);
+    expect(p.keyShift, 0);
+    expect(p.canSetup, isTrue);
+
+    final bassC = p.debugSeed('bass');
+    expect(bassC.length, 88200); // one bar at 120 bpm
+
+    // Key change transposes the seed (same length, different waveform).
+    p.setKey(7); // G
+    await tester.pump();
+    expect(p.keyShift, 7);
+    final bassG = p.debugSeed('bass');
+    expect(bassG.length, 88200);
+    expect(_same(bassC, bassG), isFalse);
+
+    // Tempo change re-sizes the bar.
+    p.setTempo(100);
+    await tester.pump();
+    expect(p.bpm, 100);
+    expect(p.debugSeed('bass').length, 105840); // one bar at 100 bpm
+
+    // Adding a layer locks setup; further tempo/key changes are ignored.
+    p.addSeed('beat');
+    await tester.pump();
+    expect(p.canSetup, isFalse);
+    p.setTempo(120);
+    p.setKey(0);
+    expect(p.bpm, 100);
+    expect(p.keyShift, 7);
   });
 
   testWidgets('play/stop toggles and does not crash without audio',

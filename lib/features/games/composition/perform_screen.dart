@@ -63,11 +63,21 @@ abstract class PerformTester {
   bool hasPadVoice(String drum);
   String? padVoiceName(String drum);
 
+  /// Groove setup (P3): tempo + key, settable only while empty ([canSetup]).
+  int get bpm;
+  int get keyShift;
+  bool get canSetup;
+  void setTempo(int bpm);
+  void setKey(int semitones);
+
   /// A single note of the current sample voice, pitched — for tests.
   Float64List debugPitched(int midi);
 
   /// The beat layer rendered from [hits] (uses pad voices) — for tests.
   Float64List debugBeat(List<(String, int)> hits);
+
+  /// A built-in seed loop at the current tempo/key — for tests.
+  Float64List debugSeed(String kind);
   void finishPlayIn();
   void cancelPlayIn();
   bool get isPlayingIn;
@@ -135,13 +145,28 @@ class _PerformScreenState extends State<PerformScreen>
   final Map<String, Float64List> _padVoices = {};
   final Map<String, String> _padVoiceNames = {};
 
-  static const int _bpm = 120;
+  // Groove setup (P3): tempo + key, chosen while the stack is empty then locked
+  // (baked layers are fixed-length PCM, so they can't be re-timed after the fact).
+  int _bpm = 120;
+  int _keyShift = 0; // semitones from C
 
   /// One bar (4 beats) of samples at [_bpm] — the master loop length.
   int get _loopSamples => (kSampleRate * 4 * 60 / _bpm).round();
 
   /// The seed loops S1 offers (kind → label key builder).
   static const List<String> _kinds = ['beat', 'bass', 'chords', 'melody'];
+
+  /// The selectable tempos — all keep the bar length integral in samples.
+  static const List<int> _kTempos = [75, 100, 120];
+
+  /// Selectable keys (root name, semitones from C).
+  static const List<(int, String)> _kKeys = [
+    (0, 'C'),
+    (2, 'D'),
+    (5, 'F'),
+    (7, 'G'),
+    (9, 'A'),
+  ];
 
   // Scenes (S4): each is a per-layer "is-active" snapshot; `_armed` is the scene
   // queued to launch at the next bar boundary.
@@ -178,6 +203,34 @@ class _PerformScreenState extends State<PerformScreen>
     _stack.add(_PerformLayer(kind, _seedLoop(kind)));
     _refresh();
   }
+
+  // ── Groove setup: tempo + key (P3) ────────────────────────────────────────
+  @override
+  int get bpm => _bpm;
+  @override
+  int get keyShift => _keyShift;
+
+  /// Tempo/key change the bar length + seed pitch, so they're locked once any
+  /// layer is baked (an existing layer can't be re-timed after the fact).
+  @override
+  bool get canSetup => _stack.isEmpty;
+
+  @override
+  void setTempo(int bpm) {
+    if (!canSetup || !_kTempos.contains(bpm)) return;
+    _bpm = bpm;
+    setState(() {});
+  }
+
+  @override
+  void setKey(int semitones) {
+    if (!canSetup) return;
+    _keyShift = semitones;
+    setState(() {});
+  }
+
+  @override
+  Float64List debugSeed(String kind) => _seedLoop(kind);
 
   // ── Play-in a layer: melody (S2) / beat pads (S3) ─────────────────────────
   @override
@@ -653,6 +706,7 @@ class _PerformScreenState extends State<PerformScreen>
     final eighth = n ~/ 8;
     final buf = Float64List(n);
     final rng = Random(kind.hashCode & 0x7fffffff);
+    final k = pow(2, _keyShift / 12).toDouble(); // key transpose (P3)
     switch (kind) {
       case 'beat':
         for (var b = 0; b < 4; b++) {
@@ -663,15 +717,15 @@ class _PerformScreenState extends State<PerformScreen>
           _noise(buf, e * eighth, eighth ~/ 3, rng, gain: 0.08, decay: 90);
         }
       case 'bass':
-        const roots = [65.41, 65.41, 87.31, 98.0]; // C2 C2 F2 G2
+        const roots = [65.41, 65.41, 87.31, 98.0]; // C2 C2 F2 G2 (I-I-IV-V)
         for (var b = 0; b < 4; b++) {
-          _tone(buf, roots[b], b * beat, beat, gain: 0.4, decay: 4);
+          _tone(buf, roots[b] * k, b * beat, beat, gain: 0.4, decay: 4);
         }
       case 'chords':
         const chord = [261.63, 329.63, 392.0]; // C E G
         for (var b = 0; b < 4; b += 2) {
           for (final f in chord) {
-            _tone(buf, f, b * beat, beat * 2, gain: 0.18, decay: 3);
+            _tone(buf, f * k, b * beat, beat * 2, gain: 0.18, decay: 3);
           }
         }
       case 'melody':
@@ -686,7 +740,7 @@ class _PerformScreenState extends State<PerformScreen>
           783.99,
         ]; // C D E G E D C G (pentatonic-ish)
         for (var e = 0; e < 8; e++) {
-          _tone(buf, riff[e], e * eighth, eighth, gain: 0.22, decay: 10);
+          _tone(buf, riff[e] * k, e * eighth, eighth, gain: 0.22, decay: 10);
         }
     }
     return buf;
@@ -781,6 +835,37 @@ class _PerformScreenState extends State<PerformScreen>
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
+              if (canSetup) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      l10n.performTempo,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    for (final t in _kTempos)
+                      ChoiceChip(
+                        label: Text('$t'),
+                        selected: _bpm == t,
+                        onSelected: (_) => setTempo(t),
+                      ),
+                    const SizedBox(width: 12),
+                    Text(
+                      l10n.performKey,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    for (final (semis, name) in _kKeys)
+                      ChoiceChip(
+                        label: Text(name),
+                        selected: _keyShift == semis,
+                        onSelected: (_) => setKey(semis),
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

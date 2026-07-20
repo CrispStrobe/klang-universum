@@ -816,6 +816,8 @@
   "performClear": "Clear all",
   "performPlayIn": "Play a melody",
   "performPlayInHint": "Tap the keys to play your melody — it becomes a new layer.",
+  "performTempo": "Tempo",
+  "performKey": "Key",
   "performPickSound": "Pick a sound",
   "performVoiceSample": "Your sound",
   "performVoiceSynth": "Synth voice",

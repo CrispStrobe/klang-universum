@@ -3890,6 +3890,18 @@ abstract class AppLocalizations {
   /// **'Tap the keys to play your melody — it becomes a new layer.'**
   String get performPlayInHint;
 
+  /// No description provided for @performTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get performTempo;
+
+  /// No description provided for @performKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Key'**
+  String get performKey;
+
   /// No description provided for @performPickSound.
   ///
   /// In en, this message translates to:

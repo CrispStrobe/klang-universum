@@ -753,6 +753,8 @@
   "performClear": "Alles löschen",
   "performPlayIn": "Melodie spielen",
   "performPlayInHint": "Tippe die Tasten, um deine Melodie zu spielen — sie wird zu einer neuen Ebene.",
+  "performTempo": "Tempo",
+  "performKey": "Tonart",
   "performPickSound": "Klang wählen",
   "performVoiceSample": "Dein Klang",
   "performVoiceSynth": "Synth-Stimme",

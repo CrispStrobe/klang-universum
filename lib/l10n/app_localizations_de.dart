@@ -2063,6 +2063,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe die Tasten, um deine Melodie zu spielen — sie wird zu einer neuen Ebene.';
 
   @override
+  String get performTempo => 'Tempo';
+
+  @override
+  String get performKey => 'Tonart';
+
+  @override
   String get performPickSound => 'Klang wählen';
 
   @override
