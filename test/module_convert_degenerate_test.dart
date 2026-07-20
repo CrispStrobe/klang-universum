@@ -76,6 +76,33 @@ Map<String, ModuleDoc> _cases() => {
           ),
         ],
       ),
+      // Adversarial envelope: >12 points, out-of-range values/ticks, a sustain
+      // index past the end, and loopEnd < loopStart. The XM writer clamps, the
+      // others ignore envelopes — none may crash.
+      'huge / out-of-range envelope': _doc(
+        samples: [
+          DocSample(
+            pcm: _sample().pcm,
+            volumeEnvelope: DocEnvelope(
+              enabled: true,
+              points: [for (var i = 0; i < 100; i++) (i * 7 - 30, i * 9 - 20)],
+              sustain: 99,
+              loopStart: 50,
+              loopEnd: 30,
+            ),
+            panEnvelope: const DocEnvelope(
+              enabled: true,
+              points: [(-100, -5), (999999, 9999)],
+            ),
+          ),
+        ],
+      ),
+      'out-of-range pan (high)': _doc(
+        samples: [DocSample(pcm: _sample().pcm, pan: 99999)],
+      ),
+      'out-of-range pan (negative)': _doc(
+        samples: [DocSample(pcm: _sample().pcm, pan: -50)],
+      ),
     };
 
 void main() {
