@@ -98,6 +98,19 @@ void main() {
       expect(wav.length, greaterThan(44)); // more than a bare WAV header
     });
 
+    test('sixteenBit toggle controls the exported sample bit-depth', () {
+      final song = sampleSong(buzz(400));
+      // Default: 16-bit (higher quality) for the app export path.
+      expect(moduleDocFromSong(song).samples.first.sixteenBit, isTrue);
+      // Opting out yields 8-bit samples (smaller files) — e.g. for a MOD
+      // export where 16-bit is meaningless anyway.
+      final eightBit = moduleDocFromSong(song, sixteenBit: false);
+      expect(eightBit.samples.first.sixteenBit, isFalse);
+      // The waveform is preserved in the doc regardless of the flag (the writer
+      // is what quantises to the on-disk bit-depth).
+      expect(eightBit.samples.first.pcm.length, 400);
+    });
+
     test('a procedural voice is rendered to a non-empty sample', () {
       final ch = TrackerChannel(
         id: 'p',

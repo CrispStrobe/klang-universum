@@ -936,6 +936,8 @@
   "trackerExportXml": "MusicXML exportieren…",
   "trackerExportAbc": "ABC exportieren…",
   "trackerExportModule": "Modul exportieren (.mod/.xm/.s3m/.it)…",
+  "trackerExport16Bit": "16-Bit-Samples",
+  "trackerExport16BitHint": "Höhere Qualität, ~2× Dateigröße. MOD ist immer 8-Bit.",
   "trackerOpenWorkshop": "In der Notenwerkstatt öffnen",
   "trackerSavedSong": "Im Liederbuch gespeichert",
   "trackerSaveEmpty": "Erst ein paar Noten setzen",

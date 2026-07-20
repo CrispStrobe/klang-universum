@@ -2533,6 +2533,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerExportModule => 'Modul exportieren (.mod/.xm/.s3m/.it)…';
 
   @override
+  String get trackerExport16Bit => '16-Bit-Samples';
+
+  @override
+  String get trackerExport16BitHint =>
+      'Höhere Qualität, ~2× Dateigröße. MOD ist immer 8-Bit.';
+
+  @override
   String get trackerOpenWorkshop => 'In der Notenwerkstatt öffnen';
 
   @override

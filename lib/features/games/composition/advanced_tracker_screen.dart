@@ -3913,7 +3913,7 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// REAL PCM and the authored effect column survive (unlike the Score bridge,
   /// which re-synthesizes a timbre and drops effects). Also exports drum-only
   /// songs the Score path couldn't.
-  Future<void> _exportModule(ModuleFormat fmt) async {
+  Future<void> _exportModule(ModuleFormat fmt, {bool sixteenBit = true}) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     _song.syncCurrent(); // fold live edits into the snapshot before isEmpty
@@ -3922,7 +3922,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
       return;
     }
     try {
-      final bytes = convertDocTo(moduleDocFromSong(_song), fmt);
+      final bytes = convertDocTo(
+        moduleDocFromSong(_song, sixteenBit: sixteenBit),
+        fmt,
+      );
       await _saveBytes(bytes, 'tracker.${fmt.name}', fmt.name.toUpperCase(), [
         fmt.name,
       ]);
@@ -3934,36 +3937,51 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
 
   Future<void> _pickModuleFormat() async {
     final l10n = AppLocalizations.of(context)!;
+    var sixteenBit = true; // persists across the sheet's rebuilds
     await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.trackerExportModule,
-                style: Theme.of(ctx).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final f in ModuleFormat.values)
-                    ActionChip(
-                      label: Text('.${f.name}'),
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        _exportModule(f);
-                      },
-                    ),
+                  Text(
+                    l10n.trackerExportModule,
+                    style: Theme.of(ctx).textTheme.titleMedium,
+                  ),
+                  // 16-bit samples: higher quality, ~2× the sample-data size.
+                  // MOD ignores it (always 8-bit).
+                  CheckboxListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    value: sixteenBit,
+                    onChanged: (v) => setSheet(() => sixteenBit = v ?? true),
+                    title: Text(l10n.trackerExport16Bit),
+                    subtitle: Text(l10n.trackerExport16BitHint),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final f in ModuleFormat.values)
+                        ActionChip(
+                          label: Text('.${f.name}'),
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            _exportModule(f, sixteenBit: sixteenBit);
+                          },
+                        ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

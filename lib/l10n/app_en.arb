@@ -999,6 +999,8 @@
   "trackerExportXml": "Export MusicXML…",
   "trackerExportAbc": "Export ABC…",
   "trackerExportModule": "Export module (.mod/.xm/.s3m/.it)…",
+  "trackerExport16Bit": "16-bit samples",
+  "trackerExport16BitHint": "Higher quality, ~2× the file size. MOD is always 8-bit.",
   "trackerOpenWorkshop": "Open in Score Workshop",
   "trackerSavedSong": "Saved to the Song Book",
   "trackerSaveEmpty": "Place some notes first",

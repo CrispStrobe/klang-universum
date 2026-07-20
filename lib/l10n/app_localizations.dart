@@ -4760,6 +4760,18 @@ abstract class AppLocalizations {
   /// **'Export module (.mod/.xm/.s3m/.it)…'**
   String get trackerExportModule;
 
+  /// No description provided for @trackerExport16Bit.
+  ///
+  /// In en, this message translates to:
+  /// **'16-bit samples'**
+  String get trackerExport16Bit;
+
+  /// No description provided for @trackerExport16BitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher quality, ~2× the file size. MOD is always 8-bit.'**
+  String get trackerExport16BitHint;
+
   /// No description provided for @trackerOpenWorkshop.
   ///
   /// In en, this message translates to:

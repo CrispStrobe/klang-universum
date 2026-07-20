@@ -2526,6 +2526,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerExportModule => 'Export module (.mod/.xm/.s3m/.it)…';
 
   @override
+  String get trackerExport16Bit => '16-bit samples';
+
+  @override
+  String get trackerExport16BitHint =>
+      'Higher quality, ~2× the file size. MOD is always 8-bit.';
+
+  @override
   String get trackerOpenWorkshop => 'Open in Score Workshop';
 
   @override

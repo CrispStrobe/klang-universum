@@ -187,7 +187,14 @@ TrackerPattern _patternFromDoc(
 // the real one, just quantised).
 
 /// Convert [song] to a [ModuleDoc], preserving sample PCM + the effect column.
-ModuleDoc moduleDocFromSong(TrackerSong song, {int engineRate = kSampleRate}) {
+/// [sixteenBit] stores the samples at 16-bit depth where the container supports
+/// it (XM/IT/S3M — MOD is always 8-bit); default true keeps app-recorded audio
+/// at full precision. Pass false for a smaller, classic 8-bit export.
+ModuleDoc moduleDocFromSong(
+  TrackerSong song, {
+  int engineRate = kSampleRate,
+  bool sixteenBit = true,
+}) {
   song.syncCurrent();
   final channelCount = song.channels.length;
 
@@ -250,14 +257,20 @@ ModuleDoc moduleDocFromSong(TrackerSong song, {int engineRate = kSampleRate}) {
     initialTempo: song.timing.tempoBpm.clamp(32, 255),
     order: List<int>.of(song.order),
     patterns: patterns,
-    samples: [for (final i in insts) _docSampleForInstrument(i, engineRate)],
+    samples: [
+      for (final i in insts) _docSampleForInstrument(i, engineRate, sixteenBit),
+    ],
   );
 }
 
 /// One module [DocSample] for [inst]: a [SampleInstrument] keeps its real PCM
 /// (tuning baked into c5speed); any other voice is rendered to a base-note
 /// (MIDI 60) one-shot.
-DocSample _docSampleForInstrument(TrackerInstrument inst, int engineRate) {
+DocSample _docSampleForInstrument(
+  TrackerInstrument inst,
+  int engineRate,
+  bool sixteenBit,
+) {
   if (inst is SampleInstrument && inst.sample.isNotEmpty) {
     // Import plays a sample unshifted at MIDI 60 with ratio = c5speed/engineRate,
     // so to preserve the instrument's own baseMidi we set the rate that shifts
@@ -269,9 +282,8 @@ DocSample _docSampleForInstrument(TrackerInstrument inst, int engineRate) {
       loopStart: (inst.loopStart * ratio).round(),
       loopLength: (inst.loopLength * ratio).round(),
       pingPong: inst.pingPong,
-      // App samples are full-precision — keep 16-bit where the format allows
-      // (XM/IT); MOD/S3M ignore it and stay 8-bit.
-      sixteenBit: true,
+      // Full precision where the format allows (XM/IT/S3M); MOD stays 8-bit.
+      sixteenBit: sixteenBit,
     );
   }
   // A procedural voice has no PCM → render ~1s of MIDI 60 as a one-shot sample.
@@ -284,7 +296,7 @@ DocSample _docSampleForInstrument(TrackerInstrument inst, int engineRate) {
   return DocSample(
     pcm: _trimTrailingSilence(pcm),
     c5speed: engineRate,
-    sixteenBit: true,
+    sixteenBit: sixteenBit,
   );
 }
 
