@@ -15,7 +15,7 @@ is recorded in [HISTORY.md](HISTORY.md).
 
   | # | Component | Role | Pure-Dart feasibility | Owner |
   |---|---|---|---|---|
-  | 1 | **HuBERT / ContentVec** encoder (`vec-768-layer-12`) | content features — SHARED by every SVC model | conv+attention (SDPA supported, like BTC); heavy but offline-real-time. **PORTING FIRST — the linchpin.** | opus (onnx_runtime_dart) |
+  | 1 | **HuBERT / ContentVec** encoder (`vec-256-layer-9`) | content features — SHARED by every SVC model | ✅ **SHIPPED** — `hubert.dart`/`hubert_model_store.dart`/`voice.dart`, runtime parity **cosine >0.9999** vs onnxruntime (full transformer: LayerNorm/GELU/Softmax/InstanceNorm/Where), ~2 s per 1 s audio. Used the vec-256 export (dynamic-len, ORT-clean; vec-768 exports are shape-broken). | opus (onnx_runtime_dart) |
   | 2 | **Harvest (WORLD F0)** | robust DSP F0 (no model, web-safe) — the transcription-goal win | pure DSP port vs `pyworld.harvest` | opus |
   | 3 | **DDSP-SVC** generator | lightest synth (net predicts harmonic/noise params → cheap additive DSP) — the ONLY pure-Dart *real-time* candidate | feasible; the real-time route | opus |
   | 4 | **RVC generator** (NSF-HiFi-GAN, VITS) | best quality VC | ONNX runs, but HiFi-GAN vocoder is HEAVY → **offline-only** in pure Dart (SIMD-capped) | opus (offline) + **crispasr (real-time)** |
