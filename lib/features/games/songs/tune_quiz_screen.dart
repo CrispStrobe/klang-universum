@@ -120,30 +120,38 @@ class _TuneQuizScreenState extends State<TuneQuizScreen> with QuizRoundMixin {
                     const SizedBox(height: 16),
                     FeedbackLine(correct: _lastAnswer),
                     const SizedBox(height: 16),
-                    Column(
-                      children: [
-                        for (final song in kSongs)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: FilledButton(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: _tapped == null
-                                      ? null
-                                      : song.id == _target.id &&
-                                              _tapped?.id == _target.id
-                                          ? Colors.green
-                                          : song.id == _tapped?.id
-                                              ? Colors.redAccent
-                                              : null,
+                    // The answer list is one button per song; as the song book
+                    // grows it can exceed a small phone's height, so it scrolls
+                    // within the space left below the play button.
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            for (final song in kSongs)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: _tapped == null
+                                          ? null
+                                          : song.id == _target.id &&
+                                                  _tapped?.id == _target.id
+                                              ? Colors.green
+                                              : song.id == _tapped?.id
+                                                  ? Colors.redAccent
+                                                  : null,
+                                    ),
+                                    onPressed: () => _onAnswer(song),
+                                    child: Text(song.title),
+                                  ),
                                 ),
-                                onPressed: () => _onAnswer(song),
-                                child: Text(song.title),
                               ),
-                            ),
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
