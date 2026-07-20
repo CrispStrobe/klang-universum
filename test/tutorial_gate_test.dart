@@ -53,7 +53,10 @@ void main() {
     expect(find.text('game screen'), findsOneWidget);
     expect(find.text('Reading notes'), findsOneWidget);
 
-    // Dismiss the tutorial (page to the end) and leave the game.
+    // Dismiss the tutorial (page to the end) and leave the game. The reading
+    // primer has 4 steps (staff, higher, names, try-it), so 3 Nexts → "Got it!".
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Next'));

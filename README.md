@@ -12,7 +12,7 @@ Targets: iOS, Android, Web, Windows, macOS, Linux.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 
-| id | Topic | Games (41) + Song Book |
+| id | Topic | Games (150+) + Song Book |
 |---|---|---|
 | `note_values` | Notenwerte & Pausen | Symbol Quiz • Duration Duel • Rhythm Echo • Count the Beats (ties!) • Sort the Beats (drag) |
 | `note_reading` | Noten lesen (Violin/Bass) | Reading Quiz ×2 (fading landmark hints) • Place the Note ×2 • Melody Echo (ear↔staff) • Melody Dictation (ear→write) • Note Match (memory pairs) • Note Order (low→high) • Line or Space? (swipe) |
@@ -20,15 +20,21 @@ See [docs/PLAN.md](docs/PLAN.md) for the full curriculum map and roadmap.
 | `scales` | Tonleitern, Dur/Moll | Scale Detective • Dur oder Moll? (ear) • Scale Builder • Sound Echo (memory sequence) |
 | `chords` | Akkorde & Intervalle | Chord Quiz • Triad Builder • Interval Detective (ear) |
 | `harmony` | Harmonik (T/S/D) | Function Quiz • Cadence Workshop • Hear the Function (ear) |
-| `composition` | Komponieren (Kompositionstechnik) | Ending Detective (closure) • Question & Answer (phrases) • Label the Form (AnaVis-style) • My Melody + **Composition Workshop** (touch-first multi-instrument score editor) • **Loop Mixer** (tap-a-card groovebox) • **Tracker** (touch pattern sequencer) |
+| `composition` | Komponieren (Kompositionstechnik) | Ending Detective (closure) • Question & Answer (phrases) • Label the Form (AnaVis-style) • My Melody + **Composition Workshop** (touch-first multi-instrument score editor) • **Loop Mixer** (tap-a-card groovebox) • **Tracker** (touch pattern sequencer) • **Multitrack DAW** (vector-clip arranger — send audio from any module, then arrange / trim / split / reverse / speed / merge on a draggable timeline → WAV/MP3) |
 | `cello` | Cello-Ecke (instrument corner) | Which String? • Finger Quiz (1st position) • Tenor Clef reading |
 | `guitar` | Gitarren-Ecke (tablature corner) | Open Strings (name the open string) • Read the Tab (fretted note → name) |
-| `songs` | Liederbuch (real songs) | Song Book (5 songs, play-along cursor + lyrics) • Name That Tune (ear) • **Import**: MusicXML (paste or file), ChordPro chord sheets (playable chips), simple monophonic MIDI |
+| `songs` | Liederbuch (real songs) | Song Book (play-along cursor + lyrics) • Name That Tune (ear) • **Sing/Play along** + **Sight-sing** (endless generated in-key tunes, major & minor, difficulty scales with the player, read off a moving score + mic-graded with a starting-pitch cue) • **Play a MIDI file** (turn any `.mid` into a play-along) • **Import**: MusicXML (paste or file), ChordPro chord sheets (playable chips), MIDI |
 | `keyboard` | Tasten-Ecke (piano corner) | Find the Key (staff→key) • Key Quiz (key→name) • Echo Keys (ear→key) • Play the Melody (sight-playing) • Chord Grip • Grand Staff (read both clefs) |
 
 SRI review runners: note-value symbols + note reading (per clef); the home
 review button routes to the biggest due bucket. Audio is synthesized in
 pure Dart (no assets). Web deep links: `?game=<id>`.
+
+Every game gets an illustrated, localized **tutorial** (`lib/shared/tutorial/`)
+shown once on first entry (and reopenable via **?**): plain-language text, a
+notated + heard example, read-aloud (TTS), and interactive **"try it"** practice
+steps — read/hear then tap the answer, with gentle reveal-on-stuck — so a
+zero-knowledge child can clear it.
 Later: more ear training, unlock gating, Kompositionstechnik (see plan).
 Live web build: https://crispstrobe.github.io/cometbeat/ (GitHub Pages, via
 `.github/workflows/pages.yml`) and https://mus-theta.vercel.app (Vercel, via
@@ -60,6 +66,12 @@ acceptance tests.
 - **Live pitch/chord detection** — `pitch_analysis.dart` (McLeod/NSDF) +
   `chroma_analysis.dart` (FFT + chromagram) drive the Tuner, Play/Sing along, and
   Chord-listener games from the mic.
+- **Transcription — audio → sheet music** (`core/audio/transcription/`) — a
+  clean-room, patent-free pure-Dart monophonic pipeline (pYIN F0 → note-state
+  Viterbi → auto-tuning → spectral-flux onsets + autocorrelation tempo + Ellis
+  DP beats → key/clef/meter estimation → a `crisp_notation` Score) plus a neural
+  polyphonic path (Basic Pitch / CREPE via `onnx_runtime_dart`) for chords &
+  inharmonic timbres, wired behind an auto-router. Exports MusicXML / MIDI / ABC.
 - **crisp_dsp** (`core/audio/crisp_dsp/`) — reverb / delay / chorus / flanger,
   distortion, ring-mod, cubic resampling, WSOLA time-stretch, ADSR envelopes,
   sfxr; sample-editing ops (trim/normalize/fade) and multi-sample instruments.
@@ -89,12 +101,17 @@ One dispatcher, **`mus`**, fronts the suite — `dart run bin/mus.dart <cmd> …
 
 | cmd | what it does |
 |---|---|
-| `listen` | mic / WAV → live pitch & chord detection |
+| `listen` | mic / WAV → live pitch & chord detection; `--transcribe` a recording → MusicXML / MIDI / ABC |
 | `info` | sniff + dump any module (`.mod`/`.s3m`/`.xm`/`.it`) |
 | `conv` | convert modules between formats + extract samples to WAV |
 | `render` | a Loop Mixer groove (share token) → WAV |
 | `midi` | module ↔ MIDI / MusicXML / ABC / kern / MEI / MuseScore (both ways) |
 | `fx` | apply a crisp_dsp effect to a WAV offline |
+
+Standalone bins (not under `mus`): `rendersong` (a score / MIDI / MusicXML …
+through a SoundFont → WAV/MP3, per-part General-MIDI voicing), `sfont` (inspect /
+render `.sf2` / `.sf3`), `transcribe_basicpitch` · `transcribe_crepe` ·
+`transcribe_chords` (neural transcription paths).
 
 ## Development
 

@@ -37,8 +37,7 @@ class CrepeModelStore {
     }
     final env = Platform.environment['COMET_CREPE_DIR'];
     if (env != null && env.isNotEmpty) return env;
-    final home =
-        Platform.environment['HOME'] ??
+    final home = Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         Directory.systemTemp.path;
     return '$home/.cache/comet_beat/models';
@@ -151,8 +150,7 @@ class CrepeRunConfig {
   }
 
   @override
-  String toString() =>
-      'CrepeRunConfig(workers: $workers, poolConv: $poolConv, '
+  String toString() => 'CrepeRunConfig(workers: $workers, poolConv: $poolConv, '
       'batchFrames: $batchFrames)';
 }
 
@@ -203,16 +201,16 @@ Future<F0Estimator> crepeF0Estimator({
   if (cfg.parallel) {
     await model.parallelize(workers: cfg.workers, poolConv: cfg.poolConv);
     return (Float64List mono, int sampleRate) => crepeF0Async(
-      mono,
-      model: model,
-      sampleRate: sampleRate,
-      batchFrames: cfg.batchFrames,
-    );
+          mono,
+          model: model,
+          sampleRate: sampleRate,
+          batchFrames: cfg.batchFrames,
+        );
   }
   return (Float64List mono, int sampleRate) => crepeF0(
-    mono,
-    model: model,
-    sampleRate: sampleRate,
-    batchFrames: cfg.batchFrames,
-  );
+        mono,
+        model: model,
+        sampleRate: sampleRate,
+        batchFrames: cfg.batchFrames,
+      );
 }
