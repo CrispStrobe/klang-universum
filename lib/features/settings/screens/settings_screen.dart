@@ -484,7 +484,9 @@ class _TranscriptionEngineSection extends StatelessWidget {
                       svc,
                       l10n.transcriptionStepF0,
                       TranscriptionStep.f0,
-                      const [Backend.auto, Backend.pureDart, Backend.crispasr],
+                      // ONNX CREPE is the shipped neural F0 (works on web too);
+                      // CrispASR ggml CREPE joins once its package ships.
+                      const [Backend.auto, Backend.pureDart, Backend.onnx],
                     ),
                     _stepPicker(
                       context,

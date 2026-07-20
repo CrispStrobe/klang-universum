@@ -7,8 +7,10 @@
 // pass can move it to a compute() isolate. Test seams (`debugPickAudio`,
 // `debugNeural`) let a widget test drive the flow with no file-picker/mic/ONNX.
 
+import 'package:comet_beat/core/audio/transcription/engine_config.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:comet_beat/core/audio/transcription/transcription_service.dart';
+import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/features/games/songs/song_screen.dart';
 import 'package:comet_beat/features/games/transcribe/crepe_provider.dart';
 import 'package:comet_beat/features/games/transcribe/neural_provider.dart';
@@ -17,6 +19,7 @@ import 'package:crisp_notation_core/crisp_notation_core.dart' show Score;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// How the user wants the engine chosen.
 enum EngineChoice { auto, monophonic, neural }
@@ -54,7 +57,28 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
   String? _error;
   EngineChoice _choice = EngineChoice.auto;
   bool _neuralPitch = false;
+  bool _configApplied = false;
   TranscriptionResult? _result;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_configApplied) return;
+    _configApplied = true;
+    // Default the melody-pitch (CREPE) toggle from the Settings "Transcription
+    // engine" F0 choice — on for a neural backend, off for on-device/auto. The
+    // user can still override it here. No-op when the config isn't in scope
+    // (widget tests): the toggle keeps its default-off.
+    try {
+      final f0 = context
+          .read<TranscriptionConfigService>()
+          .config
+          .backendFor(TranscriptionStep.f0);
+      if (f0 == Backend.onnx || f0 == Backend.crispasr) _neuralPitch = true;
+    } on ProviderNotFoundException {
+      // keep the default
+    }
+  }
 
   Future<Uint8List?> _pickAudio() async {
     if (widget.debugPickAudio != null) return widget.debugPickAudio!();
