@@ -64,6 +64,52 @@ per-string softmaxes, **no decoding of any kind** — its published metrics are 
 plain per-frame argmax, so a constrained Viterbi over the same layer is a strict
 improvement, not a lossy adaptation.
 
+### ✅ WEIGHTS DELIVERED — `tabcnn.onnx` + CQT blob published (onnx_runtime_dart agent)
+
+The audio model is trained, ONNX-exported, parity-verified on pure-Dart
+`onnx_runtime_dart`, and published. The provider (`TabCnnModelStore` +
+`CqtFilterBank` front-end) can now pin these:
+
+- **Assets on the `onnx_runtime_dart` `models-v1` release:**
+  - `tabcnn.onnx` (3.3 MB) — `sha256 15c58000ed2d1deb3d3fc07581aa1823482dad91d913399dc0209ef240ad8a51`
+    — `https://github.com/CrispStrobe/onnx_runtime_dart/releases/download/models-v1/tabcnn.onnx`
+  - `tabcnn-cqt.bin` (0.68 MB) — `sha256 4e5dfa1f10f76545a30cbfd3224431503dbad943b1def78624632284e6df597a`
+    — `https://github.com/CrispStrobe/onnx_runtime_dart/releases/download/models-v1/tabcnn-cqt.bin`
+- **Model IO (pin these):** input `input : float32[N,192,9,1]` (192 CQT bins ×
+  9-frame context × 1 ch — repo-native axis order, NOT `[N,9,192,1]`); output
+  `output : float32[N,6,21]` **per-string LogSoftmax** log-probs (the DP's ABI).
+  ~0.8 M params (833,982). **Runtime parity vs onnxruntime: 240/240 per-string
+  argmax agreement, max|Δlogprob| 2.67e-5.**
+- **Frame hop = 0.023220 s** (hop 512 ÷ sr 22050) — place notes on the grid with this.
+- **CQT front-end spec (the #1 risk — exact, from the tab-cnn repo source):**
+  mic audio → `librosa.util.normalize` (whole-waveform peak) → resample **22050 Hz**
+  → `abs(librosa.cqt(hop_length=512, n_bins=192, bins_per_octave=24, fmin=C1=32.703))`
+  → `[frames,192]`. **NO per-frame or log normalization** — TabCNN eats RAW CQT
+  magnitude. So the provider's `CqtFilterBank` apply is **raw magnitude**
+  (`|band·STFT| ÷ √length`), NOT BTC's `log((mag)+eps)`/mean-std path — the blob's
+  `mean`/`std` header fields are 0/1 and unused here. `tabcnn-cqt.bin` is the
+  banded 192-bin filterbank (n_fft 32768, boxcar STFT); verified vs `librosa.cqt`
+  at **cosine 0.999947 AND median magnitude ratio 0.9999** (the magnitude
+  assertion, not just scale-invariant cosine).
+- **Class layout (unchanged, matches your decoder):** class 0 = closed, class k =
+  fret k−1; 21 classes × 6 strings.
+
+**Licence (§ hard gate — CLEARED):** trained on **GuitarSet, CC BY 4.0**
+(`zenodo.org/records/3371780`) — derived weights are redistributable **with
+attribution**. Registry `license` field: `CC-BY-4.0 (GuitarSet)`. The §0 kill-switch passes.
+
+**⚠ Honest scope note — vanilla, not GuitarProFX.** The spec asked for the
+GuitarProFX-augmented weights, but **no public GuitarProFX weights exist** (the
+tab-cnn repo is code-only; the DAFx-24 variant's weights aren't released), so this
+is the **vanilla TabCNN trained fresh on GuitarSet**. Quality matches the vanilla
+paper: **held-out (guitarist-5 fold) tablature F1 = 0.745** (P 0.784 / R 0.710) vs
+the paper's 0.748 — a single held-out fold, not the full 6-fold protocol.
+**EGSet12 zero-shot was NOT evaluated** (would need that corpus); per the spec,
+expect the vanilla model to degrade on real *electric* guitar (~0.45 zero-shot),
+so the **GuitarProFX re-render augmentation remains the future robustness lever** —
+retrain with it if/when the augmented data or weights become available (the export
++ CQT + publish pipeline is now in place to re-ship instantly).
+
 Our side of that contract is now IN the tree, testable with synthetic emissions:
 
 - **`tab_emission_decoder.dart`** — `TabEmissionModel` seam (audio →
