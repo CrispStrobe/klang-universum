@@ -25,11 +25,21 @@ typedef ContentEncoder = Future<ContentFeatures> Function(
   int sampleRate,
 );
 
-/// A voice converter: content [features] + a per-frame F0 track ([f0Hz], one Hz
-/// value per feature frame, 0 = unvoiced) + a target [speakerId] → converted
-/// mono audio at [outSampleRate]. The heavy real-time HiFi-GAN implementations
-/// live on the native (CrispASR) path; a lightweight DDSP-SVC implementation is
-/// the pure-Dart / web fallback.
+/// A voice converter: content [features] (native 50 Hz) + an F0 track [f0Hz] +
+/// a target [speakerId] → converted mono audio (at the checkpoint's native
+/// rate).
+///
+/// F0-RATE CONTRACT (RVC / SVC_RECORD_SHAPES §2/§4): [f0Hz] is native **100 Hz**
+/// — length `2 * features.frames`, one Hz value per 10 ms, `0` = unvoiced. F0 is
+/// NOT feature-aligned: the model runs at 100 Hz and the 50 Hz ContentVec is
+/// duplicated ×2 (nearest) to meet it — done on the native CrispASR side (the
+/// pure-Dart DDSP fallback duplicates internally). A length mismatch truncates
+/// to the shorter (RVC's `min`), it is not an error. Coarse pitch quantisation
+/// is derived model-side, so we send Hz only.
+///
+/// One-shot (a later streaming entry point is additive, not a break). The heavy
+/// real-time HiFi-GAN path lives native (CrispASR); the pure-Dart / web fallback
+/// is a lightweight DDSP-SVC.
 typedef VoiceConverter = Future<({Float64List audio, int sampleRate})> Function(
   ContentFeatures features,
   Float32List f0Hz,
