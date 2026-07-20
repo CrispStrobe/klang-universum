@@ -85,6 +85,10 @@ abstract class PerformTester {
   void addBeatboxLayer(List<BeatFrame> frames, {required int totalMs});
   bool get isCapturing;
 
+  /// Transport (P5): the moving loop position while the clock runs.
+  double get loopProgress; // 0..1 through the bar (0 when stopped)
+  int get currentBeat; // 0..3, or -1 when stopped
+
   /// A single note of the current sample voice, pitched — for tests.
   Float64List debugPitched(int midi);
 
@@ -206,15 +210,21 @@ class _PerformScreenState extends State<PerformScreen>
   @override
   void initState() {
     super.initState();
-    // Fire an armed scene when the loop crosses a bar boundary (phase wraps).
+    // While the transport runs: move the playhead (P5) + fire an armed scene
+    // when the loop crosses a bar boundary (S4).
     _boundaryTimer = Timer.periodic(const Duration(milliseconds: 40), (_) {
-      if (!_playing || _armed == null) {
-        _lastPhaseMs = _phaseNow;
+      if (!mounted || !_clock.isRunning) {
+        _lastPhaseMs = 0;
         return;
       }
       final now = _phaseNow;
-      if (now < _lastPhaseMs) launchArmed();
+      final wrapped = now < _lastPhaseMs;
       _lastPhaseMs = now;
+      if (_playing && _armed != null && wrapped) {
+        launchArmed(); // applies + setState
+      } else if (_playing || isPlayingIn || isCapturing) {
+        setState(() {}); // repaint the sweeping playhead
+      }
     });
   }
 
@@ -841,6 +851,19 @@ class _PerformScreenState extends State<PerformScreen>
   List<Float64List> get _activePcm =>
       [for (final l in _stack.activeLayers) l.pcm];
 
+  // ── Transport (P5) ────────────────────────────────────────────────────────
+  @override
+  double get loopProgress {
+    if (!_clock.isRunning) return 0;
+    return (_phaseNow / _barMs).clamp(0.0, 1.0).toDouble();
+  }
+
+  @override
+  int get currentBeat {
+    if (!_clock.isRunning) return -1;
+    return (_phaseNow / _barMs * 4).floor().clamp(0, 3);
+  }
+
   @override
   void play() {
     if (_stack.activeLayers.isEmpty) return;
@@ -1120,6 +1143,34 @@ class _PerformScreenState extends State<PerformScreen>
                         style: TextStyle(color: scheme.onPrimaryContainer),
                       ),
                     ],
+                  ),
+                ),
+              ],
+              if (_playing || isPlayingIn || isCapturing) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    for (var b = 0; b < 4; b++)
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: b == currentBeat
+                                ? scheme.primary
+                                : scheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: loopProgress,
+                    minHeight: 4,
                   ),
                 ),
               ],

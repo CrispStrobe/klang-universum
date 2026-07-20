@@ -373,6 +373,31 @@ void main() {
     expect(p.layerCount, 2);
   });
 
+  testWidgets('transport reports loop position while running, resets on stop',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    // Stopped: no playhead.
+    expect(p.loopProgress, 0.0);
+    expect(p.currentBeat, -1);
+
+    // Playing: the clock runs → a live position (at/after the downbeat).
+    p.addSeed('beat');
+    p.play();
+    await tester.pump();
+    expect(p.isPlaying, isTrue);
+    expect(p.currentBeat, inInclusiveRange(0, 3));
+    expect(p.loopProgress, inInclusiveRange(0.0, 1.0));
+
+    // Stop resets the transport.
+    p.stop();
+    await tester.pump();
+    expect(p.loopProgress, 0.0);
+    expect(p.currentBeat, -1);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));
