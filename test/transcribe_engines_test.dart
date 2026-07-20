@@ -65,7 +65,7 @@ void main() {
     expect(rmvpeUsed, isTrue);
   });
 
-  test('nothing installed → both null (pure-Dart)', () async {
+  test('nothing installed → neural null, F0 = pure-Dart DIO', () async {
     final e = await resolveEngines(
       cfg,
       isWeb: false,
@@ -74,8 +74,9 @@ void main() {
       loadCrepeGgml: ({bool download = false}) async => null,
       loadCrepeOnnx: ({bool download = false}) async => null,
     );
-    expect(e.neural, isNull);
-    expect(e.f0, isNull);
+    expect(e.neural, isNull); // no built-in polyphonic engine
+    expect(e.f0, isNotNull); // the model-free WORLD DIO F0 always resolves
+    await e.f0!(Float64List(0), 44100); // and is callable
   });
 
   test('a user "on-device" F0 choice ignores the installed CREPE', () async {
@@ -85,7 +86,8 @@ void main() {
       loadNeural: ({bool download = false}) async => _fakeNeural,
       loadCrepeOnnx: ({bool download = false}) async => _fakeF0,
     );
-    expect(e.f0, isNull); // forced pure-Dart
+    expect(e.f0, isNotNull); // forced pure-Dart → WORLD DIO, not CREPE
+    await e.f0!(Float64List(0), 44100); // DIO runs (no model, no download)
     expect(e.neural, isNotNull); // poly still auto
   });
 

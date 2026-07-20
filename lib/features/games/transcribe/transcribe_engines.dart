@@ -3,7 +3,8 @@
 // Settings choices and route.dart's F0Estimator / NeuralTranscriber seams:
 // config.resolve() decides WHICH backend a step wants; the providers decide
 // whether it's actually present; anything unpicked or absent falls back to
-// pure-Dart (a null engine).
+// pure-Dart — a null neural/chords engine (→ the chain's built-in), and the
+// model-free WORLD DIO estimator for F0.
 
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_piano.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
@@ -11,6 +12,7 @@ import 'package:comet_beat/core/audio/transcription/crispasr_ffi_separate.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_separate.dart'
     show loadCrispasrSeparatorFromEnv;
+import 'package:comet_beat/core/audio/transcription/dio.dart' show dioEstimator;
 import 'package:comet_beat/core/audio/transcription/engine_config.dart';
 import 'package:comet_beat/core/audio/transcription/harmony.dart'
     show ChordEstimator;
@@ -165,6 +167,11 @@ Future<TranscriptionEngines> resolveEngines(
       Backend.crispasr => ggmlF0,
       Backend.onnxFfi => ffiF0,
       Backend.onnx => onnxF0,
+      // The pure-Dart F0 tier is WORLD DIO+StoneMask (model-free, web-safe,
+      // pyworld-parity) — a strict upgrade over the chain's built-in pYIN, and
+      // the only F0 that needs no download. Injected so it runs on web and
+      // whenever a user picks "on-device" or nothing else is installed.
+      Backend.pureDart => dioEstimator(),
       _ => null,
     },
     neural: switch (poly.backend) {
