@@ -576,6 +576,10 @@
   "beatLoadShared": "Geteilten laden",
   "beatShared": "Beat geteilt — im Loop-Mixer, Tracker oder Looper laden",
   "beatLoaded": "Geteilten Beat geladen",
+  "tuneShare": "Melodie teilen",
+  "tuneLoadShared": "Geteilte Melodie laden",
+  "tuneShared": "Melodie geteilt — lade sie im Loop-Mixer, Tracker oder Looper",
+  "tuneLoaded": "Geteilte Melodie geladen",
   "dawBpm": "{n} BPM",
   "@dawBpm": {
     "placeholders": { "n": { "type": "int" } }

@@ -3122,6 +3122,30 @@ abstract class AppLocalizations {
   /// **'Loaded the shared beat'**
   String get beatLoaded;
 
+  /// No description provided for @tuneShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share tune'**
+  String get tuneShare;
+
+  /// No description provided for @tuneLoadShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Load shared tune'**
+  String get tuneLoadShared;
+
+  /// No description provided for @tuneShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Tune shared — load it in the Loop Mixer, Tracker or Looper'**
+  String get tuneShared;
+
+  /// No description provided for @tuneLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded the shared tune'**
+  String get tuneLoaded;
+
   /// No description provided for @dawBpm.
   ///
   /// In en, this message translates to:

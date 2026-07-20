@@ -1666,6 +1666,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get beatLoaded => 'Geteilten Beat geladen';
 
   @override
+  String get tuneShare => 'Melodie teilen';
+
+  @override
+  String get tuneLoadShared => 'Geteilte Melodie laden';
+
+  @override
+  String get tuneShared =>
+      'Melodie geteilt — lade sie im Loop-Mixer, Tracker oder Looper';
+
+  @override
+  String get tuneLoaded => 'Geteilte Melodie geladen';
+
+  @override
   String dawBpm(int n) {
     return '$n BPM';
   }

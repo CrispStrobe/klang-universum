@@ -13,6 +13,7 @@ import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show SampleInstrument;
 import 'package:comet_beat/core/services/beat_bridge.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/loop_creatures.dart';
@@ -78,6 +79,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     BeatBridge.instance.clear();
+    MelodyBridge.instance.clear();
   });
 
   testWidgets('loads a shared beat as the user beat track, and shares back',
@@ -1014,6 +1016,35 @@ void main() {
     expect(
       game.debugTuneCells!.any((c) => c.midis?.contains(60) ?? false),
       isFalse,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('MelodyBridge: share a tune, then load it back', (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    // Build a tune and share it to the bridge.
+    game.debugEditTuneCell(60, 0);
+    game.debugEditTuneCell(67, 4);
+    await tester.pump();
+    expect(game.canLoadSharedTune, isFalse);
+    game.shareTune();
+    expect(MelodyBridge.instance.hasMelody, isTrue);
+    expect(game.canLoadSharedTune, isTrue);
+
+    // Clear the track (toggle both notes off), then load the shared one back.
+    game.debugEditTuneCell(60, 0);
+    game.debugEditTuneCell(67, 4);
+    await tester.pump();
+    expect(game.hasVoiceTrack, isFalse);
+
+    game.loadSharedTune();
+    await tester.pump();
+    expect(game.hasVoiceTrack, isTrue);
+    expect(
+      game.debugTuneCells!.any((c) => c.midis?.contains(60) ?? false),
+      isTrue,
     );
     expect(tester.takeException(), isNull);
   });

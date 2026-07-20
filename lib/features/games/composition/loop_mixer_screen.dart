@@ -49,6 +49,7 @@ import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/custom_progressions.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
@@ -222,6 +223,12 @@ abstract interface class LoopMixerTester {
   void shareBeat();
   bool get canLoadSharedBeat;
   void loadSharedBeat();
+
+  /// MelodyBridge: publish this mixer's tune / pull a shared one (pitched twin
+  /// of shareBeat/loadSharedBeat).
+  void shareTune();
+  bool get canLoadSharedTune;
+  void loadSharedTune();
   bool get isJamming;
   void toggleJam();
 
@@ -732,6 +739,42 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.beatLoaded)),
+    );
+  }
+
+  @override
+  void shareTune() {
+    final cells = _engine.userTrackCells;
+    if (cells == null || cells.isEmpty) return;
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: cells,
+        tempoBpm: _engine.tempoBpm,
+        key: _engine.key,
+        source: 'loopmixer',
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneShared)),
+    );
+  }
+
+  @override
+  bool get canLoadSharedTune => MelodyBridge.instance.hasMelody;
+
+  @override
+  void loadSharedTune() {
+    final shared = MelodyBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    setState(() {
+      _engine.setUserTrack(shared.toCells(), instrument: Instrument.musicBox);
+      _engine.enabled.add(LoopEngine.userTrackId);
+    });
+    _restartGroove();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneLoaded)),
     );
   }
 
@@ -1270,6 +1313,19 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               enabled: BeatBridge.instance.hasBeat,
               onTap: () => Navigator.pop(sheet, 'loadBeat'),
             ),
+            // MelodyBridge: the pitched twin — share/pull the tune.
+            ListTile(
+              leading: const Icon(Icons.upload),
+              title: Text(l10n.tuneShare),
+              enabled: _engine.userTrackCells != null,
+              onTap: () => Navigator.pop(sheet, 'shareTune'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.download),
+              title: Text(l10n.tuneLoadShared),
+              enabled: MelodyBridge.instance.hasMelody,
+              onTap: () => Navigator.pop(sheet, 'loadTune'),
+            ),
           ],
         ),
       ),
@@ -1280,6 +1336,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
         shareBeat();
       case 'loadBeat':
         loadSharedBeat();
+      case 'shareTune':
+        shareTune();
+      case 'loadTune':
+        loadSharedTune();
       case 'copy':
         await Clipboard.setData(ClipboardData(text: grooveToken));
         messenger.showSnackBar(

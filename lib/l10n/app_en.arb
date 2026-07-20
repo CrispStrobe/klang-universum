@@ -649,6 +649,10 @@
   "beatLoadShared": "Load shared",
   "beatShared": "Beat shared — load it in the Loop Mixer, Tracker or Looper",
   "beatLoaded": "Loaded the shared beat",
+  "tuneShare": "Share tune",
+  "tuneLoadShared": "Load shared tune",
+  "tuneShared": "Tune shared — load it in the Loop Mixer, Tracker or Looper",
+  "tuneLoaded": "Loaded the shared tune",
   "dawBpm": "{n} BPM",
   "@dawBpm": {
     "placeholders": { "n": { "type": "int" } }
