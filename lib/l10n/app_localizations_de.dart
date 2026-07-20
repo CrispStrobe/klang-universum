@@ -707,6 +707,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tempoSlowerLabel => 'Wird langsamer';
 
   @override
+  String get gameArticulationEar => 'Gebunden oder kurz?';
+
+  @override
+  String get gameArticulationEarSubtitle =>
+      'Hör hin: sind die Töne verbunden oder hüpfend?';
+
+  @override
+  String get articulationEarPrompt =>
+      'Eine Melodie erklingt. Ist sie gebunden oder kurz und getrennt?';
+
+  @override
+  String get articulationSmoothLabel => 'Gebunden';
+
+  @override
+  String get articulationShortLabel => 'Kurz';
+
+  @override
   String get gameStepSkip => 'Schritt oder Sprung?';
 
   @override

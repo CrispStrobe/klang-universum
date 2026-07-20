@@ -35,6 +35,7 @@ import 'package:comet_beat/features/games/composition/my_melody_screen.dart';
 import 'package:comet_beat/features/games/composition/question_answer_screen.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/drums/drum_read_screen.dart';
+import 'package:comet_beat/features/games/expression/articulation_ear_screen.dart';
 import 'package:comet_beat/features/games/expression/charades_screen.dart';
 import 'package:comet_beat/features/games/expression/crescendo_ear_screen.dart';
 import 'package:comet_beat/features/games/expression/tempo_change_ear_screen.dart';
@@ -821,6 +822,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTempoChangeEar,
       subtitle: (l) => l.gameTempoChangeEarSubtitle,
       builder: (_) => const TempoChangeEarScreen(),
+      tutorial: expressionPrimer,
+    ),
+    // Aural articulation — legato (smooth) vs staccato (short) by ear (the
+    // aural twin of articulation_read's glyph reading).
+    GameInfo(
+      id: 'articulation_ear',
+      icon: Icons.waves,
+      title: (l) => l.gameArticulationEar,
+      subtitle: (l) => l.gameArticulationEarSubtitle,
+      builder: (_) => const ArticulationEarScreen(),
       tutorial: expressionPrimer,
     ),
     GameInfo(

@@ -704,6 +704,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tempoSlowerLabel => 'Slowing down';
 
   @override
+  String get gameArticulationEar => 'Smooth or Short?';
+
+  @override
+  String get gameArticulationEarSubtitle =>
+      'Listen: are the notes connected or bouncy?';
+
+  @override
+  String get articulationEarPrompt =>
+      'A tune plays. Is it smooth or short and detached?';
+
+  @override
+  String get articulationSmoothLabel => 'Smooth';
+
+  @override
+  String get articulationShortLabel => 'Short';
+
+  @override
   String get gameStepSkip => 'Step or Skip?';
 
   @override

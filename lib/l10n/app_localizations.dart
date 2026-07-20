@@ -1370,6 +1370,36 @@ abstract class AppLocalizations {
   /// **'Slowing down'**
   String get tempoSlowerLabel;
 
+  /// No description provided for @gameArticulationEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth or Short?'**
+  String get gameArticulationEar;
+
+  /// No description provided for @gameArticulationEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen: are the notes connected or bouncy?'**
+  String get gameArticulationEarSubtitle;
+
+  /// No description provided for @articulationEarPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'A tune plays. Is it smooth or short and detached?'**
+  String get articulationEarPrompt;
+
+  /// No description provided for @articulationSmoothLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth'**
+  String get articulationSmoothLabel;
+
+  /// No description provided for @articulationShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Short'**
+  String get articulationShortLabel;
+
   /// No description provided for @gameStepSkip.
   ///
   /// In en, this message translates to:

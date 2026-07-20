@@ -336,7 +336,7 @@ const List<Concept> kConcepts = [
     GradeBand.g56,
     ConceptArea.articulation,
     'Staccato and accents',
-    ['articulation_read'],
+    ['articulation_read', 'articulation_ear'],
   ),
   Concept(
     'beams',

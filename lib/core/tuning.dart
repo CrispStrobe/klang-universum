@@ -77,6 +77,7 @@ const Map<String, List<int>> kStarThresholds = {
   'direction_ear': [100, 600, 900],
   'crescendo_ear': [100, 600, 900],
   'tempo_change_ear': [100, 600, 900],
+  'articulation_ear': [100, 600, 900],
   'same_diff': [100, 600, 900],
   'run_direction': [100, 600, 900],
   'count_notes': [100, 600, 900],
