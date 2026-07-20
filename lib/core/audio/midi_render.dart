@@ -201,12 +201,17 @@ class _Note {
     final e = sampleAt(endTick).round();
     if (e <= s) return;
     final vn = p.vel / 127.0;
+    // Velocity → amplitude on the SF2 concave curve (≈ its default velocity→
+    // attenuation modulator): gain ∝ (vel/127)^1.5, matching a fluidsynth
+    // reference within ~1 dB across the range. Linear velocity made soft notes
+    // far too loud (−18 vs −28 dB at velocity 16) — flat, undynamic. The filter
+    // still uses the raw linear [vn] (velNorm) for its cutoff modulation.
     final note = _Note(
       s,
       e,
       key,
       ch,
-      p.gain * vn,
+      p.gain * math.pow(vn, 1.5).toDouble(),
       vn,
       p.pan,
       p.modCents,
@@ -591,8 +596,12 @@ void _renderZone(
   // Loop only when the zone's sampleModes (gen 54) enables it (and the sample
   // has a loop region, and it isn't a one-shot drum).
   final loop = zone.loopEnabled && sample.loops && !n.isDrum;
-  final loopStart = sample.loopStart.toDouble();
-  final loopEnd = sample.loopEnd.toDouble();
+  // The sample's loop points, adjusted by the zone's SF2 loop-point offsets
+  // (gens 2/3), clamped to the sample.
+  final loopStart =
+      (sample.loopStart + zone.loopStartOffset).clamp(0, len).toDouble();
+  final loopEnd =
+      (sample.loopEnd + zone.loopEndOffset).clamp(0, len).toDouble();
 
   final durSamples = n.endSample - n.startSample;
 
@@ -603,8 +612,9 @@ void _renderZone(
   final delayS = (zone.delayVolSec * sr).round();
   final attackS =
       math.max((zone.attackVolSec * sr).round(), (0.002 * sr).round());
-  final holdS = (zone.holdVolSec * sr).round();
-  final decayS = math.max((zone.decayVolSec * sr).round(), 1);
+  // Hold/decay are key-scaled (SF2 gens 39/40): a font's high notes ring shorter.
+  final holdS = (zone.volEnvHoldSec(n.key) * sr).round();
+  final decayS = math.max((zone.volEnvDecaySec(n.key) * sr).round(), 1);
   final sus = zone.sustainGain;
   final releaseS = math
       .max((zone.releaseVolSec * sr).round(), (0.006 * sr).round())

@@ -323,6 +323,29 @@ void main() {
     );
   });
 
+  test('velocity → loudness is concave (soft notes quieter than linear)', () {
+    // gain ∝ (vel/127)^1.5, so vel 32 vs 127 is (32/127)^1.5 ≈ 0.126, well below
+    // the linear 0.252 — the SF2 concave velocity curve, matching a real synth.
+    final oneFont = loadSoundFont(
+      oneSampleSf2(
+        pcm: sineI16(2000, 64),
+        sampleRate: 44100,
+        rootKey: 60,
+        loopStart: 0,
+        loopEnd: 0,
+      ),
+    );
+    List<int> at(int vel) => [0, 0x90, 60, vel, 0x82, 0x00, 0x80, 60, 0];
+    final ps = _peak(renderMidiFile(_midi(at(32)), oneFont).$1);
+    final pl = _peak(renderMidiFile(_midi(at(127)), oneFont).$1);
+    expect(
+      ps / pl,
+      lessThan(0.18),
+      reason: 'concave: steeper than linear 0.25',
+    );
+    expect(ps / pl, greaterThan(0.08), reason: 'but not as steep as square');
+  });
+
   test('empty / non-MIDI input yields empty output', () {
     final (l, r) = renderMidiFile(Uint8List.fromList([1, 2, 3]), font);
     expect(l, isEmpty);

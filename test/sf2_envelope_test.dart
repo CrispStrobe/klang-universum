@@ -116,6 +116,22 @@ void main() {
     expect(hat.exclusiveClass, 1);
   });
 
+  test('key→vol-env decay (gen 40): a high note rings shorter', () {
+    const z = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      decayVolTc: 0, // 2^0 = 1 s decay at the reference key 60
+      key2VolEnvDecayTc: 100, // 100 timecents shorter per key above 60
+    );
+    expect(z.volEnvDecaySec(60), closeTo(1.0, 1e-6));
+    // key 72 (+12): decay tc = 0 + 100·(60−72) = −1200 → 2^-1 = 0.5 s.
+    expect(z.volEnvDecaySec(72), closeTo(0.5, 1e-6));
+    // key 48 (−12): +1200 tc → 2 s (low notes ring longer).
+    expect(z.volEnvDecaySec(48), closeTo(2.0, 1e-6));
+  });
+
   test('velFilterCents: default darkens soft notes; a mod opens loud ones', () {
     // No modulators → the SF2 default: full velocity keeps the cutoff, silence
     // drops it 2400 cents (soft notes are duller).

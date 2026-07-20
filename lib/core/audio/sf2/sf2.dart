@@ -81,6 +81,13 @@ const _genReleaseModEnv = 30;
 // units of 32768 samples. Skips a lead-in so the attack lands as authored.
 const _genStartAddrsOffset = 0;
 const _genStartAddrsCoarseOffset = 4;
+// Loop-point offsets (added to the shdr loop start/end), in samples.
+const _genStartLoopAddrsOffset = 2;
+const _genEndLoopAddrsOffset = 3;
+// Key→volume-envelope scaling (timecents per key away from 60): higher keys get
+// shorter hold/decay — a piano's high notes ring shorter than its low ones.
+const _genKeynumToVolEnvHold = 39;
+const _genKeynumToVolEnvDecay = 40;
 
 /// One sample from a soundfont: its decoded PCM (−1..1), the rate it was
 /// recorded at, the MIDI key it represents ([originalPitch]), and its loop
@@ -163,6 +170,10 @@ class Sf2Zone {
     this.sustainModEnvPermille = 0,
     this.releaseModEnvTc = -12000,
     this.sampleStartOffset = 0,
+    this.loopStartOffset = 0,
+    this.loopEndOffset = 0,
+    this.key2VolEnvHoldTc = 0,
+    this.key2VolEnvDecayTc = 0,
   });
 
   final int keyLo;
@@ -272,6 +283,22 @@ class Sf2Zone {
 
   /// The sample offset (in frames) to start playback at (SF2 gens 0 + 4).
   final int sampleStartOffset;
+
+  /// Loop-point offsets (SF2 gens 2/3), added to the sample's shdr loop points.
+  final int loopStartOffset;
+  final int loopEndOffset;
+
+  /// Key→volume-envelope scaling (SF2 gens 39/40): timecents added to the hold /
+  /// decay time per key ABOVE 60, so a font's high notes ring shorter.
+  final int key2VolEnvHoldTc;
+  final int key2VolEnvDecayTc;
+
+  /// The hold / decay time in seconds for MIDI [key], with the SF2 key-scaling
+  /// applied (each key above 60 shortens it by [key2VolEnvHoldTc]/[…DecayTc]).
+  double volEnvHoldSec(int key) =>
+      _tcSec(holdVolTc + key2VolEnvHoldTc * (60 - key));
+  double volEnvDecaySec(int key) =>
+      _tcSec(decayVolTc + key2VolEnvDecayTc * (60 - key));
 
   /// The cutoff modulation in cents for MIDI [vel] (0..1), summing this zone's
   /// velocity→filter modulators — or the SF2 default when it has none.
@@ -613,6 +640,11 @@ List<Sf2Preset> _parsePresets(
           iv((g) => g.releaseModEnv, -12000) + po((g) => g.releaseModEnv),
       sampleStartOffset:
           iv((g) => g.startOff, 0) + 32768 * iv((g) => g.startCoarse, 0),
+      loopStartOffset: iv((g) => g.loopStartOff, 0) + po((g) => g.loopStartOff),
+      loopEndOffset: iv((g) => g.loopEndOff, 0) + po((g) => g.loopEndOff),
+      key2VolEnvHoldTc: iv((g) => g.key2VolHold, 0) + po((g) => g.key2VolHold),
+      key2VolEnvDecayTc:
+          iv((g) => g.key2VolDecay, 0) + po((g) => g.key2VolDecay),
       // Velocity→filter modulators: the instrument zone's (or the instrument
       // global zone's) PLUS the preset's (they add — a drum kit's high-velocity
       // filter-open lives at the preset level). Empty → SF2 default at play time.
@@ -694,6 +726,7 @@ class _Gen {
   int? modEnvToPitch, modEnvToFilter;
   int? delayModEnv, attackModEnv, holdModEnv, decayModEnv, sustainModEnv;
   int? releaseModEnv, startOff, startCoarse;
+  int? loopStartOff, loopEndOff, key2VolHold, key2VolDecay;
   // velocity→filterFc modulators, flattened as [amount, dir, type, …] triples.
   List<int>? velFilterMods;
 }
@@ -775,6 +808,14 @@ _Gen _readGens(ByteData data, int genOff, int gStart, int gEnd, int genCount) {
         g.startOff = amt;
       case _genStartAddrsCoarseOffset:
         g.startCoarse = amt;
+      case _genStartLoopAddrsOffset:
+        g.loopStartOff = samt;
+      case _genEndLoopAddrsOffset:
+        g.loopEndOff = samt;
+      case _genKeynumToVolEnvHold:
+        g.key2VolHold = samt;
+      case _genKeynumToVolEnvDecay:
+        g.key2VolDecay = samt;
       case _genPan:
         g.pan = samt;
       case _genExclusiveClass:
