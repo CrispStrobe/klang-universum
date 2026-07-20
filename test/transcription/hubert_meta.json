@@ -1,0 +1,22 @@
+{
+  "n": 16000,
+  "sr": 16000,
+  "in_names": [
+    "source"
+  ],
+  "in_shapes": [
+    [
+      1,
+      1,
+      "sample_length"
+    ]
+  ],
+  "out_names": [
+    "embed"
+  ],
+  "emb_shape": [
+    1,
+    49,
+    256
+  ]
+}
