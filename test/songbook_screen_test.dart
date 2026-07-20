@@ -64,6 +64,11 @@ void main() {
 
   testWidgets('add-songs picker toggles membership; remove drops from book',
       (tester) async {
+    // Tall window: the picker now also lists the built-in songs, so the user's
+    // own songs sit lower down — make everything render.
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final songs = UserSongsService()
       ..addSong(
         const ImportedSong(id: 'a', title: 'Song A', musicXml: _xml),
@@ -81,11 +86,12 @@ void main() {
     // Empty book → the empty hint, no song tiles.
     expect(find.text('No songs yet — tap Add songs.'), findsOneWidget);
 
-    // Open the picker and tick both songs.
+    // Open the picker and tick both of the user's own songs (by title, since
+    // the built-in children's songs are listed above them now).
     await tester.tap(find.byIcon(Icons.playlist_add));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(CheckboxListTile).at(0));
-    await tester.tap(find.byType(CheckboxListTile).at(1));
+    await tester.tap(find.text('Song A'));
+    await tester.tap(find.text('Song B'));
     await tester.pumpAndSettle();
     expect(songs.songsInCollection('book').map((s) => s.id), ['a', 'b']);
 
@@ -100,6 +106,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(songs.songsInCollection('book').map((s) => s.id), ['b']);
     expect(songs.songs.map((s) => s.id), ['a', 'b']);
+  });
+
+  testWidgets('a built-in song can be added to a book (materialised)',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final songs = UserSongsService();
+    await songs.load(); // fresh: no imported songs at all
+    songs.createCollection('My Book', id: 'book');
+
+    await tester.pumpWidget(
+      _host(songs, const SongbookScreen(collectionId: 'book')),
+    );
+    await tester.pumpAndSettle();
+
+    // The picker opens even with an empty library (built-in songs are always
+    // offered) — the old "import something first" dead end is gone.
+    await tester.tap(find.byIcon(Icons.playlist_add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Twinkle, Twinkle, Little Star'));
+    await tester.pumpAndSettle();
+
+    // Ticking it materialises the built-in into the library (as builtin_<id>)
+    // and adds it to the book.
+    expect(
+      songs.songsInCollection('book').map((s) => s.id),
+      ['builtin_twinkle'],
+    );
+    expect(songs.songs.single.title, 'Twinkle, Twinkle, Little Star');
+    expect(songs.songs.single.musicXml, contains('score-partwise'));
   });
 
   testWidgets('deleting the book pops the screen', (tester) async {

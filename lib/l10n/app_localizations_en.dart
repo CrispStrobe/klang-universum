@@ -3325,6 +3325,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get songbookAddSongs => 'Add songs';
 
   @override
+  String get songbookBuiltinSongs => 'Children\'s songs';
+
+  @override
   String get songbookEmpty => 'No songs yet — tap Add songs.';
 
   @override

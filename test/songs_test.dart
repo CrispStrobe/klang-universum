@@ -177,6 +177,11 @@ void main() {
 
   testWidgets('song book lists all songs; song screen renders systems',
       (tester) async {
+    // A tall window so the whole (now longer) song list renders — the ListView
+    // is lazy, so off-screen titles wouldn't otherwise be built.
+    tester.view.physicalSize = const Size(1200, 3600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
     await tester.pumpWidget(_wrap(const SongListScreen(), sri));
     await tester.pump();
@@ -194,6 +199,10 @@ void main() {
   });
 
   testWidgets('tune quiz offers all song titles and records', (tester) async {
+    // Tall window so every option renders (see the song-book test above).
+    tester.view.physicalSize = const Size(1200, 3600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     final sri = SriService(getNow: () => DateTime(2026, 7, 11));
     await tester.pumpWidget(_wrap(const TuneQuizScreen(), sri));
     await tester.pump();

@@ -6302,6 +6302,12 @@ abstract class AppLocalizations {
   /// **'Add songs'**
   String get songbookAddSongs;
 
+  /// No description provided for @songbookBuiltinSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Children\'s songs'**
+  String get songbookBuiltinSongs;
+
   /// No description provided for @songbookEmpty.
   ///
   /// In en, this message translates to:

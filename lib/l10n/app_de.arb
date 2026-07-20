@@ -1194,6 +1194,7 @@
   "songbookRename": "Umbenennen",
   "songbookDelete": "Liederbuch löschen",
   "songbookAddSongs": "Lieder hinzufügen",
+  "songbookBuiltinSongs": "Kinderlieder",
   "songbookEmpty": "Noch keine Lieder — tippe auf „Lieder hinzufügen“.",
   "songbookNoImports": "Importiere oder komponiere zuerst ein Lied, dann füge es hier hinzu.",
   "songbookRemoveFromBook": "Aus dem Liederbuch entfernen",

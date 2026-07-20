@@ -3335,6 +3335,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get songbookAddSongs => 'Lieder hinzufügen';
 
   @override
+  String get songbookBuiltinSongs => 'Kinderlieder';
+
+  @override
   String get songbookEmpty =>
       'Noch keine Lieder — tippe auf „Lieder hinzufügen“.';
 

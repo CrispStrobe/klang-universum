@@ -6,9 +6,12 @@
 // library), added from a picker, and the book renamed or deleted. Tapping a
 // song opens it in the shared player.
 
+import 'package:comet_beat/features/games/songs/song_book.dart'
+    show Song, kSongs;
 import 'package:comet_beat/features/games/songs/song_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:crisp_notation/crisp_notation.dart' show scoreToMusicXml;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -129,20 +132,16 @@ class SongbookScreen extends StatelessWidget {
     }
   }
 
-  /// A checklist of every song in the library; ticking one adds it to the book,
-  /// unticking removes it. Changes apply immediately (the service is the source
-  /// of truth), so there is no separate confirm.
+  /// A checklist of songs to add to this book — the built-in children's songs
+  /// AND the user's own imported/composed/transcribed songs. Ticking a built-in
+  /// song first materialises it into the library (its DSL → MusicXML, under a
+  /// stable `builtin_<id>`) so a book can actually contain the nursery songs.
+  /// Changes apply immediately (the service is the source of truth).
   Future<void> _addSongs(
     BuildContext context,
     UserSongsService service,
   ) async {
     final l = AppLocalizations.of(context)!;
-    if (service.songs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.songbookNoImports)),
-      );
-      return;
-    }
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -153,28 +152,37 @@ class SongbookScreen extends StatelessWidget {
               final books = svc.collections.where((c) => c.id == collectionId);
               final inBook =
                   books.isEmpty ? <String>{} : books.first.songIds.toSet();
+              // The user's OWN songs (exclude materialised built-ins so they
+              // aren't listed twice).
+              final imported =
+                  svc.songs.where((s) => !s.id.startsWith('builtin_')).toList();
               return ListView(
                 shrinkWrap: true,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      l.songbookAddSongs,
-                      style: Theme.of(ctx).textTheme.titleMedium,
-                    ),
-                  ),
-                  for (final song in svc.songs)
+                  _sheetHeader(ctx, l.songbookAddSongs),
+                  _sectionLabel(ctx, l.songbookBuiltinSongs),
+                  for (final song in kSongs)
                     CheckboxListTile(
-                      value: inBook.contains(song.id),
+                      value: inBook.contains('builtin_${song.id}'),
                       title: Text(song.title),
-                      onChanged: (checked) {
-                        if (checked ?? false) {
-                          svc.addSongToCollection(collectionId, song.id);
-                        } else {
-                          svc.removeSongFromCollection(collectionId, song.id);
-                        }
-                      },
+                      onChanged: (checked) =>
+                          _toggleBuiltin(svc, song, checked ?? false),
                     ),
+                  if (imported.isNotEmpty) ...[
+                    _sectionLabel(ctx, l.importedSongs),
+                    for (final song in imported)
+                      CheckboxListTile(
+                        value: inBook.contains(song.id),
+                        title: Text(song.title),
+                        onChanged: (checked) {
+                          if (checked ?? false) {
+                            svc.addSongToCollection(collectionId, song.id);
+                          } else {
+                            svc.removeSongFromCollection(collectionId, song.id);
+                          }
+                        },
+                      ),
+                  ],
                 ],
               );
             },
@@ -183,6 +191,41 @@ class SongbookScreen extends StatelessWidget {
       },
     );
   }
+
+  /// Add/remove a built-in song to this book, materialising it into the library
+  /// on first add (idempotent — the `builtin_<id>` copy is reused thereafter).
+  void _toggleBuiltin(UserSongsService svc, Song song, bool checked) {
+    final id = 'builtin_${song.id}';
+    if (checked) {
+      if (!svc.songs.any((s) => s.id == id)) {
+        svc.addSong(
+          ImportedSong(
+            id: id,
+            title: song.title,
+            musicXml: scoreToMusicXml(song.score, partName: song.title),
+          ),
+        );
+      }
+      svc.addSongToCollection(collectionId, id);
+    } else {
+      svc.removeSongFromCollection(collectionId, id);
+    }
+  }
+
+  Widget _sheetHeader(BuildContext ctx, String text) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(text, style: Theme.of(ctx).textTheme.titleMedium),
+      );
+
+  Widget _sectionLabel(BuildContext ctx, String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Text(
+          text,
+          style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                color: Theme.of(ctx).colorScheme.primary,
+              ),
+        ),
+      );
 }
 
 /// Shared name dialog for creating/renaming a songbook. Returns the trimmed

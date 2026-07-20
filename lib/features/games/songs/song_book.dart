@@ -92,4 +92,44 @@ const kSongs = <Song>[
     dsl: 'g4:q g4 g4 d4 | e4 e4 d4:h | b4:q b4 a4 a4 | g4:w',
     lyrics: 'Old Mac- Don- ald had a farm, E- I- E- I- O.',
   ),
+  Song(
+    id: 'bruder_jakob',
+    title: 'Bruder Jakob',
+    dsl: 'c4:q d4 e4 c4 | c4 d4 e4 c4 | e4 f4 g4:h | e4:q f4 g4:h | '
+        'g4:e a4 g4 f4 e4:q c4 | g4:e a4 g4 f4 e4:q c4 | '
+        'c4:q g3 c4:h | c4:q g3 c4:h',
+    lyrics: 'Bru- der Ja- kob, Bru- der Ja- kob, schläfst du noch, '
+        'schläfst du noch, hörst du nicht die Glo- cken, '
+        'hörst du nicht die Glo- cken, ding dang dong, ding dang dong.',
+  ),
+  Song(
+    id: 'ode_to_joy',
+    title: 'Ode an die Freude',
+    dsl: 'e4:q e4 f4 g4 | g4 f4 e4 d4 | c4 c4 d4 e4 | e4 d4 d4:h',
+    lyrics: 'Freu- de, schö- ner Göt- ter- fun- ken, '
+        'Toch- ter aus E- ly- si- um.',
+  ),
+  Song(
+    id: 'jingle_bells',
+    title: 'Jingle Bells',
+    dsl: 'e4:q e4 e4:h | e4:q e4 e4:h | e4:q g4 c4 d4 | e4:w',
+    lyrics: 'Jin- gle bells, jin- gle bells, jin- gle all the way,',
+  ),
+  Song(
+    id: 'london_bridge',
+    title: 'London Bridge Is Falling Down',
+    dsl: 'g4:q a4 g4 f4 | e4:q f4 g4:h | d4:q e4 f4:h | e4:q f4 g4:h | '
+        'g4:q a4 g4 f4 | e4:q f4 g4:h | d4:q g4 e4 c4',
+    lyrics: 'Lon- don Bridge is fall- ing down, fall- ing down, '
+        'fall- ing down, Lon- don Bridge is fall- ing down, '
+        'my fair la- dy.',
+  ),
+  Song(
+    id: 'hot_cross_buns',
+    title: 'Hot Cross Buns',
+    dsl: 'e4:q d4 c4:h | e4:q d4 c4:h | c4:e c4 c4 c4 d4 d4 d4 d4 | '
+        'e4:q d4 c4:h',
+    lyrics: 'Hot cross buns, hot cross buns, one a pen- ny, '
+        'two a pen- ny, hot cross buns.',
+  ),
 ];

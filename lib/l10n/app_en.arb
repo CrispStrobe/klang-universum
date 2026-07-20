@@ -1274,6 +1274,7 @@
   "songbookRename": "Rename",
   "songbookDelete": "Delete songbook",
   "songbookAddSongs": "Add songs",
+  "songbookBuiltinSongs": "Children's songs",
   "songbookEmpty": "No songs yet — tap Add songs.",
   "songbookNoImports": "Import or compose a song first, then add it here.",
   "songbookRemoveFromBook": "Remove from songbook",
