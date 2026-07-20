@@ -391,7 +391,9 @@ void _renderZone(
   final semisFixed = (n.key - root + zone.coarseTune) +
       (zone.fineTune + sample.pitchCorrection) / 100.0;
 
-  final loop = sample.loops && !n.isDrum;
+  // Loop only when the zone's sampleModes (gen 54) enables it (and the sample
+  // has a loop region, and it isn't a one-shot drum).
+  final loop = zone.loopEnabled && sample.loops && !n.isDrum;
   final loopStart = sample.loopStart.toDouble();
   final loopEnd = sample.loopEnd.toDouble();
 
@@ -495,12 +497,19 @@ void _renderZone(
     final ratio = baseRatio *
         math.pow(2, (semisFixed + bend + pitchMod) / 12.0).toDouble();
 
-    // Linear-interpolated sample read.
-    final i0 = phase.floor();
-    final frac = phase - i0;
-    final s0 = i0 < len ? pcm[i0] : 0.0;
-    final s1 = i0 + 1 < len ? pcm[i0 + 1] : s0;
-    var v = s0 + (s1 - s0) * frac;
+    // Cubic (Catmull-Rom) sample read — less aliasing than linear on upward
+    // pitch shifts.
+    final i1 = phase.floor();
+    final t = phase - i1;
+    final p0 = pcm[i1 > 0 ? i1 - 1 : 0];
+    final p1 = i1 < len ? pcm[i1] : 0.0;
+    final p2 = i1 + 1 < len ? pcm[i1 + 1] : p1;
+    final p3 = i1 + 2 < len ? pcm[i1 + 2] : p2;
+    var v = 0.5 *
+        (2 * p1 +
+            (-p0 + p2) * t +
+            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
+            (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
 
     // Amplitude envelope: the SF2 DAHDSR up to note-off, then an exponential
     // release from the note-off level.
@@ -528,9 +537,11 @@ void _renderZone(
     left[outIdx] += v * lg;
     right[outIdx] += v * rg;
 
-    // Advance the read head, wrapping the loop for sustain.
+    // Advance the read head, wrapping the loop for sustain. Loop-until-release
+    // (mode 3) stops wrapping after note-off so the tail plays to the end.
     phase += ratio;
-    if (loop && phase >= loopEnd && loopEnd > loopStart) {
+    final wrapping = loop && (!zone.loopUntilRelease || i < durSamples);
+    if (wrapping && phase >= loopEnd && loopEnd > loopStart) {
       phase = loopStart + (phase - loopEnd);
     }
   }

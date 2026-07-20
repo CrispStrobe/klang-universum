@@ -53,6 +53,7 @@ const _genInitialFilterFc = 8; // low-pass cutoff, absolute cents
 const _genInitialFilterQ = 9; // resonance, centibels
 const _genPan = 17; // 0.1% units, −500 (left) .. +500 (right)
 const _genExclusiveClass = 57; // same-class notes cut each other off
+const _genSampleModes = 54; // 0 none · 1 loop · 3 loop until release
 // LFO generators. modLFO can sweep pitch (gen 5) and volume (gen 13); vibLFO
 // sweeps pitch (gen 6). Delays are timecents; freqs are absolute cents.
 const _genModLfoToPitch = 5; // cents
@@ -132,6 +133,7 @@ class Sf2Zone {
     this.freqVibLfoCents = 0,
     this.panTenthPct = 0,
     this.exclusiveClass = 0,
+    this.sampleModes = 0,
   });
 
   final int keyLo;
@@ -195,6 +197,12 @@ class Sf2Zone {
   /// Exclusive class (gen 57): a new note of the same class on the same channel
   /// cuts off any still-sounding one (open vs closed hi-hat). 0 = none.
   final int exclusiveClass;
+
+  /// sampleModes (gen 54): 0 = no loop, 1 = loop, 3 = loop until note-off then
+  /// play to the sample end. (2 is reserved → treated as no loop.)
+  final int sampleModes;
+  bool get loopEnabled => sampleModes == 1 || sampleModes == 3;
+  bool get loopUntilRelease => sampleModes == 3;
 
   /// velRange (gen 44): the MIDI velocity window this zone (sample layer) covers,
   /// so a soft vs loud note picks a different recording. Default 0..127 (the
@@ -434,7 +442,8 @@ List<Sf2Preset> _parsePresets(
           delayVibLfo = -12000,
           freqVibLfo = 0,
           panTenth = 0,
-          exclusiveClass = 0;
+          exclusiveClass = 0,
+          sampleModes = 0;
       int? sampleId, rootOverride;
       for (var g = gStart; g < gEnd; g++) {
         final oper = u16(igenOff + g * 4);
@@ -491,6 +500,8 @@ List<Sf2Preset> _parsePresets(
           panTenth = samt; // 0.1% units (signed)
         } else if (oper == _genExclusiveClass) {
           exclusiveClass = amt;
+        } else if (oper == _genSampleModes) {
+          sampleModes = amt;
         }
       }
       if (sampleId != null && sampleId >= 0 && sampleId < sampleCount) {
@@ -524,6 +535,7 @@ List<Sf2Preset> _parsePresets(
             freqVibLfoCents: freqVibLfo,
             panTenthPct: panTenth,
             exclusiveClass: exclusiveClass,
+            sampleModes: sampleModes,
           ),
         );
       }

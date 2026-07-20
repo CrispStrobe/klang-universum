@@ -115,4 +115,27 @@ void main() {
     );
     expect(hat.exclusiveClass, 1);
   });
+
+  test('sampleModes (gen 54): loop / loop-until-release flags', () {
+    const none = Sf2Zone(keyLo: 0, keyHi: 127, sampleIndex: 0, rootKey: 60);
+    expect(none.loopEnabled, isFalse);
+    const loop = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      sampleModes: 1,
+    );
+    expect(loop.loopEnabled, isTrue);
+    expect(loop.loopUntilRelease, isFalse);
+    const untilRel = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      sampleModes: 3,
+    );
+    expect(untilRel.loopEnabled, isTrue);
+    expect(untilRel.loopUntilRelease, isTrue);
+  });
 }
