@@ -40,6 +40,28 @@ void main() {
     expect(_midis(back), [60, 62, 64, 65]);
   });
 
+  test('arranging keeps frets up to 24 (never loses what fretFor would keep)',
+      () {
+    // Regression: arrangeTab's default maxFret (20) is stricter than fretFor's
+    // (24), so a high note reachable only at fret 21–24 was dropped when arranged
+    // but kept with --no-arrange. gpFretPlanFor now uses 24.
+    final s = Score.simple(
+      timeSignature: TimeSignature.fourFour,
+      notes: 'd6:q', // midi 86 → fret 22 on the high-E string
+    );
+    expect(gpFretPlanFor(s, guitar)['e0'], isNotEmpty); // placed, not dropped
+    expect(unreachableCount(s, guitar), 0);
+  });
+
+  test('a genuinely unreachable note is counted and left to fretFor', () {
+    final s = Score.simple(
+      timeSignature: TimeSignature.fourFour,
+      notes: 'a6:q', // midi 93 → 29 frets up the high-E string, off the board
+    );
+    expect(unreachableCount(s, guitar), 1);
+    expect(gpFretPlanFor(s, guitar), isEmpty); // no pin → the writer drops it
+  });
+
   test('a capo keeps the sounding pitches (absolute frets stay correct)', () {
     final score = Score.simple(
       timeSignature: TimeSignature.fourFour,

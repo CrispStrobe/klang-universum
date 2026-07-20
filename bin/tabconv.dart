@@ -23,7 +23,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:comet_beat/features/games/composition/tab_gp_plan.dart'
-    show gpFretPlanFor;
+    show gpFretPlanFor, unreachableCount;
 import 'package:comet_beat/features/games/songs/import/jams.dart'
     show jamsToMidi;
 import 'package:crisp_notation_core/crisp_notation_core.dart';
@@ -64,6 +64,16 @@ void main(List<String> args) {
   final plans = arrange
       ? [for (final p in parts) gpFretPlanFor(p, tuning, capo: capo)]
       : null;
+
+  // Warn if the chosen instrument physically can't reach some notes (e.g. a
+  // guitar melody forced onto a 4-string bass) — those become rests.
+  final dropped = [
+    for (final p in parts) unreachableCount(p, tuning, capo: capo),
+  ].fold(0, (a, b) => a + b);
+  if (dropped > 0) {
+    stderr.writeln('warning: $dropped note(s) out of reach on $tuningName'
+        '${capo > 0 ? ' (capo $capo)' : ''} — dropped');
+  }
 
   final String gpif;
   if (parts.length == 1) {
