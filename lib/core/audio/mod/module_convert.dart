@@ -609,6 +609,27 @@ ModModule docToMod(ModuleDoc doc) {
       }
       rows.add(cells);
     }
+    // A source pattern shorter than MOD's fixed 64 rows would otherwise play
+    // through all 64 — padding a short loop with 48 silent rows. Emit a Dxx
+    // pattern break on the last real row (in a free effect slot) so playback
+    // advances at the intended length and the loop stays its authored size.
+    final srcRows = dp.rows.length;
+    if (srcRows > 0 && srcRows < 64) {
+      final breakRow = rows[srcRows - 1];
+      for (var ch = 0; ch < 4; ch++) {
+        final o = breakRow[ch];
+        // Use only a fully-empty cell so the break never overwrites a note or
+        // an authored effect (there are 4 channels; a short loop's last row
+        // almost always has a free one).
+        if (o.period == 0 && o.effect == 0 && o.effectParam == 0) {
+          breakRow[ch] = ModCell(
+            sample: o.sample,
+            effect: 0xD, // Dxx pattern break
+          );
+          break;
+        }
+      }
+    }
     patterns.add(ModPattern(rows));
   }
 
@@ -778,6 +799,21 @@ S3mModule docToS3m(ModuleDoc doc) {
         }
       }
       rows.add(cells);
+    }
+    // writeS3m pads a short pattern to S3M's fixed 64 rows; without a break a
+    // short loop would then play 64 rows. Emit a `C` pattern break (command 3)
+    // on the last real row (a free command slot) so it advances at its authored
+    // length, matching the MOD path.
+    if (rows.isNotEmpty && rows.length < 64) {
+      final breakRow = rows.last;
+      for (var ch = 0; ch < breakRow.length; ch++) {
+        final o = breakRow[ch];
+        // Only a fully-empty cell, so the break never clobbers a note/effect.
+        if (o.note == S3mCell.emptyNote && o.command == 0 && o.info == 0) {
+          breakRow[ch] = const S3mCell(command: 3); // C — pattern break
+          break;
+        }
+      }
     }
     patterns.add(S3mPattern(rows));
   }
