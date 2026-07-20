@@ -431,6 +431,26 @@ void main() {
     expect(p.bars, 4);
   });
 
+  testWidgets('export gates on having a mix; the exported mix carries sound',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    expect(p.canExport, isFalse); // nothing to export yet
+
+    p.addSeed('beat');
+    await tester.pump();
+    expect(p.canExport, isTrue);
+    // The export content carries sound.
+    expect(_peak(p.debugMix().toList()), greaterThan(0.0));
+
+    // Muting the only layer leaves nothing to export.
+    p.toggleMute(0);
+    await tester.pump();
+    expect(p.canExport, isFalse);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

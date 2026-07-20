@@ -36,6 +36,8 @@ import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart'
     show showMySamplesSheet;
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart'
+    show showAudioExportSheet;
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -132,6 +134,9 @@ abstract class PerformTester {
   /// Bounce (S5): build clips to hand off to the arranger's "My Samples"
   /// library — the whole loop as one clip, or one clip per active layer.
   List<SampleClip> debugBounce(String base, {bool perLayer});
+
+  /// Export/share (Q2): true when there's a mix worth saving to a file.
+  bool get canExport;
 
   /// The current summed mix (active layers) — for tests.
   Float64List debugMix();
@@ -823,6 +828,21 @@ class _PerformScreenState extends State<PerformScreen>
     );
   }
 
+  // ── Export / share the jam as a file (Q2) ─────────────────────────────────
+  @override
+  bool get canExport => _stack.activeLayers.isNotEmpty;
+
+  Future<void> _export() async {
+    final l10n = AppLocalizations.of(context)!;
+    final mix = renderLoopStack(_activePcm, loopSamples: _loopSamples);
+    if (mix.isEmpty) return;
+    await showAudioExportSheet(
+      context,
+      pcm: mix,
+      baseName: l10n.performBounceName,
+    );
+  }
+
   /// Pick a sound from "My Samples" to play as the keyboard voice (resampled to
   /// the loop rate + auto-tuned by [setSampleVoice]).
   Future<void> _pickVoice() async {
@@ -1032,6 +1052,11 @@ class _PerformScreenState extends State<PerformScreen>
             tooltip: _playing ? l10n.performStop : l10n.performPlay,
             onPressed:
                 _stack.activeLayers.isEmpty ? null : (_playing ? stop : play),
+          ),
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            tooltip: l10n.performExport,
+            onPressed: canExport ? _export : null,
           ),
           PopupMenuButton<bool>(
             icon: const Icon(Icons.drive_file_move_outline),

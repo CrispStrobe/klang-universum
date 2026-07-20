@@ -784,6 +784,7 @@
   "performCancel": "Abbrechen",
   "performMute": "Ebene stumm",
   "performUnmute": "Ebene laut",
+  "performExport": "Exportieren / teilen",
   "performBounce": "An Arranger senden",
   "performBounceMix": "Ganze Schleife als ein Clip",
   "performBounceLayers": "Jede Ebene als Clip",

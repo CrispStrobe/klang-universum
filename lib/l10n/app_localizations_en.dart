@@ -2131,6 +2131,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performUnmute => 'Unmute layer';
 
   @override
+  String get performExport => 'Export / share';
+
+  @override
   String get performBounce => 'Send to arranger';
 
   @override

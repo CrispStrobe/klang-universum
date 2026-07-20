@@ -4016,6 +4016,12 @@ abstract class AppLocalizations {
   /// **'Unmute layer'**
   String get performUnmute;
 
+  /// No description provided for @performExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export / share'**
+  String get performExport;
+
   /// No description provided for @performBounce.
   ///
   /// In en, this message translates to:
