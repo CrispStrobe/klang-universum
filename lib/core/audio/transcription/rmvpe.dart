@@ -37,31 +37,71 @@ PitchTrack rmvpeF0(
   int sampleRate = 44100,
   double thred = 0.03,
 }) {
+  final p = _prepMel(mono, mel, sampleRate);
+  if (p == null) return const [];
+  final out = model.run(
+    {
+      _inName: Tensor.float(p.input, [1, mel.nMels, p.pf]),
+    },
+    const [_outName],
+  )[_outName]!;
+  return _decodeSalience(out.f ?? out.asFloatList(), p.nFrames, mel, thred);
+}
+
+/// Isolate-pool variant of [rmvpeF0]: identical mel / pad / decode, but
+/// inference goes through [OnnxModel.runAsync] so a [OnnxModel.parallelize]d
+/// model runs its Conv on the worker pool. RMVPE is ~80% Conv, so this is the
+/// speed lever (~1.7× measured); output stays bitwise identical. Selected by the
+/// store's env-gated `estimator()`.
+Future<PitchTrack> rmvpeF0Async(
+  Float64List mono, {
+  required OnnxModel model,
+  required RmvpeMel mel,
+  int sampleRate = 44100,
+  double thred = 0.03,
+}) async {
+  final p = _prepMel(mono, mel, sampleRate);
+  if (p == null) return const [];
+  final out = await model.runAsync(
+    {
+      _inName: Tensor.float(p.input, [1, mel.nMels, p.pf]),
+    },
+    const [_outName],
+  );
+  final sal = out[_outName]!.f ?? out[_outName]!.asFloatList();
+  return _decodeSalience(sal, p.nFrames, mel, thred);
+}
+
+/// Resample→16 kHz, log-mel, and frame-pad to a multiple of 32 (the U-Net
+/// downsamples by 2^5). Returns the model input `[1, nMels, pf]` flattened plus
+/// the true `nFrames`; null when the audio is empty.
+({Float32List input, int nFrames, int pf})? _prepMel(
+  Float64List mono,
+  RmvpeMel mel,
+  int sampleRate,
+) {
   final audio = sampleRate == rmvpeSampleRate
       ? mono
       : resampleLinear(mono, sampleRate / rmvpeSampleRate);
-  if (audio.isEmpty) return const [];
-
+  if (audio.isEmpty) return null;
   final (logMel, nFrames) = rmvpeLogMel(mel, audio);
   final nMels = mel.nMels;
-
-  // Pad frames to a multiple of 32 (the U-Net downsamples by 2^5) so the model
-  // preserves the frame count; crop back after.
   final nPad = 32 * ((nFrames - 1) ~/ 32 + 1) - nFrames;
   final pf = nFrames + nPad;
   final input = Float32List(nMels * pf); // frame-padded with 0 (log-mel space)
   for (var m = 0; m < nMels; m++) {
     input.setRange(m * pf, m * pf + nFrames, logMel, m * nFrames);
   }
+  return (input: input, nFrames: nFrames, pf: pf);
+}
 
-  final out = model.run(
-    {
-      _inName: Tensor.float(input, [1, nMels, pf]),
-    },
-    const [_outName],
-  )[_outName]!;
-  final sal = out.f ?? out.asFloatList(); // [1, pf, 360]
-
+/// Decode a `[1, pf, 360]` salience matrix's first [nFrames] rows to a track.
+PitchTrack _decodeSalience(
+  Float32List sal,
+  int nFrames,
+  RmvpeMel mel,
+  double thred,
+) {
   final track = <PitchFrame>[];
   for (var t = 0; t < nFrames; t++) {
     final (hz, voiced) = _decodeFrame(sal, t * _nBins, thred);

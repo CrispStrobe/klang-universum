@@ -119,6 +119,14 @@ class CrepeModelStore {
 ///                                            the engine warns activation copying
 ///                                            may cancel the gain — measure)
 ///   COMET_CREPE_BATCH     int, default 512 — frames per inference batch
+/// A sensible default isolate-pool worker count for offline neural inference —
+/// CPU cores minus a couple (the UI isolate + headroom), capped at 6, and 0 on
+/// ≤2-core devices (where the pool's setup cost outweighs the gain).
+int autoPoolWorkers() {
+  final n = Platform.numberOfProcessors - 2;
+  return n < 0 ? 0 : (n > 6 ? 6 : n);
+}
+
 class CrepeRunConfig {
   const CrepeRunConfig({
     this.workers = 0,
@@ -143,7 +151,10 @@ class CrepeRunConfig {
     }
 
     return CrepeRunConfig(
-      workers: pInt('COMET_CREPE_WORKERS', 0),
+      // Default the isolate pool ON — measured ~2.6× (0.6×→1.7× realtime) on
+      // this Conv-heavy model, bitwise-identical output. `COMET_CREPE_WORKERS=0`
+      // disables it. Auto count leaves headroom for the UI isolate + small cores.
+      workers: pInt('COMET_CREPE_WORKERS', autoPoolWorkers()),
       poolConv: pBool('COMET_CREPE_POOLCONV', true),
       batchFrames: pInt('COMET_CREPE_BATCH', 512),
     );

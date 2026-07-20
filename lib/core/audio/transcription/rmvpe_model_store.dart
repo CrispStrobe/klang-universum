@@ -9,6 +9,8 @@ library;
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart'
+    show autoPoolWorkers;
 import 'package:comet_beat/core/audio/transcription/rmvpe.dart';
 import 'package:comet_beat/core/audio/transcription/rmvpe_mel.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart'
@@ -88,11 +90,24 @@ class RmvpeModelStore {
     return _cached = (model: model, mel: mel);
   }
 
-  /// Builds an [F0Estimator] backed by RMVPE for `transcribeAuto(f0: ...)` —
-  /// a heavier, more robust alternative to CREPE. Loads (and memoises) the
-  /// bundle. Native-only; the app wires this behind `!kIsWeb`.
+  /// Builds an [F0Estimator] backed by RMVPE for `transcribeAuto(f0: ...)` — a
+  /// heavier, more robust alternative to CREPE. Sets up the isolate pool by
+  /// default (RMVPE is ~80% Conv → ~1.7× faster, bitwise-identical output);
+  /// `COMET_RMVPE_WORKERS=0` disables it. Native-only; wire behind `!kIsWeb`.
   Future<F0Estimator> estimator() async {
     final b = await load();
+    final workers =
+        int.tryParse(Platform.environment['COMET_RMVPE_WORKERS'] ?? '') ??
+            autoPoolWorkers();
+    if (workers > 0) {
+      await b.model.parallelize(workers: workers, poolConv: true);
+      return (Float64List mono, int sampleRate) => rmvpeF0Async(
+            mono,
+            model: b.model,
+            mel: b.mel,
+            sampleRate: sampleRate,
+          );
+    }
     return (Float64List mono, int sampleRate) =>
         rmvpeF0(mono, model: b.model, mel: b.mel, sampleRate: sampleRate);
   }

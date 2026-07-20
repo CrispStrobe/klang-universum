@@ -29,12 +29,17 @@ Future<OnnxModel?> _tryModel() async {
 
 void main() {
   group('CrepeRunConfig.fromEnv (deterministic, no model)', () {
-    test('defaults to the single-threaded path', () {
+    test('defaults to the isolate pool (auto worker count)', () {
       final c = CrepeRunConfig.fromEnv(const {});
-      expect(c.workers, 0);
-      expect(c.parallel, isFalse);
+      expect(c.workers, autoPoolWorkers()); // pool on by default
       expect(c.poolConv, isTrue);
       expect(c.batchFrames, 512);
+    });
+
+    test('COMET_CREPE_WORKERS=0 disables the pool', () {
+      final c = CrepeRunConfig.fromEnv(const {'COMET_CREPE_WORKERS': '0'});
+      expect(c.workers, 0);
+      expect(c.parallel, isFalse);
     });
 
     test('parses workers / poolConv / batch and flips to parallel', () {
@@ -51,7 +56,7 @@ void main() {
 
     test('bad values fall back to defaults', () {
       final c = CrepeRunConfig.fromEnv(const {'COMET_CREPE_WORKERS': 'nope'});
-      expect(c.workers, 0);
+      expect(c.workers, autoPoolWorkers());
     });
   });
 

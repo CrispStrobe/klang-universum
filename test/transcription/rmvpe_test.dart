@@ -69,6 +69,22 @@ void main() {
         // ignore: avoid_print
         print('RMVPE median F0 (220 Hz tone): $median');
         expect(median, closeTo(220, 6));
+
+        // The isolate-pool path (the shipped default) must be identical to sync.
+        await bundle.model.parallelize(workers: 2, poolConv: true);
+        final pooled = await rmvpeF0Async(
+          y,
+          model: bundle.model,
+          mel: bundle.mel,
+          sampleRate: sr,
+        );
+        bundle.model.dispose();
+        expect(pooled.length, track.length);
+        var maxDf = 0.0;
+        for (var i = 0; i < track.length; i++) {
+          maxDf = max(maxDf, (pooled[i].f0Hz - track[i].f0Hz).abs());
+        }
+        expect(maxDf, lessThan(1e-6), reason: 'pooled vs sync F0 drift');
       },
       timeout: const Timeout(Duration(minutes: 5)),
     );
