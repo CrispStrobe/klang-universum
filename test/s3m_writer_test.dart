@@ -14,6 +14,11 @@ import 'package:comet_beat/core/audio/mod/s3m_reader.dart';
 import 'package:comet_beat/core/audio/mod/s3m_writer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Signed 8-bit samples as normalized float (÷128) — the S3mSample.pcm model.
+/// ×128 on write inverts this, so the bytes round-trip exactly.
+Float64List _i8(List<int> v) =>
+    Float64List.fromList([for (final b in v) b / 128]);
+
 void main() {
   test('output has the "SCRM" signature at 0x2C', () {
     final m0 = parseS3m(File('test/fixtures/golden.s3m').readAsBytesSync());
@@ -80,7 +85,7 @@ void main() {
           S3mSample(
             name: 'lead',
             volume: 60,
-            pcm: Int8List.fromList([0, 40, -40, 80]),
+            pcm: _i8([0, 40, -40, 80]),
           ),
           S3mSample(
             name: 'bass',
@@ -88,7 +93,7 @@ void main() {
             c2spd: 4000,
             loop: true,
             loopEnd: 4,
-            pcm: Int8List.fromList([10, 20, 30, -10, -20]),
+            pcm: _i8([10, 20, 30, -10, -20]),
           ),
         ],
         patterns: [S3mPattern(rows)],
@@ -122,12 +127,12 @@ void main() {
       final lead = m1.samples[0], bass = m1.samples[1];
       expect(lead.name, 'lead');
       expect(lead.volume, 60);
-      expect(lead.pcm, Int8List.fromList([0, 40, -40, 80]));
+      expect(lead.pcm, _i8([0, 40, -40, 80]));
       expect(bass.name, 'bass');
       expect(bass.c2spd, 4000);
       expect(bass.loop, isTrue);
       expect(bass.loopEnd, 4);
-      expect(bass.pcm, Int8List.fromList([10, 20, 30, -10, -20]));
+      expect(bass.pcm, _i8([10, 20, 30, -10, -20]));
     });
   });
 }

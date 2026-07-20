@@ -176,7 +176,8 @@ Uint8List writeS3m(S3mModule module) {
     u8(sample.volume); // 0x1C
     u8(0); // 0x1D
     u8(0); // 0x1E pack
-    u8(sample.loop ? 1 : 0); // 0x1F flags
+    // 0x1F flags: bit0 loop, bit2 16-bit sample.
+    u8((sample.loop ? 0x01 : 0) | (sample.sixteenBit ? 0x04 : 0));
     u32(sample.c2spd); // 0x20 C2 speed
     // 0x24..0x2F reserved (12 bytes).
     for (var i = 0x24; i < 0x30; i++) {
@@ -189,8 +190,20 @@ Uint8List writeS3m(S3mModule module) {
       align16();
       final pcmOff = len();
       insMemsegs[s] = pcmOff ~/ 16;
-      for (var i = 0; i < pcmLen; i++) {
-        u8(sample.pcm[i] & 0xFF); // signed byte written as-is
+      // Quantize the normalized float PCM back to signed 8- or 16-bit (×128 /
+      // ×32768 inverts the reader's /128 / /32768, so a parsed sample round-trips
+      // byte-exactly). 16-bit is a signed LE word each.
+      if (sample.sixteenBit) {
+        for (var i = 0; i < pcmLen; i++) {
+          final q = (sample.pcm[i] * 32768).round().clamp(-32768, 32767);
+          u8(q & 0xFF);
+          u8((q >> 8) & 0xFF);
+        }
+      } else {
+        for (var i = 0; i < pcmLen; i++) {
+          final q = (sample.pcm[i] * 128).round().clamp(-128, 127);
+          u8(q & 0xFF);
+        }
       }
     }
   }

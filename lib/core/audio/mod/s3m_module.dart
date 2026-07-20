@@ -65,10 +65,11 @@ class S3mSample {
     this.loopStart = 0,
     this.loopEnd = 0,
     this.loop = false,
+    this.sixteenBit = false,
     required this.pcm,
   });
 
-  factory S3mSample.empty() => S3mSample(pcm: Int8List(0));
+  factory S3mSample.empty() => S3mSample(pcm: Float64List(0));
 
   final String name;
   final int volume;
@@ -76,8 +77,13 @@ class S3mSample {
   final int loopStart, loopEnd;
   final bool loop;
 
-  /// Signed 8-bit PCM (unsigned source is converted on read).
-  final Int8List pcm;
+  /// Store the sample at 16-bit depth (S3M flag 0x04) instead of the classic
+  /// 8-bit. Default false = byte-identical 8-bit export.
+  final bool sixteenBit;
+
+  /// Normalized PCM in [-1, 1] (8- or 16-bit source is normalized on read;
+  /// unified with [XmSample]/[ItSample]).
+  final Float64List pcm;
 
   bool get isEmpty => pcm.isEmpty;
 }

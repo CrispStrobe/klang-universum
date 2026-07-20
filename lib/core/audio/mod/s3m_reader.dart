@@ -140,27 +140,33 @@ S3mSample _readInstrument(
   final volume = bytes[base + 0x1C];
   final flags = bytes[base + 0x1F];
   final loop = (flags & 0x01) != 0;
+  final sixteenBit = (flags & 0x04) != 0;
+  final unsigned = sampleFormat == 2;
   final c2spd = data.getUint32(base + 0x20, Endian.little);
   final name = _readAsciiz(bytes, base + 0x30, 28);
 
-  // PCM window — robust to truncation: clamp to what's actually present.
+  // PCM window — robust to truncation: clamp to what's actually present. [length]
+  // is in SAMPLES; a 16-bit sample is 2 bytes each. Normalize to [-1, 1] float
+  // (unified with the XM/IT readers): 8-bit /128, 16-bit /32768.
+  final bytesPerSample = sixteenBit ? 2 : 1;
   var available = length;
   if (pcmOffset < 0 || pcmOffset >= bytes.length) {
     available = 0;
-  } else if (pcmOffset + available > bytes.length) {
-    available = bytes.length - pcmOffset;
+  } else if (pcmOffset + available * bytesPerSample > bytes.length) {
+    available = (bytes.length - pcmOffset) ~/ bytesPerSample;
   }
-  final pcm = Int8List(available);
-  if (sampleFormat == 2) {
-    // Unsigned PCM → signed via (b - 128).
-    for (var i = 0; i < available; i++) {
-      pcm[i] = bytes[pcmOffset + i] - 128;
-    }
-  } else {
-    // Signed PCM passes straight through.
-    for (var i = 0; i < available; i++) {
+  final pcm = Float64List(available);
+  for (var i = 0; i < available; i++) {
+    if (sixteenBit) {
+      final lo = bytes[pcmOffset + i * 2];
+      final hi = bytes[pcmOffset + i * 2 + 1];
+      final w = lo | (hi << 8);
+      final s = unsigned ? w - 32768 : (w >= 32768 ? w - 65536 : w);
+      pcm[i] = s / 32768.0;
+    } else {
       final b = bytes[pcmOffset + i];
-      pcm[i] = b >= 128 ? b - 256 : b;
+      final s = unsigned ? b - 128 : (b >= 128 ? b - 256 : b);
+      pcm[i] = s / 128.0;
     }
   }
 
@@ -171,6 +177,7 @@ S3mSample _readInstrument(
     loopStart: loopBegin,
     loopEnd: loopEnd,
     loop: loop,
+    sixteenBit: sixteenBit,
     pcm: pcm,
   );
 }

@@ -270,10 +270,10 @@ Float64List _sineF() {
   return s;
 }
 
-Int8List _sine() {
-  final s = Int8List(512);
+Float64List _sine() {
+  final s = Float64List(512);
   for (var i = 0; i < s.length; i++) {
-    s[i] = (100 * sin(2 * pi * 4 * i / s.length)).round();
+    s[i] = (100 / 128) * sin(2 * pi * 4 * i / s.length);
   }
   return s;
 }

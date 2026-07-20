@@ -39,10 +39,10 @@ void main() {
       expect(s.volume, 48);
       expect(s.c2spd, 8363);
       expect(s.pcm.length, 8);
-      // Unsigned [128,160,200,255,128,96,40,0] → signed (b-128).
-      expect(s.pcm[0], 0);
-      expect(s.pcm[3], 127);
-      expect(s.pcm[7], -128);
+      // Unsigned [128,160,200,255,128,96,40,0] → signed (b-128) → normalized /128.
+      expect(s.pcm[0], 0.0);
+      expect(s.pcm[3], closeTo(127 / 128, 1e-9));
+      expect(s.pcm[7], -1.0);
     });
 
     test('the one pattern (note C-5, instrument 1, on channel 0 row 0)', () {

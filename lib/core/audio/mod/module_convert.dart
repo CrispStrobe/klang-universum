@@ -274,7 +274,8 @@ ModuleDoc docFromS3m(S3mModule m) {
         loopStart: s.loopStart,
         loopLength: s.loop ? (s.loopEnd - s.loopStart) : 0,
         c5speed: s.c2spd,
-        pcm: _normInt8(s.pcm),
+        sixteenBit: s.sixteenBit,
+        pcm: Float64List.fromList(s.pcm), // already normalized by the reader
       );
       samples.add(ds);
     }
@@ -766,10 +767,6 @@ S3mModule docToS3m(ModuleDoc doc) {
       samples.add(S3mSample.empty());
       continue;
     }
-    final pcm = Int8List(ds.pcm.length);
-    for (var i = 0; i < ds.pcm.length; i++) {
-      pcm[i] = (ds.pcm[i] * 128).round().clamp(-128, 127);
-    }
     samples.add(
       S3mSample(
         name: ds.name,
@@ -778,7 +775,9 @@ S3mModule docToS3m(ModuleDoc doc) {
         loop: ds.loopLength > 0,
         loopStart: ds.loopStart,
         loopEnd: ds.loopStart + ds.loopLength,
-        pcm: pcm,
+        sixteenBit: ds.sixteenBit,
+        // The writer quantizes to 8- or 16-bit per sixteenBit.
+        pcm: Float64List.fromList(ds.pcm),
       ),
     );
   }

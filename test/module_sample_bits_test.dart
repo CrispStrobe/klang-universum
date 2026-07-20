@@ -56,7 +56,11 @@ double _errAfter(ModuleFormat fmt, {required bool sixteenBit}) {
 
 void main() {
   group('sample bit-depth round-trip', () {
-    for (final fmt in const [ModuleFormat.xm, ModuleFormat.it]) {
+    for (final fmt in const [
+      ModuleFormat.xm,
+      ModuleFormat.it,
+      ModuleFormat.s3m,
+    ]) {
       test('${fmt.name}: 16-bit reconstructs far tighter than 8-bit', () {
         final err16 = _errAfter(fmt, sixteenBit: true);
         final err8 = _errAfter(fmt, sixteenBit: false);

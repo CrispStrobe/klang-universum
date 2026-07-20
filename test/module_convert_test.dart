@@ -24,6 +24,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 Uint8List _read(String path) => File(path).readAsBytesSync();
 
+/// Signed 8-bit samples as the normalized float (÷128) S3mSample.pcm model.
+Float64List _norm8(List<int> v) =>
+    Float64List.fromList([for (final b in v) b / 128]);
+
 void main() {
   group('sniffModuleFormat — each golden detected correctly', () {
     test('signatures', () {
@@ -185,7 +189,7 @@ void main() {
       // sample "sine" survives the signed round-trip exactly (×128 inverts /128)
       expect(
         back.samples[0].pcm,
-        Int8List.fromList([0, 64, 127, 64, 0, -64, -128, -64]),
+        _norm8([0, 64, 127, 64, 0, -64, -128, -64]),
       );
     });
 
@@ -196,7 +200,7 @@ void main() {
       final cell = back.patterns.first.rows[0][0];
       expect(cell.note, 0x40); // MIDI 60
       expect(cell.instrument, 1);
-      expect(back.samples[0].pcm, Int8List.fromList([0, 10, 20, -10, -20]));
+      expect(back.samples[0].pcm, _norm8([0, 10, 20, -10, -20]));
     });
   });
 
