@@ -7,6 +7,7 @@
 //
 // Pure Dart (no Flutter) so the whole model is unit-testable.
 
+import 'package:comet_beat/features/games/composition/tab_arranger.dart';
 import 'package:crisp_notation/crisp_notation.dart';
 
 /// A playing technique attached to a tab note. Each maps to the `Score` list
@@ -425,26 +426,54 @@ class TabDocument {
     ];
   }
 
-  /// Builds an editable document from an arbitrary [score], placing each note on
-  /// its lowest-fret string for [tuning] (unreachable pitches are dropped). Best
-  /// effort: complex/high polyphony flattens to what the fretboard can play.
-  static TabDocument fromScore(Score score, Tuning tuning) {
-    final columns = <TabColumn>[];
+  /// Builds an editable document from an arbitrary [score]. Notes the score
+  /// pins to explicit strings (a GP/MusicXML import's [Score.tabVoicings]) keep
+  /// that fingering; every other note is placed by the [arrangeTab] Viterbi —
+  /// minimising hand movement + chord span, not just lowest-fret-per-note — so
+  /// a scale stays in position and chords take a playable voicing. Unreachable
+  /// pitches (within the arranger's fret window) are dropped; best effort for
+  /// dense polyphony. Behind a [capo] the open pitch rises, so frets shrink.
+  static TabDocument fromScore(Score score, Tuning tuning, {int capo = 0}) {
+    final voiced = {for (final v in score.tabVoicings) v.noteId: v.strings};
+    final midiCols = <List<int>>[];
+    final durations = <NoteDuration>[];
+    final pinned = <int, Fretting>{}; // column index → explicit fingering
+    var idx = 0;
     for (final measure in score.measures) {
       for (final el in measure.elements) {
         if (el is NoteElement) {
-          final frets = <int, int>{};
-          for (final p in el.pitches) {
-            final sf = tuning.fretFor(p);
-            if (sf != null) frets.putIfAbsent(sf.$1, () => sf.$2);
+          final midis = [for (final p in el.pitches) p.midiNumber];
+          final strings = voiced[el.id];
+          if (strings != null && strings.length == midis.length) {
+            final frets = <int, int>{};
+            for (var i = 0; i < midis.length; i++) {
+              final s = strings[i];
+              if (s < 0 || s >= tuning.strings.length) continue;
+              final fret = midis[i] - tuning.strings[s].midiNumber - capo;
+              if (fret >= 0) frets[s] = fret;
+            }
+            if (frets.isNotEmpty) pinned[idx] = frets;
           }
-          columns.add(TabColumn(frets: frets, duration: el.duration));
+          midiCols.add(midis);
+          durations.add(el.duration);
+          idx++;
         } else if (el is RestElement) {
-          columns.add(TabColumn(duration: el.duration));
+          midiCols.add(const []);
+          durations.add(el.duration);
+          idx++;
         }
       }
     }
-    if (columns.isEmpty) columns.add(const TabColumn());
-    return TabDocument(tuning: tuning, columns: columns);
+    if (midiCols.isEmpty) {
+      return TabDocument(tuning: tuning, columns: [const TabColumn()]);
+    }
+    final arranged = arrangeTab(midiCols, tuning, capo: capo);
+    return TabDocument(
+      tuning: tuning,
+      columns: [
+        for (var i = 0; i < arranged.length; i++)
+          TabColumn(frets: pinned[i] ?? arranged[i], duration: durations[i]),
+      ],
+    );
   }
 }

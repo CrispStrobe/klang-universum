@@ -15,6 +15,7 @@ import 'package:comet_beat/core/audio/tracker_engine.dart'
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
+import 'package:comet_beat/features/games/composition/tab_arranger.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_mic_capture.dart';
@@ -548,10 +549,10 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   // ── Shared-tune bridge (MelodyBridge) ──────────────────────────────────────
   // Tab⇄tune is the easy direction: a fret already knows its exact pitch, so
   // publishing walks the columns reading the TOP sounding note of each (the
-  // melody voice), and loading places each shared note at its lowest playable
-  // fret ([Tuning.fretFor]) — a monophonic line, so no fingering conflicts.
-  // (A full polyphonic score→tab *arrangement* — optimal string/fret choice
-  // across chords — is a harder, separate problem; see docs/PLAN.md.)
+  // melody voice), and loading runs the shared line through [arrangeTab] (the
+  // Viterbi arranger) so it stays in one hand position instead of bouncing to
+  // the lowest fret per note. Polyphonic score→tab uses the same arranger via
+  // TabDocument.fromScore.
 
   @override
   bool get canShareMelody => _doc.columns.any((c) => c.frets.isNotEmpty);
@@ -611,24 +612,27 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   void loadSharedMelody() {
     final shared = MelodyBridge.instance.current;
     if (shared == null || shared.isEmpty) return;
-    final cols = <TabColumn>[];
+    // Split each cell into notatable durations, one output column each (a note
+    // held across pieces keeps its MIDI so the arranger parks it on one fret).
+    final midiCols = <List<int>>[];
+    final durs = <NoteDuration>[];
     for (final c in shared.cells) {
       final midis = c.midis;
       for (final d in _tabDurationsFor(c.steps)) {
-        if (midis == null || midis.isEmpty) {
-          cols.add(TabColumn(duration: d)); // a rest
-        } else {
-          // Target the OPEN-string pitch (the capo re-adds its shift on render).
-          final sf = _doc.tuning
-              .fretFor(Pitch.fromMidi(midis.first + shared.key - _capo));
-          cols.add(
-            sf == null
-                ? TabColumn(duration: d)
-                : TabColumn(frets: {sf.$1: sf.$2}, duration: d),
-          );
-        }
+        midiCols.add(
+          midis == null || midis.isEmpty
+              ? const []
+              : [midis.first + shared.key],
+        );
+        durs.add(d);
       }
     }
+    if (midiCols.isEmpty) return;
+    final frettings = arrangeTab(midiCols, _doc.tuning, capo: _capo);
+    final cols = [
+      for (var i = 0; i < frettings.length; i++)
+        TabColumn(frets: frettings[i], duration: durs[i]),
+    ];
     if (_insertRun(cols) == 0) return;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
