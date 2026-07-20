@@ -94,7 +94,9 @@ PianoHeads _runSegments(Float64List audio, OnnxModel model) {
     final seg = Float32List(_segSamples);
     seg.setRange(0, _segSamples, padded, s);
     final out = model.run(
-      {_inName: Tensor.float(seg, [1, _segSamples])},
+      {
+        _inName: Tensor.float(seg, [1, _segSamples])
+      },
       _outNames,
     );
     Float32List head(String name) {
@@ -285,7 +287,9 @@ Map<String, Float32List> pianoHeadsForTest(Float64List audio, OnnxModel model) {
     seg[i] = audio[i];
   }
   final out = model.run(
-    {_inName: Tensor.float(seg, [1, _segSamples])},
+    {
+      _inName: Tensor.float(seg, [1, _segSamples])
+    },
     _outNames,
   );
   const crop = 100 * _classes;

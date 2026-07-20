@@ -81,44 +81,52 @@ void main() {
       }
     }
 
-    test('4-stem separation matches the sherpa/knf reference', () async {
-      final models = await tryLoad(SpleeterConfig.fourStems);
-      if (models == null) {
-        // ignore: avoid_print
-        print('SKIP: Spleeter 4-stem models unavailable.');
-        return;
-      }
-      final res = spleeterSeparateNamed(
-        synthMono(44100),
-        models: [for (final n in spleeter4Stems) models[n]!],
-        stemNames: spleeter4Stems,
-      );
-      for (final stem in spleeter4Stems) {
-        final ref = readBin('$_dir/spleeter_e2e4_$stem.bin');
-        final (maxD, cos) = compare(res[stem]!, ref, ref.length);
-        expect(cos, greaterThan(0.9999), reason: '$stem cos=$cos');
-        expect(maxD, lessThan(5e-3), reason: '$stem max|Δ|=$maxD');
-      }
-    }, timeout: const Timeout(Duration(minutes: 3)),);
+    test(
+      '4-stem separation matches the sherpa/knf reference',
+      () async {
+        final models = await tryLoad(SpleeterConfig.fourStems);
+        if (models == null) {
+          // ignore: avoid_print
+          print('SKIP: Spleeter 4-stem models unavailable.');
+          return;
+        }
+        final res = spleeterSeparateNamed(
+          synthMono(44100),
+          models: [for (final n in spleeter4Stems) models[n]!],
+          stemNames: spleeter4Stems,
+        );
+        for (final stem in spleeter4Stems) {
+          final ref = readBin('$_dir/spleeter_e2e4_$stem.bin');
+          final (maxD, cos) = compare(res[stem]!, ref, ref.length);
+          expect(cos, greaterThan(0.9999), reason: '$stem cos=$cos');
+          expect(maxD, lessThan(5e-3), reason: '$stem max|Δ|=$maxD');
+        }
+      },
+      timeout: const Timeout(Duration(minutes: 3)),
+    );
 
-    test('2-stem separation matches the sherpa/knf reference', () async {
-      final models = await tryLoad(SpleeterConfig.twoStems);
-      if (models == null) {
-        // ignore: avoid_print
-        print('SKIP: Spleeter 2-stem models unavailable.');
-        return;
-      }
-      final res = spleeterSeparateNamed(
-        synthMono(44100),
-        models: [for (final n in spleeter2Stems) models[n]!],
-        stemNames: spleeter2Stems,
-      );
-      for (final stem in spleeter2Stems) {
-        final ref = readBin('$_dir/spleeter_e2e2_$stem.bin');
-        final (maxD, cos) = compare(res[stem]!, ref, ref.length);
-        expect(cos, greaterThan(0.9999), reason: '$stem cos=$cos');
-        expect(maxD, lessThan(5e-3), reason: '$stem max|Δ|=$maxD');
-      }
-    }, timeout: const Timeout(Duration(minutes: 3)),);
+    test(
+      '2-stem separation matches the sherpa/knf reference',
+      () async {
+        final models = await tryLoad(SpleeterConfig.twoStems);
+        if (models == null) {
+          // ignore: avoid_print
+          print('SKIP: Spleeter 2-stem models unavailable.');
+          return;
+        }
+        final res = spleeterSeparateNamed(
+          synthMono(44100),
+          models: [for (final n in spleeter2Stems) models[n]!],
+          stemNames: spleeter2Stems,
+        );
+        for (final stem in spleeter2Stems) {
+          final ref = readBin('$_dir/spleeter_e2e2_$stem.bin');
+          final (maxD, cos) = compare(res[stem]!, ref, ref.length);
+          expect(cos, greaterThan(0.9999), reason: '$stem cos=$cos');
+          expect(maxD, lessThan(5e-3), reason: '$stem max|Δ|=$maxD');
+        }
+      },
+      timeout: const Timeout(Duration(minutes: 3)),
+    );
   });
 }
