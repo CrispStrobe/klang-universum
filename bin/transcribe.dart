@@ -8,12 +8,16 @@
 //
 //   dart run bin/transcribe.dart audio.wav [options]
 //
-//   --task notes|poly|chords   what to produce (default notes)
+//   --task notes|poly|chords|stems  what to produce (default notes)
 //   --backend auto|dart|onnx|crispasr
 //                              which runtime (default auto: crispasr → onnx →
-//                              pure-Dart for F0). poly/chords are onnx-only.
+//                              pure-Dart for F0). poly/chords are onnx-only;
+//                              stems = onnx Open-Unmix or crispasr CLI.
 //   --f0 pyin|crepe|rmvpe      the F0 model for `notes` (default: per backend —
 //                              dart→pyin, onnx→crepe, crispasr→crepe)
+//   --sep-bin / --sep-model    crispasr binary + demucs GGUF for `--task stems`
+//                              --backend crispasr (or env CRISPASR_BIN /
+//                              CRISPASR_SEP_MODEL)
 //   --a4 440                   reference pitch
 //   --f0-dump                  print the raw pitch track instead of notes
 //   --json                     machine-readable output
@@ -29,18 +33,23 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/transcription/basic_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/basic_pitch_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
+import 'package:comet_beat/core/audio/transcription/crispasr_separate.dart';
 import 'package:comet_beat/core/audio/transcription/harmony.dart';
 import 'package:comet_beat/core/audio/transcription/harmony_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/pyin.dart' show pyinF0;
 import 'package:comet_beat/core/audio/transcription/rmvpe_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart';
+import 'package:comet_beat/core/audio/transcription/separate_umx_model_store.dart';
+import 'package:comet_beat/core/audio/transcription/stems.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
 
 const _names = [
@@ -63,8 +72,9 @@ Future<void> main(List<String> args) async {
   if (positional.isEmpty) {
     stderr.writeln(
       'usage: dart run bin/transcribe.dart audio.wav '
-      '[--task notes|poly|chords] [--backend auto|dart|onnx|crispasr] '
-      '[--f0 pyin|crepe|rmvpe] [--a4 440] [--f0-dump] [--json]',
+      '[--task notes|poly|chords|stems] [--backend auto|dart|onnx|crispasr] '
+      '[--f0 pyin|crepe|rmvpe] [--sep-bin B] [--sep-model M] [--a4 440] '
+      '[--f0-dump] [--json]',
     );
     exit(64);
   }
@@ -103,6 +113,30 @@ Future<void> main(List<String> args) async {
       );
       sw.stop();
       _printChords(chords, sw, json);
+    case 'stems':
+      final sep = await _resolveSeparator(backend, args);
+      if (sep == null) {
+        stderr.writeln(
+          'no separator available — --backend onnx needs the Open-Unmix model '
+          '(auto-downloads, needs network); --backend crispasr needs --sep-bin '
+          '<crispasr> --sep-model <demucs.gguf> (or CRISPASR_BIN / '
+          'CRISPASR_SEP_MODEL).',
+        );
+        exit(69);
+      }
+      final stems = await sep(mono, wav.sampleRate);
+      sw.stop();
+      final written = _writeStems(path, stems, wav.sampleRate);
+      if (json) {
+        stdout.writeln(jsonEncode(written));
+      } else {
+        stdout.writeln(
+          '${written.length} stems  (${sw.elapsedMilliseconds} ms):',
+        );
+        for (final f in written) {
+          stdout.writeln('  $f');
+        }
+      }
     case 'notes':
       final f0 = await _resolveF0(backend, _optS(args, '--f0', ''));
       if (args.contains('--f0-dump')) {
@@ -122,7 +156,7 @@ Future<void> main(List<String> args) async {
       sw.stop();
       _printNotes(notes, sw, json);
     default:
-      stderr.writeln('unknown --task "$task" (notes|poly|chords)');
+      stderr.writeln('unknown --task "$task" (notes|poly|chords|stems)');
       exit(64);
   }
 }
@@ -167,6 +201,63 @@ Future<F0Estimator?> _resolveF0(String backend, String model) async {
       stderr.writeln('backend: pure-Dart (pYIN)');
       return null;
   }
+}
+
+/// Resolve a source separator from the backend choice. onnx ⇒ Open-Unmix
+/// (auto-downloads); crispasr ⇒ the `--separate` CLI (needs a binary + demucs
+/// model). auto tries crispasr first, then onnx. Null ⇒ none available.
+Future<Separator?> _resolveSeparator(String backend, List<String> args) async {
+  Future<Separator?> onnx() async {
+    try {
+      return await UmxModelStore().separator(); // loads/downloads the model
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Separator? crispasr() {
+    final env = Platform.environment;
+    final bin = _optS(args, '--sep-bin', env['CRISPASR_BIN'] ?? '');
+    final model = _optS(args, '--sep-model', env['CRISPASR_SEP_MODEL'] ?? '');
+    if (bin.isEmpty || model.isEmpty) return null;
+    return crispasrCliSeparator(binary: bin, model: model);
+  }
+
+  switch (backend) {
+    case 'crispasr':
+      return crispasr();
+    case 'onnx':
+      return onnx();
+    case 'dart':
+      return null; // no pure-Dart separator
+    case 'auto':
+    default:
+      return crispasr() ?? await onnx();
+  }
+}
+
+/// Write each non-null stem next to the input as `<base>_<name>.wav` (mono, at
+/// the input sample rate). Returns the paths written.
+List<String> _writeStems(String inputPath, Stems stems, int sr) {
+  final base =
+      inputPath.replaceAll(RegExp(r'\.wav$', caseSensitive: false), '');
+  final out = <String>[];
+  void write(String name, Float64List? pcm) {
+    if (pcm == null) return;
+    final i16 = Int16List(pcm.length);
+    for (var k = 0; k < pcm.length; k++) {
+      i16[k] = (pcm[k].clamp(-1.0, 1.0) * 32767).round();
+    }
+    final f = File('${base}_$name.wav')
+      ..writeAsBytesSync(wavBytes(i16, sampleRate: sr));
+    out.add(f.path);
+  }
+
+  write('vocals', stems.vocals);
+  write('bass', stems.bass);
+  write('drums', stems.drums);
+  write('other', stems.other);
+  return out;
 }
 
 void _printNotes(List<NoteEvent> events, Stopwatch sw, bool json) {
