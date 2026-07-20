@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiTrackMidiToMultiPart;
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
+import 'package:comet_beat/features/games/songs/import/jams.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/library_browser_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -181,6 +182,38 @@ class _ImportScreenState extends State<ImportScreen> {
     }
   }
 
+  /// Picks a `.jams` file (JSON Annotated Music Specification — the MIR chord/
+  /// beat/key dataset format) and imports its chord annotation as a chord sheet,
+  /// reusing the ChordPro storage + playback path.
+  Future<void> _importJamsFile() async {
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'JAMS', extensions: ['jams', 'json']),
+        ],
+      );
+      if (file == null || !mounted) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      final source = jamsToChordPro(utf8.decode(bytes)); // validates
+      final sheet = parseChordPro(source);
+      final base = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+      final typed = _title.text.trim();
+      context.read<UserSongsService>().addSheet(
+            ImportedChordSheet(
+              id: _newId(),
+              title: typed.isNotEmpty
+                  ? typed
+                  : (sheet.title == 'JAMS chords' ? base : sheet.title),
+              source: source,
+            ),
+          );
+      _done();
+    } catch (e) {
+      if (mounted) _fail(e);
+    }
+  }
+
   @override
   void dispose() {
     _text.dispose();
@@ -259,6 +292,11 @@ class _ImportScreenState extends State<ImportScreen> {
                     onPressed: _importMusicFile,
                     icon: const Icon(Icons.file_open),
                     label: Text(l10n.importMusicFile),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _importJamsFile,
+                    icon: const Icon(Icons.data_object),
+                    label: Text(l10n.importJamsFile),
                   ),
                 ],
               ),

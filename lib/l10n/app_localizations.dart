@@ -6542,6 +6542,12 @@ abstract class AppLocalizations {
   /// **'Import a file (MusicXML/MXL/ABC/MEI/kern/MIDI)…'**
   String get importMusicFile;
 
+  /// No description provided for @importJamsFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import chords from a JAMS file…'**
+  String get importJamsFile;
+
   /// No description provided for @importDone.
   ///
   /// In en, this message translates to:

@@ -530,4 +530,38 @@ void main() {
     expect(songs.songs, hasLength(1));
     expect(songs.songs.single.title, 'ditty');
   });
+
+  testWidgets('import screen: picking a JAMS file adds a chord sheet',
+      (tester) async {
+    final sri = SriService(getNow: () => DateTime(2026, 7, 11));
+    final songs = UserSongsService();
+    const jams = '{"file_metadata":{"title":"Blues"},"annotations":['
+        '{"namespace":"chord","data":['
+        '{"time":0.0,"duration":2.0,"value":"C:maj"},'
+        '{"time":2.0,"duration":2.0,"value":"F:maj"},'
+        '{"time":4.0,"duration":2.0,"value":"G:7"},'
+        '{"time":6.0,"duration":2.0,"value":"A:min7"}]}]}';
+    FileSelectorPlatform.instance = _FakeFileSelector(
+      XFile.fromData(Uint8List.fromList(utf8.encode(jams)), path: 'blues.jams'),
+    );
+
+    await tester
+        .pumpWidget(_wrap(_launcher(const ImportScreen()), sri, songs: songs));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Import chords from a JAMS file…'));
+    await tester.pumpAndSettle();
+
+    // Imported as a chord sheet (not a song), titled from file_metadata.
+    expect(songs.songs, isEmpty);
+    expect(songs.sheets, hasLength(1));
+    expect(songs.sheets.single.title, 'Blues');
+    // The Harte labels became the app's plain chord chips.
+    expect(parseChordPro(songs.sheets.single.source).chords, [
+      'C',
+      'F',
+      'G',
+      'Am',
+    ]);
+  });
 }
