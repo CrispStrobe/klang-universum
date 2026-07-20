@@ -9,8 +9,58 @@ This file tracks **what is pending and planned**. What's already built and live
 is recorded in [HISTORY.md](HISTORY.md).
 
 ## 🚧 Actively working on (agent coordination — keep in sync with origin/main)
+- **opus (sf2-fidelity)** · 🚧 **ACTIVE — SF2 synthesis fidelity (Phase 2, see "## MIDI renderer — Phase 2").** We read only 8 SF2 generators (pitch-correct) but NONE that shape timbre, so the resampling voice uses generic heuristics where a correct player reads the font's own params. Building Tier 1 in order — **T1a** volume envelope DAHDSR (gens 33–38), **T1b** 2-pole resonant low-pass (gens 8/9, reuse `crisp_dsp Biquad`), **T1c** LFO vib/trem (gens 5,6,13,21–24), **T1d** zone pan (17) + stereo samples, **T1e** exclusive class (57), **T1f** cubic interp + loop modes (54) — then Tier 2 (CC91/93 sends, GS/XG/NRPN, aftertouch/pedals) and SFZ. Each: add gen parsing to `sf2/sf2.dart` + apply in `midi_render.dart`. Maintainer-directed; will keep sf2.dart edits additive. Shipped slice-by-slice.
 - **opus (daw-split)** · ✅ **SHIPPED — clip SPLIT at the playhead** (`f9af987d`). The one DAW-essential op still missing. `DawService.splitClip(track,index,atMs)` makes two source-sharing clips (left trimmed to the cut + keeps fade-in; right re-placed at the cut, plays to the original end + keeps fade-out; seam carries no fade → inaudible; both share the one cached render). No-op unless the cut is strictly inside the clip (`canSplitClip`). Inspector "Split" button (enabled when the playhead is inside); action row → Wrap so 4 buttons never overflow. Pure composition of existing trim+placement. +3 service +1 widget test; DAW files only; analyze clean; DAW suites green (30 service + 17 screen). **⇒ the DAW is now truly complete.** Now idle.
-- **opus (midi-renderer)** · ✅ **SHIPPED — SOTA MIDI-renderer slices S1–S4** (see "## MIDI renderer — SOTA roadmap"). **S1** master **reverb** send (`reverbFx`, `--reverb 0..1`, default 0.16; `00f4308e`). **S2** **ADSR release tail** in the render bridge — a ~140 ms quadratic fade per note (velocity gain folded in); universal, helps every format + the app's Workshop/Tab preview; unmarked scores unchanged (`1fb41b3b`). **S3** NEW `lib/core/audio/midi_render.dart` `renderMidiFile(smf, font)` → the **event-accurate MIDI synth**: parse all tracks to absolute ticks, schedule on a SAMPLE clock — **exact timing** (no 16th-grid quantization), **tempo map**, per-channel **program+bank** (mid-song changes), **CC7/10/11** volume/expression/pan, **sustain pedal (CC64)**, ch10→drums; each note voiced by its SF2 preset + release, panned constant-power → stereo. Default for MIDI+`--sf2` (`--notation` forces the old quantized route). Verified: 3-track MIDI (piano L / bass R / drums) @ 100-BPM meta → correct pitches, stereo, tempo (`a2e0b359`). **S4** velocity→cutoff **low-pass filter** per voice (~900 Hz pp … 16 kHz ff; drums exempt) — the timbral half of dynamics (`27015c05`). +tests each slice; full analyze clean. **S5** (`79555cbb`) replaced the synth voice with a **resampling SF2 voice** — reads `font.sampleAt(zone.sampleIndex)` at a per-sample fractional rate (linear-interp), loops the zone for sustain, applies rootKey/tune/attenuation — unlocking **continuous pitch-bend** (per-channel bend curve, ±2 st) + **CC1 mod-wheel LFO vibrato**; verified a C-major scale resamples to the exact pitches through FluidR3. **S6** real-time playback (`--play` → afplay/ffplay/…; temp output optional; `df04594b`). **S7** the last of the list (`2b02bb61`): **RPN pitch-bend range** (CC101/100 + CC6/38, per channel), **`--chorus`** master send, **`--bits 24`** WAV (pure 24-bit LE writer), **`.flac`** output (via external flac/ffmpeg). **⇒ the entire SOTA MIDI-renderer roadmap (S1–S7) is SHIPPED**; a genuine FluidSynth/BASSMIDI-class renderer — resampling SF2 synthesis, event-accurate scheduling, full CC/pedal/bend/RPN, tempo map, per-part GM, stereo+reverb+chorus, 16/24-bit WAV·MP3·FLAC, and play-it-now. Now idle.
+- **opus (midi-renderer)** · ✅ **SHIPPED — SOTA MIDI-renderer slices S1–S4** (see "## MIDI renderer — Phase 2: SF2 synthesis fidelity
+
+Phase 1 (S1–S7) made us a correct MIDI *player* — right notes, timing, dynamics,
+CC/pedal/bend/RPN, tempo map, per-part GM, WAV16/24·MP3·FLAC, `--play`. Phase 2
+closes the *synthesis-fidelity* gap: the resampling voice reads only 8 SF2
+generators (key/vel range, sample id, root key, attenuation, coarse/fine tune,
+loop) — enough for correct PITCH — but reads NONE of the generators that shape
+TIMBRE. So it substitutes generic heuristics (a fixed ~140 ms release, a
+velocity-mapped one-pole filter, a fixed 5.5 Hz mod-wheel vibrato) where a
+correct SF2 player uses the font\'s OWN envelope/filter/LFO/pan/modulators.
+Closing this = "sounds like the font intends" instead of "close but generic".
+Each slice adds generator parsing to `sf2/sf2.dart` and applies it in
+`midi_render.dart`\'s resampling voice.
+
+### Tier 1 — SF2 synthesis exactness (the biggest audible jump)
+- **T1a — Volume envelope (DAHDSR, gens 33–38).** Per-voice delay/attack/hold/
+  decay→sustain + release, replacing the generic fade. Times are timecents
+  (`sec = 2^(tc/1200)`); sustain is centibels of attenuation. **Biggest single
+  win** — a piano decays like a piano, a pad swells like a pad.
+- **T1b — Resonant low-pass (gens 8/9).** The SF2 2-pole low-pass at the font\'s
+  `initialFilterFc` (absolute cents → Hz) + `initialFilterQ` (cB resonance),
+  reusing `crisp_dsp Biquad` — replacing the heuristic one-pole. Mod-envelope→
+  cutoff (gens 25–32, 11) is a follow-on.
+- **T1c — LFO vibrato/tremolo (gens 5, 6, 13, 21–24).** The font\'s own vibrato
+  (vibLfoToPitch) + tremolo (modLfoToVolume) rate/depth/delay, replacing the
+  fixed mod-wheel LFO (which stays as an additive CC1 layer).
+- **T1d — Zone pan (gen 17) + stereo samples.** Per-zone pan; pair L/R linked
+  samples (shdr `sampleType`/`sampleLink`) so a stereo piano/strings stays
+  stereo instead of collapsing to mono.
+- **T1e — Exclusive class (gen 57).** Same-class notes cut each other off — open
+  vs closed hi-hat, a re-struck mono patch — instead of ringing together.
+- **T1f — Cubic interpolation + loop modes (gen 54).** Cubic (vs linear) sample
+  read to cut aliasing on big upward pitch shifts; honour no-loop /
+  loop-continuous / loop-until-release.
+
+### Tier 2 — MIDI / GM breadth
+- **Per-channel reverb/chorus send (CC91/CC93)** instead of one global master FX.
+- **GS / XG / GM2** — extended bank select, SysEx drum-kit/parameter changes,
+  **NRPN** (GS filter/envelope/drum-level tweaks).
+- **Aftertouch** (channel/poly), **portamento** (CC5/65), **soft pedal** (CC67),
+  **sostenuto** (CC66), controller resets (CC120/121/123) + GM/GS reset SysEx.
+
+### Tier 3 — engine / format breadth
+- **SFZ** import (the text-based sample format, richer opcodes than SF2).
+- **DLS / GIG import, VSTi hosting** — realistically out of scope.
+- Higher sample rates + output dithering (cosmetic).
+
+Order: T1a → T1b → T1c → T1d → T1e → T1f → Tier 2 → SFZ.
+
+## MIDI renderer — SOTA roadmap"). **S1** master **reverb** send (`reverbFx`, `--reverb 0..1`, default 0.16; `00f4308e`). **S2** **ADSR release tail** in the render bridge — a ~140 ms quadratic fade per note (velocity gain folded in); universal, helps every format + the app's Workshop/Tab preview; unmarked scores unchanged (`1fb41b3b`). **S3** NEW `lib/core/audio/midi_render.dart` `renderMidiFile(smf, font)` → the **event-accurate MIDI synth**: parse all tracks to absolute ticks, schedule on a SAMPLE clock — **exact timing** (no 16th-grid quantization), **tempo map**, per-channel **program+bank** (mid-song changes), **CC7/10/11** volume/expression/pan, **sustain pedal (CC64)**, ch10→drums; each note voiced by its SF2 preset + release, panned constant-power → stereo. Default for MIDI+`--sf2` (`--notation` forces the old quantized route). Verified: 3-track MIDI (piano L / bass R / drums) @ 100-BPM meta → correct pitches, stereo, tempo (`a2e0b359`). **S4** velocity→cutoff **low-pass filter** per voice (~900 Hz pp … 16 kHz ff; drums exempt) — the timbral half of dynamics (`27015c05`). +tests each slice; full analyze clean. **S5** (`79555cbb`) replaced the synth voice with a **resampling SF2 voice** — reads `font.sampleAt(zone.sampleIndex)` at a per-sample fractional rate (linear-interp), loops the zone for sustain, applies rootKey/tune/attenuation — unlocking **continuous pitch-bend** (per-channel bend curve, ±2 st) + **CC1 mod-wheel LFO vibrato**; verified a C-major scale resamples to the exact pitches through FluidR3. **S6** real-time playback (`--play` → afplay/ffplay/…; temp output optional; `df04594b`). **S7** the last of the list (`2b02bb61`): **RPN pitch-bend range** (CC101/100 + CC6/38, per channel), **`--chorus`** master send, **`--bits 24`** WAV (pure 24-bit LE writer), **`.flac`** output (via external flac/ffmpeg). **⇒ the entire SOTA MIDI-renderer roadmap (S1–S7) is SHIPPED**; a genuine FluidSynth/BASSMIDI-class renderer — resampling SF2 synthesis, event-accurate scheduling, full CC/pedal/bend/RPN, tempo map, per-part GM, stereo+reverb+chorus, 16/24-bit WAV·MP3·FLAC, and play-it-now. Now idle.
 - **opus (rendersong-velocity)** · ✅ **SHIPPED — honor MIDI note velocity end-to-end** (`crisp_notation@4792748` + mus `4d1fe394`). Was: the core `scoreFromMidi` DROPPED per-note velocity, so a MIDI's performed dynamics were lost before rendering. Now `NoteElement.velocity` (int? 0..127, additive/backward-compat) is threaded through the MIDI reader (pending→_Note→group→_Ev→NoteElement; a chord takes its loudest) and written back by `scoreToMidi` (explicit velocity > dynamics-derived), so a MIDI's dynamics round-trip (+2 core tests; 300-score sustain-grid + dynamics→velocity suites stay green). mus `renderScoreWithInstrument` voices a note by velocity/127 when present (precedence: velocity > notated DynamicMarkings > full level; no-velocity byte-identical), so rendersong's GM MIDI mixes AND the app's Workshop/Tab "play with instrument" now hear per-note dynamics (114 render/gm/workshop/tab tests green). +mus test. Now idle. **⇒ render quality: correct tempo · notated dynamics · MIDI velocity · stereo · soft-master · per-part GM voicing — all shipped.**
 > **opus** now works in its own worktree `../mus-opus` (branch `feature/opus`),
 > merging to `origin/main` only at checkpoints — no longer editing the shared
