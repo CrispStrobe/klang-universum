@@ -106,4 +106,36 @@ void main() {
   test('empty input yields empty output', () {
     expect(arrangeTab(const [], guitar), isEmpty);
   });
+
+  test('a TabPositionModel biases the local choice (seam routes)', () {
+    // E4 (64) is normally taken open on the high-E string (fret 0). A model that
+    // strongly prefers fret 5 on the B string (index 1) should win the column.
+    final a = arrangeTab(
+      [
+        [64],
+      ],
+      guitar,
+      model: _FavourModel((1, 5)),
+    );
+    expect(a.single[1], 5);
+    expect(_sounding(a, guitar), [64]); // still the requested pitch
+  });
+}
+
+/// A stand-in [TabPositionModel] that lavishes score on one position and stays
+/// neutral (null → heuristic) elsewhere — enough to prove the seam is consulted.
+class _FavourModel implements TabPositionModel {
+  _FavourModel(this.favoured);
+  final (int, int) favoured;
+
+  @override
+  List<Map<(int, int), double>?>? score(
+    List<List<int>> columns,
+    Tuning tuning, {
+    int capo = 0,
+    int maxFret = 20,
+  }) =>
+      [
+        for (final _ in columns) {favoured: 100.0},
+      ];
 }

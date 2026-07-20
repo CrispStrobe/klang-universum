@@ -19,6 +19,25 @@ import 'package:crisp_notation/crisp_notation.dart' show Tuning;
 /// open). An empty map is a rest / silent column.
 typedef Fretting = Map<int, int>;
 
+/// Scores candidate `(string, fret)` placements per column so a data-driven
+/// arranger can supply the *local* term while [arrangeTab]'s Viterbi stays the
+/// arbiter (hand-movement transition cost + hard playability constraints remain
+/// ours, so the model can never produce an unplayable shape). CrispASR would
+/// implement this behind FFI/ONNX; a null return (whole or per-column) defers to
+/// the heuristic cost, so callers keep working with no model present.
+/// See docs/TAB_ARRANGER_NEURAL_HANDOFF.md.
+abstract interface class TabPositionModel {
+  /// For each input column, a `higher = more idiomatic` score per position, or
+  /// null for that column to defer it to the heuristic. Positions map to the
+  /// same MIDI pitches [arrangeTab] enumerates for the column.
+  List<Map<(int string, int fret), double>?>? score(
+    List<List<int>> columns,
+    Tuning tuning, {
+    int capo,
+    int maxFret,
+  });
+}
+
 /// The weights of the arranger's cost function. Defaults are tuned so hand
 /// movement dominates (keep the hand in one place), chord span matters, and a
 /// tiny height term breaks ties toward the low neck.
@@ -149,6 +168,7 @@ List<Fretting> arrangeTab(
   int maxFret = 20,
   int maxCandidatesPerColumn = 64,
   TabArrangeCost cost = const TabArrangeCost(),
+  TabPositionModel? model,
 }) {
   if (columns.isEmpty) return [];
   final cands = [
@@ -163,8 +183,29 @@ List<Fretting> arrangeTab(
       ),
   ];
 
+  // When a model is supplied, its per-position scores replace the heuristic
+  // LOCAL term (transition/hand-movement stays ours). A missing score for a
+  // candidate's position falls back to the heuristic, so partial models work.
+  final scores = model?.score(columns, tuning, capo: capo, maxFret: maxFret);
+  double local(int i, Fretting f) {
+    final col = (scores != null && i < scores.length) ? scores[i] : null;
+    if (col != null && f.isNotEmpty) {
+      var sum = 0.0;
+      var any = false;
+      for (final e in f.entries) {
+        final v = col[(e.key, e.value)];
+        if (v != null) {
+          sum += v;
+          any = true;
+        }
+      }
+      if (any) return -sum; // higher model score → lower cost
+    }
+    return _localCost(f, cost);
+  }
+
   // Viterbi: dp[c] = best total cost of ending column i at candidate c.
-  var dp = [for (final f in cands[0]) _localCost(f, cost)];
+  var dp = [for (final f in cands[0]) local(0, f)];
   final back = <List<int>>[]; // back[i][c] = chosen candidate index in col i-1
   for (var i = 1; i < cands.length; i++) {
     final prev = cands[i - 1];
@@ -172,9 +213,9 @@ List<Fretting> arrangeTab(
     final next = List<double>.filled(cur.length, double.infinity);
     final bp = List<int>.filled(cur.length, 0);
     for (var c = 0; c < cur.length; c++) {
-      final local = _localCost(cur[c], cost);
+      final loc = local(i, cur[c]);
       for (var p = 0; p < prev.length; p++) {
-        final total = dp[p] + local + _transitionCost(prev[p], cur[c], cost);
+        final total = dp[p] + loc + _transitionCost(prev[p], cur[c], cost);
         if (total < next[c]) {
           next[c] = total;
           bp[c] = p;
