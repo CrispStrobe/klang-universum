@@ -41,7 +41,7 @@ import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart'
     show showAudioExportSheet;
-import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
+import 'package:comet_beat/shared/widgets/scrollable_piano.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -1759,17 +1759,15 @@ class _PerformScreenState extends State<PerformScreen>
                     ),
                   ),
                   const SizedBox(height: 6),
-                  SizedBox(
-                    height: 140,
-                    child: PianoKeyboard(
-                      whiteKeyCount: 8,
-                      onKeyTap: (midi) {
-                        // F1/R1: play through the live voice (polyphonic) at the
-                        // accent volume (F2) so held/repeated keys ring together.
-                        _live.play('n$midi', _noteWav(midi), volume: _accent);
-                        playInNote(midi);
-                      },
-                    ),
+                  ScrollablePiano(
+                    // B1: the app's shared compact keyboard (same as Score mode
+                    // / the Tracker) — sweepable across octaves, labelled.
+                    onKeyTap: (midi) {
+                      // F1/R1: play through the live voice (polyphonic) at the
+                      // accent volume (F2) so held/repeated keys ring together.
+                      _live.play('n$midi', _noteWav(midi), volume: _accent);
+                      playInNote(midi);
+                    },
                   ),
                 ],
               ],

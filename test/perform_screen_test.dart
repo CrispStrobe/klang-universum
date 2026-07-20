@@ -4,12 +4,14 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/beat_capture.dart' show BeatFrame;
 import 'package:comet_beat/core/services/live_voice.dart' show LiveVoiceMode;
+import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/composition/perform_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 PerformTester _perform(WidgetTester tester) =>
     tester.state<State<PerformScreen>>(find.byType(PerformScreen))
@@ -23,7 +25,12 @@ Widget _wrap(Widget home) => MaterialApp(
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en'), Locale('de')],
-      home: home,
+      // The shared keyboard's note-name labels read SettingsService (as in the
+      // real app); provide a default one so the play-in panel builds.
+      home: ChangeNotifierProvider(
+        create: (_) => SettingsService(),
+        child: home,
+      ),
     );
 
 double _peak(List<double> x) =>
