@@ -690,6 +690,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get crescendoSofterLabel => 'Wird leiser';
 
   @override
+  String get gameTempoChangeEar => 'Schneller oder langsamer?';
+
+  @override
+  String get gameTempoChangeEarSubtitle =>
+      'Hör hin: rücken die Schläge zusammen oder auseinander?';
+
+  @override
+  String get tempoChangeEarPrompt =>
+      'Ein Puls erklingt. Wird er schneller oder langsamer?';
+
+  @override
+  String get tempoFasterLabel => 'Wird schneller';
+
+  @override
+  String get tempoSlowerLabel => 'Wird langsamer';
+
+  @override
   String get gameStepSkip => 'Schritt oder Sprung?';
 
   @override

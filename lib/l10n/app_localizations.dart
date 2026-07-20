@@ -1340,6 +1340,36 @@ abstract class AppLocalizations {
   /// **'Getting softer'**
   String get crescendoSofterLabel;
 
+  /// No description provided for @gameTempoChangeEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Speeding Up or Slowing Down?'**
+  String get gameTempoChangeEar;
+
+  /// No description provided for @gameTempoChangeEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen: do the beats get closer or further apart?'**
+  String get gameTempoChangeEarSubtitle;
+
+  /// No description provided for @tempoChangeEarPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'A beat plays. Does it speed up or slow down?'**
+  String get tempoChangeEarPrompt;
+
+  /// No description provided for @tempoFasterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Speeding up'**
+  String get tempoFasterLabel;
+
+  /// No description provided for @tempoSlowerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Slowing down'**
+  String get tempoSlowerLabel;
+
   /// No description provided for @gameStepSkip.
   ///
   /// In en, this message translates to:

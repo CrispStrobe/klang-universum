@@ -687,6 +687,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crescendoSofterLabel => 'Getting softer';
 
   @override
+  String get gameTempoChangeEar => 'Speeding Up or Slowing Down?';
+
+  @override
+  String get gameTempoChangeEarSubtitle =>
+      'Listen: do the beats get closer or further apart?';
+
+  @override
+  String get tempoChangeEarPrompt =>
+      'A beat plays. Does it speed up or slow down?';
+
+  @override
+  String get tempoFasterLabel => 'Speeding up';
+
+  @override
+  String get tempoSlowerLabel => 'Slowing down';
+
+  @override
   String get gameStepSkip => 'Step or Skip?';
 
   @override

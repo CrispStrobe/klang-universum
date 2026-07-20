@@ -37,6 +37,7 @@ import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/drums/drum_read_screen.dart';
 import 'package:comet_beat/features/games/expression/charades_screen.dart';
 import 'package:comet_beat/features/games/expression/crescendo_ear_screen.dart';
+import 'package:comet_beat/features/games/expression/tempo_change_ear_screen.dart';
 import 'package:comet_beat/features/games/guitar/capo_match_screen.dart';
 import 'package:comet_beat/features/games/guitar/fretboard_find_screen.dart';
 import 'package:comet_beat/features/games/guitar/guitar_string_quiz_screen.dart';
@@ -810,6 +811,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCrescendoEar,
       subtitle: (l) => l.gameCrescendoEarSubtitle,
       builder: (_) => const CrescendoEarScreen(),
+      tutorial: expressionPrimer,
+    ),
+    // Aural direction-of-tempo — accelerando vs ritardando by ear (tempo_duel
+    // trains a fixed speed; this trains the change over time).
+    GameInfo(
+      id: 'tempo_change_ear',
+      icon: Icons.speed,
+      title: (l) => l.gameTempoChangeEar,
+      subtitle: (l) => l.gameTempoChangeEarSubtitle,
+      builder: (_) => const TempoChangeEarScreen(),
       tutorial: expressionPrimer,
     ),
     GameInfo(
