@@ -201,9 +201,10 @@ String? _value(List<String> args, String key) {
 /// reserved sample).
 Uint8List _scaleS3m() {
   const n = 2000;
-  final sine = Int8List(n);
+  // S3mSample.pcm is normalized float [-1, 1] (the writer scales it to 8/16-bit).
+  final sine = Float64List(n);
   for (var i = 0; i < n; i++) {
-    sine[i] = (100 * sin(2 * pi * 8 * i / n)).round();
+    sine[i] = 0.8 * sin(2 * pi * 8 * i / n);
   }
   const semis = [0, 2, 4, 5, 7, 9, 11, 12]; // C D E F G A B C (major scale)
   final rows = <List<S3mCell>>[
