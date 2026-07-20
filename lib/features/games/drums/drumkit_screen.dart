@@ -123,6 +123,10 @@ class DrumkitScreen extends StatefulWidget {
 
   static const tempos = [80, 100, 120, 140];
 
+  /// Width of the grid's fixed drum-label column — the visual kit is inset by
+  /// the same amount so it lines up over the step columns it plays.
+  static const labelGutter = 64.0;
+
   @override
   State<DrumkitScreen> createState() => _DrumkitScreenState();
 }
@@ -928,14 +932,20 @@ class _DrumkitScreenState extends State<DrumkitScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // The visual kit: tap a drawn piece to play it; it lights up as
-              // the beat plays (step clock) or is tapped/recorded.
+              // the beat plays (step clock) or is tapped/recorded. Inset by the
+              // label gutter so it aligns with the step columns below.
               Expanded(
                 flex: 4,
-                child: DrumKitVisual(
-                  step: _step,
-                  hitAt: (drum, step) => _rows[drum]![step],
-                  controller: _visual,
-                  onHit: tapPad, // tap a drawn piece to play it (+ record it)
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: DrumkitScreen.labelGutter,
+                  ),
+                  child: DrumKitVisual(
+                    step: _step,
+                    hitAt: (drum, step) => _rows[drum]![step],
+                    controller: _visual,
+                    onHit: tapPad, // tap a drawn piece to play it (+ record it)
+                  ),
                 ),
               ),
               // Hand percussion that isn't on the drawn kit — compact pads.
@@ -961,7 +971,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                 flex: 6,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    const labelW = 64.0;
+                    const labelW = DrumkitScreen.labelGutter;
                     const minCell = 24.0;
                     final avail = constraints.maxWidth - labelW;
                     // Fill the width at 2 bars; shrink to minCell then scroll.
