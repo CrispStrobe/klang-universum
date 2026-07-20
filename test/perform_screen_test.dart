@@ -3,6 +3,7 @@
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/beat_capture.dart' show BeatFrame;
+import 'package:comet_beat/core/services/live_voice.dart' show LiveVoiceMode;
 import 'package:comet_beat/features/games/composition/perform_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -618,6 +619,29 @@ void main() {
     final loud = _peak(p.debugMix().toList());
 
     expect(loud, greaterThan(soft)); // velocity made it louder
+  });
+
+  testWidgets('audio-path toggle switches mode; degrades to classic for now',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    // Default is Auto, and with no real-time engine built yet it degrades.
+    expect(p.liveMode, LiveVoiceMode.auto);
+    expect(p.isRealtimeActive, isFalse);
+
+    // The kid can force Classic or Real-time; both are safe (Real-time still
+    // falls back until the engine lands in R2).
+    p.setLiveMode(LiveVoiceMode.classic);
+    await tester.pump();
+    expect(p.liveMode, LiveVoiceMode.classic);
+    expect(p.isRealtimeActive, isFalse);
+
+    p.setLiveMode(LiveVoiceMode.realtime);
+    await tester.pump();
+    expect(p.liveMode, LiveVoiceMode.realtime);
+    expect(p.isRealtimeActive, isFalse); // graceful degrade
   });
 
   testWidgets('play/stop toggles and does not crash without audio',

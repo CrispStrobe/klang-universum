@@ -2199,6 +2199,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performDrop => 'Drop!';
 
   @override
+  String get performAudioPath => 'Sound engine';
+
+  @override
+  String get performAudioAuto => 'Auto (best available)';
+
+  @override
+  String get performAudioClassic => 'Classic';
+
+  @override
+  String get performAudioRealtime => 'Real-time (low latency)';
+
+  @override
   String get performExport => 'Export / share';
 
   @override

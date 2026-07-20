@@ -31,8 +31,8 @@ import 'package:comet_beat/core/audio/sample_pitch.dart'
 import 'package:comet_beat/core/audio/synth.dart'
     show Drum, kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/live_voice.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
-import 'package:comet_beat/core/services/voice_pool.dart';
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart'
     show showMySamplesSheet;
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
@@ -90,6 +90,11 @@ abstract class PerformTester {
   /// Play-in dynamics (F2): soft/normal/loud accent applied to captured taps.
   double get accent;
   void setAccent(double amount);
+
+  /// Live audio path (R1): classic pool vs real-time engine, user-selectable.
+  LiveVoiceMode get liveMode;
+  bool get isRealtimeActive;
+  void setLiveMode(LiveVoiceMode mode);
 
   /// Sing / beatbox a layer (P4): convert captured mic frames into a layer.
   /// The mic flow calls these; tests drive them with synthetic frames.
@@ -179,7 +184,9 @@ class _PerformScreenState extends State<PerformScreen>
     implements PerformTester {
   final LoopStack<_PerformLayer> _stack = LoopStack<_PerformLayer>();
   final LoopPlayerService _loop = LoopPlayerService();
-  final VoicePool _voices = VoicePool(); // F1: polyphonic play-in voices
+  // F1/R1: polyphonic play-in voices behind a swappable backend (classic pool
+  // or the real-time engine), chosen by the user's setting with graceful degrade.
+  final LiveVoiceEngine _live = LiveVoiceEngine();
   final Stopwatch _clock = Stopwatch();
   bool _playing = false;
 
@@ -280,6 +287,12 @@ class _PerformScreenState extends State<PerformScreen>
   @override
   void initState() {
     super.initState();
+    // R1: load the saved audio-path preference (best-effort; degrades silently).
+    unawaited(
+      _live.load().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
     // While the transport runs: move the playhead (P5) + fire an armed scene
     // when the loop crosses a bar boundary (S4).
     _boundaryTimer = Timer.periodic(const Duration(milliseconds: 40), (_) {
@@ -312,7 +325,7 @@ class _PerformScreenState extends State<PerformScreen>
     _micSub?.cancel();
     _mic?.stop();
     _loop.dispose();
-    _voices.dispose();
+    _live.dispose();
     super.dispose();
   }
 
@@ -581,6 +594,7 @@ class _PerformScreenState extends State<PerformScreen>
     _voiceBase = baseMidi ?? detectSampleBaseMidi(pcm) ?? 60;
     _voiceName = name;
     _noteWavCache.clear(); // F1: the note voice changed
+    _live.invalidate(); // R1: drop any cached real-time sources
     setState(() {});
   }
 
@@ -589,6 +603,7 @@ class _PerformScreenState extends State<PerformScreen>
     _voicePcm = null;
     _voiceName = null;
     _noteWavCache.clear();
+    _live.invalidate();
     setState(() {});
   }
 
@@ -603,6 +618,7 @@ class _PerformScreenState extends State<PerformScreen>
     _padVoices[drum] = pcm;
     _padVoiceNames[drum] = name;
     _padWavCache.remove(drum); // F1: this pad's voice changed
+    _live.invalidate();
     setState(() {});
   }
 
@@ -611,6 +627,7 @@ class _PerformScreenState extends State<PerformScreen>
     _padVoices.remove(drum);
     _padVoiceNames.remove(drum);
     _padWavCache.remove(drum);
+    _live.invalidate();
     setState(() {});
   }
 
@@ -640,9 +657,21 @@ class _PerformScreenState extends State<PerformScreen>
 
   @override
   void setAccent(double amount) {
+    // Accent is applied as the live play-in volume (and baked into captures),
+    // so the cached note/pad WAVs stay valid.
     _accent = amount.clamp(0.3, 1.6);
-    _noteWavCache.clear(); // audition volume follows the accent
-    _padWavCache.clear();
+    setState(() {});
+  }
+
+  // ── Live audio path (R1) ──────────────────────────────────────────────────
+  @override
+  LiveVoiceMode get liveMode => _live.mode;
+  @override
+  bool get isRealtimeActive => _live.isRealtimeActive;
+
+  @override
+  void setLiveMode(LiveVoiceMode mode) {
+    unawaited(_live.setMode(mode)); // persists best-effort
     setState(() {});
   }
 
@@ -650,19 +679,12 @@ class _PerformScreenState extends State<PerformScreen>
   /// set, else a short synth tone. Cached per midi (cleared on voice change).
   Uint8List _noteWav(int midi) => _noteWavCache.putIfAbsent(midi, () {
         if (hasSampleVoice) {
-          final pitched =
-              _pitched(midi, maxSamples: (kSampleRate * 0.7).round());
-          return wavBytes(_toInt16(_scaled(pitched, _accent)));
+          return wavBytes(
+            _toInt16(_pitched(midi, maxSamples: (kSampleRate * 0.7).round())),
+          );
         }
         final buf = Float64List((kSampleRate * 0.6).round());
-        _tone(
-          buf,
-          _midiToFreq(midi),
-          0,
-          buf.length,
-          gain: 0.28 * _accent,
-          decay: 6,
-        );
+        _tone(buf, _midiToFreq(midi), 0, buf.length, gain: 0.28, decay: 6);
         return wavBytes(_toInt16(buf));
       });
 
@@ -678,24 +700,16 @@ class _PerformScreenState extends State<PerformScreen>
           final clip = voice.length > cap
               ? Float64List.sublistView(voice, 0, cap)
               : voice;
-          return wavBytes(_toInt16(_scaled(clip, _accent)));
+          return wavBytes(_toInt16(clip));
         }
         final buf = Float64List((kSampleRate * 0.25).round());
-        final a = _accent;
         switch (drum) {
           case 'kick':
-            _tone(buf, 55, 0, buf.length, gain: 0.6 * a, decay: 22);
+            _tone(buf, 55, 0, buf.length, gain: 0.6, decay: 22);
           case 'snare':
-            _noise(buf, 0, buf.length, Random(7), gain: 0.4 * a);
+            _noise(buf, 0, buf.length, Random(7), gain: 0.4);
           default: // hat
-            _noise(
-              buf,
-              0,
-              buf.length ~/ 3,
-              Random(9),
-              gain: 0.12 * a,
-              decay: 90,
-            );
+            _noise(buf, 0, buf.length ~/ 3, Random(9), gain: 0.12, decay: 90);
         }
         return wavBytes(_toInt16(buf));
       });
@@ -772,9 +786,10 @@ class _PerformScreenState extends State<PerformScreen>
     ('hat', (l) => l.performPadHat),
   ];
 
-  /// Audition a drum hit when a pad is tapped — through the polyphonic pool
-  /// (F1), so fast taps overlap instead of cutting each other off.
-  void _playHit(String drum) => _voices.play(_padWav(drum));
+  /// Audition a drum hit when a pad is tapped — through the live voice (F1/R1),
+  /// so fast taps overlap; the accent sets the play volume (F2).
+  void _playHit(String drum) =>
+      _live.play('p$drum', _padWav(drum), volume: _accent);
 
   /// Render captured `(midi, phaseMs)` notes across the whole loop: each note is
   /// snapped to the nearest 16th (a per-bar grid), held until the next note
@@ -1279,6 +1294,25 @@ class _PerformScreenState extends State<PerformScreen>
       appBar: AppBar(
         title: Text(l10n.performTitle),
         actions: [
+          PopupMenuButton<LiveVoiceMode>(
+            icon: Icon(isRealtimeActive ? Icons.bolt : Icons.bolt_outlined),
+            tooltip: l10n.performAudioPath,
+            onSelected: setLiveMode,
+            itemBuilder: (context) => [
+              for (final m in LiveVoiceMode.values)
+                CheckedPopupMenuItem(
+                  value: m,
+                  checked: liveMode == m,
+                  child: Text(
+                    switch (m) {
+                      LiveVoiceMode.auto => l10n.performAudioAuto,
+                      LiveVoiceMode.classic => l10n.performAudioClassic,
+                      LiveVoiceMode.realtime => l10n.performAudioRealtime,
+                    },
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.undo),
             tooltip: l10n.performUndo,
@@ -1726,9 +1760,9 @@ class _PerformScreenState extends State<PerformScreen>
                     child: PianoKeyboard(
                       whiteKeyCount: 8,
                       onKeyTap: (midi) {
-                        // F1: play through the polyphonic pool so held/repeated
-                        // keys ring together instead of cutting each other off.
-                        _voices.play(_noteWav(midi));
+                        // F1/R1: play through the live voice (polyphonic) at the
+                        // accent volume (F2) so held/repeated keys ring together.
+                        _live.play('n$midi', _noteWav(midi), volume: _accent);
                         playInNote(midi);
                       },
                     ),

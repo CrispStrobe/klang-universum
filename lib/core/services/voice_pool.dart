@@ -33,7 +33,8 @@ class VoicePool {
 
   /// Play [wav] on the next voice WITHOUT stopping the others, so notes ring
   /// together. Only the reused voice is stopped (classic voice-stealing).
-  Future<void> play(Uint8List wav) async {
+  /// [volume] (0..1+) sets this voice's level — used for play-in velocity.
+  Future<void> play(Uint8List wav, {double volume = 1.0}) async {
     try {
       while (_players.length < size) {
         _players.add(AudioPlayer());
@@ -41,6 +42,7 @@ class VoicePool {
       final player = _players[_next];
       _next = advance(_next, size);
       await player.stop();
+      await player.setVolume(volume.clamp(0.0, 1.0));
       if (kIsWeb) {
         // BytesSource is unsupported on web; a data URI plays fine.
         await player.play(

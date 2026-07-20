@@ -4148,6 +4148,30 @@ abstract class AppLocalizations {
   /// **'Drop!'**
   String get performDrop;
 
+  /// No description provided for @performAudioPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound engine'**
+  String get performAudioPath;
+
+  /// No description provided for @performAudioAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (best available)'**
+  String get performAudioAuto;
+
+  /// No description provided for @performAudioClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get performAudioClassic;
+
+  /// No description provided for @performAudioRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time (low latency)'**
+  String get performAudioRealtime;
+
   /// No description provided for @performExport.
   ///
   /// In en, this message translates to:
