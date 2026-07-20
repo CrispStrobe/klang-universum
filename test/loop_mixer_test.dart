@@ -13,8 +13,8 @@ import 'package:comet_beat/core/audio/synth.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show SampleInstrument;
 import 'package:comet_beat/core/services/beat_bridge.dart';
-import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/loop_creatures.dart';
 import 'package:comet_beat/features/games/composition/loop_mixer_screen.dart';
@@ -1017,6 +1017,31 @@ void main() {
       game.debugTuneCells!.any((c) => c.midis?.contains(60) ?? false),
       isFalse,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('LM-UX4c: editing a built-in stem overrides its pattern',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+
+    // Target the built-in melody stem, then tap a note.
+    game.debugSetTuneTarget('melody');
+    await tester.pump();
+    game.debugEditTuneCell(60, 0); // C, authored-C (engine transposes on render)
+    await tester.pump();
+
+    // The stem now plays the override (and is enabled), not its preset.
+    expect(game.enabledTracks, contains('melody'));
+    expect(
+      game.debugTuneCells!.any((c) => c.midis?.contains(60) ?? false),
+      isTrue,
+    );
+
+    // Clearing the note reverts the stem to its built-in preset.
+    game.debugEditTuneCell(60, 0);
+    await tester.pump();
+    expect(game.debugTuneCells, isNull); // override cleared
     expect(tester.takeException(), isNull);
   });
 

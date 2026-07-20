@@ -517,6 +517,7 @@
   "loopMixerBeatEditHint": "Tap the grid to build your own beat.",
   "loopMixerTuneEdit": "Edit the tune",
   "loopMixerTuneEditHint": "Tap the grid to build your own tune — every note fits the band.",
+  "loopMixerTuneMine": "My tune",
   "loopMixerScoreEmpty": "Turn on a layer to see it written as notes.",
   "@loopMixerScoreEmpty": {
     "description": "Hint shown in the Loop Mixer score panel when no track is enabled to engrave."

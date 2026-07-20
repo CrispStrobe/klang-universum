@@ -1114,6 +1114,29 @@ class LoopEngine {
   LoopTrack? _userTrack;
   LoopTrack? _userBeatTrack;
 
+  /// Per-track pitched cell overrides (LM-UX4c): when set, a built-in stem
+  /// plays these authored-C cells (transposed at render) instead of its variant
+  /// / progression shape — so the kid's edit replaces that part. A 2-bar
+  /// pattern that tiles across a progression, like the plain stem path.
+  final Map<String, List<PatternCell>> _cellOverrides = {};
+
+  /// The current override for [id], or null. Seeds the tune editor.
+  List<PatternCell>? trackCellsOverride(String id) => _cellOverrides[id];
+
+  /// Replace a built-in track's pattern with [cells] (authored-C). Empty clears.
+  void setTrackCells(String id, List<PatternCell> cells) {
+    if (cells.isEmpty || cells.every((c) => c.midis == null)) {
+      _cellOverrides.remove(id);
+    } else {
+      _cellOverrides[id] = List.of(cells);
+    }
+    _clearRenderCaches();
+  }
+
+  void clearTrackCells(String id) {
+    if (_cellOverrides.remove(id) != null) _clearRenderCaches();
+  }
+
   /// The selected band flavour ([kGrooveStyles]). Setting it re-points the five
   /// cards at that style's pattern set and biases the tempo/swing/kit/scale
   /// toward the flavour; enabled/variant/level state carries across (same ids).
@@ -1537,6 +1560,8 @@ class LoopEngine {
   /// resolved and tiled in progression mode), or null for unpitched patterns.
   /// Powers the live engraving.
   List<PatternCell>? cellsFor(String id) {
+    final override = _cellOverrides[id];
+    if (override != null) return override;
     final track = _track(id);
     final variant = _variantOf(track);
     final prog = _progression;
@@ -1588,6 +1613,29 @@ class LoopEngine {
     final voice = _trackVoices[track.id];
     final prog = _progression;
     final t = pitchTranspose;
+
+    // A per-track cell override (LM-UX4c) plays the kid's edited pattern instead
+    // of the variant/progression shape — a 2-bar pattern that tiles under a
+    // progression, exactly like the plain stem path below.
+    final cellsOverride = _cellOverrides[track.id];
+    if (cellsOverride != null) {
+      final inst = track.chordFollower?.instrument ??
+          (track.variants[variant] is MelodicPattern
+              ? (track.variants[variant] as MelodicPattern).instrument
+              : Instrument.flute);
+      Float64List one(LoopTiming tm) => voice != null
+          ? renderCellsWithInstrument(cellsOverride, voice, tm, transpose: t)
+          : renderCells(cellsOverride, inst, tm, transpose: t);
+      if (prog == null) return one(timing);
+      final twoBars = one(_vampTiming);
+      final reps = prog.degrees.length ~/ 2;
+      final out = Float64List(twoBars.length * reps);
+      for (var r = 0; r < reps; r++) {
+        out.setAll(r * twoBars.length, twoBars);
+      }
+      return out;
+    }
+
     if (prog == null) {
       final pat = track.variants[variant];
       if (voice != null && pat is MelodicPattern) {

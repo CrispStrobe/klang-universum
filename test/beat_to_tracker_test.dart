@@ -70,7 +70,9 @@ void main() {
       for (var i = 0; i < 200; i++) i % 20 < 10 ? 0.5 : -0.5,
     ]);
     final beat = SharedBeat(
-      rows: {Drum.kick: row([0, 4])},
+      rows: {
+        Drum.kick: row([0, 4]),
+      },
       tempoBpm: 120,
       voices: {
         Drum.kick: SharedVoice(

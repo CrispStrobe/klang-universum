@@ -1377,6 +1377,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap the grid to build your own tune — every note fits the band.';
 
   @override
+  String get loopMixerTuneMine => 'My tune';
+
+  @override
   String get loopMixerScoreEmpty =>
       'Turn on a layer to see it written as notes.';
 

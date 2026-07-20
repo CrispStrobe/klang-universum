@@ -1382,6 +1382,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippe ins Raster, um deine eigene Melodie zu bauen — jede Note passt zur Band.';
 
   @override
+  String get loopMixerTuneMine => 'Meine Melodie';
+
+  @override
   String get loopMixerScoreEmpty =>
       'Schalte eine Spur ein, um sie als Noten zu sehen.';
 

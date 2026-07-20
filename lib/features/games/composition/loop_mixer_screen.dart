@@ -177,6 +177,7 @@ abstract interface class LoopMixerTester {
   void toggleTuneEdit();
   void debugEditTuneCell(int midi, int step);
   List<PatternCell>? get debugTuneCells;
+  void debugSetTuneTarget(String id);
   String get grooveToken;
   bool loadGrooveToken(String token);
   bool get isInfinite;
@@ -504,30 +505,47 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _restartGroove();
   }
 
-  // LM-UX4b: the tune (pitched) step-editor — reuses the shared StepGridView.
+  // LM-UX4b/c: the tune (pitched) step-editor — reuses the shared StepGridView.
   bool _showTuneEdit = false;
   @override
   bool get tuneEditVisible => _showTuneEdit;
   @override
   void toggleTuneEdit() => setState(() => _showTuneEdit = !_showTuneEdit);
   @override
-  List<PatternCell>? get debugTuneCells => _engine.userTrackCells;
+  List<PatternCell>? get debugTuneCells => _targetCells();
   @override
   void debugEditTuneCell(int midi, int step) => _toggleTuneCell(midi, step);
+  @override
+  void debugSetTuneTarget(String id) => setState(() => _tuneTarget = id);
 
-  /// The tune editor's pitch rows — one octave of the current key's pentatonic
-  /// scale, so every tap lands a note that fits the band (colour-melody rule).
-  List<int> get _tuneRows {
-    final base = 60 + _engine.key; // C4 transposed into the current key
-    final deg = _engine.scale == GrooveScale.minorPentatonic
-        ? const [0, 3, 5, 7, 10, 12]
-        : const [0, 2, 4, 7, 9, 12];
-    return [for (final d in deg) base + d];
-  }
+  /// Which pitched part the tune editor edits: the user track ('voice' = "My
+  /// tune") or a built-in stem (LM-UX4c, via the engine's cell-override).
+  String _tuneTarget = LoopEngine.userTrackId;
+  static const _tuneTargets = [
+    LoopEngine.userTrackId,
+    'melody',
+    'chords',
+    'bass',
+  ];
 
-  /// The user melodic cells as grid cells (one StepCell per pitch per onset).
+  bool get _tuneTargetIsUser => _tuneTarget == LoopEngine.userTrackId;
+
+  /// The authored-C cells behind the current tune target (null = none yet).
+  List<PatternCell>? _targetCells() => _tuneTargetIsUser
+      ? _engine.userTrackCells
+      : _engine.trackCellsOverride(_tuneTarget);
+
+  /// The tune editor's pitch rows — one octave of C major pentatonic. Cells are
+  /// authored in C (like every built-in stem); the engine's `pitchTranspose`
+  /// shifts the whole pattern into the current key AND scale at render (the
+  /// same `{0,2,4,7,9} + pitchTranspose` rule), so edits always fit the band and
+  /// follow later key/scale changes.
+  List<int> get _tuneRows =>
+      const [0, 2, 4, 7, 9, 12].map((d) => 60 + d).toList();
+
+  /// The target's cells as grid cells (one StepCell per pitch per onset).
   List<StepCell> _tuneStepCells() {
-    final cells = _engine.userTrackCells ?? const <PatternCell>[];
+    final cells = _targetCells() ?? const <PatternCell>[];
     final out = <StepCell>[];
     var pos = 0;
     for (final c in cells) {
@@ -563,7 +581,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   }
 
   void _toggleTuneCell(int midi, int step) {
-    const steps = kPatternSteps; // the user melodic track fills 2 bars
+    const steps = kPatternSteps; // pitched patterns fill 2 bars
     final cells = _tuneStepCells();
     final idx = cells.indexWhere((c) => c.row == midi && c.step == step);
     final next = [...cells];
@@ -572,14 +590,19 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     } else {
       next.add(StepCell(midi, step, len: 2));
     }
-    if (next.isEmpty) {
-      _engine.clearUserTrack();
+    final pattern =
+        next.isEmpty ? <PatternCell>[] : _stepCellsToPattern(next, steps);
+    if (_tuneTargetIsUser) {
+      if (next.isEmpty) {
+        _engine.clearUserTrack();
+      } else {
+        _engine.setUserTrack(pattern, instrument: Instrument.musicBox);
+        _engine.enabled.add(LoopEngine.userTrackId);
+      }
     } else {
-      _engine.setUserTrack(
-        _stepCellsToPattern(next, steps),
-        instrument: Instrument.musicBox,
-      );
-      _engine.enabled.add(LoopEngine.userTrackId);
+      // A built-in stem: override its pattern (empty clears back to the preset).
+      _engine.setTrackCells(_tuneTarget, pattern);
+      if (next.isNotEmpty) _engine.enabled.add(_tuneTarget);
     }
     setState(() {});
     _restartGroove();
@@ -1792,6 +1815,24 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
+            ),
+            const SizedBox(height: 4),
+            // LM-UX4c: which part to edit — your own tune, or a built-in stem.
+            Wrap(
+              spacing: 6,
+              children: [
+                for (final id in _tuneTargets)
+                  ChoiceChip(
+                    label: Text(
+                      id == LoopEngine.userTrackId
+                          ? l10n.loopMixerTuneMine
+                          : _trackLabel(l10n, id),
+                    ),
+                    selected: _tuneTarget == id,
+                    onSelected: (_) => setState(() => _tuneTarget = id),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             ValueListenableBuilder<int>(
