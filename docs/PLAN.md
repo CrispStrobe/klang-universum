@@ -9,6 +9,7 @@ This file tracks **what is pending and planned**. What's already built and live
 is recorded in [HISTORY.md](HISTORY.md).
 
 ## 🚧 Actively working on (agent coordination — keep in sync with origin/main)
+- **opus (score-fixes + LM/LL UX scope)** · 🚧 **ACTIVE (maintainer bug reports + UX directives).** ✅ **2 crisp_notation layout bugs FIXED + pushed** (`crisp_notation@4a67ae3`, path-dep so live in the app now): (1) **multi-voice short-measure barline** — a voice whose measure is shorter than its neighbours (e.g. an imported ABC where V1's last bar = 3/8 under 4/4) drew its closing barline mid-measure; `layout_engine.dart` now advances the cursor to the SHARED measure-end column (largest onset across voices), not the voice's own content end. (2) **notation-over-tab low-note collision** — the tab staff was placed a fixed gap below the notation's bottom *line* (y=4), so low notes (low-E ledger lines) descended into the tab; `notation_tab.dart` now measures the notation box's actual bottom ink. Regression tests for both; full core suite (1704) green. 📋 **Scoped the maintainer's LM/LL UX overhaul into PLAN.md** — see "Loop Mixer + Live Looper — UX & editability overhaul (2026-07-20)" below. **NOT yet built** (big, multi-slice). Next: pick + build the shared building blocks first (compact keyboard, playback-highlight, editable-score-view) then the surface slices. Touches `perform_screen.dart`, `loop_mixer_screen.dart`, shared widgets, ARBs — coordinate before starting.
 - **opus (crescendo-ear)** · ✅ **SHIPPED — new ear game "Getting Louder or Softer?"** (`crescendo_ear`, expression module). A steady 8-note pulse plays whose loudness ramps up (crescendo) or down (diminuendo); tap which — the aural *direction-of-dynamics* skill nothing drilled yet (charades = a fixed level; this = the change over time). Binary-ear scaffold (mirrors `direction_ear_screen`); synthesized by rendering each pulse note with a ramped `renderSegments(gain:)` (each note peak-normalizes identically → the gain ramp IS the dynamic), concatenated → one WAV → `playWavBytes`. NEW `expression/crescendo_ear_screen.dart` + `game_registry.dart` (1 GameInfo) + `tuning.dart` (1 bracket) + `concept_map.dart` (added to `loud_soft`) + en/de ARBs + widget test; reuses `expressionPrimer`. SRI `dynamics.hear.<cresc|dim>`. Analyze clean; new test + curriculum-coverage + consistency guards green. Now idle.
 - **opus (transcribe-3path)** · ✅ **SHIPPED — all 3 backend paths now real for F0.** (1) **CrispASR ggml CREPE** (GUI + CLI): `crispasr_pitch.dart` (+`_io`/`_stub`) shells `crispasr --pitch`, parses tab-separated `time_ms f0_hz voiced_prob` → `PitchTrack`; env-gated (`CRISPASR_BIN`/`CRISPASR_CREPE_GGUF` or `--bin`/`--model`); un-stubbed `loadCrispasrCrepeF0` + `bin/transcribe_crispasr.dart`. (2) **native-ORT FFI** (GUI-only): added `onnxruntime: ^1.4.1` (MIT plugin, sdk-safe) to pubspec; `onnx_ort_session.dart` (+`_io`/`_stub`) wraps native ORT behind a Float32List-in/out seam (the ONLY file touching `package:onnxruntime`); refactored `crepe.dart` to a runtime-agnostic **`crepeF0WithRunner`** seam (crepeF0 delegates — ORT parity Δf0=0.0002 Hz, zero octave errors preserved); `onnx_ffi_provider.dart` (+`_io`/`_stub`) runs the SAME CREPE `.onnx` on native ORT reusing that seam; un-stubbed `loadOnnxFfiF0`. All defensive: native dylib can't load headless/web → `fromBytes`→null → resolver falls back to pure-Dart onnx (`flutter test` green). Native-ORT poly/chords (BasicPitch/BTC) still stubbed (pure-Dart onnx serves them). **⇒ F0 has all 3 runtimes; auto-order ggml > onnxFfi > onnx.** onnxFfi F0 also serves **RMVPE** (preferred over CREPE, same seam via `rmvpeF0WithRunner`). (3) **CrispASR ggml — upgraded to the in-app FFI binding**: `crispasr` bumped `^0.8.11→^0.8.16` (0.8.16 ships `CrispasrSession.pitch(Float32List pcm16k)` whose `PitchFrame` record is field-for-field ours → zero-adapter); `crispasr_ffi_pitch.dart` (+`_io`/`_stub`) resolves the crepe GGUF via CrispASR's OWN registry+cache (cstr/crepe-GGUF), opens a pitch session, returns the frames straight as a `PitchTrack`. `loadCrispasrCrepeF0` now prefers FFI, falls back to the `--pitch` CLI. Pure-Dart FFI (not a plugin) ⇒ works in GUI **and** `dart run` (bin prefers it too). Defensive: old/missing lib (this box has 0.8.10, no pitch sym) or no model → null → CLI → onnx/pyin. **⇒ ggml CREPE is now a real in-app call, no shell-out.** (4) **onnxFfi now covers ALL FOUR models**: extended the runner seam to `basic_pitch.dart` (`basicPitchTranscribeWithRunner`, 2-head Yn/Yo) + `harmony.dart` (`estimateChordsWithRunner`, 108-frame CQT segments) — both bit-identical delegations; un-stubbed `loadOnnxFfiNeural` (Basic Pitch poly) + `loadOnnxFfiChords` (BTC) on native ORT. So F0 (CREPE+RMVPE), polyphony (Basic Pitch), and chords (BTC) all run on onnxFfi now. (5) **UNIFIED CLI `bin/transcribe.dart`** — one dispatcher over every CLI-capable backend/model: `--task notes|poly|chords|stems` × `--backend auto|dart|onnx|crispasr` × `--f0 pyin|crepe|rmvpe`, `--f0-dump`, `--json`. Routes to the Flutter-free engines directly (crispasr FFI, onnx crepe/rmvpe/basicpitch/btc/Open-Unmix, pyin). **`--task stems`** does source separation (onnx Open-Unmix, or crispasr `--separate` CLI via `--sep-bin`/`--sep-model`), writing `<in>_<stem>.wav` — so separation is now headless too. onnxFfi is DELIBERATELY absent from CLI — proven: `package:onnxruntime` transitively imports `package:flutter` so it can't compile under `dart run` (native-ORT is genuinely GUI-only). Validated end-to-end: `--backend dart` transcribes the violin G-scale correctly; `--task stems --backend onnx` separates a brass clip → vocals stem WAV. (6) **`resolveSeparator(config)`** completes the framework's 5th step (`separation`) in the resolver — mirrors `resolveEngines`: crispasr (`--separate` CLI, env-gated; FFI once 0.8.17) > onnx (Open-Unmix — the WORKING pure-Dart-ONNX separator; HTDemucs-onnx is a dead-end); web/pureDart → null. New `loadUmxSeparator` + `loadCrispasrSeparatorFromEnv` web-safe loaders; +6 tests. The seam the GUI whole-song feature consumes. **Robustness fix:** upstream added a model-license guard (BTC now CC-BY-NC-SA-4.0-gated); made all onnxFfi loaders swallow the license/download throw → null. (7) **GUI whole-song → MultiPartScore SHIPPED** — the Transcribe screen gains a **"Whole song (separate into parts)"** toggle: `transcribeSong(mono, separator: resolveSeparator(config), neural, f0)` → `StemTranscription{MultiPartScore, partNames}`, shown as an N-parts card with **"Save to Song Book"** (multi-part MusicXML via `multiPartToMusicXml` → `ImportedSong` in `UserSongsService` — the Tracker/Workshop store). `debugSeparator` test seam; +1 widget test (fake separator → parts → save adds a `score-partwise` song). +5 EN/DE ARB keys. **Perf/robustness:** `OrtFfiSession.available()` cheap probe — the onnxFfi loaders now bail BEFORE reading a (361 MB RMVPE!) model file when native ORT can't load (fixed a widget-test stall from a machine-cached model). +16 tests total; my files analyze-clean (2 pre-existing `piano.dart` info-lints are another agent's); 172 transcription + 4 screen tests green. Now idle. Touched: `pubspec.yaml`, `lib/core/audio/transcription/{crepe,rmvpe,basic_pitch,harmony,crispasr_pitch*,crispasr_ffi_pitch*,onnx_ort_session*}.dart`, `lib/features/games/transcribe/{transcribe_engines,onnx_ffi_provider*}.dart`, `settings_screen.dart` (1 line), `bin/{transcribe,transcribe_crispasr}.dart`.
 - **opus (transcribe-spleeter)** · ✅ **SHIPPED — Spleeter 4-stem separation** (vocals/drums/bass/other, MIT). Completes Tier-2 #4 in FULL (Open-Unmix `separate_umx.dart` only isolates vocals; this splits the whole mix into all four stems → `transcribeStems` already routes them into a multi-part score). Uses the pre-built sherpa-onnx Spleeter ONNX (no TF install: all-conv U-Net, 7 Conv + 6 ConvTranspose + BatchNorm + LeakyRelu, Sigmoid mask, **no RNN** → every op already supported; vocals/drums/bass/other ONNX ~38 MB each on the `onnx_runtime_dart` models-v1 release). Spectrogram-domain, mirroring `separate_umx.dart`: resample→44.1 k → STFT (n_fft **4096**, hop 1024, `stft.dart`) → magnitude cropped to 1024 bins, packed into `[2, num_splits, 512, 1024]` patches (pad time to mult-of-512) → each stem model → estimated magnitude → **power-ratio soft (Wiener) masks** normalised across the 4 stems → apply to the mix's complex STFT (high bins ≥1024 pass through the residual mask) → iSTFT → the 4 stems as a full `Stems` record → `spleeterSeparator(...)` fits the `stems.dart` `Separator` seam. **Perf: 2.3× realtime PER STEM measured (all-conv, pool gives no benefit); ~1.7× RT slowdown for all four (4-min song ≈ 7 min) — opt-in, native-only.** Model runtime parity **cosine 1.0** vs onnxruntime. Files: `separate_spleeter.dart` (web-safe) + `separate_spleeter_model_store.dart` (dart:io) + tests.
@@ -1868,6 +1869,100 @@ toy.**
    export; gate any sharing behind the parental-control stance. **M–L.**
 3. **Save slots / preset shelf.** In-app named groove slots (the share token
    already serializes the spec) so a kid can keep and revisit their bands. **S.**
+
+## Loop Mixer + Live Looper — UX & editability overhaul (maintainer directives, 2026-07-20)
+
+**STATUS: SCOPED, unclaimed (this section). NOT built.** Direct maintainer
+feedback after playing the shipped Live Looper (Perform, S/P/Q/F/R arcs) and the
+Loop Mixer 2.0: both are powerful underneath but **read as opaque, static forms
+you can't edit or see into**. The complaints, verbatim-ish:
+
+- **Live Looper:** "I see NO way to actually CHANGE what goes on — I click '+
+  Beat' and get ONE thing, and it STAYS no matter what." → the `+` seeds are a
+  fixed, *deterministic* 1-bar loop; a layer can only be muted/volumed/deleted,
+  never edited. "Play a melody / Play a beat" exist but are unintuitive and
+  produce un-editable layers.
+- **"The bars for the voices must be clickable and thus changeable."**
+- **"We must be able to SEE what is recorded."** (Today a layer is a label +
+  volume slider — its content is invisible.)
+- **"The keyboard must be like the other keyboards, like in Score mode"**, and
+  **"in Tracker we have a better keyboard (a little smaller) — maybe we do NOT
+  need several of them?"** → consolidate to ONE shared compact keyboard.
+- **Loop Mixer:** 5 track lines waste vertical space — **on wide screens show
+  them as ~5 panels side-by-side.** "Show as sheet music" is **rendered too
+  small.** **The notes currently played must show** (playback highlight). Need a
+  **way to CHANGE that score.** Key/Scale/Kit/Swing/Filter/etc options need **way
+  better rendering.** Need an **(i) button that explains the concept and, on
+  demand, every GUI element.** Need **ways to change all presets** (own
+  harmonies, kits, scales, …).
+
+**⚠ Design reversal (recorded on purpose):** the 2.0/3.0 invariant "*No step
+editor here — grid editing is the Tracker's job*" is **overridden** by the
+maintainer for BOTH surfaces. The Loop Mixer and Live Looper must become
+*editable*, not just playing surfaces. Keep the other 2.0 invariants (consonance
+/ colour-melody rule, sample-integral timing, backward-compatible spec/token).
+
+**Chosen for the Live Looper's "change it": a REAL step editor** (maintainer
+pick over quick re-roll) — tap a layer → a groovebox grid (beat = kick/snare/hat
+× 16 steps) / note editor (melody/bass on the shared keyboard).
+
+### Cross-cutting building blocks (build these FIRST — every slice reuses them)
+
+- **B1 — one shared compact keyboard.** Extract/adopt the **Tracker's smaller
+  keyboard** as the single reusable widget; replace `PianoKeyboard` in Perform
+  (and audit other callers) so every keyboard matches "Score mode". Kills the
+  "several keyboards" smell. (Callers today: composition workshop, sound_lab,
+  my_melody, advanced_tracker, keyboard games — audit which should switch.)
+- **B2 — playback highlight.** Reuse the shipped **`PlayingStaffView` +
+  `ScorePlayback` + `StaffView.highlightedIds`** primitive (auto-memory
+  [[playing-staff-highlight]]) so "notes currently played show" in BOTH the Loop
+  Mixer sheet-music view and the Live Looper lanes.
+- **B3 — editable score/lane view.** Reuse the Composition/Tab Workshop editing
+  model: a bar/lane is a tappable region → edit its notes/hits in place. For the
+  Loop Mixer the underlying model is the `GrooveSpec` (spec→WAV); for the Live
+  Looper it's the layer (today baked PCM — needs a symbolic model behind each
+  layer so it can be edited + re-rendered).
+- **B4 — in-app explain system ("(i)").** Reuse the **tutorial/primer framework**
+  (`lib/shared/tutorial/`): an (i) button opens a concept explainer + an on-
+  demand "what's this?" for each GUI control (Key/Scale/Kit/Swing/Filter/…).
+- **B5 — editable presets.** A preset store + tiny editor for **own harmonies /
+  kits / scales / progressions** (extends the groove save-slots idea §"Save
+  slots" above) so the palette isn't hardcoded.
+
+### Live Looper (Perform) — editable, visible lanes
+
+- **LL1 — see what's recorded.** Each layer shows its actual content (mini
+  notation via B2's StaffView, or a step-grid for beats), not just a label.
+  Requires giving each layer a **symbolic model** (notes/hits) it renders from,
+  replacing/augmenting the baked-PCM-only layer.
+- **LL2 — click a bar → edit in place** (the real step editor): beat = pad×step
+  grid; melody/bass = note entry on the B1 shared keyboard. Re-renders the
+  layer's PCM on edit (offline, as today).
+- **LL3 — playback highlight** on the lanes (B2).
+- **LL4 — adopt the shared compact keyboard** (B1); retire Perform's
+  `PianoKeyboard`.
+
+### Loop Mixer 3.0 — UX rendering pass (complements the existing §A–§G above)
+
+- **LM-UX1 — responsive layout.** 5 stacked track cards → a **horizontal
+  panel row** (≈5 columns) on wide screens (LayoutBuilder breakpoint); stacked
+  on narrow. Reclaims vertical space for the score.
+- **LM-UX2 — bigger sheet-music view.** The "show as sheet music" render is too
+  small — scale it up / give it real estate (and make it the B2 highlight host).
+- **LM-UX3 — playback highlight** in the sheet view (B2) — notes light as they
+  play.
+- **LM-UX4 — editable groove score** (B3): change the notes/pattern (edits the
+  `GrooveSpec`, re-renders; respects the colour-melody + timing invariants).
+- **LM-UX5 — better option controls.** Key/Scale/Kit/Swing/Filter/… from cramped
+  chips to clear, legible controls (grouped, labelled, with current-value
+  affordances).
+- **LM-UX6 — (i) info + per-control help** (B4).
+- **LM-UX7 — editable presets** (B5): own harmonies/kits/scales.
+
+**Suggested order:** B1 + B2 (highest reuse, unblock the visible-and-editable
+work) → LL1/LL3 + LM-UX2/UX3 (make both *visible*) → B3 → LL2 + LM-UX4 (make
+both *editable*) → LM-UX1/UX5 (layout/controls polish) → B4/LM-UX6 (help) →
+B5/LM-UX7 (presets). Slice-per-ship, test-per-slice, as with the S/P/Q/F/R arcs.
 
 ## Ideas backlog for the next agent (Jul 2026 handoff)
 
