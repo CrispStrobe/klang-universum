@@ -5,7 +5,9 @@
 // whether it's actually present; anything unpicked or absent falls back to
 // pure-Dart (a null engine).
 
+import 'package:comet_beat/core/audio/transcription/crispasr_ffi_piano.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
+import 'package:comet_beat/core/audio/transcription/crispasr_ffi_separate.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_separate.dart'
     show loadCrispasrSeparatorFromEnv;
@@ -50,14 +52,12 @@ Future<F0Estimator?> loadCrispasrCrepeF0({bool download = false}) async =>
     await crispasrFfiCrepeF0(download: download) ?? crispasrCliCrepeF0();
 
 /// `crispasr` runtime — polyphonic transcription via CrispASR ggml PIANO (Kong).
-/// Returns [NoteEvent]s. Piano is session-openable today, but its only output is
-/// segment text ("C4 v=80") — lossy/ugly to parse. Deliberately still stubbed:
-/// CrispASR is adding a clean `crispasr_session_piano_notes*` C ABI returning
-/// {midi, onMs, offMs, velocity} (their §251), which drops straight onto
-/// [NoteEvent]. Un-stub against THAT, not the text hack. Until then, the
-/// pure-Dart onnx Basic Pitch serves polyphony.
-Future<NeuralTranscriber?> loadCrispasrPiano({bool download = false}) async =>
-    null;
+/// WIRED via the clean FFI note-event API (`crispasr_ffi_piano.dart` →
+/// `CrispasrSession.pianoNotes`, crispasr 0.8.17+): its `{midi, onMs, offMs,
+/// velocity}` maps straight onto [NoteEvent]. Null (no lib/model) → the resolver
+/// falls back to the pure-Dart onnx Basic Pitch.
+Future<NeuralTranscriber?> loadCrispasrPiano({bool download = false}) =>
+    loadCrispasrPianoFfi(download: download);
 
 /// `onnxFfi` runtime — the same CREPE `.onnx` model on the NATIVE ONNX Runtime
 /// via FFI (the `onnxruntime` plugin), reusing crepeF0WithRunner. WIRED for F0
@@ -189,12 +189,19 @@ Future<TranscriptionEngines> resolveEngines(
 /// Auto prefers crispasr > onnx. Null ⇒ no separator available (→ the song
 /// pipeline makes a single part). There is no pure-Dart separator, so a
 /// `pureDart` choice resolves to null. Test seams: pass fake loaders.
+/// The `crispasr` separation backend: the in-app FFI htdemucs
+/// (`CrispasrSession.separate`, crispasr 0.8.17+), falling back to the
+/// `--separate` CLI (env-gated) for a dev box without a bundled lib.
+Future<Separator?> _crispasrSeparator({bool download = false}) async =>
+    await loadCrispasrFfiSeparator(download: download) ??
+    await loadCrispasrSeparatorFromEnv();
+
 Future<Separator?> resolveSeparator(
   TranscriptionEngineConfig config, {
   bool isWeb = kIsWeb,
   Future<Separator?> Function({bool download}) loadOnnx = loadUmxSeparator,
   Future<Separator?> Function({bool download}) loadCrispasr =
-      loadCrispasrSeparatorFromEnv,
+      _crispasrSeparator,
 }) async {
   final explicit =
       config.backendFor(TranscriptionStep.separation) != Backend.auto;
