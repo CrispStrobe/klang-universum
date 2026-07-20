@@ -18,6 +18,22 @@ class OrtFfiSession {
 
   final OrtSession _session;
   static bool _envReady = false;
+  static bool? _available;
+
+  /// Whether the native ONNX Runtime is loadable here — cached after the first
+  /// probe. False under `flutter test` / `dart run` / web-via-io (no dylib), so
+  /// callers can bail BEFORE reading a (possibly huge) model file they couldn't
+  /// use anyway. Never throws.
+  static bool available() {
+    if (_available != null) return _available!;
+    try {
+      OrtEnv.instance.init(); // lazily opens libonnxruntime — throws if absent
+      _envReady = true;
+      return _available = true;
+    } catch (_) {
+      return _available = false;
+    }
+  }
 
   /// Build a session from raw `.onnx` bytes, or null if the native ORT runtime
   /// isn't loadable here (headless test, web-via-io, missing dylib) or the

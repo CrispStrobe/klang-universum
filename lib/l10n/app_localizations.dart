@@ -2702,6 +2702,36 @@ abstract class AppLocalizations {
   /// **'Neural pitch (CREPE)'**
   String get transcribeNeuralPitch;
 
+  /// Toggle: separate a full recording into stems (vocals/bass/etc.) and transcribe each into its own staff, producing a multi-part score.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole song (separate into parts)'**
+  String get transcribeWholeSong;
+
+  /// No description provided for @transcribeWholeSongHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Splits the mix into parts and notates each one'**
+  String get transcribeWholeSongHint;
+
+  /// No description provided for @transcribeSongResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} parts'**
+  String transcribeSongResult(int count);
+
+  /// No description provided for @transcribeSaveSongBook.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Song Book'**
+  String get transcribeSaveSongBook;
+
+  /// No description provided for @transcribeSongSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to the Song Book'**
+  String get transcribeSongSaved;
+
   /// No description provided for @transcribeResult.
   ///
   /// In en, this message translates to:

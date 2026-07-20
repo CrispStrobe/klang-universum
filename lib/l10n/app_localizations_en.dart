@@ -1417,6 +1417,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transcribeNeuralPitch => 'Neural pitch (CREPE)';
 
   @override
+  String get transcribeWholeSong => 'Whole song (separate into parts)';
+
+  @override
+  String get transcribeWholeSongHint =>
+      'Splits the mix into parts and notates each one';
+
+  @override
+  String transcribeSongResult(int count) {
+    return '$count parts';
+  }
+
+  @override
+  String get transcribeSaveSongBook => 'Save to Song Book';
+
+  @override
+  String get transcribeSongSaved => 'Saved to the Song Book';
+
+  @override
   String transcribeResult(int count, int bpm) {
     return '$count notes · $bpm BPM';
   }

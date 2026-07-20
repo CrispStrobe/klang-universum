@@ -45,14 +45,17 @@ const int _btcTimestep = 108;
 /// (an explicit backend choice); otherwise used only if already cached. Null ⇒
 /// no model or no native ORT here → the resolver falls to the pure-Dart onnx
 /// path.
-Future<F0Estimator?> loadOnnxFfiF0({bool download = false}) async =>
-    await _rmvpeFfiF0(download: download) ??
-    await _crepeFfiF0(download: download);
+Future<F0Estimator?> loadOnnxFfiF0({bool download = false}) async {
+  if (!OrtFfiSession.available()) return null; // no native ORT → skip model I/O
+  return await _rmvpeFfiF0(download: download) ??
+      await _crepeFfiF0(download: download);
+}
 
 /// Native-ORT polyphony (Basic Pitch): the same nmp.onnx on native ORT via the
 /// basicPitchTranscribeWithRunner seam. Null ⇒ no model / no native ORT here →
 /// resolver falls to the pure-Dart onnx Basic Pitch.
 Future<NeuralTranscriber?> loadOnnxFfiNeural({bool download = false}) async {
+  if (!OrtFfiSession.available()) return null; // no native ORT → skip model I/O
   final bytes = await _basicPitchBytes(download: download);
   if (bytes == null) return null;
   final session = OrtFfiSession.fromBytes(bytes);
@@ -79,6 +82,7 @@ Future<NeuralTranscriber?> loadOnnxFfiNeural({bool download = false}) async {
 /// estimateChordsWithRunner seam. Null ⇒ no model / no native ORT → resolver
 /// falls to the pure-Dart onnx BTC.
 Future<ChordEstimator?> loadOnnxFfiChords({bool download = false}) async {
+  if (!OrtFfiSession.available()) return null; // no native ORT → skip model I/O
   final store = HarmonyModelStore();
   if (!store.isPresent() && !download) return null;
   // ensureFiles() THROWS if the BTC licence (CC-BY-NC-SA, non-commercial) isn't

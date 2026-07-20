@@ -5,6 +5,9 @@
 import 'dart:typed_data';
 
 class OrtFfiSession {
+  /// No native ORT on web / no-dart:io.
+  static bool available() => false;
+
   static OrtFfiSession? fromBytes(Uint8List bytes) => null;
 
   Map<String, Float32List> run(

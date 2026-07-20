@@ -545,6 +545,21 @@
   "@transcribeNeuralPitch": {
     "description": "Toggle: use the CREPE neural F0 model for the melody pitch instead of the built-in tracker. More accurate on singing; downloads a small model on first use."
   },
+  "transcribeWholeSong": "Whole song (separate into parts)",
+  "@transcribeWholeSong": {
+    "description": "Toggle: separate a full recording into stems (vocals/bass/etc.) and transcribe each into its own staff, producing a multi-part score."
+  },
+  "transcribeWholeSongHint": "Splits the mix into parts and notates each one",
+  "transcribeSongResult": "{count} parts",
+  "@transcribeSongResult": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transcribeSaveSongBook": "Save to Song Book",
+  "transcribeSongSaved": "Saved to the Song Book",
   "transcribeResult": "{count} notes · {bpm} BPM",
   "@transcribeResult": {
     "placeholders": {

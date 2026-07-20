@@ -482,6 +482,11 @@
   "transcribeEngineNeural": "Neuronal",
   "transcribeNeuralWebNote": "Die neuronale Engine braucht die App (nicht die Web-Version) – hier wird die Melodie-Engine verwendet.",
   "transcribeNeuralPitch": "Neuronale Tonhöhe (CREPE)",
+  "transcribeWholeSong": "Ganzer Song (in Stimmen trennen)",
+  "transcribeWholeSongHint": "Teilt den Mix in Stimmen und notiert jede einzeln",
+  "transcribeSongResult": "{count} Stimmen",
+  "transcribeSaveSongBook": "Im Liederbuch speichern",
+  "transcribeSongSaved": "Im Liederbuch gespeichert",
   "transcribeResult": "{count} Noten · {bpm} BPM",
   "@transcribeResult": {
     "placeholders": {

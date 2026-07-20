@@ -11,16 +11,21 @@ import 'package:comet_beat/core/audio/transcription/engine_config.dart';
 import 'package:comet_beat/core/audio/transcription/harmony.dart'
     show ChordEstimator;
 import 'package:comet_beat/core/audio/transcription/route.dart';
+import 'package:comet_beat/core/audio/transcription/stems.dart'
+    show Separator, StemTranscription, transcribeSong;
 import 'package:comet_beat/core/audio/transcription/transcription_service.dart';
+import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/features/games/songs/song_screen.dart';
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/transcribe/crepe_provider.dart';
 import 'package:comet_beat/features/games/transcribe/harmony_provider.dart';
 import 'package:comet_beat/features/games/transcribe/neural_provider.dart';
 import 'package:comet_beat/features/games/transcribe/rmvpe_provider.dart';
 import 'package:comet_beat/features/games/transcribe/transcribe_engines.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
-import 'package:crisp_notation_core/crisp_notation_core.dart' show Score;
+import 'package:crisp_notation_core/crisp_notation_core.dart'
+    show MultiPartScore, Score, multiPartToMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +49,7 @@ class TranscribeScreen extends StatefulWidget {
     this.debugCrepe,
     this.debugRmvpe,
     this.debugHarmony,
+    this.debugSeparator,
   });
 
   /// Test seam: replaces the file-picker. Returns WAV bytes, or null to cancel.
@@ -61,6 +67,9 @@ class TranscribeScreen extends StatefulWidget {
   /// Test seam: replaces neural chord-estimator (BTC) loading.
   final Future<ChordEstimator?> Function({bool download})? debugHarmony;
 
+  /// Test seam: replaces the whole-song source separator resolution.
+  final Future<Separator?> Function()? debugSeparator;
+
   @override
   State<TranscribeScreen> createState() => _TranscribeScreenState();
 }
@@ -70,8 +79,10 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
   String? _error;
   EngineChoice _choice = EngineChoice.auto;
   bool _neuralPitch = false;
+  bool _wholeSong = false;
   bool _configApplied = false;
   TranscriptionResult? _result;
+  StemTranscription? _songResult;
 
   @override
   void didChangeDependencies() {
@@ -124,16 +135,44 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     return loader(download: download);
   }
 
+  Future<Separator?> _resolveSeparator() {
+    if (widget.debugSeparator != null) return widget.debugSeparator!();
+    return resolveSeparator(_config());
+  }
+
   Future<void> _transcribe() async {
     setState(() {
       _busy = true;
       _error = null;
       _result = null;
+      _songResult = null;
     });
     try {
       final bytes = await _pickAudio();
       if (bytes == null) {
         setState(() => _busy = false); // cancelled
+        return;
+      }
+      // Whole-song: separate into stems (if a separator is available) and
+      // transcribe each into a multi-part score. Always inline — the separator
+      // and per-stem engines hold ONNX handles that can't cross an isolate.
+      if (_wholeSong) {
+        final wav = readWavPcm16(bytes);
+        final mono = wavToMonoFloat(wav);
+        final sep = await _resolveSeparator();
+        final engines = await _resolve();
+        final song = await transcribeSong(
+          mono,
+          separator: sep,
+          neural: engines.neural,
+          f0: engines.f0,
+          sampleRate: wav.sampleRate,
+        );
+        if (!mounted) return;
+        setState(() {
+          _songResult = song;
+          _busy = false;
+        });
         return;
       }
       // Neural only when the user allows it and (native) the model is present.
@@ -198,6 +237,25 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
     );
   }
 
+  /// Persist a whole-song transcription to the Song Book as a multi-part song
+  /// (every voice kept via MusicXML — the same store the Tracker/Workshop use).
+  void _saveSongToBook(
+    MultiPartScore score,
+    List<String> partNames,
+    AppLocalizations l10n,
+  ) {
+    context.read<UserSongsService>().addSong(
+          ImportedSong(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: l10n.transcribeTitle,
+            musicXml: multiPartToMusicXml(score, partNames: partNames),
+          ),
+        );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.transcribeSongSaved)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -242,7 +300,7 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
               ),
             // CREPE neural pitch upgrades the melody F0; native-only, and not for
             // the polyphonic neural engine (which has no F0 stage).
-            if (_choice != EngineChoice.neural && !kIsWeb)
+            if (_choice != EngineChoice.neural && !kIsWeb && !_wholeSong)
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
@@ -253,6 +311,19 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
                     : (v) => setState(() => _neuralPitch = v ?? false),
                 title: Text(l10n.transcribeNeuralPitch),
               ),
+            // Whole-song: separate the mix into stems and transcribe each into a
+            // multi-part score (needs a separation model; degrades to a single
+            // part when none is present).
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              dense: true,
+              value: _wholeSong,
+              onChanged:
+                  _busy ? null : (v) => setState(() => _wholeSong = v ?? false),
+              title: Text(l10n.transcribeWholeSong),
+              subtitle: Text(l10n.transcribeWholeSongHint),
+            ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _busy ? null : _transcribe,
@@ -267,8 +338,49 @@ class _TranscribeScreenState extends State<TranscribeScreen> {
                 l10n.transcribeError(_error!),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               )
+            else if (_songResult != null)
+              Expanded(child: _songCard(_songResult!, l10n))
             else if (_result != null)
               Expanded(child: _resultCard(_result!, l10n)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _songCard(StemTranscription song, AppLocalizations l10n) {
+    final score = song.score;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.transcribeSongResult(song.partNames.length),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            if (song.partNames.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(song.partNames.join(' · ')),
+            ],
+            const SizedBox(height: 16),
+            if (score == null)
+              Text(l10n.transcribeNoNotes)
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.tonalIcon(
+                    onPressed: () =>
+                        _saveSongToBook(score, song.partNames, l10n),
+                    icon: const Icon(Icons.library_add),
+                    label: Text(l10n.transcribeSaveSongBook),
+                  ),
+                ],
+              ),
           ],
         ),
       ),

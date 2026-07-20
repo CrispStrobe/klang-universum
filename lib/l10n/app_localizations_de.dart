@@ -1422,6 +1422,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get transcribeNeuralPitch => 'Neuronale Tonhöhe (CREPE)';
 
   @override
+  String get transcribeWholeSong => 'Ganzer Song (in Stimmen trennen)';
+
+  @override
+  String get transcribeWholeSongHint =>
+      'Teilt den Mix in Stimmen und notiert jede einzeln';
+
+  @override
+  String transcribeSongResult(int count) {
+    return '$count Stimmen';
+  }
+
+  @override
+  String get transcribeSaveSongBook => 'Im Liederbuch speichern';
+
+  @override
+  String get transcribeSongSaved => 'Im Liederbuch gespeichert';
+
+  @override
   String transcribeResult(int count, int bpm) {
     return '$count Noten · $bpm BPM';
   }

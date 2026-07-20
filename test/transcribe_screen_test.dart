@@ -8,10 +8,14 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/transcription/pyin.dart';
+import 'package:comet_beat/core/audio/transcription/stems.dart' show Stems;
+import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/transcribe/transcribe_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _sr = 44100;
 double _hz(int midi) => 440 * pow(2, (midi - 69) / 12).toDouble();
@@ -48,6 +52,11 @@ void main() {
         TranscribeScreen(
           debugPickAudio: () async => wav,
           debugNeural: ({bool download = false}) async => null, // no neural
+          // Stub the model loaders so a machine-cached RMVPE/CREPE/BTC doesn't
+          // load a real (huge) ONNX model and stall pumpAndSettle.
+          debugRmvpe: ({bool download = false}) async => null,
+          debugCrepe: ({bool download = false}) async => null,
+          debugHarmony: ({bool download = false}) async => null,
         ),
       ),
     );
@@ -81,6 +90,7 @@ void main() {
             crepeUsed = true;
             return pyinF0(mono, sampleRate: sr);
           },
+          debugHarmony: ({bool download = false}) async => null,
         ),
       ),
     );
@@ -94,6 +104,50 @@ void main() {
 
     expect(crepeUsed, isTrue, reason: 'CREPE estimator should have been used');
     expect(find.text(l10n.transcribeOpenSongBook), findsOneWidget);
+  });
+
+  testWidgets('whole-song mode → multi-part result saved to the Song Book',
+      (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final songs = UserSongsService();
+    await songs.load();
+    final wav = _scaleWav();
+    // A fake separator that returns the mix as a single vocal stem → one part.
+    Future<Stems> fakeSep(Float64List mono, int sr) async =>
+        (vocals: mono, bass: null, drums: null, other: null);
+
+    await t.pumpWidget(
+      _app(
+        ChangeNotifierProvider<UserSongsService>.value(
+          value: songs,
+          child: TranscribeScreen(
+            debugPickAudio: () async => wav,
+            debugNeural: ({bool download = false}) async => null,
+            debugRmvpe: ({bool download = false}) async => null,
+            debugCrepe: ({bool download = false}) async => null,
+            debugHarmony: ({bool download = false}) async => null,
+            debugSeparator: () async => fakeSep,
+          ),
+        ),
+      ),
+    );
+    final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+
+    // Turn on whole-song mode, then transcribe.
+    await t.tap(find.text(l10n.transcribeWholeSong));
+    await t.pumpAndSettle();
+    await t.tap(find.text(l10n.transcribePickFile));
+    await t.pumpAndSettle();
+
+    // A multi-part result with a "Save to Song Book" action.
+    expect(find.text(l10n.transcribeSaveSongBook), findsOneWidget);
+
+    // Saving adds a multi-part song to the library.
+    final before = songs.songs.length;
+    await t.tap(find.text(l10n.transcribeSaveSongBook));
+    await t.pumpAndSettle();
+    expect(songs.songs.length, before + 1);
+    expect(songs.songs.last.musicXml, contains('score-partwise'));
   });
 
   testWidgets('a cancelled pick leaves no result and no spinner', (t) async {
