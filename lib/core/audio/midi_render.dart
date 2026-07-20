@@ -40,7 +40,8 @@ const double _maxTailSec = 3; // cap a note's release tail (buffer headroom)
 // far smaller than the flat CC-default we used before, so the wet return is
 // scaled up to keep the same overall space while preserving the font's
 // per-instrument WET/dry variation (a pad far wetter than a bass).
-const double _reverbReturnGain = 4.6;
+const double _reverbReturnGain = 1.9;
+const double _reverbWidth = 3.0; // side-boost so the wet tail spreads wide
 const double _bendRangeSemis = 2; // GM default (RPN 0 not yet read)
 const double _vibratoRateHz = 5.5;
 const double _vibratoMaxCents = 50; // at full mod wheel
@@ -457,22 +458,29 @@ class _Note {
   // of one stuck on its own side. A bigger room gives the tail the length that
   // reads as "air"/space (a dry mix sounds stale next to a real synth).
   if (wantRev) {
-    final send = Float64List(maxLen);
-    for (var i = 0; i < maxLen; i++) {
-      send[i] = (revL![i] + revR![i]) * 0.5;
-    }
-    final wl = reverbFx(send, mix: 1, roomSize: 0.82, sampleRate: sampleRate);
+    // Reverb the STEREO (panned) sends — NOT a mono sum — so the wet tail keeps
+    // the dry stereo image (a right-panned hat's reverb stays right); the right
+    // channel is Freeverb-offset by 23 samples for extra decorrelation. Summing
+    // to mono first collapsed everything to the centre (a narrow, "stale" tail).
+    final wl = reverbFx(revL!, mix: 1, roomSize: 0.82, sampleRate: sampleRate);
     final wr = reverbFx(
-      send,
+      revR!,
       mix: 1,
       roomSize: 0.82,
       stereoSpread: 23,
       sampleRate: sampleRate,
     );
+    // Widen the wet return (mid/side): boost the side component so the reverb
+    // tail spreads across the stereo field like a real synth's, instead of
+    // sitting narrow/centred (our Freeverb decorrelates less than fluidsynth's).
     final g = reverbMix * _reverbReturnGain;
     for (var i = 0; i < maxLen; i++) {
-      left[i] += wl[i] * g;
-      right[i] += wr[i] * g;
+      final wetL = wl[i] * g;
+      final wetR = wr[i] * g;
+      final mid = (wetL + wetR) * 0.5;
+      final side = (wetL - wetR) * 0.5 * _reverbWidth;
+      left[i] += mid + side;
+      right[i] += mid - side;
     }
   }
   if (wantChor) {
@@ -654,8 +662,8 @@ void _renderZone(
   // base — so a pad is wet and a bass dry, as the font intends — plus the
   // channel's CC91/93 send (scaled by the SF2 default modulator's 0.2). Before,
   // every note got the flat CC-default send regardless of instrument.
-  final zReverb = (zone.reverbSend + 0.2 * n.reverb).clamp(0.0, 1.0);
-  final zChorus = (zone.chorusSend + 0.2 * n.chorus).clamp(0.0, 1.0);
+  final zReverb = (zone.reverbSend + 0.45 * n.reverb).clamp(0.0, 1.0);
+  final zChorus = (zone.chorusSend + 0.45 * n.chorus).clamp(0.0, 1.0);
 
   // SF2 modulation envelope (a 2nd DAHDSR) → filter cutoff (+ pitch): the attack
   // "bite" that a static filter lacks — e.g. a kick's low base cutoff opens into
