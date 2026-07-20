@@ -188,6 +188,26 @@ void main() {
       expect(p.zones.single.sampleIndex, 0);
     });
 
+    test('preset-level attenuation ADDS to the instrument zone (GM balance)',
+        () {
+      // A GM font balances its instruments with preset-level attenuation; the
+      // reader must add it to the instrument's own attenuation, not drop it —
+      // else every instrument plays at the wrong relative level.
+      final sf = Sf2SoundFont.parse(
+        oneSampleSf2(
+          pcm: sineI16(880, 20),
+          sampleRate: 44100,
+          rootKey: 60,
+          loopStart: 0,
+          loopEnd: 0,
+          attenuationCb: 60, // instrument level: −6 dB
+          presetAttenuationCb: 100, // preset level: −10 dB
+        ),
+      );
+      // 60 + 100 = 160 cB (−16 dB total).
+      expect(sf.presets.single.zones.single.attenuationCb, 160);
+    });
+
     test('a key-split preset picks the RIGHT sample per note', () {
       // Sample A = low buzz (few periods), B = high buzz (many periods): a
       // note in each range should read a clearly different pitch.

@@ -415,132 +415,75 @@ List<Sf2Preset> _parsePresets(
   int presetBagNdx(int i) => u16(phdrOff + i * 38 + 24);
   int instBagNdx(int i) => u16(instOff + i * 22 + 20);
 
-  // The zones of instrument [instIndex] (keyRange + sampleID + root override).
-  List<Sf2Zone> zonesOfInstrument(int instIndex) {
+  // Every zone's generators for one instrument, in ibag order. A leading zone
+  // with no sampleID is the instrument's GLOBAL zone (defaults for the rest).
+  List<_Gen> instZoneGens(int instIndex) {
     if (instIndex < 0 || instIndex + 1 >= instCount) return const [];
-    final zones = <Sf2Zone>[];
+    final out = <_Gen>[];
     final ibStart = instBagNdx(instIndex);
     final ibEnd = instBagNdx(instIndex + 1).clamp(0, ibagCount - 1);
     for (var ib = ibStart; ib < ibEnd; ib++) {
-      final gStart = u16(ibagOff + ib * 4);
-      final gEnd = u16(ibagOff + (ib + 1) * 4).clamp(0, igenCount);
-      var lo = 0, hi = 127;
-      var vlo = 0, vhi = 127;
-      var atten = 0, coarse = 0, fine = 0;
-      var delayVol = -12000,
-          attackVol = -12000,
-          holdVol = -12000,
-          decayVol = -12000,
-          sustainVol = 0,
-          releaseVol = -12000;
-      var filterFc = 13500, filterQ = 0;
-      var modLfoPitch = 0,
-          vibLfoPitch = 0,
-          modLfoVol = 0,
-          delayModLfo = -12000,
-          freqModLfo = 0,
-          delayVibLfo = -12000,
-          freqVibLfo = 0,
-          panTenth = 0,
-          exclusiveClass = 0,
-          sampleModes = 0;
-      int? sampleId, rootOverride;
-      for (var g = gStart; g < gEnd; g++) {
-        final oper = u16(igenOff + g * 4);
-        final amt = u16(igenOff + g * 4 + 2);
-        final samt =
-            data.getInt16(igenOff + g * 4 + 2, Endian.little); // signed
-        if (oper == _genKeyRange) {
-          lo = amt & 0xFF;
-          hi = (amt >> 8) & 0xFF;
-        } else if (oper == _genVelRange) {
-          vlo = amt & 0xFF;
-          vhi = (amt >> 8) & 0xFF;
-        } else if (oper == _genRootKeyOverride) {
-          rootOverride = amt;
-        } else if (oper == _genSampleId) {
-          sampleId = amt;
-        } else if (oper == _genInitialAttenuation) {
-          atten = amt; // centibels (unsigned)
-        } else if (oper == _genCoarseTune) {
-          coarse = samt; // semitones (signed)
-        } else if (oper == _genFineTune) {
-          fine = samt; // cents (signed)
-        } else if (oper == _genDelayVolEnv) {
-          delayVol = samt;
-        } else if (oper == _genAttackVolEnv) {
-          attackVol = samt;
-        } else if (oper == _genHoldVolEnv) {
-          holdVol = samt;
-        } else if (oper == _genDecayVolEnv) {
-          decayVol = samt;
-        } else if (oper == _genSustainVolEnv) {
-          sustainVol = amt; // centibels (unsigned)
-        } else if (oper == _genReleaseVolEnv) {
-          releaseVol = samt;
-        } else if (oper == _genInitialFilterFc) {
-          filterFc = samt; // absolute cents (signed)
-        } else if (oper == _genInitialFilterQ) {
-          filterQ = amt; // centibels
-        } else if (oper == _genModLfoToPitch) {
-          modLfoPitch = samt;
-        } else if (oper == _genVibLfoToPitch) {
-          vibLfoPitch = samt;
-        } else if (oper == _genModLfoToVolume) {
-          modLfoVol = samt;
-        } else if (oper == _genDelayModLfo) {
-          delayModLfo = samt;
-        } else if (oper == _genFreqModLfo) {
-          freqModLfo = samt;
-        } else if (oper == _genDelayVibLfo) {
-          delayVibLfo = samt;
-        } else if (oper == _genFreqVibLfo) {
-          freqVibLfo = samt;
-        } else if (oper == _genPan) {
-          panTenth = samt; // 0.1% units (signed)
-        } else if (oper == _genExclusiveClass) {
-          exclusiveClass = amt;
-        } else if (oper == _genSampleModes) {
-          sampleModes = amt;
-        }
-      }
-      if (sampleId != null && sampleId >= 0 && sampleId < sampleCount) {
-        zones.add(
-          Sf2Zone(
-            keyLo: lo,
-            keyHi: hi,
-            velLo: vlo,
-            velHi: vhi,
-            sampleIndex: sampleId,
-            rootKey: (rootOverride != null && rootOverride <= 127)
-                ? rootOverride
-                : -1, // -1 → resolved to the sample's originalPitch later
-            attenuationCb: atten,
-            coarseTune: coarse,
-            fineTune: fine,
-            delayVolTc: delayVol,
-            attackVolTc: attackVol,
-            holdVolTc: holdVol,
-            decayVolTc: decayVol,
-            sustainVolCb: sustainVol,
-            releaseVolTc: releaseVol,
-            filterFcCents: filterFc,
-            filterQCb: filterQ,
-            modLfoToPitchCents: modLfoPitch,
-            vibLfoToPitchCents: vibLfoPitch,
-            modLfoToVolumeCb: modLfoVol,
-            delayModLfoTc: delayModLfo,
-            freqModLfoCents: freqModLfo,
-            delayVibLfoTc: delayVibLfo,
-            freqVibLfoCents: freqVibLfo,
-            panTenthPct: panTenth,
-            exclusiveClass: exclusiveClass,
-            sampleModes: sampleModes,
-          ),
-        );
-      }
+      out.add(
+        _readGens(
+          data,
+          igenOff,
+          u16(ibagOff + ib * 4),
+          u16(ibagOff + (ib + 1) * 4),
+          igenCount,
+        ),
+      );
     }
-    return zones;
+    return out;
+  }
+
+  // Resolve one instrument zone [z] (falling back to the instrument GLOBAL zone
+  // [ig], then SF2 defaults) and ADD the preset's generator offsets [p] — which
+  // is how a GM font's preset-level attenuation/pan/tune balance its instruments
+  // (SF2 §9.4: preset generators are relative and add to the instrument's). Key
+  // and velocity windows INTERSECT with the preset's (they narrow, never widen).
+  Sf2Zone? buildZone(_Gen z, _Gen? ig, _Gen p) {
+    final sampleId = z.sampleId;
+    if (sampleId == null || sampleId < 0 || sampleId >= sampleCount) {
+      return null;
+    }
+    int iv(int? Function(_Gen) f, int dflt) =>
+        f(z) ?? (ig == null ? null : f(ig)) ?? dflt; // instrument absolute
+    int po(int? Function(_Gen) f) => f(p) ?? 0; // preset offset (absent → 0)
+    final root = z.rootOverride ?? ig?.rootOverride;
+    return Sf2Zone(
+      keyLo: max(iv((g) => g.keyLo, 0), p.keyLo ?? 0),
+      keyHi: min(iv((g) => g.keyHi, 127), p.keyHi ?? 127),
+      velLo: max(iv((g) => g.velLo, 0), p.velLo ?? 0),
+      velHi: min(iv((g) => g.velHi, 127), p.velHi ?? 127),
+      sampleIndex: sampleId,
+      rootKey: (root != null && root <= 127) ? root : -1,
+      attenuationCb: iv((g) => g.atten, 0) + po((g) => g.atten),
+      coarseTune: iv((g) => g.coarse, 0) + po((g) => g.coarse),
+      fineTune: iv((g) => g.fine, 0) + po((g) => g.fine),
+      delayVolTc: iv((g) => g.delayVol, -12000) + po((g) => g.delayVol),
+      attackVolTc: iv((g) => g.attackVol, -12000) + po((g) => g.attackVol),
+      holdVolTc: iv((g) => g.holdVol, -12000) + po((g) => g.holdVol),
+      decayVolTc: iv((g) => g.decayVol, -12000) + po((g) => g.decayVol),
+      sustainVolCb: iv((g) => g.sustainVol, 0) + po((g) => g.sustainVol),
+      releaseVolTc: iv((g) => g.releaseVol, -12000) + po((g) => g.releaseVol),
+      filterFcCents: iv((g) => g.filterFc, 13500) + po((g) => g.filterFc),
+      filterQCb: iv((g) => g.filterQ, 0) + po((g) => g.filterQ),
+      modLfoToPitchCents:
+          iv((g) => g.modLfoPitch, 0) + po((g) => g.modLfoPitch),
+      vibLfoToPitchCents:
+          iv((g) => g.vibLfoPitch, 0) + po((g) => g.vibLfoPitch),
+      modLfoToVolumeCb: iv((g) => g.modLfoVol, 0) + po((g) => g.modLfoVol),
+      delayModLfoTc:
+          iv((g) => g.delayModLfo, -12000) + po((g) => g.delayModLfo),
+      freqModLfoCents: iv((g) => g.freqModLfo, 0) + po((g) => g.freqModLfo),
+      delayVibLfoTc:
+          iv((g) => g.delayVibLfo, -12000) + po((g) => g.delayVibLfo),
+      freqVibLfoCents: iv((g) => g.freqVibLfo, 0) + po((g) => g.freqVibLfo),
+      panTenthPct: iv((g) => g.pan, 0) + po((g) => g.pan),
+      // Not additive from a preset (instrument-only per spec).
+      exclusiveClass: iv((g) => g.exclusiveClass, 0),
+      sampleModes: iv((g) => g.sampleModes, 0),
+    );
   }
 
   final presets = <Sf2Preset>[];
@@ -551,17 +494,33 @@ List<Sf2Preset> _parsePresets(
     final bank = u16(phdrOff + pi * 38 + 22);
     final bagStart = presetBagNdx(pi);
     final bagEnd = presetBagNdx(pi + 1).clamp(0, pbagCount - 1);
+    // Parse every preset zone's generators. A leading zone naming no instrument
+    // is the preset's GLOBAL zone — its offsets apply to all the other zones.
+    final pZones = [
+      for (var b = bagStart; b < bagEnd; b++)
+        _readGens(
+          data,
+          pgenOff,
+          u16(pbagOff + b * 4),
+          u16(pbagOff + (b + 1) * 4),
+          pgenCount,
+        ),
+    ];
+    final pGlobal = (pZones.isNotEmpty && pZones.first.instIndex == null)
+        ? pZones.first
+        : null;
     final zones = <Sf2Zone>[];
-    for (var b = bagStart; b < bagEnd; b++) {
-      final gStart = u16(pbagOff + b * 4);
-      final gEnd = u16(pbagOff + (b + 1) * 4).clamp(0, pgenCount);
-      int? instIndex;
-      for (var g = gStart; g < gEnd; g++) {
-        if (u16(pgenOff + g * 4) == _genInstrument) {
-          instIndex = u16(pgenOff + g * 4 + 2);
-        }
+    for (final pz in pZones) {
+      final instIndex = pz.instIndex;
+      if (instIndex == null) continue; // the global zone is not a voice itself
+      final offsets = _mergePreset(pGlobal, pz); // local preset over global
+      final iz = instZoneGens(instIndex);
+      final ig = (iz.isNotEmpty && iz.first.sampleId == null) ? iz.first : null;
+      for (final z in iz) {
+        if (z.sampleId == null) continue; // instrument global zone, not a voice
+        final built = buildZone(z, ig, offsets);
+        if (built != null) zones.add(built);
       }
-      if (instIndex != null) zones.addAll(zonesOfInstrument(instIndex));
     }
     if (zones.isNotEmpty) {
       presets.add(
@@ -570,6 +529,118 @@ List<Sf2Preset> _parsePresets(
     }
   }
   return presets;
+}
+
+/// One zone's generators, each null when that zone doesn't specify it — so an
+/// instrument zone can fall back to its global zone / SF2 defaults, and a preset
+/// zone's set values act as offsets (unset = 0, i.e. no change).
+class _Gen {
+  int? keyLo, keyHi, velLo, velHi, atten, coarse, fine;
+  int? delayVol, attackVol, holdVol, decayVol, sustainVol, releaseVol;
+  int? filterFc, filterQ;
+  int? modLfoPitch, vibLfoPitch, modLfoVol;
+  int? delayModLfo, freqModLfo, delayVibLfo, freqVibLfo;
+  int? pan, exclusiveClass, sampleModes, sampleId, rootOverride, instIndex;
+}
+
+/// Read the generators in [gStart, gEnd) of a pgen/igen chunk into a [_Gen].
+_Gen _readGens(ByteData data, int genOff, int gStart, int gEnd, int genCount) {
+  final g = _Gen();
+  final end = gEnd.clamp(0, genCount);
+  for (var i = gStart.clamp(0, genCount); i < end; i++) {
+    final oper = data.getUint16(genOff + i * 4, Endian.little);
+    final amt = data.getUint16(genOff + i * 4 + 2, Endian.little); // unsigned
+    final samt = data.getInt16(genOff + i * 4 + 2, Endian.little); // signed
+    switch (oper) {
+      case _genKeyRange:
+        g.keyLo = amt & 0xFF;
+        g.keyHi = (amt >> 8) & 0xFF;
+      case _genVelRange:
+        g.velLo = amt & 0xFF;
+        g.velHi = (amt >> 8) & 0xFF;
+      case _genRootKeyOverride:
+        g.rootOverride = amt;
+      case _genSampleId:
+        g.sampleId = amt;
+      case _genInstrument:
+        g.instIndex = amt;
+      case _genInitialAttenuation:
+        g.atten = amt;
+      case _genCoarseTune:
+        g.coarse = samt;
+      case _genFineTune:
+        g.fine = samt;
+      case _genDelayVolEnv:
+        g.delayVol = samt;
+      case _genAttackVolEnv:
+        g.attackVol = samt;
+      case _genHoldVolEnv:
+        g.holdVol = samt;
+      case _genDecayVolEnv:
+        g.decayVol = samt;
+      case _genSustainVolEnv:
+        g.sustainVol = amt;
+      case _genReleaseVolEnv:
+        g.releaseVol = samt;
+      case _genInitialFilterFc:
+        g.filterFc = samt;
+      case _genInitialFilterQ:
+        g.filterQ = amt;
+      case _genModLfoToPitch:
+        g.modLfoPitch = samt;
+      case _genVibLfoToPitch:
+        g.vibLfoPitch = samt;
+      case _genModLfoToVolume:
+        g.modLfoVol = samt;
+      case _genDelayModLfo:
+        g.delayModLfo = samt;
+      case _genFreqModLfo:
+        g.freqModLfo = samt;
+      case _genDelayVibLfo:
+        g.delayVibLfo = samt;
+      case _genFreqVibLfo:
+        g.freqVibLfo = samt;
+      case _genPan:
+        g.pan = samt;
+      case _genExclusiveClass:
+        g.exclusiveClass = amt;
+      case _genSampleModes:
+        g.sampleModes = amt;
+    }
+  }
+  return g;
+}
+
+/// Merge a preset's global-zone offsets [glob] under a local preset zone [loc]
+/// (local wins). Used so a preset's global attenuation/pan applies to each of
+/// its instrument zones unless that zone overrides it.
+_Gen _mergePreset(_Gen? glob, _Gen loc) {
+  if (glob == null) return loc;
+  return _Gen()
+    ..keyLo = loc.keyLo ?? glob.keyLo
+    ..keyHi = loc.keyHi ?? glob.keyHi
+    ..velLo = loc.velLo ?? glob.velLo
+    ..velHi = loc.velHi ?? glob.velHi
+    ..atten = loc.atten ?? glob.atten
+    ..coarse = loc.coarse ?? glob.coarse
+    ..fine = loc.fine ?? glob.fine
+    ..delayVol = loc.delayVol ?? glob.delayVol
+    ..attackVol = loc.attackVol ?? glob.attackVol
+    ..holdVol = loc.holdVol ?? glob.holdVol
+    ..decayVol = loc.decayVol ?? glob.decayVol
+    ..sustainVol = loc.sustainVol ?? glob.sustainVol
+    ..releaseVol = loc.releaseVol ?? glob.releaseVol
+    ..filterFc = loc.filterFc ?? glob.filterFc
+    ..filterQ = loc.filterQ ?? glob.filterQ
+    ..modLfoPitch = loc.modLfoPitch ?? glob.modLfoPitch
+    ..vibLfoPitch = loc.vibLfoPitch ?? glob.vibLfoPitch
+    ..modLfoVol = loc.modLfoVol ?? glob.modLfoVol
+    ..delayModLfo = loc.delayModLfo ?? glob.delayModLfo
+    ..freqModLfo = loc.freqModLfo ?? glob.freqModLfo
+    ..delayVibLfo = loc.delayVibLfo ?? glob.delayVibLfo
+    ..freqVibLfo = loc.freqVibLfo ?? glob.freqVibLfo
+    ..pan = loc.pan ?? glob.pan
+    ..instIndex = loc.instIndex;
 }
 
 /// Whether [bytes] is a compressed `.sf3` soundfont (OGG-Vorbis samples), which

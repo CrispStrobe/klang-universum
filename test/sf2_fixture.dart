@@ -131,6 +131,7 @@ Uint8List oneSampleSf2({
   int coarseTune = 0,
   int fineTune = 0,
   int sampleModes = 0,
+  int presetAttenuationCb = 0, // preset-level gen 48 (adds to the instrument's)
 }) {
   // Instrument-zone generators: keyRange, optional atten/tune/loop-mode, then
   // sampleID (terminal). Signed tune values are two's-complement bits.
@@ -140,10 +141,16 @@ Uint8List oneSampleSf2({
   if (fineTune != 0) gens.add(_rec4(52, fineTune & 0xFFFF));
   if (sampleModes != 0) gens.add(_rec4(54, sampleModes)); // gen 54: loop mode
   gens.add(_rec4(53, 0)); // sampleID 0
+  // Preset-zone generators: an optional preset-level attenuation (gen 48), then
+  // the instrument (gen 41, terminal).
+  final pgen = <Uint8List>[
+    if (presetAttenuationCb != 0) _rec4(48, presetAttenuationCb),
+    _rec4(41, 0),
+  ];
   final pdta = _pdta([
     _chunk('phdr', _phdr('GMTest', 0, 0)),
-    _chunk('pbag', _concat([_rec4(0, 0), _rec4(1, 0)])),
-    _chunk('pgen', _rec4(41, 0)), // instrument → inst 0
+    _chunk('pbag', _concat([_rec4(0, 0), _rec4(pgen.length, 0)])),
+    _chunk('pgen', _concat(pgen)), // (preset atten) + instrument → inst 0
     _chunk('inst', _inst('GMInst', 1)),
     _chunk('ibag', _concat([_rec4(0, 0), _rec4(gens.length, 0)])),
     _chunk('igen', _concat(gens)),
