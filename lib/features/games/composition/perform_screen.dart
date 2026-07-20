@@ -79,10 +79,12 @@ abstract class PerformTester {
   int get bpm;
   int get keyShift;
   int get bars; // Q1: master loop length
+  double get swing; // Q5: 0 straight
   bool get canSetup;
   void setTempo(int bpm);
   void setKey(int semitones);
   void setLoopBars(int bars);
+  void setSwing(double amount);
 
   /// Sing / beatbox a layer (P4): convert captured mic frames into a layer.
   /// The mic flow calls these; tests drive them with synthetic frames.
@@ -192,6 +194,7 @@ class _PerformScreenState extends State<PerformScreen>
   int _bpm = 120;
   int _keyShift = 0; // semitones from C
   int _bars = 1; // Q1: master loop length in bars
+  double _swing = 0.0; // Q5: off-beat delay (0 = straight)
 
   /// One bar (4 beats) of samples at [_bpm].
   int get _barSamples => (kSampleRate * 4 * 60 / _bpm).round();
@@ -207,6 +210,12 @@ class _PerformScreenState extends State<PerformScreen>
 
   /// Selectable loop lengths, in bars.
   static const List<int> _kLoopBars = [1, 2, 4];
+
+  /// Selectable swing amounts (feel, off-beat delay).
+  static const List<(double, String)> _kSwing = [
+    (0.0, 'straight'),
+    (0.5, 'swing'),
+  ];
 
   /// Selectable keys (root name, semitones from C).
   static const List<(int, String)> _kKeys = [
@@ -318,11 +327,20 @@ class _PerformScreenState extends State<PerformScreen>
 
   @override
   int get bars => _bars;
+  @override
+  double get swing => _swing;
 
   @override
   void setLoopBars(int bars) {
     if (!canSetup || !_kLoopBars.contains(bars)) return;
     _bars = bars;
+    setState(() {});
+  }
+
+  @override
+  void setSwing(double amount) {
+    if (!canSetup) return;
+    _swing = amount.clamp(0.0, 0.75);
     setState(() {});
   }
 
@@ -631,8 +649,9 @@ class _PerformScreenState extends State<PerformScreen>
     final beat = _barSamples ~/ 4;
     final rng = Random(7);
     for (final (drum, ms) in hits) {
-      final start =
+      final snapped =
           ((ms / 1000 * kSampleRate) / sixteenth).round() * sixteenth % n;
+      final start = _swung(snapped, sixteenth);
       final voice = _padVoices[drum];
       if (voice != null && voice.isNotEmpty) {
         _place(buf, voice, start, beat); // your own sound (P2)
@@ -688,10 +707,16 @@ class _PerformScreenState extends State<PerformScreen>
     final buf = Float64List(n);
     final sixteenth = _barSamples ~/ 16;
     final beat = _barSamples ~/ 4;
-    // Snap each note to a 16th-note sample position, sorted in time.
+    // Snap each note to a 16th-note sample position (swung), sorted in time.
     final placed = [
       for (final (midi, ms) in notes)
-        (midi, ((ms / 1000 * kSampleRate) / sixteenth).round() * sixteenth % n),
+        (
+          midi,
+          _swung(
+            ((ms / 1000 * kSampleRate) / sixteenth).round() * sixteenth % n,
+            sixteenth,
+          ),
+        ),
     ]..sort((a, b) => a.$2.compareTo(b.$2));
     for (var i = 0; i < placed.length; i++) {
       final (midi, start) = placed[i];
@@ -998,6 +1023,16 @@ class _PerformScreenState extends State<PerformScreen>
     return out;
   }
 
+  /// Swing (Q5): delay an off-beat (odd) [unit]-grid position by `_swing` × half
+  /// the grid, so grooves shuffle instead of sitting dead on the grid.
+  int _swung(int start, int unit) {
+    if (_swing == 0.0 || unit <= 0) return start;
+    if ((start / unit).round().isOdd) {
+      return start + (_swing * unit / 2).round();
+    }
+    return start;
+  }
+
   // ── Transport (P5) ────────────────────────────────────────────────────────
   @override
   double get loopProgress {
@@ -1075,7 +1110,14 @@ class _PerformScreenState extends State<PerformScreen>
           if (b.isOdd) _noise(buf, b * beat, eighth, rng, gain: 0.4);
         }
         for (var e = 0; e < 8; e++) {
-          _noise(buf, e * eighth, eighth ~/ 3, rng, gain: 0.08, decay: 90);
+          _noise(
+            buf,
+            _swung(e * eighth, eighth),
+            eighth ~/ 3,
+            rng,
+            gain: 0.08,
+            decay: 90,
+          );
         }
       case 'bass':
         const roots = [65.41, 65.41, 87.31, 98.0]; // C2 C2 F2 G2 (I-I-IV-V)
@@ -1101,7 +1143,14 @@ class _PerformScreenState extends State<PerformScreen>
           783.99,
         ]; // C D E G E D C G (pentatonic-ish)
         for (var e = 0; e < 8; e++) {
-          _tone(buf, riff[e] * k, e * eighth, eighth, gain: 0.22, decay: 10);
+          _tone(
+            buf,
+            riff[e] * k,
+            _swung(e * eighth, eighth),
+            eighth,
+            gain: 0.22,
+            decay: 10,
+          );
         }
     }
     return buf;
@@ -1239,6 +1288,21 @@ class _PerformScreenState extends State<PerformScreen>
                         label: Text(l10n.performBars(b)),
                         selected: _bars == b,
                         onSelected: (_) => setLoopBars(b),
+                      ),
+                    const SizedBox(width: 12),
+                    Text(
+                      l10n.performFeel,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    for (final (amount, key) in _kSwing)
+                      ChoiceChip(
+                        label: Text(
+                          key == 'swing'
+                              ? l10n.performFeelSwing
+                              : l10n.performFeelStraight,
+                        ),
+                        selected: _swing == amount,
+                        onSelected: (_) => setSwing(amount),
                       ),
                   ],
                 ),

@@ -529,6 +529,36 @@ void main() {
     expect(p.isMuted(1), isTrue);
   });
 
+  testWidgets('swing shifts off-beats; straight is unchanged; locks on build',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    expect(p.swing, 0.0);
+    final straight = p.debugSeed('beat');
+
+    // Swing moves the off-beat hats → a different waveform (same length).
+    p.setSwing(0.5);
+    await tester.pump();
+    expect(p.swing, 0.5);
+    final swung = p.debugSeed('beat');
+    expect(swung.length, straight.length);
+    expect(_same(straight, swung), isFalse);
+
+    // Straight again reproduces the original render exactly.
+    p.setSwing(0.0);
+    await tester.pump();
+    expect(_same(straight, p.debugSeed('beat')), isTrue);
+
+    // Locks once a layer is baked.
+    p.setSwing(0.5);
+    p.addSeed('beat');
+    await tester.pump();
+    p.setSwing(0.0);
+    expect(p.swing, 0.5);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

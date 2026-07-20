@@ -2072,6 +2072,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get performLength => 'Länge';
 
   @override
+  String get performFeel => 'Feel';
+
+  @override
+  String get performFeelStraight => 'Gerade';
+
+  @override
+  String get performFeelSwing => 'Swing';
+
+  @override
   String performBars(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

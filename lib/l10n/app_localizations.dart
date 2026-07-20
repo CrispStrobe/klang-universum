@@ -3908,6 +3908,24 @@ abstract class AppLocalizations {
   /// **'Length'**
   String get performLength;
 
+  /// No description provided for @performFeel.
+  ///
+  /// In en, this message translates to:
+  /// **'Feel'**
+  String get performFeel;
+
+  /// No description provided for @performFeelStraight.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight'**
+  String get performFeelStraight;
+
+  /// No description provided for @performFeelSwing.
+  ///
+  /// In en, this message translates to:
+  /// **'Swing'**
+  String get performFeelSwing;
+
   /// No description provided for @performBars.
   ///
   /// In en, this message translates to:

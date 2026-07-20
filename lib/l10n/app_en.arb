@@ -819,6 +819,9 @@
   "performTempo": "Tempo",
   "performKey": "Key",
   "performLength": "Length",
+  "performFeel": "Feel",
+  "performFeelStraight": "Straight",
+  "performFeelSwing": "Swing",
   "performBars": "{count, plural, =1{1 bar} other{{count} bars}}",
   "@performBars": {
     "placeholders": {

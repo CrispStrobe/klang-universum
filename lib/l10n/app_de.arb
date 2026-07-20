@@ -756,6 +756,9 @@
   "performTempo": "Tempo",
   "performKey": "Tonart",
   "performLength": "Länge",
+  "performFeel": "Feel",
+  "performFeelStraight": "Gerade",
+  "performFeelSwing": "Swing",
   "performBars": "{count, plural, =1{1 Takt} other{{count} Takte}}",
   "@performBars": {
     "placeholders": {
