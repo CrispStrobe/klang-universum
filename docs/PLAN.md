@@ -2037,6 +2037,57 @@ or drops** (verified against the code, not assumed). Ranked by ROI:
 
 **Doing #1 first** (maintainer's call, 2026-07-20).
 
+## IT instrument-layer rendering — scoping (the rest of #5, 2026-07-20)
+
+**Why.** The oracle (our render vs libopenmpt over the real corpus) showed IT
+files render loud but ~unpitched (6/6 sampled: peak 0.4–0.95, MPM-voiced ~0),
+while MOD passes (Jaccard 0.58) and XM passes (1.00). Diagnosed to the ground:
+NOT looping (0/319 corpus loop mismatches) and NOT the keymap (shipped
+`1d2191ac`) and NOT resample clipping (shipped `eb11d788`). The real cause:
+**we render IT samples but not the instrument-layer SHAPING** — volume/pan/pitch
+envelopes, resonant filter, fadeout, NNA. That's exactly the layer XM *does*
+get (its envelopes render via the tracker `VolumeEnvelope`/`PanEnvelope` infra I
+wired for #1b — which is *why* XM scores 1.00), and IT is missing only the
+parse+wire.
+
+**Key leverage — the infra already exists.** `VolumeEnvelope`/`PanEnvelope`
+(tracker_engine) render in the replayer's sample voice today; `crisp_dsp` has a
+`Biquad` (resonant filter, already used by the SF2 renderer). So most slices are
+"parse the IT header field → map onto existing render machinery", mirroring the
+XM path (`docFromXm`→`_channelVolEnv` in tracker_song_module).
+
+**IMPI header offsets** (IT 2.14, per instrument; base = its offset-table entry):
+0x11 NNA · 0x12 DCT · 0x13 DCA · 0x14 u16 fadeout · 0x3A IFC (filter cutoff) ·
+0x3B IFR (resonance) · 0x40 keymap (240, DONE) · **0x130 volume env** ·
+**0x182 pan env** · **0x1D4 pitch/filter env**. Each env is 82 B: flag(bit0 on ·
+bit1 loop · bit2 sustain · bit3=pitch-env-is-filter) · num · loopBeg · loopEnd ·
+susBeg · susEnd · then 25 × (int8 y, u16 x-tick).
+
+**Slices (ROI order — re-run the oracle after each to measure the gain):**
+- **A — IT volume envelope (highest ROI, low risk).** Parse the 0x130 vol env →
+  `ItInstrument.volEnv` → carry in `docFromIt` onto `DocSample.volumeEnvelope`
+  (already a field) → the tracker bridge already converts it to the channel
+  `VolumeEnvelope` (from #1b) → it renders. Amplitude now shapes/decays like the
+  reference instead of a raw one-shot. **Also completes 1c** (IT envelope
+  round-trip) for free. Mirrors XM exactly.
+- **B — fadeout + note-off release.** Parse 0x14 fadeout; apply a fade after
+  key-off/note-cut so ringing notes die like the reference (today they hard-cut
+  or ring forever).
+- **C — resonant filter (IFC/IFR + pitch-env-as-filter).** Parse 0x3A/0x3B; a
+  per-voice `crisp_dsp Biquad` low-pass at the cutoff/resonance; the 0x1D4 env
+  (when bit3 set) modulates it. The timbre half — big for filter-heavy IT.
+- **D — NNA / DCT / DCA (hardest, architectural).** New-note actions need a
+  polyphonic voice allocator (several ringing voices per channel) — the replayer
+  is one-voice-per-channel today. Lowest ROI-per-effort for the oracle; defer.
+- **E — pan envelope · pitch envelope · random vol/pan · pitch-pan sep.**
+  Refinements; pan env reuses the `PanEnvelope` infra like A reuses volume.
+
+**Also applies to XM** where analogous (XM already renders its vol/pan env; XM
+also has fadeout + auto-vibrato that B/E would cover). Acceptance per slice:
+`songFromModuleBytes` a synthetic + real IT → assert the channel envelope/filter
+is set + the render shapes correctly; then the oracle voiced-fraction rises
+toward libopenmpt. Do **A** first.
+
 ## Ideas backlog for the next agent (Jul 2026 handoff)
 
 Brain-dump of every game/feature idea still on the table after the Jul-2026
