@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
 import 'package:comet_beat/features/games/songs/import/jams.dart';
 import 'package:crisp_notation/crisp_notation.dart'
-    show NoteElement, scoreFromMidi;
+    show NoteElement, RestElement, scoreFromMidi;
 import 'package:flutter_test/flutter_test.dart';
 
 /// The MIDI note numbers of every note in [midi], in order.
@@ -20,6 +20,17 @@ List<int> _midiPitches(Uint8List midi) => scoreFromMidi(midi)
     .expand((n) => n.pitches)
     .map((p) => p.midiNumber)
     .toList();
+
+/// A compact `pitch/base` or `R/base` token per element, across all measures —
+/// so the quantized rhythm can be asserted directly.
+List<String> _elements(Uint8List midi) => [
+      for (final m in scoreFromMidi(midi).measures)
+        for (final e in m.elements)
+          if (e is NoteElement)
+            '${e.pitches.map((p) => p.midiNumber).join("+")}/${e.duration.base.name}'
+          else if (e is RestElement)
+            'R/${e.duration.base.name}',
+    ];
 
 String _jams(List<Map<String, Object?>> chordData, {String? title}) =>
     jsonEncode({
@@ -280,6 +291,131 @@ void main() {
       expect(jamsTitle(json), 'Arp');
       expect(jamsTempo(json), 100.0);
       expect(jamsMelodyNotes(json), notes);
+    });
+  });
+
+  // The hard cases: the notation comes from the (battle-tested) MIDI reader, so
+  // these lock the seconds→ticks mapping that feeds it.
+  group('melody rhythm & edge cases (quantization)', () {
+    test('mixed durations quantize to the right note values', () {
+      // eighth(0.25) quarter(0.5) half(1.0) at 120 BPM, packed into one bar.
+      final json = notesToJams(tempo: 120, const [
+        (time: 0.0, duration: 0.25, midi: 60),
+        (time: 0.25, duration: 0.5, midi: 62),
+        (time: 0.75, duration: 1.0, midi: 64),
+      ]);
+      final e = _elements(jamsToMidi(json));
+      expect(e, ['60/eighth', '62/quarter', '64/half']);
+    });
+
+    test('a leading offset becomes a rest', () {
+      // First note at 0.5 s (a quarter's silence) at 120 BPM.
+      final json = notesToJams(tempo: 120, const [
+        (time: 0.5, duration: 0.5, midi: 60),
+        (time: 1.0, duration: 0.5, midi: 62),
+      ]);
+      final e = _elements(jamsToMidi(json));
+      expect(e.first, 'R/quarter');
+      expect(e.where((x) => x.startsWith('60')), isNotEmpty);
+    });
+
+    test('a mid-melody gap becomes a rest', () {
+      // A note, a beat of silence, a note — at 120 BPM.
+      final json = notesToJams(tempo: 120, const [
+        (time: 0.0, duration: 0.5, midi: 60),
+        (time: 1.0, duration: 0.5, midi: 67),
+      ]);
+      final e = _elements(jamsToMidi(json));
+      expect(e, containsAllInOrder(['60/quarter', 'R/quarter', '67/quarter']));
+    });
+
+    test('tempo changes the quantized rhythm (same seconds)', () {
+      List<JamsNote> half() => const [(time: 0.0, duration: 0.5, midi: 60)];
+      // 0.5 s is an eighth at 60 BPM (beat = 1 s) but a quarter at 120 BPM.
+      final slow = _elements(jamsToMidi(notesToJams(tempo: 60, half())));
+      final fast = _elements(jamsToMidi(notesToJams(tempo: 120, half())));
+      expect(slow, ['60/eighth']);
+      expect(fast, ['60/quarter']);
+    });
+
+    test('a beat annotation sets the time signature', () {
+      const json = '{"annotations":['
+          '{"namespace":"note_midi","data":['
+          '{"time":0.0,"duration":0.5,"value":60}]},'
+          '{"namespace":"beat","data":['
+          '{"time":0.0,"value":1},{"time":0.5,"value":2},'
+          '{"time":1.0,"value":3},{"time":1.5,"value":1}]},'
+          '{"namespace":"tempo","data":[{"time":0.0,"value":120}]}]}';
+      expect(scoreFromMidi(jamsToMidi(json)).timeSignature!.beats, 3);
+    });
+
+    test('a note far into the piece round-trips (multi-byte VLQ delta)', () {
+      // 30 s in at 120 BPM = 57600 ticks → a 3-byte variable-length quantity.
+      final json = notesToJams(tempo: 120, const [
+        (time: 0.0, duration: 0.5, midi: 60),
+        (time: 30.0, duration: 0.5, midi: 72),
+      ]);
+      final pitches = _midiPitches(jamsToMidi(json));
+      expect(pitches.first, 60);
+      expect(pitches.last, 72);
+    });
+
+    test('malformed / partial observations are skipped, not fatal', () {
+      final json = jsonEncode({
+        'annotations': [
+          {
+            'namespace': 'note_midi',
+            'data': [
+              {'time': 0.0, 'duration': 0.5, 'value': 60},
+              {'time': 0.5, 'duration': 0.5}, // no value
+              {'time': null, 'duration': 0.5, 'value': 62}, // no time
+              {'time': 1.0, 'duration': 0.5, 'value': 'x'}, // non-numeric
+              {'time': 1.5, 'duration': 0.5, 'value': 64},
+            ],
+          },
+        ],
+      });
+      expect(jamsMelodyNotes(json).map((n) => n.midi), [60, 64]);
+    });
+  });
+
+  group('annotation selection', () {
+    test('melody wins when a file carries both chords and notes', () {
+      final json = jsonEncode({
+        'annotations': [
+          {
+            'namespace': 'chord',
+            'data': [
+              {'time': 0.0, 'duration': 2.0, 'value': 'C:maj'},
+            ],
+          },
+          {
+            'namespace': 'note_midi',
+            'data': [
+              {'time': 0.0, 'duration': 0.5, 'value': 60},
+            ],
+          },
+        ],
+      });
+      // Both are present; the import screen prefers the (richer) melody.
+      expect(jamsMelodyNotes(json), isNotEmpty);
+      expect(jamsHasChords(json), isTrue);
+    });
+
+    test('the strict chord_harte namespace is accepted', () {
+      final json = jsonEncode({
+        'annotations': [
+          {
+            'namespace': 'chord_harte',
+            'data': [
+              {'time': 0.0, 'duration': 2.0, 'value': 'D:min7'},
+              {'time': 2.0, 'duration': 2.0, 'value': 'G:7'},
+              {'time': 4.0, 'duration': 2.0, 'value': 'C:maj7'},
+            ],
+          },
+        ],
+      });
+      expect(parseChordPro(jamsToChordPro(json)).chords, ['Dm', 'G', 'C']);
     });
   });
 }

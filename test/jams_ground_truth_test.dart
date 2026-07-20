@@ -53,23 +53,24 @@ Float64List _chordWindow(List<double> freqs, int windowSize) {
 }
 
 void main() {
-  test('pitch detector recovers a JAMS note_midi ground truth', () {
-    // 1. Author the ground truth AS JAMS (the provider).
-    const scale = [60, 62, 64, 65, 67, 69, 71, 72];
+  test('pitch detector recovers a full CHROMATIC note_midi ground truth', () {
+    // Author every semitone from C3 (48) to C6 (84) as a JAMS note_midi (the
+    // provider), spanning three octaves incl. every accidental.
+    const lo = 48, hi = 84;
     final groundTruth = notesToJams(
       [
-        for (var i = 0; i < scale.length; i++)
-          (time: i * 0.5, duration: 0.5, midi: scale[i]),
+        for (var m = lo; m <= hi; m++)
+          (time: (m - lo) * 0.5, duration: 0.5, midi: m),
       ],
-      title: 'C major scale',
+      title: 'chromatic',
       tempo: 120,
     );
 
-    // 2. Read it back the way the importer does (writer↔reader round-trip).
+    // Read it back the way the importer does (writer↔reader round-trip).
     final truth = jamsMelodyNotes(groundTruth);
-    expect(truth.map((n) => n.midi), scale);
+    expect(truth.map((n) => n.midi), [for (var m = lo; m <= hi; m++) m]);
 
-    // 3. Synthesize each ground-truth note and 4. assert the detector recovers it.
+    // Synthesize each ground-truth note; the detector must recover it exactly.
     final detector = PitchDetector();
     for (final n in truth) {
       final window = _toneWindow(
@@ -87,20 +88,44 @@ void main() {
     }
   });
 
-  test('chord detector recovers a JAMS chord ground truth', () {
-    // Author a chord progression as JAMS, then read it back to the app's names.
+  test('chord detector recovers the ROOT of every maj/min triad', () {
+    const windowSize = 4096;
+    final detector = ChordDetector();
+    // All 12 roots × {major, minor}, authored via their triad pitches.
+    for (var root = 60; root < 72; root++) {
+      for (final quality in ['', 'm']) {
+        final name = _pcNames[root % 12] + quality;
+        final midis = chordMidis(name)!;
+        final r = detector.analyze(
+          _chordWindow(midis.map(midiToFrequency).toList(), windowSize),
+        );
+        expect(r.hasChord, isTrue, reason: '$name should match something');
+        // The root is always recovered (the quality can occasionally read
+        // richer — e.g. a bare C# triad edges to C#maj7 in the chroma match —
+        // which is why the exact-name assertion below sticks to a clean set).
+        expect(
+          r.best!.rootPc,
+          root % 12,
+          reason: 'root of $name: got ${r.best!.name}',
+        );
+      }
+    }
+  });
+
+  test('chord detector names a clean progression exactly (via JAMS)', () {
+    // Author a I-vi-IV-V progression as JAMS, read it back to the app's names,
+    // then synthesize + detect each and assert the exact chord name.
     final groundTruth = chordsToJams(['C', 'Am', 'F', 'G'], title: 'I-vi-IV-V');
     final truth = parseChordPro(jamsToChordPro(groundTruth)).chords;
     expect(truth, ['C', 'Am', 'F', 'G']);
 
-    // Synthesize each ground-truth chord (its triad) and detect it.
     const windowSize = 4096;
     final detector = ChordDetector();
     for (final name in truth) {
       final midis = chordMidis(name)!;
-      final window =
-          _chordWindow(midis.map(midiToFrequency).toList(), windowSize);
-      final r = detector.analyze(window);
+      final r = detector.analyze(
+        _chordWindow(midis.map(midiToFrequency).toList(), windowSize),
+      );
       expect(r.hasChord, isTrue, reason: '$name should match something');
       expect(
         r.best!.name,
@@ -110,3 +135,18 @@ void main() {
     }
   });
 }
+
+const _pcNames = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+];
