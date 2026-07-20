@@ -8,7 +8,10 @@
 //
 //   dart run bin/transcribe.dart audio.wav [options]
 //
-//   --task notes|poly|chords|stems  what to produce (default notes)
+//   --task notes|poly|chords|tab|stems  what to produce (default notes)
+//                              tab = guitar tablature from audio (TabCNN, prefers
+//                              the GuitarProFX weights; auto-downloads / or set
+//                              COMET_TABCNN_DIR)
 //   --backend auto|dart|onnx|crispasr
 //                              which runtime (default auto: crispasr → onnx →
 //                              pure-Dart for F0). poly/chords are onnx-only;
@@ -56,6 +59,10 @@ import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:comet_beat/core/audio/transcription/separate_umx_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/stems.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
+import 'package:comet_beat/features/games/composition/tab_emission_decoder.dart'
+    show collapseTabFrames, kTabStrings;
+import 'package:comet_beat/features/games/composition/tabcnn_emitter.dart'
+    show audioToTab;
 
 const _names = [
   'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', //
@@ -77,7 +84,7 @@ Future<void> main(List<String> args) async {
   if (positional.isEmpty) {
     stderr.writeln(
       'usage: dart run bin/transcribe.dart audio.wav '
-      '[--task notes|poly|chords|stems] [--backend auto|dart|onnx|crispasr] '
+      '[--task notes|poly|chords|tab|stems] [--backend auto|dart|onnx|crispasr] '
       '[--f0 pyin|dio|crepe|rmvpe] [--f0-viterbi] [--sep-bin B] [--sep-model M] '
       '[--a4 440] [--f0-dump] [--json]',
     );
@@ -164,8 +171,23 @@ Future<void> main(List<String> args) async {
       );
       sw.stop();
       _printNotes(notes, sw, json);
+    case 'tab':
+      // Audio → guitar tab via the TabCNN emitter (prefers gpfx) + the
+      // per-string Viterbi decoder. Needs the model (auto-downloads, or point
+      // COMET_TABCNN_DIR at a prebuilt tabcnn-gpfx.onnx + tabcnn-cqt.bin).
+      final perFrame = await audioToTab(mono, wav.sampleRate);
+      sw.stop();
+      if (perFrame == null) {
+        stderr.writeln(
+          'no TabCNN model available — needs network to fetch it from HF '
+          '(cstr/tabcnn-onnx), or set COMET_TABCNN_DIR to a dir holding '
+          'tabcnn-gpfx.onnx + tabcnn-cqt.bin.',
+        );
+        exit(69);
+      }
+      _printTab(perFrame, sw, json);
     default:
-      stderr.writeln('unknown --task "$task" (notes|poly|chords|stems)');
+      stderr.writeln('unknown --task "$task" (notes|poly|chords|tab|stems)');
       exit(64);
   }
 }
@@ -302,6 +324,52 @@ void _printNotes(List<NoteEvent> events, Stopwatch sw, bool json) {
       '${(n.offMs / 1000).toStringAsFixed(3).padLeft(7)}s '
       '${n.confidence.toStringAsFixed(2).padLeft(6)}',
     );
+  }
+}
+
+/// Renders the per-frame frettings as an ASCII guitar tab: collapse identical
+/// runs, drop sub-46 ms flickers, one column per surviving fretted event.
+void _printTab(List<Map<int, int>> perFrame, Stopwatch sw, bool json) {
+  const hop = 512 / 22050; // TabCNN frame hop (s)
+  const minFrames = 2; // ignore < ~46 ms noise
+  final events = <({Map<int, int> frets, int startFrame, int frames})>[];
+  var f = 0;
+  for (final (frets, n) in collapseTabFrames(perFrame)) {
+    if (frets.isNotEmpty && n >= minFrames) {
+      events.add((frets: frets, startFrame: f, frames: n));
+    }
+    f += n;
+  }
+  if (json) {
+    stdout.writeln(
+      jsonEncode([
+        for (final e in events)
+          {
+            'frets': {for (final k in e.frets.keys) '$k': e.frets[k]},
+            'startS': e.startFrame * hop,
+            'durS': e.frames * hop,
+          },
+      ]),
+    );
+    return;
+  }
+  stdout
+      .writeln('${events.length} tab events  (${sw.elapsedMilliseconds} ms):');
+  if (events.isEmpty) return;
+  // 6 string lines (0 = high e … 5 = low E), one 2-wide column per event.
+  const labels = ['e', 'B', 'G', 'D', 'A', 'E'];
+  final lines = [
+    for (var s = 0; s < kTabStrings; s++) StringBuffer('  ${labels[s]}|'),
+  ];
+  for (final e in events) {
+    for (var s = 0; s < kTabStrings; s++) {
+      final cell =
+          e.frets.containsKey(s) ? e.frets[s].toString().padLeft(2, '-') : '--';
+      lines[s].write('-$cell');
+    }
+  }
+  for (final l in lines) {
+    stdout.writeln((l..write('-|')).toString());
   }
 }
 
