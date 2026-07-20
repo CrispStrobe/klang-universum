@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/beat_capture.dart'
     show BeatFrame, beatboxToTaps;
 import 'package:comet_beat/core/audio/daw_sources.dart' show DrumSource;
+import 'package:comet_beat/core/audio/drum_presets.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart'
     show DrumRowsPattern, LoopTiming, kPatternSteps;
 import 'package:comet_beat/core/audio/microphone_pitch_service.dart';
@@ -97,6 +98,9 @@ abstract interface class DrumkitTester {
   void shareBeat();
   bool get canLoadSharedBeat;
   void loadSharedBeat();
+
+  /// Load a built-in starter groove ([kDrumPresets] index) into the grid.
+  void debugLoadPreset(int index);
 }
 
 class DrumkitScreen extends StatefulWidget {
@@ -580,6 +584,58 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     );
   }
 
+  // --- Presets ---------------------------------------------------------------
+
+  void _loadPreset(DrumPreset preset) {
+    _pushUndo();
+    setState(() {
+      for (final d in Drum.values) {
+        _rows[d]!.setAll(0, preset.pattern.rows[d]!);
+      }
+    });
+    _syncPlayback();
+  }
+
+  @override
+  void debugLoadPreset(int index) => _loadPreset(kDrumPresets[index]);
+
+  Future<void> _openPresets() async {
+    final l10n = AppLocalizations.of(context)!;
+    final chosen = await showModalBottomSheet<DrumPreset>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                l10n.drumkitPresetsTitle,
+                style: Theme.of(sheet).textTheme.titleMedium,
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final preset in kDrumPresets)
+                    ListTile(
+                      leading: const Icon(Icons.music_note),
+                      title: Text(preset.name),
+                      onTap: () => Navigator.pop(sheet, preset),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (chosen != null) _loadPreset(chosen);
+  }
+
+  // --- Shared-groove bridge --------------------------------------------------
+
   @override
   bool get canLoadSharedBeat => BeatBridge.instance.hasBeat;
 
@@ -788,6 +844,12 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                     onPressed: togglePlay,
                     icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
                     label: Text(isPlaying ? l10n.songStop : l10n.myMelodyPlay),
+                  ),
+                  // Starter grooves — the quickest way to see how a beat works.
+                  FilledButton.tonalIcon(
+                    onPressed: _openPresets,
+                    icon: const Icon(Icons.auto_awesome),
+                    label: Text(l10n.drumkitPresets),
                   ),
                   FilledButton.icon(
                     onPressed: toggleRecord,

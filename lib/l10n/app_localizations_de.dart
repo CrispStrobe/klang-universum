@@ -1501,6 +1501,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawSent => 'Zur Mehrspur hinzugefügt';
 
   @override
+  String get drumkitPresets => 'Vorlagen';
+
+  @override
+  String get drumkitPresetsTitle => 'Groove wählen';
+
+  @override
   String get beatShare => 'Beat teilen';
 
   @override

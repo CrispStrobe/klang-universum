@@ -59,6 +59,22 @@ void main() {
     expect(kit.canUndo, isTrue);
   });
 
+  testWidgets('loading a preset fills the grid and is undoable',
+      (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    expect(kit.hitCount, 0);
+
+    kit.debugLoadPreset(0); // the first built-in groove
+    await tester.pump();
+    expect(kit.hitCount, greaterThan(0));
+    expect(kit.canUndo, isTrue);
+
+    kit.undo();
+    await tester.pump();
+    expect(kit.hitCount, 0); // undo restores the empty grid
+  });
+
   testWidgets('an empty grid has nothing to share', (tester) async {
     await pumpGame(tester, const DrumkitScreen());
     final kit = _kit(tester);

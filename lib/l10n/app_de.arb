@@ -528,6 +528,8 @@
   "dawEmpty": "Füge einen Beat oder eine Melodie hinzu und drücke Play — sie überlagern sich.",
   "dawSend": "Zur Mehrspur",
   "dawSent": "Zur Mehrspur hinzugefügt",
+  "drumkitPresets": "Vorlagen",
+  "drumkitPresetsTitle": "Groove wählen",
   "beatShare": "Beat teilen",
   "beatLoadShared": "Geteilten laden",
   "beatShared": "Beat geteilt — im Loop-Mixer, Tracker oder Looper laden",

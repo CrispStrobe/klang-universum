@@ -1496,6 +1496,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawSent => 'Added to the Multitrack';
 
   @override
+  String get drumkitPresets => 'Presets';
+
+  @override
+  String get drumkitPresetsTitle => 'Choose a groove';
+
+  @override
   String get beatShare => 'Share beat';
 
   @override
