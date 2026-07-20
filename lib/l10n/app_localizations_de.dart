@@ -1156,6 +1156,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerSwing => 'Swing';
 
   @override
+  String get loopMixerSwingStraight => 'Gerade';
+
+  @override
+  String get loopMixerSwingShuffle => 'Shuffle';
+
+  @override
+  String get loopMixerFilterDark => 'Dunkel';
+
+  @override
+  String get loopMixerFilterThin => 'Dünn';
+
+  @override
   String get loopMixerHarmony => 'Harmonie';
 
   @override

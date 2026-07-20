@@ -2186,6 +2186,30 @@ abstract class AppLocalizations {
   /// **'Swing'**
   String get loopMixerSwing;
 
+  /// No description provided for @loopMixerSwingStraight.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight'**
+  String get loopMixerSwingStraight;
+
+  /// No description provided for @loopMixerSwingShuffle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get loopMixerSwingShuffle;
+
+  /// No description provided for @loopMixerFilterDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get loopMixerFilterDark;
+
+  /// No description provided for @loopMixerFilterThin.
+  ///
+  /// In en, this message translates to:
+  /// **'Thin'**
+  String get loopMixerFilterThin;
+
   /// No description provided for @loopMixerHarmony.
   ///
   /// In en, this message translates to:
