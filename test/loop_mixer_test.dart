@@ -957,4 +957,25 @@ void main() {
     expect(find.byIcon(Icons.piano), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('LM-UX7: a custom harmony is added, selected, and shown',
+      (tester) async {
+    await pumpGame(tester, const LoopMixerScreen());
+    final game = _game(tester);
+    expect(game.customHarmonyCount, 0);
+
+    game.debugAddCustomHarmony(const [
+      ChordDegree.i,
+      ChordDegree.iv,
+      ChordDegree.v,
+      ChordDegree.i,
+    ]);
+    await tester.pump();
+
+    expect(game.customHarmonyCount, 1);
+    // The new harmony becomes the active progression + renders a chip.
+    expect(game.progressionId, startsWith('custom'));
+    expect(find.text('I–IV–V–I'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
 }

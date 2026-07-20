@@ -1182,6 +1182,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get loopMixerHarmony => 'Harmonie';
 
   @override
+  String get loopMixerHarmonyMake => 'Eigene bauen';
+
+  @override
+  String get loopMixerHarmonyMakeTitle => 'Harmonie bauen';
+
+  @override
+  String get loopMixerHarmonyMakeHint =>
+      'Wähle für jeden der 4 Takte einen Akkord — sie klingen immer gut zusammen.';
+
+  @override
+  String get loopMixerHarmonyMakeCreate => 'Erstellen';
+
+  @override
+  String get loopMixerCancel => 'Abbrechen';
+
+  @override
   String get loopMixerKey => 'Tonart';
 
   @override

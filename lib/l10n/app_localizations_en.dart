@@ -1178,6 +1178,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loopMixerHarmony => 'Harmony';
 
   @override
+  String get loopMixerHarmonyMake => 'Make your own';
+
+  @override
+  String get loopMixerHarmonyMakeTitle => 'Build a harmony';
+
+  @override
+  String get loopMixerHarmonyMakeHint =>
+      'Pick a chord for each of the 4 bars — they always sound good together.';
+
+  @override
+  String get loopMixerHarmonyMakeCreate => 'Create';
+
+  @override
+  String get loopMixerCancel => 'Cancel';
+
+  @override
   String get loopMixerKey => 'Key';
 
   @override

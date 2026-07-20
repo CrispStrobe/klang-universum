@@ -2234,6 +2234,36 @@ abstract class AppLocalizations {
   /// **'Harmony'**
   String get loopMixerHarmony;
 
+  /// No description provided for @loopMixerHarmonyMake.
+  ///
+  /// In en, this message translates to:
+  /// **'Make your own'**
+  String get loopMixerHarmonyMake;
+
+  /// No description provided for @loopMixerHarmonyMakeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a harmony'**
+  String get loopMixerHarmonyMakeTitle;
+
+  /// No description provided for @loopMixerHarmonyMakeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a chord for each of the 4 bars — they always sound good together.'**
+  String get loopMixerHarmonyMakeHint;
+
+  /// No description provided for @loopMixerHarmonyMakeCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get loopMixerHarmonyMakeCreate;
+
+  /// No description provided for @loopMixerCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get loopMixerCancel;
+
   /// No description provided for @loopMixerKey.
   ///
   /// In en, this message translates to:

@@ -49,6 +49,7 @@ import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
+import 'package:comet_beat/features/games/composition/custom_progressions.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart';
 import 'package:comet_beat/features/games/composition/groove_play_along.dart';
 import 'package:comet_beat/features/games/composition/groove_slots.dart';
@@ -259,6 +260,11 @@ abstract interface class LoopMixerTester {
   /// Forces the seam handler (normally driven by the real-time clock, which
   /// widget tests can't advance) — asserts fill scheduling without waiting.
   void debugLoopWrap();
+
+  /// LM-UX7: add a custom harmony without the picker dialog (for tests); the
+  /// count reflects the kid's saved harmonies.
+  void debugAddCustomHarmony(List<ChordDegree> degrees);
+  int get customHarmonyCount;
 }
 
 class _LoopMixerScreenState extends State<LoopMixerScreen>
@@ -272,6 +278,11 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   final _clock = Stopwatch();
 
   late final Ticker _ticker;
+  // LM-UX7: the kid's own saved harmonies, shown alongside the built-in ones.
+  final _progStore = CustomProgressionStore();
+  List<Progression> _customProgressions = const [];
+  int _customProgId = 0; // session-unique ids for new harmonies
+
   final _step = ValueNotifier<int>(-1);
 
   /// Smooth loop phase 0..1 for the sweeping playhead; -1 while stopped.
@@ -293,6 +304,10 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void initState() {
     super.initState();
     if (widget.initialSpec != null) _engine.applySpec(widget.initialSpec!);
+    // LM-UX7: load the kid's saved harmonies (best-effort).
+    _progStore.load().then((ps) {
+      if (mounted) setState(() => _customProgressions = ps);
+    });
     _ticker = createTicker((_) {
       if (!_clock.isRunning) {
         _step.value = -1;
@@ -403,6 +418,18 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   void stopAll() => _stopAll();
   @override
   void debugLoopWrap() => _onLoopWrap();
+
+  @override
+  int get customHarmonyCount => _customProgressions.length;
+
+  @override
+  void debugAddCustomHarmony(List<ChordDegree> degrees) {
+    final p = Progression('custom-new-${_customProgId++}', degrees);
+    setState(() => _customProgressions = [..._customProgressions, p]);
+    _progStore.save(_customProgressions);
+    _setProgression(p);
+  }
+
   @override
   bool get scoreVisible => _showScore;
   @override
@@ -1957,6 +1984,91 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     _restartGroove();
   }
 
+  // ── Custom harmonies (LM-UX7) ─────────────────────────────────────────────
+  void _deleteCustomProgression(Progression p) {
+    setState(() {
+      _customProgressions = [
+        for (final c in _customProgressions)
+          if (c.id != p.id) c,
+      ];
+    });
+    if (_engine.progression?.id == p.id) _setProgression(null);
+    _progStore.save(_customProgressions);
+  }
+
+  Future<void> _makeCustomProgression(AppLocalizations l10n) async {
+    final degrees = await _showHarmonyEditor(l10n);
+    if (degrees == null || degrees.length < 2) return;
+    final p = Progression('custom-new-${_customProgId++}', degrees);
+    setState(() => _customProgressions = [..._customProgressions, p]);
+    await _progStore.save(_customProgressions);
+    _setProgression(p);
+  }
+
+  /// A 4-slot chord picker — each bar is any of the offered degrees (all
+  /// consonant with the pentatonic melodies, so no combination can clash).
+  Future<List<ChordDegree>?> _showHarmonyEditor(AppLocalizations l10n) {
+    final sel = [
+      ChordDegree.i,
+      ChordDegree.v,
+      ChordDegree.vi,
+      ChordDegree.iv,
+    ];
+    return showDialog<List<ChordDegree>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setD) => AlertDialog(
+          title: Text(l10n.loopMixerHarmonyMakeTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.loopMixerHarmonyMakeHint,
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              for (var i = 0; i < 4; i++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 20, child: Text('${i + 1}')),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 4,
+                          children: [
+                            for (final d in ChordDegree.values)
+                              ChoiceChip(
+                                label: Text(d.label),
+                                selected: sel[i] == d,
+                                onSelected: (_) => setD(() => sel[i] = d),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l10n.loopMixerCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, List<ChordDegree>.of(sel)),
+              child: Text(l10n.loopMixerHarmonyMakeCreate),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Key/scale keep the loop length, only the pitches move — re-render + re-sync
   // in place (like a master send change), no grid restart needed.
   void _setKey(int key) {
@@ -2529,6 +2641,21 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                           onSelected: (_) => _setProgression(p),
                           visualDensity: VisualDensity.compact,
                         ),
+                      // LM-UX7: the kid's own saved harmonies (deletable).
+                      for (final p in _customProgressions)
+                        InputChip(
+                          label: Text(p.label),
+                          selected: _engine.progression?.id == p.id,
+                          onSelected: (_) => _setProgression(p),
+                          onDeleted: () => _deleteCustomProgression(p),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ActionChip(
+                        avatar: const Icon(Icons.add, size: 16),
+                        label: Text(l10n.loopMixerHarmonyMake),
+                        onPressed: () => _makeCustomProgression(l10n),
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ],
                   ),
                 ),
