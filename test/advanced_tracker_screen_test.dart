@@ -7,11 +7,12 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
-import 'package:comet_beat/core/audio/synth.dart' show Instrument;
+import 'package:comet_beat/core/audio/synth.dart' show Drum, Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show AdditiveInstrument, SampleInstrument;
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
     show instrumentToJsonString;
+import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
@@ -31,7 +32,44 @@ AdvancedTrackerTester _game(WidgetTester tester) =>
     ) as AdvancedTrackerTester;
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    BeatBridge.instance.clear();
+  });
+
+  testWidgets('loads a shared beat as a polyphonic drum song, and shares back',
+      (tester) async {
+    // A beat another mode shared: kick + hat both on step 0 (needs polyphony).
+    List<bool> row(List<int> hits) =>
+        [for (var i = 0; i < 8; i++) hits.contains(i)];
+    BeatBridge.instance.publish(
+      SharedBeat(
+        rows: {
+          Drum.kick: row([0, 4]),
+          Drum.hat: row([0, 1, 2, 3, 4, 5, 6, 7]),
+        },
+        tempoBpm: 120,
+      ),
+    );
+
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+    expect(game.canLoadSharedBeat, isTrue);
+
+    // Pull it in — it becomes a drum song with a channel per active drum.
+    game.loadSharedBeat();
+    await tester.pump();
+    expect(game.channelCount, 2); // kick + hat, polyphony preserved
+    expect(game.noteCount, greaterThan(0));
+
+    // Share it back out — round-trips through the bridge (source advtracker).
+    BeatBridge.instance.clear();
+    game.shareBeat();
+    final shared = BeatBridge.instance.current;
+    expect(shared, isNotNull);
+    expect(shared!.source, 'advtracker');
+    expect(shared.rows[Drum.kick]!.take(5), [true, false, false, false, true]);
+  });
 
   testWidgets('trackerNoteName renders classic tracker labels', (_) async {
     expect(trackerNoteName(60), 'C-4');

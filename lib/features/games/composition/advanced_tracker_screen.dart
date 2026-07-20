@@ -36,6 +36,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/beat_to_tracker.dart';
 import 'package:comet_beat/core/audio/chroma_analysis.dart'
     show ChordTemplate, kChordTemplates;
 import 'package:comet_beat/core/audio/crisp_dsp/sample_edit.dart';
@@ -47,7 +48,7 @@ import 'package:comet_beat/core/audio/mod/module_convert.dart'
 import 'package:comet_beat/core/audio/mod/module_doc.dart' show ModuleFormat;
 import 'package:comet_beat/core/audio/sample_pitch.dart';
 import 'package:comet_beat/core/audio/sound_library.dart';
-import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
+import 'package:comet_beat/core/audio/synth.dart' show Drum, wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_replayer.dart'
     show
@@ -67,6 +68,7 @@ import 'package:comet_beat/core/audio/wav_io.dart'
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/multipart_to_tracker.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
@@ -306,6 +308,12 @@ abstract interface class AdvancedTrackerTester {
   /// Import a module (.mod/.s3m/.xm/.it) from raw [bytes]; save to the Song Book.
   void importModuleBytes(Uint8List bytes);
   bool debugSaveToSongBook(UserSongsService songs);
+
+  /// Shared-groove bridge: publish the song's percussion channels out, and pull
+  /// a shared beat in (as a fresh channel-per-drum drum song).
+  void shareBeat();
+  bool get canLoadSharedBeat;
+  void loadSharedBeat();
 
   /// Export the whole song as MIDI / MusicXML bytes (null when nothing pitched).
   Uint8List? debugExportMidi();
@@ -3580,6 +3588,55 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void importModuleBytes(Uint8List bytes) =>
       _replaceSong(songFromModuleBytes(bytes));
 
+  // --- Shared-groove bridge --------------------------------------------------
+  //
+  // The Advanced Tracker is polyphonic, so unlike the Beginner one it can carry
+  // a shared beat LOSSLESSLY: load builds a fresh drum song with one percussion
+  // channel per active drum (kick+hat on the same step just live on two
+  // channels); share reads every percussion channel back out.
+
+  @override
+  void shareBeat() {
+    final steps = _song.rows;
+    final rows = <Drum, List<bool>>{};
+    for (final ch in _song.channels) {
+      if (ch.instrument is! PercussionInstrument) continue;
+      for (var s = 0; s < steps && s < ch.cells.length; s++) {
+        final midi = ch.cells[s].midi;
+        if (midi == null) continue;
+        final drum = Drum.values[midi.clamp(0, Drum.values.length - 1)];
+        (rows[drum] ??= List<bool>.filled(steps, false))[s] = true;
+      }
+    }
+    if (rows.isEmpty) return;
+    BeatBridge.instance.publish(
+      SharedBeat(
+        rows: rows,
+        tempoBpm: _song.timing.tempoBpm,
+        swing: _song.timing.swing,
+        source: 'advtracker',
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.beatShared)),
+    );
+  }
+
+  @override
+  bool get canLoadSharedBeat => BeatBridge.instance.hasBeat;
+
+  @override
+  void loadSharedBeat() {
+    final shared = BeatBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    _replaceSong(drumSongFromBeat(shared));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.beatLoaded)),
+    );
+  }
+
   // --- Native lossless save / share (the CBS1. token, tracker_song_codec) ---
 
   @override
@@ -4172,6 +4229,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   _exportAudio();
                 case 'daw':
                   sendToDaw();
+                case 'shareBeat':
+                  shareBeat();
+                case 'loadBeat':
+                  loadSharedBeat();
                 case 'workshop':
                   _openInWorkshop();
               }
@@ -4230,6 +4291,8 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               ),
               _menuRow('exportAudio', Icons.download, l10n.audioExportTitle),
               _menuRow('daw', Icons.library_add, l10n.dawSend),
+              _menuRow('shareBeat', Icons.upload, l10n.beatShare),
+              _menuRow('loadBeat', Icons.download, l10n.beatLoadShared),
               const PopupMenuDivider(),
               _menuRow('workshop', Icons.edit_note, l10n.trackerOpenWorkshop),
             ],
