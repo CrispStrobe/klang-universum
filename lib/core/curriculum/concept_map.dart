@@ -104,7 +104,7 @@ const List<Concept> kConcepts = [
     GradeBand.g12,
     ConceptArea.dynamics,
     'Loud and soft',
-    ['dynamics_duel', 'charades'],
+    ['dynamics_duel', 'charades', 'crescendo_ear'],
   ),
   Concept(
     'fast_slow',

@@ -36,6 +36,7 @@ import 'package:comet_beat/features/games/composition/question_answer_screen.dar
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/drums/drum_read_screen.dart';
 import 'package:comet_beat/features/games/expression/charades_screen.dart';
+import 'package:comet_beat/features/games/expression/crescendo_ear_screen.dart';
 import 'package:comet_beat/features/games/guitar/capo_match_screen.dart';
 import 'package:comet_beat/features/games/guitar/fretboard_find_screen.dart';
 import 'package:comet_beat/features/games/guitar/guitar_string_quiz_screen.dart';
@@ -799,6 +800,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCharades,
       subtitle: (l) => l.gameCharadesSubtitle,
       builder: (_) => const CharadesScreen(),
+      tutorial: expressionPrimer,
+    ),
+    // Aural direction-of-dynamics — crescendo vs diminuendo by ear (charades
+    // trains a fixed level; this trains the change over time).
+    GameInfo(
+      id: 'crescendo_ear',
+      icon: Icons.graphic_eq,
+      title: (l) => l.gameCrescendoEar,
+      subtitle: (l) => l.gameCrescendoEarSubtitle,
+      builder: (_) => const CrescendoEarScreen(),
       tutorial: expressionPrimer,
     ),
     GameInfo(

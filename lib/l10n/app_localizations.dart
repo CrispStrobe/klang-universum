@@ -1310,6 +1310,36 @@ abstract class AppLocalizations {
   /// **'Lower'**
   String get directionDownLabel;
 
+  /// No description provided for @gameCrescendoEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting Louder or Softer?'**
+  String get gameCrescendoEar;
+
+  /// No description provided for @gameCrescendoEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen: does the pulse grow louder or fade away?'**
+  String get gameCrescendoEarSubtitle;
+
+  /// No description provided for @crescendoEarPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'A beat plays. Does it get louder or softer?'**
+  String get crescendoEarPrompt;
+
+  /// No description provided for @crescendoLouderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting louder'**
+  String get crescendoLouderLabel;
+
+  /// No description provided for @crescendoSofterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting softer'**
+  String get crescendoSofterLabel;
+
   /// No description provided for @gameStepSkip.
   ///
   /// In en, this message translates to:

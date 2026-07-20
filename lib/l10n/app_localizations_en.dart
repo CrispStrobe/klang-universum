@@ -670,6 +670,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get directionDownLabel => 'Lower';
 
   @override
+  String get gameCrescendoEar => 'Getting Louder or Softer?';
+
+  @override
+  String get gameCrescendoEarSubtitle =>
+      'Listen: does the pulse grow louder or fade away?';
+
+  @override
+  String get crescendoEarPrompt =>
+      'A beat plays. Does it get louder or softer?';
+
+  @override
+  String get crescendoLouderLabel => 'Getting louder';
+
+  @override
+  String get crescendoSofterLabel => 'Getting softer';
+
+  @override
   String get gameStepSkip => 'Step or Skip?';
 
   @override
