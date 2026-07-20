@@ -1418,6 +1418,68 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
   /// Per-track staff row height (LM-UX2 — was cramped at 42).
   static const double _scoreRowHeight = 68;
 
+  /// One track's pulsing card — shared by the stacked (narrow) and side-by-side
+  /// (wide) layouts (LM-UX1).
+  Widget _trackTile(AppLocalizations l10n, LoopTrack track) {
+    return _BeatPulse(
+      step: _step,
+      active: _engine.enabled.contains(track.id),
+      beatsPerBar: LoopTiming.beatsPerBar,
+      color: _trackColors[track.id]!,
+      child: _TrackCard(
+        color: _trackColors[track.id]!,
+        shape: creatureShapeFor(track.id),
+        label: _trackLabel(l10n, track.id),
+        active: _engine.enabled.contains(track.id),
+        armed: _pendingLaunches.contains(track.id),
+        variant: _engine.variants[track.id] ?? 0,
+        variantCount: track.variants.length,
+        level: _engine.levels[track.id] ?? 1.0,
+        onTap: () => _toggle(track.id),
+        onCycleVariant: () => _cycleVariant(track.id),
+        onRollVariant: () => _rollVariant(track.id),
+        onLevel: (v) => _setLevel(track.id, v),
+        voiced: _engine.trackVoice(track.id) != null,
+        onVoice:
+            _trackIsPitched(track) ? () => _pickVoice(l10n, track.id) : null,
+      ),
+    );
+  }
+
+  /// The track lane: cards stacked on a narrow screen, or laid out as ~5 panels
+  /// side by side on a wide one to reclaim vertical space (LM-UX1).
+  Widget _trackLane(AppLocalizations l10n) {
+    final tracks = _engine.tracks;
+    return LayoutBuilder(
+      builder: (context, c) {
+        // Stack on phones; only genuinely wide screens (tablet/desktop/landscape)
+        // spread the cards into side-by-side panels.
+        if (c.maxWidth < 560) {
+          return Column(
+            children: [
+              for (final track in tracks)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: _trackTile(l10n, track),
+                ),
+            ],
+          );
+        }
+        final cols = (c.maxWidth / 180).floor().clamp(2, tracks.length);
+        const spacing = 6.0;
+        final w = (c.maxWidth - spacing * (cols - 1)) / cols;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final track in tracks)
+              SizedBox(width: w, child: _trackTile(l10n, track)),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _scoreStaffRow(AppLocalizations l10n, String id, Score score) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -2315,40 +2377,9 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
                 if (_showScore) _buildScorePanel(l10n),
                 const SizedBox(height: 8),
                 // The track lane is natural-height; the whole body scrolls (this
-                // screen has ~10 control rows that don't fit a short phone). Was
-                // Expanded-per-card, which squished cards below their min height.
-                Column(
-                  children: [
-                    for (final track in _engine.tracks)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: _BeatPulse(
-                          step: _step,
-                          active: _engine.enabled.contains(track.id),
-                          beatsPerBar: LoopTiming.beatsPerBar,
-                          color: _trackColors[track.id]!,
-                          child: _TrackCard(
-                            color: _trackColors[track.id]!,
-                            shape: creatureShapeFor(track.id),
-                            label: _trackLabel(l10n, track.id),
-                            active: _engine.enabled.contains(track.id),
-                            armed: _pendingLaunches.contains(track.id),
-                            variant: _engine.variants[track.id] ?? 0,
-                            variantCount: track.variants.length,
-                            level: _engine.levels[track.id] ?? 1.0,
-                            onTap: () => _toggle(track.id),
-                            onCycleVariant: () => _cycleVariant(track.id),
-                            onRollVariant: () => _rollVariant(track.id),
-                            onLevel: (v) => _setLevel(track.id, v),
-                            voiced: _engine.trackVoice(track.id) != null,
-                            onVoice: _trackIsPitched(track)
-                                ? () => _pickVoice(l10n, track.id)
-                                : null,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                // screen has ~10 control rows that don't fit a short phone).
+                // LM-UX1: stacked on narrow, side-by-side panels on wide.
+                _trackLane(l10n),
                 const SizedBox(height: 6),
                 // Capture row: sing a melody / beatbox a beat — count-in,
                 // record 2 bars, the capture joins the band as a card.
@@ -2933,12 +2964,16 @@ class _TrackCard extends StatelessWidget {
                   size: 32,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: foreground,
-                        fontWeight: FontWeight.w600,
-                      ),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: foreground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 // The pattern-variant badge: tap to cycle A → B → C, long-press
