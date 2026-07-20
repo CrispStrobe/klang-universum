@@ -25,9 +25,9 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart'
     show Biquad, BiquadKind;
+import 'package:comet_beat/core/audio/crisp_dsp/fdn_reverb.dart' show fdnReverb;
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
     show chorusFx;
-import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart' show reverbFx;
 import 'package:comet_beat/core/audio/sf2/sf2.dart'
     show Sf2Preset, Sf2Sample, Sf2SoundFont, Sf2Zone;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
@@ -39,9 +39,11 @@ const double _maxTailSec = 3; // cap a note's release tail (buffer headroom)
 // Reverb-return makeup: the per-zone SF2 reverb sends (gen 16, median ~5%) are
 // far smaller than the flat CC-default we used before, so the wet return is
 // scaled up to keep the same overall space while preserving the font's
-// per-instrument WET/dry variation (a pad far wetter than a bass).
-const double _reverbReturnGain = 1.9;
-const double _reverbWidth = 3.0; // side-boost so the wet tail spreads wide
+// per-instrument WET/dry variation (a pad far wetter than a bass). The FDN
+// returns wet at a lower unit level than the old Freeverb×width hack, so the
+// makeup is larger; the final master peak-normalizes anyway, so this only sets
+// the wet/DRY balance, not the absolute level.
+const double _reverbReturnGain = 12.0;
 const double _bendRangeSemis = 2; // GM default (RPN 0 not yet read)
 const double _vibratoRateHz = 5.5;
 const double _vibratoMaxCents = 50; // at full mod wheel
@@ -451,36 +453,23 @@ class _Note {
     );
   }
 
-  // Wet the send buses once and fold them into the master. A mono send →
-  // stereo return: sum the (panned) sends to one bus, then run it through two
-  // decorrelated reverbs — the right offset by the Freeverb stereo spread (23
-  // samples) — so even a centre-panned note gets a WIDE, spacious tail instead
-  // of one stuck on its own side. A bigger room gives the tail the length that
-  // reads as "air"/space (a dry mix sounds stale next to a real synth).
+  // Wet the send buses once and fold them into the master. This mirrors the
+  // reference synth's architecture: a MONO reverb send → an FDN late-
+  // reverberator → a wide, decorrelated stereo return. The FDN produces its
+  // spacious stereo image internally (oracle-matched to the reference: side/mid
+  // ≈ 0.38, L/R corr ≈ 0.55 — wide but mono-safe), so no mid/side width hack is
+  // needed. The dry signal keeps each note's pan; the wet tail is the shared
+  // "air"/space that a dry mix lacks (which read as stale next to a real synth).
   if (wantRev) {
-    // Reverb the STEREO (panned) sends — NOT a mono sum — so the wet tail keeps
-    // the dry stereo image (a right-panned hat's reverb stays right); the right
-    // channel is Freeverb-offset by 23 samples for extra decorrelation. Summing
-    // to mono first collapsed everything to the centre (a narrow, "stale" tail).
-    final wl = reverbFx(revL!, mix: 1, roomSize: 0.82, sampleRate: sampleRate);
-    final wr = reverbFx(
-      revR!,
-      mix: 1,
-      roomSize: 0.82,
-      stereoSpread: 23,
-      sampleRate: sampleRate,
-    );
-    // Widen the wet return (mid/side): boost the side component so the reverb
-    // tail spreads across the stereo field like a real synth's, instead of
-    // sitting narrow/centred (our Freeverb decorrelates less than fluidsynth's).
+    final send = Float64List(maxLen);
+    for (var i = 0; i < maxLen; i++) {
+      send[i] = (revL![i] + revR![i]) * 0.5;
+    }
+    final (wl, wr) = fdnReverb(send, roomSize: 0.7, sampleRate: sampleRate);
     final g = reverbMix * _reverbReturnGain;
     for (var i = 0; i < maxLen; i++) {
-      final wetL = wl[i] * g;
-      final wetR = wr[i] * g;
-      final mid = (wetL + wetR) * 0.5;
-      final side = (wetL - wetR) * 0.5 * _reverbWidth;
-      left[i] += mid + side;
-      right[i] += mid - side;
+      left[i] += wl[i] * g;
+      right[i] += wr[i] * g;
     }
   }
   if (wantChor) {
