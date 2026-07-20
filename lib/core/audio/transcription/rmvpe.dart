@@ -1,0 +1,118 @@
+// lib/core/audio/transcription/rmvpe.dart
+//
+// RMVPE — robust neural monophonic F0 (MIT, RVC/lj1995 export) behind the
+// `PitchTrack` contract. A heavier, more noise/vocal-robust alternative to
+// CREPE. The model is a pure conv U-Net: 128-mel spectrogram → 360-bin pitch
+// salience (the same representation CREPE emits). Runs on `onnx_runtime_dart`.
+//
+// Pipeline: resample→16 kHz → log-mel (see `rmvpe_mel.dart`, validated vs the
+// RVC MelSpectrogram) → pad frames to a multiple of 32 (the U-Net's stride) →
+// model → crop → RMVPE `to_local_average_cents` decode → [PitchTrack].
+//
+// WEB-SAFE: takes a preloaded [OnnxModel] + [RmvpeMel] bytes; model/asset
+// download (dart:io, ~361 MB) lives in the native `rmvpe_model_store.dart`.
+library;
+
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
+import 'package:comet_beat/core/audio/transcription/contracts.dart';
+import 'package:comet_beat/core/audio/transcription/rmvpe_mel.dart';
+import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
+
+const int _nBins = 360;
+const double _centsBase = 1997.3794084376191; // == CREPE (20 cents/bin)
+const String _inName = 'input';
+const String _outName = 'output';
+
+/// Neural monophonic F0 with RMVPE. Resamples [mono] to 16 kHz, computes the
+/// log-mel, runs the [model], and decodes each frame to F0 + voicing → a
+/// [PitchTrack]. [thred] gates a frame unvoiced (`f0Hz == 0`) when the peak
+/// salience is below it (RMVPE default 0.03). Pure / synchronous / web-safe.
+PitchTrack rmvpeF0(
+  Float64List mono, {
+  required OnnxModel model,
+  required RmvpeMel mel,
+  int sampleRate = 44100,
+  double thred = 0.03,
+}) {
+  final audio = sampleRate == rmvpeSampleRate
+      ? mono
+      : resampleLinear(mono, sampleRate / rmvpeSampleRate);
+  if (audio.isEmpty) return const [];
+
+  final (logMel, nFrames) = rmvpeLogMel(mel, audio);
+  final nMels = mel.nMels;
+
+  // Pad frames to a multiple of 32 (the U-Net downsamples by 2^5) so the model
+  // preserves the frame count; crop back after.
+  final nPad = 32 * ((nFrames - 1) ~/ 32 + 1) - nFrames;
+  final pf = nFrames + nPad;
+  final input = Float32List(nMels * pf); // frame-padded with 0 (log-mel space)
+  for (var m = 0; m < nMels; m++) {
+    input.setRange(m * pf, m * pf + nFrames, logMel, m * nFrames);
+  }
+
+  final out = model.run(
+    {
+      _inName: Tensor.float(input, [1, nMels, pf]),
+    },
+    const [_outName],
+  )[_outName]!;
+  final sal = out.f ?? out.asFloatList(); // [1, pf, 360]
+
+  final track = <PitchFrame>[];
+  for (var t = 0; t < nFrames; t++) {
+    final (hz, voiced) = _decodeFrame(sal, t * _nBins, thred);
+    track.add(
+      (
+        timeMs: t * mel.hop / rmvpeSampleRate * 1000.0,
+        f0Hz: hz,
+        voicedProb: voiced,
+      ),
+    );
+  }
+  return track;
+}
+
+/// Decode one 360-bin salience row (at [base]) to (F0 Hz, voicing) — RMVPE's
+/// `to_local_average_cents`: weighted average of bin-centre cents over
+/// `[argmax-4, argmax+5)` (out-of-range bins contribute 0), weighted by the RAW
+/// salience (no sigmoid, unlike CREPE). Unvoiced (F0 0) when peak ≤ [thred].
+/// Voicing = peak salience.
+(double, double) _decodeFrame(Float32List sal, int base, double thred) {
+  var argmax = 0;
+  var peak = sal[base];
+  for (var b = 1; b < _nBins; b++) {
+    final v = sal[base + b];
+    if (v > peak) {
+      peak = v;
+      argmax = b;
+    }
+  }
+  if (peak <= thred) return (0.0, peak < 0 ? 0.0 : peak);
+  final lo = math.max(0, argmax - 4), hi = math.min(_nBins, argmax + 5);
+  var num = 0.0, den = 0.0;
+  for (var b = lo; b < hi; b++) {
+    final w = sal[base + b];
+    num += w * (20 * b + _centsBase);
+    den += w;
+  }
+  final cents = den > 0 ? num / den : 0.0;
+  final hz = 10.0 * math.pow(2.0, cents / 1200.0);
+  return (hz, peak);
+}
+
+/// Decode a full salience matrix `[nFrames × 360]` to `(f0Hz, voicing)` pairs —
+/// exposed so the decoder can be tested against an RMVPE reference without the
+/// model.
+List<(double, double)> decodeRmvpeSalience(
+  Float32List salience,
+  int nFrames, {
+  double thred = 0.03,
+}) =>
+    [
+      for (var t = 0; t < nFrames; t++)
+        _decodeFrame(salience, t * _nBins, thred),
+    ];
