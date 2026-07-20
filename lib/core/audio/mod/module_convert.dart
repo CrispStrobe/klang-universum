@@ -317,6 +317,23 @@ ModuleDoc docFromS3m(S3mModule m) {
   );
 }
 
+// Envelopes map 1:1 between the XM-native and neutral shapes (same fields).
+DocEnvelope _docEnvFromXm(XmEnvelope e) => DocEnvelope(
+      points: e.points,
+      sustain: e.sustain,
+      loopStart: e.loopStart,
+      loopEnd: e.loopEnd,
+      enabled: e.enabled,
+    );
+
+XmEnvelope _xmEnvFromDoc(DocEnvelope e) => XmEnvelope(
+      points: e.points,
+      sustain: e.sustain,
+      loopStart: e.loopStart,
+      loopEnd: e.loopEnd,
+      enabled: e.enabled,
+    );
+
 ModuleDoc docFromXm(XmModule m) {
   final samples = <DocSample>[];
   for (final inst in m.instruments) {
@@ -332,6 +349,8 @@ ModuleDoc docFromXm(XmModule m) {
         c5speed: xmTuningToC5speed(s.relativeNote, s.finetune),
         pingPong: s.loopLength > 0 && s.pingPong,
         sixteenBit: s.sixteenBit,
+        volumeEnvelope: _docEnvFromXm(inst.volumeEnvelope),
+        panEnvelope: _docEnvFromXm(inst.panEnvelope),
         pcm: Float64List.fromList(s.pcm),
       );
       samples.add(ds);
@@ -665,6 +684,8 @@ XmModule docToXm(ModuleDoc doc) {
     instruments.add(
       XmInstrument(
         name: ds.name,
+        volumeEnvelope: _xmEnvFromDoc(ds.volumeEnvelope),
+        panEnvelope: _xmEnvFromDoc(ds.panEnvelope),
         samples: [
           XmSample(
             name: ds.name,

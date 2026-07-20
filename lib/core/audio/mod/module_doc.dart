@@ -24,6 +24,28 @@ import 'dart:typed_data';
 /// The source container format a [ModuleDoc] was read from.
 enum ModuleFormat { mod, s3m, xm, it }
 
+/// A volume or panning envelope in the neutral model — the shape XM and IT
+/// share: [points] are `(tick, value)` breakpoints (value 0..64; pan is centred
+/// at 32), with an optional [sustain] point and a [loopStart]..[loopEnd] loop
+/// (all indices into [points]), gated by [enabled]. A disabled/empty envelope
+/// means the sample has none.
+class DocEnvelope {
+  const DocEnvelope({
+    this.points = const [],
+    this.sustain,
+    this.loopStart,
+    this.loopEnd,
+    this.enabled = false,
+  });
+
+  final List<(int, int)> points; // (x in ticks, y 0..64)
+  final int? sustain; // sustain-point index, or null
+  final int? loopStart, loopEnd; // loop-point indices, or null
+  final bool enabled;
+
+  bool get isEmpty => !enabled || points.isEmpty;
+}
+
 /// A sample in the neutral model. [pcm] is normalized to [-1, 1].
 class DocSample {
   const DocSample({
@@ -34,6 +56,8 @@ class DocSample {
     this.c5speed = 8363,
     this.pingPong = false,
     this.sixteenBit = false,
+    this.volumeEnvelope = const DocEnvelope(),
+    this.panEnvelope = const DocEnvelope(),
     required this.pcm,
   });
 
@@ -50,6 +74,10 @@ class DocSample {
   /// Default false = the classic 8-bit sample (byte-identical export). MOD/S3M
   /// ignore this (MOD is 8-bit only); the XM/IT writers honour it.
   final bool sixteenBit;
+
+  /// The instrument's volume / panning envelopes (XM/IT carry these on the
+  /// instrument; MOD/S3M have none, so these stay empty there).
+  final DocEnvelope volumeEnvelope, panEnvelope;
 
   final Float64List pcm;
 

@@ -44,6 +44,37 @@ String _readName(Uint8List bytes, int start, int end) {
   return buf.toString().trim();
 }
 
+/// Reads one XM envelope (12 `(tick, value)` points, of which [numAt] are used)
+/// plus its sustain/loop indices and the type byte (bit0 on · bit1 sustain ·
+/// bit2 loop) at the given absolute offsets.
+XmEnvelope _readXmEnvelope(
+  ByteData bd, {
+  required int pointsAt,
+  required int numAt,
+  required int sustainAt,
+  required int loopStartAt,
+  required int loopEndAt,
+  required int typeAt,
+}) {
+  final type = bd.getUint8(typeAt);
+  final n = bd.getUint8(numAt).clamp(0, 12);
+  final points = <(int, int)>[
+    for (var i = 0; i < n; i++)
+      (
+        bd.getUint16(pointsAt + i * 4, Endian.little),
+        bd.getUint16(pointsAt + i * 4 + 2, Endian.little),
+      ),
+  ];
+  final hasLoop = (type & 0x04) != 0;
+  return XmEnvelope(
+    points: points,
+    enabled: (type & 0x01) != 0,
+    sustain: (type & 0x02) != 0 ? bd.getUint8(sustainAt) : null,
+    loopStart: hasLoop ? bd.getUint8(loopStartAt) : null,
+    loopEnd: hasLoop ? bd.getUint8(loopEndAt) : null,
+  );
+}
+
 /// Parses FastTracker 2 `.xm` [bytes] into an [XmModule].
 XmModule parseXm(Uint8List bytes) {
   // 1. Signature + minimum length.
@@ -134,6 +165,32 @@ XmModule parseXm(Uint8List bytes) {
       continue;
     }
 
+    // The extended instrument header carries the volume/pan envelope block at
+    // fixed offsets (points 129/177, counts+flags 225..234). Older/minimal
+    // headers omit it — guard on the declared header size + bounds.
+    var volEnv = const XmEnvelope();
+    var panEnv = const XmEnvelope();
+    if (instrumentHeaderSize >= 235 && instrumentStart + 235 <= len) {
+      volEnv = _readXmEnvelope(
+        bd,
+        pointsAt: instrumentStart + 129,
+        numAt: instrumentStart + 225,
+        sustainAt: instrumentStart + 227,
+        loopStartAt: instrumentStart + 228,
+        loopEndAt: instrumentStart + 229,
+        typeAt: instrumentStart + 233,
+      );
+      panEnv = _readXmEnvelope(
+        bd,
+        pointsAt: instrumentStart + 177,
+        numAt: instrumentStart + 226,
+        sustainAt: instrumentStart + 230,
+        loopStartAt: instrumentStart + 231,
+        loopEndAt: instrumentStart + 232,
+        typeAt: instrumentStart + 234,
+      );
+    }
+
     // Sample headers begin at instrumentStart + instrumentHeaderSize.
     var headerCursor = instrumentStart + instrumentHeaderSize;
     final sampleMeta = <_SampleMeta>[];
@@ -186,7 +243,14 @@ XmModule parseXm(Uint8List bytes) {
       dataCursor += meta.lengthInBytes;
     }
 
-    instruments.add(XmInstrument(name: insName, samples: samples));
+    instruments.add(
+      XmInstrument(
+        name: insName,
+        samples: samples,
+        volumeEnvelope: volEnv,
+        panEnvelope: panEnv,
+      ),
+    );
     instrumentStart = dataCursor;
   }
 

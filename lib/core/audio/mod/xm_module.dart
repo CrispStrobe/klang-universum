@@ -79,11 +79,32 @@ class XmSample {
   bool get isEmpty => pcm.isEmpty;
 }
 
-/// An instrument: a name and its samples.
+/// A volume or panning envelope: `(tick, value)` points (value 0..64), an
+/// optional sustain point + loop (indices into [points]), gated by [enabled].
+class XmEnvelope {
+  const XmEnvelope({
+    this.points = const [],
+    this.sustain,
+    this.loopStart,
+    this.loopEnd,
+    this.enabled = false,
+  });
+  final List<(int, int)> points;
+  final int? sustain, loopStart, loopEnd;
+  final bool enabled;
+}
+
+/// An instrument: a name, its samples, and its volume / panning envelopes.
 class XmInstrument {
-  const XmInstrument({this.name = '', required this.samples});
+  const XmInstrument({
+    this.name = '',
+    required this.samples,
+    this.volumeEnvelope = const XmEnvelope(),
+    this.panEnvelope = const XmEnvelope(),
+  });
   final String name;
   final List<XmSample> samples;
+  final XmEnvelope volumeEnvelope, panEnvelope;
 }
 
 /// One note cell. `note == 0` empty, `note == 97` note-off.

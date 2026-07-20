@@ -65,6 +65,47 @@ void _writeName(Uint8List dst, int offset, int length, String s) {
   }
 }
 
+/// Writes one XM envelope into an instrument header: up to 12 `(tick, value)`
+/// points + the count, sustain/loop indices, and type byte (bit0 on · bit1
+/// sustain · bit2 loop). A disabled/empty envelope leaves the block zeroed (off).
+void _writeXmEnvelope(
+  ByteData ihb,
+  XmEnvelope env, {
+  required int pointsAt,
+  required int numAt,
+  required int sustainAt,
+  required int loopStartAt,
+  required int loopEndAt,
+  required int typeAt,
+}) {
+  if (!env.enabled || env.points.isEmpty) return;
+  final n = env.points.length.clamp(0, 12);
+  for (var i = 0; i < n; i++) {
+    ihb.setUint16(
+      pointsAt + i * 4,
+      env.points[i].$1.clamp(0, 0xFFFF),
+      Endian.little,
+    );
+    ihb.setUint16(
+      pointsAt + i * 4 + 2,
+      env.points[i].$2.clamp(0, 0xFFFF),
+      Endian.little,
+    );
+  }
+  ihb.setUint8(numAt, n);
+  var type = 0x01; // enabled
+  if (env.sustain != null) {
+    type |= 0x02;
+    ihb.setUint8(sustainAt, env.sustain!.clamp(0, 255));
+  }
+  if (env.loopStart != null && env.loopEnd != null) {
+    type |= 0x04;
+    ihb.setUint8(loopStartAt, env.loopStart!.clamp(0, 255));
+    ihb.setUint8(loopEndAt, env.loopEnd!.clamp(0, 255));
+  }
+  ihb.setUint8(typeAt, type);
+}
+
 /// Serializes an [XmModule] to FastTracker 2 `.xm` bytes (re-readable by parseXm).
 Uint8List writeXm(XmModule module) {
   final out = BytesBuilder();
@@ -159,7 +200,28 @@ Uint8List writeXm(XmModule module) {
     ih[26] = 0; // type
     ihb.setUint16(27, numSamples, Endian.little);
     ihb.setUint32(29, 40, Endian.little); // sampleHeaderSize
-    // bytes 33..262 remain zero (keymap/envelopes).
+    // Keymap (33..128) stays zero (every note → sample 0). Emit the volume/pan
+    // envelope block from the instrument's envelopes (left zeroed = disabled).
+    _writeXmEnvelope(
+      ihb,
+      instrument.volumeEnvelope,
+      pointsAt: 129,
+      numAt: 225,
+      sustainAt: 227,
+      loopStartAt: 228,
+      loopEndAt: 229,
+      typeAt: 233,
+    );
+    _writeXmEnvelope(
+      ihb,
+      instrument.panEnvelope,
+      pointsAt: 177,
+      numAt: 226,
+      sustainAt: 230,
+      loopStartAt: 231,
+      loopEndAt: 232,
+      typeAt: 234,
+    );
     out.add(ih);
 
     // Sample headers, then sample data blocks (same order).
