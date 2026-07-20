@@ -824,6 +824,7 @@
   "performPadHat": "Hi-Hat",
   "performDone": "Fertig",
   "performCancel": "Abbrechen",
+  "performTapBeat": "Tippe ins Raster, um den Beat zu ändern",
   "performMute": "Ebene stumm",
   "performUnmute": "Ebene laut",
   "performDrop": "Drop!",

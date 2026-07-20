@@ -677,6 +677,38 @@ void main() {
     expect(melody.map((c) => c.$1), containsAll([60, 64, 67]));
   });
 
+  testWidgets('LL2: tapping a beat cell toggles the hit and re-renders',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    p.addSeed('beat');
+    await tester.pump();
+    expect(p.debugLayerCells(0), contains((2, 0))); // seed kick at step 0
+
+    // Toggling an ON cell removes it.
+    p.toggleBeatCell(0, 2, 0);
+    await tester.pump();
+    expect(p.debugLayerCells(0), isNot(contains((2, 0))));
+
+    // Toggling an empty cell adds it, and the mix still sounds (re-rendered).
+    p.toggleBeatCell(0, 2, 1);
+    await tester.pump();
+    expect(p.debugLayerCells(0), contains((2, 1)));
+    expect(_peak(p.debugMix().toList()), greaterThan(0.0));
+
+    // A melodic layer ignores beat-cell toggles (guard).
+    p.startPlayIn();
+    p.playInNote(60);
+    p.finishPlayIn();
+    await tester.pump();
+    final before = p.debugLayerCells(1);
+    p.toggleBeatCell(1, 0, 0);
+    await tester.pump();
+    expect(p.debugLayerCells(1), before);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

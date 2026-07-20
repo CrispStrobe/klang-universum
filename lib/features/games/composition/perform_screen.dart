@@ -62,11 +62,16 @@ class _PerformLayer {
   _PerformLayer(
     this.label,
     this.pcm, {
-    this.cells = const [],
+    List<_Cell> cells = const [],
     this.percussive = false,
-  });
+  }) : cells = [...cells];
   final String label;
-  final Float64List pcm;
+
+  /// Re-rendered in place when the pattern is edited (LL2), so the layer object
+  /// stays the same reference in the LoopStack.
+  Float64List pcm;
+
+  /// The editable symbolic pattern (mutable copy).
   final List<_Cell> cells;
   final bool percussive;
   double gain = 1.0; // Q3: per-layer volume
@@ -81,6 +86,7 @@ class _LayerRoll extends StatelessWidget {
     required this.percussive,
     required this.steps,
     this.playStep,
+    this.onToggle,
   });
   final List<_Cell> cells;
   final bool percussive;
@@ -89,25 +95,46 @@ class _LayerRoll extends StatelessWidget {
   /// The 16th step the transport is on (LL3), or null when stopped.
   final int? playStep;
 
+  /// LL2: tap a grid cell to toggle it (percussive layers). `(row, step)`.
+  final void Function(int row, int step)? onToggle;
+
+  static const double _h = 36;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 36,
-      width: double.infinity,
-      child: CustomPaint(
-        painter: _RollPainter(
-          cells: cells,
-          percussive: percussive,
-          steps: steps,
-          playStep: playStep,
-          fill: scheme.primary,
-          grid: scheme.outlineVariant,
-          bar: scheme.outline,
-          bg: scheme.surfaceContainerHighest,
-          play: scheme.tertiary,
-        ),
+    final paint = CustomPaint(
+      painter: _RollPainter(
+        cells: cells,
+        percussive: percussive,
+        steps: steps,
+        playStep: playStep,
+        fill: scheme.primary,
+        grid: scheme.outlineVariant,
+        bar: scheme.outline,
+        bg: scheme.surfaceContainerHighest,
+        play: scheme.tertiary,
       ),
+    );
+    final editable = percussive && onToggle != null && steps > 0;
+    return SizedBox(
+      height: _h,
+      width: double.infinity,
+      child: editable
+          ? LayoutBuilder(
+              builder: (context, c) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (d) {
+                  final step = (d.localPosition.dx / c.maxWidth * steps)
+                      .floor()
+                      .clamp(0, steps - 1);
+                  final row = (d.localPosition.dy / _h * 3).floor().clamp(0, 2);
+                  onToggle!(row, step);
+                },
+                child: paint,
+              ),
+            )
+          : paint,
     );
   }
 }
@@ -331,6 +358,9 @@ abstract class PerformTester {
 
   /// The symbolic pattern of layer [i] (LL1) as `(row, step)` pairs — for tests.
   List<(int, int)> debugLayerCells(int i);
+
+  /// LL2: toggle a hit on a percussive layer's step grid and re-render it.
+  void toggleBeatCell(int layer, int row, int step);
 }
 
 class PerformScreen extends StatefulWidget {
@@ -482,6 +512,27 @@ class _PerformScreenState extends State<PerformScreen>
         for (final (drum, ms, _) in hits)
           _Cell(_drumRow[drum] ?? 0, _stepOf(ms)),
       ];
+
+  static const List<String> _rowDrum = ['hat', 'snare', 'kick'];
+
+  /// Render a layer's edited [cells] back to PCM (LL2) — the reverse of the
+  /// cell builders, through the same renderers (so pad voices / swing apply).
+  Float64List _renderCells(List<_Cell> cells, bool percussive) {
+    final sixteenthMs = _barMs / 16;
+    if (percussive) {
+      return _renderBeat([
+        for (final c in cells)
+          (
+            _rowDrum[c.row.clamp(0, 2)],
+            (c.step * sixteenthMs).round(),
+            1.0,
+          ),
+      ]);
+    }
+    return _renderMelody([
+      for (final c in cells) (c.row, (c.step * sixteenthMs).round(), 1.0),
+    ]);
+  }
 
   /// The symbolic pattern behind a built-in seed (one bar, tiled across the
   /// loop), matching what [_seedLoop] synthesises — so seed layers show too.
@@ -1378,6 +1429,20 @@ class _PerformScreenState extends State<PerformScreen>
   List<(int, int)> debugLayerCells(int i) =>
       [for (final c in _stack.layers[i].cells) (c.row, c.step)];
 
+  @override
+  void toggleBeatCell(int layer, int row, int step) {
+    final l = _stack.layers[layer];
+    if (!l.percussive) return;
+    final idx = l.cells.indexWhere((c) => c.row == row && c.step == step);
+    if (idx >= 0) {
+      l.cells.removeAt(idx);
+    } else {
+      l.cells.add(_Cell(row, step));
+    }
+    l.pcm = _renderCells(l.cells, true); // re-render in place
+    _refresh(); // re-sum + hot-swap if playing
+  }
+
   List<Float64List> get _activePcm =>
       [for (final l in _stack.activeLayers) _scaled(l.pcm, l.gain)];
 
@@ -1871,8 +1936,26 @@ class _PerformScreenState extends State<PerformScreen>
                                         .floor()
                                         .clamp(0, _stepsTotal - 1)
                                     : null,
+                                // LL2: tap a beat cell to change the pattern.
+                                onToggle: layer.percussive
+                                    ? (row, step) =>
+                                        toggleBeatCell(i, row, step)
+                                    : null,
                               ),
                             ),
+                            if (layer.percussive)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  l10n.performTapBeat,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ),
                             Slider(
                               value: layer.gain.clamp(0.0, 1.5),
                               max: 1.5,

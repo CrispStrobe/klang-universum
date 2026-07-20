@@ -4256,6 +4256,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get performCancel;
 
+  /// No description provided for @performTapBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the grid to change the beat'**
+  String get performTapBeat;
+
   /// No description provided for @performMute.
   ///
   /// In en, this message translates to:

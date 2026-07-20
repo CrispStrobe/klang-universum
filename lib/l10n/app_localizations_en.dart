@@ -2261,6 +2261,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performCancel => 'Cancel';
 
   @override
+  String get performTapBeat => 'Tap the grid to change the beat';
+
+  @override
   String get performMute => 'Mute layer';
 
   @override

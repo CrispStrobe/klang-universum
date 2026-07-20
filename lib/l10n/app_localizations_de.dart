@@ -2268,6 +2268,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get performCancel => 'Abbrechen';
 
   @override
+  String get performTapBeat => 'Tippe ins Raster, um den Beat zu ändern';
+
+  @override
   String get performMute => 'Ebene stumm';
 
   @override
