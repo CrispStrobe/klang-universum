@@ -644,6 +644,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                   step: _step,
                   hitAt: (drum, step) => _rows[drum]![step],
                   controller: _visual,
+                  onHit: tapPad, // tap a drawn piece to play it (+ record it)
                 ),
               ),
               const SizedBox(height: 8),

@@ -51,12 +51,18 @@ class DrumKitVisual extends StatefulWidget {
     required this.step,
     required this.hitAt,
     this.controller,
+    this.onHit,
     this.drums = Drum.values,
   });
 
   final ValueListenable<int> step;
   final bool Function(Drum drum, int step) hitAt;
   final DrumKitVisualController? controller;
+
+  /// Tapping a drawn piece fires its [Drum] — the kit is playable, GarageBand
+  /// style. (The screen routes this to its pad handler, so a tap auditions the
+  /// drum and, while recording, is captured onto the grid.)
+  final ValueChanged<Drum>? onHit;
   final List<Drum> drums;
 
   @override
@@ -150,21 +156,55 @@ class _DrumKitVisualState extends State<DrumKitVisual>
     _repaint.value++; // drive the CustomPainter without a full rebuild
   }
 
+  void _onTapDown(TapDownDetails d) {
+    final onHit = widget.onHit;
+    if (onHit == null) return;
+    final box = context.findRenderObject();
+    if (box is! RenderBox) return;
+    final drum = pieceAt(d.localPosition, box.size, widget.drums.toSet());
+    if (drum != null) onHit(drum);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return RepaintBoundary(
-      child: CustomPaint(
-        painter: _DrumKitPainter(
-          glow: _glow,
-          drums: widget.drums,
-          dark: dark,
-          repaint: _repaint,
+      child: GestureDetector(
+        onTapDown: widget.onHit == null ? null : _onTapDown,
+        child: CustomPaint(
+          painter: _DrumKitPainter(
+            glow: _glow,
+            drums: widget.drums,
+            dark: dark,
+            repaint: _repaint,
+          ),
+          child: const SizedBox.expand(),
         ),
-        child: const SizedBox.expand(),
       ),
     );
   }
+}
+
+/// Which drawn piece (if any) sits under [p] on a canvas of [size], among the
+/// [shown] drums. Front-most (last-painted) wins where pieces overlap; each
+/// piece is an ellipse matched to how it's drawn, so taps feel accurate.
+@visibleForTesting
+Drum? pieceAt(Offset p, Size size, Set<Drum> shown) {
+  final s = size.shortestSide;
+  for (final piece in _kLayout.reversed) {
+    if (!shown.contains(piece.drum)) continue;
+    final c = Offset(piece.cx * size.width, piece.cy * size.height);
+    final r = piece.r * s;
+    final (hw, hh) = switch (piece.shape) {
+      _Shape.cymbal || _Shape.hihat => (r, r * 0.5),
+      _Shape.tom || _Shape.snare => (r, r * 0.7),
+      _Shape.kick => (r, r * 0.85),
+      _Shape.puck => (r, r),
+    };
+    final dx = (p.dx - c.dx) / hw, dy = (p.dy - c.dy) / hh;
+    if (dx * dx + dy * dy <= 1.0) return piece.drum;
+  }
+  return null;
 }
 
 // ── Layout ───────────────────────────────────────────────────────────────────

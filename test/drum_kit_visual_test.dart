@@ -89,6 +89,64 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('tapping a drawn piece fires its drum (playable kit)',
+      (tester) async {
+    final step = ValueNotifier<int>(-1);
+    final hits = <Drum>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              height: 200,
+              width: 320,
+              child: DrumKitVisual(
+                step: step,
+                hitAt: (_, __) => false,
+                onHit: hits.add,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    // The kick is the big front piece at normalized (0.53, 0.76).
+    final box = tester.getRect(find.byType(DrumKitVisual));
+    await tester.tapAt(Offset(box.left + 0.53 * 320, box.top + 0.76 * 200));
+    await tester.pump();
+    expect(hits, [Drum.kick]);
+
+    // A tap in empty space (top-right corner) fires nothing.
+    await tester.tapAt(Offset(box.right - 4, box.top + 4));
+    await tester.pump();
+    expect(hits, [Drum.kick]);
+    step.dispose();
+  });
+
+  test('pieceAt hit-tests each piece at its own centre', () {
+    const size = Size(320, 200);
+    final shown = Drum.values.toSet();
+    // Every piece resolves to itself when tapped dead-centre.
+    for (final probe in [
+      (Drum.kick, 0.53, 0.76),
+      (Drum.snare, 0.31, 0.62),
+      (Drum.crash, 0.21, 0.26),
+      (Drum.ride, 0.82, 0.24),
+      (Drum.lowTom, 0.87, 0.60),
+    ]) {
+      final (drum, cx, cy) = probe;
+      expect(
+        pieceAt(Offset(cx * size.width, cy * size.height), size, shown),
+        drum,
+      );
+    }
+    // A drum not in `shown` is never returned.
+    expect(
+      pieceAt(const Offset(0.53 * 320, 0.76 * 200), size, {Drum.snare}),
+      isNot(Drum.kick),
+    );
+  });
+
   testWidgets('renders without error and repaints on the step clock',
       (tester) async {
     final step = ValueNotifier<int>(-1);
