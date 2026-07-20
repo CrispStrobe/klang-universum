@@ -111,11 +111,18 @@ class CqtFilterBank {
   }
 }
 
-/// Compute the BTC CQT feature for [audio22k] (mono, 22050 Hz). Returns
-/// `(feature, nFrames)` where feature is row-major `[nFrames × nBins]`, already
-/// `log(|CQT|+1e-6)` and globally `(·-mean)/std`-normalised — ready to segment
-/// into 108-frame windows for the model.
-(Float32List, int) btcCqtFeature(CqtFilterBank fb, Float64List audio22k) {
+/// Compute the CQT feature for [audio22k] (mono, 22050 Hz). Returns
+/// `(feature, nFrames)`, row-major `[nFrames × nBins]`. Default ([logMag] true)
+/// gives BTC's `log(|CQT|+1e-6)` globally `(·-mean)/std`-normalised feature,
+/// ready to segment into 108-frame windows. [logMag] false gives the **raw
+/// magnitude** `|CQT|/√length` (no log, no standardisation) — what TabCNN's
+/// audio→tab front-end was trained on (its blob carries mean 0 / std 1, so the
+/// only difference that matters is skipping the log).
+(Float32List, int) btcCqtFeature(
+  CqtFilterBank fb,
+  Float64List audio22k, {
+  bool logMag = true,
+}) {
   final nFft = fb.nFft, hop = fb.hop, nBins = fb.nBins;
   final half = nFft ~/ 2;
   // librosa.stft centers: pad nFft/2 each side (zeros), frame at hop.
@@ -143,7 +150,7 @@ class CqtFilterBank {
         si += br * di + bi * dr;
       }
       final mag = math.sqrt(sr * sr + si * si) / math.sqrt(fb.lengths[k]);
-      feat[base + k] = (math.log(mag + eps) - fb.mean) / fb.std;
+      feat[base + k] = logMag ? (math.log(mag + eps) - fb.mean) / fb.std : mag;
     }
   }
   return (feat, nFrames);
