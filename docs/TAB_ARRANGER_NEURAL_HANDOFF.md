@@ -53,6 +53,49 @@ cost). The transition term (hand movement) **stays ours** — it's a hard physic
 prior the model shouldn't be trusted to relearn. The `List<List<int>> →
 List<Fretting>` shape callers use is untouched.
 
+## Audio arm — the caller side is BUILT (seam + decoder), awaiting weights
+
+CrispASR's scoping (`docs/music-transcription/GUITAR_TAB_SPEC.md` §GT1) landed the
+audio-arm verdict: **adopt as proposed** — ship a **GuitarProFX-augmented TabCNN**
+(~0.8 M params, public weights; the vanilla model's GuitarSet F1 0.748 drops to
+0.447 zero-shot on real electric guitar, and re-rendering training audio with real
+tones is the fix). TabCNN is *already* an emission scorer: six independent
+per-string softmaxes, **no decoding of any kind** — its published metrics are a
+plain per-frame argmax, so a constrained Viterbi over the same layer is a strict
+improvement, not a lossy adaptation.
+
+Our side of that contract is now IN the tree, testable with synthetic emissions:
+
+- **`tab_emission_decoder.dart`** — `TabEmissionModel` seam (audio →
+  `TabEmissionFrames`) + `decodeTabEmissions()`, a **per-string temporal
+  Viterbi** that holds each string on a stable fret (kills the single-frame flips
+  argmax follows), giving one-note-per-string + fret-range for free.
+  `collapseTabFrames()` run-lengths the frames for a later rhythm/quantise stage.
+  Pure Dart, 6 unit tests (incl. a decoy-spike case argmax fails and the decoder
+  passes). Mirrors `f0_viterbi` decoding the CREPE/RMVPE lattice.
+
+**The ABI contract CrispASR must match** (frozen here so the C++ has a target):
+
+- output = **`[T, 6, 21]` log-probabilities** (`log_softmax`, NOT probs or
+  logits — the DP sums costs and must never take log(0)), row-major
+  (frame, string, class);
+- **class 0 = string silent** ("closed"/not played); **class `k ≥ 1` = fret
+  `k−1`** (class 1 = open, class 20 = fret 19) — `kTabClasses = 21`;
+- plus the **frame hop in seconds** so we align to our own grid.
+- ⚠ FretNet's tab head is NOT this per-string softmax shape — the decoder assumes
+  TabCNN's. Pick FretNet only if note-level onsets matter (its real edge); for
+  frame-level emissions feeding this DP, TabCNN is the fit.
+
+Open refinement (documented, not blocking): the v1 decoder smooths each string
+independently; a cross-string **hand-span** coupling within a frame is the next
+increment. Per-string smoothing is already the strict improvement the spec
+describes.
+
+**Hard gate before any C++** (spec §5): **GuitarSet's license is UNVERIFIED**, and
+it trains every audio-arm candidate — if it forbids commercial use of derived
+weights, the audio arm dies. Check it first (cheap, can invalidate the arm). Same
+for EGSet12.
+
 ## Which models (best current, by input)
 
 Two distinct problems; CrispASR could ship either or both.
