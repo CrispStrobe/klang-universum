@@ -847,6 +847,7 @@
   "performCancel": "Cancel",
   "performMute": "Mute layer",
   "performUnmute": "Unmute layer",
+  "performDrop": "Drop!",
   "performExport": "Export / share",
   "performBounce": "Send to arranger",
   "performBounceMix": "Whole loop as one clip",

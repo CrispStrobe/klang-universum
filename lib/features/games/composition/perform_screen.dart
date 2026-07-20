@@ -44,9 +44,10 @@ import 'package:provider/provider.dart';
 
 /// One overdub layer: a label + one bar-cycle of mono PCM.
 class _PerformLayer {
-  const _PerformLayer(this.label, this.pcm);
+  _PerformLayer(this.label, this.pcm);
   final String label;
   final Float64List pcm;
+  double gain = 1.0; // Q3: per-layer volume
 }
 
 /// Test seam onto the Perform screen — build/mute/undo layers + read the mix
@@ -138,6 +139,14 @@ abstract class PerformTester {
   /// Export/share (Q2): true when there's a mix worth saving to a file.
   bool get canExport;
 
+  /// Per-layer volume + "the drop" (Q3).
+  double layerGain(int i);
+  void setLayerGain(int i, double gain);
+  double get masterLevel; // 0..1 whole-mix level (the drop ducks it)
+  bool get isDropped;
+  void drop();
+  void releaseDrop();
+
   /// The current summed mix (active layers) — for tests.
   Float64List debugMix();
 }
@@ -208,6 +217,10 @@ class _PerformScreenState extends State<PerformScreen>
   Timer? _boundaryTimer;
   int _lastPhaseMs = 0;
 
+  // "The drop" (Q3): duck the whole mix, then slam back on the next downbeat.
+  double _masterLevel = 1.0;
+  bool _dropRelease = false;
+
   // Sing / beatbox capture (P4). Lazy mic (never touched in headless tests).
   MicrophonePitchService? _mic;
   StreamSubscription<Object?>? _micSub;
@@ -235,7 +248,9 @@ class _PerformScreenState extends State<PerformScreen>
       final now = _phaseNow;
       final wrapped = now < _lastPhaseMs;
       _lastPhaseMs = now;
-      if (_playing && _armed != null && wrapped) {
+      if (_playing && wrapped && _dropRelease) {
+        releaseDrop(); // the drop slams back on the downbeat
+      } else if (_playing && _armed != null && wrapped) {
         launchArmed(); // applies + setState
       } else if (_playing || isPlayingIn || isCapturing) {
         setState(() {}); // repaint the sweeping playhead
@@ -843,6 +858,39 @@ class _PerformScreenState extends State<PerformScreen>
     );
   }
 
+  // ── Per-layer volume + "the drop" (Q3) ────────────────────────────────────
+  @override
+  double layerGain(int i) => _stack.layers[i].gain;
+
+  @override
+  void setLayerGain(int i, double gain) {
+    _stack.layers[i].gain = gain.clamp(0.0, 1.5);
+    _refresh();
+  }
+
+  @override
+  double get masterLevel => _masterLevel;
+  @override
+  bool get isDropped => _masterLevel < 1.0;
+
+  /// Duck the whole mix now; it slams back at the next bar (`releaseDrop`, fired
+  /// by the boundary timer) — the DJ "drop" move.
+  @override
+  void drop() {
+    _masterLevel = 0.0;
+    _dropRelease = true;
+    if (_playing) _swap();
+    setState(() {});
+  }
+
+  @override
+  void releaseDrop() {
+    _masterLevel = 1.0;
+    _dropRelease = false;
+    if (_playing) _swap();
+    setState(() {});
+  }
+
   /// Pick a sound from "My Samples" to play as the keyboard voice (resampled to
   /// the loop rate + auto-tuned by [setSampleVoice]).
   Future<void> _pickVoice() async {
@@ -883,7 +931,17 @@ class _PerformScreenState extends State<PerformScreen>
       renderLoopStack(_activePcm, loopSamples: _loopSamples);
 
   List<Float64List> get _activePcm =>
-      [for (final l in _stack.activeLayers) l.pcm];
+      [for (final l in _stack.activeLayers) _scaled(l.pcm, l.gain)];
+
+  /// [src] × [g] (returns [src] unchanged when g == 1, the common case).
+  Float64List _scaled(Float64List src, double g) {
+    if (g == 1.0) return src;
+    final out = Float64List(src.length);
+    for (var i = 0; i < src.length; i++) {
+      out[i] = src[i] * g;
+    }
+    return out;
+  }
 
   // ── Transport (P5) ────────────────────────────────────────────────────────
   @override
@@ -933,7 +991,8 @@ class _PerformScreenState extends State<PerformScreen>
 
   void _swap() {
     final mix = renderLoopStack(_activePcm, loopSamples: _loopSamples);
-    _loop.playLoop(wavBytes(_toInt16(mix)), position: _phase);
+    final out = _masterLevel == 1.0 ? mix : _scaled(mix, _masterLevel);
+    _loop.playLoop(wavBytes(_toInt16(out)), position: _phase);
   }
 
   Int16List _toInt16(Float64List f) {
@@ -1224,6 +1283,17 @@ class _PerformScreenState extends State<PerformScreen>
                     minHeight: 4,
                   ),
                 ),
+                if (_playing) ...[
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    icon: Icon(isDropped ? Icons.volume_off : Icons.flash_on),
+                    label: Text(l10n.performDrop),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isDropped ? scheme.error : null,
+                    ),
+                    onPressed: isDropped ? null : drop,
+                  ),
+                ],
               ],
               const SizedBox(height: 16),
               if (_stack.layers.isEmpty)
@@ -1252,6 +1322,11 @@ class _PerformScreenState extends State<PerformScreen>
                         ),
                         title: Text(
                           _seedLabel(l10n, _stack.layers[i].label),
+                        ),
+                        subtitle: Slider(
+                          value: _stack.layers[i].gain.clamp(0.0, 1.5),
+                          max: 1.5,
+                          onChanged: (v) => setLayerGain(i, v),
                         ),
                         trailing: IconButton(
                           icon: Icon(

@@ -2138,6 +2138,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get performUnmute => 'Ebene laut';
 
   @override
+  String get performDrop => 'Drop!';
+
+  @override
   String get performExport => 'Exportieren / teilen';
 
   @override

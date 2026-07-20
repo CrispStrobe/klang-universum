@@ -451,6 +451,40 @@ void main() {
     expect(p.canExport, isFalse);
   });
 
+  testWidgets('per-layer volume changes the mix; the drop ducks + releases',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    p.addSeed('beat');
+    await tester.pump();
+    final full = _peak(p.debugMix().toList());
+    expect(full, greaterThan(0.0));
+    expect(p.layerGain(0), 1.0);
+
+    // Turning a layer down quiets the mix; silencing it drops out entirely.
+    p.setLayerGain(0, 0.0);
+    await tester.pump();
+    expect(p.layerGain(0), 0.0);
+    expect(_peak(p.debugMix().toList()), lessThan(full));
+    p.setLayerGain(0, 1.0);
+    await tester.pump();
+
+    // The drop ducks the whole mix, then a boundary release slams it back.
+    p.play();
+    expect(p.masterLevel, 1.0);
+    expect(p.isDropped, isFalse);
+    p.drop();
+    await tester.pump();
+    expect(p.isDropped, isTrue);
+    expect(p.masterLevel, lessThan(1.0));
+    p.releaseDrop();
+    await tester.pump();
+    expect(p.isDropped, isFalse);
+    expect(p.masterLevel, 1.0);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));
