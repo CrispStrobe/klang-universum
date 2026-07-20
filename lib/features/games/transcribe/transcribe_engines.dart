@@ -46,7 +46,12 @@ Future<F0Estimator?> loadCrispasrCrepeF0({bool download = false}) async =>
     await crispasrFfiCrepeF0(download: download) ?? crispasrCliCrepeF0();
 
 /// `crispasr` runtime — polyphonic transcription via CrispASR ggml PIANO (Kong).
-/// Returns [NoteEvent]s; blocked on the pub release exposing the piano C ABI.
+/// Returns [NoteEvent]s. Piano is session-openable today, but its only output is
+/// segment text ("C4 v=80") — lossy/ugly to parse. Deliberately still stubbed:
+/// CrispASR is adding a clean `crispasr_session_piano_notes*` C ABI returning
+/// {midi, onMs, offMs, velocity} (their §251), which drops straight onto
+/// [NoteEvent]. Un-stub against THAT, not the text hack. Until then, the
+/// pure-Dart onnx Basic Pitch serves polyphony.
 Future<NeuralTranscriber?> loadCrispasrPiano({bool download = false}) async =>
     null;
 
