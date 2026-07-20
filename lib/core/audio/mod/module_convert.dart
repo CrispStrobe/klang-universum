@@ -523,7 +523,10 @@ ModuleDoc docFromIt(ItModule m) {
     case 0x7:
       return (18, param); // R tremolo
     case 0x8:
-      return (24, directPan ? param : (param ~/ 2).clamp(0, 0x80)); // X pan
+      // X pan: IT is 0x00–0xFF direct; S3M is 0x00–0x80, so halve. ROUND (not
+      // truncate) so full-right 0xFF → 0x80 and the reader's ×2 recovers 0xFF
+      // exactly, instead of 0x7F → 0xFE.
+      return (24, directPan ? param : (param / 2).round().clamp(0, 0x80));
     case 0x9:
       return (15, param); // O sample offset
     case 0xA:

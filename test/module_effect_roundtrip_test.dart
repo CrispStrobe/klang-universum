@@ -28,6 +28,8 @@ const _effects = <String, (int, int)>{
   '9xx sample offset': (0x9, 0x10),
   'Bxx position jump': (0xB, 0x02),
   'Dxx pattern break': (0xD, 0x08),
+  '8xx set pan (centre)': (0x8, 0x80),
+  '8xx set pan (full right)': (0x8, 0xFF), // exercises the S3M 7-bit rounding
   // Extended (Exy) sub-commands our readers translate ↔ S3M/IT Sxy.
   'E6x pattern loop': (0xE, 0x62),
   'ECx note cut': (0xE, 0xC3),
