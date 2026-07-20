@@ -45,7 +45,8 @@ void main() {
     );
     // Tap the top-left cell → hat lane (row 0), step 0.
     await tester.tapAt(
-        tester.getTopLeft(find.byType(StepGridView)) + const Offset(4, 4));
+      tester.getTopLeft(find.byType(StepGridView)) + const Offset(4, 4),
+    );
     expect(row, 0);
     expect(step, 0);
   });

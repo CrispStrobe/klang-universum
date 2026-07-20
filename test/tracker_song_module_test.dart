@@ -317,6 +317,76 @@ void main() {
       );
     });
   });
+
+  group('module envelopes import onto the channel', () {
+    test('a sample volume/pan envelope becomes the channel envelope', () {
+      final pcm = Float64List.fromList([
+        for (var i = 0; i < 64; i++) sin(2 * pi * 4 * i / 64),
+      ]);
+      final doc = ModuleDoc(
+        sourceFormat: ModuleFormat.xm,
+        channelCount: 1,
+        initialTempo: 100, // one tick = 2500/100 = 25 ms
+        order: [0],
+        patterns: [
+          const DocPattern(
+            [
+              [DocCell(note: 60, instrument: 1)],
+            ],
+            1,
+          ),
+        ],
+        samples: [
+          DocSample(
+            pcm: pcm,
+            volumeEnvelope: const DocEnvelope(
+              points: [(0, 64), (5, 0)],
+              enabled: true,
+            ),
+            panEnvelope: const DocEnvelope(
+              points: [(0, 32), (10, 64)], // centre → hard right
+              enabled: true,
+            ),
+          ),
+        ],
+      );
+
+      final song = songFromModuleDoc(doc);
+      final ch = song.channels.first;
+
+      final vol = ch.volumeEnvelope!;
+      expect(vol.points.length, 2);
+      expect(vol.points[0].ms, 0);
+      expect(vol.points[0].level, closeTo(1.0, 1e-9)); // 64/64
+      expect(vol.points[1].ms, 125); // 5 ticks × 25 ms
+      expect(vol.points[1].level, closeTo(0.0, 1e-9));
+
+      final pan = ch.panEnvelope!;
+      expect(pan.points[0].pan, closeTo(0.0, 1e-9)); // 32 → centre
+      expect(pan.points[1].ms, 250); // 10 ticks × 25 ms
+      expect(pan.points[1].pan, closeTo(1.0, 1e-9)); // 64 → hard right
+    });
+
+    test('no envelope → the channel has none', () {
+      final doc = ModuleDoc(
+        sourceFormat: ModuleFormat.mod,
+        channelCount: 1,
+        order: [0],
+        patterns: [
+          const DocPattern(
+            [
+              [DocCell(note: 60, instrument: 1)],
+            ],
+            1,
+          ),
+        ],
+        samples: [DocSample(pcm: Float64List(64))],
+      );
+      final ch = songFromModuleDoc(doc).channels.first;
+      expect(ch.volumeEnvelope, isNull);
+      expect(ch.panEnvelope, isNull);
+    });
+  });
 }
 
 Float64List _sineF() {

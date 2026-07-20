@@ -46,6 +46,11 @@ TrackerSong songFromModuleDoc(ModuleDoc doc) {
         id: 'ch${c + 1}',
         instrument: _instrumentForChannel(doc, rep[c], c),
         rows: rows,
+        // The channel's dominant sample carries the module's envelopes (XM/IT);
+        // convert them onto the channel so the imported module plays — and
+        // shows in the envelope editor — with its shaping intact.
+        volumeEnvelope: _channelVolEnv(doc, rep[c]),
+        panEnvelope: _channelPanEnv(doc, rep[c]),
       ),
   ];
 
@@ -111,6 +116,38 @@ List<int> _repInstrumentPerChannel(ModuleDoc doc, int channelCount) {
           ? 0
           : counts[c].entries.reduce((a, b) => a.value >= b.value ? a : b).key,
   ];
+}
+
+/// XM/IT envelope x-units are ticks; at [tempo] BPM one tick is 2500/tempo ms.
+double _tickMs(int tempo) => 2500.0 / (tempo < 1 ? 1 : tempo);
+
+DocSample? _sampleFor(ModuleDoc doc, int ins) =>
+    (ins >= 1 && ins - 1 <= doc.samples.length - 1)
+        ? doc.samples[ins - 1]
+        : null;
+
+/// The dominant sample's volume envelope as a tracker [VolumeEnvelope] (ticks →
+/// ms at the module tempo, value 0..64 → level 0..1). Null when there's none.
+VolumeEnvelope? _channelVolEnv(ModuleDoc doc, int ins) {
+  final e = _sampleFor(doc, ins)?.volumeEnvelope;
+  if (e == null || e.isEmpty) return null;
+  final ms = _tickMs(doc.initialTempo);
+  return VolumeEnvelope([
+    for (final (t, v) in e.points)
+      (ms: (t * ms).round(), level: (v / 64).clamp(0.0, 1.0)),
+  ]);
+}
+
+/// The dominant sample's pan envelope as a tracker [PanEnvelope] (value 0..64,
+/// centred at 32, → pan −1..1). Null when there's none.
+PanEnvelope? _channelPanEnv(ModuleDoc doc, int ins) {
+  final e = _sampleFor(doc, ins)?.panEnvelope;
+  if (e == null || e.isEmpty) return null;
+  final ms = _tickMs(doc.initialTempo);
+  return PanEnvelope([
+    for (final (t, v) in e.points)
+      (ms: (t * ms).round(), pan: ((v - 32) / 32).clamp(-1.0, 1.0)),
+  ]);
 }
 
 /// A channel's instrument: its dominant module sample, else a rotating additive
