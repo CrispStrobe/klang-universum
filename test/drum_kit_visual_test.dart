@@ -110,9 +110,9 @@ void main() {
         ),
       ),
     );
-    // The kick is the big front piece at normalized (0.53, 0.76).
+    // The kick is the big front piece at normalized (0.53, 0.74).
     final box = tester.getRect(find.byType(DrumKitVisual));
-    await tester.tapAt(Offset(box.left + 0.53 * 320, box.top + 0.76 * 200));
+    await tester.tapAt(Offset(box.left + 0.53 * 320, box.top + 0.74 * 200));
     await tester.pump();
     expect(hits, [Drum.kick]);
 
@@ -128,11 +128,11 @@ void main() {
     final shown = Drum.values.toSet();
     // Every piece resolves to itself when tapped dead-centre.
     for (final probe in [
-      (Drum.kick, 0.53, 0.76),
-      (Drum.snare, 0.31, 0.62),
-      (Drum.crash, 0.21, 0.26),
-      (Drum.ride, 0.82, 0.24),
-      (Drum.lowTom, 0.87, 0.60),
+      (Drum.kick, 0.53, 0.74),
+      (Drum.snare, 0.30, 0.62),
+      (Drum.crash, 0.21, 0.25),
+      (Drum.ride, 0.80, 0.24),
+      (Drum.lowTom, 0.86, 0.58),
     ]) {
       final (drum, cx, cy) = probe;
       expect(

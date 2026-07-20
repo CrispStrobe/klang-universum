@@ -637,9 +637,10 @@ class _DrumkitScreenState extends State<DrumkitScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // The visual kit lights up as it plays (step clock) or is tapped.
-              SizedBox(
-                height: 150,
+              // The visual kit: tap a drawn piece to play it; it lights up as
+              // the beat plays (step clock) or is tapped/recorded.
+              Expanded(
+                flex: 4,
                 child: DrumKitVisual(
                   step: _step,
                   hitAt: (drum, step) => _rows[drum]![step],
@@ -647,9 +648,26 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                   onHit: tapPad, // tap a drawn piece to play it (+ record it)
                 ),
               ),
+              // Hand percussion that isn't on the drawn kit — compact pads.
+              Row(
+                children: [
+                  for (final drum in const [Drum.clap, Drum.rim, Drum.cowbell])
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: FilledButton.tonalIcon(
+                          onPressed: () => tapPad(drum),
+                          icon: Icon(_drumIcon(drum), size: 18),
+                          label: Text(_drumLabel(l10n, drum)),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               // The step grid: one row per drum, kPatternSteps toggles.
               Expanded(
+                flex: 6,
                 child: Column(
                   children: [
                     for (final drum in Drum.values)
@@ -709,23 +727,6 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                       ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              // The pads — tap to audition a drum.
-              Row(
-                children: [
-                  for (final drum in Drum.values)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: FilledButton.tonalIcon(
-                          onPressed: () => tapPad(drum),
-                          icon: Icon(_drumIcon(drum)),
-                          label: Text(_drumLabel(l10n, drum)),
-                        ),
-                      ),
-                    ),
-                ],
               ),
               const SizedBox(height: 8),
               // Transport + tempo + clear.

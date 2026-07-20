@@ -196,10 +196,9 @@ Drum? pieceAt(Offset p, Size size, Set<Drum> shown) {
     final c = Offset(piece.cx * size.width, piece.cy * size.height);
     final r = piece.r * s;
     final (hw, hh) = switch (piece.shape) {
-      _Shape.cymbal || _Shape.hihat => (r, r * 0.5),
-      _Shape.tom || _Shape.snare => (r, r * 0.7),
-      _Shape.kick => (r, r * 0.85),
-      _Shape.puck => (r, r),
+      _Shape.cymbal || _Shape.hihat => (r * 1.05, r * 0.45),
+      _Shape.tom || _Shape.snare => (r, r * 0.85), // head + a bit of the shell
+      _Shape.kick => (r, r),
     };
     final dx = (p.dx - c.dx) / hw, dy = (p.dy - c.dy) / hh;
     if (dx * dx + dy * dy <= 1.0) return piece.drum;
@@ -209,40 +208,46 @@ Drum? pieceAt(Offset p, Size size, Set<Drum> shown) {
 
 // ── Layout ───────────────────────────────────────────────────────────────────
 
-enum _Shape { cymbal, hihat, tom, kick, snare, puck }
+enum _Shape { cymbal, hihat, tom, kick, snare }
 
 /// One drawn piece: where it sits (normalized 0..1), how big (fraction of the
-/// canvas' shorter side), its base hue, and how to draw it.
+/// canvas' shorter side), its shell/brass hue, how deep the shell is (a fraction
+/// of the head radius — 0 for cymbals), and how to draw it.
 class _Piece {
-  const _Piece(this.drum, this.shape, this.cx, this.cy, this.r, this.color);
+  const _Piece(
+    this.drum,
+    this.shape,
+    this.cx,
+    this.cy,
+    this.r,
+    this.color, {
+    this.depth = 1.0,
+  });
   final Drum drum;
   final _Shape shape;
-  final double cx, cy, r;
+  final double cx, cy, r, depth;
   final Color color;
 }
 
-// A right-facing kit seen from the drummer's front. Back-to-front paint order.
-const _kBrass = Color(0xFFC9A227);
-const _kTom = Color(0xFF7E4A2B);
-const _kShell = Color(0xFF2E3440);
+// An acoustic kit seen from the front, painted back-to-front. Only the acoustic
+// core is drawn (like GarageBand's kit); clap/rim/cowbell live in the pads/grid.
+const _kBrass = Color(0xFFCBA23A); // cymbal gold
+const _kRed = Color(0xFF9B2A2A); // glossy shell red
+const _kSteel = Color(0xFFAAB2BC); // snare steel
 
 const List<_Piece> _kLayout = [
   // Cymbals + hi-hat sit high, behind the drums.
-  _Piece(Drum.crash, _Shape.cymbal, 0.21, 0.26, 0.15, _kBrass),
-  _Piece(Drum.ride, _Shape.cymbal, 0.82, 0.24, 0.17, _kBrass),
-  _Piece(Drum.openHat, _Shape.hihat, 0.10, 0.34, 0.10, _kBrass),
-  _Piece(Drum.hat, _Shape.hihat, 0.11, 0.52, 0.10, _kBrass),
-  // Toms: high → mid across the top of the kick, floor tom to the right.
-  _Piece(Drum.highTom, _Shape.tom, 0.40, 0.36, 0.10, _kTom),
-  _Piece(Drum.tom, _Shape.tom, 0.56, 0.35, 0.11, _kTom),
-  _Piece(Drum.lowTom, _Shape.tom, 0.87, 0.60, 0.13, _kTom),
-  // Snare + the big front kick.
-  _Piece(Drum.snare, _Shape.snare, 0.31, 0.62, 0.12, _kShell),
-  _Piece(Drum.kick, _Shape.kick, 0.53, 0.76, 0.20, _kShell),
-  // Small hand-percussion accents in the gaps.
-  _Piece(Drum.clap, _Shape.puck, 0.44, 0.55, 0.055, Color(0xFFE0A96D)),
-  _Piece(Drum.rim, _Shape.puck, 0.20, 0.80, 0.05, Color(0xFF9AA0A6)),
-  _Piece(Drum.cowbell, _Shape.puck, 0.68, 0.53, 0.05, Color(0xFFB08D57)),
+  _Piece(Drum.ride, _Shape.cymbal, 0.80, 0.24, 0.185, _kBrass),
+  _Piece(Drum.crash, _Shape.cymbal, 0.21, 0.25, 0.165, _kBrass),
+  _Piece(Drum.openHat, _Shape.hihat, 0.095, 0.40, 0.11, _kBrass),
+  _Piece(Drum.hat, _Shape.hihat, 0.095, 0.47, 0.11, _kBrass),
+  // Rack toms mounted over the kick; floor tom to the right (deeper shell).
+  _Piece(Drum.highTom, _Shape.tom, 0.40, 0.40, 0.115, _kRed, depth: 1.15),
+  _Piece(Drum.tom, _Shape.tom, 0.57, 0.39, 0.125, _kRed, depth: 1.15),
+  _Piece(Drum.lowTom, _Shape.tom, 0.86, 0.58, 0.155, _kRed, depth: 1.7),
+  // Snare (steel, shallow) then the big front kick.
+  _Piece(Drum.snare, _Shape.snare, 0.30, 0.62, 0.135, _kSteel, depth: 0.85),
+  _Piece(Drum.kick, _Shape.kick, 0.53, 0.74, 0.225, _kRed),
 ];
 
 class _DrumKitPainter extends CustomPainter {
@@ -257,6 +262,10 @@ class _DrumKitPainter extends CustomPainter {
   final List<Drum> drums;
   final bool dark;
 
+  static const _cream = Color(0xFFF3ECD9); // drum head
+  static const _chrome = Color(0xFFE6EAEF);
+  static const _chromeDark = Color(0xFF8A929C);
+
   @override
   void paint(Canvas canvas, Size size) {
     final shown = drums.toSet();
@@ -269,138 +278,284 @@ class _DrumKitPainter extends CustomPainter {
       switch (p.shape) {
         case _Shape.cymbal:
         case _Shape.hihat:
-          _cymbal(canvas, c, r, p.color, g, hat: p.shape == _Shape.hihat);
+          _cymbal(canvas, c, r, g, hat: p.shape == _Shape.hihat);
         case _Shape.tom:
         case _Shape.snare:
+          _drum(canvas, c, r, p.color, g, depth: r * p.depth);
         case _Shape.kick:
-          _drum(canvas, c, r, p.color, g, front: p.shape == _Shape.kick);
-        case _Shape.puck:
-          _puck(canvas, c, r, p.color, g);
+          _kick(canvas, c, r, p.color, g);
       }
     }
   }
 
-  // A cymbal: a flat tilted ellipse on a thin stand, with a centre bell.
+  // A soft ground shadow under a piece.
+  void _shadow(Canvas canvas, Offset c, double rx, double ry) {
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(c.dx + rx * 0.12, c.dy + ry * 0.9),
+        width: rx * 2,
+        height: ry * 1.1,
+      ),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.22)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, ry * 0.6),
+    );
+  }
+
+  // A cymbal / hi-hat: a stand, a gold disc with lathe grooves, a bell + shine.
   void _cymbal(
     Canvas canvas,
     Offset c,
     double r,
-    Color base,
     double g, {
     required bool hat,
   }) {
-    final stand = Paint()
-      ..color = (dark ? Colors.white : Colors.black).withValues(alpha: 0.25)
-      ..strokeWidth = max(1.0, r * 0.06);
-    canvas.drawLine(c, Offset(c.dx, c.dy + r * 1.7), stand);
-    final rect = Rect.fromCenter(center: c, width: r * 2, height: r * 0.7);
-    if (g > 0) _halo(canvas, c, r * 1.4, g);
-    canvas.drawOval(
-      rect,
-      Paint()..color = Color.lerp(base, Colors.white, 0.15 + 0.7 * g)!,
+    // Stand: a thin metal rod down to the kit floor.
+    canvas.drawLine(
+      c,
+      Offset(c.dx, c.dy + r * (hat ? 1.6 : 2.5)),
+      Paint()
+        ..color = _chromeDark.withValues(alpha: 0.7)
+        ..strokeWidth = max(1.5, r * 0.07),
     );
-    // A darker rim ring + the bell, so it reads as brass not a blob.
+    final disc = Rect.fromCenter(center: c, width: r * 2, height: r * 0.62);
+    _shadow(canvas, c, r * 0.9, r * 0.34);
+    if (g > 0) _halo(canvas, c, r * 1.5, g);
+    // The brass disc — a warm radial gradient, brightening when struck.
     canvas.drawOval(
-      rect,
+      disc,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.1, -0.3),
+          radius: 0.9,
+          colors: [
+            Color.lerp(const Color(0xFFF6E7B0), Colors.white, g)!,
+            Color.lerp(_kBrass, Colors.white, 0.4 * g)!,
+            Color.lerp(const Color(0xFF7A5E1C), Colors.white, 0.3 * g)!,
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(disc),
+    );
+    // Concentric lathe grooves.
+    final groove = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(0.6, r * 0.015)
+      ..color = const Color(0xFF6B521A).withValues(alpha: 0.35);
+    for (var i = 1; i <= 5; i++) {
+      final f = i / 6.0;
+      canvas.drawOval(
+        Rect.fromCenter(center: c, width: r * 2 * f, height: r * 0.62 * f),
+        groove,
+      );
+    }
+    // The bell (raised centre) + a bright specular streak.
+    canvas.drawOval(
+      Rect.fromCenter(center: c, width: r * 0.42, height: r * 0.18),
+      Paint()..color = Color.lerp(const Color(0xFFEAD48A), Colors.white, g)!,
+    );
+    canvas.drawArc(
+      Rect.fromCenter(center: c, width: r * 1.7, height: r * 0.5),
+      pi * 1.05,
+      pi * 0.5,
+      false,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = max(1.0, r * 0.05)
-        ..color = Colors.black.withValues(alpha: 0.25),
+        ..strokeWidth = max(1.0, r * 0.04)
+        ..color = Colors.white.withValues(alpha: 0.45),
     );
+    // Rim edge.
     canvas.drawOval(
-      Rect.fromCenter(center: c, width: r * 0.5, height: r * 0.22),
-      Paint()..color = Color.lerp(base, Colors.black, 0.2)!,
+      disc,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = max(1.0, r * 0.03)
+        ..color = const Color(0xFF5A461A).withValues(alpha: 0.5),
     );
     if (hat) {
-      // A second (lower) plate marks the hi-hat pair.
+      // A thin lower plate makes the hi-hat read as a pair.
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(c.dx, c.dy + r * 0.28),
-          width: r * 1.9,
-          height: r * 0.5,
+          center: Offset(c.dx, c.dy + r * 0.22),
+          width: r * 1.92,
+          height: r * 0.34,
         ),
-        Paint()..color = Color.lerp(base, Colors.black, 0.25)!,
+        Paint()..color = const Color(0xFF9A7A2A),
       );
     }
   }
 
-  // A drum: an elliptical head (perspective-squashed) with a rim + shell.
+  // A drum seen at a slight angle: a cylindrical shell + a bright head, a chrome
+  // rim with tension lugs. [depth] is the visible shell height in pixels.
   void _drum(
     Canvas canvas,
     Offset c,
     double r,
     Color shell,
     double g, {
-    required bool front,
+    required double depth,
   }) {
-    final h = front ? r * 1.7 : r * 1.1; // the kick faces us (rounder)
-    final rect = Rect.fromCenter(center: c, width: r * 2, height: h);
-    if (g > 0) _halo(canvas, c, r * 1.2, g);
-    // Shell body (a soft vertical shade).
+    final rx = r, ry = r * 0.5;
+    _shadow(canvas, Offset(c.dx, c.dy + depth), rx, ry);
+    // Shell wall: a rectangle between the head plane and the bottom ellipse,
+    // capped by that bottom ellipse — the cylinder silhouette.
+    final wall = Rect.fromLTRB(c.dx - rx, c.dy, c.dx + rx, c.dy + depth);
+    final bottom = Rect.fromCenter(
+      center: Offset(c.dx, c.dy + depth),
+      width: rx * 2,
+      height: ry * 2,
+    );
     canvas.drawOval(
-      rect,
+      bottom,
+      Paint()..color = Color.lerp(shell, Colors.black, 0.35)!,
+    );
+    canvas.drawRect(
+      wall,
       Paint()
         ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
           colors: [
-            Color.lerp(shell, Colors.white, 0.25)!,
-            Color.lerp(shell, Colors.black, 0.2)!,
+            Color.lerp(shell, Colors.black, 0.35)!,
+            Color.lerp(shell, Colors.white, 0.35)!,
+            shell,
+            Color.lerp(shell, Colors.black, 0.4)!,
           ],
-        ).createShader(rect),
+          stops: const [0.0, 0.28, 0.55, 1.0],
+        ).createShader(wall),
     );
-    // Head (lighter, flares bright when struck).
-    final head = Rect.fromCenter(
+    // A chrome hoop at the bottom edge of the shell.
+    canvas.drawArc(
+      bottom,
+      0,
+      pi,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = max(1.5, r * 0.06)
+        ..color = _chrome.withValues(alpha: 0.7),
+    );
+
+    final head = Rect.fromCenter(center: c, width: rx * 2, height: ry * 2);
+    // Chrome counter-hoop (rim) just outside the head.
+    final rim = Rect.fromCenter(
       center: c,
-      width: r * 1.7,
-      height: h * 0.82,
+      width: rx * 2 * 1.06,
+      height: ry * 2 * 1.06,
     );
+    canvas.drawOval(
+      rim,
+      Paint()
+        ..shader = const SweepGradient(
+          colors: [_chromeDark, _chrome, _chromeDark, _chrome, _chromeDark],
+          stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+        ).createShader(rim),
+    );
+    // Tension lugs around the rim.
+    final lug = Paint()..color = _chrome;
+    final lugEdge = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(0.6, r * 0.02)
+      ..color = _chromeDark;
+    const lugs = 8;
+    for (var i = 0; i < lugs; i++) {
+      final a = (i / lugs) * 2 * pi;
+      final lp = Offset(c.dx + cos(a) * rx * 1.02, c.dy + sin(a) * ry * 1.02);
+      canvas.drawCircle(lp, r * 0.055, lug);
+      canvas.drawCircle(lp, r * 0.055, lugEdge);
+    }
+    if (g > 0) _halo(canvas, c, r, g);
+    // The head: a bright radial gradient, flaring white when struck.
     canvas.drawOval(
       head,
       Paint()
-        ..color = Color.lerp(
-          const Color(0xFFF2E9D8),
-          Colors.white,
-          0.9 * g,
-        )!
-            .withValues(alpha: 0.92),
+        ..shader = RadialGradient(
+          center: const Alignment(-0.2, -0.35),
+          radius: 1.0,
+          colors: [
+            Color.lerp(Colors.white, Colors.white, g)!,
+            Color.lerp(_cream, Colors.white, g)!,
+            Color.lerp(const Color(0xFFD8CFB8), Colors.white, 0.8 * g)!,
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(head),
     );
-    // Rim.
+    // Head rim line + a soft top highlight.
     canvas.drawOval(
-      rect,
+      head,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = max(1.5, r * 0.1)
-        ..color = Color.lerp(shell, Colors.black, 0.3)!,
+        ..strokeWidth = max(1.0, r * 0.03)
+        ..color = const Color(0xFF9A9583).withValues(alpha: 0.6),
     );
   }
 
-  // A small labelled accent puck (clap / rim / cowbell).
-  void _puck(Canvas canvas, Offset c, double r, Color base, double g) {
-    if (g > 0) _halo(canvas, c, r * 1.3, g);
-    canvas.drawCircle(
-      c,
-      r,
-      Paint()..color = Color.lerp(base, Colors.white, 0.8 * g)!,
-    );
+  // The kick: a big front-facing shell with a cream resonant head, chrome hoop,
+  // lugs, and a small port hole.
+  void _kick(Canvas canvas, Offset c, double r, Color shell, double g) {
+    _shadow(canvas, c, r * 0.95, r * 0.85);
+    if (g > 0) _halo(canvas, c, r * 0.9, g);
+    // Outer shell ring (glossy).
     canvas.drawCircle(
       c,
       r,
       Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.3, -0.4),
+          colors: [
+            Color.lerp(shell, Colors.white, 0.4)!,
+            shell,
+            Color.lerp(shell, Colors.black, 0.45)!,
+          ],
+          stops: const [0.0, 0.55, 1.0],
+        ).createShader(Rect.fromCircle(center: c, radius: r)),
+    );
+    // Chrome counter-hoop.
+    canvas.drawCircle(
+      c,
+      r * 0.82,
+      Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = max(1.0, r * 0.14)
-        ..color = Colors.black.withValues(alpha: 0.3),
+        ..strokeWidth = max(2.0, r * 0.08)
+        ..shader = const SweepGradient(
+          colors: [_chromeDark, _chrome, _chromeDark, _chrome, _chromeDark],
+        ).createShader(Rect.fromCircle(center: c, radius: r * 0.82)),
+    );
+    // Tension lugs around the hoop.
+    const lugs = 10;
+    for (var i = 0; i < lugs; i++) {
+      final a = (i / lugs) * 2 * pi;
+      final lp = Offset(c.dx + cos(a) * r * 0.9, c.dy + sin(a) * r * 0.9);
+      canvas.drawCircle(lp, r * 0.045, Paint()..color = _chrome);
+    }
+    // The front head.
+    canvas.drawCircle(
+      c,
+      r * 0.74,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.25, -0.3),
+          colors: [
+            Colors.white,
+            Color.lerp(_cream, Colors.white, g)!,
+            Color.lerp(const Color(0xFFD6CDB6), Colors.white, 0.8 * g)!,
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(Rect.fromCircle(center: c, radius: r * 0.74)),
+    );
+    // A small bass-port hole, lower-right.
+    canvas.drawCircle(
+      Offset(c.dx + r * 0.32, c.dy + r * 0.28),
+      r * 0.13,
+      Paint()..color = const Color(0xFF2A2622).withValues(alpha: 0.85),
     );
   }
 
-  // A soft additive halo behind a struck piece.
+  // A warm additive halo behind a struck piece.
   void _halo(Canvas canvas, Offset c, double r, double g) {
     canvas.drawCircle(
       c,
-      r * (1.0 + 0.3 * g),
+      r * (1.1 + 0.3 * g),
       Paint()
-        ..color = const Color(0xFFFFF3B0).withValues(alpha: 0.55 * g)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.5),
+        ..color = const Color(0xFFFFF0A0).withValues(alpha: 0.5 * g)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.55),
     );
   }
 
