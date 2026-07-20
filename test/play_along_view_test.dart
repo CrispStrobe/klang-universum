@@ -87,4 +87,45 @@ void main() {
     ); // F#3
     expect(playAlongSriId('keyboard.play_along', 60), 'keyboard.play_along.c4');
   });
+
+  testWidgets('a Starting-note cue shows for sung charts, not instrument ones',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    Widget app(PlayAlongChart chart) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => SettingsService()),
+            Provider<AudioService>(create: (_) => AudioService()),
+            ChangeNotifierProvider(create: (_) => ProgressService()),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('de')],
+            home: PlayAlongScreen(
+              chart: chart,
+              title: 'Sing',
+              gameId: 'sing_along',
+              sriPrefix: 'voice.sing_along',
+            ),
+          ),
+        );
+
+    // Sung (octave-agnostic) chart → the cue is offered, and tapping it plays a
+    // pitch without throwing.
+    await tester.pumpWidget(app(PlayAlongCharts.twinkleSing));
+    await tester.pump();
+    expect(find.text('Starting note'), findsOneWidget);
+    await tester.tap(find.text('Starting note'));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    // Instrument (exact-pitch) chart → no cue (you read the exact notes).
+    await tester.pumpWidget(app(PlayAlongCharts.celloFirstPosition));
+    await tester.pump();
+    expect(find.text('Starting note'), findsNothing);
+  });
 }

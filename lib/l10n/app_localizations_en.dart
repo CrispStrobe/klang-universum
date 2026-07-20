@@ -5596,6 +5596,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAlongPreview => 'Preview';
 
   @override
+  String get playAlongReference => 'Starting note';
+
+  @override
   String get playAlongViewLabel => 'View';
 
   @override

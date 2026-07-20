@@ -307,6 +307,12 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
 
   void _preview() => context.read<AudioService>().playSequence(_melody());
 
+  /// Play just the chart's first pitch — a starting note to pitch off, WITHOUT
+  /// giving away the tune (unlike [_preview], which plays the whole melody). The
+  /// point of sight-singing: read the notes, but know where to begin.
+  void _referenceNote() =>
+      context.read<AudioService>().playMidiNote(widget.chart.notes.first.midi);
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -453,6 +459,15 @@ class _PlayAlongScreenState extends State<PlayAlongScreen>
                       spacing: 12,
                       runSpacing: 8,
                       children: [
+                        // A single starting pitch for singers — get your note
+                        // without hearing the whole tune (that's Preview).
+                        if (widget.chart.octaveAgnostic &&
+                            widget.chart.notes.isNotEmpty)
+                          OutlinedButton.icon(
+                            onPressed: _running ? null : _referenceNote,
+                            icon: const Icon(Icons.music_note),
+                            label: Text(l.playAlongReference),
+                          ),
                         OutlinedButton.icon(
                           onPressed: _running ? null : _preview,
                           icon: const Icon(Icons.volume_up),

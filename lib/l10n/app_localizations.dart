@@ -10226,6 +10226,12 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get playAlongPreview;
 
+  /// No description provided for @playAlongReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting note'**
+  String get playAlongReference;
+
   /// No description provided for @playAlongViewLabel.
   ///
   /// In en, this message translates to:

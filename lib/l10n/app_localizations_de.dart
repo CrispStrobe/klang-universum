@@ -5621,6 +5621,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playAlongPreview => 'Vorhören';
 
   @override
+  String get playAlongReference => 'Startton';
+
+  @override
   String get playAlongViewLabel => 'Ansicht';
 
   @override
