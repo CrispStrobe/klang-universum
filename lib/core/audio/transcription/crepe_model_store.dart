@@ -132,11 +132,16 @@ class CrepeRunConfig {
     this.workers = 0,
     this.poolConv = true,
     this.batchFrames = 512,
+    this.viterbi = false,
   });
 
   final int workers;
   final bool poolConv;
   final int batchFrames;
+
+  /// Viterbi path-smoothing over the 360-bin lattice (torchcrepe/librosa)
+  /// instead of per-frame argmax. `COMET_CREPE_VITERBI=1`.
+  final bool viterbi;
 
   /// True when the isolate-pool path should be used.
   bool get parallel => workers > 0;
@@ -157,6 +162,7 @@ class CrepeRunConfig {
       workers: pInt('COMET_CREPE_WORKERS', autoPoolWorkers()),
       poolConv: pBool('COMET_CREPE_POOLCONV', true),
       batchFrames: pInt('COMET_CREPE_BATCH', 512),
+      viterbi: pBool('COMET_CREPE_VITERBI', false),
     );
   }
 
@@ -186,6 +192,7 @@ Future<PitchTrack> crepeRun(
       fmin: fmin,
       fmax: fmax,
       batchFrames: config.batchFrames,
+      viterbi: config.viterbi,
     );
   }
   return crepeF0(
@@ -195,6 +202,7 @@ Future<PitchTrack> crepeRun(
     fmin: fmin,
     fmax: fmax,
     batchFrames: config.batchFrames,
+    viterbi: config.viterbi,
   );
 }
 
@@ -216,6 +224,7 @@ Future<F0Estimator> crepeF0Estimator({
           model: model,
           sampleRate: sampleRate,
           batchFrames: cfg.batchFrames,
+          viterbi: cfg.viterbi,
         );
   }
   return (Float64List mono, int sampleRate) => crepeF0(
@@ -223,5 +232,6 @@ Future<F0Estimator> crepeF0Estimator({
         model: model,
         sampleRate: sampleRate,
         batchFrames: cfg.batchFrames,
+        viterbi: cfg.viterbi,
       );
 }

@@ -99,6 +99,9 @@ class RmvpeModelStore {
     final workers =
         int.tryParse(Platform.environment['COMET_RMVPE_WORKERS'] ?? '') ??
             autoPoolWorkers();
+    // COMET_RMVPE_VITERBI=1 → Viterbi path-smoothing over the 360-bin lattice
+    // (torchcrepe/librosa) instead of per-frame argmax; default off.
+    final vit = Platform.environment['COMET_RMVPE_VITERBI'] == '1';
     if (workers > 0) {
       await b.model.parallelize(workers: workers, poolConv: true);
       return (Float64List mono, int sampleRate) => rmvpeF0Async(
@@ -106,10 +109,16 @@ class RmvpeModelStore {
             model: b.model,
             mel: b.mel,
             sampleRate: sampleRate,
+            viterbi: vit,
           );
     }
-    return (Float64List mono, int sampleRate) =>
-        rmvpeF0(mono, model: b.model, mel: b.mel, sampleRate: sampleRate);
+    return (Float64List mono, int sampleRate) => rmvpeF0(
+          mono,
+          model: b.model,
+          mel: b.mel,
+          sampleRate: sampleRate,
+          viterbi: vit,
+        );
   }
 
   static Future<Uint8List?> _get(String url) async {

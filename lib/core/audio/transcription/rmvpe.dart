@@ -18,6 +18,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
+import 'package:comet_beat/core/audio/transcription/f0_viterbi.dart';
 import 'package:comet_beat/core/audio/transcription/rmvpe_mel.dart';
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
 
@@ -36,12 +37,14 @@ PitchTrack rmvpeF0(
   required RmvpeMel mel,
   int sampleRate = 44100,
   double thred = 0.03,
+  bool viterbi = false,
 }) =>
     rmvpeF0WithRunner(
       mono,
       mel: mel,
       sampleRate: sampleRate,
       thred: thred,
+      viterbi: viterbi,
       run: (input, nMels, pf) {
         final out = model.run(
           {
@@ -74,11 +77,12 @@ PitchTrack rmvpeF0WithRunner(
   required RmvpeSalienceRunner run,
   int sampleRate = 44100,
   double thred = 0.03,
+  bool viterbi = false,
 }) {
   final p = _prepMel(mono, mel, sampleRate);
   if (p == null) return const [];
   final sal = run(p.input, mel.nMels, p.pf);
-  return _decodeSalience(sal, p.nFrames, mel, thred);
+  return _decodeSalience(sal, p.nFrames, mel, thred, viterbi: viterbi);
 }
 
 /// Isolate-pool variant of [rmvpeF0]: identical mel / pad / decode, but
@@ -92,6 +96,7 @@ Future<PitchTrack> rmvpeF0Async(
   required RmvpeMel mel,
   int sampleRate = 44100,
   double thred = 0.03,
+  bool viterbi = false,
 }) async {
   final p = _prepMel(mono, mel, sampleRate);
   if (p == null) return const [];
@@ -102,7 +107,7 @@ Future<PitchTrack> rmvpeF0Async(
     const [_outName],
   );
   final sal = out[_outName]!.f ?? out[_outName]!.asFloatList();
-  return _decodeSalience(sal, p.nFrames, mel, thred);
+  return _decodeSalience(sal, p.nFrames, mel, thred, viterbi: viterbi);
 }
 
 /// Resample→16 kHz, log-mel, and frame-pad to a multiple of 32 (the U-Net
@@ -133,11 +138,18 @@ PitchTrack _decodeSalience(
   Float32List sal,
   int nFrames,
   RmvpeMel mel,
-  double thred,
-) {
+  double thred, {
+  bool viterbi = false,
+}) {
+  // [viterbi]: global optimal bin path (torchcrepe/librosa) then the same local
+  // average around each path bin — smooths octave flips the per-frame argmax
+  // would follow.
+  final path = viterbi ? viterbiPitchPath(sal, nFrames, _nBins) : null;
   final track = <PitchFrame>[];
   for (var t = 0; t < nFrames; t++) {
-    final (hz, voiced) = _decodeFrame(sal, t * _nBins, thred);
+    final (hz, voiced) = path != null
+        ? _decodeAtCenter(sal, t * _nBins, path[t], thred)
+        : _decodeFrame(sal, t * _nBins, thred);
     track.add(
       (
         timeMs: t * mel.hop / rmvpeSampleRate * 1000.0,
@@ -164,8 +176,24 @@ PitchTrack _decodeSalience(
       argmax = b;
     }
   }
+  return _decodeAtCenter(sal, base, argmax, thred);
+}
+
+/// The local weighted-average decode of one salience row, centred on [center]
+/// (the argmax, or the Viterbi path bin). Voicing = peak salience; unvoiced when
+/// peak ≤ [thred].
+(double, double) _decodeAtCenter(
+  Float32List sal,
+  int base,
+  int center,
+  double thred,
+) {
+  var peak = sal[base];
+  for (var b = 1; b < _nBins; b++) {
+    if (sal[base + b] > peak) peak = sal[base + b];
+  }
   if (peak <= thred) return (0.0, peak < 0 ? 0.0 : peak);
-  final lo = math.max(0, argmax - 4), hi = math.min(_nBins, argmax + 5);
+  final lo = math.max(0, center - 4), hi = math.min(_nBins, center + 5);
   var num = 0.0, den = 0.0;
   for (var b = lo; b < hi; b++) {
     final w = sal[base + b];

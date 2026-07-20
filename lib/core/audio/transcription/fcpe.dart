@@ -19,6 +19,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
+import 'package:comet_beat/core/audio/transcription/f0_viterbi.dart';
 import 'package:comet_beat/core/audio/transcription/fcpe_mel.dart';
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
 
@@ -36,6 +37,7 @@ PitchTrack fcpeF0(
   required FcpeAssets assets,
   int sampleRate = 44100,
   double threshold = 0.006,
+  bool viterbi = false,
 }) {
   final p = _prep(mono, assets, sampleRate);
   if (p == null) return const [];
@@ -45,7 +47,8 @@ PitchTrack fcpeF0(
     },
     const [_outName],
   )[_outName]!;
-  return _decode(out.f ?? out.asFloatList(), p.nFrames, assets, threshold);
+  return _decode(out.f ?? out.asFloatList(), p.nFrames, assets, threshold,
+      viterbi: viterbi,);
 }
 
 /// Isolate-pool variant of [fcpeF0] (`runAsync`) — FCPE is ~77% Conv, so a
@@ -56,6 +59,7 @@ Future<PitchTrack> fcpeF0Async(
   required FcpeAssets assets,
   int sampleRate = 44100,
   double threshold = 0.006,
+  bool viterbi = false,
 }) async {
   final p = _prep(mono, assets, sampleRate);
   if (p == null) return const [];
@@ -66,7 +70,7 @@ Future<PitchTrack> fcpeF0Async(
     const [_outName],
   );
   final sal = out[_outName]!.f ?? out[_outName]!.asFloatList();
-  return _decode(sal, p.nFrames, assets, threshold);
+  return _decode(sal, p.nFrames, assets, threshold, viterbi: viterbi);
 }
 
 ({Float32List mel, int nFrames})? _prep(
@@ -90,9 +94,12 @@ PitchTrack _decode(
   Float32List sal,
   int nFrames,
   FcpeAssets a,
-  double threshold,
-) {
-  final ct = a.centTable;
+  double threshold, {
+  bool viterbi = false,
+}) {
+  // [viterbi]: the global optimal bin path (torchcrepe/librosa) then the same
+  // local average around each path bin — smooths octave flips / spikes.
+  final path = viterbi ? viterbiPitchPath(sal, nFrames, _nBins) : null;
   final track = <PitchFrame>[];
   for (var t = 0; t < nFrames; t++) {
     final base = t * _nBins;
@@ -105,15 +112,16 @@ PitchTrack _decode(
         argmax = b;
       }
     }
+    final center = path != null ? path[t] : argmax;
     var hz = 0.0;
     if (peak > threshold) {
       var num = 0.0, den = 0.0;
       for (var k = 0; k < 9; k++) {
-        var idx = argmax - 4 + k;
+        var idx = center - 4 + k;
         if (idx < 0) idx = 0;
         if (idx >= _nBins) idx = _nBins - 1;
         final w = sal[base + idx];
-        num += ct[idx] * w;
+        num += a.centTable[idx] * w;
         den += w;
       }
       final cents = den != 0 ? num / den : 0.0;

@@ -22,6 +22,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
+import 'package:comet_beat/core/audio/transcription/f0_viterbi.dart';
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
 
 // ── CREPE constants (torchcrepe) ─────────────────────────────────────────────
@@ -50,6 +51,7 @@ PitchTrack crepeF0(
   double fmin = 50,
   double fmax = 2006,
   int batchFrames = 512,
+  bool viterbi = false,
 }) =>
     crepeF0WithRunner(
       mono,
@@ -67,6 +69,7 @@ PitchTrack crepeF0(
       fmin: fmin,
       fmax: fmax,
       batchFrames: batchFrames,
+      viterbi: viterbi,
     );
 
 /// Runs one batch of `[nFrames, 1024]` normalised frames and returns the flat
@@ -92,17 +95,24 @@ PitchTrack crepeF0WithRunner(
   double fmin = 50,
   double fmax = 2006,
   int batchFrames = 512,
+  bool viterbi = false,
 }) {
   final p = _prepare(mono, sampleRate, hopMs, fmin, fmax);
   final track = <PitchFrame>[];
+  // [viterbi] needs the whole activation matrix (global path), so accumulate it.
+  final acts = viterbi ? Float32List(p.totalFrames * _pitchBins) : null;
   final frameBuf = Float32List(batchFrames * _window);
   for (var f0i = 0; f0i < p.totalFrames; f0i += batchFrames) {
     final nf = math.min(batchFrames, p.totalFrames - f0i);
     final input = _fillBatch(p.padded, p.hop, f0i, nf, frameBuf, batchFrames);
     final af = run(Float32List.fromList(input), nf);
-    _decodeBatch(af, nf, f0i, p, track);
+    if (acts != null) {
+      acts.setRange(f0i * _pitchBins, (f0i + nf) * _pitchBins, af);
+    } else {
+      _decodeBatch(af, nf, f0i, p, track);
+    }
   }
-  return track;
+  return acts != null ? _viterbiTrack(acts, p.totalFrames, p) : track;
 }
 
 /// Isolate-pool variant of [crepeF0]: identical framing / normalisation /
@@ -119,9 +129,11 @@ Future<PitchTrack> crepeF0Async(
   double fmin = 50,
   double fmax = 2006,
   int batchFrames = 512,
+  bool viterbi = false,
 }) async {
   final p = _prepare(mono, sampleRate, hopMs, fmin, fmax);
   final track = <PitchFrame>[];
+  final acts = viterbi ? Float32List(p.totalFrames * _pitchBins) : null;
   final frameBuf = Float32List(batchFrames * _window);
   for (var f0i = 0; f0i < p.totalFrames; f0i += batchFrames) {
     final nf = math.min(batchFrames, p.totalFrames - f0i);
@@ -133,9 +145,13 @@ Future<PitchTrack> crepeF0Async(
       const [_outName],
     );
     final af = out[_outName]!.f ?? out[_outName]!.asFloatList();
-    _decodeBatch(af, nf, f0i, p, track);
+    if (acts != null) {
+      acts.setRange(f0i * _pitchBins, (f0i + nf) * _pitchBins, af);
+    } else {
+      _decodeBatch(af, nf, f0i, p, track);
+    }
   }
-  return track;
+  return acts != null ? _viterbiTrack(acts, p.totalFrames, p) : track;
 }
 
 /// Shared prep: resample→16 kHz, 512-pad each side, frame count, and the
@@ -265,7 +281,25 @@ void _fillNormalizedFrame(
       argmax = b;
     }
   }
-  final start = math.max(0, argmax - 4), end = math.min(_pitchBins, argmax + 5);
+  return _decodeAtCenter(act, base, argmax, minBin, maxBin);
+}
+
+/// The local weighted-average decode of one row, centred on [center] (the
+/// argmax for `weighted_argmax`, or the Viterbi path bin). Voicing is the peak
+/// activation over the gated range — independent of [center].
+(double, double) _decodeAtCenter(
+  Float32List act,
+  int base,
+  int center,
+  int minBin,
+  int maxBin,
+) {
+  var peak = -double.infinity;
+  for (var b = minBin; b < maxBin; b++) {
+    final v = act[base + b];
+    if (v > peak) peak = v;
+  }
+  final start = math.max(0, center - 4), end = math.min(_pitchBins, center + 5);
   var num = 0.0, den = 0.0;
   for (var b = start; b < end; b++) {
     if (b < minBin || b >= maxBin) continue; // masked out
@@ -276,6 +310,27 @@ void _fillNormalizedFrame(
   final cents = den > 0 ? num / den : 0.0;
   final hz = 10.0 * math.pow(2.0, cents / 1200.0);
   return (hz, peak.isFinite ? peak.clamp(0.0, 1.0).toDouble() : 0.0);
+}
+
+/// Viterbi-decode a full accumulated activation matrix `[totalFrames × 360]` to
+/// a [PitchTrack]: the global optimal bin path (torchcrepe/librosa) then the
+/// same local weighted-average around each path bin. Smooths octave flips /
+/// single-frame spikes that per-frame argmax follows.
+PitchTrack _viterbiTrack(
+  Float32List acts,
+  int totalFrames,
+  ({Float64List padded, int hop, int totalFrames, int minBin, int maxBin}) p,
+) {
+  final path = viterbiPitchPath(acts, totalFrames, _pitchBins);
+  final track = <PitchFrame>[];
+  for (var t = 0; t < totalFrames; t++) {
+    final (hz, voiced) =
+        _decodeAtCenter(acts, t * _pitchBins, path[t], p.minBin, p.maxBin);
+    track.add(
+      (timeMs: t * p.hop / _sr * 1000.0, f0Hz: hz, voicedProb: voiced),
+    );
+  }
+  return track;
 }
 
 /// Decode a full activation matrix `[nFrames, 360]` to `(f0Hz, voicing)` pairs —
@@ -291,5 +346,22 @@ List<(double, double)> decodeCrepeActivation(
   return [
     for (var f = 0; f < nFrames; f++)
       _decodeFrame(activation, f * _pitchBins, minBin, maxBin),
+  ];
+}
+
+/// Viterbi variant of [decodeCrepeActivation] — the global optimal bin path
+/// (torchcrepe/librosa) then the local weighted-average around each path bin.
+/// Exposed for testing without running the model.
+List<(double, double)> decodeCrepeActivationViterbi(
+  Float32List activation,
+  int nFrames, {
+  double fmin = 50,
+  double fmax = 2006,
+}) {
+  final (minBin, maxBin) = _binRange(fmin, fmax);
+  final path = viterbiPitchPath(activation, nFrames, _pitchBins);
+  return [
+    for (var f = 0; f < nFrames; f++)
+      _decodeAtCenter(activation, f * _pitchBins, path[f], minBin, maxBin),
   ];
 }

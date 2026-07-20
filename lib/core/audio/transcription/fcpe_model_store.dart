@@ -98,6 +98,9 @@ class FcpeModelStore {
     final workers =
         int.tryParse(Platform.environment['COMET_FCPE_WORKERS'] ?? '') ??
             autoPoolWorkers();
+    // COMET_FCPE_VITERBI=1 → Viterbi path-smoothing over the 360-bin lattice
+    // (torchcrepe/librosa) instead of per-frame argmax; default off.
+    final vit = Platform.environment['COMET_FCPE_VITERBI'] == '1';
     if (workers > 0) {
       await b.model.parallelize(workers: workers, poolConv: true);
       return (Float64List mono, int sampleRate) => fcpeF0Async(
@@ -105,10 +108,16 @@ class FcpeModelStore {
             model: b.model,
             assets: b.assets,
             sampleRate: sampleRate,
+            viterbi: vit,
           );
     }
-    return (Float64List mono, int sampleRate) =>
-        fcpeF0(mono, model: b.model, assets: b.assets, sampleRate: sampleRate);
+    return (Float64List mono, int sampleRate) => fcpeF0(
+          mono,
+          model: b.model,
+          assets: b.assets,
+          sampleRate: sampleRate,
+          viterbi: vit,
+        );
   }
 
   static Future<Uint8List?> _get(String url) async {
