@@ -22,7 +22,7 @@ the emissions they already know how to consume.
 whole arm dies and you ship nothing.
 
 - **GuitarSet** licence — the base corpus. UNVERIFIED in the scoping pass.
-- **GuitarProFX augmentation** (DAFx-24) — the variant we actually want; confirm
+- **GP-FX augmentation** (DAFx-24) — the variant we actually want; confirm
   its released weights + the re-rendered audio are redistributable.
 - **EGSet12** (Zenodo 11406378) — needed only as an acceptance set, but check it.
 
@@ -35,7 +35,7 @@ permissive/`NC` licence we can tag is fine; *no* licence is not.
 
 ## 1. Which weights
 
-Ship the **GuitarProFX-augmented TabCNN**, not the vanilla one — vanilla's
+Ship the **GP-FX-augmented TabCNN**, not the vanilla one — vanilla's
 GuitarSet tablature-F1 0.748 collapses to **0.447 zero-shot on real electric
 guitar** (EGSet12); re-rendering the training audio with real tones lifts it to
 **0.585** (architecture/optimizer/LR/data-split all held constant).
@@ -43,7 +43,7 @@ guitar** (EGSet12); re-rendering the training audio with real tones lifts it to
 - TabCNN (Wiggins & Kim, ISMIR 2019): <https://github.com/andywiggins/tab-cnn>
   (Keras/TF) — the architecture + the fallback if the augmented weights aren't
   cleanly licensed.
-- GuitarProFX variant (DAFx-24, Pedroza et al.):
+- GP-FX variant (DAFx-24, Pedroza et al.):
   <https://dafx.de/paper-archive/2024/papers/DAFx24_paper_99.pdf> ·
   <https://arxiv.org/html/2405.14679>
 - ⚠ Do **not** substitute FretNet without telling CometBeat — its tab head is
@@ -135,7 +135,7 @@ the model reads garbage while every cheap check still passes.
   concern; your number is emission quality.
 - **Report EGSet12 zero-shot F1 alongside GuitarSet**, and lead with it. GuitarSet
   6-fold is the *training* protocol, so it flatters; EGSet12 is what predicts real
-  behaviour (spec §7). Don't quote the GuitarProFX gain magnitude as precise
+  behaviour (spec §7). Don't quote the GP-FX gain magnitude as precise
   (σ 0.06–0.11, only tablature-F1 clears p<0.05).
 
 ## 8. Deliverables checklist

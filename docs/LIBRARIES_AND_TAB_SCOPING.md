@@ -289,7 +289,7 @@ it. Verified:
   note to specific strings**, overriding the engine's default lowest-fret
   placement, and `ChordDiagram(frets, {fingers, baseFret, barreFret, name})`. So a
   faithful editor where the *user picks the string* needs **no library change**.
-- **Guitar Pro I/O (core):** read `gp5/gp4/gp3ToScore`, `scoreFromGpif`, `.gp`/
+- **GPIF I/O (core):** read `gp5/gp4/gp3ToScore`, `scoreFromGpif`, `.gp`/
   `.gpx` containers (clean-room); **write** `scoreToGpif` + `.gp`/`.gpx`
   containers. `asciiTabToScore` reads ASCII tab.
 - **App today:** `importScore` (`composition_workshop_screen.dart:227`) already
@@ -322,7 +322,7 @@ Recommend **(b)**: `lib/features/games/composition/tab_workshop_screen.dart`,
 constructor `TabWorkshopScreen({MultiPartDocument? initialDocument})`, plus a
 dropdown entry. Shared model = free round-trip Score↔Tab↔Tracker.
 
-### 2.3 SOTA UX (Guitar Pro / TuxGuitar / Songsterr / Soundslice / Flat), kid-first
+### 2.3 SOTA UX (GPIF / TuxGuitar / Songsterr / Soundslice / Flat), kid-first
 
 - **Dual view:** `NotationTabView` — standard staff synced above the 6-line tab.
   Toggle to tab-only for beginners.
@@ -354,9 +354,9 @@ dropdown entry. Shared model = free round-trip Score↔Tab↔Tracker.
 
 - **Tablature itself is centuries old — no patents.** Standard tab-editing
   interactions (fret entry, string lines, technique marks) are unencumbered.
-- **Guitar Pro format**: we only touch the **GPIF XML** via `crisp_notation`'s
+- **GPIF format**: we only touch the **GPIF XML** via `crisp_notation`'s
   **clean-room** reader/writer (per its file-header docstrings). We do **not** ship
-  Arobas soundbanks / RSE, or replicate Guitar Pro's icon set / trade dress —
+  Arobas soundbanks / RSE, or replicate GPIF's icon set / trade dress —
   build our own kid-friendly look.
 - **No copyrighted tab content is bundled or fetched** — there is no open tab
   library (§1.2). Content for the editor comes from the user or from **PD works we

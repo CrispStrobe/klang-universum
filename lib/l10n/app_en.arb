@@ -1025,7 +1025,7 @@
     }
   },
   "tabExport": "Export",
-  "tabExportGp": "Guitar Pro (.gp)",
+  "tabExportGp": "GP tab (.gp)",
   "tabExportMusicXml": "MusicXML",
   "tabExportMidi": "MIDI",
   "tabExportFailed": "Export failed",

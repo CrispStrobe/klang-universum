@@ -2621,7 +2621,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabExport => 'Export';
 
   @override
-  String get tabExportGp => 'Guitar Pro (.gp)';
+  String get tabExportGp => 'GP tab (.gp)';
 
   @override
   String get tabExportMusicXml => 'MusicXML';

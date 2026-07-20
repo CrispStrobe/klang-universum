@@ -60,7 +60,7 @@ final List<Tuning> tabTuningPresets = <Tuning>[
   Tuning.banjoOpenG,
 ];
 
-/// Extensions the tab reader accepts. Guitar Pro (`.gp`/`.gpx`) carry real
+/// Extensions the tab reader accepts. GPIF (`.gp`/`.gpx`) carry real
 /// tab/fret data; the rest are read as pitches and placed on the fretboard by
 /// lowest-fret when converted to a [TabDocument].
 const List<String> tabImportExtensions = <String>[
@@ -204,7 +204,7 @@ abstract class TabWorkshopTester {
 
 /// A guitar/bass **tablature editor** (B1) — the Tab Workshop. Author tab on a
 /// string×step grid (tap a cell, type a fret) for any [Tuning] + capo, hear it,
-/// and open Guitar Pro / MusicXML / MIDI / ABC files as editable tab. The
+/// and open GPIF / MusicXML / MIDI / ABC files as editable tab. The
 /// engraved staff (with a synced standard staff) previews the [TabDocument];
 /// the same model round-trips to the Score Workshop and Tracker.
 class TabWorkshopScreen extends StatefulWidget {
@@ -1102,7 +1102,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
         await _saveBytes(
           writeGpFromGpif(gpif),
           '$base.gp',
-          'Guitar Pro',
+          'GP tab',
           const ['gp'],
         );
       case 'musicxml':

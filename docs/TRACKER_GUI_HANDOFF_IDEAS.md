@@ -214,7 +214,7 @@ exist (Advanced already exposes all four). Add the format picker.
 
 ### C3. Advanced Tracker — broaden import  [lib-exists]
 Advanced imports MusicXML/MIDI only. Add ABC / MEI / Humdrum `.krn` / MuseScore
-`.mscx/.mscz` / Guitar Pro `.gp/.gpx` import (the multi-part readers exist and
+`.mscx/.mscz` / GPIF `.gp/.gpx` import (the multi-part readers exist and
 Workshop already uses them).
 
 ### C4. Advanced Tracker — broaden notation export  [lib-exists]
@@ -245,7 +245,7 @@ module path.
 
 ### C9. Long-tail codecs  [lib-exists]
 `asciiTabToScore` (ASCII-tab **import**) is wired in **no** screen — add to
-Workshop import. `scoreToGpif` (Guitar Pro **text** export) exists but no screen
+Workshop import. `scoreToGpif` (GPIF **text** export) exists but no screen
 writes GP — add to Workshop export (note: no binary `.gp` writer exists, GPIF
 text only).
 

@@ -2630,7 +2630,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tabExport => 'Exportieren';
 
   @override
-  String get tabExportGp => 'Guitar Pro (.gp)';
+  String get tabExportGp => 'GP tab (.gp)';
 
   @override
   String get tabExportMusicXml => 'MusicXML';

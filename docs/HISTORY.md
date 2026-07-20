@@ -81,7 +81,7 @@ sibling of the My Melody sandbox. What it does now:
   the engraving width is bound to the viewport so systems break on-screen.
 - **I/O** — a single **Open…** picker reads any supported score by extension —
   MusicXML (+ compressed `.mxl`), MIDI, ABC, MEI, Humdrum `**kern`, MuseScore
-  (`.mscx`/`.mscz`), Guitar Pro (`.gp`/`.gpx`) — and a single **Export…** sheet
+  (`.mscx`/`.mscz`), GPIF (`.gp`/`.gpx`) — and a single **Export…** sheet
   writes MusicXML/`.mxl` · MIDI · ABC · MEI · `**kern` · MuseScore · LilyPond ·
   Braille · **SVG** (font embedded) · **PNG**, saving via the system dialog (text
   formats fall back to a copyable view where a platform has no save picker). All
@@ -2210,7 +2210,7 @@ the 2026-07-17 sweep (newest at the top of this batch):_
   open/save dialogs were blocked). Verified in the built `.app`. (2) **Unified**
   the ⋮ menu to one **Open…** + one **Export…** (was one item per type). (3)
   **Many more formats**: import MusicXML/`.mxl`/MIDI/ABC/MEI/`**kern`/MuseScore
-  (`.mscx`/`.mscz`)/GuitarPro (`.gp`/`.gpx`); export those + LilyPond/Braille/SVG/
+  (`.mscx`/`.mscz`)/GPIF (`.gp`/`.gpx`); export those + LilyPond/Braille/SVG/
   PNG. Pure-Dart parsers → web build ✓, macOS build ✓. Pure `importScore()` +
   `kExportFormats` unit-tested. · ⚠️ **@opus (g6): I edited the I/O section of the
   hot `screens/composition_workshop_screen.dart`** (imports, top-level

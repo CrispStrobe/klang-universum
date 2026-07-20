@@ -56,7 +56,7 @@ List<Fretting>` shape callers use is untouched.
 ## Audio arm — the caller side is BUILT (seam + decoder), awaiting weights
 
 CrispASR's scoping (`docs/music-transcription/GUITAR_TAB_SPEC.md` §GT1) landed the
-audio-arm verdict: **adopt as proposed** — ship a **GuitarProFX-augmented TabCNN**
+audio-arm verdict: **adopt as proposed** — ship a **GP-FX-augmented TabCNN**
 (~0.8 M params, public weights; the vanilla model's GuitarSet F1 0.748 drops to
 0.447 zero-shot on real electric guitar, and re-rendering training audio with real
 tones is the fix). TabCNN is *already* an emission scorer: six independent
@@ -148,7 +148,7 @@ Two distinct problems; CrispASR could ship either or both.
 
 **A. Symbolic MIDI/score → tab positions** (upgrades `fromScore`, MusicXML/MIDI
 import, the bridge pull — the common case).
-- **Corpus:** **DadaGP** (~26k GuitarPro songs, tokenised — Sarmento et al.,
+- **Corpus:** **DadaGP** (~26k GPIF songs, tokenised — Sarmento et al.,
   ISMIR 2021) is the strongest open set; the *ProgGP / GTR-CTRL* line builds on
   it. Also mineable: MuseScore/GP corpora we already parse.
 - **Model:** small seq2seq / BiLSTM-CRF or a tiny transformer (note-sequence →
@@ -196,7 +196,7 @@ Test against **playability + parity**, not bytes:
 - **Quality metric:** total hand-movement cost + mean chord span over a held-out
   GP set, model vs. baseline — the model should reduce them (or match at lower
   variance). Report, don't assert a threshold.
-- **A/B corpus:** re-fret a set of GuitarPro songs (strip their voicings, arrange,
+- **A/B corpus:** re-fret a set of GPIF songs (strip their voicings, arrange,
   compare to the human tab) — % of positions matching the original fingering.
 - **Fallback proof:** with the model absent/failed, `arrangeTab` returns exactly
   the baseline (regression-locked).

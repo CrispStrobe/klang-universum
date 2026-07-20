@@ -227,7 +227,7 @@ const _kImportExtensions = [
   'mei', // MEI
   'krn', // Humdrum **kern
   'mscx', 'mscz', // MuseScore (+ compressed)
-  'gp', 'gpx', // Guitar Pro
+  'gp', 'gpx', // GPIF
 ];
 
 const _kImportGroups = <XTypeGroup>[
@@ -274,7 +274,7 @@ MultiPartScore importMultiPart(String fileName, Uint8List bytes) {
     'mei' => multiPartScoreFromMei(text()),
     'krn' => multiPartScoreFromKern(text()),
     'mid' || 'midi' => multiTrackMidiToMultiPart(bytes),
-    // MuseScore / Guitar Pro have no multi-part reader here yet.
+    // MuseScore / GPIF have no multi-part reader here yet.
     _ => MultiPartScore([importScore(fileName, bytes)]),
   };
 }

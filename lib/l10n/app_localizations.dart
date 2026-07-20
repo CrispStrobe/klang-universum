@@ -4919,7 +4919,7 @@ abstract class AppLocalizations {
   /// No description provided for @tabExportGp.
   ///
   /// In en, this message translates to:
-  /// **'Guitar Pro (.gp)'**
+  /// **'GP tab (.gp)'**
   String get tabExportGp;
 
   /// No description provided for @tabExportMusicXml.

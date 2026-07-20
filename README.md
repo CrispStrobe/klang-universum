@@ -101,6 +101,12 @@ acceptance tests.
   `ScoreDocument` with 2 voices, clef/key/meter/tempo, ties, slurs, dynamics,
   lyrics, transposition); `buildMultiPart()` snapshots it to an immutable
   `MultiPartScore` for rendering + export. Imports/exports the formats above.
+- **Guitar tablature** — a touch-first tab editor (`TabDocument`) with a
+  cost-based fret **arranger** (Viterbi over playable positions), plus the
+  `tabconv` CLI. Reads GPIF `.gp3`/`.gp4`/`.gp5`/`.gpx`/`.gp` (and any
+  notation format) and **writes GPIF `.gp`**, preserving the arranged
+  string/fret choices, techniques (bends & contours, hammer-ons, slides,
+  vibrato, dead/ghost/harmonic notes) and each track's tuning.
 
 ### Headless CLI tools (`dart run bin/<x>.dart`)
 
@@ -116,9 +122,13 @@ One dispatcher, **`mus`**, fronts the suite — `dart run bin/mus.dart <cmd> …
 | `fx` | apply a crisp_dsp effect to a WAV offline |
 
 Standalone bins (not under `mus`): `rendersong` (a score / MIDI / MusicXML …
-through a SoundFont → WAV/MP3, per-part General-MIDI voicing), `sfont` (inspect /
-render `.sf2` / `.sf3`), `transcribe_basicpitch` · `transcribe_crepe` ·
-`transcribe_chords` (neural transcription paths).
+through a SoundFont → WAV/MP3, per-part General-MIDI voicing), `tabconv` (any
+notation format — ABC / MIDI / MusicXML / MuseScore / MEI / kern / GPIF /
+JAMS melody — → a **GPIF `.gp`**, running the cost-based tab arranger so
+the frets are playable; `--tuning`/`--capo`/`--no-arrange`, multi-part → one GP
+track per part), `sfont` (inspect / render `.sf2` / `.sf3`),
+`transcribe_basicpitch` · `transcribe_crepe` · `transcribe_chords` (neural
+transcription paths).
 
 ## Development
 

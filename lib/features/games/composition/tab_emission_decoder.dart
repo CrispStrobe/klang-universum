@@ -1,6 +1,6 @@
 // The caller side of the audio→tab contract (CrispASR §GT1,
 // docs/music-transcription/GUITAR_TAB_SPEC.md → docs/TAB_ARRANGER_NEURAL_HANDOFF
-// .md §audio): CrispASR ships a GuitarProFX-augmented TabCNN that emits, per
+// .md §audio): CrispASR ships a GP-FX-augmented TabCNN that emits, per
 // frame, a 6×21 grid of LOG-probabilities and does NO decoding. WE own the DP.
 //
 // TabCNN's layer is six independent per-string softmaxes with no inter-string
@@ -54,7 +54,7 @@ class TabEmissionFrames {
       logProbs[(frame * kTabStrings + string) * kTabClasses + cls];
 }
 
-/// The emission scorer CrispASR ships (GuitarProFX-augmented TabCNN): audio →
+/// The emission scorer CrispASR ships (GP-FX-augmented TabCNN): audio →
 /// [TabEmissionFrames] of log-probs, with NO decoding or smoothing inside the
 /// network. Returns null when unavailable (no model / web / load failure) so the
 /// caller falls back to its symbolic/heuristic tab paths. Mirrors the

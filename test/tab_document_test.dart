@@ -160,7 +160,7 @@ void main() {
     expect(fretted.first.frets[0], anyOf(0, isNotNull));
   });
 
-  test('GP export: toScore round-trips through the Guitar Pro writer', () {
+  test('GP export: toScore round-trips through the GPIF writer', () {
     final doc = TabDocument.blank(guitar, initialColumns: 2)
       ..setFret(0, 0, 0)
       ..setFret(1, 5, 3);
@@ -226,7 +226,7 @@ void main() {
     );
   });
 
-  test('techniques ride a Guitar Pro export (glissando/bend/vibrato survive)',
+  test('techniques ride a GPIF export (glissando/bend/vibrato survive)',
       () {
     final doc = TabDocument.blank(guitar, initialColumns: 2)
       ..setFret(0, 0, 5)

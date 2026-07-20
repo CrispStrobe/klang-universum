@@ -45,7 +45,7 @@ A touch- **and** desktop-first score editor, **three source files**:
   mordent/turn), **full meters + circle of fifths**, **`RhythmPolicy.split`**
   (tie over-long notes across barlines; ⋮-menu toggle), **discontiguous
   selection** (marquee selects exactly what it covers).
-- Import MusicXML/`.mxl`/MIDI/ABC/MEI/`**kern`/MuseScore/GuitarPro; export those +
+- Import MusicXML/`.mxl`/MIDI/ABC/MEI/`**kern`/MuseScore/GPIF; export those +
   LilyPond/Braille/SVG/PNG. **Save → reopen is lossless** for everything the
   element stream holds. Multi-instrument authoring (G6).
 

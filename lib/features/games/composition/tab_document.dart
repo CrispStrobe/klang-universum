@@ -3,7 +3,7 @@
 // fret to one or more strings (a chord). It converts *to* a crisp_notation
 // [Score] for engraving/playback (carrying [TabVoicing]s so the user's explicit
 // string choice is honoured, not re-derived) and *from* a Score so an imported
-// file (Guitar Pro/MusicXML/…) becomes editable as tab.
+// file (GPIF/MusicXML/…) becomes editable as tab.
 //
 // Pure Dart (no Flutter) so the whole model is unit-testable.
 
@@ -12,7 +12,7 @@ import 'package:crisp_notation/crisp_notation.dart';
 
 /// A playing technique attached to a tab note. Each maps to the `Score` list
 /// the tab engine renders from — and, where the GPIF writer reads the same
-/// list, it survives a Guitar Pro export too:
+/// list, it survives a GPIF export too:
 ///
 /// | technique | Score list | renders | exports to `.gp` |
 /// |---|---|---|---|

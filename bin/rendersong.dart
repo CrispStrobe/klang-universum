@@ -2,7 +2,7 @@
 //
 // Render a whole SONG to audio through a SoundFont (or a built-in voice) — the
 // missing "play this piece" CLI. Parses any notation format crisp_notation_core
-// reads (ABC / Guitar Pro / MIDI / MusicXML / MuseScore / MEI / Humdrum), voices
+// reads (ABC / GPIF / MIDI / MusicXML / MuseScore / MEI / Humdrum), voices
 // every note through a chosen SoundFont preset via the same
 // loadSoundFont → soundFontInstrument → renderScoreWithInstrument pipeline the
 // app uses, and writes a WAV or MP3. Flutter-free, so it runs under plain
@@ -11,7 +11,7 @@
 //   # a General-MIDI SoundFont voice (piano = preset 0) → MP3
 //   dart run bin/rendersong.dart tune.abc out.mp3 --sf2 FluidR3Mono_GM.sf3
 //
-//   # pick a preset + tempo + bitrate; render a Guitar Pro tab to WAV
+//   # pick a preset + tempo + bitrate; render a GPIF tab to WAV
 //   dart run bin/rendersong.dart song.gp3 out.wav --sf2 gm.sf2 --preset 24 --bpm 96
 //
 //   # no SoundFont → a built-in additive piano
@@ -280,7 +280,7 @@ int _tempoOfParts(List<Score> parts) {
 // ── Input routing (mirrors crisp_notation_cli's _loadScore) ──────────────────
 
 /// Parse [path] to a [MultiPartScore] (preferred, all parts) or a [Score]
-/// (MIDI / Guitar Pro, which flatten to one score).
+/// (MIDI / GPIF, which flatten to one score).
 Object _load(String path, String? from) {
   final file = File(path);
   if (!file.existsSync()) _fail('no such file: $path');

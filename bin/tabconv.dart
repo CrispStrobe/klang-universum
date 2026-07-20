@@ -1,8 +1,8 @@
 // bin/tabconv.dart
 //
-// Headless "notation → Guitar Pro (.gp)" converter. Reads any Score-yielding
-// format (ABC, MIDI, MusicXML/MXL, MuseScore, MEI, Humdrum kern, Guitar Pro,
-// JAMS note_midi melody) and writes a Guitar Pro 7 (.gp) file — running the
+// Headless "notation → GPIF (.gp)" converter. Reads any Score-yielding
+// format (ABC, MIDI, MusicXML/MXL, MuseScore, MEI, Humdrum kern, GPIF,
+// JAMS note_midi melody) and writes a GPIF v7 (.gp) file — running the
 // cost-based tab arranger so the frets are playable, not the greedy per-pitch
 // fallback the writer uses on its own. Multi-part inputs export one GP track
 // per part.
