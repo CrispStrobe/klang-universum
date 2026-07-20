@@ -632,9 +632,11 @@ void _renderZone(
   final rg = math.sin(theta);
   final baseGain = n.gain * zone.gain;
 
-  // SF2 2-pole resonant low-pass at the zone's own cutoff/Q. The SF2 default
-  // velocity→filter modulator darkens soft notes (−2400 cents at velocity 0).
-  final velCents = (n.velNorm - 1) * 2400;
+  // SF2 2-pole resonant low-pass at the zone's own cutoff/Q, plus the zone's
+  // velocity→filter modulation: the SF2 default darkens soft notes, but a drum
+  // kit's own modulator OPENS a low base cutoff on a hard hit (the "click" that
+  // a dull, boomy kick otherwise lacks).
+  final velCents = zone.velFilterCents(n.velNorm);
   final cutoffHz = (zone.filterCutoffHz * math.pow(2, velCents / 1200))
       .clamp(20.0, sr / 2 - 1)
       .toDouble();

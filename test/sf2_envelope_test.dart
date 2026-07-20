@@ -116,6 +116,25 @@ void main() {
     expect(hat.exclusiveClass, 1);
   });
 
+  test('velFilterCents: default darkens soft notes; a mod opens loud ones', () {
+    // No modulators → the SF2 default: full velocity keeps the cutoff, silence
+    // drops it 2400 cents (soft notes are duller).
+    const plain = Sf2Zone(keyLo: 0, keyHi: 127, sampleIndex: 0, rootKey: 60);
+    expect(plain.velFilterCents(1.0), closeTo(0, 1e-9));
+    expect(plain.velFilterCents(0.0), closeTo(-2400, 1e-9));
+    // A drum-kit-style opening modulator (amount +9000, dir 0 = min→max, linear)
+    // does the OPPOSITE: a hard hit opens the cutoff wide (its "click").
+    const drum = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      velFilterMods: [9000, 0, 0],
+    );
+    expect(drum.velFilterCents(1.0), closeTo(9000, 1e-9)); // loud → wide open
+    expect(drum.velFilterCents(0.0), closeTo(0, 1e-9)); // soft → base cutoff
+  });
+
   test('sampleModes (gen 54): loop / loop-until-release flags', () {
     const none = Sf2Zone(keyLo: 0, keyHi: 127, sampleIndex: 0, rootKey: 60);
     expect(none.loopEnabled, isFalse);

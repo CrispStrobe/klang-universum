@@ -137,6 +137,7 @@ class Sf2Zone {
     this.exclusiveClass = 0,
     this.sampleModes = 0,
     this.scaleTuning = 100,
+    this.velFilterMods = const [],
   });
 
   final int keyLo;
@@ -211,6 +212,34 @@ class Sf2Zone {
   /// (100 = normal chromatic, 0 = untuned — a drum kit's key selects a different
   /// sample, not a transposition). Drives how much [keyLo]..[keyHi] shifts pitch.
   final int scaleTuning;
+
+  /// Velocity→filter-cutoff modulators (SF2 imod), flattened as `[amount, dir,
+  /// type, …]` cents triples. Empty → the SF2 default (darken soft notes by up
+  /// to 2400 cents). A drum kit adds a positive one so a hard hit opens a low
+  /// base cutoff into its bright "click".
+  final List<int> velFilterMods;
+
+  /// The cutoff modulation in cents for MIDI [vel] (0..1), summing this zone's
+  /// velocity→filter modulators — or the SF2 default when it has none.
+  double velFilterCents(double vel) {
+    if (velFilterMods.isEmpty) {
+      return -2400 * (1 - vel); // SF2 default modulator
+    }
+    var sum = 0.0;
+    for (var i = 0; i + 2 < velFilterMods.length; i += 3) {
+      final amount = velFilterMods[i];
+      final dir = velFilterMods[i + 1];
+      final type = velFilterMods[i + 2];
+      var v = dir == 1 ? 1 - vel : vel; // direction
+      if (type == 1) {
+        v = v * v; // concave (approx): slow rise
+      } else if (type == 2) {
+        v = 1 - (1 - v) * (1 - v); // convex (approx): fast rise
+      }
+      sum += amount * v;
+    }
+    return sum;
+  }
 
   /// velRange (gen 44): the MIDI velocity window this zone (sample layer) covers,
   /// so a soft vs loud note picks a different recording. Default 0..127 (the
@@ -419,6 +448,19 @@ List<Sf2Preset> _parsePresets(
   final instCount = inst.$2 ~/ 22;
   final pbagCount = pbag.$2 ~/ 4, ibagCount = ibag.$2 ~/ 4;
   final pgenCount = pgen.$2 ~/ 4, igenCount = igen.$2 ~/ 4;
+  // Instrument modulators (imod): each ibag record's 2nd u16 is its imod index.
+  // We read only the velocity→filter-cutoff modulator (10-byte records) — the
+  // one that gives a drum kit its high-velocity "click" (a low base cutoff that
+  // opens wide on a hard hit). Absent imod → no mods → the SF2 default applies.
+  final imod = chunks['imod'];
+  final imodOff = imod?.$1 ?? 0;
+  final imodCount = (imod?.$2 ?? 0) ~/ 10;
+  // Preset modulators (pmod): a GM drum kit puts the high-velocity filter-open
+  // at the PRESET level (its instrument zone zeroes the default darkening), so
+  // these ADD to the instrument's velocity→filter modulation.
+  final pmod = chunks['pmod'];
+  final pmodOff = pmod?.$1 ?? 0;
+  final pmodCount = (pmod?.$2 ?? 0) ~/ 10;
 
   int presetBagNdx(int i) => u16(phdrOff + i * 38 + 24);
   int instBagNdx(int i) => u16(instOff + i * 22 + 20);
@@ -431,15 +473,21 @@ List<Sf2Preset> _parsePresets(
     final ibStart = instBagNdx(instIndex);
     final ibEnd = instBagNdx(instIndex + 1).clamp(0, ibagCount - 1);
     for (var ib = ibStart; ib < ibEnd; ib++) {
-      out.add(
-        _readGens(
-          data,
-          igenOff,
-          u16(ibagOff + ib * 4),
-          u16(ibagOff + (ib + 1) * 4),
-          igenCount,
-        ),
+      final g = _readGens(
+        data,
+        igenOff,
+        u16(ibagOff + ib * 4),
+        u16(ibagOff + (ib + 1) * 4),
+        igenCount,
       );
+      g.velFilterMods = _readVelFilterMods(
+        data,
+        imodOff,
+        u16(ibagOff + ib * 4 + 2),
+        u16(ibagOff + (ib + 1) * 4 + 2),
+        imodCount,
+      );
+      out.add(g);
     }
     return out;
   }
@@ -492,6 +540,15 @@ List<Sf2Preset> _parsePresets(
       exclusiveClass: iv((g) => g.exclusiveClass, 0),
       sampleModes: iv((g) => g.sampleModes, 0),
       scaleTuning: iv((g) => g.scaleTuning, 100),
+      // Velocity→filter modulators: the instrument zone's (or the instrument
+      // global zone's) PLUS the preset's (they add — a drum kit's high-velocity
+      // filter-open lives at the preset level). Empty → SF2 default at play time.
+      velFilterMods: [
+        ...((z.velFilterMods?.isNotEmpty ?? false)
+            ? z.velFilterMods!
+            : (ig?.velFilterMods ?? const [])),
+        ...?p.velFilterMods,
+      ],
     );
   }
 
@@ -505,16 +562,24 @@ List<Sf2Preset> _parsePresets(
     final bagEnd = presetBagNdx(pi + 1).clamp(0, pbagCount - 1);
     // Parse every preset zone's generators. A leading zone naming no instrument
     // is the preset's GLOBAL zone — its offsets apply to all the other zones.
-    final pZones = [
-      for (var b = bagStart; b < bagEnd; b++)
-        _readGens(
-          data,
-          pgenOff,
-          u16(pbagOff + b * 4),
-          u16(pbagOff + (b + 1) * 4),
-          pgenCount,
-        ),
-    ];
+    final pZones = <_Gen>[];
+    for (var b = bagStart; b < bagEnd; b++) {
+      final g = _readGens(
+        data,
+        pgenOff,
+        u16(pbagOff + b * 4),
+        u16(pbagOff + (b + 1) * 4),
+        pgenCount,
+      );
+      g.velFilterMods = _readVelFilterMods(
+        data,
+        pmodOff,
+        u16(pbagOff + b * 4 + 2),
+        u16(pbagOff + (b + 1) * 4 + 2),
+        pmodCount,
+      );
+      pZones.add(g);
+    }
     final pGlobal = (pZones.isNotEmpty && pZones.first.instIndex == null)
         ? pZones.first
         : null;
@@ -551,6 +616,8 @@ class _Gen {
   int? delayModLfo, freqModLfo, delayVibLfo, freqVibLfo;
   int? pan, exclusiveClass, sampleModes, scaleTuning, sampleId;
   int? rootOverride, instIndex;
+  // velocity→filterFc modulators, flattened as [amount, dir, type, …] triples.
+  List<int>? velFilterMods;
 }
 
 /// Read the generators in [gStart, gEnd) of a pgen/igen chunk into a [_Gen].
@@ -623,6 +690,37 @@ _Gen _readGens(ByteData data, int genOff, int gStart, int gEnd, int genCount) {
   return g;
 }
 
+/// Read the velocity→filter-cutoff modulators in a zone's imod range, flattened
+/// as `[amount, dir, type, …]` triples. A modulator qualifies when its
+/// destination is initialFilterFc (gen 8) and its source is note-on velocity (a
+/// general controller, index 2). `dir` (1 = max→min) and `type` (0 linear /
+/// 1 concave / 2 convex) shape the velocity curve; the amount is in cents. GM
+/// drum kits use these to open a low base cutoff on a hard hit (the "click").
+List<int> _readVelFilterMods(
+  ByteData data,
+  int modOff,
+  int mStart,
+  int mEnd,
+  int modCount,
+) {
+  final out = <int>[];
+  final end = mEnd.clamp(0, modCount);
+  for (var i = mStart.clamp(0, modCount); i < end; i++) {
+    final o = modOff + i * 10;
+    final src = data.getUint16(o, Endian.little);
+    final dest = data.getUint16(o + 2, Endian.little);
+    final amount = data.getInt16(o + 4, Endian.little);
+    // dest 8 = initialFilterFc; source: CC flag clear (bit 7) and index 2 = vel.
+    if (dest == 8 && (src & 0x80) == 0 && (src & 0x7f) == 2) {
+      out
+        ..add(amount)
+        ..add((src >> 8) & 1) // direction
+        ..add((src >> 10) & 0x3f); // curve type
+    }
+  }
+  return out;
+}
+
 /// Merge a preset's global-zone offsets [glob] under a local preset zone [loc]
 /// (local wins). Used so a preset's global attenuation/pan applies to each of
 /// its instrument zones unless that zone overrides it.
@@ -652,7 +750,8 @@ _Gen _mergePreset(_Gen? glob, _Gen loc) {
     ..delayVibLfo = loc.delayVibLfo ?? glob.delayVibLfo
     ..freqVibLfo = loc.freqVibLfo ?? glob.freqVibLfo
     ..pan = loc.pan ?? glob.pan
-    ..instIndex = loc.instIndex;
+    ..instIndex = loc.instIndex
+    ..velFilterMods = [...?glob.velFilterMods, ...?loc.velFilterMods];
 }
 
 /// Whether [bytes] is a compressed `.sf3` soundfont (OGG-Vorbis samples), which
