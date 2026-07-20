@@ -559,6 +559,32 @@ void main() {
     expect(p.swing, 0.5);
   });
 
+  testWidgets('play-in voices cache note WAVs; a voice change invalidates',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    // A synth note builds a WAV and caches it (same instance on re-tap).
+    final a = p.debugNoteWav(60);
+    expect(a.isNotEmpty, isTrue);
+    expect(identical(p.debugNoteWav(60), a), isTrue);
+    // A different note is a different cache entry.
+    expect(identical(p.debugNoteWav(67), a), isFalse);
+
+    // Setting a sample voice invalidates the cache → notes rebuild from it.
+    p.setSampleVoice(
+      Float64List(4410)..fillRange(0, 4410, 0.5),
+      baseMidi: 60,
+      name: 'x',
+    );
+    await tester.pump();
+    final b = p.debugNoteWav(60);
+    expect(identical(b, a), isFalse);
+    expect(b.isNotEmpty, isTrue);
+    expect(identical(p.debugNoteWav(60), b), isTrue); // re-cached
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

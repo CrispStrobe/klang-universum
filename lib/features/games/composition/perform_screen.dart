@@ -32,6 +32,7 @@ import 'package:comet_beat/core/audio/synth.dart'
     show Drum, kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
+import 'package:comet_beat/core/services/voice_pool.dart';
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart'
     show showMySamplesSheet;
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
@@ -98,6 +99,9 @@ abstract class PerformTester {
 
   /// A single note of the current sample voice, pitched — for tests.
   Float64List debugPitched(int midi);
+
+  /// The cached play-in WAV for [midi] (F1) — for tests.
+  Uint8List debugNoteWav(int midi);
 
   /// The beat layer rendered from [hits] (uses pad voices) — for tests.
   Float64List debugBeat(List<(String, int)> hits);
@@ -171,8 +175,13 @@ class _PerformScreenState extends State<PerformScreen>
     implements PerformTester {
   final LoopStack<_PerformLayer> _stack = LoopStack<_PerformLayer>();
   final LoopPlayerService _loop = LoopPlayerService();
+  final VoicePool _voices = VoicePool(); // F1: polyphonic play-in voices
   final Stopwatch _clock = Stopwatch();
   bool _playing = false;
+
+  // F1: per-note / per-pad rendered-WAV caches (rebuilt when the voice changes).
+  final Map<int, Uint8List> _noteWavCache = {};
+  final Map<String, Uint8List> _padWavCache = {};
 
   // Play-in recording: which panel is up ('melody' keyboard / 'beat' pads), and
   // the captured taps with their loop-phase.
@@ -290,6 +299,7 @@ class _PerformScreenState extends State<PerformScreen>
     _micSub?.cancel();
     _mic?.stop();
     _loop.dispose();
+    _voices.dispose();
     super.dispose();
   }
 
@@ -555,6 +565,7 @@ class _PerformScreenState extends State<PerformScreen>
     _voicePcm = pcm;
     _voiceBase = baseMidi ?? detectSampleBaseMidi(pcm) ?? 60;
     _voiceName = name;
+    _noteWavCache.clear(); // F1: the note voice changed
     setState(() {});
   }
 
@@ -562,6 +573,7 @@ class _PerformScreenState extends State<PerformScreen>
   void clearSampleVoice() {
     _voicePcm = null;
     _voiceName = null;
+    _noteWavCache.clear();
     setState(() {});
   }
 
@@ -575,6 +587,7 @@ class _PerformScreenState extends State<PerformScreen>
   void setPadVoice(String drum, Float64List pcm, {String name = 'sample'}) {
     _padVoices[drum] = pcm;
     _padVoiceNames[drum] = name;
+    _padWavCache.remove(drum); // F1: this pad's voice changed
     setState(() {});
   }
 
@@ -582,6 +595,7 @@ class _PerformScreenState extends State<PerformScreen>
   void clearPadVoice(String drum) {
     _padVoices.remove(drum);
     _padVoiceNames.remove(drum);
+    _padWavCache.remove(drum);
     setState(() {});
   }
 
@@ -603,6 +617,45 @@ class _PerformScreenState extends State<PerformScreen>
 
   @override
   Float64List debugPitched(int midi) => _pitched(midi);
+
+  /// The playable WAV for a keyboard note (F1) — the pitched sample voice if
+  /// set, else a short synth tone. Cached per midi (cleared on voice change).
+  Uint8List _noteWav(int midi) => _noteWavCache.putIfAbsent(midi, () {
+        if (hasSampleVoice) {
+          return wavBytes(
+            _toInt16(_pitched(midi, maxSamples: (kSampleRate * 0.7).round())),
+          );
+        }
+        final buf = Float64List((kSampleRate * 0.6).round());
+        _tone(buf, _midiToFreq(midi), 0, buf.length, gain: 0.28, decay: 6);
+        return wavBytes(_toInt16(buf));
+      });
+
+  @override
+  Uint8List debugNoteWav(int midi) => _noteWav(midi);
+
+  /// The playable WAV for a drum pad (F1) — its own sound if assigned, else a
+  /// synth hit. Cached per drum (cleared on pad-voice change).
+  Uint8List _padWav(String drum) => _padWavCache.putIfAbsent(drum, () {
+        final voice = _padVoices[drum];
+        if (voice != null && voice.isNotEmpty) {
+          final cap = (kSampleRate * 0.5).round();
+          final clip = voice.length > cap
+              ? Float64List.sublistView(voice, 0, cap)
+              : voice;
+          return wavBytes(_toInt16(clip));
+        }
+        final buf = Float64List((kSampleRate * 0.25).round());
+        switch (drum) {
+          case 'kick':
+            _tone(buf, 55, 0, buf.length, gain: 0.6, decay: 22);
+          case 'snare':
+            _noise(buf, 0, buf.length, Random(7), gain: 0.4);
+          default: // hat
+            _noise(buf, 0, buf.length ~/ 3, Random(9), gain: 0.12, decay: 90);
+        }
+        return wavBytes(_toInt16(buf));
+      });
 
   /// Mix [src] into [buf] at [start], capped to [maxLen] and the buffer end.
   void _place(
@@ -676,28 +729,9 @@ class _PerformScreenState extends State<PerformScreen>
     ('hat', (l) => l.performPadHat),
   ];
 
-  /// Audition a single drum hit (a short one-shot) when a pad is tapped — the
-  /// pad's own sound if one is assigned (P2), else the built-in synth drum.
-  void _playHit(String drum) {
-    final voice = _padVoices[drum];
-    if (voice != null && voice.isNotEmpty) {
-      final cap = (kSampleRate * 0.5).round();
-      final clip =
-          voice.length > cap ? Float64List.sublistView(voice, 0, cap) : voice;
-      context.read<AudioService>().playWavBytes(wavBytes(_toInt16(clip)));
-      return;
-    }
-    final buf = Float64List((kSampleRate * 0.25).round());
-    switch (drum) {
-      case 'kick':
-        _tone(buf, 55, 0, buf.length, gain: 0.6, decay: 22);
-      case 'snare':
-        _noise(buf, 0, buf.length, Random(7), gain: 0.4);
-      default: // hat
-        _noise(buf, 0, buf.length ~/ 3, Random(9), gain: 0.12, decay: 90);
-    }
-    context.read<AudioService>().playWavBytes(wavBytes(_toInt16(buf)));
-  }
+  /// Audition a drum hit when a pad is tapped — through the polyphonic pool
+  /// (F1), so fast taps overlap instead of cutting each other off.
+  void _playHit(String drum) => _voices.play(_padWav(drum));
 
   /// Render captured `(midi, phaseMs)` notes across the whole loop: each note is
   /// snapped to the nearest 16th (a per-bar grid), held until the next note
@@ -1625,22 +1659,9 @@ class _PerformScreenState extends State<PerformScreen>
                     child: PianoKeyboard(
                       whiteKeyCount: 8,
                       onKeyTap: (midi) {
-                        if (hasSampleVoice) {
-                          context.read<AudioService>().playWavBytes(
-                                wavBytes(
-                                  _toInt16(
-                                    _pitched(
-                                      midi,
-                                      maxSamples: (kSampleRate * 0.7).round(),
-                                    ),
-                                  ),
-                                ),
-                              );
-                        } else {
-                          context
-                              .read<AudioService>()
-                              .playMidiNote(midi, ms: 400);
-                        }
+                        // F1: play through the polyphonic pool so held/repeated
+                        // keys ring together instead of cutting each other off.
+                        _voices.play(_noteWav(midi));
                         playInNote(midi);
                       },
                     ),
