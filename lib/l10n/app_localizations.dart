@@ -2864,6 +2864,12 @@ abstract class AppLocalizations {
   /// **'Added to the Multitrack'**
   String get dawSent;
 
+  /// No description provided for @drumkitBars.
+  ///
+  /// In en, this message translates to:
+  /// **'Bars'**
+  String get drumkitBars;
+
   /// No description provided for @drumkitPresets.
   ///
   /// In en, this message translates to:

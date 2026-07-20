@@ -7,6 +7,7 @@
 // use — so it's the shared beat editor (interconnection to those is a follow-up).
 
 import 'dart:async';
+import 'dart:math' show max;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/beat_capture.dart'
@@ -38,6 +39,7 @@ import 'package:comet_beat/shared/music_io/music_export.dart'
     show showMusicExportSheet;
 import 'package:crisp_notation/crisp_notation.dart'
     show MultiPartScore, multiPartToMusicXml;
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -66,6 +68,10 @@ abstract interface class DrumkitTester {
   /// Groove: 0 = straight, up to 0.6 delays every off-eighth (a swing feel).
   double get swing;
   void setSwing(double swing);
+
+  /// Pattern length in bars (2/4/8) — resizes the grid, preserving hits.
+  int get bars;
+  void setBars(int bars);
 
   /// Tap-to-record: while on, pad taps are captured and, on stop, quantised
   /// onto the step grid (overdubbed into the pattern).
@@ -127,8 +133,15 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   // Drives the GarageBand-style visual kit: pieces flash on the step clock, and
   // on a live pad tap via this controller.
   final _visual = DrumKitVisualController();
+  // Horizontal scroll for the step grid when the pattern is wider than the
+  // screen (4/8 bars) — cells keep a tappable minimum width and scroll.
+  final _gridScroll = ScrollController();
   int _tempo = 100;
   double _swing = 0; // 0 = straight; a groove delays every off-eighth
+  int _bars = 2; // pattern length — 2/4/8 bars (mehr Takte)
+
+  /// The current grid width in steps (eighths): 8 per bar.
+  int get _steps => LoopTiming.stepsPerBar * _bars;
 
   // Undo/redo history of pattern snapshots (grid edits, record takes, clear).
   static const _maxUndo = 50;
@@ -150,7 +163,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   bool _listening = false;
 
   LoopTiming get _timing =>
-      LoopTiming(tempoBpm: _tempo, swing: _swing); // 2 bars (default)
+      LoopTiming(tempoBpm: _tempo, swing: _swing, bars: _bars);
 
   @override
   void initState() {
@@ -171,6 +184,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     _ticker.dispose();
     _step.dispose();
     _visual.dispose();
+    _gridScroll.dispose();
     _loop.dispose();
     _captureStop?.cancel();
     _micSub?.cancel();
@@ -204,7 +218,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   // --- DrumkitTester ---------------------------------------------------------
 
   @override
-  int get steps => kPatternSteps;
+  int get steps => _steps;
 
   @override
   bool cellAt(Drum drum, int step) => _rows[drum]![step];
@@ -376,8 +390,8 @@ class _DrumkitScreenState extends State<DrumkitScreen>
           beatMs: beatMs,
           resolution: RhythmResolution.eighth,
         );
-        final pattern = toDrumPattern(q, drumOf: (_) => drum);
-        for (var s = 0; s < kPatternSteps; s++) {
+        final pattern = toDrumPattern(q, drumOf: (_) => drum, steps: _steps);
+        for (var s = 0; s < _steps; s++) {
           if (pattern.rows[drum]![s]) _rows[drum]![s] = true;
         }
       }
@@ -590,7 +604,12 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     _pushUndo();
     setState(() {
       for (final d in Drum.values) {
-        _rows[d]!.setAll(0, preset.pattern.rows[d]!);
+        final src = preset.pattern.rows[d]!;
+        // Tile the 2-bar preset across however many bars are set, so a longer
+        // grid gets the groove repeated instead of half-filled.
+        for (var i = 0; i < _steps; i++) {
+          _rows[d]![i] = src.isNotEmpty && src[i % src.length];
+        }
       }
     });
     _syncPlayback();
@@ -644,7 +663,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     final shared = BeatBridge.instance.current;
     if (shared == null || shared.isEmpty) return;
     _pushUndo();
-    final fitted = shared.rowsFitted(kPatternSteps);
+    final fitted = shared.rowsFitted(_steps);
     setState(() {
       for (final d in Drum.values) {
         _rows[d]!.setAll(0, fitted[d]!);
@@ -674,6 +693,27 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   @override
   void setSwing(double swing) {
     setState(() => _swing = swing.clamp(0.0, 0.6));
+    _syncPlayback();
+  }
+
+  @override
+  int get bars => _bars;
+
+  @override
+  void setBars(int bars) {
+    if (bars == _bars || !const [2, 4, 8].contains(bars)) return;
+    _pushUndo();
+    final newSteps = LoopTiming.stepsPerBar * bars;
+    setState(() {
+      for (final d in Drum.values) {
+        final old = _rows[d]!;
+        // Grow → keep existing hits + pad with silence; shrink → truncate.
+        _rows[d] = [
+          for (var i = 0; i < newSteps; i++) i < old.length && old[i],
+        ];
+      }
+      _bars = bars;
+    });
     _syncPlayback();
   }
 
@@ -770,67 +810,82 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                 ],
               ),
               const SizedBox(height: 8),
-              // The step grid: one row per drum, kPatternSteps toggles.
+              // The step grid: a fixed drum-label column + horizontally
+              // scrollable step cells (so 4/8-bar patterns stay tappable).
               Expanded(
                 flex: 6,
-                child: Column(
-                  children: [
-                    for (final drum in Drum.values)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    const labelW = 64.0;
+                    const minCell = 24.0;
+                    final avail = constraints.maxWidth - labelW;
+                    // Fill the width at 2 bars; shrink to minCell then scroll.
+                    final cellW = max(minCell, avail / _steps);
+                    return Row(
+                      children: [
+                        // Fixed labels column (aligned with the cell rows).
+                        SizedBox(
+                          width: labelW,
+                          child: Column(
                             children: [
-                              SizedBox(
-                                width: 64,
-                                child: Text(
-                                  _drumLabel(l10n, drum),
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                              ),
-                              for (var s = 0; s < kPatternSteps; s++)
+                              for (final drum in Drum.values)
                                 Expanded(
-                                  child: ValueListenableBuilder<int>(
-                                    valueListenable: _step,
-                                    builder: (context, playing, _) {
-                                      final on = _rows[drum]![s];
-                                      final beat = s % 2 == 0;
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 2,
-                                        ),
-                                        child: GestureDetector(
-                                          onTap: () => toggle(drum, s),
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: on
-                                                  ? scheme.primary
-                                                  : (beat
-                                                      ? scheme
-                                                          .surfaceContainerHighest
-                                                      : scheme
-                                                          .surfaceContainerLow),
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              border: playing == s
-                                                  ? Border.all(
-                                                      color: scheme.tertiary,
-                                                      width: 2,
-                                                    )
-                                                  : null,
-                                            ),
-                                            child: const SizedBox.expand(),
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 3),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        _drumLabel(l10n, drum),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall,
+                                      ),
+                                    ),
                                   ),
                                 ),
                             ],
                           ),
                         ),
-                      ),
-                  ],
+                        Expanded(
+                          child: SingleChildScrollView(
+                            controller: _gridScroll,
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: cellW * _steps,
+                              child: Column(
+                                children: [
+                                  for (final drum in Drum.values)
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 3,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            for (var s = 0; s < _steps; s++)
+                                              SizedBox(
+                                                width: cellW,
+                                                child: _StepCell(
+                                                  step: _step,
+                                                  on: _rows[drum]![s],
+                                                  index: s,
+                                                  scheme: scheme,
+                                                  onTap: () => toggle(drum, s),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 8),
@@ -883,6 +938,17 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                       selected: _tempo == bpm,
                       onSelected: (_) => setTempo(bpm),
                     ),
+                  // Pattern length — mehr Takte (2/4/8 bars).
+                  Text(
+                    l10n.drumkitBars,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  for (final b in const [2, 4, 8])
+                    ChoiceChip(
+                      label: Text('$b'),
+                      selected: _bars == b,
+                      onSelected: (_) => setBars(b),
+                    ),
                   // Groove feel: straight vs a swung off-beat.
                   ChoiceChip(
                     label: Text(l10n.drumkitStraight),
@@ -922,6 +988,54 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                 ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One step cell in the beat grid: lit when [on], playhead-outlined when the
+/// clock is on this step. Every bar's first step (and its downbeats) is tinted
+/// so a longer, scrolled pattern stays readable.
+class _StepCell extends StatelessWidget {
+  const _StepCell({
+    required this.step,
+    required this.on,
+    required this.index,
+    required this.scheme,
+    required this.onTap,
+  });
+
+  final ValueListenable<int> step;
+  final bool on;
+  final int index;
+  final ColorScheme scheme;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final barStart = index % LoopTiming.stepsPerBar == 0;
+    final beat = index % 2 == 0;
+    return Padding(
+      padding: EdgeInsets.only(left: barStart && index > 0 ? 6 : 2, right: 2),
+      child: ValueListenableBuilder<int>(
+        valueListenable: step,
+        builder: (context, playing, _) => GestureDetector(
+          onTap: onTap,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: on
+                  ? scheme.primary
+                  : (beat
+                      ? scheme.surfaceContainerHighest
+                      : scheme.surfaceContainerLow),
+              borderRadius: BorderRadius.circular(4),
+              border: playing == index
+                  ? Border.all(color: scheme.tertiary, width: 2)
+                  : null,
+            ),
+            child: const SizedBox.expand(),
           ),
         ),
       ),

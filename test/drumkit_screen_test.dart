@@ -59,6 +59,43 @@ void main() {
     expect(kit.canUndo, isTrue);
   });
 
+  testWidgets('bars extend the grid, preserving hits', (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    expect(kit.steps, 16); // 2 bars by default
+    expect(kit.bars, 2);
+
+    kit.toggle(Drum.kick, 0);
+    kit.toggle(Drum.snare, 15); // last step of the 2-bar grid
+    await tester.pump();
+    expect(kit.hitCount, 2);
+
+    kit.setBars(4);
+    await tester.pump();
+    expect(kit.steps, 32);
+    expect(kit.bars, 4);
+    expect(kit.cellAt(Drum.kick, 0), isTrue); // hits preserved
+    expect(kit.cellAt(Drum.snare, 15), isTrue);
+    expect(kit.hitCount, 2); // the new bars are silent
+
+    kit.setBars(2); // shrink back — truncates the (silent) extra bars
+    await tester.pump();
+    expect(kit.steps, 16);
+    expect(kit.cellAt(Drum.kick, 0), isTrue);
+    expect(kit.hitCount, 2);
+  });
+
+  testWidgets('a preset tiles across the extra bars', (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    kit.setBars(4);
+    kit.debugLoadPreset(0); // Rock: kick on every downbeat
+    await tester.pump();
+    expect(kit.steps, 32);
+    expect(kit.cellAt(Drum.kick, 0), isTrue);
+    expect(kit.cellAt(Drum.kick, 16), isTrue); // the groove repeated, not blank
+  });
+
   testWidgets('loading a preset fills the grid and is undoable',
       (tester) async {
     await pumpGame(tester, const DrumkitScreen());

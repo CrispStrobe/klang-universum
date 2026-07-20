@@ -1518,6 +1518,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawSent => 'Zur Mehrspur hinzugefügt';
 
   @override
+  String get drumkitBars => 'Takte';
+
+  @override
   String get drumkitPresets => 'Vorlagen';
 
   @override
