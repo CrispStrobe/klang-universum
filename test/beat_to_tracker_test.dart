@@ -1,10 +1,14 @@
 // drumSongFromBeat: a shared beat → a polyphonic drum TrackerSong (one
 // percussion channel per active drum). Pure Dart, no device audio.
 
+import 'dart:typed_data';
+
 import 'package:comet_beat/core/audio/beat_to_tracker.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
-    show PercussionInstrument;
+    show PercussionInstrument, SampleInstrument;
+import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
+    show instrumentToJsonString;
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -59,6 +63,33 @@ void main() {
     expect(song.channels.single.instrument, isA<PercussionInstrument>());
     // Renders without throwing (silence is fine).
     expect(song.renderSongWav().length, greaterThan(44));
+  });
+
+  test('a per-drum voice override becomes that channel instrument', () {
+    final pcm = Float64List.fromList([
+      for (var i = 0; i < 200; i++) i % 20 < 10 ? 0.5 : -0.5,
+    ]);
+    final beat = SharedBeat(
+      rows: {Drum.kick: row([0, 4])},
+      tempoBpm: 120,
+      voices: {
+        Drum.kick: SharedVoice(
+          'Boom',
+          instrumentToJsonString(SampleInstrument('boom', pcm)),
+        ),
+      },
+    );
+    final song = drumSongFromBeat(beat);
+
+    // The kick channel plays the sample voice, not the synth percussion voice.
+    final inst = song.channels.single.instrument;
+    expect(inst, isA<SampleInstrument>());
+    expect(inst, isNot(isA<PercussionInstrument>()));
+    // Its hits play note 60 (the sample's natural pitch), not the drum index.
+    for (var s = 0; s < song.rows; s++) {
+      final midi = song.channels.single.cells[s].midi;
+      if (midi != null) expect(midi, 60);
+    }
   });
 
   test('the built song renders audible drums', () {

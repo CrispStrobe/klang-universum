@@ -16,9 +16,22 @@ import 'package:comet_beat/core/audio/loop_engine.dart' show DrumRowsPattern;
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
 import 'package:flutter/foundation.dart';
 
+/// A per-drum sound override carried with a shared beat: an instrument's
+/// display [name] + its [instrumentToJsonString] payload. Kept as plain strings
+/// so this core service needn't depend on the Sound-Lab feature layer — a
+/// consumer rebuilds the instrument via `instrumentFromJsonString` (and the UI
+/// its `SavedInstrument` from name+json).
+@immutable
+class SharedVoice {
+  const SharedVoice(this.name, this.json);
+  final String name;
+  final String json;
+}
+
 /// An immutable snapshot of a shared beat: the per-drum step rows plus the
-/// tempo/swing it was authored at. Rows are copied on construction so a later
-/// edit in the source mode can't mutate the shared copy.
+/// tempo/swing it was authored at, and optional per-drum sound overrides. Rows
+/// are copied on construction so a later edit in the source mode can't mutate
+/// the shared copy.
 @immutable
 class SharedBeat {
   SharedBeat({
@@ -26,9 +39,16 @@ class SharedBeat {
     required this.tempoBpm,
     this.swing = 0,
     this.source = '',
-  }) : rows = {
+    Map<Drum, SharedVoice> voices = const {},
+  })  : rows = {
           for (final e in rows.entries) e.key: List<bool>.unmodifiable(e.value),
-        };
+        },
+        voices = Map<Drum, SharedVoice>.unmodifiable(voices);
+
+  /// Per-drum sound overrides (empty = every drum uses the consumer's own kit).
+  /// A mode that can play arbitrary samples (the Drum Kit, the Advanced Tracker)
+  /// applies these; others keep the pattern and their own drum sounds.
+  final Map<Drum, SharedVoice> voices;
 
   /// One boolean row per drum voice (a step is a hit). Sparse is fine — an
   /// absent drum reads as all-silent.

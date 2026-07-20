@@ -8,7 +8,14 @@
 
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
-    show PercussionInstrument, TrackerCell, TrackerChannel, TrackerTiming;
+    show
+        PercussionInstrument,
+        TrackerCell,
+        TrackerChannel,
+        TrackerInstrument,
+        TrackerTiming;
+import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
+    show instrumentFromJsonString;
 import 'package:comet_beat/core/audio/tracker_song.dart'
     show TrackerPattern, TrackerSong;
 import 'package:comet_beat/core/services/beat_bridge.dart' show SharedBeat;
@@ -25,21 +32,38 @@ TrackerSong drumSongFromBeat(SharedBeat beat, {int stepsPerBeat = 2}) {
   ];
   final drums = active.isEmpty ? const [Drum.kick] : active;
 
+  // A drum that carried a sound override plays that instrument on a sample
+  // channel (note 60 = its natural pitch); otherwise the synth percussion voice
+  // (note = the drum index). Falls back to percussion if the voice can't rebuild.
+  TrackerInstrument? voiceFor(Drum d) {
+    final v = beat.voices[d];
+    if (v == null) return null;
+    try {
+      return instrumentFromJsonString(v.json);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  final voices = {for (final d in drums) d: voiceFor(d)};
+
   final channels = [
     for (final d in drums)
       TrackerChannel(
         id: 'drum_${d.name}',
-        instrument: PercussionInstrument('drum_${d.name}'),
+        instrument: voices[d] ?? PercussionInstrument('drum_${d.name}'),
         rows: steps,
       ),
   ];
-  // Channel-major cells: channel c (drum drums[c]) hits on its own steps.
+  // Channel-major cells: channel c (drum drums[c]) hits on its own steps. A
+  // percussion channel encodes the drum in the note; a sample voice plays note
+  // 60 (its natural pitch).
   final cells = <List<TrackerCell>>[
     for (final d in drums)
       [
         for (var s = 0; s < steps; s++)
           fitted[d]![s]
-              ? TrackerCell(midi: d.index, volume: 1)
+              ? TrackerCell(midi: voices[d] != null ? 60 : d.index, volume: 1)
               : TrackerCell.empty,
       ],
   ];

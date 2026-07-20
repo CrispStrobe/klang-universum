@@ -654,6 +654,11 @@ class _DrumkitScreenState extends State<DrumkitScreen>
         tempoBpm: _tempo,
         swing: _swing,
         source: 'drumkit',
+        // Carry the per-drum sound overrides so they travel with the beat.
+        voices: {
+          for (final e in _drumVoice.entries)
+            e.key: SharedVoice(e.value.name, e.value.json),
+        },
       ),
     );
     if (!mounted) return;
@@ -819,6 +824,13 @@ class _DrumkitScreenState extends State<DrumkitScreen>
       }
       _tempo = shared.tempoBpm.clamp(40, 240);
       _swing = shared.swing.clamp(0.0, 0.6);
+      // Restore any per-drum sound overrides that travelled with the beat.
+      _drumVoice.clear();
+      _voiceShot.clear();
+      for (final e in shared.voices.entries) {
+        _drumVoice[e.key] =
+            SavedInstrument(name: e.value.name, json: e.value.json);
+      }
     });
     _syncPlayback();
     if (!mounted) return;

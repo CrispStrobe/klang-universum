@@ -150,6 +150,32 @@ void main() {
     expect(kit.drumVoiceOf(Drum.kick), isNull);
   });
 
+  testWidgets('per-drum voices travel with a shared beat', (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+
+    final pcm = Float64List.fromList([
+      for (var i = 0; i < 200; i++) i % 20 < 10 ? 0.5 : -0.5,
+    ]);
+    final voice = SavedInstrument(
+      name: 'Boom',
+      json: instrumentToJsonString(SampleInstrument('boom', pcm)),
+    );
+    kit.toggle(Drum.kick, 0);
+    kit.debugSetDrumVoice(Drum.kick, voice);
+    await tester.pump();
+    kit.shareBeat();
+
+    // Drop the voice locally, then load the shared beat — the voice comes back.
+    kit.debugSetDrumVoice(Drum.kick, null);
+    await tester.pump();
+    expect(kit.drumVoiceOf(Drum.kick), isNull);
+
+    kit.loadSharedBeat();
+    await tester.pump();
+    expect(kit.drumVoiceOf(Drum.kick)?.name, 'Boom');
+  });
+
   testWidgets('an empty grid has nothing to share', (tester) async {
     await pumpGame(tester, const DrumkitScreen());
     final kit = _kit(tester);
