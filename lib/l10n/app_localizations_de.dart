@@ -2274,6 +2274,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get performTapBeat => 'Tippe ins Raster, um den Beat zu ändern';
 
   @override
+  String get performTapMelody => 'Tippe ins Raster, um die Melodie zu ändern';
+
+  @override
   String get performMute => 'Ebene stumm';
 
   @override

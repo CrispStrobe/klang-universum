@@ -4268,6 +4268,12 @@ abstract class AppLocalizations {
   /// **'Tap the grid to change the beat'**
   String get performTapBeat;
 
+  /// No description provided for @performTapMelody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the grid to change the tune'**
+  String get performTapMelody;
+
   /// No description provided for @performMute.
   ///
   /// In en, this message translates to:

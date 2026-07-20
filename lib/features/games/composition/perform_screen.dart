@@ -87,6 +87,7 @@ class _LayerRoll extends StatelessWidget {
     required this.steps,
     this.playStep,
     this.onToggle,
+    this.melodyRows = const [],
   });
   final List<_Cell> cells;
   final bool percussive;
@@ -95,10 +96,16 @@ class _LayerRoll extends StatelessWidget {
   /// The 16th step the transport is on (LL3), or null when stopped.
   final int? playStep;
 
-  /// LL2: tap a grid cell to toggle it (percussive layers). `(row, step)`.
+  /// LL2/LL2b: tap a cell to toggle it. The callback gets the STORED row value
+  /// (a drum lane for beats, a MIDI pitch for melodies) and the step.
   final void Function(int row, int step)? onToggle;
 
-  static const double _h = 36;
+  /// The melody edit grid (ascending MIDI); each display row is one entry.
+  final List<int> melodyRows;
+
+  int get _rowCount =>
+      percussive ? 3 : (melodyRows.isEmpty ? 1 : melodyRows.length);
+  double get _h => percussive ? 36 : 78;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +116,7 @@ class _LayerRoll extends StatelessWidget {
         percussive: percussive,
         steps: steps,
         playStep: playStep,
+        melodyRows: melodyRows,
         fill: scheme.primary,
         grid: scheme.outlineVariant,
         bar: scheme.outline,
@@ -116,7 +124,7 @@ class _LayerRoll extends StatelessWidget {
         play: scheme.tertiary,
       ),
     );
-    final editable = percussive && onToggle != null && steps > 0;
+    final editable = onToggle != null && steps > 0 && _rowCount > 0;
     return SizedBox(
       height: _h,
       width: double.infinity,
@@ -128,8 +136,18 @@ class _LayerRoll extends StatelessWidget {
                   final step = (d.localPosition.dx / c.maxWidth * steps)
                       .floor()
                       .clamp(0, steps - 1);
-                  final row = (d.localPosition.dy / _h * 3).floor().clamp(0, 2);
-                  onToggle!(row, step);
+                  final yRow = (d.localPosition.dy / _h * _rowCount)
+                      .floor()
+                      .clamp(0, _rowCount - 1);
+                  // Display row (0 = top) → stored value.
+                  final int stored;
+                  if (percussive) {
+                    stored = yRow; // 0 hat · 1 snare · 2 kick
+                  } else {
+                    stored =
+                        melodyRows[(_rowCount - 1) - yRow]; // top = highest
+                  }
+                  onToggle!(stored, step);
                 },
                 child: paint,
               ),
@@ -145,6 +163,7 @@ class _RollPainter extends CustomPainter {
     required this.percussive,
     required this.steps,
     required this.playStep,
+    required this.melodyRows,
     required this.fill,
     required this.grid,
     required this.bar,
@@ -155,6 +174,7 @@ class _RollPainter extends CustomPainter {
   final bool percussive;
   final int steps;
   final int? playStep;
+  final List<int> melodyRows;
   final Color fill;
   final Color grid;
   final Color bar;
@@ -194,19 +214,47 @@ class _RollPainter extends CustomPainter {
       );
     }
 
-    // Rows: 3 drum lanes, or the pitch span for melodic layers.
+    // Rows: 3 drum lanes, or the diatonic melody grid (nearest degree).
     final int rows;
     int Function(_Cell) rowOf = (_) => 0;
     if (percussive) {
       rows = 3;
       rowOf = (c) => c.row.clamp(0, 2);
+    } else if (melodyRows.isNotEmpty) {
+      rows = melodyRows.length;
+      rowOf = (c) {
+        var best = 0;
+        var bd = 1 << 30;
+        for (var i = 0; i < melodyRows.length; i++) {
+          final d = (melodyRows[i] - c.row).abs();
+          if (d < bd) {
+            bd = d;
+            best = i;
+          }
+        }
+        return (rows - 1) - best; // higher pitch → top
+      };
     } else if (cells.isEmpty) {
       rows = 1;
     } else {
       final lo = cells.map((c) => c.row).reduce(min);
       final hi = cells.map((c) => c.row).reduce(max);
       rows = (hi - lo + 1).clamp(1, 24);
-      rowOf = (c) => (hi - c.row).clamp(0, rows - 1); // higher pitch → top
+      rowOf = (c) => (hi - c.row).clamp(0, rows - 1);
+    }
+
+    // Faint horizontal row separators for the melody grid (readability).
+    if (!percussive && rows > 1) {
+      for (var i = 1; i < rows; i++) {
+        final y = i * size.height / rows;
+        canvas.drawLine(
+          Offset(0, y),
+          Offset(size.width, y),
+          Paint()
+            ..color = grid
+            ..strokeWidth = 0.4,
+        );
+      }
     }
 
     final rowH = size.height / rows;
@@ -232,6 +280,7 @@ class _RollPainter extends CustomPainter {
       old.steps != steps ||
       old.percussive != percussive ||
       old.playStep != playStep ||
+      old.melodyRows != melodyRows ||
       old.fill != fill;
 }
 
@@ -359,8 +408,9 @@ abstract class PerformTester {
   /// The symbolic pattern of layer [i] (LL1) as `(row, step)` pairs — for tests.
   List<(int, int)> debugLayerCells(int i);
 
-  /// LL2: toggle a hit on a percussive layer's step grid and re-render it.
-  void toggleBeatCell(int layer, int row, int step);
+  /// LL2: toggle a cell on a layer's step grid and re-render it. For a beat
+  /// layer [row] is a drum lane; for a melody layer it's the note's MIDI.
+  void toggleCell(int layer, int row, int step);
 }
 
 class PerformScreen extends StatefulWidget {
@@ -1430,17 +1480,24 @@ class _PerformScreenState extends State<PerformScreen>
       [for (final c in _stack.layers[i].cells) (c.row, c.step)];
 
   @override
-  void toggleBeatCell(int layer, int row, int step) {
+  void toggleCell(int layer, int row, int step) {
     final l = _stack.layers[layer];
-    if (!l.percussive) return;
     final idx = l.cells.indexWhere((c) => c.row == row && c.step == step);
     if (idx >= 0) {
       l.cells.removeAt(idx);
     } else {
-      l.cells.add(_Cell(row, step));
+      l.cells.add(_Cell(row, step, len: l.percussive ? 1 : 2));
     }
-    l.pcm = _renderCells(l.cells, true); // re-render in place
+    l.pcm = _renderCells(l.cells, l.percussive); // re-render in place
     _refresh(); // re-sum + hot-swap if playing
+  }
+
+  /// The editable melody grid (LL2b): one octave of the major scale in the
+  /// current key (ascending C..C), so tapping only lands consonant notes.
+  List<int> get _melodyRows {
+    const deg = [0, 2, 4, 5, 7, 9, 11, 12];
+    final base = 60 + _keyShift; // C4 in the current key
+    return [for (final d in deg) base + d];
   }
 
   List<Float64List> get _activePcm =>
@@ -1936,26 +1993,27 @@ class _PerformScreenState extends State<PerformScreen>
                                         .floor()
                                         .clamp(0, _stepsTotal - 1)
                                     : null,
-                                // LL2: tap a beat cell to change the pattern.
-                                onToggle: layer.percussive
-                                    ? (row, step) =>
-                                        toggleBeatCell(i, row, step)
-                                    : null,
+                                // LL2/LL2b: tap a cell to change the pattern.
+                                melodyRows:
+                                    layer.percussive ? const [] : _melodyRows,
+                                onToggle: (row, step) =>
+                                    toggleCell(i, row, step),
                               ),
                             ),
-                            if (layer.percussive)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  l10n.performTapBeat,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                layer.percussive
+                                    ? l10n.performTapBeat
+                                    : l10n.performTapMelody,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
                               ),
+                            ),
                             Slider(
                               value: layer.gain.clamp(0.0, 1.5),
                               max: 1.5,

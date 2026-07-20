@@ -826,6 +826,7 @@
   "performDone": "Fertig",
   "performCancel": "Abbrechen",
   "performTapBeat": "Tippe ins Raster, um den Beat zu ändern",
+  "performTapMelody": "Tippe ins Raster, um die Melodie zu ändern",
   "performMute": "Ebene stumm",
   "performUnmute": "Ebene laut",
   "performDrop": "Drop!",

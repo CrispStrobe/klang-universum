@@ -899,6 +899,7 @@
   "performDone": "Done",
   "performCancel": "Cancel",
   "performTapBeat": "Tap the grid to change the beat",
+  "performTapMelody": "Tap the grid to change the tune",
   "performMute": "Mute layer",
   "performUnmute": "Unmute layer",
   "performDrop": "Drop!",
