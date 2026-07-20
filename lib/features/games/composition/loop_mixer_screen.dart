@@ -1387,7 +1387,7 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     final visible = rows.length < 3 ? rows.length : 3;
     return Card(
       child: SizedBox(
-        height: rows.isEmpty ? 52 : (visible * 46 + 8).toDouble(),
+        height: rows.isEmpty ? 52 : (visible * (_scoreRowHeight + 4) + 8),
         child: rows.isEmpty
             ? Center(
                 child: Padding(
@@ -1407,6 +1407,9 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
     );
   }
 
+  /// Per-track staff row height (LM-UX2 — was cramped at 42).
+  static const double _scoreRowHeight = 68;
+
   Widget _scoreStaffRow(AppLocalizations l10n, String id, Score score) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1421,15 +1424,16 @@ class _LoopMixerScreenState extends State<LoopMixerScreen>
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          // LM-UX2: render the staff at a legible size and SCROLL a wide bar
+          // horizontally instead of shrinking the whole thing to fit.
           Expanded(
             child: SizedBox(
-              height: 42,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
+              height: _scoreRowHeight,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 child: StaffView(
                   score: score,
-                  staffSpace: 7,
+                  staffSpace: 11,
                   theme: kidsScoreTheme,
                 ),
               ),
