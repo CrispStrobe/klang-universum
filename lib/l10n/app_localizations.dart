@@ -2930,6 +2930,36 @@ abstract class AppLocalizations {
   /// **'Bars'**
   String get drumkitBars;
 
+  /// No description provided for @drumkitSounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Sounds'**
+  String get drumkitSounds;
+
+  /// No description provided for @drumkitDefaultSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Default drum'**
+  String get drumkitDefaultSound;
+
+  /// No description provided for @drumkitChangeSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Change sound'**
+  String get drumkitChangeSound;
+
+  /// No description provided for @drumkitResetSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to default'**
+  String get drumkitResetSound;
+
+  /// No description provided for @drumkitSoundUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'That voice needs its SoundFont loaded first'**
+  String get drumkitSoundUnavailable;
+
   /// No description provided for @drumkitPresets.
   ///
   /// In en, this message translates to:

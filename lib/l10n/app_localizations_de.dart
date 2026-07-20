@@ -1555,6 +1555,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get drumkitBars => 'Takte';
 
   @override
+  String get drumkitSounds => 'Klänge';
+
+  @override
+  String get drumkitDefaultSound => 'Standard-Drum';
+
+  @override
+  String get drumkitChangeSound => 'Klang ändern';
+
+  @override
+  String get drumkitResetSound => 'Auf Standard zurücksetzen';
+
+  @override
+  String get drumkitSoundUnavailable =>
+      'Für diesen Klang muss erst sein SoundFont geladen werden';
+
+  @override
   String get drumkitPresets => 'Vorlagen';
 
   @override

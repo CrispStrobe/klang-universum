@@ -1549,6 +1549,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drumkitBars => 'Bars';
 
   @override
+  String get drumkitSounds => 'Sounds';
+
+  @override
+  String get drumkitDefaultSound => 'Default drum';
+
+  @override
+  String get drumkitChangeSound => 'Change sound';
+
+  @override
+  String get drumkitResetSound => 'Reset to default';
+
+  @override
+  String get drumkitSoundUnavailable =>
+      'That voice needs its SoundFont loaded first';
+
+  @override
   String get drumkitPresets => 'Presets';
 
   @override

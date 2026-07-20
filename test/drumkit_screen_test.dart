@@ -1,12 +1,19 @@
 // Drumkit / BoomBox — the step beat-grid over a shared DrumRowsPattern.
 // Audio is a no-op in the headless binding; assertions are on the grid + state.
 
+import 'dart:typed_data';
+
 import 'package:comet_beat/core/audio/beat_capture.dart' show BeatFrame;
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show SampleInstrument;
+import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
+    show instrumentToJsonString;
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/drums/drumkit_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -110,6 +117,37 @@ void main() {
     kit.undo();
     await tester.pump();
     expect(kit.hitCount, 0); // undo restores the empty grid
+  });
+
+  testWidgets('a per-drum voice override swaps the sound and resets back',
+      (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    expect(kit.drumVoiceOf(Drum.kick), isNull); // the built-in synth drum
+
+    // A library instrument (as My-Instruments would supply).
+    final pcm = Float64List.fromList([
+      for (var i = 0; i < 400; i++) i % 40 < 20 ? 0.6 : -0.6,
+    ]);
+    final voice = SavedInstrument(
+      name: 'Boom',
+      json: instrumentToJsonString(SampleInstrument('boom', pcm)),
+    );
+
+    kit.debugSetDrumVoice(Drum.kick, voice);
+    await tester.pump();
+    expect(kit.drumVoiceOf(Drum.kick)?.name, 'Boom');
+
+    // The beat still builds/plays with the override in place.
+    kit.toggle(Drum.kick, 0);
+    await tester.pump();
+    expect(kit.hitCount, 1);
+    expect(tester.takeException(), isNull);
+
+    // Reset restores the synth drum.
+    kit.debugSetDrumVoice(Drum.kick, null);
+    await tester.pump();
+    expect(kit.drumVoiceOf(Drum.kick), isNull);
   });
 
   testWidgets('an empty grid has nothing to share', (tester) async {

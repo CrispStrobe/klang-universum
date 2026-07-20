@@ -7,7 +7,7 @@
 // use — so it's the shared beat editor (interconnection to those is a follow-up).
 
 import 'dart:async';
-import 'dart:math' show max;
+import 'dart:math' show max, min;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/beat_capture.dart'
@@ -22,7 +22,7 @@ import 'package:comet_beat/core/audio/rhythm_convert.dart' show toDrumPattern;
 import 'package:comet_beat/core/audio/rhythm_quantize.dart'
     show RhythmOnset, RhythmResolution, quantizeToResolution;
 import 'package:comet_beat/core/audio/synth.dart'
-    show Drum, renderDrum, wavBytes;
+    show Drum, kSampleRate, renderDrum, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
@@ -32,6 +32,10 @@ import 'package:comet_beat/features/games/composition/groove_notation.dart'
 import 'package:comet_beat/features/games/drums/drum_kit_visual.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart'
+    show SavedInstrument;
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
+    show renderInstrumentNote, showMyInstrumentsSheet;
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart'
     show showAudioExportSheet;
@@ -107,6 +111,11 @@ abstract interface class DrumkitTester {
 
   /// Load a built-in starter groove ([kDrumPresets] index) into the grid.
   void debugLoadPreset(int index);
+
+  /// Per-drum sound override (a library / SoundFont voice; null = the synth
+  /// drum): the current voice for [drum], and a setter.
+  SavedInstrument? drumVoiceOf(Drum drum);
+  void debugSetDrumVoice(Drum drum, SavedInstrument? voice);
 }
 
 class DrumkitScreen extends StatefulWidget {
@@ -125,6 +134,12 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   final Map<Drum, List<bool>> _rows = {
     for (final d in Drum.values) d: List<bool>.filled(kPatternSteps, false),
   };
+
+  // Per-drum sound override: a library instrument (incl. SoundFont-backed
+  // voices) replacing the built-in synth voice. Null = the synth drum. The
+  // rendered one-shot is cached per voice so playback doesn't re-synthesize.
+  final Map<Drum, SavedInstrument> _drumVoice = {};
+  final Map<Drum, Float64List> _voiceShot = {};
 
   final _loop = GaplessLoopPlayer();
   final _clock = Stopwatch();
@@ -202,8 +217,50 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     return out;
   }
 
-  Uint8List _renderWav() =>
-      wavBytes(_toPcm16(DrumRowsPattern(_rows).render(_timing)));
+  Uint8List _renderWav() => wavBytes(_toPcm16(_renderPattern()));
+
+  /// The pattern rendered to PCM, applying any per-drum voice overrides. With no
+  /// overrides this is exactly the shared [DrumRowsPattern] render; otherwise
+  /// each overridden drum's hits play its instrument's cached one-shot.
+  Float64List _renderPattern() {
+    if (_drumVoice.isEmpty) return DrumRowsPattern(_rows).render(_timing);
+    final total = _timing.totalSamples;
+    final out = Float64List(total);
+    for (final drum in Drum.values) {
+      final row = _rows[drum]!;
+      final shot =
+          _drumVoice.containsKey(drum) ? _oneShotFor(drum) : renderDrum(drum);
+      if (shot.isEmpty) continue;
+      for (var s = 0; s < row.length; s++) {
+        if (!row[s]) continue;
+        final start = (_timing.boundaryMs(s) * kSampleRate) ~/ 1000;
+        final n = min(shot.length, total - start);
+        for (var i = 0; i < n; i++) {
+          out[start + i] += shot[i];
+        }
+      }
+    }
+    return out;
+  }
+
+  /// The cached one-shot for [drum]'s override voice (empty if it can't render,
+  /// e.g. an unresolved SoundFont reference).
+  Float64List _oneShotFor(Drum drum) => _voiceShot.putIfAbsent(drum, () {
+        final inst = _drumVoice[drum]?.instrument;
+        return inst == null ? Float64List(0) : renderInstrumentNote(inst);
+      });
+
+  void _setDrumVoice(Drum drum, SavedInstrument? voice) {
+    setState(() {
+      _voiceShot.remove(drum);
+      if (voice == null) {
+        _drumVoice.remove(drum);
+      } else {
+        _drumVoice[drum] = voice;
+      }
+    });
+    _syncPlayback();
+  }
 
   /// Re-render + re-swap the loop IN PHASE after an edit (so the beat doesn't
   /// restart) — the same trick the Loop Mixer / Tracker use.
@@ -332,9 +389,13 @@ class _DrumkitScreenState extends State<DrumkitScreen>
       );
     }
     _visual.flash(drum); // light the piece on the visual kit
-    context
-        .read<AudioService>()
-        .playWavBytes(wavBytes(_toPcm16(renderDrum(drum))));
+    // Audition the drum's actual voice — its override one-shot, else the synth.
+    final shot = _drumVoice.containsKey(drum)
+        ? _oneShotFor(drum)
+        : renderDrum(drum);
+    if (shot.isNotEmpty) {
+      context.read<AudioService>().playWavBytes(wavBytes(_toPcm16(shot)));
+    }
   }
 
   @override
@@ -543,7 +604,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   void _exportAudio() {
     showAudioExportSheet(
       context,
-      pcm: DrumRowsPattern(_rows).render(_timing),
+      pcm: _renderPattern(), // include per-drum voice overrides
       baseName: 'beat',
     );
   }
@@ -651,6 +712,91 @@ class _DrumkitScreenState extends State<DrumkitScreen>
       ),
     );
     if (chosen != null) _loadPreset(chosen);
+  }
+
+  // --- Per-drum sounds (instrument library / SoundFont voices) ---------------
+
+  @override
+  SavedInstrument? drumVoiceOf(Drum drum) => _drumVoice[drum];
+
+  @override
+  void debugSetDrumVoice(Drum drum, SavedInstrument? voice) =>
+      _setDrumVoice(drum, voice);
+
+  Future<void> _openDrumSounds() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => StatefulBuilder(
+        builder: (sheet, setSheet) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.drumkitSounds,
+                  style: Theme.of(sheet).textTheme.titleMedium,
+                ),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final drum in Drum.values)
+                      ListTile(
+                        leading: Icon(_drumIcon(drum)),
+                        title: Text(_drumLabel(l10n, drum)),
+                        subtitle: Text(
+                          _drumVoice[drum]?.name ?? l10n.drumkitDefaultSound,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_drumVoice.containsKey(drum))
+                              IconButton(
+                                icon: const Icon(Icons.restart_alt),
+                                tooltip: l10n.drumkitResetSound,
+                                onPressed: () {
+                                  _setDrumVoice(drum, null);
+                                  setSheet(() {});
+                                },
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              tooltip: l10n.drumkitChangeSound,
+                              onPressed: () async {
+                                final saved =
+                                    await showMyInstrumentsSheet(sheet);
+                                if (saved == null) return;
+                                if (saved.instrument == null) {
+                                  // A SoundFont reference needs its font loaded.
+                                  if (!sheet.mounted) return;
+                                  ScaffoldMessenger.of(sheet).showSnackBar(
+                                    SnackBar(
+                                      content:
+                                          Text(l10n.drumkitSoundUnavailable),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                _setDrumVoice(drum, saved);
+                                setSheet(() {});
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // --- Shared-groove bridge --------------------------------------------------
@@ -905,6 +1051,12 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                     onPressed: _openPresets,
                     icon: const Icon(Icons.auto_awesome),
                     label: Text(l10n.drumkitPresets),
+                  ),
+                  // Swap any drum's sound for a library / SoundFont voice.
+                  FilledButton.tonalIcon(
+                    onPressed: _openDrumSounds,
+                    icon: const Icon(Icons.library_music),
+                    label: Text(l10n.drumkitSounds),
                   ),
                   FilledButton.icon(
                     onPressed: toggleRecord,
