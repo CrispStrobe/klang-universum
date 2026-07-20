@@ -28,7 +28,7 @@ import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show splitMultiTrackMidi;
 
-const double _releaseMs = 140;
+const double _maxTailSec = 3; // cap a note's release tail (buffer headroom)
 const double _bendRangeSemis = 2; // GM default (RPN 0 not yet read)
 const double _vibratoRateHz = 5.5;
 const double _vibratoMaxCents = 50; // at full mod wheel
@@ -260,11 +260,12 @@ class _Note {
     }
   }
 
-  // Render each note by resampling its zone.
+  // Render each note by resampling its zone. Leave room for the longest
+  // possible release tail after the last note-off.
   var maxLen = 0;
-  final relSamples = (_releaseMs * sampleRate / 1000).round();
+  final tail = (_maxTailSec * sampleRate).round();
   for (final n in notes) {
-    if (n.endSample + relSamples > maxLen) maxLen = n.endSample + relSamples;
+    if (n.endSample + tail > maxLen) maxLen = n.endSample + tail;
   }
   final left = Float64List(maxLen);
   final right = Float64List(maxLen);
@@ -340,8 +341,37 @@ void _resampleNote(
   final loopEnd = sample.loopEnd.toDouble();
 
   final durSamples = n.endSample - n.startSample;
-  final relSamples = (_releaseMs * sr / 1000).round();
-  final total = durSamples + relSamples;
+
+  // SF2 volume envelope (DAHDSR), in samples, with small click-avoiding floors.
+  // The default gens (−12000 tc ≈ 1 ms, sustain full) behave like a gate, so a
+  // font without an envelope is close to the old behaviour; a font WITH one
+  // (a piano's decay, a pad's swell) now plays as designed.
+  final delayS = (zone.delayVolSec * sr).round();
+  final attackS =
+      math.max((zone.attackVolSec * sr).round(), (0.002 * sr).round());
+  final holdS = (zone.holdVolSec * sr).round();
+  final decayS = math.max((zone.decayVolSec * sr).round(), 1);
+  final sus = zone.sustainGain;
+  final releaseS = math
+      .max((zone.releaseVolSec * sr).round(), (0.006 * sr).round())
+      .clamp(1, (_maxTailSec * sr).round());
+  final total = durSamples + releaseS;
+
+  // The envelope value during attack→sustain (pre note-off).
+  double preRelease(int i) {
+    if (i < delayS) return 0;
+    var t = i - delayS;
+    if (t < attackS) return t / attackS; // linear attack 0→1
+    t -= attackS;
+    if (t < holdS) return 1; // hold at peak
+    t -= holdS;
+    if (t < decayS) {
+      return math.exp(t / decayS * math.log(math.max(sus, 1e-4))); // 1→sustain
+    }
+    return sus;
+  }
+
+  final offLevel = preRelease(durSamples); // level when note-off begins release
 
   final theta = (n.pan.clamp(-1.0, 1.0) + 1) * 0.25 * math.pi;
   final lg = math.cos(theta);
@@ -381,14 +411,16 @@ void _resampleNote(
     final s1 = i0 + 1 < len ? pcm[i0 + 1] : s0;
     var v = s0 + (s1 - s0) * frac;
 
-    // Amplitude envelope (sustain then a quadratic release).
-    var env = baseGain;
-    if (i >= durSamples && relSamples > 0) {
-      final t = (i - durSamples) / relSamples;
-      final k = 1 - t;
-      env *= k * k;
+    // Amplitude envelope: the SF2 DAHDSR up to note-off, then an exponential
+    // release from the note-off level.
+    final double env;
+    if (i < durSamples) {
+      env = preRelease(i);
+    } else {
+      final t = (i - durSamples) / releaseS; // 0→1
+      env = offLevel * math.exp(t * math.log(1e-4)); // → ~0
     }
-    v *= env;
+    v *= env * baseGain;
 
     // Velocity low-pass.
     filt += a * (v - filt);

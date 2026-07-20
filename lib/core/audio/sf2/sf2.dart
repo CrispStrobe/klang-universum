@@ -42,6 +42,13 @@ const _genRootKeyOverride = 58;
 const _genInitialAttenuation = 48; // centibels
 const _genCoarseTune = 51; // semitones (signed)
 const _genFineTune = 52; // cents (signed)
+// Volume-envelope generators (timecents; sustain in centibels of attenuation).
+const _genDelayVolEnv = 33;
+const _genAttackVolEnv = 34;
+const _genHoldVolEnv = 35;
+const _genDecayVolEnv = 36;
+const _genSustainVolEnv = 37;
+const _genReleaseVolEnv = 38;
 
 /// One sample from a soundfont: its decoded PCM (−1..1), the rate it was
 /// recorded at, the MIDI key it represents ([originalPitch]), and its loop
@@ -89,12 +96,39 @@ class Sf2Zone {
     this.attenuationCb = 0,
     this.coarseTune = 0,
     this.fineTune = 0,
+    this.delayVolTc = -12000,
+    this.attackVolTc = -12000,
+    this.holdVolTc = -12000,
+    this.decayVolTc = -12000,
+    this.sustainVolCb = 0,
+    this.releaseVolTc = -12000,
   });
 
   final int keyLo;
   final int keyHi;
   final int sampleIndex;
   final int rootKey;
+
+  /// Volume-envelope generators. Times are timecents (seconds = 2^(tc/1200));
+  /// the SF2 default −12000 tc ≈ 1 ms (effectively a gate). [sustainVolCb] is
+  /// the decay target in centibels of attenuation (0 = full level).
+  final int delayVolTc;
+  final int attackVolTc;
+  final int holdVolTc;
+  final int decayVolTc;
+  final int sustainVolCb;
+  final int releaseVolTc;
+
+  static double _tcSec(int tc) => pow(2, tc / 1200).toDouble();
+  double get delayVolSec => _tcSec(delayVolTc);
+  double get attackVolSec => _tcSec(attackVolTc);
+  double get holdVolSec => _tcSec(holdVolTc);
+  double get decayVolSec => _tcSec(decayVolTc);
+  double get releaseVolSec => _tcSec(releaseVolTc);
+
+  /// The sustain level as a linear gain (0..1): `10^(−cB/200)`.
+  double get sustainGain =>
+      pow(10, -sustainVolCb.clamp(0, 1440) / 200).toDouble();
 
   /// velRange (gen 44): the MIDI velocity window this zone (sample layer) covers,
   /// so a soft vs loud note picks a different recording. Default 0..127 (the
@@ -316,6 +350,12 @@ List<Sf2Preset> _parsePresets(
       var lo = 0, hi = 127;
       var vlo = 0, vhi = 127;
       var atten = 0, coarse = 0, fine = 0;
+      var delayVol = -12000,
+          attackVol = -12000,
+          holdVol = -12000,
+          decayVol = -12000,
+          sustainVol = 0,
+          releaseVol = -12000;
       int? sampleId, rootOverride;
       for (var g = gStart; g < gEnd; g++) {
         final oper = u16(igenOff + g * 4);
@@ -338,6 +378,18 @@ List<Sf2Preset> _parsePresets(
           coarse = samt; // semitones (signed)
         } else if (oper == _genFineTune) {
           fine = samt; // cents (signed)
+        } else if (oper == _genDelayVolEnv) {
+          delayVol = samt;
+        } else if (oper == _genAttackVolEnv) {
+          attackVol = samt;
+        } else if (oper == _genHoldVolEnv) {
+          holdVol = samt;
+        } else if (oper == _genDecayVolEnv) {
+          decayVol = samt;
+        } else if (oper == _genSustainVolEnv) {
+          sustainVol = amt; // centibels (unsigned)
+        } else if (oper == _genReleaseVolEnv) {
+          releaseVol = samt;
         }
       }
       if (sampleId != null && sampleId >= 0 && sampleId < sampleCount) {
@@ -354,6 +406,12 @@ List<Sf2Preset> _parsePresets(
             attenuationCb: atten,
             coarseTune: coarse,
             fineTune: fine,
+            delayVolTc: delayVol,
+            attackVolTc: attackVol,
+            holdVolTc: holdVol,
+            decayVolTc: decayVol,
+            sustainVolCb: sustainVol,
+            releaseVolTc: releaseVol,
           ),
         );
       }

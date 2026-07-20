@@ -1,0 +1,35 @@
+// Sf2Zone volume-envelope generators decode correctly: timecents → seconds
+// (2^(tc/1200)) and sustain centibels → linear gain (10^(-cB/200)). These drive
+// the resampling voice's DAHDSR so a font's own attack/decay/sustain/release
+// play as designed.
+
+import 'package:comet_beat/core/audio/sf2/sf2.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('envelope timecents → seconds and sustain cB → gain', () {
+    const z = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      attackVolTc: 0, // 2^0 = 1 s
+      holdVolTc: -6000, // 2^-5 = 1/32 s
+      decayVolTc: 1200, // 2^1 = 2 s
+      sustainVolCb: 200, // −20 dB → 0.1
+    );
+    expect(z.attackVolSec, closeTo(1.0, 1e-9));
+    expect(z.holdVolSec, closeTo(1 / 32, 1e-9));
+    expect(z.decayVolSec, closeTo(2.0, 1e-9));
+    expect(z.releaseVolSec, closeTo(0.0009766, 1e-6));
+    expect(z.sustainGain, closeTo(0.1, 1e-9));
+  });
+
+  test('the defaults are a full-level gate (unset font behaves like before)',
+      () {
+    const z = Sf2Zone(keyLo: 0, keyHi: 127, sampleIndex: 0, rootKey: 60);
+    expect(z.attackVolSec, lessThan(0.002)); // ~1 ms → instant attack
+    expect(z.releaseVolSec, lessThan(0.002));
+    expect(z.sustainGain, closeTo(1.0, 1e-9)); // full sustain
+  });
+}
