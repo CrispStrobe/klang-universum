@@ -36,9 +36,16 @@ notated + heard example, read-aloud (TTS), and interactive **"try it"** practice
 steps — read/hear then tap the answer, with gentle reveal-on-stuck — so a
 zero-knowledge child can clear it.
 Later: more ear training, unlock gating, Kompositionstechnik (see plan).
-Live web build: https://crispstrobe.github.io/cometbeat/ (GitHub Pages, via
-`.github/workflows/pages.yml`) and https://mus-theta.vercel.app (Vercel, via
-`deploy.yml`) — both auto-deploy the same web build on every green `main`.
+Live web builds — two deploy regimes on purpose:
+- **GitHub Pages** (https://crispstrobe.github.io/cometbeat/, via
+  `pages.yml`) redeploys on **every** push to `main` — no per-day quota, so it's
+  always the freshest bleeding-edge build.
+- **Vercel** (https://mus-theta.vercel.app, via `deploy.yml`) deploys **only on a
+  version tag (`v*`) or a published GitHub Release** (plus manual dispatch).
+  Vercel's free tier caps production deploys at 100/day, which per-commit
+  deploys blow through during multi-agent development; tags give it a stable,
+  intentional "release" cut. Cut a release with `git tag v1.2.3 && git push
+  origin v1.2.3`.
 
 ## Architecture notes
 
