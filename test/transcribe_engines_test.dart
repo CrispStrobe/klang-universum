@@ -127,8 +127,51 @@ void main() {
     expect(e.chords, isNull);
   });
 
-  test('the CrispASR ggml CREPE stub is null until the package ships pitch()',
+  test('native-ORT FFI F0 is used when present (and beats pure-Dart ONNX)',
       () async {
+    var ffiUsed = false;
+    Future<PitchTrack> ffiF0(Float64List m, int sr) async {
+      ffiUsed = true;
+      return const [];
+    }
+
+    final e = await resolveEngines(
+      cfg,
+      isWeb: false,
+      loadNeural: ({bool download = false}) async => null,
+      loadRmvpe: ({bool download = false}) async => null,
+      loadCrepeOnnx: ({bool download = false}) async =>
+          _fakeF0, // pure-Dart onnx
+      loadF0OnnxFfi: ({bool download = false}) async => ffiF0, // native-ORT FFI
+    );
+    expect(e.f0, isNotNull);
+    await e.f0!(Float64List(0), 44100);
+    expect(ffiUsed, isTrue, reason: 'native-ORT FFI beats pure-Dart ONNX');
+  });
+
+  test('ggml piano is used for polyphony when present', () async {
+    var pianoUsed = false;
+    Future<List<NoteEvent>> piano(Float64List m, int sr) async {
+      pianoUsed = true;
+      return const [];
+    }
+
+    final e = await resolveEngines(
+      cfg,
+      isWeb: false,
+      loadNeural: ({bool download = false}) async => _fakeNeural, // onnx BP
+      loadPianoGgml: ({bool download = false}) async => piano, // ggml
+    );
+    expect(e.neural, isNotNull);
+    await e.neural!(Float64List(0), 44100);
+    expect(pianoUsed, isTrue, reason: 'ggml piano beats ONNX Basic Pitch');
+  });
+
+  test('all FFI runtimes stubbed null today', () async {
     expect(await loadCrispasrCrepeF0(), isNull);
+    expect(await loadCrispasrPiano(), isNull);
+    expect(await loadOnnxFfiF0(), isNull);
+    expect(await loadOnnxFfiNeural(), isNull);
+    expect(await loadOnnxFfiChords(), isNull);
   });
 }
