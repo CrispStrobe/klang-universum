@@ -349,3 +349,39 @@ pattern in the commit.
 *Every tier stays behind the frozen `contracts.dart` seam and the shared
 `note_metrics.dart` ruler, so engines swap without touching consumers, and every
 neural piece is download-on-demand + `!kIsWeb`-guarded with a pure-Dart fallback.*
+
+---
+
+## The "3 paths" — three neural runtimes per step (status + un-stub recipes)
+
+Each neural step can run on up to three runtimes; the engine config
+(`engine_config.dart` `Backend`) selects, and `resolveEngines`
+(`features/games/transcribe/transcribe_engines.dart`) routes. Auto prefers the
+fastest available: **ggml > native-ORT FFI > pure-Dart ONNX** (web: pure-Dart
+ONNX only — both FFI runtimes are gated off web by `backendNeedsFfi`).
+
+| Step | `onnx` — onnx_runtime_dart (pure Dart, web ✓, **LIVE**) | `onnxFfi` — native ONNX Runtime via FFI | `crispasr` — ggml/GGUF via FFI |
+|---|---|---|---|
+| **F0** | RMVPE (preferred) / CREPE | CREPE·RMVPE `.onnx` (stub) | CREPE ✅ ported (stub — needs pub) |
+| **polyphony** | Basic Pitch | Basic Pitch `.onnx` (stub) | piano ✅ ported (stub — needs pub) |
+| **chords** | BTC | BTC `.onnx` (stub) | — (not ported to ggml) |
+| **separation** | htdemucs `.onnx` (shell) | htdemucs `.onnx` (stub) | htdemucs + RoFormer ✅ ported |
+
+**Un-stub recipes** (each is a few lines, in `transcribe_engines.dart`):
+
+- **`crispasr` (highest leverage) — blocked on the `crispasr` PUB release** (the
+  in-repo `flutter/crispasr` FFI already has `pitch()` / `separate()` / piano).
+  When it publishes: `loadCrispasrCrepeF0` → resample mono→16 kHz Float32, call
+  `crispasr.pitch(pcm16k)`, map `PitchFrame`→`PitchTrack` (identical fields);
+  `loadCrispasrPiano` → the piano C ABI → `List<NoteEvent>`; the separator →
+  `crispasr.separate()` into `stems.dart`'s `Separator` (or keep the CLI route
+  `crispasr_separate.dart`). Models: `cstr/crepe-GGUF`, `cstr/htdemucs-GGUF`.
+- **`onnxFfi` — needs a native-ORT FFI binding + bundled libs (a new dep, no
+  web).** Same `.onnx` files already on `models-v1`. Fill `loadOnnxFfiF0` /
+  `loadOnnxFfiNeural` / `loadOnnxFfiChords` to load the model on the native ORT
+  and wrap it in the same estimator shape the pure-Dart providers use.
+- **RMVPE / BTC on ggml** — port to CrispASR if wanted (their triage: portable);
+  then they join the `crispasr` column.
+
+Until a loader is filled it returns null → its runtime isn't in `available` →
+the resolver falls to the next → everything runs on pure-Dart ONNX today, safely.
