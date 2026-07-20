@@ -36,7 +36,8 @@ import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
     show chorusFx;
 import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart' show reverbFx;
 import 'package:comet_beat/core/audio/gm_song_render.dart';
-import 'package:comet_beat/core/audio/midi_render.dart' show renderMidiFile;
+import 'package:comet_beat/core/audio/midi_render.dart'
+    show ReverbAlgo, renderMidiFile;
 import 'package:comet_beat/core/audio/mp3/mp3_encoder.dart';
 import 'package:comet_beat/core/audio/score_instrument_render.dart';
 import 'package:comet_beat/core/audio/sf2/sf2.dart' show VorbisDecode;
@@ -62,6 +63,7 @@ void main(List<String> args) {
   var bitrate = 192;
   var gain = 1.0;
   var reverb = 0.22; // a present stereo room by default; --reverb 0 for dry
+  var reverbAlgo = ReverbAlgo.fdn; // --reverb-algo fdn|freeverb
   var chorus = 0.0; // off by default
   var bits = 16; // WAV bit depth (16 or 24)
   var play = false; // play the result through the system audio
@@ -88,6 +90,13 @@ void main(List<String> args) {
         gain = double.parse(_next(args, ++i, a));
       case '--reverb':
         reverb = double.parse(_next(args, ++i, a)).clamp(0.0, 1.0);
+      case '--reverb-algo':
+        final v = _next(args, ++i, a).toLowerCase();
+        reverbAlgo = switch (v) {
+          'fdn' => ReverbAlgo.fdn,
+          'freeverb' => ReverbAlgo.freeverb,
+          _ => _fail('--reverb-algo must be fdn or freeverb'),
+        };
       case '--chorus':
         chorus = double.parse(_next(args, ++i, a)).clamp(0.0, 1.0);
       case '--bits':
@@ -150,6 +159,7 @@ void main(List<String> args) {
       _loadFont(sf2),
       reverbMix: reverb,
       chorusMix: chorus,
+      reverbAlgo: reverbAlgo,
     );
     stderr.writeln('  event-accurate MIDI synth '
         '(exact timing · tempo map · CC · sustain pedal · CC91/93 sends)');
@@ -613,6 +623,8 @@ Options:
   --bitrate <K>    MP3 bitrate kbps (default 192)
   --gain <G>       output gain multiplier (default 1.0)
   --reverb <0..1>  master reverb mix (default 0.22, stereo; 0 = dry)
+  --reverb-algo <a>  reverb algorithm: fdn (default, wide) or freeverb (drier,
+                   narrower — closer for drum-forward content)
   --chorus <0..1>  master chorus mix (default 0 = off)
   --bits <16|24>   WAV/FLAC bit depth (default 16)
   --play           play the result through the system audio (the <out> file is

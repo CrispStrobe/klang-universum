@@ -28,6 +28,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart'
 import 'package:comet_beat/core/audio/crisp_dsp/fdn_reverb.dart' show fdnReverb;
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
     show chorusFx;
+import 'package:comet_beat/core/audio/crisp_dsp/reverb.dart' show reverbFx;
 import 'package:comet_beat/core/audio/sf2/sf2.dart'
     show Sf2Preset, Sf2Sample, Sf2SoundFont, Sf2Zone;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
@@ -39,11 +40,13 @@ const double _maxTailSec = 3; // cap a note's release tail (buffer headroom)
 // Reverb-return makeup: the per-zone SF2 reverb sends (gen 16, median ~5%) are
 // far smaller than the flat CC-default we used before, so the wet return is
 // scaled up to keep the same overall space while preserving the font's
-// per-instrument WET/dry variation (a pad far wetter than a bass). The FDN
-// returns wet at a lower unit level than the old Freeverb×width hack, so the
-// makeup is larger; the final master peak-normalizes anyway, so this only sets
-// the wet/DRY balance, not the absolute level.
-const double _reverbReturnGain = 12.0;
+// per-instrument WET/dry variation (a pad far wetter than a bass). The two
+// algorithms return wet at different unit levels, so each has its own makeup;
+// the final master peak-normalizes anyway, so this only sets the wet/DRY
+// balance, not the absolute level.
+const double _fdnReturnGain = 12.0; // FDN wet is lower-level per unit input
+const double _freeverbReturnGain = 1.9; // legacy Freeverb path
+const double _freeverbWidth = 3.0; // legacy mid/side side-boost
 const double _bendRangeSemis = 2; // GM default (RPN 0 not yet read)
 const double _vibratoRateHz = 5.5;
 const double _vibratoMaxCents = 50; // at full mod wheel
@@ -125,6 +128,13 @@ class _Note {
   int cutAtSample = 1 << 62;
 }
 
+/// Which late-reverb algorithm the master reverb send uses.
+/// [fdn] is the default (a Jot feedback-delay-network, matching the reference
+/// synth's own reverb); [freeverb] is the legacy Schroeder-Moorer path (a
+/// stereo-spread Freeverb with a mid/side width boost) kept for A/B and for
+/// content — e.g. percussion — where the drier, narrower Freeverb reads closer.
+enum ReverbAlgo { fdn, freeverb }
+
 /// Render [smf] through [font] to a stereo (left, right) pair, scheduling every
 /// event on a sample clock. Empty in → empty out.
 (Float64List left, Float64List right) renderMidiFile(
@@ -133,6 +143,7 @@ class _Note {
   int sampleRate = kSampleRate,
   double reverbMix = 0,
   double chorusMix = 0,
+  ReverbAlgo reverbAlgo = ReverbAlgo.fdn,
 }) {
   final (events, tpq, sysex) = _parseAllEvents(smf);
   if (events.isEmpty || tpq <= 0) return (Float64List(0), Float64List(0));
@@ -453,23 +464,46 @@ class _Note {
     );
   }
 
-  // Wet the send buses once and fold them into the master. This mirrors the
-  // reference synth's architecture: a MONO reverb send → an FDN late-
-  // reverberator → a wide, decorrelated stereo return. The FDN produces its
-  // spacious stereo image internally (oracle-matched to the reference: side/mid
-  // ≈ 0.38, L/R corr ≈ 0.55 — wide but mono-safe), so no mid/side width hack is
-  // needed. The dry signal keeps each note's pan; the wet tail is the shared
-  // "air"/space that a dry mix lacks (which read as stale next to a real synth).
-  if (wantRev) {
+  // Wet the send buses once and fold them into the master.
+  if (wantRev && reverbAlgo == ReverbAlgo.fdn) {
+    // FDN path (default) — mirrors the reference synth's own architecture: a
+    // MONO reverb send → an FDN late-reverberator → a wide, decorrelated stereo
+    // return. The FDN produces its spacious stereo image internally (oracle-
+    // matched to the reference: side/mid ≈ 0.38, L/R corr ≈ 0.55 — wide but
+    // mono-safe), so no mid/side width hack is needed. The dry signal keeps each
+    // note's pan; the wet tail is the shared "air"/space a dry mix lacks.
     final send = Float64List(maxLen);
     for (var i = 0; i < maxLen; i++) {
       send[i] = (revL![i] + revR![i]) * 0.5;
     }
-    final (wl, wr) = fdnReverb(send, roomSize: 0.7, sampleRate: sampleRate);
-    final g = reverbMix * _reverbReturnGain;
+    // roomSize 0.7 (fdnReverb's default) → RT60 ≈ 1.7s, matching the reference.
+    final (wl, wr) = fdnReverb(send, sampleRate: sampleRate);
+    final g = reverbMix * _fdnReturnGain;
     for (var i = 0; i < maxLen; i++) {
       left[i] += wl[i] * g;
       right[i] += wr[i] * g;
+    }
+  } else if (wantRev) {
+    // Legacy Freeverb path — reverb the STEREO (panned) sends through two
+    // decorrelated Freeverbs (the right offset by the Freeverb stereo spread, 23
+    // samples), then widen the wet return via a mid/side boost. Drier and
+    // narrower than the FDN; kept for A/B and drum-forward content.
+    final wl = reverbFx(revL!, mix: 1, roomSize: 0.82, sampleRate: sampleRate);
+    final wr = reverbFx(
+      revR!,
+      mix: 1,
+      roomSize: 0.82,
+      stereoSpread: 23,
+      sampleRate: sampleRate,
+    );
+    final g = reverbMix * _freeverbReturnGain;
+    for (var i = 0; i < maxLen; i++) {
+      final wetL = wl[i] * g;
+      final wetR = wr[i] * g;
+      final mid = (wetL + wetR) * 0.5;
+      final side = (wetL - wetR) * 0.5 * _freeverbWidth;
+      left[i] += mid + side;
+      right[i] += mid - side;
     }
   }
   if (wantChor) {
