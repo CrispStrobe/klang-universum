@@ -1,5 +1,7 @@
 // Live Looper "Perform" (S1) — stack/mute/undo/redo layers + a summed mix.
 
+import 'dart:typed_data';
+
 import 'package:comet_beat/features/games/composition/perform_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -219,6 +221,42 @@ void main() {
     await tester.pump();
     expect(p.debugBounce('Perf'), isEmpty);
     expect(p.debugBounce('Perf', perLayer: true), isEmpty);
+  });
+
+  testWidgets('sample voice plays pitched + records a melody in that sound',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    final sample = Float64List(4410)..fillRange(0, 4410, 0.5);
+    p.setSampleVoice(sample, baseMidi: 60, name: 'meow');
+    await tester.pump();
+    expect(p.hasSampleVoice, isTrue);
+    expect(p.voiceName, 'meow');
+
+    // Pitch: at the base note = original length; an octave up = half as long.
+    expect(p.debugPitched(60).length, 4410);
+    final octaveUp = p.debugPitched(72);
+    expect(octaveUp.length, 2205);
+    expect(_peak(octaveUp.toList()), greaterThan(0.0));
+
+    // Recording a melody now uses the sample → a non-silent 'melody' layer.
+    p.startPlayIn();
+    for (final m in [60, 64, 67]) {
+      p.playInNote(m);
+    }
+    p.finishPlayIn();
+    await tester.pump();
+    expect(p.layerCount, 1);
+    expect(p.layerLabel(0), 'melody');
+    expect(_peak(p.debugMix().toList()), greaterThan(0.0));
+
+    // Clearing the voice returns to the synth.
+    p.clearSampleVoice();
+    await tester.pump();
+    expect(p.hasSampleVoice, isFalse);
+    expect(p.debugPitched(60), isEmpty);
   });
 
   testWidgets('play/stop toggles and does not crash without audio',

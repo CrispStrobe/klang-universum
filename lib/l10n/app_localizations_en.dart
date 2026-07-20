@@ -2051,6 +2051,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap the keys to play your melody — it becomes a new layer.';
 
   @override
+  String get performPickSound => 'Pick a sound';
+
+  @override
+  String get performVoiceSample => 'Your sound';
+
+  @override
+  String get performVoiceSynth => 'Synth voice';
+
+  @override
   String get performPlayInBeat => 'Play a beat';
 
   @override

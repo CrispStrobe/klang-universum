@@ -14,11 +14,17 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/resample.dart'
+    show resampleCubic;
 import 'package:comet_beat/core/audio/loop_record.dart';
 import 'package:comet_beat/core/audio/loop_stack_render.dart';
+import 'package:comet_beat/core/audio/sample_pitch.dart'
+    show detectSampleBaseMidi;
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
+import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart'
+    show showMySamplesSheet;
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
@@ -43,6 +49,16 @@ abstract class PerformTester {
   void startPlayInBeat();
   void playInNote(int midi);
   void playInPad(String drum);
+
+  /// Sampler voice (P1): make a captured sound the keyboard's instrument, so
+  /// playing/recording a melody uses THAT sound (auto-tuned) instead of a synth.
+  void setSampleVoice(Float64List pcm, {int? baseMidi, String name});
+  void clearSampleVoice();
+  bool get hasSampleVoice;
+  String? get voiceName;
+
+  /// A single note of the current sample voice, pitched — for tests.
+  Float64List debugPitched(int midi);
   void finishPlayIn();
   void cancelPlayIn();
   bool get isPlayingIn;
@@ -100,6 +116,11 @@ class _PerformScreenState extends State<PerformScreen>
   String? _playInMode;
   final List<(int midi, int phaseMs)> _playInNotes = [];
   final List<(String drum, int phaseMs)> _playInHits = [];
+
+  // Sampler voice (P1): a captured sound played pitched. null = built-in synth.
+  Float64List? _voicePcm;
+  int _voiceBase = 60;
+  String? _voiceName;
 
   static const int _bpm = 120;
 
@@ -185,6 +206,61 @@ class _PerformScreenState extends State<PerformScreen>
     _playInHits.add((drum, _phaseNow));
   }
 
+  // ── Sampler voice (P1) ────────────────────────────────────────────────────
+  @override
+  bool get hasSampleVoice => _voicePcm != null && _voicePcm!.isNotEmpty;
+  @override
+  String? get voiceName => _voiceName;
+
+  @override
+  void setSampleVoice(
+    Float64List pcm, {
+    int? baseMidi,
+    String name = 'sample',
+  }) {
+    _voicePcm = pcm;
+    _voiceBase = baseMidi ?? detectSampleBaseMidi(pcm) ?? 60;
+    _voiceName = name;
+    setState(() {});
+  }
+
+  @override
+  void clearSampleVoice() {
+    _voicePcm = null;
+    _voiceName = null;
+    setState(() {});
+  }
+
+  /// The sample voice resampled so [midi] plays in tune (base pitch → [midi]),
+  /// optionally capped to [maxSamples]. Empty when no sample voice is set.
+  Float64List _pitched(int midi, {int? maxSamples}) {
+    final pcm = _voicePcm;
+    if (pcm == null || pcm.isEmpty) return Float64List(0);
+    final ratio = _midiToFreq(midi) / _midiToFreq(_voiceBase);
+    final r = resampleCubic(pcm, ratio <= 0 ? 1.0 : ratio);
+    if (maxSamples != null && r.length > maxSamples) {
+      return Float64List.sublistView(r, 0, maxSamples);
+    }
+    return r;
+  }
+
+  @override
+  Float64List debugPitched(int midi) => _pitched(midi);
+
+  /// Mix [src] into [buf] at [start], capped to [maxLen] and the buffer end.
+  void _place(
+    Float64List buf,
+    Float64List src,
+    int start,
+    int maxLen, {
+    double gain = 0.7,
+  }) {
+    final len = min(src.length, maxLen);
+    for (var i = 0; i < len && start + i < buf.length; i++) {
+      buf[start + i] += gain * src[i];
+    }
+  }
+
   @override
   void finishPlayIn() {
     final mode = _playInMode;
@@ -267,7 +343,11 @@ class _PerformScreenState extends State<PerformScreen>
       final (midi, start) = placed[i];
       final next = i + 1 < placed.length ? placed[i + 1].$2 : n;
       final dur = (next - start).clamp(sixteenth, beat);
-      _tone(buf, _midiToFreq(midi), start, dur, gain: 0.28, decay: 6);
+      if (hasSampleVoice) {
+        _place(buf, _pitched(midi), start, dur);
+      } else {
+        _tone(buf, _midiToFreq(midi), start, dur, gain: 0.28, decay: 6);
+      }
     }
     return buf;
   }
@@ -422,6 +502,17 @@ class _PerformScreenState extends State<PerformScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.performBounceDone(clips.length))),
     );
+  }
+
+  /// Pick a sound from "My Samples" to play as the keyboard voice (resampled to
+  /// the loop rate + auto-tuned by [setSampleVoice]).
+  Future<void> _pickVoice() async {
+    final clip = await showMySamplesSheet(context);
+    if (clip == null || clip.pcm.isEmpty || !mounted) return;
+    final pcm = clip.sampleRate == kSampleRate
+        ? clip.pcm
+        : resampleCubic(clip.pcm, clip.sampleRate / kSampleRate);
+    setSampleVoice(pcm, name: clip.name);
   }
 
   // ── Playback ──────────────────────────────────────────────────────────────
@@ -780,19 +871,63 @@ class _PerformScreenState extends State<PerformScreen>
                         ),
                     ],
                   )
-                else
+                else ...[
+                  SizedBox(
+                    height: 36,
+                    child: Row(
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.graphic_eq, size: 18),
+                          label: Text(l10n.performPickSound),
+                          onPressed: _pickVoice,
+                        ),
+                        const SizedBox(width: 8),
+                        if (hasSampleVoice)
+                          Expanded(
+                            child: InputChip(
+                              avatar: const Icon(Icons.music_note, size: 18),
+                              label: Text(
+                                _voiceName ?? l10n.performVoiceSample,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onDeleted: clearSampleVoice,
+                            ),
+                          )
+                        else
+                          Text(
+                            l10n.performVoiceSynth,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   SizedBox(
                     height: 140,
                     child: PianoKeyboard(
                       whiteKeyCount: 8,
                       onKeyTap: (midi) {
-                        context
-                            .read<AudioService>()
-                            .playMidiNote(midi, ms: 400);
+                        if (hasSampleVoice) {
+                          context.read<AudioService>().playWavBytes(
+                                wavBytes(
+                                  _toInt16(
+                                    _pitched(
+                                      midi,
+                                      maxSamples: (kSampleRate * 0.7).round(),
+                                    ),
+                                  ),
+                                ),
+                              );
+                        } else {
+                          context
+                              .read<AudioService>()
+                              .playMidiNote(midi, ms: 400);
+                        }
                         playInNote(midi);
                       },
                     ),
                   ),
+                ],
               ],
             ],
           ),

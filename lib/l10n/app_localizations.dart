@@ -3878,6 +3878,24 @@ abstract class AppLocalizations {
   /// **'Tap the keys to play your melody — it becomes a new layer.'**
   String get performPlayInHint;
 
+  /// No description provided for @performPickSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a sound'**
+  String get performPickSound;
+
+  /// No description provided for @performVoiceSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sound'**
+  String get performVoiceSample;
+
+  /// No description provided for @performVoiceSynth.
+  ///
+  /// In en, this message translates to:
+  /// **'Synth voice'**
+  String get performVoiceSynth;
+
   /// No description provided for @performPlayInBeat.
   ///
   /// In en, this message translates to:
