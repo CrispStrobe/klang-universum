@@ -206,18 +206,15 @@ class _Note {
     final e = sampleAt(endTick).round();
     if (e <= s) return;
     final vn = p.vel / 127.0;
-    // Velocity → amplitude on the SF2 concave curve (its default velocity→
-    // attenuation modulator, ≈ −279·log10(vel/127) cB ≡ gain ∝ (vel/127)^1.4).
-    // Fit to a fluidsynth reference across the MUSICAL range (v48–112 match to
-    // ~0.4 dB); linear made soft notes far too loud (flat, undynamic) and 1.5
-    // over-thinned the mid-velocity body. The filter still uses the raw linear
-    // [vn] (velNorm) for its cutoff modulation.
+    // The velocity→amplitude curve is applied PER ZONE in _renderZone (each
+    // instrument authors its own velocity→attenuation, gen 48) — so [gain] here
+    // carries only CC7/CC11/soft-pedal and [velNorm] is the raw velocity.
     final note = _Note(
       s,
       e,
       key,
       ch,
-      p.gain * math.pow(vn, 1.4).toDouble(),
+      p.gain,
       vn,
       p.pan,
       p.modCents,
@@ -647,7 +644,11 @@ void _renderZone(
   final theta = (notePan.clamp(-1.0, 1.0) + 1) * 0.25 * math.pi;
   final lg = math.cos(theta);
   final rg = math.sin(theta);
-  final baseGain = n.gain * zone.gain;
+  // Velocity → amplitude on THIS zone's SF2 concave curve (its velocity→
+  // attenuation, gen 48; default ≈ (vel)^1.4). Per-instrument, so a percussive
+  // kit is velocity-steep and a sustained organ nearly flat — the balance a
+  // single global curve couldn't get right (drums too loud vs the melody).
+  final baseGain = n.gain * zone.gain * zone.velAttenGain(n.velNorm);
 
   // Effects sends: the zone's OWN authored reverb/chorus (SF2 gens 16/15) is the
   // base — so a pad is wet and a bass dry, as the font intends — plus the

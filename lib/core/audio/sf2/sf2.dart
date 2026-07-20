@@ -168,6 +168,7 @@ class Sf2Zone {
     this.sampleModes = 0,
     this.scaleTuning = 100,
     this.velFilterMods = const [],
+    this.velAttenMods = const [],
     this.modEnvToPitchCents = 0,
     this.modEnvToFilterCents = 0,
     this.delayModEnvTc = -12000,
@@ -266,6 +267,26 @@ class Sf2Zone {
   /// to 2400 cents). A drum kit adds a positive one so a hard hit opens a low
   /// base cutoff into its bright "click".
   final List<int> velFilterMods;
+
+  /// Velocity→attenuation modulators (SF2 mod, dest gen 48), flattened as
+  /// `[amount(cB), dir, type, …]`. Empty → the SF2 default (amount 960, the
+  /// concave velocity→loudness curve). The font gives each instrument its own
+  /// amount (a percussive kit steep, a sustained organ nearly flat).
+  final List<int> velAttenMods;
+
+  /// The velocity gain (0..1) for MIDI [vel] (0..1): the SF2 concave velocity→
+  /// attenuation. The default amount 960 cB ≈ `(vel)^1.4`; a font override
+  /// scales the exponent (amount/686), so a low-amount instrument is loud at any
+  /// velocity and a high-amount one is very velocity-sensitive.
+  double velAttenGain(double vel) {
+    if (vel <= 0) return 0;
+    var amount = 0;
+    for (var i = 0; i + 2 < velAttenMods.length; i += 3) {
+      amount += velAttenMods[i]; // sum the zone's velocity→attenuation amounts
+    }
+    if (velAttenMods.isEmpty) amount = 960; // SF2 default modulator
+    return pow(vel, amount / 686).toDouble();
+  }
 
   /// Modulation envelope (a 2nd DAHDSR) and its targets. [modEnvToFilterCents]
   /// sweeps the filter cutoff and [modEnvToPitchCents] the pitch by the envelope
@@ -594,13 +615,10 @@ List<Sf2Preset> _parsePresets(
         u16(ibagOff + (ib + 1) * 4),
         igenCount,
       );
-      g.velFilterMods = _readVelFilterMods(
-        data,
-        imodOff,
-        u16(ibagOff + ib * 4 + 2),
-        u16(ibagOff + (ib + 1) * 4 + 2),
-        imodCount,
-      );
+      final mStart = u16(ibagOff + ib * 4 + 2);
+      final mEnd = u16(ibagOff + (ib + 1) * 4 + 2);
+      g.velFilterMods = _readVelMods(data, imodOff, mStart, mEnd, imodCount, 8);
+      g.velAttenMods = _readVelMods(data, imodOff, mStart, mEnd, imodCount, 48);
       out.add(g);
     }
     return out;
@@ -694,6 +712,12 @@ List<Sf2Preset> _parsePresets(
             : (ig?.velFilterMods ?? const [])),
         ...?p.velFilterMods,
       ],
+      velAttenMods: [
+        ...((z.velAttenMods?.isNotEmpty ?? false)
+            ? z.velAttenMods!
+            : (ig?.velAttenMods ?? const [])),
+        ...?p.velAttenMods,
+      ],
     );
   }
 
@@ -716,13 +740,10 @@ List<Sf2Preset> _parsePresets(
         u16(pbagOff + (b + 1) * 4),
         pgenCount,
       );
-      g.velFilterMods = _readVelFilterMods(
-        data,
-        pmodOff,
-        u16(pbagOff + b * 4 + 2),
-        u16(pbagOff + (b + 1) * 4 + 2),
-        pmodCount,
-      );
+      final mStart = u16(pbagOff + b * 4 + 2);
+      final mEnd = u16(pbagOff + (b + 1) * 4 + 2);
+      g.velFilterMods = _readVelMods(data, pmodOff, mStart, mEnd, pmodCount, 8);
+      g.velAttenMods = _readVelMods(data, pmodOff, mStart, mEnd, pmodCount, 48);
       pZones.add(g);
     }
     final pGlobal = (pZones.isNotEmpty && pZones.first.instIndex == null)
@@ -769,8 +790,10 @@ class _Gen {
   int? loopStartOff, loopEndOff, key2VolHold, key2VolDecay;
   int? reverbSend, chorusSend; // gen 16 / 15, 0.1% units
   int? modLfoToFilter, key2ModHold, key2ModDecay;
-  // velocity→filterFc modulators, flattened as [amount, dir, type, …] triples.
+  // velocity→filterFc / velocity→attenuation modulators, flattened as
+  // [amount, dir, type, …] triples.
   List<int>? velFilterMods;
+  List<int>? velAttenMods;
 }
 
 /// Read the generators in [gStart, gEnd) of a pgen/igen chunk into a [_Gen].
@@ -881,18 +904,20 @@ _Gen _readGens(ByteData data, int genOff, int gStart, int gEnd, int genCount) {
   return g;
 }
 
-/// Read the velocity→filter-cutoff modulators in a zone's imod range, flattened
-/// as `[amount, dir, type, …]` triples. A modulator qualifies when its
-/// destination is initialFilterFc (gen 8) and its source is note-on velocity (a
-/// general controller, index 2). `dir` (1 = max→min) and `type` (0 linear /
-/// 1 concave / 2 convex) shape the velocity curve; the amount is in cents. GM
-/// drum kits use these to open a low base cutoff on a hard hit (the "click").
-List<int> _readVelFilterMods(
+/// Read the velocity→[destGen] modulators in a zone's mod range, flattened as
+/// `[amount, dir, type, …]` triples. A modulator qualifies when its destination
+/// is [destGen] and its source is note-on velocity (a general controller, index
+/// 2). `dir` (1 = max→min) and `type` (0 linear / 1 concave / 2 convex) shape
+/// the velocity curve; the amount is in the destination's units (filterFc gen 8
+/// → cents for the drum "click"; attenuation gen 48 → centibels for the
+/// per-instrument velocity→loudness curve).
+List<int> _readVelMods(
   ByteData data,
   int modOff,
   int mStart,
   int mEnd,
   int modCount,
+  int destGen,
 ) {
   final out = <int>[];
   final end = mEnd.clamp(0, modCount);
@@ -901,8 +926,8 @@ List<int> _readVelFilterMods(
     final src = data.getUint16(o, Endian.little);
     final dest = data.getUint16(o + 2, Endian.little);
     final amount = data.getInt16(o + 4, Endian.little);
-    // dest 8 = initialFilterFc; source: CC flag clear (bit 7) and index 2 = vel.
-    if (dest == 8 && (src & 0x80) == 0 && (src & 0x7f) == 2) {
+    // source: CC flag clear (bit 7) and general-controller index 2 = velocity.
+    if (dest == destGen && (src & 0x80) == 0 && (src & 0x7f) == 2) {
       out
         ..add(amount)
         ..add((src >> 8) & 1) // direction
@@ -942,7 +967,8 @@ _Gen _mergePreset(_Gen? glob, _Gen loc) {
     ..freqVibLfo = loc.freqVibLfo ?? glob.freqVibLfo
     ..pan = loc.pan ?? glob.pan
     ..instIndex = loc.instIndex
-    ..velFilterMods = [...?glob.velFilterMods, ...?loc.velFilterMods];
+    ..velFilterMods = [...?glob.velFilterMods, ...?loc.velFilterMods]
+    ..velAttenMods = [...?glob.velAttenMods, ...?loc.velAttenMods];
 }
 
 /// Whether [bytes] is a compressed `.sf3` soundfont (OGG-Vorbis samples), which
