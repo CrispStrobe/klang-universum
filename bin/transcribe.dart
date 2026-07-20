@@ -13,7 +13,7 @@
 //                              which runtime (default auto: crispasr → onnx →
 //                              pure-Dart for F0). poly/chords are onnx-only;
 //                              stems = onnx Open-Unmix or crispasr CLI.
-//   --f0 pyin|crepe|rmvpe      the F0 model for `notes` (default: per backend —
+//   --f0 pyin|dio|crepe|rmvpe      the F0 model for `notes` (default: per backend —
 //                              dart→pyin, onnx→crepe, crispasr→crepe)
 //   --sep-bin / --sep-model    crispasr binary + demucs GGUF for `--task stems`
 //                              --backend crispasr (or env CRISPASR_BIN /
@@ -43,6 +43,7 @@ import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_separate.dart';
+import 'package:comet_beat/core/audio/transcription/dio.dart' show dioEstimator;
 import 'package:comet_beat/core/audio/transcription/harmony.dart';
 import 'package:comet_beat/core/audio/transcription/harmony_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/pyin.dart' show pyinF0;
@@ -73,7 +74,7 @@ Future<void> main(List<String> args) async {
     stderr.writeln(
       'usage: dart run bin/transcribe.dart audio.wav '
       '[--task notes|poly|chords|stems] [--backend auto|dart|onnx|crispasr] '
-      '[--f0 pyin|crepe|rmvpe] [--sep-bin B] [--sep-model M] [--a4 440] '
+      '[--f0 pyin|dio|crepe|rmvpe] [--sep-bin B] [--sep-model M] [--a4 440] '
       '[--f0-dump] [--json]',
     );
     exit(64);
@@ -164,6 +165,12 @@ Future<void> main(List<String> args) async {
 /// Resolve the F0 estimator for the `notes` task from the backend + model
 /// choice. Null ⇒ the pure-Dart pYIN default (web-safe, no model).
 Future<F0Estimator?> _resolveF0(String backend, String model) async {
+  // Pure-Dart F0 models (no download, any backend): `dio` = WORLD DIO+StoneMask
+  // (a robust classical DSP tracker, pyworld-parity); `pyin` = the built-in
+  // default (null estimator).
+  if (model == 'dio') return dioEstimator();
+  if (model == 'pyin') return null;
+
   Future<F0Estimator?> onnx() async {
     final m = model.isEmpty ? 'crepe' : model;
     if (m == 'rmvpe') return RmvpeModelStore().estimator();
