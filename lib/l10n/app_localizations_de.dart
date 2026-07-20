@@ -690,6 +690,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get crescendoSofterLabel => 'Wird leiser';
 
   @override
+  String get gameCrescendoRead => 'Crescendo oder Diminuendo?';
+
+  @override
+  String get gameCrescendoReadSubtitle =>
+      'Lies die Gabel: wird die Musik lauter oder leiser?';
+
+  @override
+  String get crescendoReadPrompt =>
+      'Schau auf die Gabel unter den Noten. Wird es lauter oder leiser?';
+
+  @override
   String get gameTempoChangeEar => 'Schneller oder langsamer?';
 
   @override

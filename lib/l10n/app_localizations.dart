@@ -1340,6 +1340,24 @@ abstract class AppLocalizations {
   /// **'Getting softer'**
   String get crescendoSofterLabel;
 
+  /// No description provided for @gameCrescendoRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Crescendo or Diminuendo?'**
+  String get gameCrescendoRead;
+
+  /// No description provided for @gameCrescendoReadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the hairpin: does the music grow or fade?'**
+  String get gameCrescendoReadSubtitle;
+
+  /// No description provided for @crescendoReadPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at the wedge under the notes. Does it get louder or softer?'**
+  String get crescendoReadPrompt;
+
   /// No description provided for @gameTempoChangeEar.
   ///
   /// In en, this message translates to:

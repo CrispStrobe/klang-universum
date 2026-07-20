@@ -687,6 +687,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crescendoSofterLabel => 'Getting softer';
 
   @override
+  String get gameCrescendoRead => 'Crescendo or Diminuendo?';
+
+  @override
+  String get gameCrescendoReadSubtitle =>
+      'Read the hairpin: does the music grow or fade?';
+
+  @override
+  String get crescendoReadPrompt =>
+      'Look at the wedge under the notes. Does it get louder or softer?';
+
+  @override
   String get gameTempoChangeEar => 'Speeding Up or Slowing Down?';
 
   @override

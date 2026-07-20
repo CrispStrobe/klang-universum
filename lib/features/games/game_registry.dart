@@ -38,6 +38,7 @@ import 'package:comet_beat/features/games/drums/drum_read_screen.dart';
 import 'package:comet_beat/features/games/expression/articulation_ear_screen.dart';
 import 'package:comet_beat/features/games/expression/charades_screen.dart';
 import 'package:comet_beat/features/games/expression/crescendo_ear_screen.dart';
+import 'package:comet_beat/features/games/expression/crescendo_read_screen.dart';
 import 'package:comet_beat/features/games/expression/tempo_change_ear_screen.dart';
 import 'package:comet_beat/features/games/guitar/capo_match_screen.dart';
 import 'package:comet_beat/features/games/guitar/fretboard_find_screen.dart';
@@ -812,6 +813,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCrescendoEar,
       subtitle: (l) => l.gameCrescendoEarSubtitle,
       builder: (_) => const CrescendoEarScreen(),
+      tutorial: crescendoEarPrimer,
+    ),
+    // Reading twin of crescendo_ear — read a real hairpin (opening wedge =
+    // crescendo, closing = diminuendo) on the staff.
+    GameInfo(
+      id: 'crescendo_read',
+      icon: Icons.change_history,
+      title: (l) => l.gameCrescendoRead,
+      subtitle: (l) => l.gameCrescendoReadSubtitle,
+      builder: (_) => const CrescendoReadScreen(),
       tutorial: crescendoEarPrimer,
     ),
     // Aural direction-of-tempo — accelerando vs ritardando by ear (tempo_duel
