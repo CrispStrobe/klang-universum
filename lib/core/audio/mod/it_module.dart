@@ -80,6 +80,7 @@ class ItSample {
     this.loopStart = 0,
     this.loopEnd = 0,
     this.c5speed = 8363,
+    this.pan = 128,
     this.pingPong = false,
     required this.pcm,
   });
@@ -93,6 +94,11 @@ class ItSample {
   final int length; // declared length in samples
   final int loopStart, loopEnd;
   final int c5speed; // playback rate at C-5
+
+  /// Default stereo position 0 left … 128 centre … 255 right, from the sample
+  /// header's default-pan byte (128 = no explicit default pan).
+  final int pan;
+
   final bool pingPong; // Flg 0x40 — bidirectional loop
   final Float64List pcm;
 

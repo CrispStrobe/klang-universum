@@ -156,7 +156,9 @@ Uint8List writeIt(ItModule module) {
     u8(s.defaultVolume); // 0x13 default volume
     writeString(s.name, 26); // 0x14 name
     u8(0x01); // 0x2E Cvt (signed)
-    u8(32); // 0x2F default pan
+    // 0x2F default pan: centre (128) → no explicit default pan; else set bit 7
+    // + the 0..64 pan (doc 0..255 → IT 0..64).
+    u8(s.pan == 128 ? 32 : (0x80 | (s.pan * 64 ~/ 255).clamp(0, 64)));
     u32(length); // 0x30 length (samples)
     u32(s.loopStart); // 0x34 loop start
     u32(s.loopEnd); // 0x38 loop end

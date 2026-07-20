@@ -201,6 +201,9 @@ ItSample _parseSample(
   final sampleName = readCString(so + 0x14, 26);
   final filename = readCString(so + 0x04, 12);
   final cvt = u8(so + 0x2E);
+  // Default pan (dfp): bit 7 = "use default pan", bits 0..6 = pan 0..64.
+  final dfp = u8(so + 0x2F);
+  final pan = (dfp & 0x80) != 0 ? ((dfp & 0x7F) * 4).clamp(0, 255) : 128;
   final length = u32(so + 0x30);
   final loopStart = u32(so + 0x34);
   final loopEnd = u32(so + 0x38);
@@ -232,6 +235,7 @@ ItSample _parseSample(
     loopStart: loopStart,
     loopEnd: loopEnd,
     c5speed: c5speed == 0 ? 8363 : c5speed,
+    pan: pan,
     pingPong: pingPong,
     pcm: pcm,
   );

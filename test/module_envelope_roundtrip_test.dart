@@ -5,7 +5,7 @@
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
-    show convertToMod, convertToXm, parseAnyModule;
+    show convertToIt, convertToMod, convertToXm, parseAnyModule;
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -92,6 +92,28 @@ void main() {
     );
     // Panning is a raw header byte, so it survives exactly.
     expect(_firstUsed(parseAnyModule(convertToXm(doc))).pan, 200);
+  });
+
+  test('an IT sample default pan round-trips through the doc', () {
+    final pcm = Float64List.fromList([
+      for (var i = 0; i < 64; i++) i % 8 < 4 ? 0.5 : -0.5,
+    ]);
+    final doc = ModuleDoc(
+      sourceFormat: ModuleFormat.it,
+      channelCount: 1,
+      order: [0],
+      patterns: [
+        const DocPattern(
+          [
+            [DocCell(note: 60, instrument: 1)],
+          ],
+          1,
+        ),
+      ],
+      // 192 = 48/64 in IT's 7-bit default-pan, so it round-trips exactly.
+      samples: [DocSample(pcm: pcm, pan: 192)],
+    );
+    expect(_firstUsed(parseAnyModule(convertToIt(doc))).pan, 192);
   });
 
   test('MOD has no envelopes — the envelope drops (documented limitation)', () {
