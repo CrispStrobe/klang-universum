@@ -7,10 +7,12 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show SampleInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_patterns.dart';
@@ -31,7 +33,53 @@ TabWorkshopTester _tab(WidgetTester tester) =>
         as TabWorkshopTester;
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    MelodyBridge.instance.clear();
+  });
+
+  testWidgets('shares the tab melody out and loads a shared tune in as frets',
+      (tester) async {
+    await pumpGame(tester, const TabWorkshopScreen());
+    final tab = _tab(tester);
+
+    // The demo riff is non-empty, so its top voice publishes to the bridge.
+    expect(tab.canShareMelody, isTrue);
+    expect(tab.canLoadSharedMelody, isFalse);
+    tab.shareMelody();
+    final shared = MelodyBridge.instance.current;
+    expect(shared, isNotNull);
+    expect(shared!.source, 'tab');
+    expect(shared.isEmpty, isFalse);
+
+    // Now pull a controlled tune in — it lands as fretted columns.
+    final before = tab.columnCount;
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: const <PatternCell>[
+          (midis: [60], steps: 2), // C4
+          (midis: [64], steps: 2), // E4
+          (midis: [67], steps: 4), // G4
+          (midis: null, steps: 8),
+        ],
+        tempoBpm: 120,
+        source: 'loopmixer',
+      ),
+    );
+    expect(tab.canLoadSharedMelody, isTrue);
+    tab.loadSharedMelody();
+    await tester.pump();
+    expect(tab.columnCount, greaterThan(before));
+
+    // Some placed fret sounds C4 (60) on the standard tuning (B3 string, fret 1).
+    final soundsC4 = [
+      for (var c = 0; c < tab.columnCount; c++)
+        for (var s = 0; s < 6; s++)
+          if (tab.fretAt(c, s) case final int f)
+            tab.tuning.strings[s].midiNumber + f + tab.capo,
+    ];
+    expect(soundsC4, contains(60));
+  });
 
   group('parseTabFile', () {
     test('reads an ABC file into a Score with notes', () {

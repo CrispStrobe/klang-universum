@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
+import 'package:comet_beat/core/audio/loop_engine.dart'
+    show LoopTiming, PatternCell, kPatternSteps;
 import 'package:comet_beat/core/audio/microphone_pitch_service.dart';
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
 import 'package:comet_beat/core/audio/score_instrument_render.dart'
@@ -11,6 +13,7 @@ import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
@@ -160,6 +163,13 @@ abstract class TabWorkshopTester {
   void toggleSolo();
   bool isMuted(int track);
   bool isSoloed(int track);
+
+  /// Shared-tune bridge (MelodyBridge): publish the top voice of the tab out as
+  /// a tune, and pull a shared tune in as fretted columns after the cursor.
+  bool get canShareMelody;
+  void shareMelody();
+  bool get canLoadSharedMelody;
+  void loadSharedMelody();
 
   /// Loads a Song-Book song (by MusicXML) into the active track as editable tab.
   void openSongMusicXml(String title, String musicXml);
@@ -533,6 +543,97 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       _selCol = (at + cols.length - 1).clamp(0, _doc.columns.length - 1);
     });
     return cols.length;
+  }
+
+  // ── Shared-tune bridge (MelodyBridge) ──────────────────────────────────────
+  // Tab⇄tune is the easy direction: a fret already knows its exact pitch, so
+  // publishing walks the columns reading the TOP sounding note of each (the
+  // melody voice), and loading places each shared note at its lowest playable
+  // fret ([Tuning.fretFor]) — a monophonic line, so no fingering conflicts.
+  // (A full polyphonic score→tab *arrangement* — optimal string/fret choice
+  // across chords — is a harder, separate problem; see docs/PLAN.md.)
+
+  @override
+  bool get canShareMelody => _doc.columns.any((c) => c.frets.isNotEmpty);
+
+  @override
+  void shareMelody() {
+    final cells = <PatternCell>[];
+    var filled = 0;
+    for (final col in _doc.columns) {
+      if (filled >= kPatternSteps) break;
+      final (num, den) = col.duration.fraction;
+      var steps = (num * LoopTiming.stepsPerBar / den).round();
+      if (steps < 1) steps = 1;
+      if (filled + steps > kPatternSteps) steps = kPatternSteps - filled;
+      // The melody note is the highest sounding pitch in the column (top voice).
+      int? midi;
+      col.frets.forEach((string, fret) {
+        final m = _doc.tuning.strings[string].midiNumber + fret + _capo;
+        if (midi == null || m > midi!) midi = m;
+      });
+      cells.add((midis: midi == null ? null : [midi!], steps: steps));
+      filled += steps;
+    }
+    if (filled < kPatternSteps) {
+      cells.add((midis: null, steps: kPatternSteps - filled));
+    }
+    if (cells.every((c) => c.midis == null)) return; // nothing but rests
+    MelodyBridge.instance.publish(
+      SharedMelody(cells: cells, tempoBpm: _bpm, source: 'tab'),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneShared)),
+    );
+  }
+
+  /// Decomposes [steps] eighth-steps into the fewest tab note values, largest
+  /// first (the tab's own [kTabDurations] set — whole … eighth).
+  List<NoteDuration> _tabDurationsFor(int steps) {
+    final out = <NoteDuration>[];
+    var rem = steps;
+    while (rem > 0) {
+      final pick = kTabDurations.firstWhere(
+        (d) => d.$2 <= rem,
+        orElse: () => kTabDurations.last, // an eighth (1 step) always fits
+      );
+      out.add(pick.$1);
+      rem -= pick.$2;
+    }
+    return out;
+  }
+
+  @override
+  bool get canLoadSharedMelody => MelodyBridge.instance.hasMelody;
+
+  @override
+  void loadSharedMelody() {
+    final shared = MelodyBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    final cols = <TabColumn>[];
+    for (final c in shared.cells) {
+      final midis = c.midis;
+      for (final d in _tabDurationsFor(c.steps)) {
+        if (midis == null || midis.isEmpty) {
+          cols.add(TabColumn(duration: d)); // a rest
+        } else {
+          // Target the OPEN-string pitch (the capo re-adds its shift on render).
+          final sf = _doc.tuning
+              .fretFor(Pitch.fromMidi(midis.first + shared.key - _capo));
+          cols.add(
+            sf == null
+                ? TabColumn(duration: d)
+                : TabColumn(frets: {sf.$1: sf.$2}, duration: d),
+          );
+        }
+      }
+    }
+    if (_insertRun(cols) == 0) return;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneLoaded)),
+    );
   }
 
   @override
@@ -1166,6 +1267,27 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             icon: const Icon(Icons.edit_note),
             tooltip: l10n.tabOpenWorkshop,
             onPressed: _openInScoreWorkshop,
+          ),
+          // Shared-tune bridge: hand the tab's melody to the Loop Mixer /
+          // Tracker / Score Editor, or pull a tune they shared in as tab.
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.library_music_outlined),
+            tooltip: l10n.tuneShare,
+            enabled: canShareMelody || MelodyBridge.instance.hasMelody,
+            onSelected: (v) =>
+                v == 'share' ? shareMelody() : loadSharedMelody(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'share',
+                enabled: canShareMelody,
+                child: Text(l10n.tuneShare),
+              ),
+              PopupMenuItem(
+                value: 'load',
+                enabled: MelodyBridge.instance.hasMelody,
+                child: Text(l10n.tuneLoadShared),
+              ),
+            ],
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.ios_share),
