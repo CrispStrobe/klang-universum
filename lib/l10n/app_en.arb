@@ -860,6 +860,8 @@
     }
   },
   "performSceneSave": "Save scene",
+  "performChainPlay": "Play scenes",
+  "performChainStop": "Stop",
   "performSceneLabel": "Scene {number} · {active} on",
   "@performSceneLabel": {
     "placeholders": {

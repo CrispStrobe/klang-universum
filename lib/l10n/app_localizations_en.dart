@@ -2163,6 +2163,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performSceneSave => 'Save scene';
 
   @override
+  String get performChainPlay => 'Play scenes';
+
+  @override
+  String get performChainStop => 'Stop';
+
+  @override
   String performSceneLabel(int number, int active) {
     return 'Scene $number · $active on';
   }

@@ -147,6 +147,13 @@ abstract class PerformTester {
   void drop();
   void releaseDrop();
 
+  /// Scene-chain (Q4): play the saved scenes in order, auto-advancing each loop.
+  bool get isChaining;
+  int get chainPos;
+  void playChain();
+  void advanceChain(); // step to the next scene (the boundary timer calls this)
+  void stopChain();
+
   /// The current summed mix (active layers) — for tests.
   Float64List debugMix();
 }
@@ -221,6 +228,10 @@ class _PerformScreenState extends State<PerformScreen>
   double _masterLevel = 1.0;
   bool _dropRelease = false;
 
+  // Scene-chain (Q4): play scenes in order, advancing each loop boundary.
+  bool _chaining = false;
+  int _chainPos = 0;
+
   // Sing / beatbox capture (P4). Lazy mic (never touched in headless tests).
   MicrophonePitchService? _mic;
   StreamSubscription<Object?>? _micSub;
@@ -248,11 +259,15 @@ class _PerformScreenState extends State<PerformScreen>
       final now = _phaseNow;
       final wrapped = now < _lastPhaseMs;
       _lastPhaseMs = now;
-      if (_playing && wrapped && _dropRelease) {
-        releaseDrop(); // the drop slams back on the downbeat
-      } else if (_playing && _armed != null && wrapped) {
-        launchArmed(); // applies + setState
-      } else if (_playing || isPlayingIn || isCapturing) {
+      if (_playing && wrapped) {
+        if (_dropRelease) releaseDrop(); // the drop slams back on the downbeat
+        if (_chaining) {
+          advanceChain(); // the song plays itself through the sections
+        } else if (_armed != null) {
+          launchArmed();
+        }
+      }
+      if (_playing || isPlayingIn || isCapturing) {
         setState(() {}); // repaint the sweeping playhead
       }
     });
@@ -734,6 +749,7 @@ class _PerformScreenState extends State<PerformScreen>
     _stack.clear();
     _scenes.clear();
     _armed = null;
+    _chaining = false;
     _refresh();
   }
 
@@ -763,12 +779,14 @@ class _PerformScreenState extends State<PerformScreen>
   @override
   void launchScene(int i) {
     _armed = null;
+    _chaining = false; // manual override stops the chain
     _applyScene(_scenes[i]);
     _refresh();
   }
 
   @override
   void armScene(int i) {
+    _chaining = false; // manual override stops the chain
     _armed = _armed == i ? null : i; // tap again to disarm
     setState(() {});
   }
@@ -891,6 +909,43 @@ class _PerformScreenState extends State<PerformScreen>
     setState(() {});
   }
 
+  // ── Scene-chain / arrangement (Q4) ────────────────────────────────────────
+  @override
+  bool get isChaining => _chaining;
+  @override
+  int get chainPos => _chainPos;
+
+  /// Start playing the saved scenes in order (looping), advancing each loop.
+  @override
+  void playChain() {
+    if (_scenes.isEmpty) return;
+    _chaining = true;
+    _armed = null;
+    _chainPos = 0;
+    _applyScene(_scenes[0]);
+    if (_playing) {
+      _refresh();
+    } else {
+      play();
+    }
+    setState(() {});
+  }
+
+  /// Advance to the next scene, wrapping — called at each loop boundary.
+  @override
+  void advanceChain() {
+    if (!_chaining || _scenes.isEmpty) return;
+    _chainPos = (_chainPos + 1) % _scenes.length;
+    _applyScene(_scenes[_chainPos]);
+    _refresh();
+  }
+
+  @override
+  void stopChain() {
+    _chaining = false;
+    setState(() {});
+  }
+
   /// Pick a sound from "My Samples" to play as the keyboard voice (resampled to
   /// the loop rate + auto-tuned by [setSampleVoice]).
   Future<void> _pickVoice() async {
@@ -972,6 +1027,7 @@ class _PerformScreenState extends State<PerformScreen>
   @override
   void stop() {
     _playing = false;
+    _chaining = false;
     _clock.stop();
     _loop.stop();
     setState(() {});
@@ -1351,6 +1407,21 @@ class _PerformScreenState extends State<PerformScreen>
                         label: Text(l10n.performSceneSave),
                         onPressed: saveScene,
                       ),
+                      if (_scenes.length >= 2) ...[
+                        const SizedBox(width: 8),
+                        ActionChip(
+                          avatar: Icon(
+                            _chaining ? Icons.stop : Icons.playlist_play,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _chaining
+                                ? l10n.performChainStop
+                                : l10n.performChainPlay,
+                          ),
+                          onPressed: _chaining ? stopChain : playChain,
+                        ),
+                      ],
                       const SizedBox(width: 8),
                       Expanded(
                         child: ListView.separated(
@@ -1359,13 +1430,16 @@ class _PerformScreenState extends State<PerformScreen>
                           separatorBuilder: (_, __) => const SizedBox(width: 8),
                           itemBuilder: (context, i) {
                             final armed = _armed == i;
+                            final playing = _chaining && _chainPos == i;
                             return InputChip(
-                              selected: armed,
+                              selected: armed || playing,
                               showCheckmark: false,
                               avatar: Icon(
-                                armed
-                                    ? Icons.hourglass_top
-                                    : Icons.play_circle_outline,
+                                playing
+                                    ? Icons.graphic_eq
+                                    : armed
+                                        ? Icons.hourglass_top
+                                        : Icons.play_circle_outline,
                                 size: 18,
                               ),
                               label: Text(

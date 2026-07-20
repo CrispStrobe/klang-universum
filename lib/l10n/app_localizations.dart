@@ -4064,6 +4064,18 @@ abstract class AppLocalizations {
   /// **'Save scene'**
   String get performSceneSave;
 
+  /// No description provided for @performChainPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play scenes'**
+  String get performChainPlay;
+
+  /// No description provided for @performChainStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get performChainStop;
+
   /// No description provided for @performSceneLabel.
   ///
   /// In en, this message translates to:

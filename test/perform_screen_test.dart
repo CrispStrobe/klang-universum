@@ -485,6 +485,50 @@ void main() {
     expect(p.masterLevel, 1.0);
   });
 
+  testWidgets('scene-chain plays scenes in order and wraps', (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    p.addSeed('beat');
+    p.addSeed('bass');
+    await tester.pump();
+
+    // Scene A = both on; scene B = beat only.
+    p.saveScene();
+    p.toggleMute(1);
+    p.saveScene();
+    p.toggleMute(1);
+    await tester.pump();
+    expect(p.sceneCount, 2);
+
+    // Start the chain → scene A applied, both on.
+    p.play();
+    p.playChain();
+    await tester.pump();
+    expect(p.isChaining, isTrue);
+    expect(p.chainPos, 0);
+    expect(p.isMuted(1), isFalse);
+
+    // A boundary advances to scene B (beat only).
+    p.advanceChain();
+    await tester.pump();
+    expect(p.chainPos, 1);
+    expect(p.isMuted(1), isTrue);
+
+    // Next boundary wraps back to scene A.
+    p.advanceChain();
+    await tester.pump();
+    expect(p.chainPos, 0);
+    expect(p.isMuted(1), isFalse);
+
+    // A manual launch overrides + stops the chain.
+    p.launchScene(1);
+    await tester.pump();
+    expect(p.isChaining, isFalse);
+    expect(p.isMuted(1), isTrue);
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

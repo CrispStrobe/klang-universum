@@ -797,6 +797,8 @@
     }
   },
   "performSceneSave": "Szene sichern",
+  "performChainPlay": "Szenen abspielen",
+  "performChainStop": "Stopp",
   "performSceneLabel": "Szene {number} · {active} an",
   "@performSceneLabel": {
     "placeholders": {
