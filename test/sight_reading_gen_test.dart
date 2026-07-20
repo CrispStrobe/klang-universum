@@ -111,4 +111,45 @@ void main() {
       expect(notes.last.midi, 60, reason: 'final C');
     }
   });
+
+  group('minor mode (A natural minor)', () {
+    // A B C D E F G A — the relative minor, still accidental-free.
+    const aMinor = {57, 59, 60, 62, 64, 65, 67, 69};
+
+    test('draws only from A minor and resolves to A', () {
+      for (final seed in List.generate(30, (i) => i)) {
+        final chart = sightReadingChart(seed, minor: true, stars: 2);
+        expect(chart.name, contains('minor'));
+        for (final n in chart.notes) {
+          expect(aMinor.contains(n.midi), isTrue, reason: 'midi ${n.midi}');
+        }
+        expect(chart.notes.last.midi, 57); // tonic A
+        expect(chart.notes[chart.notes.length - 2].midi, 59); // 2̂ = B
+      }
+    });
+
+    test('opens on A / E / C by seed and is deterministic', () {
+      int firstOf(int seed) =>
+          sightReadingChart(seed, minor: true).notes.first.midi;
+      expect(firstOf(0), 57); // A tonic
+      expect(firstOf(1), 64); // E dominant
+      expect(firstOf(2), 60); // C mediant
+      final a = sightReadingChart(5, minor: true, stars: 3);
+      final b = sightReadingChart(5, minor: true, stars: 3);
+      expect(
+        a.notes.map((n) => (n.midi, n.startBeat, n.beats)),
+        b.notes.map((n) => (n.midi, n.startBeat, n.beats)),
+      );
+    });
+
+    test('the 0★ minor tier stays in the low five notes, quarters only', () {
+      const starter = {57, 59, 60, 62, 64}; // A B C D E
+      for (final seed in List.generate(20, (i) => i)) {
+        for (final n in sightReadingChart(seed, minor: true, stars: 0).notes) {
+          expect(starter.contains(n.midi), isTrue, reason: 'midi ${n.midi}');
+          expect(n.beats, 1.0);
+        }
+      }
+    });
+  });
 }

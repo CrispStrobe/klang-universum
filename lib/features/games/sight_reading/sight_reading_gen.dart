@@ -13,13 +13,19 @@ import 'package:comet_beat/core/audio/play_along.dart';
 /// per scale degree and no accidentals to read at this level.
 const List<int> _cMajorC4 = [60, 62, 64, 65, 67, 69, 71, 72];
 
+/// The A natural-minor scale from A3 to A4 — the relative minor, still all white
+/// keys (no accidentals), for the "minor sounds different" variety.
+const List<int> _aMinorA3 = [57, 59, 60, 62, 64, 65, 67, 69];
+
 /// Builds a [PlayAlongChart] of [bars] 4/4 bars: an in-key melody that moves
 /// mostly by step, starts and ends on the tonic, and never leaves the scale
 /// range. Deterministic for a given [seed].
 ///
-/// [stars] (0..3, the player's best tier) scales the difficulty:
-///   0 — five-note range (C4–G4), steps only, quarters, gentle 80 BPM;
-///   1–2 — full octave (C4–C5), the odd skip, some eighths, 90 BPM;
+/// [minor] draws from A natural minor instead of C major (both accidental-free)
+/// so the exercises aren't all in the same bright key. [stars] (0..3, the
+/// player's best tier) scales the difficulty:
+///   0 — five-note range, steps only, quarters, gentle 80 BPM;
+///   1–2 — full octave, the odd skip, some eighths, 90 BPM;
 ///   3 — full octave, more skips + the occasional leap, more eighths, 104 BPM.
 /// [bpm] overrides the tier's default tempo when given.
 PlayAlongChart sightReadingChart(
@@ -27,11 +33,12 @@ PlayAlongChart sightReadingChart(
   int bars = 4,
   int stars = 1,
   int? bpm,
+  bool minor = false,
 }) {
+  final scale = minor ? _aMinorA3 : _cMajorC4;
   final rng = Random(seed);
   final level = stars.clamp(0, 3);
-  final maxDegree =
-      level == 0 ? 4 : _cMajorC4.length - 1; // C4–G4 vs full octave
+  final maxDegree = level == 0 ? 4 : scale.length - 1; // 5 notes vs full octave
   final allowEighths = level >= 1;
   final eighthOneIn =
       level >= 3 ? 2 : 3; // how often a beat splits into eighths
@@ -68,7 +75,7 @@ PlayAlongChart sightReadingChart(
     // Resolve to the tonic on the very last beat.
     if (slot == totalBeats - 1) {
       notes.add(
-        TargetNote(midi: _cMajorC4[0], startBeat: slot.toDouble(), beats: 1),
+        TargetNote(midi: scale[0], startBeat: slot.toDouble(), beats: 1),
       );
       break;
     }
@@ -76,35 +83,31 @@ PlayAlongChart sightReadingChart(
     if (allowEighths && rng.nextInt(eighthOneIn) == 0) {
       for (var e = 0; e < 2; e++) {
         notes.add(
-          TargetNote(
-            midi: _cMajorC4[idx],
-            startBeat: slot + e * 0.5,
-            beats: 0.5,
-          ),
+          TargetNote(midi: scale[idx], startBeat: slot + e * 0.5, beats: 0.5),
         );
         idx = nextDegree();
       }
     } else {
       notes.add(
-        TargetNote(midi: _cMajorC4[idx], startBeat: slot.toDouble(), beats: 1),
+        TargetNote(midi: scale[idx], startBeat: slot.toDouble(), beats: 1),
       );
       idx = nextDegree();
     }
   }
 
   // Cadential close: step down to the final tonic (2̂ → 1̂) so the phrase ends
-  // with a sense of arrival instead of a random jump onto C.
+  // with a sense of arrival instead of a random jump onto the tonic.
   if (notes.length >= 2) {
     final penult = notes[notes.length - 2];
     notes[notes.length - 2] = TargetNote(
-      midi: _cMajorC4[1], // D — a step above the closing C
+      midi: scale[1], // the supertonic — a step above the closing tonic
       startBeat: penult.startBeat,
       beats: penult.beats,
     );
   }
 
   return PlayAlongChart(
-    name: 'Sight-singing',
+    name: minor ? 'Sight-singing (minor)' : 'Sight-singing',
     bpm: tempo,
     notes: notes,
     octaveAgnostic: true, // sung back — the octave is voice-dependent

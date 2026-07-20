@@ -1386,17 +1386,22 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       icon: Icons.auto_stories,
       title: (l) => l.gameSightReading,
       subtitle: (l) => l.gameSightReadingSubtitle,
-      builder: (ctx) => PlayAlongScreen(
-        // Difficulty scales with the player's best tier (0..3): more range,
-        // skips and eighths as they improve.
-        chart: sightReadingChart(
-          DateTime.now().microsecondsSinceEpoch,
-          stars: ctx.read<ProgressService>().starsFor('sight_reading'),
-        ),
-        title: AppLocalizations.of(ctx)!.gameSightReading,
-        gameId: 'sight_reading',
-        sriPrefix: 'voice.sight_reading',
-      ),
+      builder: (ctx) {
+        // A fresh seed each open → a never-repeating tune. Difficulty scales
+        // with the player's best tier (0..3); the seed's parity alternates
+        // C-major and A-minor keys for variety.
+        final seed = DateTime.now().microsecondsSinceEpoch;
+        return PlayAlongScreen(
+          chart: sightReadingChart(
+            seed,
+            stars: ctx.read<ProgressService>().starsFor('sight_reading'),
+            minor: seed.isOdd,
+          ),
+          title: AppLocalizations.of(ctx)!.gameSightReading,
+          gameId: 'sight_reading',
+          sriPrefix: 'voice.sight_reading',
+        );
+      },
     ),
     // Play along to ANY MIDI file — pick a .mid and it becomes a moving-score
     // play/sing-along (scoreFromMidi → SongScreen.fromScore). Turns the whole
