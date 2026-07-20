@@ -26,6 +26,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
+import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:comet_beat/core/audio/wav_io.dart';
@@ -71,14 +72,20 @@ Future<void> main(List<String> args) async {
     exit(66);
   }
 
-  final f0 = crispasrCliCrepeF0(
-    binary: _optS(args, '--bin'),
-    model: _optS(args, '--model'),
-  );
+  // Prefer the in-app FFI binding (CrispasrSession.pitch, model auto-resolved
+  // via CrispASR's registry — downloads the crepe GGUF on first run); fall back
+  // to the `crispasr --pitch` CLI (explicit --bin/--model or env).
+  final f0 = await crispasrFfiCrepeF0(download: true) ??
+      crispasrCliCrepeF0(
+        binary: _optS(args, '--bin'),
+        model: _optS(args, '--model'),
+      );
   if (f0 == null) {
     stderr.writeln(
-      'crispasr CREPE unavailable — pass --bin <crispasr> --model <crepe.gguf> '
-      'or set CRISPASR_BIN / CRISPASR_CREPE_GGUF (both files must exist).',
+      'crispasr CREPE unavailable. Either (a) libcrispasr (0.8.16+, with the '
+      'pitch API) must be loadable — set COMET_CRISPASR_LIB or drop it in '
+      '~/.cache/crispasr — or (b) pass --bin <crispasr> --model <crepe.gguf> '
+      '(or set CRISPASR_BIN / CRISPASR_CREPE_GGUF) for the CLI path.',
     );
     exit(69);
   }

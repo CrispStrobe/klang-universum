@@ -75,13 +75,17 @@ dependencies:
   # abstracts a TtsBackend so the neural backend (crispasr, below) can slot in.
   # Narrates lesson/primer text for pre-readers + accessibility.
   flutter_tts: ^4.2.2
-  # CrispASR — the on-device NEURAL TTS backend (ggml/Kokoro, Apache-2.0, de+en).
-  # Pure-Dart FFI over libcrispasr; pub-get/analyze/test need no native lib (it's
-  # DynamicLibrary.open'd only when narration actually runs, and only where the
-  # dylib + Kokoro model are present — else TtsService falls back to flutter_tts).
-  # Model is downloaded on first use + cached, never bundled. Reached only through
-  # core/audio/tts/crispasr_tts_backend.dart. Native lib bundling: macOS first.
-  crispasr: ^0.8.11
+  # CrispASR — on-device NEURAL ggml, TWO uses (both pure-Dart FFI over
+  # libcrispasr; pub-get/analyze/test need no native lib — it's
+  # DynamicLibrary.open'd only when the feature runs, else we fall back):
+  #   • TTS backend (Kokoro, Apache-2.0, de+en) — core/audio/tts/…
+  #   • CREPE F0 (0.8.16+ CrispasrSession.pitch, cstr/crepe-GGUF) — the ggml
+  #     backend of the transcription framework, core/audio/transcription/
+  #     crispasr_ffi_pitch.dart; null when the lib/model absent → resolver falls
+  #     back to the pure-Dart onnx / CLI paths.
+  # Models are registry-resolved + downloaded on first use, never bundled.
+  # Native lib bundling: macOS first.
+  crispasr: ^0.8.16
   # AEC Tier 3b native full-duplex echo canceller (in-repo Flutter FFI plugin).
   # Used only on native platforms + only when speaker-backing AEC is wanted;
   # reached exclusively through core/audio/aec_capability.dart, whose web build
