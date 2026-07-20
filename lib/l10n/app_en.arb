@@ -601,6 +601,10 @@
   "dawEmpty": "Add a beat or a tune, then press play — they layer together.",
   "dawSend": "To Multitrack",
   "dawSent": "Added to the Multitrack",
+  "beatShare": "Share beat",
+  "beatLoadShared": "Load shared",
+  "beatShared": "Beat shared — load it in the Loop Mixer, Tracker or Looper",
+  "beatLoaded": "Loaded the shared beat",
   "dawBpm": "{n} BPM",
   "@dawBpm": {
     "placeholders": { "n": { "type": "int" } }

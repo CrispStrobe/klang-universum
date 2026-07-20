@@ -2834,6 +2834,30 @@ abstract class AppLocalizations {
   /// **'Added to the Multitrack'**
   String get dawSent;
 
+  /// No description provided for @beatShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share beat'**
+  String get beatShare;
+
+  /// No description provided for @beatLoadShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Load shared'**
+  String get beatLoadShared;
+
+  /// No description provided for @beatShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Beat shared — load it in the Loop Mixer, Tracker or Looper'**
+  String get beatShared;
+
+  /// No description provided for @beatLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded the shared beat'**
+  String get beatLoaded;
+
   /// No description provided for @dawBpm.
   ///
   /// In en, this message translates to:

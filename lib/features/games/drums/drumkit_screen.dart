@@ -22,6 +22,7 @@ import 'package:comet_beat/core/audio/rhythm_quantize.dart'
 import 'package:comet_beat/core/audio/synth.dart'
     show Drum, renderDrum, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart'
@@ -90,6 +91,12 @@ abstract interface class DrumkitTester {
 
   /// Send the current beat to the Multitrack (DAW) as a clip.
   void sendToDaw();
+
+  /// Shared-groove bridge: publish this beat so the other modes (Loop Mixer /
+  /// Trackers / Looper) can load it, and pull the shared beat into this grid.
+  void shareBeat();
+  bool get canLoadSharedBeat;
+  void loadSharedBeat();
 }
 
 class DrumkitScreen extends StatefulWidget {
@@ -554,6 +561,48 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     );
   }
 
+  // --- Shared-groove bridge --------------------------------------------------
+
+  @override
+  void shareBeat() {
+    if (hitCount == 0) return;
+    BeatBridge.instance.publish(
+      SharedBeat(
+        rows: _snapshot(), // a copy, so later edits don't change what's shared
+        tempoBpm: _tempo,
+        swing: _swing,
+        source: 'drumkit',
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.beatShared)),
+    );
+  }
+
+  @override
+  bool get canLoadSharedBeat => BeatBridge.instance.hasBeat;
+
+  @override
+  void loadSharedBeat() {
+    final shared = BeatBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    _pushUndo();
+    final fitted = shared.rowsFitted(kPatternSteps);
+    setState(() {
+      for (final d in Drum.values) {
+        _rows[d]!.setAll(0, fitted[d]!);
+      }
+      _tempo = shared.tempoBpm.clamp(40, 240);
+      _swing = shared.swing.clamp(0.0, 0.6);
+    });
+    _syncPlayback();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.beatLoaded)),
+    );
+  }
+
   @override
   int get tempo => _tempo;
 
@@ -787,6 +836,21 @@ class _DrumkitScreenState extends State<DrumkitScreen>
                     onPressed: hitCount == 0 ? null : sendToDaw,
                     icon: const Icon(Icons.library_add),
                     label: Text(l10n.dawSend),
+                  ),
+                  // Shared groove: publish this beat / pull the one another mode
+                  // (Loop Mixer, Tracker, Looper) shared.
+                  FilledButton.tonalIcon(
+                    onPressed: hitCount == 0 ? null : shareBeat,
+                    icon: const Icon(Icons.upload),
+                    label: Text(l10n.beatShare),
+                  ),
+                  ValueListenableBuilder<SharedBeat?>(
+                    valueListenable: BeatBridge.instance.beat,
+                    builder: (context, _, __) => FilledButton.tonalIcon(
+                      onPressed: canLoadSharedBeat ? loadSharedBeat : null,
+                      icon: const Icon(Icons.download),
+                      label: Text(l10n.beatLoadShared),
+                    ),
                   ),
                   OutlinedButton.icon(
                     onPressed: hitCount == 0 ? null : clear,

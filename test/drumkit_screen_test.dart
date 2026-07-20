@@ -3,6 +3,7 @@
 
 import 'package:comet_beat/core/audio/beat_capture.dart' show BeatFrame;
 import 'package:comet_beat/core/audio/synth.dart' show Drum;
+import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/drums/drumkit_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
@@ -18,7 +19,53 @@ DrumkitTester _kit(WidgetTester tester) =>
         as DrumkitTester;
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    BeatBridge.instance.clear();
+  });
+
+  testWidgets('shares the beat to the bridge and loads a shared one back',
+      (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+
+    // Author a beat and publish it to the shared bridge.
+    kit.toggle(Drum.kick, 0);
+    kit.toggle(Drum.snare, 4);
+    kit.setTempo(120);
+    await tester.pump();
+    kit.shareBeat();
+
+    final shared = BeatBridge.instance.current!;
+    expect(shared.rows[Drum.kick]![0], isTrue);
+    expect(shared.rows[Drum.snare]![4], isTrue);
+    expect(shared.tempoBpm, 120);
+    expect(shared.source, 'drumkit');
+
+    // Clear locally, then pull the shared beat back — it restores the grid.
+    kit.clear();
+    kit.setTempo(80);
+    await tester.pump();
+    expect(kit.hitCount, 0);
+
+    expect(kit.canLoadSharedBeat, isTrue);
+    kit.loadSharedBeat();
+    await tester.pump();
+    expect(kit.cellAt(Drum.kick, 0), isTrue);
+    expect(kit.cellAt(Drum.snare, 4), isTrue);
+    expect(kit.tempo, 120); // tempo came back too
+
+    // Loading is undoable (it pushed an undo snapshot).
+    expect(kit.canUndo, isTrue);
+  });
+
+  testWidgets('an empty grid has nothing to share', (tester) async {
+    await pumpGame(tester, const DrumkitScreen());
+    final kit = _kit(tester);
+    kit.shareBeat(); // no-op when empty
+    expect(BeatBridge.instance.hasBeat, isFalse);
+    expect(kit.canLoadSharedBeat, isFalse);
+  });
 
   testWidgets('toggling grid cells builds the beat', (tester) async {
     await pumpGame(tester, const DrumkitScreen());

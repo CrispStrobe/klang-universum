@@ -1496,6 +1496,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawSent => 'Added to the Multitrack';
 
   @override
+  String get beatShare => 'Share beat';
+
+  @override
+  String get beatLoadShared => 'Load shared';
+
+  @override
+  String get beatShared =>
+      'Beat shared — load it in the Loop Mixer, Tracker or Looper';
+
+  @override
+  String get beatLoaded => 'Loaded the shared beat';
+
+  @override
   String dawBpm(int n) {
     return '$n BPM';
   }
