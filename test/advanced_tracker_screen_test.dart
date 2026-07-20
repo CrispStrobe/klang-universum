@@ -7,6 +7,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
 import 'package:comet_beat/core/audio/synth.dart' show Drum, Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show AdditiveInstrument, SampleInstrument;
@@ -14,6 +15,7 @@ import 'package:comet_beat/core/audio/tracker_instrument_codec.dart'
     show instrumentToJsonString;
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
@@ -35,6 +37,41 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     BeatBridge.instance.clear();
+    MelodyBridge.instance.clear();
+  });
+
+  testWidgets('shares the melody channel out and loads a shared tune in',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    // A shared tune another mode published (C-E-G, then a rest).
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: const <PatternCell>[
+          (midis: [60], steps: 2),
+          (midis: [64], steps: 2),
+          (midis: [67], steps: 4),
+          (midis: null, steps: 8),
+        ],
+        tempoBpm: 120,
+        source: 'loopmixer',
+      ),
+    );
+    expect(game.canLoadSharedMelody, isTrue);
+
+    // Pull it in — notes land on the melody channel at their onsets.
+    game.loadSharedMelody();
+    await tester.pump();
+    expect(game.noteCount, 3);
+
+    // Share the melody channel back out — round-trips (source advtracker).
+    MelodyBridge.instance.clear();
+    game.shareMelody();
+    final shared = MelodyBridge.instance.current;
+    expect(shared, isNotNull);
+    expect(shared!.source, 'advtracker');
+    expect(shared.isEmpty, isFalse);
   });
 
   testWidgets('loads a shared beat as a polyphonic drum song, and shares back',

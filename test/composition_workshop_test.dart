@@ -6,10 +6,12 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show SampleInstrument;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
@@ -76,6 +78,7 @@ Future<void> _enterStudio(WidgetTester tester) async {
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    MelodyBridge.instance.clear();
   });
 
   Future<void> pump(WidgetTester tester) async {
@@ -105,6 +108,34 @@ void main() {
     editor.sendToDaw();
     expect(daw.clipCount, 1);
     expect(daw.bake(), isNotEmpty); // the placed note renders as a clip
+  });
+
+  testWidgets('loads a shared tune (MelodyBridge) in as notes + a rest',
+      (tester) async {
+    await pump(tester);
+    final editor = _editor(tester);
+    expect(editor.canLoadSharedMelody, isFalse);
+    expect(editor.noteCount, 0);
+
+    // A riff built on the 16-step grid elsewhere (C quarter, E quarter, G half,
+    // then a whole-bar rest) → 3 notes + 1 rest = 4 score elements.
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: const <PatternCell>[
+          (midis: [60], steps: 2),
+          (midis: [64], steps: 2),
+          (midis: [67], steps: 4),
+          (midis: null, steps: 8),
+        ],
+        tempoBpm: 100,
+        source: 'loopmixer',
+      ),
+    );
+    expect(editor.canLoadSharedMelody, isTrue);
+
+    editor.loadSharedMelody();
+    await tester.pump();
+    expect(editor.noteCount, 4);
   });
 
   testWidgets('the Analysis toggle shows the live harmony banner',

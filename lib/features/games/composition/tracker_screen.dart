@@ -34,6 +34,7 @@ import 'package:comet_beat/core/audio/voice_clip_recorder.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
@@ -132,6 +133,12 @@ abstract interface class TrackerTester {
   void shareBeat();
   bool get canLoadSharedBeat;
   void loadSharedBeat();
+
+  /// Shared-tune bridge (the pitched twin): publish the melody channel out, and
+  /// pull a shared tune in onto the first melodic channel.
+  void shareMelody();
+  bool get canLoadSharedMelody;
+  void loadSharedMelody();
 
   /// Imports the built-in demo tune into the melody channel (Score → Tracker).
   void importDemo();
@@ -1214,6 +1221,66 @@ class _TrackerScreenState extends State<TrackerScreen>
     );
   }
 
+  // ── Shared-tune bridge (pitched twin of the beat bridge) ───────────────────
+
+  /// The first melodic (non-percussion) channel, or -1 if the song is all drums.
+  int _melodicIndex() =>
+      _engine.channels.indexWhere((c) => c.instrument is! PercussionInstrument);
+
+  @override
+  void shareMelody() {
+    final ch = _melodicIndex();
+    if (ch < 0) return;
+    final steps = _engine.rows;
+    final rows = <int?>[
+      for (var s = 0; s < steps; s++) _engine.cellAt(ch, s).midi,
+    ];
+    if (rows.every((m) => m == null)) return;
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: patternCellsFromMidiRows(rows),
+        tempoBpm: _engine.timing.tempoBpm,
+        source: 'tracker',
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneShared)),
+    );
+  }
+
+  @override
+  bool get canLoadSharedMelody =>
+      MelodyBridge.instance.hasMelody && _melodicIndex() >= 0;
+
+  @override
+  void loadSharedMelody() {
+    final shared = MelodyBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    final ch = _melodicIndex();
+    if (ch < 0) return;
+    final steps = _engine.rows;
+    final rows = midiRowsFromPatternCells(
+      shared.toCells(),
+      steps,
+      transpose: shared.key,
+    );
+    for (var s = 0; s < steps; s++) {
+      final midi = rows[s];
+      _engine.setCell(
+        ch,
+        s,
+        midi == null ? TrackerCell.empty : TrackerCell(midi: midi, volume: 1),
+      );
+    }
+    setState(() {});
+    _syncPlayback();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneLoaded)),
+    );
+  }
+
   /// Long-press a placed note → a small menu for its dynamics + effect.
   void _onLongPressCode(int code, int step) {
     final cell = _engine.cellAt(_selected, step);
@@ -1650,6 +1717,10 @@ class _TrackerScreenState extends State<TrackerScreen>
                   shareBeat();
                 case 'loadBeat':
                   loadSharedBeat();
+                case 'shareMelody':
+                  shareMelody();
+                case 'loadMelody':
+                  loadSharedMelody();
                 case 'swing':
                   setSwing(!swingOn);
               }
@@ -1669,6 +1740,16 @@ class _TrackerScreenState extends State<TrackerScreen>
                 value: 'loadBeat',
                 enabled: canLoadSharedBeat,
                 child: Text(l10n.beatLoadShared),
+              ),
+              PopupMenuItem(
+                value: 'shareMelody',
+                enabled: _melodicIndex() >= 0,
+                child: Text(l10n.tuneShare),
+              ),
+              PopupMenuItem(
+                value: 'loadMelody',
+                enabled: canLoadSharedMelody,
+                child: Text(l10n.tuneLoadShared),
               ),
               PopupMenuItem(
                 value: 'importMod',

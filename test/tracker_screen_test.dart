@@ -7,6 +7,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart';
+import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
 import 'package:comet_beat/core/audio/mod/mod.dart';
 import 'package:comet_beat/core/audio/mod/module_convert.dart'
     show parseAnyModule;
@@ -15,6 +16,7 @@ import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerCell, TrackerChannelEffect, TrackerEffect;
 import 'package:comet_beat/core/audio/tracker_song.dart';
 import 'package:comet_beat/core/services/beat_bridge.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/tracker_screen.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:crisp_notation/crisp_notation.dart'
@@ -43,6 +45,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     BeatBridge.instance.clear();
+    MelodyBridge.instance.clear();
   });
 
   testWidgets('shares the drum channel out and loads a shared beat in',
@@ -75,6 +78,42 @@ void main() {
     BeatBridge.instance.clear();
     game.shareBeat();
     final shared = BeatBridge.instance.current;
+    expect(shared, isNotNull);
+    expect(shared!.source, 'tracker');
+    expect(shared.isEmpty, isFalse);
+  });
+
+  testWidgets('shares the melody channel out and loads a shared tune in',
+      (tester) async {
+    await pumpGame(tester, const TrackerScreen());
+    final game = _game(tester);
+
+    // A shared tune (C-D-E-G, then a rest) another mode published.
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: const <PatternCell>[
+          (midis: [60], steps: 2),
+          (midis: [62], steps: 2),
+          (midis: [64], steps: 2),
+          (midis: [67], steps: 2),
+          (midis: null, steps: 8),
+        ],
+        tempoBpm: 120,
+        source: 'loopmixer',
+      ),
+    );
+    expect(game.canLoadSharedMelody, isTrue);
+    expect(game.noteCount, 0);
+
+    // Pull it in — notes land on the melodic channel at their onsets.
+    game.loadSharedMelody();
+    await tester.pump();
+    expect(game.noteCount, 4);
+
+    // Share the melody channel back out — round-trips through the bridge.
+    MelodyBridge.instance.clear();
+    game.shareMelody();
+    final shared = MelodyBridge.instance.current;
     expect(shared, isNotNull);
     expect(shared!.source, 'tracker');
     expect(shared.isEmpty, isFalse);

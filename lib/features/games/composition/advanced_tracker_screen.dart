@@ -70,6 +70,7 @@ import 'package:comet_beat/core/notation/multi_part_export.dart'
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/beat_bridge.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/multipart_to_tracker.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tracker_notation.dart';
@@ -314,6 +315,12 @@ abstract interface class AdvancedTrackerTester {
   void shareBeat();
   bool get canLoadSharedBeat;
   void loadSharedBeat();
+
+  /// Shared-tune bridge (the pitched twin): publish the first melodic channel
+  /// out, and pull a shared tune in onto it.
+  void shareMelody();
+  bool get canLoadSharedMelody;
+  void loadSharedMelody();
 
   /// Export the whole song as MIDI / MusicXML bytes (null when nothing pitched).
   Uint8List? debugExportMidi();
@@ -3637,6 +3644,67 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
     );
   }
 
+  // ── Shared-tune bridge (pitched twin of the beat bridge) ───────────────────
+
+  /// The first melodic (non-percussion) channel, or -1 if the song is all drums.
+  int _melodicIndex() =>
+      _song.channels.indexWhere((c) => c.instrument is! PercussionInstrument);
+
+  @override
+  void shareMelody() {
+    final ch = _melodicIndex();
+    if (ch < 0) return;
+    final steps = _song.rows;
+    final cells = _song.channels[ch].cells;
+    final rows = <int?>[
+      for (var s = 0; s < steps; s++) s < cells.length ? cells[s].midi : null,
+    ];
+    if (rows.every((m) => m == null)) return;
+    MelodyBridge.instance.publish(
+      SharedMelody(
+        cells: patternCellsFromMidiRows(rows),
+        tempoBpm: _song.timing.tempoBpm,
+        source: 'advtracker',
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneShared)),
+    );
+  }
+
+  @override
+  bool get canLoadSharedMelody =>
+      MelodyBridge.instance.hasMelody && _melodicIndex() >= 0;
+
+  @override
+  void loadSharedMelody() {
+    final shared = MelodyBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    final ch = _melodicIndex();
+    if (ch < 0) return;
+    final steps = _song.rows;
+    final rows = midiRowsFromPatternCells(
+      shared.toCells(),
+      steps,
+      transpose: shared.key,
+    );
+    setState(() {
+      for (var s = 0; s < steps; s++) {
+        final midi = rows[s];
+        _song.engine.setCell(
+          ch,
+          s,
+          midi == null ? TrackerCell.empty : TrackerCell(midi: midi, volume: 1),
+        );
+      }
+    });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneLoaded)),
+    );
+  }
+
   // --- Native lossless save / share (the CBS1. token, tracker_song_codec) ---
 
   @override
@@ -4233,6 +4301,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   shareBeat();
                 case 'loadBeat':
                   loadSharedBeat();
+                case 'shareMelody':
+                  shareMelody();
+                case 'loadMelody':
+                  loadSharedMelody();
                 case 'workshop':
                   _openInWorkshop();
               }
@@ -4293,6 +4365,18 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
               _menuRow('daw', Icons.library_add, l10n.dawSend),
               _menuRow('shareBeat', Icons.upload, l10n.beatShare),
               _menuRow('loadBeat', Icons.download, l10n.beatLoadShared),
+              _menuRow(
+                'shareMelody',
+                Icons.upload,
+                l10n.tuneShare,
+                enabled: _melodicIndex() >= 0,
+              ),
+              _menuRow(
+                'loadMelody',
+                Icons.download,
+                l10n.tuneLoadShared,
+                enabled: canLoadSharedMelody,
+              ),
               const PopupMenuDivider(),
               _menuRow('workshop', Icons.edit_note, l10n.trackerOpenWorkshop),
             ],
@@ -4329,9 +4413,15 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   /// The classic block-editing menu (touch-friendly; the same ops have keyboard
   /// shortcuts on desktop — see the ⓘ legend). Mark begin/drag-select, select
   /// track/pattern, copy/cut/paste/paste-mix, transpose, clear, unmark.
-  PopupMenuItem<String> _menuRow(String value, IconData icon, String label) =>
+  PopupMenuItem<String> _menuRow(
+    String value,
+    IconData icon,
+    String label, {
+    bool enabled = true,
+  }) =>
       PopupMenuItem<String>(
         value: value,
+        enabled: enabled,
         child: Row(
           children: [
             Icon(icon, size: 20),

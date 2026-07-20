@@ -768,6 +768,27 @@ class ScoreDocument {
     return id;
   }
 
+  /// Bulk-insert a run of [notes] at the caret as ONE undoable action — each a
+  /// `(pitch, duration)` pair whose null pitch means a rest. Used by the shared-
+  /// tune load (MelodyBridge), where dropping a whole riff should be a single
+  /// undo, not one per note. Selects the last element inserted.
+  void insertMelody(List<(Pitch?, NoteDuration)> notes) {
+    if (notes.isEmpty) return;
+    _snapshot();
+    var at = _caretIndex();
+    for (final (pitch, duration) in notes) {
+      final id = _newId();
+      _elements.insert(
+        at,
+        pitch == null
+            ? EditorElement.rest(duration, id: id)
+            : EditorElement.note(pitch, duration, id: id),
+      );
+      at++;
+    }
+    selectIndex(at - 1);
+  }
+
   // ---- edits over the selection range ------------------------------------
 
   /// Nudge every selected note up/down by [semitones] (rests skipped, notes

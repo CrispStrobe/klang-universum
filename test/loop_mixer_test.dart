@@ -1025,10 +1025,11 @@ void main() {
     await pumpGame(tester, const LoopMixerScreen());
     final game = _game(tester);
 
-    // Target the built-in melody stem, then tap a note.
+    // Target the built-in melody stem, then tap a note (authored-C 60 — the
+    // engine transposes on render).
     game.debugSetTuneTarget('melody');
     await tester.pump();
-    game.debugEditTuneCell(60, 0); // C, authored-C (engine transposes on render)
+    game.debugEditTuneCell(60, 0);
     await tester.pump();
 
     // The stem now plays the override (and is enabled), not its preset.

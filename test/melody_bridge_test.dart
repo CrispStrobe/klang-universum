@@ -1,6 +1,7 @@
 // MelodyBridge — the pitched shared-tune backbone.
 
-import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
+import 'package:comet_beat/core/audio/loop_engine.dart'
+    show PatternCell, kPatternSteps;
 import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,5 +51,62 @@ void main() {
       tempoBpm: 100,
     );
     expect(() => m.cells.add((midis: null, steps: 1)), throwsUnsupportedError);
+  });
+
+  group('midi-row ↔ PatternCell converters', () {
+    test('folds trailing empties into the preceding note (ring), sums to 16',
+        () {
+      // C at step 0 held for 3 steps, rest for 1, G at step 4 held to the end.
+      final rows = <int?>[
+        60, null, null, null, // C. . .
+        67, null, null, null, // G. . .
+        ...List<int?>.filled(8, null), // G rings on
+      ];
+      final cells = patternCellsFromMidiRows(rows);
+      expect(
+        cells.fold<int>(0, (a, c) => a + c.steps),
+        kPatternSteps,
+        reason: 'the run-list must fill the 2-bar grid',
+      );
+      // (compare field-wise — a list inside a record is not `==` by value)
+      expect(cells.map((c) => (c.midis?.first, c.steps)).toList(), [
+        (60, 4),
+        (67, 12),
+      ]);
+    });
+
+    test('a leading rest run becomes one rest cell', () {
+      final rows = <int?>[null, null, 64, ...List<int?>.filled(13, null)];
+      final cells = patternCellsFromMidiRows(rows);
+      expect(cells.first.midis, isNull);
+      expect(cells.first.steps, 2);
+      expect(cells[1].midis, [64]);
+      expect(cells[1].steps, 14);
+    });
+
+    test('round-trips a grid: rows → cells → rows places notes at onsets', () {
+      final rows = <int?>[
+        62, null, 64, null, 65, null, null, null, //
+        ...List<int?>.filled(8, null),
+      ];
+      final back = midiRowsFromPatternCells(
+        patternCellsFromMidiRows(rows),
+        rows.length,
+      );
+      expect(back, rows); // onsets + sustained-empties preserved 1:1
+    });
+
+    test('load applies the transpose (authoring key folds into pitch)', () {
+      final rows = midiRowsFromPatternCells(
+        const <PatternCell>[
+          (midis: [60], steps: 8),
+          (midis: [64], steps: 8),
+        ],
+        16,
+        transpose: 2,
+      );
+      expect(rows[0], 62); // C+2
+      expect(rows[8], 66); // E+2
+    });
   });
 }

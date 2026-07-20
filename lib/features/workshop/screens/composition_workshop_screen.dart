@@ -16,6 +16,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
+import 'package:comet_beat/core/audio/loop_engine.dart'
+    show LoopTiming, PatternCell;
 import 'package:comet_beat/core/audio/score_instrument_render.dart'
     show renderMultiPartWithInstrument;
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
@@ -25,6 +27,7 @@ import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
@@ -482,6 +485,11 @@ abstract interface class CompositionWorkshopTester {
   /// Send the current document to the Multitrack (DAW) as a clip.
   void sendToDaw();
 
+  /// Shared-tune bridge (MelodyBridge): pull a groove riff in as notes. The
+  /// Workshop is a load-only member — it doesn't publish back (see the impl).
+  bool get canLoadSharedMelody;
+  void loadSharedMelody();
+
   /// Test seam: whether the 🔍 desktop hover card is currently showing a note.
   bool get debugHoverCardShown;
 
@@ -795,6 +803,51 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   }
 
   void _onPianoKey(int midi) => _placePitch(pitchFromMidi(midi));
+
+  // ── Shared-tune bridge (MelodyBridge): pull a groove riff in as notes ───────
+  // The Workshop only PULLS: a tune built on the 16-step grid (Loop Mixer /
+  // Tracker / Live Looper) loads as notes + rests to notate or extend here. It
+  // doesn't publish back — the score's lossless outward path is MIDI/MusicXML,
+  // the Song Book, and the direct Tracker→Workshop handoff, none of which lose
+  // rhythm to a 2-bar grid the way a symbolic publish would.
+
+  @override
+  bool get canLoadSharedMelody => MelodyBridge.instance.hasMelody;
+
+  /// Each grid cell of [stepsPerBar]-per-bar eighth-steps → the fewest notatable
+  /// durations that fill it (a whole note = one bar), a note carrying the cell's
+  /// (transposed) pitch, a rest carrying none.
+  List<(Pitch?, NoteDuration)> _tuneToDurations(SharedMelody shared) {
+    const stepsPerBar = LoopTiming.stepsPerBar; // eighth-steps in a 4/4 bar
+    final out = <(Pitch?, NoteDuration)>[];
+    for (final PatternCell c in shared.cells) {
+      final durs = notate(Fraction(c.steps, stepsPerBar));
+      final midis = c.midis;
+      final pitch = (midis != null && midis.isNotEmpty)
+          ? pitchFromMidi(midis.first + shared.key)
+          : null;
+      for (final d in durs) {
+        out.add((pitch, d));
+      }
+    }
+    return out;
+  }
+
+  @override
+  void loadSharedMelody() {
+    final shared = MelodyBridge.instance.current;
+    if (shared == null || shared.isEmpty) return;
+    final notes = _tuneToDurations(shared);
+    if (notes.isEmpty) return;
+    setState(() {
+      _doc.clearSelection();
+      _doc.insertMelody(notes);
+    });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.tuneLoaded)),
+    );
+  }
 
   /// Click blank staff: place a new note at that pitch (advancing the caret),
   /// exactly like a piano key. In chord mode it stacks the clicked pitch onto
@@ -3253,6 +3306,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                         context,
                         ScoreSource(_mpd.buildMultiPart()),
                       );
+                    case 'loadTune':
+                      loadSharedMelody();
                   }
                 },
                 itemBuilder: (ctx) => [
@@ -3321,6 +3376,14 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     Icons.library_add,
                     l10n.dawSend,
                     !_doc.isEmpty,
+                  ),
+                  // Pull a tune built in the Loop Mixer / Tracker in as notes
+                  // (MelodyBridge) to notate or extend it here.
+                  _menuItem(
+                    'loadTune',
+                    Icons.download,
+                    l10n.tuneLoadShared,
+                    MelodyBridge.instance.hasMelody,
                   ),
                   const PopupMenuDivider(),
                   _menuItem(

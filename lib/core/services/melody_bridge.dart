@@ -9,7 +9,8 @@
 // an explicit publish/pull is the right model), listenable via [melody]. Pure
 // Dart (only depends on the loop-engine model) → unit-tested.
 
-import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
+import 'package:comet_beat/core/audio/loop_engine.dart'
+    show PatternCell, kPatternSteps;
 import 'package:flutter/foundation.dart';
 
 /// An immutable snapshot of a shared tune: the melodic cells plus the
@@ -42,6 +43,56 @@ class SharedMelody {
 
   /// The cells, ready to hand to `LoopEngine.setUserTrack`.
   List<PatternCell> toCells() => [...cells];
+}
+
+/// Converts a per-row melody grid (one absolute MIDI or null per step, as the
+/// Tracker/Workshop hold it) into the engine's [PatternCell] run-list.
+///
+/// A run of empty rows following a note is folded into that note's length (the
+/// tracker "let it ring" semantics — an empty cell sustains the previous
+/// trigger); a leading run of empties becomes one rest cell. The result always
+/// sums to [steps] (default [kPatternSteps] = the 2-bar vamp grid): rows beyond
+/// [steps] are windowed off, and a shorter grid is padded with a trailing rest.
+/// So a 16-step source maps 1:1; other lengths window/pad rather than resample.
+List<PatternCell> patternCellsFromMidiRows(
+  List<int?> rows, {
+  int steps = kPatternSteps,
+}) {
+  final cells = <PatternCell>[];
+  var i = 0;
+  while (i < steps) {
+    final midi = i < rows.length ? rows[i] : null;
+    var len = 1;
+    while (i + len < steps) {
+      final next = (i + len) < rows.length ? rows[i + len] : null;
+      if (next != null) break; // a fresh trigger starts a new cell
+      len++;
+    }
+    cells.add((midis: midi == null ? null : [midi], steps: len));
+    i += len;
+  }
+  return cells;
+}
+
+/// The inverse of [patternCellsFromMidiRows]: expands a [PatternCell] run-list
+/// back onto a [rows]-long grid, placing each note's MIDI at its ONSET row only
+/// (sustained steps stay empty — the tracker rings them). Each pitch is shifted
+/// by [transpose] semitones (used to fold a shared tune's authoring key back
+/// into absolute pitches). Cells past [rows] are windowed off.
+List<int?> midiRowsFromPatternCells(
+  List<PatternCell> cells,
+  int rows, {
+  int transpose = 0,
+}) {
+  final out = List<int?>.filled(rows, null);
+  var step = 0;
+  for (final c in cells) {
+    if (step >= rows) break;
+    final midis = c.midis;
+    if (midis != null && midis.isNotEmpty) out[step] = midis.first + transpose;
+    step += c.steps;
+  }
+  return out;
 }
 
 class MelodyBridge {
