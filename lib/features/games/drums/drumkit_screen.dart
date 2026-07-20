@@ -390,9 +390,8 @@ class _DrumkitScreenState extends State<DrumkitScreen>
     }
     _visual.flash(drum); // light the piece on the visual kit
     // Audition the drum's actual voice — its override one-shot, else the synth.
-    final shot = _drumVoice.containsKey(drum)
-        ? _oneShotFor(drum)
-        : renderDrum(drum);
+    final shot =
+        _drumVoice.containsKey(drum) ? _oneShotFor(drum) : renderDrum(drum);
     if (shot.isNotEmpty) {
       context.read<AudioService>().playWavBytes(wavBytes(_toPcm16(shot)));
     }
