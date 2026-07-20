@@ -470,20 +470,47 @@ ModuleDoc docFromIt(ItModule m) {
     }
   }
 
+  // In INSTRUMENT mode a cell's `instrument` selects an instrument whose keymap
+  // resolves the PLAYED note → the actual sample (and the note to sound). A note
+  // without its own instrument reuses the channel's last one. Sample-mode files
+  // keep `instrument` as the sample number directly.
   final patterns = <DocPattern>[];
   for (final pat in m.patterns) {
     final ch = pat.channelCount;
+    final lastIns = <int, int>{}; // channel → last instrument number
     final rows = <List<DocCell>>[];
     for (final row in pat.rows) {
       final cells = <DocCell>[];
-      for (final c in row) {
+      for (var ci = 0; ci < row.length; ci++) {
+        final c = row[ci];
+        if (c.instrument > 0) lastIns[ci] = c.instrument;
+        final hasPitch = c.note >= 0 && c.note <= 119;
+
+        var docNote = itNoteToMidi(c.note);
+        var docInstrument = c.instrument;
+        if (m.usesInstruments) {
+          if (hasPitch) {
+            final eff = c.instrument > 0 ? c.instrument : (lastIns[ci] ?? 0);
+            if (eff >= 1 && eff <= m.instruments.length) {
+              final inst = m.instruments[eff - 1];
+              docInstrument = inst.keymap[c.note]; // 1-based sample (0 = none)
+              docNote = itNoteToMidi(inst.noteMap[c.note]); // keymap transpose
+            } else {
+              docInstrument = 0;
+            }
+          } else {
+            docInstrument =
+                0; // instrument-only / effect cell triggers no sample
+          }
+        }
+
         final vol = (c.volpan >= 0 && c.volpan <= 64) ? c.volpan : -1;
         final (fxCmd, fxParam) = _itEffectToFx(c.command, c.commandValue);
         cells.add(
           DocCell(
-            note: itNoteToMidi(c.note),
+            note: docNote,
             noteOff: c.note == 255 || c.note == ItCell.noteCut,
-            instrument: c.instrument,
+            instrument: docInstrument,
             volume: vol,
             effect: fxCmd,
             effectParam: fxParam,

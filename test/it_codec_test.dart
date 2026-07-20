@@ -15,6 +15,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/mod/it_module.dart';
 import 'package:comet_beat/core/audio/mod/it_reader.dart';
+import 'package:comet_beat/core/audio/mod/module_convert.dart' show docFromIt;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -144,5 +145,72 @@ void main() {
       },
       skip: present ? false : 'test/fixtures/wild_local.it not present',
     );
+  });
+
+  group('instrument-mode note→sample keymap', () {
+    Float64List sine(int n) =>
+        Float64List.fromList([for (var i = 0; i < n; i++) i / n]);
+
+    ItModule instMode({required List<int> keymap}) => ItModule(
+          name: 'im',
+          channelCount: 1,
+          instrumentCount: 1,
+          order: [0],
+          patterns: [
+            const ItPattern(
+              [
+                [ItCell(note: 60, instrument: 1)], // note 60, instrument 1
+              ],
+              1,
+            ),
+          ],
+          // samples 1,2,3 (1-based); sample 3 is index 2.
+          samples: [
+            ItSample(pcm: sine(32)),
+            ItSample.empty(),
+            ItSample(pcm: sine(48)),
+          ],
+          instruments: [
+            ItInstrument(
+              keymap: keymap,
+              noteMap: [for (var i = 0; i < 120; i++) i],
+            ),
+          ],
+        );
+
+    test(
+        'a cell resolves instrument+note → the keymap sample (not the '
+        'instrument number)', () {
+      final km = List<int>.filled(120, 0)..[60] = 3; // note 60 → sample 3
+      final doc = docFromIt(instMode(keymap: km));
+      // Was instrument 1 (wrong) before; now the keymap's sample 3.
+      expect(doc.patterns[0].rows[0][0].instrument, 3);
+    });
+
+    test('a keymap entry of 0 (no sample for that note) plays nothing', () {
+      final km = List<int>.filled(120, 0); // note 60 → 0 (none)
+      final doc = docFromIt(instMode(keymap: km));
+      expect(doc.patterns[0].rows[0][0].instrument, 0);
+    });
+
+    test('sample-mode (no instruments) keeps the cell instrument as the sample',
+        () {
+      final m = ItModule(
+        name: 'sm',
+        channelCount: 1,
+        order: [0],
+        patterns: [
+          const ItPattern(
+            [
+              [ItCell(note: 60, instrument: 2)],
+            ],
+            1,
+          ),
+        ],
+        samples: [ItSample(pcm: sine(32)), ItSample(pcm: sine(48))],
+      );
+      // No instrument layer → instrument number IS the sample number.
+      expect(docFromIt(m).patterns[0].rows[0][0].instrument, 2);
+    });
   });
 }

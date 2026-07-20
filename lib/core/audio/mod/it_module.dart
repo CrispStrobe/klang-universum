@@ -155,6 +155,25 @@ class ItPattern {
   int get numRows => rows.length;
 }
 
+/// An IT instrument: the note→sample keyboard map (offset 0x40 in the IMPI
+/// header). In instrument mode a cell's `instrument` number selects one of
+/// these, and the PLAYED note indexes [keymap] to pick the actual sample (and
+/// [noteMap] the note to sound). Sample-mode files have none.
+class ItInstrument {
+  const ItInstrument({required this.keymap, required this.noteMap});
+
+  /// 120 entries: the 1-based sample number for each input note (0 = no sample).
+  final List<int> keymap;
+
+  /// 120 entries: the note actually played for each input note (usually 1:1).
+  final List<int> noteMap;
+
+  factory ItInstrument.identity() => ItInstrument(
+        keymap: List<int>.filled(120, 0),
+        noteMap: [for (var i = 0; i < 120; i++) i],
+      );
+}
+
 /// A parsed Impulse Tracker module.
 class ItModule {
   const ItModule({
@@ -167,15 +186,22 @@ class ItModule {
     required this.order,
     required this.patterns,
     required this.samples,
+    this.instruments = const [],
   });
 
   final String name;
   final int channelCount; // max used across patterns
-  final int instrumentCount; // InsNum (instrument headers not parsed here)
+  final int instrumentCount; // InsNum
   final int initialSpeed, initialTempo, globalVolume;
   final List<int> order; // OrdNum entries (0xFF end, 0xFE skip)
   final List<ItPattern> patterns;
   final List<ItSample> samples;
+
+  /// Parsed instrument headers (empty for sample-mode files). Indexed 0-based;
+  /// a cell's 1-based instrument number is `instruments[n - 1]`.
+  final List<ItInstrument> instruments;
+
+  bool get usesInstruments => instruments.isNotEmpty;
 }
 
 /// MIDI note for an IT note byte (IT note 60 = middle C-5 = MIDI 60; they align).

@@ -101,6 +101,8 @@ ItModule parseIt(Uint8List bytes) {
   final smpNum = u16(0x24);
   final patNum = u16(0x26);
   final cwtv = u16(0x28);
+  final flags = u16(0x2C);
+  final useInstruments = (flags & 0x04) != 0;
   final globalVolume = u8(0x30);
   final initialSpeed = u8(0x32);
   final initialTempo = u8(0x33);
@@ -137,6 +139,18 @@ ItModule parseIt(Uint8List bytes) {
     samples.add(_parseSample(bytes, bd, so, it215));
   }
 
+  // ── instruments (only in instrument mode) ──
+  // A cell's number then selects an instrument whose note→sample keymap picks
+  // the actual sample; without this, instrument-mode files play the wrong/empty
+  // sample and render silent. Sample-mode files leave this empty.
+  final instruments = <ItInstrument>[];
+  if (useInstruments) {
+    final insCount = insNum > maxAddressable ? maxAddressable : insNum;
+    for (var i = 0; i < insCount; i++) {
+      instruments.add(_parseInstrument(bytes, u32(0xC0 + ordNum + i * 4)));
+    }
+  }
+
   // ── patterns ──
   final patterns = <ItPattern>[];
   var maxChannelCount = 0;
@@ -157,7 +171,23 @@ ItModule parseIt(Uint8List bytes) {
     order: order,
     patterns: patterns,
     samples: samples,
+    instruments: instruments,
   );
+}
+
+/// Parses an IT instrument header's keyboard table (120 × (note, sample) at
+/// offset 0x40) into an [ItInstrument]. Out-of-bounds → an identity map.
+ItInstrument _parseInstrument(Uint8List bytes, int base) {
+  final keymap = List<int>.filled(120, 0);
+  final noteMap = [for (var i = 0; i < 120; i++) i];
+  final table = base + 0x40;
+  if (base >= 0 && table + 240 <= bytes.length) {
+    for (var n = 0; n < 120; n++) {
+      noteMap[n] = bytes[table + n * 2]; // note to play
+      keymap[n] = bytes[table + n * 2 + 1]; // 1-based sample number (0 = none)
+    }
+  }
+  return ItInstrument(keymap: keymap, noteMap: noteMap);
 }
 
 // ── sample parsing ────────────────────────────────────────────────────────────
