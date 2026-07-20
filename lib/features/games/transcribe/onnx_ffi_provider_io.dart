@@ -8,11 +8,16 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/transcription/basic_pitch.dart'
+    show basicPitchTranscribeWithRunner;
+import 'package:comet_beat/core/audio/transcription/basic_pitch_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/crepe.dart'
     show crepeF0WithRunner;
 import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/harmony.dart'
-    show ChordEstimator;
+    show ChordEstimator, estimateChordsWithRunner;
+import 'package:comet_beat/core/audio/transcription/harmony_cqt.dart';
+import 'package:comet_beat/core/audio/transcription/harmony_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/onnx_ort_session.dart';
 import 'package:comet_beat/core/audio/transcription/rmvpe.dart'
     show rmvpeF0WithRunner;
@@ -27,6 +32,13 @@ const String _crepeOut = 'activation';
 const int _crepeWindow = 1024;
 const String _rmvpeIn = 'input';
 const String _rmvpeOut = 'output';
+const String _bpIn = 'serving_default_input_2:0';
+const String _bpNoteOut = 'StatefulPartitionedCall:1';
+const String _bpOnsetOut = 'StatefulPartitionedCall:2';
+const int _bpSamples = 43844;
+const String _btcIn = 'cqt';
+const String _btcOut = 'chord';
+const int _btcTimestep = 108;
 
 /// Native-ORT monophonic F0: RMVPE if its bundle is cached (preferred, matching
 /// the pure-Dart onnx path), else CREPE. [download] pulls the model if missing
@@ -37,15 +49,84 @@ Future<F0Estimator?> loadOnnxFfiF0({bool download = false}) async =>
     await _rmvpeFfiF0(download: download) ??
     await _crepeFfiF0(download: download);
 
-/// Native-ORT polyphony (Basic Pitch) — not yet wired; the pure-Dart onnx path
-/// serves polyphony. Stub so the resolver treats onnxFfi as absent for poly.
-Future<NeuralTranscriber?> loadOnnxFfiNeural({bool download = false}) async =>
-    null;
+/// Native-ORT polyphony (Basic Pitch): the same nmp.onnx on native ORT via the
+/// basicPitchTranscribeWithRunner seam. Null ⇒ no model / no native ORT here →
+/// resolver falls to the pure-Dart onnx Basic Pitch.
+Future<NeuralTranscriber?> loadOnnxFfiNeural({bool download = false}) async {
+  final bytes = await _basicPitchBytes(download: download);
+  if (bytes == null) return null;
+  final session = OrtFfiSession.fromBytes(bytes);
+  if (session == null) return null; // native ORT not loadable here
+  ({Float32List notes, Float32List onsets}) runWindow(Float32List window) {
+    final out = session.run(
+      _bpIn,
+      window,
+      [1, _bpSamples, 1],
+      const [_bpNoteOut, _bpOnsetOut],
+    );
+    return (notes: out[_bpNoteOut]!, onsets: out[_bpOnsetOut]!);
+  }
 
-/// Native-ORT chords (BTC) — not yet wired; the pure-Dart onnx path serves
-/// chords. Stub so the resolver treats onnxFfi as absent for chords.
-Future<ChordEstimator?> loadOnnxFfiChords({bool download = false}) async =>
-    null;
+  return (Float64List mono, int sampleRate) async =>
+      basicPitchTranscribeWithRunner(
+        mono,
+        sampleRate: sampleRate,
+        run: runWindow,
+      );
+}
+
+/// Native-ORT chords (BTC): the same btc-chord.onnx + CQT on native ORT via the
+/// estimateChordsWithRunner seam. Null ⇒ no model / no native ORT → resolver
+/// falls to the pure-Dart onnx BTC.
+Future<ChordEstimator?> loadOnnxFfiChords({bool download = false}) async {
+  final store = HarmonyModelStore();
+  if (!download && !store.isPresent()) return null;
+  if (download && !await store.ensureFiles()) return null;
+  if (!store.isPresent()) return null;
+  final Uint8List modelBytes;
+  final CqtFilterBank cqt;
+  try {
+    modelBytes = await store.modelFile().readAsBytes();
+    cqt = CqtFilterBank.fromBytes(await store.cqtFile().readAsBytes());
+  } catch (_) {
+    return null;
+  }
+  final session = OrtFfiSession.fromBytes(modelBytes);
+  if (session == null) return null; // native ORT not loadable here
+  Float32List runSegment(Float32List segment, int nBins) {
+    final out =
+        session.run(_btcIn, segment, [1, _btcTimestep, nBins], const [_btcOut]);
+    return out[_btcOut]!;
+  }
+
+  return (Float64List mono, int sampleRate) async => estimateChordsWithRunner(
+        mono,
+        cqt: cqt,
+        sampleRate: sampleRate,
+        run: runSegment,
+      );
+}
+
+// ── model bytes ──────────────────────────────────────────────────────────────
+
+/// The cached Basic Pitch nmp.onnx bytes (downloading first if [download]), or
+/// null.
+Future<Uint8List?> _basicPitchBytes({required bool download}) async {
+  final store = BasicPitchModelStore();
+  final File? file;
+  if (download) {
+    file = await store.ensureFile();
+  } else {
+    final cached = store.modelFile();
+    file = cached.existsSync() ? cached : null;
+  }
+  if (file == null) return null;
+  try {
+    return await file.readAsBytes();
+  } catch (_) {
+    return null;
+  }
+}
 
 // ── F0 backends ──────────────────────────────────────────────────────────────
 

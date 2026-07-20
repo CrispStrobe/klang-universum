@@ -70,9 +70,50 @@ List<NoteEvent> basicPitchTranscribe(
   int minNoteLenFrames = _defaultMinNoteLen,
   bool inferOnsets = true,
   bool melodiaTrick = false, // named after (not the patented) Melodia; off.
-}) {
-  final m = model;
+}) =>
+    basicPitchTranscribeWithRunner(
+      mono,
+      sampleRate: sampleRate,
+      onsetThreshold: onsetThreshold,
+      frameThreshold: frameThreshold,
+      minNoteLenFrames: minNoteLenFrames,
+      inferOnsets: inferOnsets,
+      melodiaTrick: melodiaTrick,
+      run: (window) {
+        final out = model.run(
+          {
+            _inputName: Tensor.float(window, [1, _audioNSamples, 1]),
+          },
+          const [_noteOut, _onsetOut],
+        );
+        return (
+          notes: out[_noteOut]!.f ?? out[_noteOut]!.asFloatList(),
+          onsets: out[_onsetOut]!.f ?? out[_onsetOut]!.asFloatList(),
+        );
+      },
+    );
 
+/// Runs one `[1, 43844, 1]` audio window through Basic Pitch and returns its two
+/// flat `[1, 172, 88]` posteriorgrams (frame activations Yn, onset activations
+/// Yo). The ONLY model-runtime coupling in the polyphonic chain — supply a
+/// runner backed by `onnx_runtime_dart` (the default via [basicPitchTranscribe])
+/// OR native ORT (the `onnxFfi` backend); the identical windowing/stitching/
+/// decoding runs either way.
+typedef BasicPitchWindowRunner = ({Float32List notes, Float32List onsets})
+    Function(Float32List window);
+
+/// [basicPitchTranscribe] with the model runtime abstracted behind [run] — same
+/// resample/window/overlap-stitch/decode, only the per-window inference differs.
+List<NoteEvent> basicPitchTranscribeWithRunner(
+  Float64List mono, {
+  required BasicPitchWindowRunner run,
+  int sampleRate = 44100,
+  double onsetThreshold = 0.5,
+  double frameThreshold = 0.3,
+  int minNoteLenFrames = _defaultMinNoteLen,
+  bool inferOnsets = true,
+  bool melodiaTrick = false,
+}) {
   // 1 · Resample to 22050 Hz mono (ratio = inRate/outRate; 44100 → 2.0).
   final audio = sampleRate == _sampleRate
       ? mono
@@ -95,15 +136,9 @@ List<NoteEvent> basicPitchTranscribe(
       final k = i + j;
       window[j] = k < padded.length ? padded[k].toDouble() : 0.0;
     }
-    final out = m.run(
-      {
-        _inputName:
-            Tensor.float(Float32List.fromList(window), [1, _audioNSamples, 1]),
-      },
-      const [_noteOut, _onsetOut],
-    );
-    _appendTrimmed(notesGrid, out[_noteOut]!, nOlap);
-    _appendTrimmed(onsetGrid, out[_onsetOut]!, nOlap);
+    final out = run(Float32List.fromList(window));
+    _appendTrimmed(notesGrid, out.notes, nOlap);
+    _appendTrimmed(onsetGrid, out.onsets, nOlap);
   }
 
   // Trim trailing padded frames: keep n_expected_windows · frames_per_window.
@@ -157,11 +192,12 @@ List<NoteEvent> notesFromPosteriorgrams(
   ]..sort((a, b) => a.onMs.compareTo(b.onMs));
 }
 
-/// Append a model output `[1, 172, 88]` to [grid], trimming [nOlap] frames from
-/// each end (basic_pitch `unwrap_output`).
-void _appendTrimmed(List<Float64List> grid, Tensor out, int nOlap) {
-  final f = out.f ?? out.asFloatList();
-  final nFrames = out.shape[1], nFreq = out.shape[2];
+/// Append a flat model output `[1, 172, 88]` to [grid], trimming [nOlap] frames
+/// from each end (basic_pitch `unwrap_output`). The window output shape is fixed
+/// (`_annotFrames` × `_nBins`), so it's inferred from the flat length.
+void _appendTrimmed(List<Float64List> grid, Float32List f, int nOlap) {
+  const nFrames = _annotFrames; // fixed window output height (172)
+  final nFreq = f.length ~/ nFrames; // 88 (piano range)
   for (var t = nOlap; t < nFrames - nOlap; t++) {
     final row = Float64List(nFreq);
     final base = t * nFreq;

@@ -59,6 +59,42 @@ List<ChordEvent> estimateChords(
   required CqtFilterBank cqt,
   int sampleRate = 44100,
   bool keepNoChord = false,
+}) =>
+    estimateChordsWithRunner(
+      mono,
+      cqt: cqt,
+      sampleRate: sampleRate,
+      keepNoChord: keepNoChord,
+      run: (segment, nBins) {
+        final r = model.run(
+          {
+            _inName: Tensor.float(segment, [1, _timestep, nBins]),
+          },
+          const [_outName],
+        )[_outName]!;
+        return r.f ?? r.asFloatList();
+      },
+    );
+
+/// Runs one padded `[1, 108, nBins]` CQT segment through BTC and returns the
+/// flat `[108·25]` logits. The ONLY model-runtime coupling in the chord chain —
+/// supply a runner backed by `onnx_runtime_dart` (the default via
+/// [estimateChords]) OR native ORT (the `onnxFfi` backend); the identical CQT
+/// feature/segmentation/merge runs either way.
+typedef ChordSegmentRunner = Float32List Function(
+  Float32List segment,
+  int nBins,
+);
+
+/// [estimateChords] with the model runtime abstracted behind [run] — same CQT
+/// feature, 108-frame segmentation, argmax decode, and run-merge, only the
+/// inference call differs.
+List<ChordEvent> estimateChordsWithRunner(
+  Float64List mono, {
+  required CqtFilterBank cqt,
+  required ChordSegmentRunner run,
+  int sampleRate = 44100,
+  bool keepNoChord = false,
 }) {
   final audio =
       sampleRate == _sr ? mono : resampleLinear(mono, sampleRate / _sr);
@@ -71,16 +107,17 @@ List<ChordEvent> estimateChords(
   final padded = Float32List(nSeg * _timestep * nBins)
     ..setRange(0, nFrames * nBins, feat);
 
-  final labels = decodeChordLogits(_runSegments(model, padded, nSeg, nBins));
+  final labels = decodeChordLogits(_runSegments(padded, nSeg, nBins, run));
   return _mergeRuns(labels, nFrames, _sr / cqt.hop, keepNoChord: keepNoChord);
 }
 
-/// Run each 108-frame segment through BTC; concatenate `[nSeg·108 × 25]` logits.
+/// Run each 108-frame segment through [run]; concatenate `[nSeg·108 × 25]`
+/// logits.
 Float32List _runSegments(
-  OnnxModel model,
   Float32List padded,
   int nSeg,
   int nBins,
+  ChordSegmentRunner run,
 ) {
   const nClass = 25;
   final out = Float32List(nSeg * _timestep * nClass);
@@ -90,13 +127,7 @@ Float32List _runSegments(
       s * _timestep * nBins,
       (s + 1) * _timestep * nBins,
     );
-    final r = model.run(
-      {
-        _inName: Tensor.float(Float32List.fromList(seg), [1, _timestep, nBins]),
-      },
-      const [_outName],
-    )[_outName]!;
-    final lg = r.f ?? r.asFloatList();
+    final lg = run(Float32List.fromList(seg), nBins);
     out.setRange(s * _timestep * nClass, (s + 1) * _timestep * nClass, lg);
   }
   return out;
