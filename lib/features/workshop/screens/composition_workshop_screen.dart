@@ -31,6 +31,8 @@ import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
+import 'package:comet_beat/features/games/composition/tab_gp_plan.dart'
+    show gpFretPlanFor;
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
@@ -356,6 +358,13 @@ const kExportFormats = <ExportFormat>[
     mime: 'application/xml',
     binary: false,
     multiPart: false,
+  ),
+  (
+    label: 'GP tab (.gp)',
+    ext: 'gp',
+    mime: 'application/octet-stream',
+    binary: true,
+    multiPart: true,
   ),
   (
     label: 'LilyPond',
@@ -2798,6 +2807,28 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
               ? multiPartToMscx(_mpd.buildMultiPart(), partNames: _mpd.names)
               : scoreToMscx(score),
         );
+      case 'gp':
+        // GPIF tablature: fret the score onto a standard guitar with the
+        // cost-based arranger (playable positions, techniques preserved), one
+        // GP track per part when multi-part.
+        final tuning = Tuning.standardGuitar;
+        final String gpif;
+        if (_mpd.partCount > 1) {
+          final mp = _mpd.buildMultiPart();
+          gpif = multiPartToGpif(
+            mp,
+            tunings: [for (final _ in mp.parts) tuning],
+            names: _mpd.names,
+            frettings: [for (final p in mp.parts) gpFretPlanFor(p, tuning)],
+          );
+        } else {
+          gpif = scoreToGpif(
+            score,
+            tuning: tuning,
+            frettings: gpFretPlanFor(score, tuning),
+          );
+        }
+        return (writeGpFromGpif(gpif), null);
       case 'ly':
         // LilyPond typesets every part (a StaffGroup) when multi-part.
         return (

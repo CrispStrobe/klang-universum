@@ -292,13 +292,13 @@ it. Verified:
 - **GPIF I/O (core):** read `gp5/gp4/gp3ToScore`, `scoreFromGpif`, `.gp`/
   `.gpx` containers (clean-room); **write** `scoreToGpif` + `.gp`/`.gpx`
   containers. `asciiTabToScore` reads ASCII tab.
-- **App today (✅ mostly SHIPPED — see the status banner in §2):** the dedicated
-  **Tab editor** (`tab_workshop_screen.dart`) now renders tab (`TabStaffView`),
-  exposes fret/string editing, and **exports GPIF `.gp`** (menu label "GP tab
-  (.gp)") preserving the arranged string/fret choices + techniques. A headless
-  **`bin/tabconv.dart`** exports `.gp` from any notation format too. The only
-  remaining gap: the *Composition Workshop*'s `kExportFormats` list still omits GP
-  (it lives on the Tab editor + CLI instead).
+- **App today (✅ SHIPPED):** the dedicated **Tab editor**
+  (`tab_workshop_screen.dart`) renders tab (`TabStaffView`), exposes fret/string
+  editing, and **exports GPIF `.gp`** (menu label "GP tab (.gp)") preserving the
+  arranged string/fret choices + techniques. A headless **`bin/tabconv.dart`**
+  exports `.gp` from any notation format too, and the **Composition Workshop's
+  `kExportFormats`** now includes GP (fret via the cost-based arranger, one track
+  per part). So GP export is wired on every surface.
 
 **Implication:** the editor is an **input surface + wiring** job over the existing
 `MultiPartDocument`, reusing `TabStaffView`/`FretboardView` for display and
@@ -350,8 +350,8 @@ dropdown entry. Shared model = free round-trip Score↔Tab↔Tracker.
   playing_staff.dart`). Audio via the existing synth path.
 - **Multi-track "band"**: `MultiPartDocument` is already multi-part — a track
   strip (guitar / bass / drums), each its own tuning.
-- **Import/Export**: GP import already works → now it *displays* as tab; **wire GP
-  export** (`scoreToGpif` → `.gp`) into `kExportFormats` (currently missing), plus
+- **Import/Export**: GP import already works → now it *displays* as tab; GP
+  export (`scoreToGpif` → `.gp`) into `kExportFormats` (✅ **done**, arranged), plus
   the existing MusicXML/MIDI/ABC. ASCII-tab paste-in via `asciiTabToScore`.
 
 ### 2.4 License / patent / copyright guardrails
@@ -389,8 +389,8 @@ lands there first** — scope it as a separate crisp_notation task if needed.
 - **B1 — Fret/string input**: tab-grid cursor + fret entry + duration palette +
   on-screen `FretboardView`, writing notes + `TabVoicing` into the document.
 - **B2 — Techniques + chord diagrams** (palettes over the selected note/beat).
-- **B3 — GP export wired into `kExportFormats`; `PlayingTabView` playback
-  highlighting; tuning/capo persistence.**
+- **B3 — GP export wired into `kExportFormats` (✅ done, arranged); `PlayingTabView`
+  playback highlighting; tuning/capo persistence.**
 - **B4 — Multi-track band view; ASCII-tab paste-in; live-mic fret capture (later).**
 
 ---

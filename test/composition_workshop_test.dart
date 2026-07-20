@@ -22,7 +22,10 @@ import 'package:crisp_notation/crisp_notation.dart'
         InteractiveGrandStaffView,
         InteractiveMultiPartView,
         MultiSystemView,
-        NoteNameStyle;
+        NoteElement,
+        NoteNameStyle,
+        multiPartScoreFromGpif,
+        readGpifFromGp;
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -1168,10 +1171,11 @@ void main() {
 
   test('exactly the multi-part-capable formats claim multi-part support', () {
     // Guards the flag against a new format being added without deciding.
-    // MusicXML/mxl via the library; MIDI/ABC via our own multi-part writers.
+    // MusicXML/mxl via the library; MIDI/ABC via our own multi-part writers;
+    // GP tab via multiPartToGpif (one track per part).
     expect(
       kExportFormats.where((f) => f.multiPart).map((f) => f.ext),
-      ['musicxml', 'mxl', 'mid', 'abc'],
+      ['musicxml', 'mxl', 'mid', 'abc', 'gp'],
     );
   });
 
@@ -1199,6 +1203,19 @@ void main() {
     expect(abc, isNotNull);
     final voices = RegExp(r'^V:\d+ name=', multiLine: true).allMatches(abc!);
     expect(voices.length, 2);
+
+    // GP tab → a .gp (ZIP/PK header) with two GP tracks, notes recoverable.
+    final (gp, _) = await _editor(tester).debugGenerateExport('gp');
+    expect(gp, isNotNull);
+    expect(gp!.sublist(0, 2), [0x50, 0x4B]); // PK — .gp is a ZIP
+    final back = multiPartScoreFromGpif(readGpifFromGp(gp));
+    expect(back.parts, hasLength(2));
+    for (final part in back.parts) {
+      expect(
+        part.measures.expand((m) => m.elements).whereType<NoteElement>(),
+        isNotEmpty,
+      );
+    }
   });
 
   testWidgets('enabling marquee mode shows the selection overlay',
