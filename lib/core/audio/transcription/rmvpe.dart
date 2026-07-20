@@ -36,16 +36,49 @@ PitchTrack rmvpeF0(
   required RmvpeMel mel,
   int sampleRate = 44100,
   double thred = 0.03,
+}) =>
+    rmvpeF0WithRunner(
+      mono,
+      mel: mel,
+      sampleRate: sampleRate,
+      thred: thred,
+      run: (input, nMels, pf) {
+        final out = model.run(
+          {
+            _inName: Tensor.float(input, [1, nMels, pf]),
+          },
+          const [_outName],
+        )[_outName]!;
+        return out.f ?? out.asFloatList();
+      },
+    );
+
+/// Runs the U-Net on a `[1, nMels, pf]` log-mel input and returns the flat
+/// `[1·pf·360]` salience. The ONLY model-runtime coupling in the RMVPE chain —
+/// supply a runner backed by `onnx_runtime_dart` (the default via [rmvpeF0]) OR
+/// native ORT (the `onnxFfi` backend); the identical mel/pad/decode runs either
+/// way. Mirrors CREPE's `CrepeActivationRunner`.
+typedef RmvpeSalienceRunner = Float32List Function(
+  Float32List input,
+  int nMels,
+  int pf,
+);
+
+/// [rmvpeF0] with the model runtime abstracted behind [run] — same mel,
+/// frame-padding, and `to_local_average_cents` decode, only the inference call
+/// differs (so pure-Dart and native-ORT stay bit-for-bit identical apart from
+/// the backend).
+PitchTrack rmvpeF0WithRunner(
+  Float64List mono, {
+  required RmvpeMel mel,
+  required RmvpeSalienceRunner run,
+  int sampleRate = 44100,
+  double thred = 0.03,
 }) {
   final p = _prepMel(mono, mel, sampleRate);
   if (p == null) return const [];
-  final out = model.run(
-    {
-      _inName: Tensor.float(p.input, [1, mel.nMels, p.pf]),
-    },
-    const [_outName],
-  )[_outName]!;
-  return _decodeSalience(out.f ?? out.asFloatList(), p.nFrames, mel, thred);
+  final sal = run(p.input, mel.nMels, p.pf);
+  return _decodeSalience(sal, p.nFrames, mel, thred);
 }
 
 /// Isolate-pool variant of [rmvpeF0]: identical mel / pad / decode, but
