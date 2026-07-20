@@ -21,6 +21,7 @@
 import 'dart:io';
 
 import 'fxproc.dart' as fxproc;
+import 'jamsconv.dart' as jamsconv;
 import 'listen.dart' as listen;
 import 'modconv.dart' as modconv;
 import 'modinfo.dart' as modinfo;
@@ -34,6 +35,7 @@ final _commands = <String, (Future<void> Function(List<String>), String)>{
   'conv': (_wrap(modconv.main), 'convert modules + extract samples to WAV'),
   'render': (_wrap(render.main), 'a Loop Mixer groove → WAV'),
   'midi': (_wrap(notaconv.main), "a module's melody → Standard MIDI File"),
+  'jams': (_wrap(jamsconv.main), 'JAMS ⇄ notation (.mid/.musicxml/.abc)'),
   'fx': (_wrap(fxproc.main), 'apply a crisp_dsp effect to a WAV'),
 };
 

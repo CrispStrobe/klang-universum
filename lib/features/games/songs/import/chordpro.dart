@@ -1,12 +1,12 @@
 // lib/features/games/songs/import/chordpro.dart
 //
 // Minimal ChordPro parser: `{title: ...}` directives and `[C]`-style inline
-// chords over lyrics. Chords map to playable triads (C, Am, F7 -> F, ...) so
-// every chord chip in the sheet can sound.
+// chords over lyrics. Chords voice their full quality (C, Am, F7, Cmaj7, Cm7b5,
+// …) via the shared chord-quality vocabulary, so every chip sounds as written.
 
+import 'package:comet_beat/features/games/songs/import/chord_quality.dart';
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
-import 'package:crisp_notation/crisp_notation.dart'
-    show ChordQuality, Pitch, Step, Triad;
+import 'package:crisp_notation/crisp_notation.dart' show Pitch, Step;
 
 /// One lyric fragment with an optional chord starting on it.
 class ChordSegment {
@@ -89,19 +89,20 @@ ChordSheet parseChordPro(String source) {
   return ChordSheet(title: title.isEmpty ? 'Chord sheet' : title, lines: lines);
 }
 
-/// MIDI notes for a chord symbol like `C`, `Am`, `F7`, `Bb`, `D#m` —
-/// reduced to the plain major/minor triad. Returns null when unparseable.
+/// MIDI notes for a chord symbol like `C`, `Am`, `F7`, `Cmaj7`, `Cm7b5`, `Bb`,
+/// `D#m` — voiced with its full quality via the shared vocabulary (7ths, sus,
+/// dim/aug, 6ths, 9ths). Returns null when the root is unparseable.
 List<int>? chordMidis(String chord) {
-  final match =
-      RegExp(r'^([A-Ga-g])([#b]?)(m(?!aj))?').firstMatch(chord.trim());
-  if (match == null) return null;
-  final step = Step.values.asNameMap()[match.group(1)!.toLowerCase()];
+  final split = splitChordSymbol(chord);
+  if (split == null) return null;
+  final root = split.root;
+  final step = Step.values.asNameMap()[root[0].toLowerCase()];
   if (step == null) return null;
-  final alter = switch (match.group(2)) { '#' => 1, 'b' => -1, _ => 0 };
-  final quality =
-      match.group(3) != null ? ChordQuality.minor : ChordQuality.major;
-  return Triad(Pitch(step, alter: alter), quality)
-      .pitches
-      .map((p) => p.midiNumber)
-      .toList();
+  final alter = switch (root.length > 1 ? root[1] : '') {
+    '#' => 1,
+    'b' => -1,
+    _ => 0,
+  };
+  final rootMidi = Pitch(step, alter: alter).midiNumber;
+  return [for (final i in intervalsForSuffix(split.suffix)) rootMidi + i];
 }

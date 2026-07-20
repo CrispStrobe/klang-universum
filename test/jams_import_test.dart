@@ -42,27 +42,40 @@ String _jams(List<Map<String, Object?>> chordData, {String? title}) =>
 
 void main() {
   group('harteToChordName', () {
-    test('major qualities → plain root triad', () {
+    test('preserves the quality as a chord symbol', () {
       expect(harteToChordName('C:maj'), 'C');
       expect(harteToChordName('C'), 'C'); // bare root = major
-      expect(harteToChordName('G:7'), 'G'); // dominant reduces to major triad
-      expect(harteToChordName('F#:maj7'), 'F#');
-      expect(harteToChordName('Bb:sus4'), 'Bb');
-      expect(harteToChordName('D:9'), 'D');
-    });
-
-    test('minor / diminished qualities → minor triad', () {
+      expect(harteToChordName('G:7'), 'G7'); // dominant 7th kept
+      expect(harteToChordName('F#:maj7'), 'F#maj7');
+      expect(harteToChordName('Bb:sus4'), 'Bbsus4');
       expect(harteToChordName('A:min'), 'Am');
-      expect(harteToChordName('A:min7'), 'Am');
-      expect(harteToChordName('E:minmaj7'), 'Em');
-      expect(harteToChordName('B:dim'), 'Bm');
-      expect(harteToChordName('C#:hdim7'), 'C#m');
+      expect(harteToChordName('A:min7'), 'Am7');
+      expect(harteToChordName('E:minmaj7'), 'EmMaj7');
+      expect(harteToChordName('B:dim'), 'Bdim');
+      expect(harteToChordName('C#:hdim7'), 'C#m7b5');
+      expect(harteToChordName('D:min6'), 'Dm6');
+      expect(harteToChordName('C:maj9'), 'Cmaj9');
+      expect(harteToChordName('A:min9'), 'Am9');
     });
 
-    test('slash bass and inversions are dropped', () {
+    test('unknown/extended qualities reduce to the nearest base', () {
+      // maj13 is beyond the vocabulary → major base (crucially NOT minor).
+      expect(harteToChordName('C:maj13'), 'C');
+      expect(harteToChordName('C:min11'), 'Cm'); // → minor
+      expect(harteToChordName('C:13'), 'C'); // dominant ext → major
+      expect(harteToChordName('G:sus4(b7,9)'), 'Gsus4'); // → sus4
+    });
+
+    test('slash bass and inversions are dropped (quality kept)', () {
       expect(harteToChordName('C:maj/3'), 'C');
-      expect(harteToChordName('A:min7/b7'), 'Am');
-      expect(harteToChordName('G:7/5'), 'G');
+      expect(harteToChordName('A:min7/b7'), 'Am7');
+      expect(harteToChordName('G:7/5'), 'G7');
+    });
+
+    test('every produced symbol is playable', () {
+      for (final l in ['C:maj', 'A:min7', 'G:7', 'F#:maj7', 'C#:hdim7']) {
+        expect(chordMidis(harteToChordName(l)!), isNotNull, reason: l);
+      }
     });
 
     test('no-chord and unparseable labels → null', () {
@@ -91,8 +104,8 @@ void main() {
 
       final sheet = parseChordPro(cp);
       expect(sheet.title, 'My Song');
-      // C (collapsed), Am, F, G — four distinct chords, in order.
-      expect(sheet.chords, ['C', 'Am', 'F', 'G']);
+      // C (collapsed), Am, F, G7 — the dominant 7th is preserved.
+      expect(sheet.chords, ['C', 'Am', 'F', 'G7']);
       // Every emitted chord is playable (maps to a triad).
       for (final c in sheet.chords) {
         expect(chordMidis(c), isNotNull, reason: c);
@@ -256,6 +269,40 @@ void main() {
       expect(jamsBeatsPerBar('{"annotations":[]}'), isNull);
     });
 
+    test('jamsMeter reads a structured beat_position (6/8 ≠ 6/4)', () {
+      String bp(int numBeats, int beatUnits) => jsonEncode({
+            'annotations': [
+              {
+                'namespace': 'beat_position',
+                'data': [
+                  {
+                    'time': 0.0,
+                    'duration': 0.0,
+                    'value': {
+                      'position': 1,
+                      'measure': 0,
+                      'num_beats': numBeats,
+                      'beat_units': beatUnits,
+                    },
+                  },
+                ],
+              },
+              {
+                'namespace': 'note_midi',
+                'data': [
+                  {'time': 0.0, 'duration': 0.25, 'value': 60},
+                ],
+              },
+            ],
+          });
+      // The full meter survives — 6/8 is distinguished from 6/4.
+      expect(jamsMeter(bp(6, 8)), (numerator: 6, denominator: 8));
+      expect(jamsMeter(bp(6, 4)), (numerator: 6, denominator: 4));
+      final ts = scoreFromMidi(jamsToMidi(bp(6, 8))).timeSignature!;
+      expect(ts.beats, 6);
+      expect(ts.beatUnit, 8);
+    });
+
     test('jamsKey reads TONIC:MODE (and TONIC MODE, and N)', () {
       String key(String v) => jsonEncode({
             'annotations': [
@@ -415,7 +462,56 @@ void main() {
           },
         ],
       });
-      expect(parseChordPro(jamsToChordPro(json)).chords, ['Dm', 'G', 'C']);
+      final chords = parseChordPro(jamsToChordPro(json)).chords;
+      expect(chords, ['Dm7', 'G7', 'Cmaj7']);
+    });
+  });
+
+  group('chord round-trip (Harte ↔ symbol) is lossless for the vocabulary', () {
+    test('chordsToJams → jamsToChordPro preserves the qualities', () {
+      const chords = ['C', 'Am7', 'Dm7', 'G7', 'Cmaj7', 'F#m7b5', 'Bdim'];
+      final json = chordsToJams(chords);
+      expect(parseChordPro(jamsToChordPro(json)).chords, chords);
+    });
+  });
+
+  group('scoreToJams export + MIDI round-trip', () {
+    test('a melody survives MIDI → JAMS → MIDI note-for-note', () {
+      const scale = [60, 62, 64, 65, 67, 69];
+      // The "original" MIDI, authored via JAMS.
+      final midi1 = jamsToMidi(
+        notesToJams(
+          [
+            for (var i = 0; i < scale.length; i++)
+              (time: i * 0.5, duration: 0.5, midi: scale[i]),
+          ],
+          tempo: 120,
+        ),
+      );
+      // Read → export → re-import: EXPORT is the new scoreToJams.
+      final exported = scoreToJams(scoreFromMidi(midi1), title: 'rt');
+      expect(jamsTitle(exported), 'rt');
+      final midi2 = jamsToMidi(exported);
+      expect(_midiPitches(midi2), _midiPitches(midi1));
+      expect(_midiPitches(midi2), scale);
+    });
+
+    test('scoreToJams merges tied notes into one observation', () {
+      // A note that crosses a barline is engraved as two tied notes; the export
+      // must emit ONE note_midi observation, not two.
+      final tied = jamsToMidi(
+        notesToJams(
+          const [
+            // A dotted-half at beat 3 of 4/4 spills into the next bar → tie.
+            (time: 0.0, duration: 1.0, midi: 60),
+            (time: 0.5 * 3, duration: 1.5, midi: 67),
+          ],
+          tempo: 120,
+        ),
+      );
+      final notes = jamsMelodyNotes(scoreToJams(scoreFromMidi(tied)));
+      // Two distinct pitches, not three (the tie did not split into two obs).
+      expect(notes.map((n) => n.midi), [60, 67]);
     });
   });
 }

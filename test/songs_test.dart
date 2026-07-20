@@ -556,12 +556,12 @@ void main() {
     expect(songs.songs, isEmpty);
     expect(songs.sheets, hasLength(1));
     expect(songs.sheets.single.title, 'Blues');
-    // The Harte labels became the app's plain chord chips.
+    // The Harte labels became chord chips with their quality preserved.
     expect(parseChordPro(songs.sheets.single.source).chords, [
       'C',
       'F',
-      'G',
-      'Am',
+      'G7',
+      'Am7',
     ]);
   });
 

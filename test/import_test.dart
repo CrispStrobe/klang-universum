@@ -28,11 +28,15 @@ schwimmen auf dem [C]See
       expect(lastLine.last.text, 'See');
     });
 
-    test('rejects empty input, maps chord symbols to triads', () {
+    test('rejects empty input, voices chord symbols with their full quality',
+        () {
       expect(() => parseChordPro('{title: x}\n\n'), throwsFormatException);
       expect(chordMidis('C'), [60, 64, 67]);
       expect(chordMidis('Am'), [69, 72, 76]);
-      expect(chordMidis('F7'), [65, 69, 72]); // reduced to the F triad
+      expect(chordMidis('F7'), [65, 69, 72, 75]); // dominant 7th (adds Eb)
+      expect(chordMidis('Cmaj7'), [60, 64, 67, 71]);
+      expect(chordMidis('Dm7'), [62, 65, 69, 72]);
+      expect(chordMidis('Bdim'), [71, 74, 77]);
       expect(chordMidis('Bb'), [70, 74, 77]);
       expect(chordMidis('??'), isNull);
     });

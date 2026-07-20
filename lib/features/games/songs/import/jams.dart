@@ -22,6 +22,10 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/features/games/songs/import/chord_quality.dart';
+import 'package:crisp_notation_core/crisp_notation_core.dart'
+    show NoteElement, RestElement, Score;
+
 // ─────────────────────────── decode + shared helpers ────────────────────────
 
 /// Decodes [json] into a JAMS object, or throws [FormatException].
@@ -143,16 +147,17 @@ String jamsToChordPro(String json) {
   return buffer.toString();
 }
 
-/// Maps a Harte chord [label] to a plain chord name (`C`, `Am`, `F#`, `Bbm`),
-/// or null for a no-chord / unparseable label. The app renders triads, so only
-/// the root + major/minor survive; extensions and slash-bass are dropped;
-/// dim/hdim → minor.
+/// Maps a Harte chord [label] to a chord symbol (`C`, `Am`, `G7`, `Cmaj7`,
+/// `C#m7b5`), or null for a no-chord / unparseable label. The quality is
+/// preserved via the shared vocabulary (7ths, sus, dim/aug, 6ths, 9ths); the
+/// slash-bass is dropped and qualities outside the vocabulary reduce to the
+/// nearest base quality.
 String? harteToChordName(String label) {
   final s = label.trim();
   if (s.isEmpty || s == 'N' || s == 'X') return null;
-  final m = RegExp(r'^([A-G])([#b]*)').firstMatch(s);
+  final m = RegExp(r'^([A-G][#b]*)').firstMatch(s);
   if (m == null) return null;
-  final root = '${m.group(1)}${m.group(2)}';
+  final root = m.group(1)!;
   final colon = s.indexOf(':');
   var quality = '';
   if (colon >= 0) {
@@ -161,10 +166,7 @@ String? harteToChordName(String label) {
     if (slash >= 0) quality = quality.substring(0, slash);
     quality = quality.trim();
   }
-  final isMinor = quality.startsWith('min') ||
-      quality.startsWith('dim') ||
-      quality.startsWith('hdim');
-  return isMinor ? '${root}m' : root;
+  return '$root${suffixForHarteQuality(quality)}';
 }
 
 // ───────────────────────────────── melody ───────────────────────────────────
@@ -203,18 +205,52 @@ double? jamsTempo(String json) {
   return null;
 }
 
-/// The beats-per-bar inferred from a `beat` annotation's max position value
-/// (JAMS beats carry the in-bar position 1..N), or null. Clamped to 2..12.
-int? jamsBeatsPerBar(String json) {
+/// The time signature (beats per bar + beat unit), or null.
+///
+/// Prefers the structured **`beat_position`** namespace — its `value` is
+/// `{position, measure, num_beats, beat_units}`, so `num_beats`/`beat_units`
+/// give a REAL meter and 6/8 ≠ 6/4. Falls back to the scalar **`beat`**
+/// namespace (max in-bar position → numerator, assumed `/4`).
+({int numerator, int denominator})? jamsMeter(String json) {
   try {
-    var maxPos = 0;
-    for (final o in _observations(_decodeJams(json), const {'beat'})) {
+    final root = _decodeJams(json);
+    // 1. beat_position: value is a struct carrying the meter directly.
+    for (final o in _observations(root, const {'beat_position'})) {
       final v = o['value'];
-      if (v is num) maxPos = math.max(maxPos, v.round());
+      if (v is Map && v['num_beats'] is num && (v['num_beats'] as num) >= 2) {
+        final n = (v['num_beats'] as num).round();
+        final u = v['beat_units'];
+        final den = (u is num && u >= 1) ? u.round() : 4;
+        return (numerator: n.clamp(2, 32), denominator: _asPowerOfTwo(den));
+      }
     }
-    if (maxPos >= 2) return maxPos.clamp(2, 12);
+    // 2. beat: the max in-bar position (scalar, or a {position} struct).
+    var maxPos = 0;
+    for (final o in _observations(root, const {'beat'})) {
+      final v = o['value'];
+      if (v is num) {
+        maxPos = math.max(maxPos, v.round());
+      } else if (v is Map && v['position'] is num) {
+        maxPos = math.max(maxPos, (v['position'] as num).round());
+      }
+    }
+    if (maxPos >= 2) return (numerator: maxPos.clamp(2, 32), denominator: 4);
   } catch (_) {}
   return null;
+}
+
+/// The beats-per-bar (the meter numerator), or null. See [jamsMeter].
+int? jamsBeatsPerBar(String json) => jamsMeter(json)?.numerator;
+
+/// Rounds [n] to the nearest power of two in {1,2,4,8,16,32} (MIDI's
+/// time-signature denominator must be a power of two).
+int _asPowerOfTwo(int n) {
+  const pows = [1, 2, 4, 8, 16, 32];
+  var best = 4;
+  for (final p in pows) {
+    if ((p - n).abs() < (best - n).abs()) best = p;
+  }
+  return best;
 }
 
 /// A human key label ("A minor", "Eb major") from the first `key_mode`
@@ -278,9 +314,10 @@ Uint8List jamsToMidi(String json) {
     (usPerQuarter >> 8) & 0xFF,
     usPerQuarter & 0xFF,
   ]);
-  // Time-signature meta (nn/2^dd), inferred from the beat annotation.
-  final numerator = jamsBeatsPerBar(json) ?? 4;
-  track.addAll([0x00, 0xFF, 0x58, 0x04, numerator, 2, 24, 8]);
+  // Time-signature meta (nn / 2^dd), inferred from beat_position or beat.
+  final meter = jamsMeter(json) ?? (numerator: 4, denominator: 4);
+  final dd = (math.log(meter.denominator) / math.ln2).round();
+  track.addAll([0x00, 0xFF, 0x58, 0x04, meter.numerator, dd, 24, 8]);
 
   var cur = 0;
   for (final (t, isOn, m) in events) {
@@ -340,6 +377,65 @@ String chordsToJams(
       ],
     });
 
+/// Exports [score]'s voice-1 melody as a JAMS `note_midi` document (+ a `tempo`
+/// annotation). Onsets/durations are seconds derived from the score's tempo
+/// (`quarterBpm`, else 120). Consecutive tied same-pitch notes merge into one
+/// observation, so a MIDI→JAMS→MIDI round-trip stays note-stable.
+String scoreToJams(Score score, {String? title}) {
+  final bpm = score.tempo?.quarterBpm ?? 120.0;
+  final secPerQuarter = 60.0 / bpm;
+
+  // Flatten to (startQuarters, durQuarters, midi, tiedForward), advancing a beat
+  // cursor over notes AND rests (non-timed elements contribute nothing).
+  final raw = <({double start, double dur, int midi, bool tied})>[];
+  var cursor = 0.0;
+  for (final m in score.measures) {
+    for (final e in m.elements) {
+      if (e is NoteElement) {
+        final (n, d) = e.duration.fraction;
+        final q = 4.0 * n / d;
+        for (final p in e.pitches) {
+          raw.add(
+            (start: cursor, dur: q, midi: p.midiNumber, tied: e.tieToNext),
+          );
+        }
+        cursor += q;
+      } else if (e is RestElement) {
+        final (n, d) = e.duration.fraction;
+        cursor += 4.0 * n / d;
+      }
+    }
+  }
+
+  // Merge tied runs (a note tied forward extends into the next same-pitch note).
+  final merged = <({double start, double dur, int midi})>[];
+  final open = <int, int>{}; // midi → index of the still-open tied note
+  for (final r in raw) {
+    final at = open[r.midi];
+    if (at != null) {
+      merged[at] =
+          (start: merged[at].start, dur: merged[at].dur + r.dur, midi: r.midi);
+      if (!r.tied) open.remove(r.midi);
+    } else {
+      merged.add((start: r.start, dur: r.dur, midi: r.midi));
+      if (r.tied) open[r.midi] = merged.length - 1;
+    }
+  }
+
+  return notesToJams(
+    [
+      for (final n in merged)
+        (
+          time: n.start * secPerQuarter,
+          duration: n.dur * secPerQuarter,
+          midi: n.midi,
+        ),
+    ],
+    title: title,
+    tempo: bpm,
+  );
+}
+
 /// A JAMS document (JSON string) with a `note_midi` annotation for [notes]
 /// (plus an optional `tempo` annotation).
 String notesToJams(List<JamsNote> notes, {String? title, double? tempo}) =>
@@ -358,10 +454,10 @@ String notesToJams(List<JamsNote> notes, {String? title, double? tempo}) =>
       ],
     });
 
-/// The plain chord name (`Am`, `C#`) → a Harte label (`A:min`, `C#:maj`).
+/// A chord symbol (`Am`, `G7`, `Cmaj7`) → a Harte label (`A:min`, `G:7`,
+/// `C:maj7`) — the inverse of [harteToChordName] over the vocabulary.
 String _nameToHarte(String name) {
-  final m = RegExp(r'^([A-G][#b]*)(m(?!aj))?').firstMatch(name.trim());
-  if (m == null) return 'N';
-  final root = m.group(1)!;
-  return m.group(2) != null ? '$root:min' : '$root:maj';
+  final sp = splitChordSymbol(name);
+  if (sp == null) return 'N';
+  return '${sp.root}:${harteQualityForSuffix(sp.suffix)}';
 }
