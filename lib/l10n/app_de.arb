@@ -759,6 +759,16 @@
   "performCancel": "Abbrechen",
   "performMute": "Ebene stumm",
   "performUnmute": "Ebene laut",
+  "performBounce": "An Arranger senden",
+  "performBounceMix": "Ganze Schleife als ein Clip",
+  "performBounceLayers": "Jede Ebene als Clip",
+  "performBounceName": "Perform-Schleife",
+  "performBounceDone": "{count, plural, =1{In „Meine Samples“ gesichert — im Arranger nutzbar} other{{count} Clips in „Meine Samples“ gesichert — im Arranger nutzbar}}",
+  "@performBounceDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "performSceneSave": "Szene sichern",
   "performSceneLabel": "Szene {number} · {active} an",
   "@performSceneLabel": {

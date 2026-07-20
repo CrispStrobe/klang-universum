@@ -3926,6 +3926,36 @@ abstract class AppLocalizations {
   /// **'Unmute layer'**
   String get performUnmute;
 
+  /// No description provided for @performBounce.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to arranger'**
+  String get performBounce;
+
+  /// No description provided for @performBounceMix.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole loop as one clip'**
+  String get performBounceMix;
+
+  /// No description provided for @performBounceLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Each layer as a clip'**
+  String get performBounceLayers;
+
+  /// No description provided for @performBounceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Perform loop'**
+  String get performBounceName;
+
+  /// No description provided for @performBounceDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Saved to My Samples — open the Arranger to use it} other{Saved {count} clips to My Samples — open the Arranger to use them}}'**
+  String performBounceDone(int count);
+
   /// No description provided for @performSceneSave.
   ///
   /// In en, this message translates to:

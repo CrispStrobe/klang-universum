@@ -19,6 +19,7 @@ import 'package:comet_beat/core/audio/loop_stack_render.dart';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/loop_player_service.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
 import 'package:flutter/material.dart';
@@ -71,6 +72,10 @@ abstract class PerformTester {
   int? get armedScene;
   void launchArmed();
   void removeScene(int i);
+
+  /// Bounce (S5): build clips to hand off to the arranger's "My Samples"
+  /// library — the whole loop as one clip, or one clip per active layer.
+  List<SampleClip> debugBounce(String base, {bool perLayer});
 
   /// The current summed mix (active layers) — for tests.
   Float64List debugMix();
@@ -372,6 +377,53 @@ class _PerformScreenState extends State<PerformScreen>
     setState(() {});
   }
 
+  // ── Bounce → arrange (S5) ─────────────────────────────────────────────────
+  /// Build the clips to hand off: the whole loop as one clip, or (perLayer) one
+  /// clip per ACTIVE layer. Empty when there's nothing playing.
+  List<SampleClip> _bounceClips(String base, {required bool perLayer}) {
+    if (_stack.activeLayers.isEmpty) return const [];
+    if (!perLayer) {
+      return [
+        SampleClip(
+          name: base,
+          sampleRate: kSampleRate,
+          pcm: renderLoopStack(_activePcm, loopSamples: _loopSamples),
+          source: base,
+        ),
+      ];
+    }
+    final active = _stack.activeLayers.toList();
+    return [
+      for (var i = 0; i < active.length; i++)
+        SampleClip(
+          name: '$base ${i + 1}',
+          sampleRate: kSampleRate,
+          pcm: active[i].pcm,
+          source: base,
+        ),
+    ];
+  }
+
+  @override
+  List<SampleClip> debugBounce(String base, {bool perLayer = false}) =>
+      _bounceClips(base, perLayer: perLayer);
+
+  /// Save the bounce to the shared "My Samples" library, from where the
+  /// Arranger (and other modules) can drop it onto a track.
+  Future<void> _sendToArrange(bool perLayer) async {
+    final l10n = AppLocalizations.of(context)!;
+    final clips = _bounceClips(l10n.performBounceName, perLayer: perLayer);
+    if (clips.isEmpty) return;
+    final store = SampleClipStore();
+    for (final c in clips) {
+      await store.save(c);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.performBounceDone(clips.length))),
+    );
+  }
+
   // ── Playback ──────────────────────────────────────────────────────────────
   @override
   bool get isPlaying => _playing;
@@ -543,6 +595,16 @@ class _PerformScreenState extends State<PerformScreen>
             tooltip: _playing ? l10n.performStop : l10n.performPlay,
             onPressed:
                 _stack.activeLayers.isEmpty ? null : (_playing ? stop : play),
+          ),
+          PopupMenuButton<bool>(
+            icon: const Icon(Icons.drive_file_move_outline),
+            tooltip: l10n.performBounce,
+            enabled: _stack.activeLayers.isNotEmpty,
+            onSelected: _sendToArrange,
+            itemBuilder: (context) => [
+              PopupMenuItem(value: false, child: Text(l10n.performBounceMix)),
+              PopupMenuItem(value: true, child: Text(l10n.performBounceLayers)),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),

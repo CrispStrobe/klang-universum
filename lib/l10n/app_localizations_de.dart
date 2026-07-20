@@ -2082,6 +2082,29 @@ class AppLocalizationsDe extends AppLocalizations {
   String get performUnmute => 'Ebene laut';
 
   @override
+  String get performBounce => 'An Arranger senden';
+
+  @override
+  String get performBounceMix => 'Ganze Schleife als ein Clip';
+
+  @override
+  String get performBounceLayers => 'Jede Ebene als Clip';
+
+  @override
+  String get performBounceName => 'Perform-Schleife';
+
+  @override
+  String performBounceDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Clips in „Meine Samples“ gesichert — im Arranger nutzbar',
+      one: 'In „Meine Samples“ gesichert — im Arranger nutzbar',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get performSceneSave => 'Szene sichern';
 
   @override

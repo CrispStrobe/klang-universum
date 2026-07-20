@@ -822,6 +822,16 @@
   "performCancel": "Cancel",
   "performMute": "Mute layer",
   "performUnmute": "Unmute layer",
+  "performBounce": "Send to arranger",
+  "performBounceMix": "Whole loop as one clip",
+  "performBounceLayers": "Each layer as a clip",
+  "performBounceName": "Perform loop",
+  "performBounceDone": "{count, plural, =1{Saved to My Samples — open the Arranger to use it} other{Saved {count} clips to My Samples — open the Arranger to use them}}",
+  "@performBounceDone": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "performSceneSave": "Save scene",
   "performSceneLabel": "Scene {number} · {active} on",
   "@performSceneLabel": {

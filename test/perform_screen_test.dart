@@ -1,6 +1,7 @@
 // Live Looper "Perform" (S1) — stack/mute/undo/redo layers + a summed mix.
 
 import 'package:comet_beat/features/games/composition/perform_screen.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -185,6 +186,39 @@ void main() {
     p.removeScene(0);
     await tester.pump();
     expect(p.sceneCount, 1);
+  });
+
+  testWidgets('bounce builds My-Samples clips (whole mix + per active layer)',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    p.addSeed('beat');
+    p.addSeed('bass');
+    await tester.pump();
+
+    // Whole loop → one clip that carries sound.
+    final mix = p.debugBounce('Perf');
+    expect(mix.length, 1);
+    expect(mix.first, isA<SampleClip>());
+    expect(mix.first.name, 'Perf');
+    expect(mix.first.pcm.isNotEmpty, isTrue);
+    expect(_peak(mix.first.pcm.toList()), greaterThan(0.0));
+
+    // Per layer → one clip per ACTIVE layer.
+    expect(p.debugBounce('Perf', perLayer: true).length, 2);
+
+    // Muting a layer drops it from the per-layer bounce.
+    p.toggleMute(0);
+    await tester.pump();
+    expect(p.debugBounce('Perf', perLayer: true).length, 1);
+
+    // Nothing playing → nothing to bounce.
+    p.clearAll();
+    await tester.pump();
+    expect(p.debugBounce('Perf'), isEmpty);
+    expect(p.debugBounce('Perf', perLayer: true), isEmpty);
   });
 
   testWidgets('play/stop toggles and does not crash without audio',

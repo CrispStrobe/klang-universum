@@ -2076,6 +2076,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get performUnmute => 'Unmute layer';
 
   @override
+  String get performBounce => 'Send to arranger';
+
+  @override
+  String get performBounceMix => 'Whole loop as one clip';
+
+  @override
+  String get performBounceLayers => 'Each layer as a clip';
+
+  @override
+  String get performBounceName => 'Perform loop';
+
+  @override
+  String performBounceDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $count clips to My Samples — open the Arranger to use them',
+      one: 'Saved to My Samples — open the Arranger to use it',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get performSceneSave => 'Save scene';
 
   @override
