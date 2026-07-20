@@ -26,6 +26,7 @@ import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/gapless_loop_player.dart';
 import 'package:comet_beat/features/games/composition/groove_notation.dart'
     show drumParts;
+import 'package:comet_beat/features/games/drums/drum_kit_visual.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -112,6 +113,9 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   final _clock = Stopwatch();
   late final Ticker _ticker;
   final _step = ValueNotifier<int>(-1);
+  // Drives the GarageBand-style visual kit: pieces flash on the step clock, and
+  // on a live pad tap via this controller.
+  final _visual = DrumKitVisualController();
   int _tempo = 100;
   double _swing = 0; // 0 = straight; a groove delays every off-eighth
 
@@ -155,6 +159,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
   void dispose() {
     _ticker.dispose();
     _step.dispose();
+    _visual.dispose();
     _loop.dispose();
     _captureStop?.cancel();
     _micSub?.cancel();
@@ -301,6 +306,7 @@ class _DrumkitScreenState extends State<DrumkitScreen>
         ),
       );
     }
+    _visual.flash(drum); // light the piece on the visual kit
     context
         .read<AudioService>()
         .playWavBytes(wavBytes(_toPcm16(renderDrum(drum))));
@@ -631,6 +637,16 @@ class _DrumkitScreenState extends State<DrumkitScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // The visual kit lights up as it plays (step clock) or is tapped.
+              SizedBox(
+                height: 150,
+                child: DrumKitVisual(
+                  step: _step,
+                  hitAt: (drum, step) => _rows[drum]![step],
+                  controller: _visual,
+                ),
+              ),
+              const SizedBox(height: 8),
               // The step grid: one row per drum, kPatternSteps toggles.
               Expanded(
                 child: Column(
