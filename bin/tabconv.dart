@@ -1,10 +1,11 @@
 // bin/tabconv.dart
 //
 // Headless "notation → Guitar Pro (.gp)" converter. Reads any Score-yielding
-// format (ABC, MIDI, MusicXML/MXL, MuseScore, MEI, Humdrum kern, Guitar Pro)
-// and writes a Guitar Pro 7 (.gp) file — running the cost-based tab arranger so
-// the frets are playable, not the greedy per-pitch fallback the writer uses on
-// its own. Multi-part inputs export one GP track per part.
+// format (ABC, MIDI, MusicXML/MXL, MuseScore, MEI, Humdrum kern, Guitar Pro,
+// JAMS note_midi melody) and writes a Guitar Pro 7 (.gp) file — running the
+// cost-based tab arranger so the frets are playable, not the greedy per-pitch
+// fallback the writer uses on its own. Multi-part inputs export one GP track
+// per part.
 //
 // Usage:
 //   dart run bin/tabconv.dart <in> <out.gp> [options]
@@ -23,6 +24,8 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/features/games/composition/tab_gp_plan.dart'
     show gpFretPlanFor;
+import 'package:comet_beat/features/games/songs/import/jams.dart'
+    show jamsToMidi;
 import 'package:crisp_notation_core/crisp_notation_core.dart';
 
 void main(List<String> args) {
@@ -110,6 +113,10 @@ List<Score> _loadParts(String path, String? from) {
       return multiPartScoreFromKern(text()).parts;
     case 'midi':
       return [scoreFromMidi(bytes())];
+    case 'jams':
+      // JAMS carries a note_midi melody; render it to a minimal SMF, then reuse
+      // the MIDI importer. (Chord-only JAMS files have no melody → throws.)
+      return [scoreFromMidi(jamsToMidi(text()))];
     case 'gpif':
       return multiPartScoreFromGpif(text()).parts;
     case 'gp':
