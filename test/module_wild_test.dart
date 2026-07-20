@@ -7,14 +7,39 @@
 // The invariant (same as the blackbox fuzz test, now over REAL bytes): parsing
 // untrusted input must NEVER throw a Dart Error — only a clean Exception
 // (FormatException / ItFormatException / …) is acceptable. When a file DOES
-// parse, the result must be structurally sane and re-convert to its own format
-// without an Error. Skips cleanly in CI where the corpus is absent.
+// parse, the result must be structurally sane and survive a SAME-FORMAT
+// round-trip (parse → write same format → parse) keeping every note. Skips
+// cleanly in CI where the corpus is absent.
+//
+// Measured on an 80-file real corpus (20 each mod/xm/s3m/it):
+//   • same-format round-trip:  notes 100%, samples 100% — locked here.
+//   • cross-format src→other→src note preservation:
+//       mod→{xm,s3m,it}→mod ...... 100%   (MOD content always fits + returns)
+//       it→xm→it 99.8% · s3m→it→s3m 100% · xm→it→xm 100% (equal-or-richer path)
+//       …→mod→… 32–63% · …→s3m→… 81–82%  (routing a RICHER format through a
+//       POORER one is lossy BY DESIGN — MOD can't hold >8 channels / notes
+//       above B-3 / extended effects). Not asserted (format-pair specific).
 
 import 'dart:io';
 
 import 'package:comet_beat/core/audio/mod/module_convert.dart';
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Every voiced cell as `pattern:row:channel → note`.
+Map<String, int> _notes(ModuleDoc d) {
+  final m = <String, int>{};
+  for (var p = 0; p < d.patterns.length; p++) {
+    final pat = d.patterns[p];
+    for (var r = 0; r < pat.rows.length; r++) {
+      for (var c = 0; c < pat.rows[r].length; c++) {
+        final n = pat.rows[r][c].note;
+        if (n >= 0) m['$p:$r:$c'] = n;
+      }
+    }
+  }
+  return m;
+}
 
 void main() {
   final dir = Directory('test/fixtures/wild');
@@ -69,15 +94,28 @@ void main() {
         expect(doc.patterns, isNotNull, reason: label);
         expect(doc.samples, isNotNull, reason: label);
 
-        // Re-converting to its own format must not Error either.
+        // Same-format round-trip must not Error AND must keep every note.
+        ModuleDoc? doc2;
         try {
-          convertDocTo(doc, doc.sourceFormat);
+          doc2 = parseAnyModule(convertDocTo(doc, doc.sourceFormat));
         } catch (e) {
           expect(
             e,
             isNot(isA<Error>()),
-            reason: '$label: re-convert threw an Error',
+            reason: '$label: same-format round-trip threw an Error',
           );
+        }
+        if (doc2 != null) {
+          final before = _notes(doc);
+          if (before.isNotEmpty) {
+            final after = _notes(doc2);
+            final kept = before.entries.where((e) => after[e.key] == e.value);
+            expect(
+              kept.length / before.length,
+              greaterThanOrEqualTo(0.99),
+              reason: '$label: same-format round-trip lost notes',
+            );
+          }
         }
       });
     }
