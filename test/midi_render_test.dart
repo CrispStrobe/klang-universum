@@ -131,6 +131,21 @@ void main() {
     expect(_peak(s), lessThan(_peak(l)));
   });
 
+  test('XG drum bank (CC0=127) + a GS rhythm-part SysEx render without error',
+      () {
+    final smf = _midi([
+      // GS "use part-block 1 (ch0) for rhythm map 2": F0 41 10 42 12 40 11 15
+      // 02 00 F7 (10 data bytes).
+      0, 0xF0, 0x0A, //
+      0x41, 0x10, 0x42, 0x12, 0x40, 0x11, 0x15, 0x02, 0x00, 0xF7,
+      ..._cc(0, 0, 127), // XG drum bank MSB
+      ..._note(0, 38, 240), // a snare on the (now drum) channel 0
+    ]);
+    final (l, _) = renderMidiFile(smf, font);
+    expect(l, isNotEmpty);
+    expect(_peak(l), greaterThan(0.0));
+  });
+
   test('empty / non-MIDI input yields empty output', () {
     final (l, r) = renderMidiFile(Uint8List.fromList([1, 2, 3]), font);
     expect(l, isEmpty);

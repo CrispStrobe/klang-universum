@@ -61,6 +61,7 @@ class _Pending {
     this.chorus,
     this.bank,
     this.program,
+    this.isDrum,
   );
   final int startTick;
   final int vel;
@@ -71,6 +72,7 @@ class _Pending {
   final double chorus; // CC93 send 0..1
   final int bank;
   final int program;
+  final bool isDrum;
 }
 
 /// A resolved sounding note.
@@ -118,8 +120,14 @@ class _Note {
   double reverbMix = 0,
   double chorusMix = 0,
 }) {
-  final (events, tpq) = _parseAllEvents(smf);
+  final (events, tpq, sysex) = _parseAllEvents(smf);
   if (events.isEmpty || tpq <= 0) return (Float64List(0), Float64List(0));
+
+  // Which channels are drum channels: channel 10 by default, plus any set by a
+  // GS "use-for-rhythm-part" SysEx (XG's CC0=127 is handled at note-on).
+  final drumChannel = List<bool>.filled(16, false);
+  drumChannel[9] = true;
+  _applyGsDrumSysex(sysex, drumChannel);
 
   // Tick → sample, honouring the tempo map.
   final tempoTicks = <int>[0];
@@ -148,7 +156,8 @@ class _Note {
   }
 
   final program = List<int>.filled(16, 0);
-  final bank = List<int>.filled(16, 0);
+  final bank = List<int>.filled(16, 0); // CC0 bank MSB
+  final bankLsb = List<int>.filled(16, 0); // CC32 bank LSB (GS/XG)
   final volume = List<double>.filled(16, 100 / 127);
   final expression = List<double>.filled(16, 1.0);
   final pan = List<double>.filled(16, 0.0);
@@ -187,7 +196,7 @@ class _Note {
       p.chorus,
       p.bank,
       p.program,
-      ch == 9,
+      p.isDrum,
     );
     notes.add(note);
   }
@@ -228,6 +237,8 @@ class _Note {
               chorusSend[ch],
               bank[ch],
               program[ch],
+              // GS rhythm part, or XG drum channel (CC0 bank MSB = 127).
+              drumChannel[ch] || bank[ch] == 127,
             ),
           );
         } else {
@@ -247,6 +258,8 @@ class _Note {
             pan[ch] = (ev.d2 - 64) / 64.0;
           case 0:
             bank[ch] = ev.d2;
+          case 32:
+            bankLsb[ch] = ev.d2;
           case 91:
             reverbSend[ch] = ev.d2 / 127.0;
           case 93:
@@ -651,11 +664,46 @@ void _renderZone(
   }
 }
 
+/// Scan SysEx for drum-channel setup: a Roland GS "use-for-rhythm-part"
+/// message marks a part as drums; a GM/GS/XG System-On resets to the default
+/// (only channel 10). Everything else is ignored.
+void _applyGsDrumSysex(List<Uint8List> sysex, List<bool> drumChannel) {
+  void reset() {
+    for (var i = 0; i < 16; i++) {
+      drumChannel[i] = i == 9;
+    }
+  }
+
+  for (final s in sysex) {
+    // GM System On: 7E 7F 09 01.
+    if (s.length >= 4 && s[0] == 0x7E && s[2] == 0x09) {
+      reset();
+      continue;
+    }
+    // Roland GS (41 .. 42 12 ..).
+    if (s.length >= 8 && s[0] == 0x41 && s[2] == 0x42 && s[3] == 0x12) {
+      final a1 = s[4], a2 = s[5], a3 = s[6];
+      if (a1 == 0x40 && a2 == 0x00 && a3 == 0x7F) {
+        reset(); // GS reset
+      } else if (a1 == 0x40 && (a2 & 0xf0) == 0x10 && a3 == 0x15) {
+        // Use-for-rhythm-part: block nibble → channel, data != 0 → drums.
+        final n = a2 & 0x0f;
+        final ch = n == 0 ? 9 : (n <= 9 ? n - 1 : n);
+        if (ch >= 0 && ch < 16) drumChannel[ch] = s[7] != 0;
+      }
+      continue;
+    }
+    // Yamaha XG System On: 43 10 4C 00 00 7E 00.
+    if (s.length >= 6 && s[0] == 0x43 && s[2] == 0x4C && s[5] == 0x7E) reset();
+  }
+}
+
 /// Parse every track's events into one absolute-tick, tick-sorted list.
-(List<_Evt>, int) _parseAllEvents(Uint8List smf) {
-  if (smf.length < 14) return (const [], 0);
+(List<_Evt>, int, List<Uint8List>) _parseAllEvents(Uint8List smf) {
+  if (smf.length < 14) return (const [], 0, const []);
   final tpq = (smf[12] << 8) | smf[13];
   final all = <_Evt>[];
+  final sysex = <Uint8List>[];
   for (final track in splitMultiTrackMidi(smf)) {
     if (track.length < 22) continue;
     var offset = 22;
@@ -695,7 +743,12 @@ void _renderZone(
         continue;
       }
       if (status == 0xf0 || status == 0xf7) {
-        offset += varLen();
+        final len = varLen();
+        if (offset + len > track.length) break;
+        if (status == 0xf0) {
+          sysex.add(Uint8List.sublistView(track, offset, offset + len));
+        }
+        offset += len;
         continue;
       }
       runningStatus = status;
@@ -716,5 +769,5 @@ void _renderZone(
     }
   }
   all.sort((a, b) => a.tick - b.tick);
-  return (all, tpq);
+  return (all, tpq, sysex);
 }
