@@ -432,17 +432,48 @@ double _tanh(double v) {
   return (e - 1) / (e + 1);
 }
 
-// The soft-knee level: values well below it pass ≈linearly, louder ones saturate
-// smoothly — so a lone transient spike doesn't force the normalize to crush
-// everything else (the flat-top harshness of hard clipping is avoided too).
-const double _knee = 0.6;
+// Above this fraction of full scale the soft-clipper starts rounding; below it
+// the signal passes untouched. So the master is transparent for all but the
+// loudest transients — no gross compression of a dense, many-voice mix (the old
+// fixed-knee tanh, fed a raw sum that peaked well above unity, flattened
+// everything into a buzzy quasi-square wave).
+const double _clipThresh = 0.8;
 
-/// Master a mono buffer: tanh soft-knee (glue + tame spikes) → normalize to
-/// [target].
+/// A soft clipper that is the identity below [_clipThresh] and asymptotes toward
+/// (but never reaches) 1.0 above it, so only true overs get gently rounded.
+double _softClip(double x) {
+  final a = x.abs();
+  if (a <= _clipThresh) return x;
+  final over = (a - _clipThresh) / (1 - _clipThresh);
+  final r = _clipThresh + (1 - _clipThresh) * _tanh(over);
+  return x.isNegative ? -r : r;
+}
+
+/// Master a mono buffer: normalize to unity (pure gain — cannot distort), gently
+/// soft-clip the top, then scale to [target].
 void _master(Float64List x, double target) {
+  _scaleToPeak(x, 1);
   for (var i = 0; i < x.length; i++) {
-    x[i] = _knee * _tanh(x[i] / _knee);
+    x[i] = _softClip(x[i]);
   }
+  _scaleToPeak(x, target);
+}
+
+/// Master a stereo pair together, using a SHARED peak/gain so the stereo image
+/// isn't skewed by per-channel scaling.
+void _masterStereo(Float64List left, Float64List right, double target) {
+  _scaleToPeak2(left, right, 1);
+  for (var i = 0; i < left.length; i++) {
+    left[i] = _softClip(left[i]);
+  }
+  for (var i = 0; i < right.length; i++) {
+    right[i] = _softClip(right[i]);
+  }
+  _scaleToPeak2(left, right, target);
+}
+
+/// Scale [x] so its peak magnitude becomes [target] (no-op on silence).
+void _scaleToPeak(Float64List x, double target) {
   var peak = 0.0;
   for (final s in x) {
     final a = s.abs();
@@ -455,15 +486,9 @@ void _master(Float64List x, double target) {
   }
 }
 
-/// Master a stereo pair together (shared knee + a shared normalize gain, so the
-/// stereo image isn't skewed by per-channel scaling).
-void _masterStereo(Float64List left, Float64List right, double target) {
-  for (var i = 0; i < left.length; i++) {
-    left[i] = _knee * _tanh(left[i] / _knee);
-  }
-  for (var i = 0; i < right.length; i++) {
-    right[i] = _knee * _tanh(right[i] / _knee);
-  }
+/// Scale a stereo pair by ONE shared gain so their combined peak becomes
+/// [target] (keeps the L/R balance intact).
+void _scaleToPeak2(Float64List left, Float64List right, double target) {
   var peak = 0.0;
   for (final s in left) {
     final a = s.abs();
