@@ -20,9 +20,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         multiPartScoreFromMusicXml,
         multiPartToMusicXml,
         readMusicXmlFromMxl,
-        scoreFromAbc,
-        scoreFromMusicXml,
-        scoreToMusicXml;
+        scoreFromMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -147,17 +145,19 @@ class _ImportScreenState extends State<ImportScreen> {
   }
 
   // ABC is a compact text notation used by huge public-domain tune libraries.
-  // Parse it to a Score (crisp_notation), then store it as MusicXML like the rest.
+  // Parse ALL its voices (V: → separate staves) to a MultiPartScore, then store
+  // it as multi-part MusicXML like the file-import path — so a multi-voice ABC
+  // tune keeps every voice instead of flattening to the first.
   void _importAbc() {
     try {
       final abc = _text.text.trim();
-      final score = scoreFromAbc(abc); // parse + validate
+      final mp = multiPartScoreFromAbc(abc); // parse + validate (all voices)
       final title = _abcTitle(abc);
       context.read<UserSongsService>().addSong(
             ImportedSong(
               id: _newId(),
               title: title,
-              musicXml: scoreToMusicXml(score, partName: title),
+              musicXml: multiPartToMusicXml(mp),
             ),
           );
       _done();
