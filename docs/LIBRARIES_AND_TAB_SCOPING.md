@@ -59,7 +59,7 @@ Full cited licensing report is recorded below and in this branch's commit histor
 
 **Do NOT connect** (all-rights-reserved / no license grant / no sanctioned API /
 active anti-scraping): **general musescore.com uploads**, **Ultimate Guitar**,
-**mySongBook / Guitar-Pro store**, **abcnotation.com** (as an import backend — a
+**mySongBook / GPIF tab store**, **abcnotation.com** (as an import backend — a
 discovery tool only), 8notes, Songsterr, Delcamp, FreeMIDI, BitMidi, VGMusic,
 archive.org MIDI dumps, unlicensed KernScores. **Avoid for a donation-funded app
 (NonCommercial clause):** DCML corpora, MAESTRO, Kunst der Fuge.
@@ -274,7 +274,7 @@ touching the app**. The way to guarantee that is a **design constraint now**:
 
 ### 2.1 What already exists in `crisp_notation` (the big surprise)
 
-The library ships the **whole tab + Guitar-Pro stack**; the app just never wired
+The library ships the **whole tab + GPIF stack**; the app just never wired
 it. Verified:
 
 - **Rendering (Flutter):** `TabStaffView(score, tuning, {capo, showTuning,
@@ -292,9 +292,13 @@ it. Verified:
 - **GPIF I/O (core):** read `gp5/gp4/gp3ToScore`, `scoreFromGpif`, `.gp`/
   `.gpx` containers (clean-room); **write** `scoreToGpif` + `.gp`/`.gpx`
   containers. `asciiTabToScore` reads ASCII tab.
-- **App today:** `importScore` (`composition_workshop_screen.dart:227`) already
-  imports `.gp/.gpx` → a `Score`, but the app **never renders tab or exposes
-  fret/string editing**, and **GP is missing from the export list** (`kExportFormats`).
+- **App today (✅ mostly SHIPPED — see the status banner in §2):** the dedicated
+  **Tab editor** (`tab_workshop_screen.dart`) now renders tab (`TabStaffView`),
+  exposes fret/string editing, and **exports GPIF `.gp`** (menu label "GP tab
+  (.gp)") preserving the arranged string/fret choices + techniques. A headless
+  **`bin/tabconv.dart`** exports `.gp` from any notation format too. The only
+  remaining gap: the *Composition Workshop*'s `kExportFormats` list still omits GP
+  (it lives on the Tab editor + CLI instead).
 
 **Implication:** the editor is an **input surface + wiring** job over the existing
 `MultiPartDocument`, reusing `TabStaffView`/`FretboardView` for display and

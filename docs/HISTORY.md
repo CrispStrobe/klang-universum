@@ -118,6 +118,36 @@ Editing extras that lean on crisp_notation's editor contracts: caret (C2), drag-
 (**C7** `ElementRegionController`), and one-call `Score→PNG/SVG` export
 (**C8**). Detail + roadmap: `docs/WORKSHOP_PLAN.md`.
 
+## Guitar tablature editor & GPIF export
+
+A sibling of the Composition Workshop over the same model — a touch-first
+**tablature editor** (`TabDocument`, `TabStaffView`) with per-string fret entry,
+chords, tab techniques (bends & contours, hammer-ons, slides, vibrato, dead/ghost/
+harmonics) and selectable tunings.
+
+- **Cost-based fret arranger** — `tab_arranger.dart` runs a Sayegh'89 optimum-path
+  Viterbi over per-column candidate frettings, minimising hand-movement +
+  chord-span + low-neck cost, honouring `Score.tabVoicings`, capo-aware. Beats the
+  greedy lowest-fret placement for playable shapes. An optional `TabPositionModel`
+  seam lets a future data model supply the local term while the playability
+  constraints stay ours.
+- **GPIF I/O** — reads every version (`.gp3`/`.gp4`/`.gp5` binary, `.gpx` BCFZ/BCFS,
+  `.gp` v7/8 ZIP; all clean-room in `crisp_notation`) and **writes `.gp`** (menu
+  "GP tab (.gp)"). The writer now **preserves the arranged string/fret choices** —
+  it re-fretted every pitch with the greedy `fretFor` before, silently discarding
+  the arrangement; `scoreToGpif`/`multiPartToGpif` now honour `Score.tabVoicings`
+  and an explicit `frettings` plan, so both the GUI export and the CLI keep the
+  player's positions and techniques. Multi-part scores export one track per string
+  set.
+- **`bin/tabconv.dart`** — a headless "any notation → `.gp`" converter (ABC / MIDI /
+  MusicXML / MuseScore / MEI / kern / GPIF / JAMS melody), running the arranger so
+  the frets are playable; `--tuning`/`--capo`/`--no-arrange`/`--from`, multi-part →
+  one track per part, and a warning when the chosen instrument physically can't
+  reach some notes. Round-trip-verified across every codec (pitches, chords,
+  techniques survive gp→gp, idempotent, alt tunings, capo).
+- Referred to throughout as **GPIF** and by file extension (`.gp`/`.gpx`) rather
+  than the proprietary product name.
+
 ## Live microphone & pitch detection
 
 The app's first **real-instrument input** (the structural gap every strong rival
