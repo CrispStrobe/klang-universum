@@ -2807,6 +2807,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackerEnvelope => 'Lautstärkeverlauf (Hüllkurve)';
 
   @override
+  String get trackerEnvCustom => 'Eigene';
+
+  @override
+  String get trackerEnvVolCustom => 'Eigene Lautstärke-Hüllkurve';
+
+  @override
+  String get trackerEnvPanCustom => 'Eigene Panorama-Hüllkurve';
+
+  @override
+  String get trackerEnvAddPoint => 'Punkt hinzufügen';
+
+  @override
   String get trackerEnvFlat => 'Gleichbleibend';
 
   @override

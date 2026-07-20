@@ -1023,6 +1023,33 @@ void main() {
     expect(game.noteAt(0, 3), 69);
   });
 
+  testWidgets('custom envelope editor applies + clears volume/pan points',
+      (tester) async {
+    await pumpGame(tester, const AdvancedTrackerScreen());
+    final game = _game(tester);
+
+    // Volume: apply three breakpoints (fade with a mid dip).
+    game.setChannelEnvelopePoints(
+      0,
+      true,
+      const [(0, 1.0), (500, 0.5), (1000, 0.0)],
+    );
+    await tester.pump();
+    expect(game.channelEnvelopePointCount(0, true), 3);
+
+    // Clearing removes the envelope.
+    game.setChannelEnvelopePoints(0, true, const []);
+    await tester.pump();
+    expect(game.channelEnvelopePointCount(0, true), 0);
+
+    // A custom pan envelope arms the stereo render.
+    expect(game.songUsesPan, isFalse);
+    game.setChannelEnvelopePoints(0, false, const [(0, -1.0), (500, 1.0)]);
+    await tester.pump();
+    expect(game.channelEnvelopePointCount(0, false), 2);
+    expect(game.songUsesPan, isTrue);
+  });
+
   testWidgets('swing control re-times the groove through the screen seam',
       (tester) async {
     await pumpGame(tester, const AdvancedTrackerScreen());

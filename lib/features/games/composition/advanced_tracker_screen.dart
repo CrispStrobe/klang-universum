@@ -416,6 +416,17 @@ abstract interface class AdvancedTrackerTester {
   void setPatternLength(int rows);
   int patternRows(int patternIndex);
 
+  /// Apply a CUSTOM volume/pan envelope to [channel] from `(ms, value)`
+  /// breakpoints (level 0..1 for volume, pan −1..1 for pan); empty clears it.
+  void setChannelEnvelopePoints(
+    int channel,
+    bool isVolume,
+    List<(int, double)> points,
+  );
+
+  /// The channel's envelope breakpoint count (0 = none) — for tests.
+  int channelEnvelopePointCount(int channel, bool isVolume);
+
   /// Groove/swing (0 = straight … ~0.66 = triplet shuffle) — set + read.
   void setSwing(double swing);
   double get swing;
@@ -2262,6 +2273,10 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   checked: identical(ch.volumeEnvelope, _kEnvelopePresets[key]),
                   child: Text(_envelopeLabel(l10n, key)),
                 ),
+              PopupMenuItem(
+                value: 'volCustom',
+                child: Text('${l10n.trackerEnvCustom}…'),
+              ),
               const PopupMenuDivider(),
               PopupMenuItem(
                 enabled: false,
@@ -2276,8 +2291,17 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
                   checked: identical(ch.panEnvelope, _kPanPresets[key]),
                   child: Text(_panLabel(l10n, key)),
                 ),
+              PopupMenuItem(
+                value: 'panCustom',
+                child: Text('${l10n.trackerEnvCustom}…'),
+              ),
             ],
-            onSelected: (v) {
+            onSelected: (v) async {
+              if (v == 'volCustom' || v == 'panCustom') {
+                await _showEnvelopeEditor(c, isVolume: v == 'volCustom');
+                setSheet(() {});
+                return;
+              }
               final key = v.substring(4);
               if (v.startsWith('vol:')) {
                 _song.engine
@@ -3111,6 +3135,194 @@ class _AdvancedTrackerScreenState extends State<AdvancedTrackerScreen>
   void _setChannelInstrumentVoice(int channel, TrackerInstrument inst) {
     setState(() => _song.setChannelInstrument(channel, inst));
     _syncPlayback();
+  }
+
+  @override
+  void setChannelEnvelopePoints(
+    int channel,
+    bool isVolume,
+    List<(int, double)> points,
+  ) {
+    setState(() {
+      if (isVolume) {
+        _song.engine.setChannelVolumeEnvelope(
+          channel,
+          points.isEmpty
+              ? null
+              : VolumeEnvelope([
+                  for (final p in points)
+                    (ms: p.$1, level: p.$2.clamp(0.0, 1.0)),
+                ]),
+        );
+      } else {
+        _song.engine.setChannelPanEnvelope(
+          channel,
+          points.isEmpty
+              ? null
+              : PanEnvelope([
+                  for (final p in points)
+                    (ms: p.$1, pan: p.$2.clamp(-1.0, 1.0)),
+                ]),
+        );
+      }
+    });
+    _syncPlayback();
+  }
+
+  @override
+  int channelEnvelopePointCount(int channel, bool isVolume) {
+    final ch = _song.channels[channel];
+    return isVolume
+        ? (ch.volumeEnvelope?.points.length ?? 0)
+        : (ch.panEnvelope?.points.length ?? 0);
+  }
+
+  /// A custom volume/pan envelope editor: a live preview plus one (time, value)
+  /// breakpoint row per point, editable via sliders. Applies as a
+  /// [VolumeEnvelope]/[PanEnvelope] the replayer already honours.
+  Future<void> _showEnvelopeEditor(
+    int channel, {
+    required bool isVolume,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ch = _song.channels[channel];
+    final points = <({int ms, double value})>[];
+    if (isVolume) {
+      final env = ch.volumeEnvelope;
+      if (env != null && env.points.isNotEmpty) {
+        points.addAll([for (final p in env.points) (ms: p.ms, value: p.level)]);
+      } else {
+        points.addAll(const [(ms: 0, value: 1.0), (ms: 500, value: 0.0)]);
+      }
+    } else {
+      final env = ch.panEnvelope;
+      if (env != null && env.points.isNotEmpty) {
+        points.addAll([for (final p in env.points) (ms: p.ms, value: p.pan)]);
+      } else {
+        points.addAll(const [(ms: 0, value: -1.0), (ms: 500, value: 1.0)]);
+      }
+    }
+    final minV = isVolume ? 0.0 : -1.0;
+    final scheme = Theme.of(context).colorScheme;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isVolume
+                      ? l10n.trackerEnvVolCustom
+                      : l10n.trackerEnvPanCustom,
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 72,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: _EnvelopePainter(
+                      points: [for (final p in points) (p.ms, p.value)],
+                      minV: minV,
+                      line: scheme.primary,
+                      grid: scheme.outlineVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: points.length,
+                    itemBuilder: (_, i) => Row(
+                      children: [
+                        SizedBox(width: 28, child: Text('${i + 1}')),
+                        Expanded(
+                          child: Slider(
+                            value: points[i].ms.toDouble().clamp(0, 2000),
+                            max: 2000,
+                            divisions: 40,
+                            label: '${points[i].ms} ms',
+                            onChanged: (v) => setSheet(
+                              () => points[i] =
+                                  (ms: v.round(), value: points[i].value),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: points[i].value.clamp(minV, 1.0),
+                            min: minV,
+                            divisions: 20,
+                            label: points[i].value.toStringAsFixed(2),
+                            onChanged: (v) => setSheet(
+                              () => points[i] = (ms: points[i].ms, value: v),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon:
+                              const Icon(Icons.remove_circle_outline, size: 20),
+                          onPressed: points.length > 2
+                              ? () => setSheet(() => points.removeAt(i))
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(l10n.trackerEnvAddPoint),
+                      onPressed: points.length < 8
+                          ? () => setSheet(() {
+                                final lastMs =
+                                    points.isEmpty ? 0 : points.last.ms;
+                                final ms = (lastMs + 250).clamp(0, 2000);
+                                points.add(
+                                  (ms: ms, value: isVolume ? 0.5 : 0.0),
+                                );
+                              })
+                          : null,
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setChannelEnvelopePoints(channel, isVolume, const []);
+                        Navigator.of(ctx).pop();
+                      },
+                      child: Text(l10n.trackerClear),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () {
+                        points.sort((a, b) => a.ms.compareTo(b.ms));
+                        setChannelEnvelopePoints(
+                          channel,
+                          isVolume,
+                          [for (final p in points) (p.ms, p.value)],
+                        );
+                        Navigator.of(ctx).pop();
+                      },
+                      child: Text(l10n.trackerOk),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   String _envelopeLabel(AppLocalizations l10n, String key) => switch (key) {
@@ -5458,6 +5670,64 @@ class _CommandEditorState extends State<_CommandEditor> {
 }
 
 /// Draws a pattern's mixed PCM as a vertical-bar waveform with a playhead line.
+/// Draws a custom envelope's `(ms, value)` breakpoints as a line with dots over
+/// a 0–2000 ms axis, value from [minV]..1 mapped top(1)→bottom(minV).
+class _EnvelopePainter extends CustomPainter {
+  _EnvelopePainter({
+    required this.points,
+    required this.minV,
+    required this.line,
+    required this.grid,
+  });
+
+  final List<(int, double)> points;
+  final double minV;
+  final Color line;
+  final Color grid;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = grid
+      ..strokeWidth = 1;
+    // A baseline (value 0 for pan, or bottom for volume) + top/bottom frame.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = grid.withValues(alpha: 0.15),
+    );
+    final zeroY = _y(0, size);
+    canvas.drawLine(Offset(0, zeroY), Offset(size.width, zeroY), gridPaint);
+    if (points.isEmpty) return;
+
+    final path = Path();
+    final dot = Paint()..color = line;
+    final stroke = Paint()
+      ..color = line
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    for (var i = 0; i < points.length; i++) {
+      final x = (points[i].$1.clamp(0, 2000) / 2000) * size.width;
+      final y = _y(points[i].$2, size);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+      canvas.drawCircle(Offset(x, y), 3, dot);
+    }
+    canvas.drawPath(path, stroke);
+  }
+
+  double _y(double value, Size size) {
+    final t = ((value - minV) / (1.0 - minV)).clamp(0.0, 1.0);
+    return size.height - t * size.height;
+  }
+
+  @override
+  bool shouldRepaint(_EnvelopePainter old) =>
+      old.points != points || old.minV != minV;
+}
+
 class _ScopePainter extends CustomPainter {
   _ScopePainter({
     required this.pcm,

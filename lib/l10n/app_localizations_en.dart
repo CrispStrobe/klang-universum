@@ -2798,6 +2798,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trackerEnvelope => 'Volume shape (envelope)';
 
   @override
+  String get trackerEnvCustom => 'Custom';
+
+  @override
+  String get trackerEnvVolCustom => 'Custom volume envelope';
+
+  @override
+  String get trackerEnvPanCustom => 'Custom pan envelope';
+
+  @override
+  String get trackerEnvAddPoint => 'Add point';
+
+  @override
   String get trackerEnvFlat => 'Flat (no shape)';
 
   @override

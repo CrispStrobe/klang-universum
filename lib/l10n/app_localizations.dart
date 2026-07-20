@@ -5312,6 +5312,30 @@ abstract class AppLocalizations {
   /// **'Volume shape (envelope)'**
   String get trackerEnvelope;
 
+  /// No description provided for @trackerEnvCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get trackerEnvCustom;
+
+  /// No description provided for @trackerEnvVolCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom volume envelope'**
+  String get trackerEnvVolCustom;
+
+  /// No description provided for @trackerEnvPanCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom pan envelope'**
+  String get trackerEnvPanCustom;
+
+  /// No description provided for @trackerEnvAddPoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add point'**
+  String get trackerEnvAddPoint;
+
   /// No description provided for @trackerEnvFlat.
   ///
   /// In en, this message translates to:
