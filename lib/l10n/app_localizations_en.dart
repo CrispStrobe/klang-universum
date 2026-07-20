@@ -721,6 +721,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get articulationShortLabel => 'Short';
 
   @override
+  String get primerCrescendoExplain =>
+      'Music can grow louder (a crescendo) or fade away softer (a diminuendo). Listen — this note gets louder, then softer.';
+
+  @override
+  String get primerCrescendoTry => 'Listen. Is this getting louder or softer?';
+
+  @override
+  String get primerTempoExplain =>
+      'Music can speed up (accelerando) or slow down (ritardando). Listen — the beats get closer, then further apart.';
+
+  @override
+  String get primerTempoTry => 'Listen. Is this speeding up or slowing down?';
+
+  @override
+  String get primerArticulationExplain =>
+      'Notes can be smooth and connected (legato) or short and detached (staccato). Listen — smooth first, then short.';
+
+  @override
+  String get primerArticulationTry => 'Now you try: dots over the notes mean…?';
+
+  @override
   String get gameStepSkip => 'Step or Skip?';
 
   @override
@@ -5397,9 +5418,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerArticulationAccent =>
       'A wedge > is an accent: give that note an extra push so it stands out from its neighbours.';
-
-  @override
-  String get primerArticulationTry => 'Now you try: dots over the notes mean…?';
 
   @override
   String get primerBeamTitle => 'Flags and beams';

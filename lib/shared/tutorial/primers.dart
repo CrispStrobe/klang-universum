@@ -1680,3 +1680,104 @@ Tutorial capoMatchPrimer(AppLocalizations l10n) => Tutorial(
         ),
       ],
     );
+
+/// Dynamics by ear: a phrase can grow louder (crescendo) or fade (diminuendo).
+/// Demonstrates the gradual change (a ramped note), not two fixed levels.
+/// Game: crescendo_ear.
+Tutorial crescendoEarPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.gameCrescendoEar,
+      steps: [
+        TutorialStep(
+          text: l10n.primerCrescendoExplain,
+          // A crescendo (rising) then a diminuendo (falling) on one note.
+          play: (a) async {
+            for (final g in const [0.2, 0.45, 0.7, 1.0]) {
+              await a.playPhrase([67], gain: g, noteMs: 200);
+            }
+            for (final g in const [1.0, 0.7, 0.45, 0.2]) {
+              await a.playPhrase([67], gain: g, noteMs: 200);
+            }
+          },
+        ),
+        // Active recall: rising loudness = getting louder.
+        TutorialStep(
+          text: l10n.primerCrescendoTry,
+          play: (a) async {
+            for (final g in const [0.2, 0.45, 0.7, 1.0]) {
+              await a.playPhrase([67], gain: g, noteMs: 200);
+            }
+          },
+          choices: [
+            TutorialChoice(l10n.crescendoLouderLabel, correct: true),
+            TutorialChoice(l10n.crescendoSofterLabel),
+          ],
+        ),
+      ],
+    );
+
+/// Tempo by ear: a pulse can speed up (accelerando) or slow down (ritardando).
+/// Game: tempo_change_ear.
+Tutorial tempoChangeEarPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.gameTempoChangeEar,
+      steps: [
+        TutorialStep(
+          text: l10n.primerTempoExplain,
+          // Speeding up (durations shrink) then slowing down (they grow).
+          play: (a) async {
+            await a.playSequence(
+              const [(67, 340), (67, 280), (67, 220), (67, 160)],
+            );
+            await a.playSequence(
+              const [(67, 160), (67, 220), (67, 280), (67, 340)],
+            );
+          },
+        ),
+        TutorialStep(
+          text: l10n.primerTempoTry,
+          play: (a) => a.playSequence(
+            const [(67, 340), (67, 280), (67, 220), (67, 160)],
+          ),
+          choices: [
+            TutorialChoice(l10n.tempoFasterLabel, correct: true),
+            TutorialChoice(l10n.tempoSlowerLabel),
+          ],
+        ),
+      ],
+    );
+
+/// Articulation by ear: notes can be smooth/connected (legato) or short/detached
+/// (staccato). Game: articulation_ear.
+Tutorial articulationEarPrimer(AppLocalizations l10n) => Tutorial(
+      title: l10n.gameArticulationEar,
+      steps: [
+        TutorialStep(
+          text: l10n.primerArticulationExplain,
+          // Legato (notes fill each beat) then staccato (short pokes + rests).
+          play: (a) async {
+            await a.playTimedChords([
+              ([67], 320), ([69], 320), ([71], 320), ([72], 320), //
+            ]);
+            await a.playTimedChords([
+              ([67], 110), (<int>[], 210), //
+              ([69], 110), (<int>[], 210),
+              ([71], 110), (<int>[], 210),
+              ([72], 110), (<int>[], 210),
+            ]);
+          },
+        ),
+        TutorialStep(
+          text: l10n.primerArticulationTry,
+          // A staccato phrase — short and detached.
+          play: (a) => a.playTimedChords([
+            ([67], 110), (<int>[], 210), //
+            ([69], 110), (<int>[], 210),
+            ([71], 110), (<int>[], 210),
+            ([72], 110), (<int>[], 210),
+          ]),
+          choices: [
+            TutorialChoice(l10n.articulationShortLabel, correct: true),
+            TutorialChoice(l10n.articulationSmoothLabel),
+          ],
+        ),
+      ],
+    );

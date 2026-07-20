@@ -724,6 +724,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String get articulationShortLabel => 'Kurz';
 
   @override
+  String get primerCrescendoExplain =>
+      'Musik kann lauter werden (Crescendo) oder leiser verklingen (Diminuendo). Hör hin — dieser Ton wird lauter, dann leiser.';
+
+  @override
+  String get primerCrescendoTry => 'Hör hin. Wird es lauter oder leiser?';
+
+  @override
+  String get primerTempoExplain =>
+      'Musik kann schneller (Accelerando) oder langsamer (Ritardando) werden. Hör hin — die Schläge rücken zusammen, dann auseinander.';
+
+  @override
+  String get primerTempoTry => 'Hör hin. Wird es schneller oder langsamer?';
+
+  @override
+  String get primerArticulationExplain =>
+      'Töne können gebunden und weich sein (Legato) oder kurz und getrennt (Staccato). Hör hin — erst gebunden, dann kurz.';
+
+  @override
+  String get primerArticulationTry =>
+      'Jetzt du: Punkte über den Noten bedeuten…?';
+
+  @override
   String get gameStepSkip => 'Schritt oder Sprung?';
 
   @override
@@ -5418,10 +5440,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerArticulationAccent =>
       'Ein Keil > ist ein Akzent: gib dieser Note einen extra Schubs, damit sie hervorsticht.';
-
-  @override
-  String get primerArticulationTry =>
-      'Jetzt du: Punkte über den Noten bedeuten…?';
 
   @override
   String get primerBeamTitle => 'Fähnchen und Balken';

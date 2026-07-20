@@ -1400,6 +1400,42 @@ abstract class AppLocalizations {
   /// **'Short'**
   String get articulationShortLabel;
 
+  /// No description provided for @primerCrescendoExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Music can grow louder (a crescendo) or fade away softer (a diminuendo). Listen — this note gets louder, then softer.'**
+  String get primerCrescendoExplain;
+
+  /// No description provided for @primerCrescendoTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen. Is this getting louder or softer?'**
+  String get primerCrescendoTry;
+
+  /// No description provided for @primerTempoExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Music can speed up (accelerando) or slow down (ritardando). Listen — the beats get closer, then further apart.'**
+  String get primerTempoExplain;
+
+  /// No description provided for @primerTempoTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen. Is this speeding up or slowing down?'**
+  String get primerTempoTry;
+
+  /// No description provided for @primerArticulationExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes can be smooth and connected (legato) or short and detached (staccato). Listen — smooth first, then short.'**
+  String get primerArticulationExplain;
+
+  /// No description provided for @primerArticulationTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now you try: dots over the notes mean…?'**
+  String get primerArticulationTry;
+
   /// No description provided for @gameStepSkip.
   ///
   /// In en, this message translates to:
@@ -9889,12 +9925,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A wedge > is an accent: give that note an extra push so it stands out from its neighbours.'**
   String get primerArticulationAccent;
-
-  /// No description provided for @primerArticulationTry.
-  ///
-  /// In en, this message translates to:
-  /// **'Now you try: dots over the notes mean…?'**
-  String get primerArticulationTry;
 
   /// No description provided for @primerBeamTitle.
   ///

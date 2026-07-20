@@ -27,6 +27,11 @@ void main() {
       'meter_detective', // march/waltz → strong-beat pattern
       'place_note_bass', // bass reading (not the treble fallback)
       'key_name', // key-signature naming (not the module general)
+      // The aural-expression trio — dedicated primers that demonstrate the
+      // gradual change / articulation, not the generic expression fallback.
+      'crescendo_ear',
+      'tempo_change_ear',
+      'articulation_ear',
     ]) {
       expect(byId[id], isNotNull, reason: '$id is registered');
       expect(
@@ -44,6 +49,35 @@ void main() {
       expect(tutorial.steps, isNotEmpty, reason: locale.languageCode);
       for (final step in tutorial.steps) {
         expect(step.text, isNotEmpty, reason: '${locale.languageCode} step');
+      }
+    }
+  });
+
+  test('the aural-expression primers resolve (title, text, try-it) in en/de',
+      () {
+    final primers = [
+      crescendoEarPrimer,
+      tempoChangeEarPrimer,
+      articulationEarPrimer,
+    ];
+    for (final locale in const [Locale('en'), Locale('de')]) {
+      final l10n = lookupAppLocalizations(locale);
+      for (final primer in primers) {
+        final tutorial = primer(l10n);
+        expect(tutorial.title, isNotEmpty, reason: locale.languageCode);
+        expect(tutorial.steps, isNotEmpty, reason: locale.languageCode);
+        for (final step in tutorial.steps) {
+          expect(step.text, isNotEmpty, reason: '${locale.languageCode} step');
+        }
+        // Each ends with a "try it" step (audio + two labelled choices).
+        final tryIt = tutorial.steps.last;
+        expect(
+          tryIt.hasChoices,
+          isTrue,
+          reason: '${locale.languageCode} tryit',
+        );
+        expect(tryIt.hasAudio, isTrue, reason: '${locale.languageCode} audio');
+        expect(tryIt.choices!.where((c) => c.correct), hasLength(1));
       }
     }
   });

@@ -812,7 +812,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameCrescendoEar,
       subtitle: (l) => l.gameCrescendoEarSubtitle,
       builder: (_) => const CrescendoEarScreen(),
-      tutorial: expressionPrimer,
+      tutorial: crescendoEarPrimer,
     ),
     // Aural direction-of-tempo — accelerando vs ritardando by ear (tempo_duel
     // trains a fixed speed; this trains the change over time).
@@ -822,7 +822,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTempoChangeEar,
       subtitle: (l) => l.gameTempoChangeEarSubtitle,
       builder: (_) => const TempoChangeEarScreen(),
-      tutorial: expressionPrimer,
+      tutorial: tempoChangeEarPrimer,
     ),
     // Aural articulation — legato (smooth) vs staccato (short) by ear (the
     // aural twin of articulation_read's glyph reading).
@@ -832,7 +832,7 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameArticulationEar,
       subtitle: (l) => l.gameArticulationEarSubtitle,
       builder: (_) => const ArticulationEarScreen(),
-      tutorial: expressionPrimer,
+      tutorial: articulationEarPrimer,
     ),
     GameInfo(
       id: 'which_beat',
