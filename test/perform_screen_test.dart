@@ -651,6 +651,32 @@ void main() {
     expect(p.isRealtimeActive, isFalse); // graceful degrade
   });
 
+  testWidgets('LL1: layers carry a symbolic pattern (seed + played-in)',
+      (tester) async {
+    await tester.pumpWidget(_wrap(const PerformScreen()));
+    await tester.pump();
+    final p = _perform(tester);
+
+    // A seed beat has the drum pattern behind it (kick on 1 & 3, etc.).
+    p.addSeed('beat');
+    await tester.pump();
+    final beat = p.debugLayerCells(0);
+    expect(beat, isNotEmpty);
+    expect(beat, contains((2, 0))); // kick lane, step 0
+    expect(beat, contains((2, 8))); // kick lane, step 8 (beat 3)
+    expect(beat, contains((1, 4))); // snare lane, step 4 (beat 2)
+
+    // A played-in melody's cells carry the actual pitches (row = midi).
+    p.startPlayIn();
+    for (final m in [60, 64, 67]) {
+      p.playInNote(m);
+    }
+    p.finishPlayIn();
+    await tester.pump();
+    final melody = p.debugLayerCells(1);
+    expect(melody.map((c) => c.$1), containsAll([60, 64, 67]));
+  });
+
   testWidgets('play/stop toggles and does not crash without audio',
       (tester) async {
     await tester.pumpWidget(_wrap(const PerformScreen()));

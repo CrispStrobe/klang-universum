@@ -45,12 +45,147 @@ import 'package:comet_beat/shared/widgets/scrollable_piano.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// One overdub layer: a label + one bar-cycle of mono PCM.
+/// One placed event in a layer's symbolic pattern (LL1) — a grid cell on a
+/// 16th-step timeline. [row] is a MIDI pitch for melodic layers, or a drum lane
+/// (0 = top … ) for percussive ones; [len] is the length in 16th steps.
+class _Cell {
+  const _Cell(this.row, this.step, {this.len = 1});
+  final int row;
+  final int step;
+  final int len;
+}
+
+/// One overdub layer: a label + one bar-cycle of mono PCM, plus the symbolic
+/// pattern it was built from (LL1) so it can be SEEN (mini piano-roll) and
+/// later edited.
 class _PerformLayer {
-  _PerformLayer(this.label, this.pcm);
+  _PerformLayer(
+    this.label,
+    this.pcm, {
+    this.cells = const [],
+    this.percussive = false,
+  });
   final String label;
   final Float64List pcm;
+  final List<_Cell> cells;
+  final bool percussive;
   double gain = 1.0; // Q3: per-layer volume
+}
+
+/// A compact mini piano-roll of a layer's [cells] (LL1) — so a kid SEES what
+/// each layer plays: melodic layers show pitch rows, percussive ones the drum
+/// lanes, over a bar/beat grid across [steps] 16th columns.
+class _LayerRoll extends StatelessWidget {
+  const _LayerRoll({
+    required this.cells,
+    required this.percussive,
+    required this.steps,
+  });
+  final List<_Cell> cells;
+  final bool percussive;
+  final int steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 36,
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _RollPainter(
+          cells: cells,
+          percussive: percussive,
+          steps: steps,
+          fill: scheme.primary,
+          grid: scheme.outlineVariant,
+          bar: scheme.outline,
+          bg: scheme.surfaceContainerHighest,
+        ),
+      ),
+    );
+  }
+}
+
+class _RollPainter extends CustomPainter {
+  _RollPainter({
+    required this.cells,
+    required this.percussive,
+    required this.steps,
+    required this.fill,
+    required this.grid,
+    required this.bar,
+    required this.bg,
+  });
+  final List<_Cell> cells;
+  final bool percussive;
+  final int steps;
+  final Color fill;
+  final Color grid;
+  final Color bar;
+  final Color bg;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (steps <= 0) return;
+    final r = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(r, Paint()..color = bg);
+    canvas.save();
+    canvas.clipRRect(r);
+
+    final stepW = size.width / steps;
+    // Beat lines every 4 steps; heavier bar lines every 16.
+    for (var s = 4; s < steps; s += 4) {
+      final x = s * stepW;
+      canvas.drawLine(
+        Offset(x, 0),
+        Offset(x, size.height),
+        Paint()
+          ..color = s % 16 == 0 ? bar : grid
+          ..strokeWidth = s % 16 == 0 ? 1.2 : 0.6,
+      );
+    }
+
+    // Rows: 3 drum lanes, or the pitch span for melodic layers.
+    final int rows;
+    int Function(_Cell) rowOf = (_) => 0;
+    if (percussive) {
+      rows = 3;
+      rowOf = (c) => c.row.clamp(0, 2);
+    } else if (cells.isEmpty) {
+      rows = 1;
+    } else {
+      final lo = cells.map((c) => c.row).reduce(min);
+      final hi = cells.map((c) => c.row).reduce(max);
+      rows = (hi - lo + 1).clamp(1, 24);
+      rowOf = (c) => (hi - c.row).clamp(0, rows - 1); // higher pitch → top
+    }
+
+    final rowH = size.height / rows;
+    final cellPaint = Paint()..color = fill;
+    for (final c in cells) {
+      final x = c.step * stepW;
+      final w = max(stepW * c.len - 1, 2.0);
+      final y = rowOf(c) * rowH;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x + 0.5, y + 1, w, max(rowH - 2, 2)),
+          const Radius.circular(2),
+        ),
+        cellPaint,
+      );
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_RollPainter old) =>
+      old.cells != cells ||
+      old.steps != steps ||
+      old.percussive != percussive ||
+      old.fill != fill;
 }
 
 /// Test seam onto the Perform screen — build/mute/undo layers + read the mix
@@ -173,6 +308,9 @@ abstract class PerformTester {
 
   /// The current summed mix (active layers) — for tests.
   Float64List debugMix();
+
+  /// The symbolic pattern of layer [i] (LL1) as `(row, step)` pairs — for tests.
+  List<(int, int)> debugLayerCells(int i);
 }
 
 class PerformScreen extends StatefulWidget {
@@ -288,6 +426,82 @@ class _PerformScreenState extends State<PerformScreen>
   int get _barMs => (_barSamples / kSampleRate * 1000).round();
   double get _loopMs => _loopSamples / kSampleRate * 1000;
 
+  // ── Symbolic pattern (LL1): the notes/hits a layer shows + is built from ───
+  /// Total 16th steps across the whole loop.
+  int get _stepsTotal => 16 * _bars;
+
+  /// The 16th-step index (0..[_stepsTotal]-1) a loop-phase in ms lands on.
+  int _stepOf(int phaseMs) {
+    final sixteenthMs = _barMs / 16;
+    if (sixteenthMs <= 0) return 0;
+    return (phaseMs / sixteenthMs).round().clamp(0, _stepsTotal - 1);
+  }
+
+  /// Drum lane rows for the mini-roll (hat on top, kick on the bottom).
+  static const Map<String, int> _drumRow = {'hat': 0, 'snare': 1, 'kick': 2};
+
+  /// Melodic `(midi, phaseMs, vel)` notes → grid cells, held to the next note
+  /// (capped at a beat) — mirrors [_renderMelody]'s placement.
+  List<_Cell> _melodyCells(List<(int, int, double)> notes) {
+    final placed = [for (final (m, ms, _) in notes) (m, _stepOf(ms))]
+      ..sort((a, b) => a.$2.compareTo(b.$2));
+    return [
+      for (var i = 0; i < placed.length; i++)
+        _Cell(
+          placed[i].$1,
+          placed[i].$2,
+          len: ((i + 1 < placed.length ? placed[i + 1].$2 : _stepsTotal) -
+                  placed[i].$2)
+              .clamp(1, 4),
+        ),
+    ];
+  }
+
+  /// Percussive `(drum, phaseMs, vel)` hits → grid cells on the drum lanes.
+  List<_Cell> _beatCells(List<(String, int, double)> hits) => [
+        for (final (drum, ms, _) in hits)
+          _Cell(_drumRow[drum] ?? 0, _stepOf(ms)),
+      ];
+
+  /// The symbolic pattern behind a built-in seed (one bar, tiled across the
+  /// loop), matching what [_seedLoop] synthesises — so seed layers show too.
+  List<_Cell> _seedCells(String kind) {
+    final bar = <_Cell>[];
+    switch (kind) {
+      case 'beat':
+        bar
+          ..add(const _Cell(2, 0)) // kick on beats 1 & 3
+          ..add(const _Cell(2, 8))
+          ..add(const _Cell(1, 4)) // snare on 2 & 4
+          ..add(const _Cell(1, 12));
+        for (var e = 0; e < 8; e++) {
+          bar.add(_Cell(0, e * 2)); // hats on every eighth
+        }
+      case 'bass':
+        const roots = [36, 36, 41, 43]; // C2 C2 F2 G2
+        for (var b = 0; b < 4; b++) {
+          bar.add(_Cell(roots[b] + _keyShift, b * 4, len: 4));
+        }
+      case 'chords':
+        const chord = [60, 64, 67]; // C E G
+        for (var b = 0; b < 4; b += 2) {
+          for (final m in chord) {
+            bar.add(_Cell(m + _keyShift, b * 4, len: 8));
+          }
+        }
+      case 'melody':
+        const riff = [72, 74, 76, 79, 76, 74, 72, 79]; // C D E G E D C G
+        for (var e = 0; e < 8; e++) {
+          bar.add(_Cell(riff[e] + _keyShift, e * 2, len: 2));
+        }
+    }
+    // Tile the one-bar pattern across the loop.
+    return [
+      for (var b = 0; b < _bars; b++)
+        for (final c in bar) _Cell(c.row, c.step + b * 16, len: c.len),
+    ];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -336,7 +550,14 @@ class _PerformScreenState extends State<PerformScreen>
   // ── Layer editing ─────────────────────────────────────────────────────────
   @override
   void addSeed(String kind) {
-    _stack.add(_PerformLayer(kind, _seedLoop(kind)));
+    _stack.add(
+      _PerformLayer(
+        kind,
+        _seedLoop(kind),
+        cells: _seedCells(kind),
+        percussive: kind == 'beat',
+      ),
+    );
     _refresh();
   }
 
@@ -435,7 +656,13 @@ class _PerformScreenState extends State<PerformScreen>
     if (cells == null) return;
     final notes = _cellsToNotes(cells, steps);
     if (notes.isEmpty) return;
-    _stack.add(_PerformLayer('melody', _renderMelody(notes)));
+    _stack.add(
+      _PerformLayer(
+        'melody',
+        _renderMelody(notes),
+        cells: _melodyCells(notes),
+      ),
+    );
     _refresh();
   }
 
@@ -446,7 +673,14 @@ class _PerformScreenState extends State<PerformScreen>
     if (pattern == null) return;
     final hits = _rowsToHits(pattern);
     if (hits.isEmpty) return;
-    _stack.add(_PerformLayer('beat', _renderBeat(hits)));
+    _stack.add(
+      _PerformLayer(
+        'beat',
+        _renderBeat(hits),
+        cells: _beatCells(hits),
+        percussive: true,
+      ),
+    );
     _refresh();
   }
 
@@ -737,9 +971,22 @@ class _PerformScreenState extends State<PerformScreen>
     final mode = _playInMode;
     _playInMode = null;
     if (mode == 'melody' && _playInNotes.isNotEmpty) {
-      _stack.add(_PerformLayer('melody', _renderMelody(_playInNotes)));
+      _stack.add(
+        _PerformLayer(
+          'melody',
+          _renderMelody(_playInNotes),
+          cells: _melodyCells(_playInNotes),
+        ),
+      );
     } else if (mode == 'beat' && _playInHits.isNotEmpty) {
-      _stack.add(_PerformLayer('beat', _renderBeat(_playInHits)));
+      _stack.add(
+        _PerformLayer(
+          'beat',
+          _renderBeat(_playInHits),
+          cells: _beatCells(_playInHits),
+          percussive: true,
+        ),
+      );
     }
     _playInNotes.clear();
     _playInHits.clear();
@@ -1106,6 +1353,10 @@ class _PerformScreenState extends State<PerformScreen>
   @override
   Float64List debugMix() =>
       renderLoopStack(_activePcm, loopSamples: _loopSamples);
+
+  @override
+  List<(int, int)> debugLayerCells(int i) =>
+      [for (final c in _stack.layers[i].cells) (c.row, c.step)];
 
   List<Float64List> get _activePcm =>
       [for (final l in _stack.activeLayers) _scaled(l.pcm, l.gain)];
@@ -1547,30 +1798,62 @@ class _PerformScreenState extends State<PerformScreen>
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _stack.layers.length,
                   itemBuilder: (context, i) {
+                    final layer = _stack.layers[i];
                     final muted = _stack.isMuted(i);
                     return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: muted
-                              ? scheme.surfaceContainerHighest
-                              : scheme.primaryContainer,
-                          child: Text('${i + 1}'),
-                        ),
-                        title: Text(
-                          _seedLabel(l10n, _stack.layers[i].label),
-                        ),
-                        subtitle: Slider(
-                          value: _stack.layers[i].gain.clamp(0.0, 1.5),
-                          max: 1.5,
-                          onChanged: (v) => setLayerGain(i, v),
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(
-                            muted ? Icons.volume_off : Icons.volume_up,
-                          ),
-                          tooltip:
-                              muted ? l10n.performUnmute : l10n.performMute,
-                          onPressed: () => toggleMute(i),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 13,
+                                  backgroundColor: muted
+                                      ? scheme.surfaceContainerHighest
+                                      : scheme.primaryContainer,
+                                  child: Text(
+                                    '${i + 1}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _seedLabel(l10n, layer.label),
+                                    style:
+                                        Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                ),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  icon: Icon(
+                                    muted ? Icons.volume_off : Icons.volume_up,
+                                  ),
+                                  tooltip: muted
+                                      ? l10n.performUnmute
+                                      : l10n.performMute,
+                                  onPressed: () => toggleMute(i),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            // LL1: SEE what this layer plays.
+                            Opacity(
+                              opacity: muted ? 0.4 : 1,
+                              child: _LayerRoll(
+                                cells: layer.cells,
+                                percussive: layer.percussive,
+                                steps: _stepsTotal,
+                              ),
+                            ),
+                            Slider(
+                              value: layer.gain.clamp(0.0, 1.5),
+                              max: 1.5,
+                              onChanged: (v) => setLayerGain(i, v),
+                            ),
+                          ],
                         ),
                       ),
                     );
