@@ -31,5 +31,21 @@ void main() {
     expect(z.attackVolSec, lessThan(0.002)); // ~1 ms → instant attack
     expect(z.releaseVolSec, lessThan(0.002));
     expect(z.sustainGain, closeTo(1.0, 1e-9)); // full sustain
+    // Default filter = wide open (≈ 20 kHz), Butterworth (no resonance).
+    expect(z.filterCutoffHz, closeTo(19912, 60));
+    expect(z.filterQ, closeTo(0.707, 0.01));
+  });
+
+  test('filter: cutoff cents → Hz and resonance cB → Q', () {
+    const z = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      filterFcCents: 7200, // 7200/1200 = 6 → 8.176 · 2^6 = 523.3 Hz
+      filterQCb: 120, // 12 dB → resonant (Q > 1)
+    );
+    expect(z.filterCutoffHz, closeTo(523.3, 1));
+    expect(z.filterQ, greaterThan(1.0));
   });
 }

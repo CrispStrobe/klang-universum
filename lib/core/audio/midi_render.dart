@@ -21,6 +21,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart'
+    show Biquad, BiquadKind;
 import 'package:comet_beat/core/audio/sf2/sf2.dart'
     show Sf2Preset, Sf2SoundFont, Sf2Zone;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
@@ -378,9 +380,18 @@ void _resampleNote(
   final rg = math.sin(theta);
   final baseGain = n.gain * zone.gain;
 
-  final cutoff = n.isDrum ? 20000.0 : 900 + n.velNorm * n.velNorm * 15100;
-  final a = 1 - math.exp(-2 * math.pi * cutoff / sr);
-  var filt = 0.0;
+  // SF2 2-pole resonant low-pass at the zone's own cutoff/Q. The SF2 default
+  // velocity→filter modulator darkens soft notes (−2400 cents at velocity 0).
+  final velCents = (n.velNorm - 1) * 2400;
+  final cutoffHz = (zone.filterCutoffHz * math.pow(2, velCents / 1200))
+      .clamp(20.0, sr / 2 - 1)
+      .toDouble();
+  final filter = Biquad(
+    BiquadKind.lowpass,
+    freq: cutoffHz,
+    sampleRate: sr.toDouble(),
+    q: zone.filterQ,
+  );
 
   final vibOnset = (_vibratoOnsetSec * sr).round();
   var bi = 0;
@@ -422,9 +433,8 @@ void _resampleNote(
     }
     v *= env * baseGain;
 
-    // Velocity low-pass.
-    filt += a * (v - filt);
-    v = filt;
+    // The SF2 low-pass filter.
+    v = filter.process(v);
 
     left[outIdx] += v * lg;
     right[outIdx] += v * rg;

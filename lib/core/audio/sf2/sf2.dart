@@ -49,6 +49,8 @@ const _genHoldVolEnv = 35;
 const _genDecayVolEnv = 36;
 const _genSustainVolEnv = 37;
 const _genReleaseVolEnv = 38;
+const _genInitialFilterFc = 8; // low-pass cutoff, absolute cents
+const _genInitialFilterQ = 9; // resonance, centibels
 
 /// One sample from a soundfont: its decoded PCM (−1..1), the rate it was
 /// recorded at, the MIDI key it represents ([originalPitch]), and its loop
@@ -102,6 +104,8 @@ class Sf2Zone {
     this.decayVolTc = -12000,
     this.sustainVolCb = 0,
     this.releaseVolTc = -12000,
+    this.filterFcCents = 13500,
+    this.filterQCb = 0,
   });
 
   final int keyLo;
@@ -129,6 +133,19 @@ class Sf2Zone {
   /// The sustain level as a linear gain (0..1): `10^(−cB/200)`.
   double get sustainGain =>
       pow(10, -sustainVolCb.clamp(0, 1440) / 200).toDouble();
+
+  /// The low-pass filter: `initialFilterFc` (gen 8, absolute cents) and
+  /// `initialFilterQ` (gen 9, centibels of resonance). The default 13500 cents
+  /// (≈ 20 kHz) + 0 cB is a wide-open, non-resonant filter.
+  final int filterFcCents;
+  final int filterQCb;
+
+  /// The filter cutoff in Hz: `8.176 · 2^(cents/1200)`.
+  double get filterCutoffHz => 8.176 * pow(2, filterFcCents / 1200).toDouble();
+
+  /// A biquad Q from the resonance: `10^((dB − 3.01)/20)`, so 0 cB → ~0.707
+  /// (Butterworth, flat) and higher cB peaks.
+  double get filterQ => pow(10, (filterQCb / 10 - 3.01) / 20).toDouble();
 
   /// velRange (gen 44): the MIDI velocity window this zone (sample layer) covers,
   /// so a soft vs loud note picks a different recording. Default 0..127 (the
@@ -356,6 +373,7 @@ List<Sf2Preset> _parsePresets(
           decayVol = -12000,
           sustainVol = 0,
           releaseVol = -12000;
+      var filterFc = 13500, filterQ = 0;
       int? sampleId, rootOverride;
       for (var g = gStart; g < gEnd; g++) {
         final oper = u16(igenOff + g * 4);
@@ -390,6 +408,10 @@ List<Sf2Preset> _parsePresets(
           sustainVol = amt; // centibels (unsigned)
         } else if (oper == _genReleaseVolEnv) {
           releaseVol = samt;
+        } else if (oper == _genInitialFilterFc) {
+          filterFc = samt; // absolute cents (signed)
+        } else if (oper == _genInitialFilterQ) {
+          filterQ = amt; // centibels
         }
       }
       if (sampleId != null && sampleId >= 0 && sampleId < sampleCount) {
@@ -412,6 +434,8 @@ List<Sf2Preset> _parsePresets(
             decayVolTc: decayVol,
             sustainVolCb: sustainVol,
             releaseVolTc: releaseVol,
+            filterFcCents: filterFc,
+            filterQCb: filterQ,
           ),
         );
       }
