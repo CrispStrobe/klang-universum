@@ -92,6 +92,10 @@ class _Note {
   final int bank;
   final int program;
   final bool isDrum;
+
+  /// Absolute sample at which a same-exclusive-class note cuts this one off
+  /// (1<<62 = never). Set in the render pass.
+  int cutAtSample = 1 << 62;
 }
 
 /// Render [smf] through [font] to a stereo (left, right) pair, scheduling every
@@ -273,6 +277,22 @@ class _Note {
   final right = Float64List(maxLen);
   final presetCache = <String, Sf2Preset?>{};
 
+  // Exclusive class (gen 57): within a (channel, class) group, each note is cut
+  // off when the next same-class note starts (open → closed hi-hat).
+  final byExclusive = <int, List<_Note>>{};
+  for (final n in notes) {
+    final preset = _presetFor(font, n, presetCache);
+    if (preset == null) continue;
+    final cls = _exclusiveClassOf(preset, n);
+    if (cls != 0) (byExclusive[n.channel << 16 | cls] ??= []).add(n);
+  }
+  for (final group in byExclusive.values) {
+    group.sort((a, b) => a.startSample - b.startSample);
+    for (var i = 0; i < group.length - 1; i++) {
+      group[i].cutAtSample = group[i + 1].startSample;
+    }
+  }
+
   for (final n in notes) {
     final preset = _presetFor(font, n, presetCache);
     if (preset == null) continue;
@@ -303,6 +323,15 @@ Sf2Preset? _presetFor(
         findPreset(font, 0, n.program) ??
         (font.presets.isEmpty ? null : font.presets.first),
   );
+}
+
+/// The exclusive class of the zone that voices this note (0 = none).
+int _exclusiveClassOf(Sf2Preset preset, _Note n) {
+  final vel = (n.velNorm * 127).round();
+  for (final z in preset.zones) {
+    if (z.coversKeyVel(n.key, vel)) return z.exclusiveClass;
+  }
+  return preset.zones.isEmpty ? 0 : preset.zones.first.exclusiveClass;
 }
 
 /// Voice the note: play EVERY zone covering its key/velocity (a stereo L/R pair
@@ -431,6 +460,10 @@ void _renderZone(
   final vibDelayS = (zone.delayVibLfoSec * sr).round();
   final modDelayS = (zone.delayModLfoSec * sr).round();
 
+  // Exclusive-class cut: a same-class note truncates this one with a fast fade.
+  final cutRel = n.cutAtSample - n.startSample;
+  final cutFade = (0.006 * sr).round();
+
   var bi = 0;
   var phase = 0.0;
 
@@ -438,6 +471,7 @@ void _renderZone(
     final outIdx = n.startSample + i;
     if (outIdx >= left.length) break;
     if (phase >= len) break; // one-shot ran out
+    if (i >= cutRel + cutFade) break; // cut off by a same-class note
 
     // Pitch: fixed + continuous bend (from the channel curve) + vibrato.
     while (bi + 1 < bendCurve.length && bendCurve[bi + 1].$1 <= outIdx) {
@@ -483,7 +517,10 @@ void _renderZone(
       final lfo = math.sin(modW * (i - modDelayS));
       trem = math.pow(10, zone.modLfoToVolumeCb / 10 * lfo / 20).toDouble();
     }
-    v *= env * baseGain * trem;
+    // Fast fade over the exclusive-class cut boundary (avoids a click).
+    var cut = 1.0;
+    if (i >= cutRel) cut = math.max(0.0, 1 - (i - cutRel) / cutFade);
+    v *= env * baseGain * trem * cut;
 
     // The SF2 low-pass filter.
     v = filter.process(v);

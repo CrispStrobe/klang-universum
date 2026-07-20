@@ -52,6 +52,7 @@ const _genReleaseVolEnv = 38;
 const _genInitialFilterFc = 8; // low-pass cutoff, absolute cents
 const _genInitialFilterQ = 9; // resonance, centibels
 const _genPan = 17; // 0.1% units, −500 (left) .. +500 (right)
+const _genExclusiveClass = 57; // same-class notes cut each other off
 // LFO generators. modLFO can sweep pitch (gen 5) and volume (gen 13); vibLFO
 // sweeps pitch (gen 6). Delays are timecents; freqs are absolute cents.
 const _genModLfoToPitch = 5; // cents
@@ -130,6 +131,7 @@ class Sf2Zone {
     this.delayVibLfoTc = -12000,
     this.freqVibLfoCents = 0,
     this.panTenthPct = 0,
+    this.exclusiveClass = 0,
   });
 
   final int keyLo;
@@ -189,6 +191,10 @@ class Sf2Zone {
   /// Zone pan (gen 17), −1 (hard left) .. +1 (hard right); 0 = centre.
   final int panTenthPct;
   double get pan => (panTenthPct / 500.0).clamp(-1.0, 1.0);
+
+  /// Exclusive class (gen 57): a new note of the same class on the same channel
+  /// cuts off any still-sounding one (open vs closed hi-hat). 0 = none.
+  final int exclusiveClass;
 
   /// velRange (gen 44): the MIDI velocity window this zone (sample layer) covers,
   /// so a soft vs loud note picks a different recording. Default 0..127 (the
@@ -427,7 +433,8 @@ List<Sf2Preset> _parsePresets(
           freqModLfo = 0,
           delayVibLfo = -12000,
           freqVibLfo = 0,
-          panTenth = 0;
+          panTenth = 0,
+          exclusiveClass = 0;
       int? sampleId, rootOverride;
       for (var g = gStart; g < gEnd; g++) {
         final oper = u16(igenOff + g * 4);
@@ -482,6 +489,8 @@ List<Sf2Preset> _parsePresets(
           freqVibLfo = samt;
         } else if (oper == _genPan) {
           panTenth = samt; // 0.1% units (signed)
+        } else if (oper == _genExclusiveClass) {
+          exclusiveClass = amt;
         }
       }
       if (sampleId != null && sampleId >= 0 && sampleId < sampleCount) {
@@ -514,6 +523,7 @@ List<Sf2Preset> _parsePresets(
             delayVibLfoTc: delayVibLfo,
             freqVibLfoCents: freqVibLfo,
             panTenthPct: panTenth,
+            exclusiveClass: exclusiveClass,
           ),
         );
       }

@@ -102,4 +102,17 @@ void main() {
     expect(l.isLeft, isTrue);
     expect(l.isRight, isFalse);
   });
+
+  test('exclusive class (gen 57) parses; default 0', () {
+    const none = Sf2Zone(keyLo: 0, keyHi: 127, sampleIndex: 0, rootKey: 60);
+    expect(none.exclusiveClass, 0);
+    const hat = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      exclusiveClass: 1,
+    );
+    expect(hat.exclusiveClass, 1);
+  });
 }
