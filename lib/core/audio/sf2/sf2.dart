@@ -275,9 +275,11 @@ class Sf2Zone {
   final List<int> velAttenMods;
 
   /// The velocity gain (0..1) for MIDI [vel] (0..1): the SF2 concave velocity→
-  /// attenuation. The default amount 960 cB ≈ `(vel)^1.4`; a font override
-  /// scales the exponent (amount/686), so a low-amount instrument is loud at any
-  /// velocity and a high-amount one is very velocity-sensitive.
+  /// attenuation, matching fluidsynth's exact curve. Its concave table gives
+  /// `attenuation_cB = amount · (400/960)·(−log10 vel)`, i.e. `gain =
+  /// (vel)^(amount/480)`. So the SF2 default amount 960 → `(vel)²`, and a font
+  /// override scales the exponent: a low-amount organ stays loud at any
+  /// velocity, a high-amount kit is very velocity-sensitive.
   double velAttenGain(double vel) {
     if (vel <= 0) return 0;
     var amount = 0;
@@ -285,7 +287,7 @@ class Sf2Zone {
       amount += velAttenMods[i]; // sum the zone's velocity→attenuation amounts
     }
     if (velAttenMods.isEmpty) amount = 960; // SF2 default modulator
-    return pow(vel, amount / 686).toDouble();
+    return pow(vel, amount / 480).toDouble();
   }
 
   /// Modulation envelope (a 2nd DAHDSR) and its targets. [modEnvToFilterCents]

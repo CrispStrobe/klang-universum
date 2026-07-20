@@ -120,7 +120,7 @@ void main() {
     // Default (no modulator) → the SF2 concave curve, amount 960 ≈ (vel)^1.4.
     const def = Sf2Zone(keyLo: 0, keyHi: 127, sampleIndex: 0, rootKey: 60);
     expect(def.velAttenGain(1.0), closeTo(1.0, 1e-9)); // full velocity → full
-    expect(def.velAttenGain(0.5), closeTo(0.379, 0.005)); // 0.5^1.4
+    expect(def.velAttenGain(0.5), closeTo(0.25, 0.005)); // 0.5^2 (amount 960)
     // A low-amount velocity→attenuation modulator (100 cB) → nearly velocity-
     // flat: a soft note stays loud (a sustained organ, not a percussive kit).
     const flat = Sf2Zone(
@@ -130,7 +130,7 @@ void main() {
       rootKey: 60,
       velAttenMods: [100, 1, 1],
     );
-    expect(flat.velAttenGain(0.5), closeTo(0.904, 0.01)); // 0.5^(100/686)
+    expect(flat.velAttenGain(0.5), closeTo(0.866, 0.01)); // 0.5^(100/480)
   });
 
   test('key→vol-env decay (gen 40): a high note rings shorter', () {

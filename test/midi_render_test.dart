@@ -338,12 +338,14 @@ void main() {
     List<int> at(int vel) => [0, 0x90, 60, vel, 0x82, 0x00, 0x80, 60, 0];
     final ps = _peak(renderMidiFile(_midi(at(32)), oneFont).$1);
     final pl = _peak(renderMidiFile(_midi(at(127)), oneFont).$1);
+    // The fixture has no velocity→attenuation modulator → the SF2 default
+    // (amount 960) → gain ∝ (vel)²: (32/127)² ≈ 0.063, well below linear 0.25.
     expect(
       ps / pl,
-      lessThan(0.18),
-      reason: 'concave: steeper than linear 0.25',
+      lessThan(0.10),
+      reason: 'concave, much steeper than linear',
     );
-    expect(ps / pl, greaterThan(0.08), reason: 'but not as steep as square');
+    expect(ps / pl, greaterThan(0.03), reason: 'a plausible concave floor');
   });
 
   test('per-zone reverb send (gen 16): a wet instrument gets more reverb', () {
