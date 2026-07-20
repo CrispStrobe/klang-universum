@@ -7190,4 +7190,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get transcriptionBackendNeural => 'Neuronal';
+
+  @override
+  String get transcriptionF0ViterbiLabel => 'Tonhöhe glätten';
+
+  @override
+  String get transcriptionF0ViterbiSubtitle =>
+      'Ruhigere Töne, keine Oktavsprünge – etwas langsamer (nur neuronale Tonhöhe)';
 }

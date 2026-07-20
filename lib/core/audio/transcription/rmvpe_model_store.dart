@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart'
     show autoPoolWorkers;
+import 'package:comet_beat/core/audio/transcription/f0_decode_options.dart';
 import 'package:comet_beat/core/audio/transcription/rmvpe.dart';
 import 'package:comet_beat/core/audio/transcription/rmvpe_mel.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart'
@@ -99,9 +100,13 @@ class RmvpeModelStore {
     final workers =
         int.tryParse(Platform.environment['COMET_RMVPE_WORKERS'] ?? '') ??
             autoPoolWorkers();
-    // COMET_RMVPE_VITERBI=1 → Viterbi path-smoothing over the 360-bin lattice
-    // (torchcrepe/librosa) instead of per-frame argmax; default off.
-    final vit = Platform.environment['COMET_RMVPE_VITERBI'] == '1';
+    // Viterbi path-smoothing over the 360-bin lattice (torchcrepe/librosa)
+    // instead of per-frame argmax. The F0DecodeOptions override (CLI
+    // --f0-viterbi / Settings) wins over the COMET_RMVPE_VITERBI env gate.
+    final vit = F0DecodeOptions.resolve(
+      'COMET_RMVPE_VITERBI',
+      Platform.environment,
+    );
     if (workers > 0) {
       await b.model.parallelize(workers: workers, poolConv: true);
       return (Float64List mono, int sampleRate) => rmvpeF0Async(

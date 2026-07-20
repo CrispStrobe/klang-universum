@@ -2411,5 +2411,7 @@
   "transcriptionStepChords": "Akkorde",
   "transcriptionBackendAuto": "Auto",
   "transcriptionBackendDart": "Auf dem Gerät",
-  "transcriptionBackendNeural": "Neuronal"
+  "transcriptionBackendNeural": "Neuronal",
+  "transcriptionF0ViterbiLabel": "Tonhöhe glätten",
+  "transcriptionF0ViterbiSubtitle": "Ruhigere Töne, keine Oktavsprünge – etwas langsamer (nur neuronale Tonhöhe)"
 }

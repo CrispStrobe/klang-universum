@@ -9,6 +9,7 @@
 import 'dart:convert';
 
 import 'package:comet_beat/core/audio/transcription/engine_config.dart';
+import 'package:comet_beat/core/audio/transcription/f0_decode_options.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,6 +33,7 @@ class TranscriptionConfigService with ChangeNotifier {
         // keep the default on any parse error
       }
     }
+    _applyF0Viterbi();
     notifyListeners();
   }
 
@@ -42,8 +44,18 @@ class TranscriptionConfigService with ChangeNotifier {
         _config.copyWith(backends: {..._config.backends, step: backend}),
       );
 
+  Future<void> setF0Viterbi(bool on) =>
+      _update(_config.copyWith(f0Viterbi: on));
+
+  /// Push the config's F0-Viterbi choice to the process-wide override the neural
+  /// F0 model stores read. Enabling forces it on; leaving it off defers to the
+  /// per-model `COMET_*_VITERBI` env gates (so a dev env var still works).
+  void _applyF0Viterbi() =>
+      F0DecodeOptions.viterbi = _config.f0Viterbi ? true : null;
+
   Future<void> _update(TranscriptionEngineConfig next) async {
     _config = next;
+    _applyF0Viterbi();
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(_config.toJson()));

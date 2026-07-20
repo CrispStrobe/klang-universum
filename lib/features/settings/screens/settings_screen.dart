@@ -510,6 +510,13 @@ class _TranscriptionEngineSection extends StatelessWidget {
                       TranscriptionStep.chords,
                       const [Backend.auto, Backend.pureDart, Backend.onnx],
                     ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l10n.transcriptionF0ViterbiLabel),
+                      subtitle: Text(l10n.transcriptionF0ViterbiSubtitle),
+                      value: cfg.f0Viterbi,
+                      onChanged: svc.setF0Viterbi,
+                    ),
                   ],
                 ),
               ],

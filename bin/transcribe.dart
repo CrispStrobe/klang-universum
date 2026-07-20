@@ -15,6 +15,9 @@
 //                              stems = onnx Open-Unmix or crispasr CLI.
 //   --f0 pyin|dio|crepe|rmvpe      the F0 model for `notes` (default: per backend —
 //                              dart→pyin, onnx→crepe, crispasr→crepe)
+//   --f0-viterbi               path-smooth the neural F0 decode (crepe/rmvpe/
+//                              fcpe) over the pitch lattice instead of per-frame
+//                              argmax — kills octave flips/spikes; no-op for pyin
 //   --sep-bin / --sep-model    crispasr binary + demucs GGUF for `--task stems`
 //                              --backend crispasr (or env CRISPASR_BIN /
 //                              CRISPASR_SEP_MODEL)
@@ -44,6 +47,7 @@ import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_separate.dart';
 import 'package:comet_beat/core/audio/transcription/dio.dart' show dioEstimator;
+import 'package:comet_beat/core/audio/transcription/f0_decode_options.dart';
 import 'package:comet_beat/core/audio/transcription/harmony.dart';
 import 'package:comet_beat/core/audio/transcription/harmony_model_store.dart';
 import 'package:comet_beat/core/audio/transcription/pyin.dart' show pyinF0;
@@ -74,8 +78,8 @@ Future<void> main(List<String> args) async {
     stderr.writeln(
       'usage: dart run bin/transcribe.dart audio.wav '
       '[--task notes|poly|chords|stems] [--backend auto|dart|onnx|crispasr] '
-      '[--f0 pyin|dio|crepe|rmvpe] [--sep-bin B] [--sep-model M] [--a4 440] '
-      '[--f0-dump] [--json]',
+      '[--f0 pyin|dio|crepe|rmvpe] [--f0-viterbi] [--sep-bin B] [--sep-model M] '
+      '[--a4 440] [--f0-dump] [--json]',
     );
     exit(64);
   }
@@ -88,6 +92,10 @@ Future<void> main(List<String> args) async {
   final backend = _optS(args, '--backend', 'auto');
   final json = args.contains('--json');
   final a4 = _optD(args, '--a4', 440);
+
+  // Force Viterbi path-smoothing on the neural F0 decoders (crepe/rmvpe/fcpe),
+  // overriding the per-model COMET_*_VITERBI env gates. No effect on pyin/dio.
+  if (args.contains('--f0-viterbi')) F0DecodeOptions.viterbi = true;
 
   final wav = readWavPcm16(File(path).readAsBytesSync());
   final mono = wavToMonoFloat(wav);

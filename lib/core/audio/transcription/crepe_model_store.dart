@@ -13,6 +13,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/transcription/contracts.dart';
 import 'package:comet_beat/core/audio/transcription/crepe.dart';
+import 'package:comet_beat/core/audio/transcription/f0_decode_options.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart';
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
 
@@ -162,7 +163,9 @@ class CrepeRunConfig {
       workers: pInt('COMET_CREPE_WORKERS', autoPoolWorkers()),
       poolConv: pBool('COMET_CREPE_POOLCONV', true),
       batchFrames: pInt('COMET_CREPE_BATCH', 512),
-      viterbi: pBool('COMET_CREPE_VITERBI', false),
+      // The F0DecodeOptions override (CLI --f0-viterbi / Settings) wins over the
+      // env gate, else fall back to COMET_CREPE_VITERBI.
+      viterbi: F0DecodeOptions.viterbi ?? pBool('COMET_CREPE_VITERBI', false),
     );
   }
 

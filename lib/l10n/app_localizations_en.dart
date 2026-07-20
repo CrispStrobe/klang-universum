@@ -7151,4 +7151,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transcriptionBackendNeural => 'Neural';
+
+  @override
+  String get transcriptionF0ViterbiLabel => 'Smooth pitch tracking';
+
+  @override
+  String get transcriptionF0ViterbiSubtitle =>
+      'Steadier notes, no octave jumps — a little slower (neural pitch only)';
 }

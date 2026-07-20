@@ -69,6 +69,7 @@ class TranscriptionEngineConfig {
   const TranscriptionEngineConfig({
     this.backends = const {},
     this.quality = ModelQuality.balanced,
+    this.f0Viterbi = false,
   });
 
   /// Per-step backend preference; a missing step means [Backend.auto].
@@ -77,15 +78,22 @@ class TranscriptionEngineConfig {
   /// Global quality preset → (size, quant) for the neural steps.
   final ModelQuality quality;
 
+  /// Path-smooth the neural F0 decode (crepe/rmvpe/fcpe) over the pitch lattice
+  /// instead of per-frame argmax — steadier notes, a touch slower. Applied via
+  /// [F0DecodeOptions] by the config service.
+  final bool f0Viterbi;
+
   Backend backendFor(TranscriptionStep step) => backends[step] ?? Backend.auto;
 
   TranscriptionEngineConfig copyWith({
     Map<TranscriptionStep, Backend>? backends,
     ModelQuality? quality,
+    bool? f0Viterbi,
   }) =>
       TranscriptionEngineConfig(
         backends: backends ?? this.backends,
         quality: quality ?? this.quality,
+        f0Viterbi: f0Viterbi ?? this.f0Viterbi,
       );
 
   /// Resolve the engine for [step]. [isWeb] forces pure-Dart/ONNX (no FFI);
@@ -141,6 +149,7 @@ class TranscriptionEngineConfig {
 
   Map<String, Object> toJson() => {
         'quality': quality.name,
+        'f0Viterbi': f0Viterbi,
         'backends': {
           for (final e in backends.entries) e.key.name: e.value.name,
         },
@@ -154,6 +163,7 @@ class TranscriptionEngineConfig {
     final backs = Backend.values.asNameMap();
     return TranscriptionEngineConfig(
       quality: q,
+      f0Viterbi: json['f0Viterbi'] == true,
       backends: {
         for (final e in raw.entries)
           if (steps[e.key] case final s?)

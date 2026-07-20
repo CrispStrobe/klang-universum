@@ -2,12 +2,16 @@
 // choices across restarts, and starts from sensible defaults.
 
 import 'package:comet_beat/core/audio/transcription/engine_config.dart';
+import 'package:comet_beat/core/audio/transcription/f0_decode_options.dart';
 import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    F0DecodeOptions.viterbi = null;
+  });
 
   test('defaults to balanced quality + all-auto backends', () async {
     final svc = TranscriptionConfigService();
@@ -37,5 +41,26 @@ void main() {
     svc.addListener(() => notified++);
     await svc.setQuality(ModelQuality.fast);
     expect(notified, greaterThan(0));
+  });
+
+  test('F0-Viterbi persists and drives the process-wide override', () async {
+    expect(F0DecodeOptions.viterbi, isNull); // default → defer to env gate
+
+    final a = TranscriptionConfigService();
+    await a.load();
+    await a.setF0Viterbi(true);
+    expect(a.config.f0Viterbi, isTrue);
+    expect(F0DecodeOptions.viterbi, isTrue); // forces it on for the decoders
+
+    // Persists across a reload, and re-applies the override on load.
+    F0DecodeOptions.viterbi = null;
+    final b = TranscriptionConfigService();
+    await b.load();
+    expect(b.config.f0Viterbi, isTrue);
+    expect(F0DecodeOptions.viterbi, isTrue);
+
+    // Turning it off defers to the env gate again (override cleared).
+    await b.setF0Viterbi(false);
+    expect(F0DecodeOptions.viterbi, isNull);
   });
 }

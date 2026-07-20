@@ -47,8 +47,13 @@ PitchTrack fcpeF0(
     },
     const [_outName],
   )[_outName]!;
-  return _decode(out.f ?? out.asFloatList(), p.nFrames, assets, threshold,
-      viterbi: viterbi,);
+  return _decode(
+    out.f ?? out.asFloatList(),
+    p.nFrames,
+    assets,
+    threshold,
+    viterbi: viterbi,
+  );
 }
 
 /// Isolate-pool variant of [fcpeF0] (`runAsync`) — FCPE is ~77% Conv, so a

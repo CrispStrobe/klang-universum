@@ -2724,5 +2724,7 @@
   "transcriptionStepChords": "Chords",
   "transcriptionBackendAuto": "Auto",
   "transcriptionBackendDart": "On-device",
-  "transcriptionBackendNeural": "Neural"
+  "transcriptionBackendNeural": "Neural",
+  "transcriptionF0ViterbiLabel": "Smooth pitch tracking",
+  "transcriptionF0ViterbiSubtitle": "Steadier notes, no octave jumps — a little slower (neural pitch only)"
 }

@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/transcription/crepe_model_store.dart'
     show autoPoolWorkers;
+import 'package:comet_beat/core/audio/transcription/f0_decode_options.dart';
 import 'package:comet_beat/core/audio/transcription/fcpe.dart';
 import 'package:comet_beat/core/audio/transcription/fcpe_mel.dart';
 import 'package:comet_beat/core/audio/transcription/route.dart'
@@ -98,9 +99,13 @@ class FcpeModelStore {
     final workers =
         int.tryParse(Platform.environment['COMET_FCPE_WORKERS'] ?? '') ??
             autoPoolWorkers();
-    // COMET_FCPE_VITERBI=1 → Viterbi path-smoothing over the 360-bin lattice
-    // (torchcrepe/librosa) instead of per-frame argmax; default off.
-    final vit = Platform.environment['COMET_FCPE_VITERBI'] == '1';
+    // Viterbi path-smoothing over the 360-bin lattice (torchcrepe/librosa)
+    // instead of per-frame argmax. The F0DecodeOptions override (CLI
+    // --f0-viterbi / Settings) wins over the COMET_FCPE_VITERBI env gate.
+    final vit = F0DecodeOptions.resolve(
+      'COMET_FCPE_VITERBI',
+      Platform.environment,
+    );
     if (workers > 0) {
       await b.model.parallelize(workers: workers, poolConv: true);
       return (Float64List mono, int sampleRate) => fcpeF0Async(

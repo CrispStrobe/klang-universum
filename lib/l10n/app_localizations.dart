@@ -13033,6 +13033,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Neural'**
   String get transcriptionBackendNeural;
+
+  /// No description provided for @transcriptionF0ViterbiLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth pitch tracking'**
+  String get transcriptionF0ViterbiLabel;
+
+  /// No description provided for @transcriptionF0ViterbiSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Steadier notes, no octave jumps — a little slower (neural pitch only)'**
+  String get transcriptionF0ViterbiSubtitle;
 }
 
 class _AppLocalizationsDelegate
