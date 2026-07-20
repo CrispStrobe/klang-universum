@@ -132,6 +132,21 @@ void main() {
     expect(z.volEnvDecaySec(48), closeTo(2.0, 1e-6));
   });
 
+  test('key→mod-env decay (gens 31/32) + modLfo→filter (gen 10) parse', () {
+    const z = Sf2Zone(
+      keyLo: 0,
+      keyHi: 127,
+      sampleIndex: 0,
+      rootKey: 60,
+      decayModEnvTc: 0, // 1 s mod-env decay at key 60
+      key2ModEnvDecayTc: 100, // shorter per key above 60
+      modLfoToFilterCents: 2400, // a filter wah
+    );
+    expect(z.modEnvDecaySec(60), closeTo(1.0, 1e-6));
+    expect(z.modEnvDecaySec(72), closeTo(0.5, 1e-6)); // +12 keys → half
+    expect(z.modLfoToFilterCents, 2400);
+  });
+
   test('velFilterCents: default darkens soft notes; a mod opens loud ones', () {
     // No modulators → the SF2 default: full velocity keeps the cutoff, silence
     // drops it 2400 cents (soft notes are duller).

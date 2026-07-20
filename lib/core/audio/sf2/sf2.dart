@@ -62,6 +62,8 @@ const _genScaleTuning =
 // sweeps pitch (gen 6). Delays are timecents; freqs are absolute cents.
 const _genModLfoToPitch = 5; // cents
 const _genVibLfoToPitch = 6; // cents
+const _genModLfoToFilterFc =
+    10; // cents (modLFO sweeps the cutoff — filter wah)
 const _genModLfoToVolume = 13; // centibels
 const _genDelayModLfo = 21;
 const _genFreqModLfo = 22;
@@ -90,6 +92,9 @@ const _genEndLoopAddrsOffset = 3;
 // shorter hold/decay — a piano's high notes ring shorter than its low ones.
 const _genKeynumToVolEnvHold = 39;
 const _genKeynumToVolEnvDecay = 40;
+// Key→modulation-envelope scaling (timecents per key away from 60), like 39/40.
+const _genKeynumToModEnvHold = 31;
+const _genKeynumToModEnvDecay = 32;
 
 /// One sample from a soundfont: its decoded PCM (−1..1), the rate it was
 /// recorded at, the MIDI key it represents ([originalPitch]), and its loop
@@ -178,6 +183,9 @@ class Sf2Zone {
     this.key2VolEnvDecayTc = 0,
     this.reverbSendPermille = 0,
     this.chorusSendPermille = 0,
+    this.modLfoToFilterCents = 0,
+    this.key2ModEnvHoldTc = 0,
+    this.key2ModEnvDecayTc = 0,
   });
 
   final int keyLo;
@@ -272,11 +280,25 @@ class Sf2Zone {
   final int sustainModEnvPermille;
   final int releaseModEnvTc;
 
+  /// modLFO → filter cutoff (gen 10, cents): a periodic filter sweep (wah).
+  final int modLfoToFilterCents;
+
+  /// Key→modulation-envelope scaling (gens 31/32): like [key2VolEnvHoldTc] but
+  /// for the mod envelope's hold/decay.
+  final int key2ModEnvHoldTc;
+  final int key2ModEnvDecayTc;
+
   double get delayModEnvSec => _tcSec(delayModEnvTc);
   double get attackModEnvSec => _tcSec(attackModEnvTc);
   double get holdModEnvSec => _tcSec(holdModEnvTc);
   double get decayModEnvSec => _tcSec(decayModEnvTc);
   double get releaseModEnvSec => _tcSec(releaseModEnvTc);
+
+  /// Mod-envelope hold/decay in seconds for MIDI [key], with SF2 key-scaling.
+  double modEnvHoldSec(int key) =>
+      _tcSec(holdModEnvTc + key2ModEnvHoldTc * (60 - key));
+  double modEnvDecaySec(int key) =>
+      _tcSec(decayModEnvTc + key2ModEnvDecayTc * (60 - key));
 
   /// The mod-envelope sustain level (0..1): 1 − permille/1000.
   double get modEnvSustain =>
@@ -658,6 +680,11 @@ List<Sf2Preset> _parsePresets(
           iv((g) => g.key2VolDecay, 0) + po((g) => g.key2VolDecay),
       reverbSendPermille: iv((g) => g.reverbSend, 0) + po((g) => g.reverbSend),
       chorusSendPermille: iv((g) => g.chorusSend, 0) + po((g) => g.chorusSend),
+      modLfoToFilterCents:
+          iv((g) => g.modLfoToFilter, 0) + po((g) => g.modLfoToFilter),
+      key2ModEnvHoldTc: iv((g) => g.key2ModHold, 0) + po((g) => g.key2ModHold),
+      key2ModEnvDecayTc:
+          iv((g) => g.key2ModDecay, 0) + po((g) => g.key2ModDecay),
       // Velocity→filter modulators: the instrument zone's (or the instrument
       // global zone's) PLUS the preset's (they add — a drum kit's high-velocity
       // filter-open lives at the preset level). Empty → SF2 default at play time.
@@ -741,6 +768,7 @@ class _Gen {
   int? releaseModEnv, startOff, startCoarse;
   int? loopStartOff, loopEndOff, key2VolHold, key2VolDecay;
   int? reverbSend, chorusSend; // gen 16 / 15, 0.1% units
+  int? modLfoToFilter, key2ModHold, key2ModDecay;
   // velocity→filterFc modulators, flattened as [amount, dir, type, …] triples.
   List<int>? velFilterMods;
 }
@@ -834,6 +862,12 @@ _Gen _readGens(ByteData data, int genOff, int gStart, int gEnd, int genCount) {
         g.reverbSend = amt;
       case _genChorusSend:
         g.chorusSend = amt;
+      case _genModLfoToFilterFc:
+        g.modLfoToFilter = samt;
+      case _genKeynumToModEnvHold:
+        g.key2ModHold = samt;
+      case _genKeynumToModEnvDecay:
+        g.key2ModDecay = samt;
       case _genPan:
         g.pan = samt;
       case _genExclusiveClass:

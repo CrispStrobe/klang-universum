@@ -206,17 +206,18 @@ class _Note {
     final e = sampleAt(endTick).round();
     if (e <= s) return;
     final vn = p.vel / 127.0;
-    // Velocity → amplitude on the SF2 concave curve (≈ its default velocity→
-    // attenuation modulator): gain ∝ (vel/127)^1.5, matching a fluidsynth
-    // reference within ~1 dB across the range. Linear velocity made soft notes
-    // far too loud (−18 vs −28 dB at velocity 16) — flat, undynamic. The filter
-    // still uses the raw linear [vn] (velNorm) for its cutoff modulation.
+    // Velocity → amplitude on the SF2 concave curve (its default velocity→
+    // attenuation modulator, ≈ −279·log10(vel/127) cB ≡ gain ∝ (vel/127)^1.4).
+    // Fit to a fluidsynth reference across the MUSICAL range (v48–112 match to
+    // ~0.4 dB); linear made soft notes far too loud (flat, undynamic) and 1.5
+    // over-thinned the mid-velocity body. The filter still uses the raw linear
+    // [vn] (velNorm) for its cutoff modulation.
     final note = _Note(
       s,
       e,
       key,
       ch,
-      p.gain * math.pow(vn, 1.5).toDouble(),
+      p.gain * math.pow(vn, 1.4).toDouble(),
       vn,
       p.pan,
       p.modCents,
@@ -661,8 +662,9 @@ void _renderZone(
   // are seconds; the sustain is a level (1 = held open).
   final meDelayS = (zone.delayModEnvSec * sr).round();
   final meAttackS = math.max((zone.attackModEnvSec * sr).round(), 1);
-  final meHoldS = (zone.holdModEnvSec * sr).round();
-  final meDecayS = math.max((zone.decayModEnvSec * sr).round(), 1);
+  // Hold/decay are key-scaled (SF2 gens 31/32), like the volume envelope's.
+  final meHoldS = (zone.modEnvHoldSec(n.key) * sr).round();
+  final meDecayS = math.max((zone.modEnvDecaySec(n.key) * sr).round(), 1);
   final meSustain = zone.modEnvSustain;
   final meReleaseS = math.max((zone.releaseModEnvSec * sr).round(), 1);
   final meToFilterCents = zone.modEnvToFilterCents.toDouble();
@@ -693,13 +695,15 @@ void _renderZone(
   // by velocity (the SF2 default darkens soft notes; a drum kit's modulator
   // OPENS a low base cutoff on a hard hit). The mod envelope then sweeps it.
   final baseFcCents = zone.filterFcCents + zone.velFilterCents(n.velNorm);
-  double cutoffHzAt(double me) =>
-      (8.176 * math.pow(2, (baseFcCents + meToFilterCents * me) / 1200))
+  final modLfoFilterCents = zone.modLfoToFilterCents.toDouble();
+  final hasModLfoFilter = modLfoFilterCents != 0;
+  double cutoffHz(double extraCents) =>
+      (8.176 * math.pow(2, (baseFcCents + extraCents) / 1200))
           .clamp(20.0, sr / 2 - 1)
           .toDouble();
   final filter = Biquad(
     BiquadKind.lowpass,
-    freq: cutoffHzAt(modEnvAt(0)),
+    freq: cutoffHz(meToFilterCents * modEnvAt(0)),
     sampleRate: sr.toDouble(),
     q: zone.filterQ,
   );
@@ -806,10 +810,15 @@ void _renderZone(
     if (i >= cutRel) cut = math.max(0.0, 1 - (i - cutRel) / cutFade);
     v *= env * baseGain * trem * cut;
 
-    // The SF2 low-pass filter, swept by the mod envelope (retuned at a control
-    // rate, every 16 samples, so the sweep stays cheap and click-free).
-    if (hasModEnv && meToFilterCents != 0 && (i & 15) == 0) {
-      filter.setFreq(cutoffHzAt(modEnvAt(i)));
+    // The SF2 low-pass filter, swept by the mod envelope AND the modLFO (a
+    // filter wah). Retuned at a control rate (every 16 samples) so the sweep
+    // stays cheap and click-free.
+    if ((hasModEnv || hasModLfoFilter) && (i & 15) == 0) {
+      var mc = meToFilterCents * modEnvAt(i);
+      if (hasModLfoFilter && i >= modDelayS) {
+        mc += modLfoFilterCents * math.sin(modW * (i - modDelayS));
+      }
+      filter.setFreq(cutoffHz(mc));
     }
     v = filter.process(v);
 
