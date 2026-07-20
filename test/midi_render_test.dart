@@ -123,6 +123,14 @@ void main() {
     expect(energy(wet), greaterThan(energy(dry)), reason: 'reverb adds energy');
   });
 
+  test('soft pedal (CC67) makes a note quieter', () {
+    final loud = _midi([..._note(0, 60, 240)]);
+    final soft = _midi([..._cc(0, 67, 127), ..._note(0, 60, 240)]);
+    final (l, _) = renderMidiFile(loud, font);
+    final (s, _) = renderMidiFile(soft, font);
+    expect(_peak(s), lessThan(_peak(l)));
+  });
+
   test('empty / non-MIDI input yields empty output', () {
     final (l, r) = renderMidiFile(Uint8List.fromList([1, 2, 3]), font);
     expect(l, isEmpty);

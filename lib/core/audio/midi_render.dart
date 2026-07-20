@@ -156,6 +156,7 @@ class _Note {
   final modCents = List<double>.filled(16, 0.0); // CC1 → vibrato depth
   final reverbSend = List<double>.filled(16, 40 / 127); // CC91 (GM default)
   final chorusSend = List<double>.filled(16, 0.0); // CC93
+  final soft = List<bool>.filled(16, false); // CC67 soft pedal
   // Pitch-bend range (RPN 0), default ±2 st; RPN select + data-entry state.
   final bendRange = List<double>.filled(16, _bendRangeSemis);
   final rpnMsb = List<int>.filled(16, 127);
@@ -220,7 +221,7 @@ class _Note {
             _Pending(
               ev.tick,
               ev.d2,
-              volume[ch] * expression[ch],
+              volume[ch] * expression[ch] * (soft[ch] ? 0.7 : 1.0),
               pan[ch],
               modCents[ch],
               reverbSend[ch],
@@ -250,10 +251,28 @@ class _Note {
             reverbSend[ch] = ev.d2 / 127.0;
           case 93:
             chorusSend[ch] = ev.d2 / 127.0;
+          case 67:
+            soft[ch] = ev.d2 >= 64; // soft pedal → quieter new notes
           case 64:
             final down = ev.d2 >= 64;
             if (!down) liftPedal(ch, ev.tick);
             sustain[ch] = down;
+          case 120: // all sound off
+          case 123: // all notes off
+            for (final k in pending.keys.where((k) => k >> 8 == ch).toList()) {
+              for (final p in pending.remove(k)!) {
+                finalize(ch, k & 0xff, ev.tick, p);
+              }
+            }
+            liftPedal(ch, ev.tick);
+          case 121: // reset all controllers
+            volume[ch] = 100 / 127;
+            expression[ch] = 1;
+            pan[ch] = 0;
+            modCents[ch] = 0;
+            bendRange[ch] = _bendRangeSemis;
+            sustain[ch] = false;
+            soft[ch] = false;
           case 101:
             rpnMsb[ch] = ev.d2;
           case 100:
