@@ -560,5 +560,8 @@ String _qualityName(AppLocalizations l10n, ModelQuality q) => switch (q) {
 String _backendName(AppLocalizations l10n, Backend b) => switch (b) {
       Backend.auto => l10n.transcriptionBackendAuto,
       Backend.pureDart => l10n.transcriptionBackendDart,
-      Backend.onnx || Backend.crispasr => l10n.transcriptionBackendNeural,
+      Backend.onnx ||
+      Backend.onnxFfi ||
+      Backend.crispasr =>
+        l10n.transcriptionBackendNeural,
     };
