@@ -14,7 +14,9 @@ import 'package:comet_beat/core/audio/mod/module_convert.dart'
 import 'package:comet_beat/core/audio/mod/module_doc.dart';
 import 'package:comet_beat/core/audio/mod/s3m_module.dart';
 import 'package:comet_beat/core/audio/mod/s3m_writer.dart';
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
+import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Uint8List _fixture(String name) =>
@@ -258,6 +260,61 @@ void main() {
       expect((col[2].fxCmd, col[2].fxParam), (0x4, 0x34)); // vibrato
       expect((col[3].fxCmd, col[3].fxParam), (0x8, 0xC0)); // set pan (direct)
       expect((col[4].fxCmd, col[4].fxParam), (0xF, 0x80)); // tempo
+    });
+  });
+
+  group('imported-module effects sound on SAMPLE channels (end-to-end)', () {
+    // The headline of the sample tick voice: an imported module's per-tick pitch
+    // effect must actually BEND its own sampled instrument, not fall back to a
+    // flat one-shot-per-note. This drives the SAME import entry point real bytes
+    // take (songFromModuleDoc), then renders through the replayer and reads the
+    // rendered audio back — proving the whole chain, not just a hand-built song.
+    test('a porta-up on a sampled channel raises the pitch on render', () {
+      // A long, low sine sample stored at the engine rate (c5speed = engine rate
+      // → the bridge passes the PCM through unresampled; note 60 = baseMidi plays
+      // it 1:1), long enough to ring across the porta.
+      final pcm = Float64List(150000);
+      for (var i = 0; i < pcm.length; i++) {
+        pcm[i] = sin(2 * pi * 110 * i / kSampleRate);
+      }
+      final rows = <List<DocCell>>[
+        // Row 0: trigger the sample at its base note.
+        [const DocCell(note: 60, instrument: 1)],
+        // Rows 1..7: effect-only porta-up (0x1) — continues on the ringing note.
+        for (var r = 1; r < 8; r++)
+          [const DocCell(effect: 0x1, effectParam: 0x06)],
+      ];
+      final doc = ModuleDoc(
+        sourceFormat: ModuleFormat.xm,
+        channelCount: 1,
+        order: [0],
+        patterns: [DocPattern(rows, 1)],
+        samples: [DocSample(pcm: pcm, c5speed: kSampleRate)],
+      );
+
+      final song = songFromModuleDoc(doc);
+      expect(song.usesCommands, isTrue); // routes through the tick replayer
+
+      // Render the whole song and decode the PCM back.
+      final mono = wavToMonoFloat(readWavPcm16(song.renderSongWav()));
+      expect(mono.length, greaterThan(kSampleRate ~/ 2)); // non-trivial audio
+
+      int crossings(int lo, int hi) {
+        var c = 0;
+        for (var i = lo + 1; i < hi; i++) {
+          if ((mono[i - 1] < 0) != (mono[i] < 0)) c++;
+        }
+        return c;
+      }
+
+      // A rising pitch crosses zero more often later than earlier — the porta
+      // bent the SAMPLE, so it isn't a flat per-note one-shot.
+      final n = mono.length;
+      expect(
+        crossings(n ~/ 2, n),
+        greaterThan(crossings(0, n ~/ 2)),
+        reason: 'porta on a sampled channel should raise the pitch',
+      );
     });
   });
 }

@@ -38,16 +38,19 @@
 // track the summed per-row durations.
 //
 // PER-CELL INSTRUMENT ([TrackerCell.instrument], 1-based into
-// [TrackerSong.instruments]): a note can switch the additive voice's timbre,
-// persisting per channel — so one channel can play piano then flute. Honoured on
-// ADDITIVE channels only for now (a non-additive/sample channel, or a per-cell
-// reference to a non-additive pool instrument, keeps the channel's own voice).
+// [TrackerSong.instruments]): a note can switch a channel's timbre, persisting
+// per channel — so one channel can play piano then flute. Honoured on ADDITIVE
+// channels (the tick oscillator re-reads the pool timbre) AND on SAMPLE channels
+// (the tick voice swaps `cur` to the pool's SampleInstrument — see
+// [_renderSampleChannelInto]). A per-cell reference to a non-additive pool
+// instrument that is neither additive nor sample keeps the channel's own voice.
 //
-// 9xx sample-offset works on SAMPLE voices — [SampleInstrument.renderChannel]
-// starts the note at param×256 (it already receives the cells that carry the
-// effect column). MID-SONG speed/tempo CHANGES are now handled by the variable
-// render (see the Fxx note above). Still TODO: per-cell instrument on SAMPLE
-// voices — wants a per-note non-additive render (the shared next step).
+// 9xx sample-offset works on SAMPLE voices — the sample tick voice starts the
+// read pointer at param×256 (and [SampleInstrument.renderChannel] does the same
+// on the effect-free fallback path). MID-SONG speed/tempo CHANGES are handled by
+// the variable render (see the Fxx note above). So an imported module's per-tick
+// pitch/volume effects (porta/vibrato/tremolo/Cxx/Axy/arp/extended) now actually
+// SOUND on its SAMPLED channels, not just additive ones.
 //
 // Mixing (see Trap A in docs/TRACKER_REPLAYER_HANDOVER.md): the replayer sums
 // voices at a FIXED-normalized amplitude (each additive voice divided by its
