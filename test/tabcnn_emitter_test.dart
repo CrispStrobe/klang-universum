@@ -112,6 +112,17 @@ void main() {
     }
   });
 
+  test('gpfxNormalize maps raw magnitude to per-clip dB in [0,1]', () {
+    // A spread of magnitudes; the max must map to 1, all values into [0,1].
+    final raw = Float32List.fromList([0.001, 0.01, 0.1, 1.0, 0.5]);
+    final n = gpfxNormalize(raw);
+    expect(n.reduce(math.max), closeTo(1.0, 1e-6)); // loudest bin → 1
+    expect(n.every((v) => v >= 0 && v <= 1.0 + 1e-6), isTrue);
+    // Monotonic in magnitude (dB is monotonic, so the scaling preserves order).
+    expect(n[0] < n[1] && n[1] < n[2] && n[2] < n[3], isTrue);
+    expect(gpfxNormalize(Float32List(0)), isEmpty);
+  });
+
   test('empty audio yields zero frames', () {
     final frames = tabcnnEmitWithRunner(
       Float64List(0),
@@ -129,12 +140,16 @@ void main() {
       (tester) async {
     final loaded = await TabCnnModelStore().load();
     if (loaded == null) return; // no assets / offline → skip
+    expect(loaded.variant, TabCnnVariant.gpfx); // prefers the robust model
     final mono = Float64List(22050); // 1 s
     for (var i = 0; i < mono.length; i++) {
       mono[i] = 0.3 * math.sin(2 * math.pi * 196 * i / 22050); // ~G3
     }
-    final frames =
-        TabCnnEmitter(model: loaded.model, cqt: loaded.cqt).emit(mono, 22050);
+    final frames = TabCnnEmitter(
+      model: loaded.model,
+      cqt: loaded.cqt,
+      variant: loaded.variant,
+    ).emit(mono, 22050);
     expect(frames, isNotNull);
     expect(frames!.nFrames, greaterThan(0));
     expect(frames.logProbs.length, frames.nFrames * 6 * 21);

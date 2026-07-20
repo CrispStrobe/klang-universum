@@ -1,17 +1,21 @@
 // The pure-Dart audio→tab emission provider: turns a guitar recording into the
 // [TabEmissionFrames] that tab_emission_decoder.dart's Viterbi consumes, by
-// running the GuitarSet-trained TabCNN (published by onnx_runtime_dart) on a raw
+// running TabCNN (published by onnx_runtime_dart on HF `cstr/tabcnn-onnx`) on a
 // CQT front-end. It fills the [TabEmissionModel] seam; the app/CLI hands the
 // result to decodeTabEmissions() → tab.
 //
-// The model + its 192-bin CQT filterbank blob ship as onnx_runtime_dart
-// `models-v1` release assets (TabCnnModelStore downloads + caches them, like
-// crepe_model_store). Native-only (dart:io); the app wires this behind !kIsWeb.
+// TWO published models share the SAME [N,192,9,1]→[N,6,21] contract (class 0 =
+// silent, class k = fret k−1 — gpfx is class-remapped at export to match), but
+// need DIFFERENT front-end normalization of the SAME raw CQT magnitude:
+//   • gpfx (GuitarProFX-augmented, DEFAULT) — robust on real/electric tones
+//     (EGSet12 F1 ≈ 0.77): per-clip amplitude→dB then min-max to [0,1].
+//   • vanilla (GuitarSet) — clean/acoustic (~0.45 zero-shot): raw magnitude.
+// Both start from btcCqtFeature(logMag: false) — the raw |CQT|/√length; NOT the
+// log-magnitude BTC uses (feeding BTC's log would be a silent scale error). The
+// per-variant normalization ([gpfxNormalize] vs none) is the one subtle detail.
 //
-// ⚠ TabCNN was trained on RAW CQT magnitude — NOT the log-magnitude BTC uses. So
-// the front-end calls btcCqtFeature(logMag: false); feeding the BTC log feature
-// would be a silent scale error (the model would read log where it learnt
-// linear). This is the one non-obvious detail; everything else is a wire-up.
+// The models + shared 192-bin CQT blob download + cache via TabCnnModelStore
+// (like crepe_model_store). Native-only (dart:io); the app wires it behind !kIsWeb.
 
 import 'dart:io';
 import 'dart:math' as math;
@@ -23,6 +27,9 @@ import 'package:comet_beat/features/games/composition/tab_arranger.dart'
     show Fretting;
 import 'package:comet_beat/features/games/composition/tab_emission_decoder.dart';
 import 'package:onnx_runtime_dart/onnx_runtime_dart.dart';
+
+/// Which TabCNN weights an emitter runs — they need different feature scaling.
+enum TabCnnVariant { gpfx, vanilla }
 
 /// TabCNN's CQT sample rate (the model was trained at 22.05 kHz).
 const int kTabCnnSampleRate = 22050;
@@ -60,6 +67,42 @@ Float64List peakNormalize(Float64List x) {
   return out;
 }
 
+/// The GuitarProFX front-end normalization applied to the raw-magnitude CQT
+/// [feat] (row-major, in place returns a copy): per-clip `amplitude_to_db`
+/// (librosa, ref = max, top_db = 80 → dB in [−80, 0]) then min-max to [0,1] over
+/// the WHOLE feature matrix. Matches the gpfx training preprocessing.
+Float32List gpfxNormalize(Float32List feat) {
+  if (feat.isEmpty) return feat;
+  const amin = 1e-10; // power-domain floor ((1e-5)² on amplitude)
+  var maxMag = 0.0;
+  for (final v in feat) {
+    if (v > maxMag) maxMag = v;
+  }
+  final refDb = 10 * _log10(math.max(amin, maxMag * maxMag));
+  final db = Float64List(feat.length);
+  var dbMax = double.negativeInfinity;
+  for (var i = 0; i < feat.length; i++) {
+    final v = feat[i];
+    final d = 10 * _log10(math.max(amin, v * v)) - refDb;
+    db[i] = d;
+    if (d > dbMax) dbMax = d;
+  }
+  final floor = dbMax - 80.0; // top_db
+  var dbMin = double.infinity;
+  for (var i = 0; i < db.length; i++) {
+    if (db[i] < floor) db[i] = floor;
+    if (db[i] < dbMin) dbMin = db[i];
+  }
+  final range = dbMax - dbMin + 1e-9;
+  final out = Float32List(feat.length);
+  for (var i = 0; i < db.length; i++) {
+    out[i] = (db[i] - dbMin) / range;
+  }
+  return out;
+}
+
+double _log10(double x) => math.log(x) / math.ln10;
+
 /// Builds the model's input windows from a row-major `[nFrames × nBins]` CQT
 /// [feat]: for each frame `t` a centred, zero-padded 9-frame context, laid out
 /// bin-major then context (`window[bin·9 + ctx]`) to match the exported
@@ -89,6 +132,7 @@ TabEmissionFrames tabcnnEmitWithRunner(
   Float64List mono, {
   required CqtFilterBank cqt,
   required TabWindowRunner run,
+  TabCnnVariant variant = TabCnnVariant.gpfx,
   int sampleRate = 44100,
   int batch = 256,
 }) {
@@ -104,8 +148,9 @@ TabEmissionFrames tabcnnEmitWithRunner(
   final audio = sampleRate == kTabCnnSampleRate
       ? normed
       : resampleLinear(normed, sampleRate / kTabCnnSampleRate);
-  // Raw magnitude (logMag:false) — TabCNN's training feature.
-  final (feat, nFrames) = btcCqtFeature(cqt, audio, logMag: false);
+  // Raw |CQT| magnitude (logMag:false); gpfx then re-scales it to dB→[0,1].
+  final (raw, nFrames) = btcCqtFeature(cqt, audio, logMag: false);
+  final feat = variant == TabCnnVariant.gpfx ? gpfxNormalize(raw) : raw;
   final nBins = cqt.nBins;
   if (nFrames == 0) return empty;
 
@@ -128,18 +173,24 @@ TabEmissionFrames tabcnnEmitWithRunner(
   return TabEmissionFrames(nFrames: nFrames, hopSeconds: hop, logProbs: out);
 }
 
-/// [TabEmissionModel] backed by the onnx_runtime_dart TabCNN + its CQT blob.
+/// [TabEmissionModel] backed by a TabCNN [variant] + its CQT blob.
 class TabCnnEmitter implements TabEmissionModel {
-  TabCnnEmitter({required this.model, required this.cqt});
+  TabCnnEmitter({
+    required this.model,
+    required this.cqt,
+    this.variant = TabCnnVariant.gpfx,
+  });
 
   final OnnxModel model;
   final CqtFilterBank cqt;
+  final TabCnnVariant variant;
 
   @override
   TabEmissionFrames? emit(Float64List monoAudio, int sampleRate) =>
       tabcnnEmitWithRunner(
         monoAudio,
         cqt: cqt,
+        variant: variant,
         sampleRate: sampleRate,
         run: (windows, nWindows) {
           final shape = [nWindows, cqt.nBins, kTabCnnContext, 1];
@@ -163,26 +214,37 @@ Future<List<Fretting>?> audioToTab(
 }) async {
   final loaded = await (store ?? TabCnnModelStore()).load();
   if (loaded == null) return null;
-  final emitter = TabCnnEmitter(model: loaded.model, cqt: loaded.cqt);
+  final emitter = TabCnnEmitter(
+    model: loaded.model,
+    cqt: loaded.cqt,
+    variant: loaded.variant,
+  );
   final frames = emitter.emit(mono, sampleRate);
   if (frames == null || frames.nFrames == 0) return null;
   return decodeTabEmissions(frames);
 }
 
-/// Resolves + caches the TabCNN ONNX model and its CQT filterbank blob from the
-/// onnx_runtime_dart `models-v1` release. Override the cache dir with
+/// Resolves + caches the TabCNN ONNX model + its CQT blob from HF
+/// `cstr/tabcnn-onnx`. Prefers the robust **gpfx** variant (`prefer`), falling
+/// back to vanilla when gpfx can't be fetched. Override the cache dir with
 /// `COMET_TABCNN_DIR` (tests point it at a prebuilt pair). Mirrors
-/// crepe_model_store — native-only, null/throw on offline.
+/// crepe_model_store — native-only, null on offline.
 class TabCnnModelStore {
-  TabCnnModelStore({this.cacheDirOverride});
+  TabCnnModelStore({this.cacheDirOverride, this.prefer = TabCnnVariant.gpfx});
 
   final String? cacheDirOverride;
 
-  static const _base =
-      'https://github.com/CrispStrobe/onnx_runtime_dart/releases/download/'
-      'models-v1/';
+  /// The variant to try first; the other is the fallback.
+  final TabCnnVariant prefer;
 
-  ({OnnxModel model, CqtFilterBank cqt})? _cached;
+  static const _base = 'https://huggingface.co/cstr/tabcnn-onnx/resolve/main/';
+
+  static const _onnxName = {
+    TabCnnVariant.gpfx: 'tabcnn-gpfx.onnx',
+    TabCnnVariant.vanilla: 'tabcnn.onnx',
+  };
+
+  ({OnnxModel model, CqtFilterBank cqt, TabCnnVariant variant})? _cached;
 
   String cacheDir() {
     if (cacheDirOverride != null && cacheDirOverride!.isNotEmpty) {
@@ -212,18 +274,29 @@ class TabCnnModelStore {
     }
   }
 
-  /// Loads (and memoises) the model + CQT blob, downloading on first use.
-  /// Returns null if either can't be obtained (offline) so callers gate the
-  /// audio-tab path skip-if-absent.
-  Future<({OnnxModel model, CqtFilterBank cqt})?> load() async {
+  /// Loads (and memoises) the preferred model + shared CQT blob, downloading on
+  /// first use. Tries [prefer] then the other variant; returns null (with the
+  /// resolved [variant]) if nothing can be obtained (offline) so callers gate
+  /// the audio-tab path skip-if-absent.
+  Future<({OnnxModel model, CqtFilterBank cqt, TabCnnVariant variant})?>
+      load() async {
     if (_cached != null) return _cached;
-    final onnx = await _ensure('tabcnn.onnx', 500000);
     final blob = await _ensure('tabcnn-cqt.bin', 100000);
-    if (onnx == null || blob == null) return null;
-    return _cached = (
-      model: OnnxModel.fromBytes(onnx.readAsBytesSync()),
-      cqt: CqtFilterBank.fromBytes(blob.readAsBytesSync()),
-    );
+    if (blob == null) return null;
+    final order = prefer == TabCnnVariant.gpfx
+        ? const [TabCnnVariant.gpfx, TabCnnVariant.vanilla]
+        : const [TabCnnVariant.vanilla, TabCnnVariant.gpfx];
+    for (final v in order) {
+      final onnx = await _ensure(_onnxName[v]!, 500000);
+      if (onnx != null) {
+        return _cached = (
+          model: OnnxModel.fromBytes(onnx.readAsBytesSync()),
+          cqt: CqtFilterBank.fromBytes(blob.readAsBytesSync()),
+          variant: v,
+        );
+      }
+    }
+    return null;
   }
 
   static Future<Uint8List?> _get(String url) async {
