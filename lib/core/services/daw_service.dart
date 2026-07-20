@@ -416,6 +416,35 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// **Reverse** a clip: bake what it currently plays (its trimmed window) to
+  /// audio and flip it end-to-end — a fun creative effect (a backwards beat /
+  /// sample). Like [freezeClip], the result is a fixed [SampleSource] take, so
+  /// the trim is folded in (reset) while gain/mute/fades carry over. Reversing
+  /// twice restores the audio. No-op on a silent clip.
+  void reverseClip(int track, int index) {
+    final clip = timeline.tracks[track].clips[index];
+    final rendered = _cache.putIfAbsent(
+      clip.source.cacheKey,
+      () => clip.source.render(kDawSampleRate),
+    );
+    final window = trimmedPcm(clip, rendered); // what actually plays
+    if (window.isEmpty) return;
+    _record();
+    final flipped = Float64List(window.length);
+    for (var i = 0; i < window.length; i++) {
+      flipped[i] = window[window.length - 1 - i];
+    }
+    timeline.tracks[track].clips[index] = Clip(
+      source: SampleSource(flipped),
+      startMs: clip.startMs,
+      gain: clip.gain,
+      muted: clip.muted,
+      fadeInMs: clip.fadeInMs,
+      fadeOutMs: clip.fadeOutMs,
+    );
+    notifyListeners();
+  }
+
   /// **Merge** clips into one baked audio take, preserving their relative
   /// timing: the group renders (unlimited, so the master limiter still applies
   /// once at final bake) to a single [SampleSource] placed at the earliest

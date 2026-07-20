@@ -177,6 +177,22 @@ void main() {
     expect(daw.clipCount, 2);
   });
 
+  testWidgets('Reverse bakes the clip to a backwards take', (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    daw.addDemoBeat();
+    await tester.pump();
+    expect(daw.isClipFrozen(0, 0), isFalse); // a live DrumSource
+
+    await tester.tap(find.text('🥁'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reverse'));
+    await tester.pumpAndSettle();
+
+    expect(daw.clipCount, 1); // reverse replaces in place
+    expect(daw.isClipFrozen(0, 0), isTrue); // now a baked SampleSource take
+  });
+
   testWidgets('the snap toggle flips snapping and a ruler labels the timeline',
       (tester) async {
     await _pumpDaw(tester);

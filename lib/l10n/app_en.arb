@@ -598,6 +598,7 @@
   "dawMerged": "Merged into one audio take",
   "dawDuplicate": "Duplicate",
   "dawSplit": "Split",
+  "dawReverse": "Reverse",
   "dawFreeze": "Freeze to audio",
   "dawFrozen": "Frozen to an audio take",
   "dawUndo": "Undo",

@@ -97,6 +97,9 @@ abstract interface class DawTester {
   void splitClip(int track, int index, double atMs);
   bool canSplitClip(int track, int index, double atMs);
 
+  /// Reverse the clip's audio (bakes it to a backwards take).
+  void reverseClip(int track, int index);
+
   /// Timeline: move a clip in time, and read a clip's start + to-scale duration.
   void moveClip(int track, int index, double startMs);
   double clipStartMs(int track, int index);
@@ -376,6 +379,9 @@ class _DawScreenState extends State<DawScreen>
   @override
   bool canSplitClip(int track, int index, double atMs) =>
       _daw.canSplitClip(track, index, atMs);
+
+  @override
+  void reverseClip(int track, int index) => _daw.reverseClip(track, index);
 
   @override
   void moveClip(int track, int index, double startMs) =>
@@ -716,6 +722,14 @@ class _DawScreenState extends State<DawScreen>
                             : null,
                         icon: const Icon(Icons.content_cut),
                         label: Text(l10n.dawSplit),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetCtx).pop();
+                          reverseClip(track, index);
+                        },
+                        icon: const Icon(Icons.fast_rewind),
+                        label: Text(l10n.dawReverse),
                       ),
                       TextButton.icon(
                         onPressed: () {

@@ -412,6 +412,34 @@ void main() {
       expect(s.clipCount, 1);
     });
   });
+
+  group('reverseClip', () {
+    Float64List ramp(int n) =>
+        Float64List.fromList([for (var i = 0; i < n; i++) i / n]);
+
+    test('flips the clip audio and round-trips on a second reverse', () {
+      final s = DawService()..addClip(SampleSource(ramp(10)));
+      s.reverseClip(0, 0);
+      final rev = s.timeline.tracks[0].clips[0].source.render(kDawSampleRate);
+      expect(rev.length, 10);
+      expect(rev.first, closeTo(0.9, 1e-9)); // was the last sample
+      expect(rev.last, closeTo(0.0, 1e-9)); // was the first
+      // Reversing again restores the original order.
+      s.reverseClip(0, 0);
+      final back = s.timeline.tracks[0].clips[0].source.render(kDawSampleRate);
+      expect(back.first, closeTo(0.0, 1e-9));
+      expect(back.last, closeTo(0.9, 1e-9));
+    });
+
+    test('undo restores the original source', () {
+      final src = SampleSource(ramp(8));
+      final s = DawService()..addClip(src);
+      s.reverseClip(0, 0);
+      expect(s.timeline.tracks[0].clips[0].source, isNot(same(src)));
+      s.undo();
+      expect(s.timeline.tracks[0].clips[0].source, same(src));
+    });
+  });
 }
 
 /// A live source whose render reflects a mutable buffer — a stand-in for a

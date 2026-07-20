@@ -2858,6 +2858,12 @@ abstract class AppLocalizations {
   /// **'Split'**
   String get dawSplit;
 
+  /// No description provided for @dawReverse.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse'**
+  String get dawReverse;
+
   /// No description provided for @dawFreeze.
   ///
   /// In en, this message translates to:
