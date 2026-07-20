@@ -9,8 +9,14 @@ on:
     branches: [main]
   pull_request:
 
+# Group per PR (a new push to a PR cancels its superseded run) but per COMMIT on
+# main (github.sha is unique, so main pushes are NEVER cancelled — every commit
+# runs a full CI to completion, in parallel). During heavy multi-agent
+# development a single `group: ${{ github.ref }}` made rapid main pushes cancel
+# each other, so regressions reached main with their validating run cancelled
+# (never green, never red — just "cancelled"). Per-SHA on main fixes that.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
