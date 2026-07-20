@@ -1084,6 +1084,15 @@ Tutorial sameDiffPrimer(AppLocalizations l10n) => Tutorial(
           score: _notes([60, 62]), // a step apart — clearly not an echo
           play: (a) => a.playPhrase([60, 62], noteMs: 600),
         ),
+        // Active recall by EAR: no score — listen, then tap what you heard.
+        TutorialStep(
+          text: l10n.primerSameDiffTry,
+          play: (a) => a.playPhrase([60, 67], noteMs: 600), // a clear leap
+          choices: [
+            TutorialChoice(l10n.differentLabel, correct: true),
+            TutorialChoice(l10n.sameLabel),
+          ],
+        ),
       ],
     );
 
@@ -1101,6 +1110,16 @@ Tutorial countNotesPrimer(AppLocalizations l10n) => Tutorial(
           text: l10n.primerCountFour,
           score: _notes([60, 62, 64, 65]),
           play: (a) => a.playPhrase([60, 62, 64, 65], noteMs: 550),
+        ),
+        // Active recall by EAR: no score — listen, then count the notes.
+        TutorialStep(
+          text: l10n.primerCountTry,
+          play: (a) => a.playPhrase([60, 64, 67], noteMs: 550), // three notes
+          choices: const [
+            TutorialChoice('3', correct: true),
+            TutorialChoice('2'),
+            TutorialChoice('4'),
+          ],
         ),
       ],
     );

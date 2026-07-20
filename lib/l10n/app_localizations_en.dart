@@ -5227,6 +5227,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'If the second note is even one step higher or lower, it is different — and it sits somewhere else on the staff. Listen: C then D.';
 
   @override
+  String get primerSameDiffTry =>
+      'Now listen: are these two notes the same or different?';
+
+  @override
   String get primerCountTitle => 'How many notes?';
 
   @override
@@ -5236,6 +5240,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get primerCountFour =>
       'Now four. They come quickly, so count each one the moment it arrives.';
+
+  @override
+  String get primerCountTry => 'Now listen: how many notes do you hear?';
 
   @override
   String get primerAccentTitle => 'Strong and weak beats';

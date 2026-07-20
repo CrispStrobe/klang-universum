@@ -31,6 +31,8 @@ void main() {
       enharmonicPrimer(l),
       wholeHalfPrimer(l),
       spacingPrimer(l),
+      sameDiffPrimer(l),
+      countNotesPrimer(l),
     ];
     for (final primer in primers) {
       expect(

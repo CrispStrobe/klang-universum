@@ -5248,6 +5248,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ist die zweite Note auch nur einen Schritt höher oder tiefer, ist sie verschieden — und steht woanders. Hör hin: C, dann D.';
 
   @override
+  String get primerSameDiffTry =>
+      'Jetzt hör hin: Sind diese zwei Töne gleich oder verschieden?';
+
+  @override
   String get primerCountTitle => 'Wie viele Noten?';
 
   @override
@@ -5257,6 +5261,9 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get primerCountFour =>
       'Jetzt vier. Sie kommen schnell, also zähl jede sofort mit, wenn sie erklingt.';
+
+  @override
+  String get primerCountTry => 'Jetzt hör hin: Wie viele Töne hörst du?';
 
   @override
   String get primerAccentTitle => 'Betonte und unbetonte Schläge';

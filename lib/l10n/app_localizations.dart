@@ -9566,6 +9566,12 @@ abstract class AppLocalizations {
   /// **'If the second note is even one step higher or lower, it is different — and it sits somewhere else on the staff. Listen: C then D.'**
   String get primerSameDiffDifferent;
 
+  /// No description provided for @primerSameDiffTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now listen: are these two notes the same or different?'**
+  String get primerSameDiffTry;
+
   /// No description provided for @primerCountTitle.
   ///
   /// In en, this message translates to:
@@ -9583,6 +9589,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Now four. They come quickly, so count each one the moment it arrives.'**
   String get primerCountFour;
+
+  /// No description provided for @primerCountTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Now listen: how many notes do you hear?'**
+  String get primerCountTry;
 
   /// No description provided for @primerAccentTitle.
   ///
