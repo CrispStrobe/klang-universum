@@ -7,17 +7,21 @@
 
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_pitch.dart';
+import 'package:comet_beat/core/audio/transcription/crispasr_separate.dart'
+    show loadCrispasrSeparatorFromEnv;
 import 'package:comet_beat/core/audio/transcription/engine_config.dart';
 import 'package:comet_beat/core/audio/transcription/harmony.dart'
     show ChordEstimator;
 import 'package:comet_beat/core/audio/transcription/route.dart'
     show F0Estimator, NeuralTranscriber;
+import 'package:comet_beat/core/audio/transcription/stems.dart' show Separator;
 import 'package:comet_beat/features/games/transcribe/crepe_provider.dart';
 import 'package:comet_beat/features/games/transcribe/harmony_provider.dart';
 import 'package:comet_beat/features/games/transcribe/neural_provider.dart';
 import 'package:comet_beat/features/games/transcribe/onnx_ffi_provider.dart'
     as onnx_ffi;
 import 'package:comet_beat/features/games/transcribe/rmvpe_provider.dart';
+import 'package:comet_beat/features/games/transcribe/separator_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// The neural engines to inject for a single-recording transcription: an [f0]
@@ -175,4 +179,38 @@ Future<TranscriptionEngines> resolveEngines(
       _ => null,
     },
   );
+}
+
+/// Resolve the whole-song source [Separator] from [config] — the framework's
+/// `separation` step (whole-song only, not part of [resolveEngines]'s
+/// per-recording engines). Probes the two separation runtimes and honours the
+/// per-step choice: `crispasr` = the `--separate` CLI (env-gated, FFI once
+/// 0.8.17 lands); `onnx` = Open-Unmix (the WORKING pure-Dart-ONNX separator).
+/// Auto prefers crispasr > onnx. Null ⇒ no separator available (→ the song
+/// pipeline makes a single part). There is no pure-Dart separator, so a
+/// `pureDart` choice resolves to null. Test seams: pass fake loaders.
+Future<Separator?> resolveSeparator(
+  TranscriptionEngineConfig config, {
+  bool isWeb = kIsWeb,
+  Future<Separator?> Function({bool download}) loadOnnx = loadUmxSeparator,
+  Future<Separator?> Function({bool download}) loadCrispasr =
+      loadCrispasrSeparatorFromEnv,
+}) async {
+  final explicit =
+      config.backendFor(TranscriptionStep.separation) != Backend.auto;
+  final onnx = await loadOnnx(download: explicit);
+  final ggml = await loadCrispasr(download: explicit);
+  final r = config.resolve(
+    TranscriptionStep.separation,
+    isWeb: isWeb,
+    available: {
+      if (ggml != null) Backend.crispasr,
+      if (onnx != null) Backend.onnx,
+    },
+  );
+  return switch (r.backend) {
+    Backend.crispasr => ggml,
+    Backend.onnx => onnx,
+    _ => null, // no pure-Dart separator
+  };
 }

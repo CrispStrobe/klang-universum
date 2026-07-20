@@ -80,18 +80,12 @@ Future<NeuralTranscriber?> loadOnnxFfiNeural({bool download = false}) async {
 /// falls to the pure-Dart onnx BTC.
 Future<ChordEstimator?> loadOnnxFfiChords({bool download = false}) async {
   final store = HarmonyModelStore();
-  if (!download && !store.isPresent()) return null;
-  if (download) {
-    // ensureFiles() throws if the BTC licence (CC-BY-NC-SA, non-commercial)
-    // isn't accepted. This is a best-effort resolver probe, so it must degrade
-    // to null (the resolver then falls back / leaves chords off), NOT abort the
-    // whole resolve — consent is enforced on the explicit download/UI path.
-    try {
-      if (!await store.ensureFiles()) return null;
-    } catch (_) {
-      return null;
-    }
-  }
+  if (!store.isPresent() && !download) return null;
+  // ensureFiles() THROWS if the BTC licence (CC-BY-NC-SA, non-commercial) isn't
+  // accepted. This is a best-effort resolver probe, so it must degrade to null
+  // (resolver falls back / leaves chords off), NOT abort the whole resolve —
+  // consent is enforced on the explicit download/UI path. _ensured swallows it.
+  if (download && !await _ensured(store.ensureFiles)) return null;
   if (!store.isPresent()) return null;
   final Uint8List modelBytes;
   final CqtFilterBank cqt;
@@ -125,7 +119,7 @@ Future<Uint8List?> _basicPitchBytes({required bool download}) async {
   final store = BasicPitchModelStore();
   final File? file;
   if (download) {
-    file = await store.ensureFile();
+    file = await _ensuredFile(store.ensureFile);
   } else {
     final cached = store.modelFile();
     file = cached.existsSync() ? cached : null;
@@ -143,7 +137,7 @@ Future<Uint8List?> _basicPitchBytes({required bool download}) async {
 Future<F0Estimator?> _rmvpeFfiF0({required bool download}) async {
   final store = RmvpeModelStore();
   if (!download && !store.isPresent()) return null;
-  if (download && !await store.ensureFiles()) return null;
+  if (download && !await _ensured(store.ensureFiles)) return null;
   if (!store.isPresent()) return null;
   final Uint8List modelBytes;
   final RmvpeMel mel;
@@ -184,7 +178,7 @@ Future<Uint8List?> _crepeBytes({required bool download}) async {
   final store = CrepeModelStore();
   final File? file;
   if (download) {
-    file = await store.ensureFile();
+    file = await _ensuredFile(store.ensureFile);
   } else {
     final cached = store.modelFile();
     file = cached.existsSync() ? cached : null;
@@ -192,6 +186,26 @@ Future<Uint8List?> _crepeBytes({required bool download}) async {
   if (file == null) return null;
   try {
     return await file.readAsBytes();
+  } catch (_) {
+    return null;
+  }
+}
+
+/// `ensure()` (a model-store download) that never throws — false on any error,
+/// including a model-license rejection (some models are consent-gated). Keeps
+/// every onnxFfi loader defensive so the resolver falls back instead of crashing.
+Future<bool> _ensured(Future<bool> Function() ensure) async {
+  try {
+    return await ensure();
+  } catch (_) {
+    return false;
+  }
+}
+
+/// [File]-returning variant of [_ensured] — null on any error.
+Future<File?> _ensuredFile(Future<File?> Function() ensure) async {
+  try {
+    return await ensure();
   } catch (_) {
     return null;
   }

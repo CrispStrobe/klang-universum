@@ -8,3 +8,6 @@ Future<Separator?> loadSeparator({bool download = false}) async => null;
 
 /// The model is never present on web.
 bool separatorModelPresent() => false;
+
+/// Always null on web — no ONNX. Matches separator_provider_io.dart.
+Future<Separator?> loadUmxSeparator({bool download = false}) async => null;

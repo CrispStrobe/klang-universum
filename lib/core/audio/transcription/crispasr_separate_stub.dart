@@ -3,6 +3,11 @@
 
 import 'package:comet_beat/core/audio/transcription/stems.dart' show Separator;
 
+/// Always null on web — no process/filesystem. Matches crispasr_separate_io.dart.
+Future<Separator?> loadCrispasrSeparatorFromEnv({bool download = false}) async {
+  return null;
+}
+
 /// Always null on web — no process/filesystem. [binary]/[model] are accepted for
 /// a matching signature.
 Separator? crispasrCliSeparator({

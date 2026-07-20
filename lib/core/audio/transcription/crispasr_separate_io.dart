@@ -18,6 +18,19 @@ import 'package:comet_beat/core/audio/transcription/stems.dart'
     show Separator, Stems;
 import 'package:comet_beat/core/audio/wav_io.dart';
 
+/// The env-configured CrispASR CLI [Separator], or null. Resolves the binary +
+/// separation GGUF from `CRISPASR_BIN` / `CRISPASR_SEP_MODEL` (both files must
+/// exist). This is the `crispasr` separation backend for `resolveSeparator`
+/// until the FFI `separate()` binding lands (crispasr 0.8.17). [download] is
+/// accepted for a matching loader signature (the CLI never downloads here).
+Future<Separator?> loadCrispasrSeparatorFromEnv({bool download = false}) async {
+  final bin = Platform.environment['CRISPASR_BIN'];
+  final model = Platform.environment['CRISPASR_SEP_MODEL'];
+  if (bin == null || model == null) return null;
+  if (!File(bin).existsSync() || !File(model).existsSync()) return null;
+  return crispasrCliSeparator(binary: bin, model: model);
+}
+
 /// A [Separator] that runs the CrispASR `--separate` CLI [binary] with a
 /// separation [model] GGUF. [workDir] holds the temp mix + stem files (a fresh
 /// temp dir by default). Returns empty stems on any failure so the caller falls
