@@ -132,5 +132,62 @@ void main() {
       expect(doc.samples.first.pcm, isNotEmpty);
       expect(doc.samples.first.pcm.any((v) => v != 0), isTrue);
     });
+
+    test('a channel volume envelope exports onto the doc sample', () {
+      final ch = TrackerChannel(
+        id: 's',
+        instrument: SampleInstrument('rec', buzz(400)),
+        rows: 8,
+        volumeEnvelope: const VolumeEnvelope([
+          (ms: 0, level: 1),
+          (ms: 100, level: 0),
+        ]),
+      );
+      final cells = List<TrackerCell>.filled(8, TrackerCell.empty);
+      cells[0] = const TrackerCell(midi: 60);
+      final song = TrackerSong.fromParts(
+        channels: [ch],
+        timing: const TrackerTiming(tempoBpm: 125, rows: 8), // tick = 20 ms
+        patterns: [
+          TrackerPattern(name: '00', cells: [cells]),
+        ],
+        order: [0],
+      );
+
+      final env = moduleDocFromSong(song).samples.first.volumeEnvelope;
+      expect(env.enabled, isTrue);
+      expect(env.points, [(0, 64), (5, 0)]); // 100 ms → 5 ticks; 1.0 → 64
+    });
+
+    test('a channel envelope survives a full song → XM → song round-trip', () {
+      final ch = TrackerChannel(
+        id: 's',
+        instrument: SampleInstrument('rec', buzz(400)),
+        rows: 8,
+        volumeEnvelope: const VolumeEnvelope([
+          (ms: 0, level: 1),
+          (ms: 120, level: 0),
+        ]),
+      );
+      final cells = List<TrackerCell>.filled(8, TrackerCell.empty);
+      cells[0] = const TrackerCell(midi: 60);
+      final song = TrackerSong.fromParts(
+        channels: [ch],
+        timing: const TrackerTiming(tempoBpm: 125, rows: 8),
+        patterns: [
+          TrackerPattern(name: '00', cells: [cells]),
+        ],
+        order: [0],
+      );
+
+      // song → XM bytes → re-imported song: the channel keeps its envelope.
+      final back = songFromModuleBytes(convertToXm(moduleDocFromSong(song)));
+      final env = back.channels.first.volumeEnvelope;
+      expect(env, isNotNull);
+      expect(env!.points.first.level, closeTo(1.0, 1e-9));
+      expect(env.points.last.level, closeTo(0.0, 1e-9));
+      // 120 ms → 6 ticks → back to 6 × 20 ms = 120 ms at the same tempo.
+      expect(env.points.last.ms, 120);
+    });
   });
 }

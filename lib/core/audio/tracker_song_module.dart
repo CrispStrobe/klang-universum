@@ -252,6 +252,20 @@ ModuleDoc moduleDocFromSong(
     slotOf(p);
   }
 
+  // Carry each channel's envelope onto its instrument's sample (export). XM/IT
+  // hold envelopes per instrument, so when several channels share one voice the
+  // first with an envelope wins.
+  final volEnvBySlot = <int, VolumeEnvelope>{};
+  final panEnvBySlot = <int, PanEnvelope>{};
+  for (final ch in song.channels) {
+    final slot = slotOf(ch.instrument);
+    final ve = ch.volumeEnvelope;
+    if (ve != null && !ve.isEmpty) volEnvBySlot.putIfAbsent(slot, () => ve);
+    final pe = ch.panEnvelope;
+    if (pe != null && !pe.isEmpty) panEnvBySlot.putIfAbsent(slot, () => pe);
+  }
+  final tempo = song.timing.tempoBpm.clamp(32, 255);
+
   TrackerInstrument effectiveInst(int channel, TrackerCell cell) =>
       (cell.instrument > 0 && cell.instrument - 1 < song.instruments.length)
           ? song.instruments[cell.instrument - 1]
@@ -295,7 +309,42 @@ ModuleDoc moduleDocFromSong(
     order: List<int>.of(song.order),
     patterns: patterns,
     samples: [
-      for (final i in insts) _docSampleForInstrument(i, engineRate, sixteenBit),
+      for (var k = 0; k < insts.length; k++)
+        _docSampleForInstrument(
+          insts[k],
+          engineRate,
+          sixteenBit,
+          volumeEnvelope: _docVolEnv(volEnvBySlot[k], tempo),
+          panEnvelope: _docPanEnv(panEnvBySlot[k], tempo),
+        ),
+    ],
+  );
+}
+
+/// A tracker [VolumeEnvelope] as a doc [DocEnvelope] (ms → ticks at [tempo] BPM,
+/// level 0..1 → value 0..64). Empty when there's none.
+DocEnvelope _docVolEnv(VolumeEnvelope? e, int tempo) {
+  if (e == null || e.isEmpty) return const DocEnvelope();
+  final perTick = _tickMs(tempo);
+  return DocEnvelope(
+    enabled: true,
+    points: [
+      for (final p in e.points)
+        ((p.ms / perTick).round(), (p.level * 64).round().clamp(0, 64)),
+    ],
+  );
+}
+
+/// A tracker [PanEnvelope] as a doc [DocEnvelope] (pan −1..1 → value 0..64,
+/// centred at 32). Empty when there's none.
+DocEnvelope _docPanEnv(PanEnvelope? e, int tempo) {
+  if (e == null || e.isEmpty) return const DocEnvelope();
+  final perTick = _tickMs(tempo);
+  return DocEnvelope(
+    enabled: true,
+    points: [
+      for (final p in e.points)
+        ((p.ms / perTick).round(), (p.pan * 32 + 32).round().clamp(0, 64)),
     ],
   );
 }
@@ -306,8 +355,10 @@ ModuleDoc moduleDocFromSong(
 DocSample _docSampleForInstrument(
   TrackerInstrument inst,
   int engineRate,
-  bool sixteenBit,
-) {
+  bool sixteenBit, {
+  DocEnvelope volumeEnvelope = const DocEnvelope(),
+  DocEnvelope panEnvelope = const DocEnvelope(),
+}) {
   if (inst is SampleInstrument && inst.sample.isNotEmpty) {
     // Import plays a sample unshifted at MIDI 60 with ratio = c5speed/engineRate,
     // so to preserve the instrument's own baseMidi we set the rate that shifts
@@ -321,6 +372,8 @@ DocSample _docSampleForInstrument(
       pingPong: inst.pingPong,
       // Full precision where the format allows (XM/IT/S3M); MOD stays 8-bit.
       sixteenBit: sixteenBit,
+      volumeEnvelope: volumeEnvelope,
+      panEnvelope: panEnvelope,
     );
   }
   // A procedural voice has no PCM → render ~1s of MIDI 60 as a one-shot sample.
@@ -334,6 +387,8 @@ DocSample _docSampleForInstrument(
     pcm: _trimTrailingSilence(pcm),
     c5speed: engineRate,
     sixteenBit: sixteenBit,
+    volumeEnvelope: volumeEnvelope,
+    panEnvelope: panEnvelope,
   );
 }
 
