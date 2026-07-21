@@ -2429,6 +2429,7 @@
   "transcriptionStepPoly": "Akkorde & Klavier",
   "transcriptionStepSep": "Song aufteilen",
   "transcriptionStepChords": "Akkorde",
+  "transcriptionStepTab": "Aufnahme → Gitarren-Tab",
   "transcriptionBackendAuto": "Auto",
   "transcriptionBackendDart": "Auf dem Gerät",
   "transcriptionBackendNeural": "Neuronal",

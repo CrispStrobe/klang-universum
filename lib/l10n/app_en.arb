@@ -2742,6 +2742,7 @@
   "transcriptionStepPoly": "Chords & piano",
   "transcriptionStepSep": "Split a song",
   "transcriptionStepChords": "Chords",
+  "transcriptionStepTab": "Recording → guitar tab",
   "transcriptionBackendAuto": "Auto",
   "transcriptionBackendDart": "On-device",
   "transcriptionBackendNeural": "Neural",

@@ -9,6 +9,8 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/transcription/engine_config.dart'
+    show Backend;
 import 'package:comet_beat/features/games/composition/tab_arranger.dart'
     show Fretting;
 import 'package:comet_beat/features/games/composition/tab_document.dart';
@@ -74,19 +76,22 @@ Future<TabDocument?> audioToTabDocument(
   required Tuning tuning,
   int tempoBpm = 120,
   TabCnnModelStore? store,
+  Backend prefer = Backend.auto,
 }) async {
   // The model download + onnx inference is the heavy part (~1 s); run it off the
   // caller's isolate so the UI stays responsive. Only the frettings
   // (List<Map>) cross the boundary — small + sendable. A custom [store] can't be
   // sent, so those calls (tests) stay inline. The pure quantise runs here.
   final frames = store != null
-      ? await audioToTab(mono, sampleRate, store: store)
-      : await compute(_emitTabInIsolate, (mono, sampleRate));
+      ? await audioToTab(mono, sampleRate, store: store, prefer: prefer)
+      // Pass the enum as an index — a plain int is unconditionally sendable
+      // across the isolate boundary.
+      : await compute(_emitTabInIsolate, (mono, sampleRate, prefer.index));
   if (frames == null) return null;
   return tabFramesToDocument(frames, tuning: tuning, tempoBpm: tempoBpm);
 }
 
 /// Isolate entry: run the audio→frettings emit (model load + inference) in a
 /// background isolate. Top-level so `compute` can spawn it.
-Future<List<Fretting>?> _emitTabInIsolate((Float64List, int) m) =>
-    audioToTab(m.$1, m.$2);
+Future<List<Fretting>?> _emitTabInIsolate((Float64List, int, int) m) =>
+    audioToTab(m.$1, m.$2, prefer: Backend.values[m.$3]);

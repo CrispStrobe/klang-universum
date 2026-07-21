@@ -7208,6 +7208,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transcriptionStepChords => 'Chords';
 
   @override
+  String get transcriptionStepTab => 'Recording → guitar tab';
+
+  @override
   String get transcriptionBackendAuto => 'Auto';
 
   @override

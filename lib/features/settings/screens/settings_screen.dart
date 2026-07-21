@@ -545,6 +545,15 @@ class _TranscriptionEngineSection extends StatelessWidget {
                         Backend.onnxFfi,
                       ],
                     ),
+                    _stepPicker(
+                      context,
+                      svc,
+                      l10n.transcriptionStepTab,
+                      TranscriptionStep.tab,
+                      // TabCNN: pure-Dart onnx or native ggml. No pureDart
+                      // heuristic (audio→tab needs a model) and no native-ORT.
+                      const [Backend.auto, Backend.onnx, Backend.crispasr],
+                    ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(l10n.transcriptionF0ViterbiLabel),

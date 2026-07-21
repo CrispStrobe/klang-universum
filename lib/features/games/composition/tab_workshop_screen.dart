@@ -12,11 +12,14 @@ import 'package:comet_beat/core/audio/score_instrument_render.dart'
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
+import 'package:comet_beat/core/audio/transcription/engine_config.dart'
+    show Backend, TranscriptionStep;
 import 'package:comet_beat/core/audio/wav_io.dart'
     show readWavPcm16, wavToMonoFloat;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
+import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tab_arranger.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
@@ -934,6 +937,17 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     // Capture context-bound objects before any await (picker / model I/O).
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
+    // The Settings backend choice for the audio→tab step (auto by default;
+    // absent-provider in tests → auto).
+    Backend prefer;
+    try {
+      prefer = context
+          .read<TranscriptionConfigService>()
+          .config
+          .backendFor(TranscriptionStep.tab);
+    } on ProviderNotFoundException {
+      prefer = Backend.auto;
+    }
     Uint8List bytes;
     String name;
     if (pickedBytes != null && pickedName != null) {
@@ -956,7 +970,7 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       final mono = wavToMonoFloat(wav);
       final tuning = _doc.tuning;
       doc = await (widget.debugAudioToTab ??
-          (m, sr, t) => audioToTabDocument(m, sr, tuning: t))(
+          (m, sr, t) => audioToTabDocument(m, sr, tuning: t, prefer: prefer))(
         mono,
         wav.sampleRate,
         tuning,

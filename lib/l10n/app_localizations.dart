@@ -13136,6 +13136,12 @@ abstract class AppLocalizations {
   /// **'Chords'**
   String get transcriptionStepChords;
 
+  /// No description provided for @transcriptionStepTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording → guitar tab'**
+  String get transcriptionStepTab;
+
   /// No description provided for @transcriptionBackendAuto.
   ///
   /// In en, this message translates to:

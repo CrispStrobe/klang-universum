@@ -27,6 +27,9 @@ enum TranscriptionStep {
   chords, // chord/key (chroma templates | neural, future)
   drums, // drum transcription (DSP)
   notation, // voice/staff separation, spelling (crisp_notation)
+  tab, // audio→guitar tab (TabCNN: onnx | ggml). Consumed by the Tab Workshop's
+  // audioToTab, not the resolve()/resolveEngines() pipeline — the enum is just
+  // the shared vocabulary so this preference persists + shows a picker.
 }
 
 /// The runtime a step's model runs on. [auto] picks the best AVAILABLE one.

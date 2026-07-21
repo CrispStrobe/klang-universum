@@ -7247,6 +7247,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get transcriptionStepChords => 'Akkorde';
 
   @override
+  String get transcriptionStepTab => 'Aufnahme → Gitarren-Tab';
+
+  @override
   String get transcriptionBackendAuto => 'Auto';
 
   @override

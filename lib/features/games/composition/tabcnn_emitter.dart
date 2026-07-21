@@ -23,6 +23,8 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
 import 'package:comet_beat/core/audio/transcription/crispasr_ffi_tab.dart';
+import 'package:comet_beat/core/audio/transcription/engine_config.dart'
+    show Backend;
 import 'package:comet_beat/core/audio/transcription/harmony_cqt.dart';
 import 'package:comet_beat/features/games/composition/tab_arranger.dart'
     show Fretting;
@@ -207,18 +209,26 @@ class TabCnnEmitter implements TabEmissionModel {
       );
 }
 
-/// End-to-end audio→tab, decoded to one [Fretting] per frame. Prefers the native
-/// CrispASR ggml path when libcrispasr + the GGUF are present (faster,
-/// GPU-capable), else the pure-Dart-onnx [TabCnnEmitter]. Null when neither is
-/// available (offline / web). A test [store] forces the onnx path inline. The
-/// caller quantises the frettings (× the emitter's frame hop) into notes.
+/// End-to-end audio→tab, decoded to one [Fretting] per frame. The backend is
+/// chosen by [prefer] (mirrors the transcription pipeline's per-step routing):
+///   • [Backend.auto] (default) — native CrispASR ggml first (faster,
+///     GPU-capable), falling back to the pure-Dart-onnx [TabCnnEmitter].
+///   • [Backend.crispasr] — native ggml ONLY; null if it isn't present.
+///   • [Backend.onnx] (or [Backend.pureDart]) — the onnx emitter only, skipping
+///     native (works on web).
+/// Null when the chosen path is unavailable (offline / web). A test [store]
+/// forces the onnx path inline. The caller quantises the frettings (× the
+/// emitter's frame hop) into notes.
 Future<List<Fretting>?> audioToTab(
   Float64List mono,
   int sampleRate, {
   TabCnnModelStore? store,
+  Backend prefer = Backend.auto,
 }) async {
-  // Native ggml first (unless a test store pins the onnx path).
-  if (store == null) {
+  // Native ggml unless a test store pins onnx, or the caller pinned onnx.
+  final tryNative =
+      store == null && (prefer == Backend.auto || prefer == Backend.crispasr);
+  if (tryNative) {
     final native = await crispasrFfiTab(download: true);
     if (native != null) {
       try {
@@ -230,6 +240,8 @@ Future<List<Fretting>?> audioToTab(
         native.dispose();
       }
     }
+    // A pinned-native request doesn't silently fall through to onnx.
+    if (prefer == Backend.crispasr) return null;
   }
   final loaded = await (store ?? TabCnnModelStore()).load();
   if (loaded == null) return null;
