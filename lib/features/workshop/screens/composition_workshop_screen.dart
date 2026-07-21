@@ -34,14 +34,14 @@ import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tab_gp_plan.dart'
     show gpFretPlanFor;
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
+import 'package:comet_beat/features/games/songs/import/omr_import.dart'
+    show recognizeSheetMusic;
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
     show showMyInstrumentsSheet;
 import 'package:comet_beat/features/workshop/export/score_pdf.dart';
 import 'package:comet_beat/features/workshop/model/multi_part_document.dart';
 import 'package:comet_beat/features/workshop/model/score_document.dart';
-import 'package:comet_beat/features/workshop/omr/omr_import.dart'
-    show omrImageToMultiPart;
 import 'package:comet_beat/features/workshop/widgets/multi_part_canvas.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/daw/send_to_daw.dart';
@@ -422,10 +422,11 @@ class CompositionWorkshopScreen extends StatefulWidget {
   final List<String>? initialNames;
 
   /// Test seam for "Scan sheet music" (OMR): given the picked image bytes,
-  /// returns a recognised [MultiPartScore] (or null). Production uses
-  /// [omrImageToMultiPart] (the native CrispEmbed engine). Lets a widget test
-  /// inject a fake recogniser without a native library.
-  final Future<MultiPartScore?> Function(Uint8List bytes)? debugScanImage;
+  /// returns a recognised [Score] (or null). Production uses the shared
+  /// [recognizeSheetMusic] (the native CrispEmbed engine, also behind the Song
+  /// Book's photo import). Lets a widget test inject a fake recogniser without a
+  /// native library.
+  final Future<Score?> Function(Uint8List bytes)? debugScanImage;
 
   @override
   State<CompositionWorkshopScreen> createState() =>
@@ -2003,11 +2004,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   }
 
   /// Scan a photo/scan of sheet music into a playable score via OMR. Picks an
-  /// image, runs the recogniser ([omrImageToScore], native CrispEmbed engine —
-  /// or [CompositionWorkshopScreen.debugScanImage] in tests), and loads the
-  /// resulting score. A `null` result means the image wasn't readable OR
-  /// on-device OMR isn't available here (no model/lib — offline/web); either way
-  /// the user keeps their document and can fall back to Paste tokens / Open.
+  /// image, runs the shared recogniser ([recognizeSheetMusic], native CrispEmbed
+  /// engine — or [CompositionWorkshopScreen.debugScanImage] in tests), and loads
+  /// the resulting score into the active part. A `null` result means the image
+  /// wasn't readable OR on-device OMR isn't available here (no model/lib —
+  /// offline/web); either way the user keeps their document and can fall back to
+  /// Paste tokens / Open.
   Future<void> _scanImage() async {
     if (_scanning) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -2043,7 +2045,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     if (_scanning) return;
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final recognise = widget.debugScanImage ?? omrImageToMultiPart;
+    final recognise =
+        widget.debugScanImage ?? (b) => recognizeSheetMusic(b, download: true);
     setState(() => _scanning = true);
     messenger.showSnackBar(SnackBar(content: Text(l10n.workshopScanning)));
     try {
@@ -2056,13 +2059,7 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
         );
         return;
       }
-      setState(() {
-        if (score.parts.length > 1) {
-          _mpd.loadMultiPart(score);
-        } else {
-          _doc.loadScore(score.parts.first);
-        }
-      });
+      setState(() => _doc.loadScore(score));
       messenger.showSnackBar(SnackBar(content: Text(l10n.importDone)));
     } catch (e) {
       if (mounted) setState(() => _scanning = false);

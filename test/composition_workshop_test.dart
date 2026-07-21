@@ -14,8 +14,6 @@ import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
-import 'package:comet_beat/features/workshop/omr/omr_import.dart'
-    show omrTokensToMultiPart;
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
@@ -26,6 +24,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         MultiSystemView,
         NoteElement,
         NoteNameStyle,
+        bekernToScore,
         multiPartScoreFromGpif,
         readGpifFromGp;
 import 'package:flutter/material.dart' hide Step;
@@ -1535,9 +1534,9 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1000, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     // Fake recogniser: ignores the bytes, returns a known 4-note score (as the
-    // native CrispEmbed engine would, minus the model).
+    // native CrispEmbed engine's recognizeSheetMusic would, minus the model).
     final canned =
-        omrTokensToMultiPart('**kern <b> 4 c <b> 4 d <b> 4 e <b> 4 f <b> *-');
+        bekernToScore('**kern <b> 4 c <b> 4 d <b> 4 e <b> 4 f <b> *-');
     await tester.pumpWidget(
       _appHome(CompositionWorkshopScreen(debugScanImage: (_) async => canned)),
     );
