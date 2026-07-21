@@ -7382,6 +7382,48 @@ abstract class AppLocalizations {
   /// **'Seventh'**
   String get seventhLabel;
 
+  /// No description provided for @gameSeventhEar.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Seventh?'**
+  String get gameSeventhEar;
+
+  /// No description provided for @gameSeventhEarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the flavour of a seventh chord'**
+  String get gameSeventhEarSubtitle;
+
+  /// No description provided for @seventhEarPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen. What kind of seventh chord is it?'**
+  String get seventhEarPrompt;
+
+  /// No description provided for @seventhMajorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Major 7'**
+  String get seventhMajorLabel;
+
+  /// No description provided for @seventhDominantLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dominant 7'**
+  String get seventhDominantLabel;
+
+  /// No description provided for @seventhMinorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor 7'**
+  String get seventhMinorLabel;
+
+  /// No description provided for @seventhHalfDimLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Half-diminished'**
+  String get seventhHalfDimLabel;
+
   /// No description provided for @gameSingInterval.
   ///
   /// In en, this message translates to:

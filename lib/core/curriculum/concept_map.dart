@@ -401,7 +401,7 @@ const List<Concept> kConcepts = [
     GradeBand.g78,
     ConceptArea.chords,
     'Seventh chords',
-    ['triad_seventh'],
+    ['triad_seventh', 'seventh_ear'],
   ),
   Concept(
     'chord_symbols',

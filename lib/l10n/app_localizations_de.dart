@@ -3959,6 +3959,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get seventhLabel => 'Septakkord';
 
   @override
+  String get gameSeventhEar => 'Welcher Septakkord?';
+
+  @override
+  String get gameSeventhEarSubtitle => 'Benenne die Art des Septakkords';
+
+  @override
+  String get seventhEarPrompt => 'Hör hin. Was für ein Septakkord ist das?';
+
+  @override
+  String get seventhMajorLabel => 'Großer Sept (maj7)';
+
+  @override
+  String get seventhDominantLabel => 'Dominantsept (7)';
+
+  @override
+  String get seventhMinorLabel => 'Kleiner Sept (m7)';
+
+  @override
+  String get seventhHalfDimLabel => 'Halbvermindert (m7♭5)';
+
+  @override
   String get gameSingInterval => 'Intervall singen';
 
   @override

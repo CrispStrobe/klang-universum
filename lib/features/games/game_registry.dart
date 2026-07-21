@@ -21,6 +21,7 @@ import 'package:comet_beat/features/games/chords/interval_ear_screen.dart';
 import 'package:comet_beat/features/games/chords/interval_ladder_screen.dart';
 import 'package:comet_beat/features/games/chords/major_minor_sort_screen.dart';
 import 'package:comet_beat/features/games/chords/name_that_chord_screen.dart';
+import 'package:comet_beat/features/games/chords/seventh_ear_screen.dart';
 import 'package:comet_beat/features/games/chords/sing_interval_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_builder_screen.dart';
 import 'package:comet_beat/features/games/chords/triad_seventh_screen.dart';
@@ -1076,6 +1077,16 @@ final Map<String, List<GameInfo>> kGamesByModule = {
       title: (l) => l.gameTriadSeventh,
       subtitle: (l) => l.gameTriadSeventhSubtitle,
       builder: (_) => const TriadSeventhScreen(),
+      tutorial: seventhPrimer,
+    ),
+    // Which Seventh? — name the quality of a seventh chord (major-7 / dom-7 /
+    // minor-7, + half-diminished at 2★); the step past Triad or Seventh?.
+    GameInfo(
+      id: 'seventh_ear',
+      icon: Icons.graphic_eq,
+      title: (l) => l.gameSeventhEar,
+      subtitle: (l) => l.gameSeventhEarSubtitle,
+      builder: (_) => const SeventhEarScreen(),
       tutorial: seventhPrimer,
     ),
     GameInfo(

@@ -73,6 +73,7 @@ const Map<String, List<int>> kStarThresholds = {
   'modulation_ear': [100, 600, 900],
   // Triad or Seventh? (hear the added 7th): 10 rounds x 100.
   'triad_seventh': [100, 600, 900],
+  'seventh_ear': [100, 600, 900],
   // Higher or Lower? (melodic-direction ear): 10 rounds x 100.
   'direction_ear': [100, 600, 900],
   'crescendo_ear': [100, 600, 900],

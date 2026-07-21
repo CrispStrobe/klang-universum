@@ -3942,6 +3942,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seventhLabel => 'Seventh';
 
   @override
+  String get gameSeventhEar => 'Which Seventh?';
+
+  @override
+  String get gameSeventhEarSubtitle => 'Name the flavour of a seventh chord';
+
+  @override
+  String get seventhEarPrompt => 'Listen. What kind of seventh chord is it?';
+
+  @override
+  String get seventhMajorLabel => 'Major 7';
+
+  @override
+  String get seventhDominantLabel => 'Dominant 7';
+
+  @override
+  String get seventhMinorLabel => 'Minor 7';
+
+  @override
+  String get seventhHalfDimLabel => 'Half-diminished';
+
+  @override
   String get gameSingInterval => 'Sing the Interval';
 
   @override
