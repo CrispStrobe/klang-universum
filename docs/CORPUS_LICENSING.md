@@ -92,24 +92,51 @@ All licences below read verbatim from the source's own LICENSE file / legal page
 
 **Detail worth keeping:**
 
-- **PDMX** — 254,077 MuseScore scores. The headline "public domain" is mostly the
-  **PD Mark** (210,364) — a *claim*, not a grant. Only 43,713 are real **CC0**;
-  33,142 of those carry no `license_conflict`. But CC0 covers the ENGRAVING only:
-  the clean-CC0 set still contains "Seven Nation Army", "Light of the Seven",
-  "Crimson Peak – Edith's Theme" (in-copyright songs, axis-2 fail). The
-  `is_original` flag is the axis-2 filter → **CC0 ∧ no-conflict ∧ is_original =
-  7,549** clean on both axes. Self-attested, so "defensible", not "cleared".
-  **PDMX ships JSON-only** (the tarball has 508k `.json`, 0 `.mid`/`.mxl`; the
-  CSV's `mid/`/`mxl/` paths are phantom). **7,547 CC0 MIDIs built + roundtrip-
-  verified at `/mnt/volume1/pdmx-cc0-midi/mid/`** (2026-07-21). The list had
-  7,549 rows / 7,548 unique basenames, one of which is a null `NA` row → 7,547
-  real scores, all converted (0 skipped). Roundtrip (MIDI parsed back vs source
-  JSON note-ons): **7,547/7,547 perfect files, 9,778,989/9,778,989 notes = 100%**;
-  independently cross-checked on a 30-file sample with `mido` (also 100%). Only 1
-  out-of-range pitch clamped across 9.78M notes. Converter + validator:
-  `tool/pdmx_json_to_midi.py` (stdlib-only, `extract`/`convert`/`validate`/`all`).
-  MIDIs are derived from CC0 source → redistributable; still self-attested on
-  axis-2, so a dup/plagiarism pass is wise before shipping.
+- **PDMX** — **254,077** MuseScore scores (the superset; `subset:all`). The headline
+  "public domain" is mostly the **PD Mark** (210,364) — a *claim*, not a grant. Only
+  **43,713** are real **CC0** (`cc-zero`). CC0 covers the ENGRAVING only: the
+  clean-CC0 set still contains "Seven Nation Army", "Light of the Seven", "Crimson
+  Peak – Edith's Theme" (in-copyright songs, axis-2 fail). The `is_original` flag is
+  the axis-2 filter. Other named subsets in the current HF CSV: `subset:rated` 14,182,
+  `subset:deduplicated` 102,635, `subset:rated_deduplicated` 13,187 (there is **no**
+  `subset:no_license_conflict` column in this release, though the README recommends
+  one). Counts verified directly from the tarball's `PDMX.csv` (2026-07-21).
+  - **Our clean slice → 7,547 CC0-original MIDIs built + validated** at
+    **`/mnt/volume1/pdmx-cc0-midi/mid/`** (2026-07-21). Filter = `cc-zero ∧
+    is_original ∧ no license_conflict`. NB the **current** HF CSV dropped the
+    `license_conflict` column, so in it `cc-zero ∧ is_original = 9,744`; our 7,547 is
+    that **minus 2,197** conflict-flagged rows (7,547 + 2,197 = 9,744) — the safe,
+    conservative subset. All 7,547 re-confirmed `cc-zero ∧ is_original` against the
+    current CSV (0 misclassified). (Source list `pdmx_cc0_mid.txt` had 7,549 rows /
+    7,548 unique basenames, one a null `NA` → 7,547 real scores; all converted, 0
+    skipped, 1 out-of-range pitch clamped across 9.78M notes.)
+  - **PDMX ships JSON-only** on HuggingFace: `openmusic/pdmx` is a single 1.59 GB
+    `PDMX.tar.gz` = 508k `.json` (254k score `data/` + 254k `metadata/`), **0
+    `.mid`/`.mxl`/`.pdf`**. This release's CSV has `path`(=json)/`metadata` columns
+    and **no `mid`/`mxl` columns at all** — the phantom `mid/`/`mxl/` paths came from
+    an older/Zenodo CSV. The name "Public Domain **MusicXML**" is provenance (scraped
+    as MusicXML from MuseScore); the fuller **Zenodo** release (`zenodo.15571083`)
+    adds "MXL, PDF, MID when available". MusicXML/MIDI are **derivable** from the JSON
+    (muspy → music21) if ever wanted.
+  - **Validation — is the conversion perfect? vs the authoritative ground truth
+    (muspy, the lib PDMX was built with, and beneath it the source JSON note list):**
+    (a) full-corpus roundtrip (our own independent MIDI parser vs source JSON):
+    **7,547/7,547 perfect, 9,778,989/9,778,989 note-ons = 100.0000%**; (b) vs muspy's
+    own object on samples: **pitch+onset 100.0000%**; (c) mine vs muspy's own `.mid`,
+    apples-to-apples incl. duration: **99.9997%** (298/299 perfect, 300-file sample).
+    The residual is **muspy dropping notes**, not us: across the sample **mine = JSON
+    exactly (377,636 note-ons, Δ0)** while **muspy wrote 377,239 (Δ−397)** and crashed
+    outright on 1 file (a `♭`/U+266D track name → latin-1 error). Mechanism = muspy's
+    writer collapses **same-pitch temporally-overlapping notes**; our writer preserves
+    every note. Caveat (MIDI format limit, not a bug): overlapping same-pitch notes
+    can't have their paired durations uniquely recovered on read-back — pitch+onset is
+    exact, counts are exact, only such overlaps' durations are ambiguous (true of every
+    writer, muspy included). **Net: our converter is at least as faithful as muspy and
+    strictly more note-preserving.**
+  - Converter + validator: `tool/pdmx_json_to_midi.py` (stdlib-only,
+    `extract`/`convert`/`validate`/`all`). MIDIs derived from CC0 source →
+    redistributable; still self-attested on axis-2, so a dup/plagiarism pass is wise
+    before shipping.
 - **Mutopia** — all three licences permit commercial use. Native guitar `.ly`
   files are mixed: e.g. Aguado Op. 11 No. 6 (`Mutopia-2016/01/15-2097`, CC BY-SA
   4.0, plate-backed to S. Richault 6713.R.) carries sparse editor cues (one
