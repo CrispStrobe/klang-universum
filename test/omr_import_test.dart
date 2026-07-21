@@ -57,4 +57,56 @@ void main() {
       expect(imageBytesToOmr(Uint8List.fromList([1, 2, 3, 4])), isNull);
     });
   });
+
+  group('omrImageToScore (image + engine → Score)', () {
+    Uint8List whitePng() {
+      final src = img.Image(width: 8, height: 5);
+      img.fill(src, color: img.ColorRgb8(255, 255, 255));
+      return Uint8List.fromList(img.encodePng(src));
+    }
+
+    test('decodes the image, recognises, and routes tokens to a Score',
+        () async {
+      final score = await omrImageToScore(
+        whitePng(),
+        engine: const _FakeOmr('**kern <b> 4 c <b> 4 d <b> 4 e <b> *-'),
+      );
+      expect(score, isNotNull);
+      expect(noteCount(score!), greaterThan(0));
+    });
+
+    test('an undecodable image returns null without touching the engine',
+        () async {
+      final engine = _RecordingOmr();
+      final score = await omrImageToScore(
+        Uint8List.fromList([1, 2, 3, 4]),
+        engine: engine,
+      );
+      expect(score, isNull);
+      expect(engine.called, isFalse);
+    });
+
+    test('empty recognition output returns null (not an empty score)',
+        () async {
+      final score =
+          await omrImageToScore(whitePng(), engine: const _FakeOmr('   '));
+      expect(score, isNull);
+    });
+  });
+}
+
+class _FakeOmr implements OmrEngine {
+  const _FakeOmr(this.tokens);
+  final String tokens;
+  @override
+  Future<String> recognize(OmrImage image) async => tokens;
+}
+
+class _RecordingOmr implements OmrEngine {
+  bool called = false;
+  @override
+  Future<String> recognize(OmrImage image) async {
+    called = true;
+    return '';
+  }
 }

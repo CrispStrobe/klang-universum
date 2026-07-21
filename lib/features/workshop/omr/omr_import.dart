@@ -15,9 +15,12 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/features/workshop/omr/crispembed_ffi_omr.dart';
+import 'package:comet_beat/features/workshop/omr/omr_engine.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
         OmrDialect,
+        OmrEngine,
         OmrImage,
         Score,
         bekernToScore,
@@ -62,4 +65,30 @@ Score omrTokensToScore(String tokens) {
     OmrDialect.lilyNotes => scoreFromLilyNotes(t),
     OmrDialect.bekern => bekernToScore(t),
   };
+}
+
+/// Full pipeline: encoded image [bytes] → a [Score]. Uses [engine] when given
+/// (tests inject a fake), else the native CrispEmbed ggml engine (downloading
+/// its GGUF when [download]). Returns null — never throws — when the image can't
+/// be decoded, no recognizer is present (no lib/model — offline/web), or the
+/// engine emits no usable tokens. A self-created native engine is always freed.
+Future<Score?> omrImageToScore(
+  Uint8List bytes, {
+  OmrEngine? engine,
+  bool download = true,
+}) async {
+  final image = imageBytesToOmr(bytes);
+  if (image == null) return null;
+  final own = engine == null;
+  final eng = engine ?? await crispembedFfiOmr(download: download);
+  if (eng == null) return null; // no recognizer available here
+  try {
+    final tokens = (await eng.recognize(image)).trim();
+    if (tokens.isEmpty) return null;
+    return omrTokensToScore(tokens);
+  } on Object {
+    return null; // unparseable tokens / recognition failure
+  } finally {
+    if (own && eng is DisposableOmrEngine) eng.dispose();
+  }
 }
