@@ -35,6 +35,15 @@ jobs:
           ref: main
           path: crisp_notation
 
+      # crispembed is a native FFI path dep (../CrispEmbed/flutter/crispembed);
+      # pub get needs the sibling present even where the plugin isn't built.
+      - name: Checkout CrispEmbed (sibling FFI path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: CrispStrobe/CrispEmbed
+          ref: main
+          path: CrispEmbed
+
       # onnx_runtime_dart is a dev_dependency; pub get resolves dev deps, so the
       # sibling must be present even though screenshots never exercise it.
       - name: Checkout onnx_runtime_dart (sibling dev path dependency)
