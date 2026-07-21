@@ -17,6 +17,7 @@ import 'package:comet_beat/features/games/composition/tab_emission_decoder.dart'
 import 'package:comet_beat/features/games/composition/tabcnn_emitter.dart'
     show TabCnnModelStore, audioToTab;
 import 'package:crisp_notation/crisp_notation.dart' show NoteDuration, Tuning;
+import 'package:flutter/foundation.dart' show compute;
 
 /// TabCNN's per-frame hop in seconds (512 samples ÷ 22.05 kHz).
 const double kTabCnnHopSeconds = 512 / 22050;
@@ -74,7 +75,18 @@ Future<TabDocument?> audioToTabDocument(
   int tempoBpm = 120,
   TabCnnModelStore? store,
 }) async {
-  final frames = await audioToTab(mono, sampleRate, store: store);
+  // The model download + onnx inference is the heavy part (~1 s); run it off the
+  // caller's isolate so the UI stays responsive. Only the frettings
+  // (List<Map>) cross the boundary — small + sendable. A custom [store] can't be
+  // sent, so those calls (tests) stay inline. The pure quantise runs here.
+  final frames = store != null
+      ? await audioToTab(mono, sampleRate, store: store)
+      : await compute(_emitTabInIsolate, (mono, sampleRate));
   if (frames == null) return null;
   return tabFramesToDocument(frames, tuning: tuning, tempoBpm: tempoBpm);
 }
+
+/// Isolate entry: run the audio→frettings emit (model load + inference) in a
+/// background isolate. Top-level so `compute` can spawn it.
+Future<List<Fretting>?> _emitTabInIsolate((Float64List, int) m) =>
+    audioToTab(m.$1, m.$2);
