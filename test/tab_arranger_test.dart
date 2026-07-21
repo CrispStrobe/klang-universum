@@ -177,6 +177,31 @@ void main() {
     expect(a, hasLength(1));
     expect(a.single, isNotEmpty, reason: 'fell back rather than vanishing');
   });
+
+  test('the hand-span cap still binds when a model drives the local cost', () {
+    // With a model active, local() returns the model score and NEVER calls
+    // _localCost — so the SOFT span cost disappears and the hard cap is the
+    // only thing left preventing an unplayable shape. A model is free to adore
+    // a position that would stretch the hand 13 frets; the cap must still win,
+    // because candidates are filtered before the model ever scores them.
+    addTearDown(() => TabArranger.shared = null);
+    const cMajor = [60, 64, 67, 72];
+
+    // Favour the high-E string at fret 14 — reachable for the top note alone,
+    // but only inside a very wide voicing of this chord.
+    TabArranger.shared = _FavourModel((0, 14));
+    final withModel = arrangeTab([cMajor], guitar, maxFret: 24);
+    expect(
+      _span(withModel.single),
+      lessThanOrEqualTo(kHandSpan),
+      reason: 'a model must not be able to introduce an unplayable stretch',
+    );
+    expect(_sounding(withModel, guitar)..sort(), cMajor);
+
+    // Opting out of the cap is the only way that voicing becomes reachable.
+    final uncapped = arrangeTab([cMajor], guitar, maxFret: 24, maxSpan: null);
+    expect(_sounding(uncapped, guitar)..sort(), cMajor);
+  });
 }
 
 /// A stand-in [TabPositionModel] that lavishes score on one position and stays
