@@ -408,6 +408,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get workshopSplitNotes => 'Noten über Taktstriche binden';
 
   @override
+  String get workshopScanImage => 'Notenblatt scannen…';
+
+  @override
+  String get workshopScanning => 'Notenblatt wird gelesen…';
+
+  @override
+  String get workshopScanUnavailable =>
+      'Bild konnte nicht gelesen werden (oder das Scannen von Notenblättern ist hier nicht verfügbar).';
+
+  @override
   String get workshopPasteTokens => 'Noten-Tokens einfügen…';
 
   @override

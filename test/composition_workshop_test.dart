@@ -14,6 +14,8 @@ import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
+import 'package:comet_beat/features/workshop/omr/omr_import.dart'
+    show omrTokensToMultiPart;
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/widgets/piano_keyboard.dart';
@@ -49,6 +51,27 @@ Widget _app() => MultiProvider(
         ],
         supportedLocales: [Locale('en'), Locale('de')],
         home: CompositionWorkshopScreen(),
+      ),
+    );
+
+// Same providers as [_app], but hosts an arbitrary [home] so a test can inject
+// the CompositionWorkshopScreen's debug seams (e.g. debugScanImage for OMR).
+Widget _appHome(Widget home) => MultiProvider(
+      providers: [
+        Provider<AudioService>(create: (_) => AudioService()),
+        ChangeNotifierProvider(create: (_) => UserSongsService()),
+        ChangeNotifierProvider(create: (_) => SettingsService()),
+        ChangeNotifierProvider(create: (_) => DawService()),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('de')],
+        home: home,
       ),
     );
 
@@ -1505,5 +1528,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(view().showMeasureNumbers, isTrue);
+  });
+
+  testWidgets('Scan sheet music (OMR): a recognised image loads as notes',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    // Fake recogniser: ignores the bytes, returns a known 4-note score (as the
+    // native CrispEmbed engine would, minus the model).
+    final canned =
+        omrTokensToMultiPart('**kern <b> 4 c <b> 4 d <b> 4 e <b> 4 f <b> *-');
+    await tester.pumpWidget(
+      _appHome(CompositionWorkshopScreen(debugScanImage: (_) async => canned)),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editor(tester);
+    expect(editor.noteCount, 0);
+    await editor.debugScanBytes(Uint8List.fromList([1, 2, 3]));
+    await tester.pumpAndSettle();
+    expect(editor.noteCount, greaterThan(0));
+  });
+
+  testWidgets(
+      'Scan sheet music (OMR): an unreadable/unavailable scan is a '
+      'no-op (keeps the document)', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    // null = couldn't read / no on-device model — the document is untouched.
+    await tester.pumpWidget(
+      _appHome(CompositionWorkshopScreen(debugScanImage: (_) async => null)),
+    );
+    await tester.pumpAndSettle();
+
+    final editor = _editor(tester);
+    await editor.debugScanBytes(Uint8List.fromList([1, 2, 3]));
+    await tester.pumpAndSettle();
+    expect(editor.noteCount, 0);
+    expect(tester.takeException(), isNull);
   });
 }

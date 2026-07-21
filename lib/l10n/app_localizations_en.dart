@@ -407,6 +407,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workshopSplitNotes => 'Split notes across barlines';
 
   @override
+  String get workshopScanImage => 'Scan sheet music…';
+
+  @override
+  String get workshopScanning => 'Reading the sheet music…';
+
+  @override
+  String get workshopScanUnavailable =>
+      'Couldn\'t read that image (or on-device sheet-music scanning isn\'t available here).';
+
+  @override
   String get workshopPasteTokens => 'Paste notation tokens…';
 
   @override

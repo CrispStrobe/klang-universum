@@ -19,11 +19,13 @@ import 'package:comet_beat/features/workshop/omr/crispembed_ffi_omr.dart';
 import 'package:comet_beat/features/workshop/omr/omr_engine.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
+        MultiPartScore,
         OmrDialect,
         OmrEngine,
         OmrImage,
         Score,
         bekernToScore,
+        bekernToStaffSystem,
         omrDialectOf,
         scoreFromLilyNotes,
         scoreFromSemantic;
@@ -67,16 +69,28 @@ Score omrTokensToScore(String tokens) {
   };
 }
 
-/// Full pipeline: encoded image [bytes] → a [Score]. Uses [engine] when given
-/// (tests inject a fake), else the native CrispEmbed ggml engine (downloading
-/// its GGUF when [download]). Returns null — never throws — when the image can't
-/// be decoded, no recognizer is present (no lib/model — offline/web), or the
-/// engine emits no usable tokens. A self-created native engine is always freed.
-Future<Score?> omrImageToScore(
-  Uint8List bytes, {
+/// Like [omrTokensToScore] but keeps every spine: a multi-spine `bekern` grand
+/// staff becomes one part per staff (the shape the Workshop's multi-part
+/// document wants); the single-staff dialects (semantic / lilyNotes) become a
+/// one-part score. Throws on unparseable input.
+MultiPartScore omrTokensToMultiPart(String tokens) {
+  final t = tokens.trim();
+  return switch (omrDialectOf(t)) {
+    OmrDialect.bekern => MultiPartScore.fromStaffSystem(bekernToStaffSystem(t)),
+    OmrDialect.semantic => MultiPartScore([scoreFromSemantic(t)]),
+    OmrDialect.lilyNotes => MultiPartScore([scoreFromLilyNotes(t)]),
+  };
+}
+
+/// Decodes [bytes], runs [engine] (or the native CrispEmbed engine, downloading
+/// its GGUF when [download]) and returns the trimmed token string — or null,
+/// never throwing, when the image is undecodable, no recognizer is present
+/// (offline/web), or recognition is empty. Frees a self-created native engine.
+Future<String?> _recogniseTokens(
+  Uint8List bytes,
   OmrEngine? engine,
-  bool download = true,
-}) async {
+  bool download,
+) async {
   final image = imageBytesToOmr(bytes);
   if (image == null) return null;
   final own = engine == null;
@@ -84,11 +98,42 @@ Future<Score?> omrImageToScore(
   if (eng == null) return null; // no recognizer available here
   try {
     final tokens = (await eng.recognize(image)).trim();
-    if (tokens.isEmpty) return null;
-    return omrTokensToScore(tokens);
+    return tokens.isEmpty ? null : tokens;
   } on Object {
-    return null; // unparseable tokens / recognition failure
+    return null; // recognition failure
   } finally {
     if (own && eng is DisposableOmrEngine) eng.dispose();
+  }
+}
+
+/// Full pipeline: encoded image [bytes] → a single [Score]. See [_recogniseTokens]
+/// for the null cases. Use [omrImageToMultiPart] to keep grand-staff spines.
+Future<Score?> omrImageToScore(
+  Uint8List bytes, {
+  OmrEngine? engine,
+  bool download = true,
+}) async {
+  final tokens = await _recogniseTokens(bytes, engine, download);
+  if (tokens == null) return null;
+  try {
+    return omrTokensToScore(tokens);
+  } on Object {
+    return null; // unparseable tokens
+  }
+}
+
+/// Full pipeline: encoded image [bytes] → a [MultiPartScore] (grand-staff spines
+/// preserved). Null on the same cases as [omrImageToScore].
+Future<MultiPartScore?> omrImageToMultiPart(
+  Uint8List bytes, {
+  OmrEngine? engine,
+  bool download = true,
+}) async {
+  final tokens = await _recogniseTokens(bytes, engine, download);
+  if (tokens == null) return null;
+  try {
+    return omrTokensToMultiPart(tokens);
+  } on Object {
+    return null; // unparseable tokens
   }
 }

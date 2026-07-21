@@ -818,6 +818,24 @@ abstract class AppLocalizations {
   /// **'Split notes across barlines'**
   String get workshopSplitNotes;
 
+  /// No description provided for @workshopScanImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan sheet music…'**
+  String get workshopScanImage;
+
+  /// No description provided for @workshopScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the sheet music…'**
+  String get workshopScanning;
+
+  /// No description provided for @workshopScanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read that image (or on-device sheet-music scanning isn\'t available here).'**
+  String get workshopScanUnavailable;
+
   /// No description provided for @workshopPasteTokens.
   ///
   /// In en, this message translates to:

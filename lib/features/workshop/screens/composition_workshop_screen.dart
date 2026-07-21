@@ -40,6 +40,8 @@ import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
 import 'package:comet_beat/features/workshop/export/score_pdf.dart';
 import 'package:comet_beat/features/workshop/model/multi_part_document.dart';
 import 'package:comet_beat/features/workshop/model/score_document.dart';
+import 'package:comet_beat/features/workshop/omr/omr_import.dart'
+    show omrImageToMultiPart;
 import 'package:comet_beat/features/workshop/widgets/multi_part_canvas.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/daw/send_to_daw.dart';
@@ -408,6 +410,7 @@ class CompositionWorkshopScreen extends StatefulWidget {
     super.key,
     this.initialScore,
     this.initialNames,
+    this.debugScanImage,
   });
 
   static const maxNotes = 256;
@@ -417,6 +420,12 @@ class CompositionWorkshopScreen extends StatefulWidget {
   /// Advanced Tracker's "Open in Workshop".
   final MultiPartScore? initialScore;
   final List<String>? initialNames;
+
+  /// Test seam for "Scan sheet music" (OMR): given the picked image bytes,
+  /// returns a recognised [MultiPartScore] (or null). Production uses
+  /// [omrImageToMultiPart] (the native CrispEmbed engine). Lets a widget test
+  /// inject a fake recogniser without a native library.
+  final Future<MultiPartScore?> Function(Uint8List bytes)? debugScanImage;
 
   @override
   State<CompositionWorkshopScreen> createState() =>
@@ -500,6 +509,10 @@ abstract interface class CompositionWorkshopTester {
   void loadSharedMelody();
   bool get canShareMelody;
   void shareMelody();
+
+  /// Test seam: run the OMR "Scan sheet music" load path on [bytes] directly
+  /// (bypassing the file picker), as if that image had been picked.
+  Future<void> debugScanBytes(Uint8List bytes);
 
   /// Test seam: whether the 🔍 desktop hover card is currently showing a note.
   bool get debugHoverCardShown;
@@ -609,6 +622,10 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
   // drops straight back to the music.
   bool _countIn = false;
   double _countInSec = 0;
+
+  // True while an OMR "Scan sheet music" recognition is running (guards against
+  // re-entry; the image pick + native inference are async).
+  bool _scanning = false;
   static const int _kClickMidi = 84; // a high tick, as playCountedNote uses
   static const int _kClickMs = 60;
 
@@ -1985,6 +2002,76 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     }
   }
 
+  /// Scan a photo/scan of sheet music into a playable score via OMR. Picks an
+  /// image, runs the recogniser ([omrImageToScore], native CrispEmbed engine —
+  /// or [CompositionWorkshopScreen.debugScanImage] in tests), and loads the
+  /// resulting score. A `null` result means the image wasn't readable OR
+  /// on-device OMR isn't available here (no model/lib — offline/web); either way
+  /// the user keeps their document and can fall back to Paste tokens / Open.
+  Future<void> _scanImage() async {
+    if (_scanning) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final XFile? file;
+    try {
+      file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: 'Image',
+            extensions: ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'tif', 'tiff'],
+          ),
+        ],
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importFailed(e.toString()))),
+      );
+      return;
+    }
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    await _scanBytes(bytes);
+  }
+
+  @override
+  Future<void> debugScanBytes(Uint8List bytes) => _scanBytes(bytes);
+
+  /// Recognise [bytes] via OMR and load the result — the picker-free half of
+  /// [_scanImage], shared with the [debugScanBytes] test seam.
+  Future<void> _scanBytes(Uint8List bytes) async {
+    if (_scanning) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final recognise = widget.debugScanImage ?? omrImageToMultiPart;
+    setState(() => _scanning = true);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.workshopScanning)));
+    try {
+      final score = await recognise(bytes);
+      if (!mounted) return;
+      setState(() => _scanning = false);
+      if (score == null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.workshopScanUnavailable)),
+        );
+        return;
+      }
+      setState(() {
+        if (score.parts.length > 1) {
+          _mpd.loadMultiPart(score);
+        } else {
+          _doc.loadScore(score.parts.first);
+        }
+      });
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importDone)));
+    } catch (e) {
+      if (mounted) setState(() => _scanning = false);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importFailed(e.toString()))),
+      );
+    }
+  }
+
   /// The note-property dropdown (articulations · tie · dynamics), anchored at
   /// its own button. Returns null unless a single editable note is selected.
   Widget? _paletteButton(AppLocalizations l10n) {
@@ -3342,6 +3429,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       _open();
                     case 'paste':
                       _pasteTokens();
+                    case 'scan':
+                      _scanImage();
                     case 'barnums':
                       setState(() => _barNumbers = !_barNumbers);
                     case 'notenames':
@@ -3401,6 +3490,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     'paste',
                     Icons.content_paste_go_outlined,
                     l10n.workshopPasteTokens,
+                    true,
+                  ),
+                  _menuItem(
+                    'scan',
+                    Icons.document_scanner_outlined,
+                    l10n.workshopScanImage,
                     true,
                   ),
                   CheckedPopupMenuItem<String>(
