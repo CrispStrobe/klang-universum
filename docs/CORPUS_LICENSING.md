@@ -175,6 +175,20 @@ All licences below read verbatim from the source's own LICENSE file / legal page
     `tool/pdmx_originality_report.py`. NB this catches only *named* copyrighted
     composers; works hiding under a blank/amateur composer field (recognisable by
     TITLE — "Hallelujah", "Perfect") would need a separate title-based scan.
+  - **Multi-format `files` map** (2026-07-21): every `db.json` entry now carries a
+    `files` object of format→relative-path, added by `bin/enrich_files.py`
+    (`tool/pdmx_music_db_enrich_files.py`) as the final pipeline step after
+    `merge_db.py`. Availability: **mxl 8,823, midi 7,981, json 7,471, pdf 7,471,
+    mscx 1,474, mscz 1,352**. PDMX carries all four (midi/mxl/json/pdf — the big
+    json/pdf/mxl are relative **dir-symlinks** `pdmx/ship/{mxl,json,pdf}` → the
+    cache, not copied); OpenScore Lieder has mscx+mxl+mscz; **632 entries are
+    single-format** (510 Mutopia = midi-only, 122 String Quartets = mscx-only).
+  - **More formats are fetchable from the web** (feasibility, 2026-07-21): **Mutopia**
+    per-piece FTP dirs carry PDF (A4+Letter), LilyPond `.ly` source, PostScript,
+    preview SVG (all free/PD) — we hold only the MIDI, so PDF+`.ly` are downloadable
+    via each entry's `source_url`. **OpenScore String Quartets** repo has mxl/mscz we
+    didn't clone (re-fetchable from GitHub). **OpenScore MIDI/PDF** are Pro-gated on
+    musescore.com, but MIDI is derivable locally from the `.mxl` via crisp_notation.
   - **Full Zenodo release cached** (`zenodo.15571083`, 2026-07-21) on the VPS at
     `/mnt/volume1/pdmx-cc0-midi/zenodo/`: `mid.tar.gz` (254,035 official MIDIs),
     `mxl.tar.gz` (MusicXML), `pdf.tar.gz` (9 GB sheet-music PDFs), full `PDMX.csv`
