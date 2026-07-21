@@ -105,6 +105,20 @@ All licences below read verbatim from the source's own LICENSE file / legal page
   explicit LilyPond string event `\2`, some left-hand fingerings) and its
   `TabStaff` is commented out ("tabs are not completely developed"). Treat as
   clean score material + sparse fingering cues, not full tab gold.
+  Automated scan: `tool/mutopia_guitar_scan.py` against local
+  `/Users/christianstrobele/code/mutopia-guitar/manifest.json` downloaded 361
+  primary `.ly` sources from 388 guitar entries; 27 derived source URLs were 404.
+  Classification: 6 `dense_string_labels`, 77 `weak_fingering_labels`, 84
+  `tabstaff_score_only`, 194 `score_only`, 27 `unscanned`. Strongest direct
+  string-label candidates are `capricho-arabe` (229 string events),
+  `moonlight-guitar-duo` (90), `sym5-1-guitar-duo` (79),
+  `wtk1-prelude1-guitar-duo` (73), `claro-de-luna` (69), and
+  `sorf_op35_no22` (65). Reports:
+  `/Users/christianstrobele/code/mutopia-guitar/reports/mutopia_guitar_ly_scan.{json,csv}`.
+  Conclusion: useful, but not GuitarSet-scale gold. Use dense files as direct
+  string supervision, weak files as auxiliary fingering/string pressure, and
+  score-only pieces for arranger-generated pseudo-label pretraining before
+  GuitarSet fine-tuning.
 
 Tabs for **every** row above come free via our own `arrangeTab` — see the tab
 finding. So the shippable *tab* corpus is exactly this shippable *score* corpus.
@@ -200,3 +214,77 @@ filter that also considers the modern editor.
 4. Verify the three pending leads (Essen, RISM, Meertens).
 5. rsync the corpus off `/mnt/volume1` (VPS-local, not backed up) to
    `/mnt/storage`.
+
+## Preserving fingering/fret/bowing — the performance layer (2026-07-21)
+
+Regenerating fingering algorithmically loses the human choice, so sources that
+*retain* it are worth more. Structural finding across a five-instrument sweep:
+**no openly-licensed corpus is simultaneously (a) at scale, (b) clean for a
+commercial EU/German ship, and (c) carries a real string/fret/finger/bow layer.**
+The layer must be **authored, or taken from a dead-editor source**, never
+harvested from a modern edition.
+
+### Sources that DO carry fingering and are shippable
+- **NIFC Chopin First Editions** — `github.com/pl-wnifc/humdrum-chopin-first-editions`,
+  **CC BY 4.0** (verified). 188 `.krn` files carry populated `**fing` spines
+  (~65k finger tokens). Fingerings are from 1830s first editions → the fingering
+  layer itself is PD; only the encoding needs CC BY attribution. Companion
+  `humdrum-polish-scores`, same terms. **Best off-the-shelf fingered source found.**
+- **Mutopia Burgmüller Op.100** (`ftp/BurgmullerJFF/O100/25EF-*`) — **Public
+  Domain**, ~18 études with genuine LilyPond note-attached fingering (`e8-5`).
+  In reach today via the LilyPond reader.
+- **LilyPond PD snippets** (`fretted-strings` set) — 31 fragments, genuinely PD
+  (the LilyPond README carves `snippets/` out of GFDL/GPL into public domain).
+  Tab-notation teaching examples, not repertoire.
+- **Cellofun.eu Bach Suites playing edition** (on IMSLP, BWV 1007/1009/1010/1012)
+  — fingering + bowing, tagged "PD dedicated" but the site footer says
+  "Copyright 2023". **Gated:** confirm the IMSLP uploader is the author, get
+  written CC0 confirmation, and open the ZIP to check the markup is encoded (not
+  baked into a PDF) before relying on it.
+
+### Disqualified fingered sources (verified)
+PIG (academic-only, walled), MAESTRO/ASAP/SMD/Batik/TRIOS (CC BY-**NC**-SA),
+Gerbode lute 20k (CC BY-NC-SA), SCORE-SET (CC BY-NC-SA; arXiv metadata *wrongly*
+says CC-BY), ECOLM / E-LAUTE / SyncViolinist (no data licence), URMP/Bach10 (no
+licence), Suzuki (all-rights + trademark). **Corrections to earlier notes:**
+GAPS has **no licence file at all** (not "CC-BY-NC-SA"); PDMX is **CC BY 4.0**,
+not CC0 despite the name; MusicNet's Zenodo release is now CC BY 4.0 (pitch only).
+
+### The dead-editor strategy (the general solution, all instruments)
+A modern editor's fingering on a PD work is a fresh §2/§70 contribution — but an
+editor **dead before 1955** has an EU-clear editorial layer too. So an OMR/vision
+pass over a *dead-editor* PD scan yields notes AND authentic period fingerings,
+owned outright. Candidates (death year → editorial layer PD): cello — Grützmacher
+1903, Klengel 1933, Feuillard 1935; piano — Köhler 1886, Ruthardt 1934; guitar —
+19th-c. first editions (Boije scans). Keep a per-score provenance record
+(edition, first-publication year, editor death year) as the §70 audit trail —
+the DB manifest schema already carries these fields.
+
+### OMR capability audit + a vision-LLM result
+- **Our OMR models do NOT emit fingering.** Verified in source: the
+  `semantic` / `bekern` / `lilynotes` converters
+  (`crisp_notation_cli/lib/omr.dart` + `crisp_notation_core/.../omr/`) contain no
+  fingering/technical parsing. They recover pitch + rhythm only. But the target
+  model **can hold it** — `NoteElement.fingerings: List<int>`
+  (`core/lib/src/model/element.dart:163`) and `TabVoicing` for strings exist.
+  So the pipeline can carry fingering the OMR step throws away.
+- **A vision-LLM can read the fingerings the OMR model ignores — tested.**
+  Rendered Burgmüller Op.100 No.1 to an image, transcribed the right-hand
+  fingerings visually, and scored against the LilyPond ground truth:
+  **9/9 exact** on the resolvable digits (`5,3,5,5,2,1,3,2,1`). Demo output shape
+  in `scratchpad/vtest/bar1_demo.json`, mapping to `NoteElement`.
+  **Honest bounds:** this was a *clean computer-engraved* score, not a historical
+  lithograph — real scans are materially harder; fingering *digits* read cleanly
+  but full pitch/rhythm accuracy is a separate, less-verified question; and
+  per-page cost makes it a targeted tool (the repertoire pieces that matter), not
+  a bulk harvester. Any output needs a validation pass (round-trips to plausible
+  pitches, fingerings make hand-sense) — the same defensive posture that caught
+  the year-field and cello-range bugs elsewhere in this effort.
+
+### Bottom line
+Ship NIFC (piano, fingered, CC BY) + Burgmüller (piano, fingered, PD) now. For
+guitar/cello, the fingered layer must be **built**: either the arranger computes
+fret (guitar, already shipping) or a **vision pass over dead-editor PD scans**
+recovers real period fingerings. The §2/§3-vs-§70 status of editorial fingering
+is genuinely unsettled in German law — a Fachanwalt sign-off is warranted before
+a commercial ship relies on any post-1900 editorial layer.
