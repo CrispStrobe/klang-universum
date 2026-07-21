@@ -5,16 +5,20 @@
 // Imported songs live in the Song Book (persisted via UserSongsService).
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiTrackMidiToMultiPart;
 import 'package:comet_beat/features/games/songs/import/chordpro.dart';
 import 'package:comet_beat/features/games/songs/import/jams.dart';
+import 'package:comet_beat/features/games/songs/import/omr_import.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/library_browser_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
+        MultiPartScore,
+        Score,
         multiPartScoreFromAbc,
         multiPartScoreFromKern,
         multiPartScoreFromMei,
@@ -24,6 +28,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         scoreFromMusicXml;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class ImportScreen extends StatefulWidget {
@@ -36,6 +41,10 @@ class ImportScreen extends StatefulWidget {
 class _ImportScreenState extends State<ImportScreen> {
   final _text = TextEditingController();
   final _title = TextEditingController();
+
+  // OMR (scan sheet music) progress.
+  bool _omrBusy = false;
+  String? _omrStatus;
 
   String _newId() => DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -132,6 +141,96 @@ class _ImportScreenState extends State<ImportScreen> {
       _done();
     } catch (e) {
       if (mounted) _fail(e);
+    }
+  }
+
+  // Scan/photograph sheet music → recognise → store as a song. The recognition
+  // model (~24 MB) downloads on first use, consent-gated.
+  Future<void> _importOmr({required bool camera}) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      Uint8List bytes;
+      String name;
+      if (camera) {
+        final x = await ImagePicker().pickImage(source: ImageSource.camera);
+        if (x == null || !mounted) return;
+        bytes = await x.readAsBytes();
+        name = 'Scan';
+      } else {
+        final f = await openFile(
+          acceptedTypeGroups: [
+            const XTypeGroup(
+              label: 'Image',
+              extensions: ['png', 'jpg', 'jpeg'],
+            ),
+          ],
+        );
+        if (f == null || !mounted) return;
+        bytes = await f.readAsBytes();
+        name = f.name.replaceAll(RegExp(r'\.[^.]+$'), '');
+      }
+      if (!mounted) return;
+
+      // First-use consent for the model download.
+      if (await omrModelPath() == null) {
+        if (!mounted) return;
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            title: Text(l10n.importScanModelTitle),
+            content: Text(l10n.importScanModelBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: Text(l10n.importScanCancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: Text(l10n.importScanModelDownload),
+              ),
+            ],
+          ),
+        );
+        if (ok != true || !mounted) return;
+      }
+
+      setState(() {
+        _omrBusy = true;
+        _omrStatus = null;
+      });
+      final score = await recognizeSheetMusic(
+        bytes,
+        download: true,
+        onStatus: (m) {
+          if (mounted) setState(() => _omrStatus = m);
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _omrBusy = false;
+        _omrStatus = null;
+      });
+      if (score == null) {
+        _fail(l10n.importScanFailed);
+        return;
+      }
+      final typed = _title.text.trim();
+      context.read<UserSongsService>().addSong(
+            ImportedSong(
+              id: _newId(),
+              title: typed.isNotEmpty ? typed : name,
+              musicXml: multiPartToMusicXml(MultiPartScore(<Score>[score])),
+            ),
+          );
+      _done();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _omrBusy = false;
+          _omrStatus = null;
+        });
+        _fail(e);
+      }
     }
   }
 
@@ -316,8 +415,33 @@ class _ImportScreenState extends State<ImportScreen> {
                     icon: const Icon(Icons.data_object),
                     label: Text(l10n.importJamsFile),
                   ),
+                  // OMR: photograph/scan sheet music → a song. Native only (the
+                  // recogniser needs the ggml engine), so hidden on web / where
+                  // the library isn't present.
+                  if (omrAvailable()) ...[
+                    OutlinedButton.icon(
+                      onPressed:
+                          _omrBusy ? null : () => _importOmr(camera: true),
+                      icon: const Icon(Icons.photo_camera),
+                      label: Text(l10n.importScanPhoto),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed:
+                          _omrBusy ? null : () => _importOmr(camera: false),
+                      icon: const Icon(Icons.image_search),
+                      label: Text(l10n.importScanImage),
+                    ),
+                  ],
                 ],
               ),
+              if (_omrBusy) ...[
+                const SizedBox(height: 16),
+                const Center(child: CircularProgressIndicator()),
+                if (_omrStatus != null) ...[
+                  const SizedBox(height: 8),
+                  Center(child: Text(_omrStatus!)),
+                ],
+              ],
             ],
           ),
         ),

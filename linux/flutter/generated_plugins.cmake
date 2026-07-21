@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
   aec_fullduplex
+  crispembed
   flutter_soloud
   glint_vorbis
   jni

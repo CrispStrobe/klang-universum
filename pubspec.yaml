@@ -102,6 +102,15 @@ dependencies:
   # .sf3 SoundFont path (native only; web uses a wasm/stub seam). See
   # docs/GLINT_VORBIS_HANDOVER.md + core/audio/sf2/.
   ffi: ^2.1.0
+  # OMR (optical music recognition): photograph/scan sheet music → a Score. The
+  # crispembed Flutter FFI plugin runs the CrispEmbed ggml engine (native only —
+  # web gets a stub); `image` decodes the picture to raw pixels; `image_picker`
+  # supplies the camera + gallery. The GGUF model downloads on demand (consent-
+  # gated), the token→Score parse is pure-Dart in crisp_notation_core.
+  crispembed:
+    path: ../CrispEmbed/flutter/crispembed
+  image: ^4.2.0
+  image_picker: ^1.1.2
   # Native Ogg-Vorbis DECODER (glint, MIT) compiled into the app as an FFI
   # plugin → makes .sf3 SoundFonts decodable on native. Reached ONLY through
   # core/audio/sf2/vorbis_capability.dart (web gets the dart:ffi-free stub); the

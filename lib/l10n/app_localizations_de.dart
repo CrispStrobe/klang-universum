@@ -3487,6 +3487,29 @@ class AppLocalizationsDe extends AppLocalizations {
   String get importJamsFile => 'JAMS-Datei importieren (Akkorde oder Melodie)…';
 
   @override
+  String get importScanPhoto => 'Foto aufnehmen';
+
+  @override
+  String get importScanImage => 'Aus einem Bild';
+
+  @override
+  String get importScanModelTitle => 'Erkennung laden?';
+
+  @override
+  String get importScanModelBody =>
+      'Noten aus einem Bild zu lesen braucht einen einmaligen Download (~24 MB). Er wird für das nächste Mal gespeichert.';
+
+  @override
+  String get importScanModelDownload => 'Laden';
+
+  @override
+  String get importScanCancel => 'Abbrechen';
+
+  @override
+  String get importScanFailed =>
+      'Die Noten konnten nicht gelesen werden. Bitte ein schärferes, gerades Foto versuchen.';
+
+  @override
   String get importDone => 'Importiert!';
 
   @override

@@ -6566,6 +6566,48 @@ abstract class AppLocalizations {
   /// **'Import a JAMS file (chords or melody)…'**
   String get importJamsFile;
 
+  /// No description provided for @importScanPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get importScanPhoto;
+
+  /// No description provided for @importScanImage.
+  ///
+  /// In en, this message translates to:
+  /// **'From an image'**
+  String get importScanImage;
+
+  /// No description provided for @importScanModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download the reader?'**
+  String get importScanModelTitle;
+
+  /// No description provided for @importScanModelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading sheet music from a picture needs a one-time download (~24 MB). It\'s saved for next time.'**
+  String get importScanModelBody;
+
+  /// No description provided for @importScanModelDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get importScanModelDownload;
+
+  /// No description provided for @importScanCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get importScanCancel;
+
+  /// No description provided for @importScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the sheet music. Try a clearer, straight-on photo.'**
+  String get importScanFailed;
+
   /// No description provided for @importDone.
   ///
   /// In en, this message translates to:

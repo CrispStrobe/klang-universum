@@ -1311,6 +1311,13 @@
   "importMusicXmlFile": "Pick a MusicXML file…",
   "importMusicFile": "Import a file (MusicXML/MXL/ABC/MEI/kern/MIDI)…",
   "importJamsFile": "Import a JAMS file (chords or melody)…",
+  "importScanPhoto": "Take a photo",
+  "importScanImage": "From an image",
+  "importScanModelTitle": "Download the reader?",
+  "importScanModelBody": "Reading sheet music from a picture needs a one-time download (~24 MB). It's saved for next time.",
+  "importScanModelDownload": "Download",
+  "importScanCancel": "Cancel",
+  "importScanFailed": "Couldn't read the sheet music. Try a clearer, straight-on photo.",
   "importDone": "Imported!",
   "importFailed": "Import failed: {error}",
   "@importFailed": {

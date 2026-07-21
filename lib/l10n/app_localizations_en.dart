@@ -3475,6 +3475,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importJamsFile => 'Import a JAMS file (chords or melody)…';
 
   @override
+  String get importScanPhoto => 'Take a photo';
+
+  @override
+  String get importScanImage => 'From an image';
+
+  @override
+  String get importScanModelTitle => 'Download the reader?';
+
+  @override
+  String get importScanModelBody =>
+      'Reading sheet music from a picture needs a one-time download (~24 MB). It\'s saved for next time.';
+
+  @override
+  String get importScanModelDownload => 'Download';
+
+  @override
+  String get importScanCancel => 'Cancel';
+
+  @override
+  String get importScanFailed =>
+      'Couldn\'t read the sheet music. Try a clearer, straight-on photo.';
+
+  @override
   String get importDone => 'Imported!';
 
   @override
