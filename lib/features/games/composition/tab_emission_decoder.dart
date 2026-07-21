@@ -74,6 +74,10 @@ class TabEmissionFrames {
 /// `F0Estimator` seam — the model provides emissions, we provide the decode.
 abstract interface class TabEmissionModel {
   TabEmissionFrames? emit(Float64List monoAudio, int sampleRate);
+
+  /// Frees any native resources held (e.g. a ggml session). No-op for the
+  /// pure-Dart emitters. Call once the emitter is done.
+  void dispose();
 }
 
 /// The cost of a string moving between classes on consecutive frames: staying

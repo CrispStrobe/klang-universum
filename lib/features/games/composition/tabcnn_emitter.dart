@@ -22,6 +22,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart';
+import 'package:comet_beat/core/audio/transcription/crispasr_ffi_tab.dart';
 import 'package:comet_beat/core/audio/transcription/harmony_cqt.dart';
 import 'package:comet_beat/features/games/composition/tab_arranger.dart'
     show Fretting;
@@ -186,6 +187,9 @@ class TabCnnEmitter implements TabEmissionModel {
   final TabCnnVariant variant;
 
   @override
+  void dispose() {} // pure-Dart onnx — nothing native to free
+
+  @override
   TabEmissionFrames? emit(Float64List monoAudio, int sampleRate) =>
       tabcnnEmitWithRunner(
         monoAudio,
@@ -203,15 +207,30 @@ class TabCnnEmitter implements TabEmissionModel {
       );
 }
 
-/// End-to-end audio→tab: load the model (via [store], default [TabCnnModelStore]),
-/// emit `[T,6,21]` log-probs, and decode them to one [Fretting] per frame. Null
-/// when the model is unavailable (offline / web) so callers fall back. The caller
-/// quantises the per-frame frettings (× the emitter's frame hop) into notes.
+/// End-to-end audio→tab, decoded to one [Fretting] per frame. Prefers the native
+/// CrispASR ggml path when libcrispasr + the GGUF are present (faster,
+/// GPU-capable), else the pure-Dart-onnx [TabCnnEmitter]. Null when neither is
+/// available (offline / web). A test [store] forces the onnx path inline. The
+/// caller quantises the frettings (× the emitter's frame hop) into notes.
 Future<List<Fretting>?> audioToTab(
   Float64List mono,
   int sampleRate, {
   TabCnnModelStore? store,
 }) async {
+  // Native ggml first (unless a test store pins the onnx path).
+  if (store == null) {
+    final native = await crispasrFfiTab(download: true);
+    if (native != null) {
+      try {
+        final frames = native.emit(mono, sampleRate);
+        if (frames != null && frames.nFrames > 0) {
+          return decodeTabEmissions(frames);
+        }
+      } finally {
+        native.dispose();
+      }
+    }
+  }
   final loaded = await (store ?? TabCnnModelStore()).load();
   if (loaded == null) return null;
   final emitter = TabCnnEmitter(
