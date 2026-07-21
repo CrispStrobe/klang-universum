@@ -23,15 +23,22 @@ import 'package:comet_beat/features/games/composition/tab_arranger.dart'
 /// A standard guitar has six strings.
 const int kTabStrings = 6;
 
-/// TabCNN emits 21 classes per string: class 0 = the string is silent
-/// ("closed"/not played), class `k ≥ 1` = fret `k - 1` (so class 1 = open, and
-/// class 20 = fret 19). This is the emission contract CrispASR's ABI must match.
+/// TabCNN emits 21 classes per string: one **silent** ("closed"/not played)
+/// class + 20 fret positions (open … fret 19). WHICH index is silent varies by
+/// export — the ONNX/gpfx export we ship remaps it to class 0 (frets are then
+/// class `k → k-1`), but the native GGUF keeps the upstream order (class 20 =
+/// silent, class `k → k`). So the silent class is carried per-emission in
+/// [TabEmissionFrames.silentClass], never hardcoded.
 const int kTabClasses = 21;
 
-/// The highest fret an emission class can name (class 20 → fret 19).
+/// The highest fret an emission class can name (20 fret positions → 0..19).
 const int kTabMaxFret = kTabClasses - 2;
 
-int _fretOfClass(int cls) => cls - 1; // class 1 → fret 0 (open)
+/// The fret a non-silent class [cls] names, given the export's [silentClass]:
+/// the fret positions are the classes with the silent one removed, so classes
+/// below it keep their index and classes above it shift down one. Reduces to
+/// `cls - 1` when `silentClass == 0` (the ONNX layout).
+int _fretOf(int cls, int silentClass) => cls < silentClass ? cls : cls - 1;
 
 /// Per-frame TabCNN emissions: [nFrames] frames × [kTabStrings] strings ×
 /// [kTabClasses] classes of **log-probabilities**, flattened row-major
@@ -43,11 +50,17 @@ class TabEmissionFrames {
     required this.nFrames,
     required this.hopSeconds,
     required this.logProbs,
+    this.silentClass = 0,
   }) : assert(logProbs.length == nFrames * kTabStrings * kTabClasses);
 
   final int nFrames;
   final double hopSeconds;
   final Float64List logProbs;
+
+  /// The class index that means "string silent" for THIS export — model geometry
+  /// travelling with the data (like [hopSeconds]). 0 for the remapped ONNX/gpfx
+  /// export; 20 for the native GGUF. The decoder reads it; never assume 0.
+  final int silentClass;
 
   /// The log-probability of [cls] on [string] at [frame].
   double at(int frame, int string, int cls) =>
@@ -68,10 +81,17 @@ abstract interface class TabEmissionModel {
 /// finger to a different fret mid-note costs [fretStepCost] per fret moved (a
 /// slide is more expensive than a sustain, so a one-frame emission spike to a
 /// far fret loses to holding position).
-double _transition(int a, int b, double fretStepCost, double onsetCost) {
-  if (a == 0 && b == 0) return 0; // silent → silent
-  if (a == 0 || b == 0) return onsetCost; // note starts or ends
-  return fretStepCost * (_fretOfClass(a) - _fretOfClass(b)).abs();
+double _transition(
+  int a,
+  int b,
+  int silentClass,
+  double fretStepCost,
+  double onsetCost,
+) {
+  if (a == silentClass && b == silentClass) return 0; // silent → silent
+  if (a == silentClass || b == silentClass) return onsetCost; // note on/off
+  return fretStepCost *
+      (_fretOf(a, silentClass) - _fretOf(b, silentClass)).abs();
 }
 
 /// Decodes [e] into one [Fretting] per frame via a per-string temporal Viterbi.
@@ -86,6 +106,7 @@ List<Fretting> decodeTabEmissions(
   double onsetCost = 0.0,
 }) {
   if (e.nFrames == 0) return [];
+  final silent = e.silentClass;
   // One Viterbi per string → a class per frame.
   final paths = List<List<int>>.generate(kTabStrings, (s) {
     var dp = [for (var c = 0; c < kTabClasses; c++) -e.at(0, s, c)];
@@ -97,7 +118,7 @@ List<Fretting> decodeTabEmissions(
         final emit = -e.at(t, s, c);
         for (var p = 0; p < kTabClasses; p++) {
           final total =
-              dp[p] + emit + _transition(p, c, fretStepCost, onsetCost);
+              dp[p] + emit + _transition(p, c, silent, fretStepCost, onsetCost);
           if (total < next[c]) {
             next[c] = total;
             bp[c] = p;
@@ -124,7 +145,7 @@ List<Fretting> decodeTabEmissions(
     for (var t = 0; t < e.nFrames; t++)
       {
         for (var s = 0; s < kTabStrings; s++)
-          if (paths[s][t] != 0) s: _fretOfClass(paths[s][t]),
+          if (paths[s][t] != silent) s: _fretOf(paths[s][t], silent),
       },
   ];
 }

@@ -17,6 +17,7 @@ TabEmissionFrames _emit(
   int Function(int frame, int string) favoured, {
   double peak = -0.1,
   double floor = -8.0,
+  int silentClass = 0,
   (int cls, double lp)? Function(int frame, int string)? decoy,
 }) {
   final buf = Float64List(nFrames * kTabStrings * kTabClasses);
@@ -31,7 +32,12 @@ TabEmissionFrames _emit(
       if (d != null) buf[base + d.$1] = d.$2;
     }
   }
-  return TabEmissionFrames(nFrames: nFrames, hopSeconds: 0.02, logProbs: buf);
+  return TabEmissionFrames(
+    nFrames: nFrames,
+    hopSeconds: 0.02,
+    logProbs: buf,
+    silentClass: silentClass,
+  );
 }
 
 /// Per-frame argmax (the TabCNN paper's own decode) — the baseline the Viterbi
@@ -118,5 +124,33 @@ void main() {
     expect(open.single[0], 0);
     // math import kept meaningful: sanity that floor < peak spacing decodes.
     expect(math.e, greaterThan(2));
+  });
+
+  // §2 landmine: the SAME class indices mean different frets under the two
+  // exports (ONNX remaps silent→0; native GGUF keeps silent=20). The decoder
+  // must read silentClass, not assume 0 — else every fret is off by one, open
+  // strings vanish, and silence becomes a high fret.
+  group('silentClass carries the export layout', () {
+    // String 0 favours class 5; the rest favour their silent class.
+    TabEmissionFrames c5(int silentClass) =>
+        _emit(1, (t, s) => s == 0 ? 5 : silentClass, silentClass: silentClass);
+
+    test('same class 5 → fret 4 (ONNX) vs fret 5 (GGUF)', () {
+      expect(decodeTabEmissions(c5(0)).single[0], 4); // silent=0: class k→k-1
+      expect(decodeTabEmissions(c5(20)).single[0], 5); // silent=20: class k→k
+    });
+
+    test('GGUF class 20 is SILENCE, not fret 19', () {
+      final gguf = _emit(1, (t, s) => s == 0 ? 20 : 20, silentClass: 20);
+      expect(decodeTabEmissions(gguf).single.containsKey(0), isFalse);
+      // Under the ONNX layout class 20 IS fret 19 (the old contract).
+      final onnx = _emit(1, (t, s) => s == 0 ? 20 : 0);
+      expect(decodeTabEmissions(onnx).single[0], 19);
+    });
+
+    test('GGUF class 0 is open (fret 0), not silence', () {
+      final gguf = _emit(1, (t, s) => s == 0 ? 0 : 20, silentClass: 20);
+      expect(decodeTabEmissions(gguf).single[0], 0);
+    });
   });
 }
