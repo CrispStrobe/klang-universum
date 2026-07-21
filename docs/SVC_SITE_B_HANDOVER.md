@@ -1,65 +1,74 @@
-# RVC/SVC Site-B injectable noise — worker handover
+# RVC/SVC Site-B injectable noise — status + remaining
 
-**Mission:** make the RVC generator's **Site B** noise injectable on the CometBeat
-side, so the three-way bit-exact harness (Python-ref → our Dart offline oracle →
-ggml) can feed all three the identical buffer and line up to `max_abs 0`. Site A
-is already injectable; Site B is not, and it's genuinely random, so the harness
-can't close without it. Needs an ONNX **re-export** + a small `rvc.dart` change —
-a shared task (the export owner + CometBeat).
+**Status: MECHANISM SHIPPED on our side — no ONNX re-export needed.** Site B (the
+SineGen additive noise) is an **in-graph `RandomNormal`** that `onnx_runtime_dart`
+executes, so making it injectable was a runtime hook + an `rvc.dart` seam, not a
+model re-export. What's left is a graph-presence check + the end-to-end 3-way
+harness run (needs the licence-gated RVC model + the Python reference).
 
-Background: auto-memory `svc-voice-conversion-seam`; the relay came from the
-CrispASR RVC determinism proof (three RNG sites: A = `randn_like` z_p latent,
-phase = a zeroed `(1,1)` draw, B = SineGen additive noise).
+Background: auto-memory `svc-voice-conversion-seam`; the CrispASR RVC determinism
+proof (three RNG sites: A = z_p latent, phase = a zeroed draw, B = SineGen
+additive noise).
 
-## What's already handled — and the ONE gap
+## The three sites — where each stands
 
-`infer()` draws exactly three RNG sites; our determinism story covers two:
+- **Site A** (`rnd`, the flow/z_p latent `[1,192,T]`) — a graph **input**;
+  injectable today via `rvcConvert(..., rnd:)` (`rvc.dart`).
+- **Phase** — `harmonic_num == 0` → a single draw the model zeroes; **injecting
+  zeros is provably equivalent** (bit-identical, proven both sides). It's a small
+  `RandomUniform`; nothing to do.
+- **Site B** — the SineGen **additive** noise `(1, T×upp, 1)`, a big
+  `RandomNormal`. `onnx_runtime_dart` mean-fills it by default (≈ zeros).
+  **Now injectable** — see below.
 
-- **Site A** (`rnd`, the flow/`z_p` latent `[1,192,T]`) — **injectable today**:
-  `rvcConvert(..., Float32List? rnd)` feeds `'rnd': Tensor.float(noise,[1,192,t])`;
-  `rvcSeededNoise(frames, seed:)` is the default (`lib/core/audio/transcription/
-  rvc.dart`).
-- **SineGen phase** — NOT random for us: `harmonic_num == 0` → a single `(1,1)`
-  draw the model's next line zeroes, so **injecting zeros is provably equivalent**
-  (bit-identical, proven). Nothing to do; just assert `harmonic_num==0` in any
-  guard.
-- ⛔ **Site B** — SineGen's **additive noise** `(1, T×upp, 1)`, voicing-dependent
-  and genuinely random. **Our ONNX export FOLDS the SineGen source away, so Site
-  B is not a graph input** → it can't be injected → the three-way harness can't
-  match bit-for-bit. This is the gap.
+## What shipped
 
-## The task (two halves)
+- **`onnx_runtime_dart` `OnnxRandomInject`** (`4dc258e`) — a process-global
+  `provider(op, shape)`; a non-null buffer of the **matching flat length** is used
+  verbatim by `RandomNormal`/`RandomUniform` instead of the default fill. Routing
+  is by length, so injecting the one buffer sized to Site B (`T×upp`) hits that
+  node and the tiny phase `RandomUniform` (length 1) falls through untouched — no
+  execution-order knowledge, no re-export. +3 tests.
+- **`rvc.dart`** — `rvcConvert(..., Float32List? sourceNoise)`: sets the provider
+  to route `RandomNormal → sourceNoise` around the run (restored after). A TEST
+  affordance; production `convert()` leaves it null.
 
-1. **Re-export the RVC ONNX exposing Site B as a graph input** — like `rnd` is for
-   Site A: the SineGen additive-noise buffer becomes a named `float32[1, T×upp, 1]`
-   input instead of an internal `randn`. (Export owner / the tooling that produced
-   the current `rnd`-exposing graph. Keep `rnd` + phase handling unchanged.)
-   Publish the new model to the RVC store's pinned location + sha.
-2. **Wire it in `rvc.dart`** (CometBeat) — mirror the Site-A seam:
-   - add `Float32List? sourceNoise` to `rvcConvert` (default a seeded draw, e.g.
-     `rvcSeededSourceNoise(framesUpsampled, seed:)`), feeding the new input tensor;
-   - production `convert()` stays RANDOM (kids' voice transform); the seed/inject
-     is a **test affordance only**, exactly like `rnd`.
+## ⚠ The trap the ggml agent verified — inject the RAW draw, NOT the scaled noise
 
-## Acceptance
+Their C++ (rvc_svc.cpp) applies the noise **voicing-dependently AFTER the draw**:
+`out = sin(phase)·sine_amp·uv + na·noise[i]`, where `na` is **11× different**
+voiced vs unvoiced (`noise_std = 0.003` when voiced, `sine_amp/3 = 0.0333` when
+not). The graph does the same scaling **downstream of the `RandomNormal`**. So:
 
-The 3-way harness feeds Python-ref, `rvc.dart` (offline oracle), and ggml the
-**same** Site-A and Site-B buffers (+ zeroed phase) and gets **bit-identical**
-output — `max_abs 0.000e+00` across all three, the same proof already achieved for
-Site A alone. Add it to the RVC reference-dumper's stages so it can't regress.
+- inject the **raw `N(0,1)`** at the `RandomNormal` node (exactly what our seam
+  does — `op == 'RandomNormal' ? sourceNoise`), and let the graph apply the UV
+  scaling. Do **NOT** pre-scale in `rvc.dart`.
+- if any scaling were folded in on either side, the buffers would match while the
+  outputs don't — reads as a port bug, is actually a contract mismatch.
+- length is **`T × upp`** (frame count × NSF upsample product), **not `T`** — the
+  harness sizes `sourceNoise`; our length-routing matches it.
 
-## Notes / traps
+The ggml/CrispASR side already exposes both `noise_zp` (192·T) and `noise_sine`
+(T×upp) over the C ABI (`rvc_svc_convert` / `crispasr_session_convert`) — nothing
+needed from them for the wiring.
 
-- The buffer is `T×upp` long (upsampled by the NSF hop `upp`), **not** `T` — size
-  it from the upsample factor, not the frame count.
-- Voicing-dependent: the source module gates the additive noise by the UV mask, so
-  the injected buffer must be applied at the SAME point (pre-gate) the model does,
-  or the values diverge even when the raw draw matches.
-- Don't touch the production randomness — `convert()` must stay non-deterministic;
-  only the harness/test path injects.
+## Remaining (needs the RVC model + Python ref)
+
+1. **Confirm our exported RVC graph actually contains the Site-B `RandomNormal`
+   node** (the op-support + the NSF-source phase `RandomUniform` we already run
+   strongly imply the source module is in-graph, not folded). If an old export
+   folded the additive noise away, THEN a re-export exposing it is needed — but
+   the injection mechanism above is ready either way.
+2. **Run the 3-way harness** — Python-ref, `rvc.dart` (feed `rnd` = Site A,
+   `sourceNoise` = Site B, phase = zeros), ggml — same buffers in.
+3. **Acceptance = a tight epsilon, NOT literal 0** (agreed with the ggml agent):
+   ggml↔Python hit `max_abs 0` because both are CPU-f32 with identical op
+   ordering; the Dart/ONNX runtime is a **third numerical environment**, so
+   ~1e-6/1e-7 is accumulation order, not a wiring bug. Gate on `max_abs < 1e-5`
+   (revisit only if it's larger). Add it to the RVC reference-dumper stages.
 
 ## Coordination
 
-Feature branch + a worktree; the ONNX re-export is the gating half (do it first so
-`rvc.dart` has a target); no PRs, merge to main; report the new model sha + the
-input tensor name back here + into `svc-voice-conversion-seam`.
+Feature branch + a worktree; the model+ref harness run is the only gating piece
+left; no PRs, merge to main; report the epsilon that lands into
+`svc-voice-conversion-seam`.

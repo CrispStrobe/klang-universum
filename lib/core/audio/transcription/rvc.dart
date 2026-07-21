@@ -74,8 +74,16 @@ Float32List rvcSeededNoise(int frames, {int seed = 1234567}) {
 
 /// Convert with an RVC generator [model]. [features] and [f0Hz] must already be
 /// aligned to the SAME frame count (use [rvcAlignFeatures]); [speakerId] selects
-/// the target voice. [rnd] overrides the flow noise (tests pass a fixed buffer).
-/// Returns converted audio at the model's [outSampleRate] (RVC v2 = 40 kHz).
+/// the target voice. [rnd] overrides the flow noise (Site A, a graph input).
+///
+/// [sourceNoise] injects **Site B** — the SineGen additive noise the decoder's
+/// NSF source draws inside the graph (a big `RandomNormal`, `(1, T×upp, 1)`,
+/// voicing-dependent, genuinely random). onnx_runtime_dart mean-fills that node
+/// by default (≈ zeros); passing a buffer routes it there via [OnnxRandomInject]
+/// (length-matched, so the tiny phase `RandomUniform` is untouched), so a
+/// determinism harness can feed the exact buffer the Python reference used and
+/// line up bit-for-bit. A TEST affordance — production `convert()` leaves it null
+/// (stays random-per-graph). Returns audio at [outSampleRate] (RVC v2 = 40 kHz).
 ({Float64List audio, int sampleRate}) rvcConvert(
   ContentFeatures features,
   Float32List f0Hz,
@@ -83,6 +91,7 @@ Float32List rvcSeededNoise(int frames, {int seed = 1234567}) {
   required OnnxModel model,
   int outSampleRate = 40000,
   Float32List? rnd,
+  Float32List? sourceNoise,
 }) {
   final t = f0Hz.length;
   final phone = features.frames == t && features.dim == 256
@@ -90,18 +99,26 @@ Float32List rvcSeededNoise(int frames, {int seed = 1234567}) {
       : rvcAlignFeatures(features, t);
   final pitch = rvcCoarsePitch(f0Hz);
   final noise = rnd ?? rvcSeededNoise(t);
-  final out = model.run(
-    {
-      'phone': Tensor.float(phone, [1, t, 256]),
-      'phone_lengths': Tensor.int64(Int64List.fromList([t]), [1]),
-      'pitch': Tensor.int64(pitch, [1, t]),
-      'pitchf': Tensor.float(f0Hz, [1, t]),
-      'ds': Tensor.int64(Int64List.fromList([speakerId]), [1]),
-      'rnd': Tensor.float(noise, [1, 192, t]),
-    },
-    const ['audio'],
-  );
-  final a = out['audio']!;
+  final inputs = {
+    'phone': Tensor.float(phone, [1, t, 256]),
+    'phone_lengths': Tensor.int64(Int64List.fromList([t]), [1]),
+    'pitch': Tensor.int64(pitch, [1, t]),
+    'pitchf': Tensor.float(f0Hz, [1, t]),
+    'ds': Tensor.int64(Int64List.fromList([speakerId]), [1]),
+    'rnd': Tensor.float(noise, [1, 192, t]),
+  };
+  // Inject Site-B noise (if given) around this run only; restore after.
+  final prevInject = OnnxRandomInject.provider;
+  if (sourceNoise != null) {
+    OnnxRandomInject.provider =
+        (op, shape) => op == 'RandomNormal' ? sourceNoise : null;
+  }
+  final Tensor a;
+  try {
+    a = model.run(inputs, const ['audio'])['audio']!;
+  } finally {
+    OnnxRandomInject.provider = prevInject;
+  }
   final f = a.f ?? a.asFloatList();
   final audio = Float64List(f.length);
   for (var i = 0; i < f.length; i++) {
