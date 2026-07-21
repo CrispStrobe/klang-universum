@@ -16,17 +16,26 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/sf2/sf2_remote.dart'
-    show ByteFetcher, SoundFontSource, isPermissiveLicense, kFluidR3Gm;
+    show ByteFetcher, SoundFontSource, isPermissiveLicense;
 
-/// GeneralUser GS (S. Christian Collins) — a compact (~32 MB) full General-MIDI
-/// bank, uncompressed `.sf2` (no OGG decoder needed), verified reachable. Its
-/// license (v2.0, see the source repo's documentation/LICENSE.txt) is genuinely
-/// permissive but NOT an SPDX id: "You may use GeneralUser GS without
-/// restriction for your own music creation, private or commercial … feel free
-/// to use it in your software projects, and to modify [it] …" — redistribution,
-/// commercial use and modification are all granted. It is therefore allowlisted
-/// explicitly below ([_permitted]); the URL is a community GitHub mirror (the
-/// author asks only that his OWN download server not be hot-linked).
+// ─────────────────────────── the curated catalog ────────────────────────────
+// Every entry is verified REACHABLE and permissively licensed. `.sf2` is
+// uncompressed (plays with no native decoder); `.sf3` is OGG-compressed and
+// needs the glint decoder (GLINT_LIB) at render time — the download needs
+// nothing.
+//
+// ⚠ The catalog once named "FluidR3_GM" from archive.org — that item never
+// existed as a clean copy, AND the ORIGINAL FluidR3 GM (Frank Wen) is in fact
+// "All Rights Reserved … you may not redistribute any part of my work … without
+// my written consent" (per its own readme) — NOT redistributable. The
+// genuinely-MIT FluidR3 lineage is the RE-releases: FluidR3Mono (Michael
+// Cowgill's mono conversion) and MuseScore_General — those are what we use.
+
+/// GeneralUser GS (S. Christian Collins) — compact (~32 MB) full GM bank,
+/// uncompressed `.sf2` (no decoder needed). License v2.0 is genuinely permissive
+/// but NOT an SPDX id ("use without restriction … private or commercial … feel
+/// free to use it in your software projects, and to modify [it]"), so it is
+/// allowlisted explicitly ([_permitted]). The default — smallest no-glint bank.
 const kGeneralUserGs = SoundFontSource(
   id: 'generaluser_gs',
   name: 'GeneralUser GS (S. Christian Collins)',
@@ -39,19 +48,67 @@ const kGeneralUserGs = SoundFontSource(
   approxBytes: 32319396,
 );
 
+/// FluidR3Mono (Michael Cowgill) — the FluidR3 GM lineage, mono-converted and
+/// OGG-compressed to ~14 MB `.sf3` and RE-LICENSED MIT by Cowgill (the original
+/// Frank Wen FluidR3 is all-rights-reserved; this mono conversion is the clean
+/// MIT one). The smallest bank; needs GLINT_LIB to render.
+const kFluidR3Mono = SoundFontSource(
+  id: 'fluidr3mono',
+  name: 'FluidR3Mono GM (.sf3, needs glint)',
+  url: 'https://github.com/musescore/MuseScore/raw/2.1/share/sound/'
+      'FluidR3Mono_GM.sf3',
+  license: 'MIT',
+  attribution: 'FluidR3Mono — mono conversion by Michael Cowgill, MIT '
+      '(from Frank Wen\'s FluidR3)',
+  approxBytes: 14563174,
+);
+
+/// MuseScore_General (.sf3, S. Christian Collins, FluidR3-based) — MIT, ~40 MB
+/// OGG-compressed (needs GLINT_LIB to render). A richer FluidR3 descendant.
+const kMuseScoreGeneralSf3 = SoundFontSource(
+  id: 'musescore_general_sf3',
+  name: 'MuseScore General (.sf3, needs glint)',
+  url: 'https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/'
+      'MuseScore_General.sf3',
+  license: 'MIT',
+  attribution:
+      'MuseScore_General by S. Christian Collins (FluidR3-based) — MIT',
+  approxBytes: 39900972,
+);
+
+/// MuseScore_General (.sf2, uncompressed) — the same MIT, FluidR3-derived bank as
+/// a ~215 MB uncompressed `.sf2` (no decoder needed; large). The clean-MIT,
+/// no-glint, full-quality option.
+const kMuseScoreGeneral = SoundFontSource(
+  id: 'musescore_general',
+  name: 'MuseScore General (.sf2, uncompressed)',
+  url: 'https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/'
+      'MuseScore_General.sf2',
+  license: 'MIT',
+  attribution:
+      'MuseScore_General by S. Christian Collins (FluidR3-based) — MIT',
+  approxBytes: 215614036,
+);
+
 /// The GeneralUser GS license id, allowlisted alongside the SPDX-permissive set.
 const _generalUserLicense = 'GeneralUser-GS-2.0';
 
-/// The soundfonts the CLI can auto-download — permissively licensed, uncompressed
-/// `.sf2` (so no native OGG decoder is needed). GeneralUser GS is the working
-/// default; FluidR3 GM (MIT) is offered too but its `sf2_remote.dart` mirror URL
-/// is currently dead (flagged for that file's owner). Add more here.
-const kSoundFontCatalog = <SoundFontSource>[kGeneralUserGs, kFluidR3Gm];
+/// The soundfonts the CLI can auto-download, smallest/most-convenient first.
+const kSoundFontCatalog = <SoundFontSource>[
+  kGeneralUserGs, // 32 MB .sf2, no glint — the default
+  kFluidR3Mono, // 14 MB .sf3 (needs glint) — the clean-MIT FluidR3 lineage
+  kMuseScoreGeneralSf3, // 40 MB .sf3 (needs glint), MIT
+  kMuseScoreGeneral, // 215 MB .sf2, MIT — clean + no glint, but large
+];
 
 /// Whether [license] is permissive enough to auto-download: the SPDX-permissive
 /// allowlist, plus the explicitly-verified GeneralUser GS custom license.
 bool _permitted(String license) =>
     isPermissiveLicense(license) || license == _generalUserLicense;
+
+/// The file extension a source's URL implies (`.sf3` or `.sf2`).
+String _extOf(String url) =>
+    url.toLowerCase().endsWith('.sf3') ? '.sf3' : '.sf2';
 
 /// Resolves a `--sf2` argument to a local `.sf2` file path, downloading a
 /// catalog soundfont on first use and caching it under
@@ -59,6 +116,7 @@ bool _permitted(String license) =>
 class SoundFontStore {
   SoundFontStore({
     this.cacheDirOverride,
+    this.mirrorBaseOverride,
     List<SoundFontSource>? catalog,
     ByteFetcher? fetch,
     void Function(String)? log,
@@ -67,6 +125,12 @@ class SoundFontStore {
         _log = log ?? stderr.writeln;
 
   final String? cacheDirOverride;
+
+  /// If set (or via `COMET_SOUNDFONT_MIRROR`), download from
+  /// `<mirror>/<id><ext>` instead of the source's upstream URL — the hook for a
+  /// self-hosted, license-vetted mirror (e.g. a GitHub release we control).
+  final String? mirrorBaseOverride;
+
   final List<SoundFontSource> catalog;
   final ByteFetcher _fetch;
   final void Function(String) _log;
@@ -86,7 +150,23 @@ class SoundFontStore {
     return '$home/.cache/comet_beat/soundfonts';
   }
 
-  File fileFor(SoundFontSource s) => File('${cacheDir()}/${s.id}.sf2');
+  /// The self-hosted mirror base, or null. A trailing slash is optional.
+  String? mirrorBase() {
+    final m =
+        mirrorBaseOverride ?? Platform.environment['COMET_SOUNDFONT_MIRROR'];
+    return (m != null && m.isNotEmpty) ? m : null;
+  }
+
+  /// The upstream (or mirrored) download URL for [s].
+  String urlFor(SoundFontSource s) {
+    final mirror = mirrorBase();
+    if (mirror == null) return s.url;
+    final base = mirror.endsWith('/') ? mirror : '$mirror/';
+    return '$base${s.id}${_extOf(s.url)}';
+  }
+
+  File fileFor(SoundFontSource s) =>
+      File('${cacheDir()}/${s.id}${_extOf(s.url)}');
 
   bool isPresent(SoundFontSource s) {
     final f = fileFor(s);
@@ -128,18 +208,19 @@ class SoundFontStore {
     final file = fileFor(source);
     if (isPresent(source)) return file.path;
 
+    final url = urlFor(source);
     final mb = ((source.approxBytes ?? 0) / 1000000).round();
     _log('Downloading ${source.name} '
         '(~$mb MB, ${source.license}) → ${file.path} …');
     final Uint8List bytes;
     try {
-      bytes = await _fetch(Uri.parse(source.url));
+      bytes = await _fetch(Uri.parse(url));
     } catch (e) {
-      throw StateError('SoundFont download failed (${source.url}): $e');
+      throw StateError('SoundFont download failed ($url): $e');
     }
     if (bytes.length < _minBytes) {
       throw StateError(
-        'SoundFont download too small (${bytes.length} bytes) from ${source.url}',
+        'SoundFont download too small (${bytes.length} bytes) from $url',
       );
     }
     Directory(cacheDir()).createSync(recursive: true);
@@ -155,13 +236,16 @@ class SoundFontStore {
       final mb = s.approxBytes != null
           ? ' (~${(s.approxBytes! / 1000000).round()} MB)'
           : '';
-      b.writeln('  ${s.id.padRight(14)} ${s.name}$mb — ${s.license}');
-      b.writeln('  ${' '.padRight(14)} ${s.attribution}');
+      final glint = _extOf(s.url) == '.sf3' ? ' [.sf3 — needs GLINT_LIB]' : '';
+      b.writeln('  ${s.id.padRight(20)} ${s.name}$mb — ${s.license}$glint');
+      b.writeln('  ${' '.padRight(20)} ${s.attribution}');
     }
+    final mirror = mirrorBase();
+    if (mirror != null) b.writeln('mirror: $mirror');
     return b.toString();
   }
 
-  /// A redirect-following HTTP GET (archive.org and mirrors redirect).
+  /// A redirect-following HTTP GET (GitHub / osuosl mirrors may redirect).
   static Future<Uint8List> _httpGet(Uri url) async {
     final client = HttpClient()..userAgent = 'comet_beat-soundfont';
     try {

@@ -109,12 +109,18 @@ void main() {
     await expectLater(s.resolve('test_gm'), throwsA(isA<StateError>()));
   });
 
-  test('the real catalog offers the working GeneralUser GS default', () {
+  test('the real catalog offers GeneralUser GS + the MIT FluidR3 lineage', () {
     expect(kSoundFontCatalog, isNotEmpty);
-    final s = SoundFontStore(cacheDirOverride: tmp.path);
-    final desc = s.describeCatalog();
+    // GeneralUser GS is the default (first); the original ARR FluidR3 is NOT
+    // offered — only the MIT re-releases are.
+    expect(kSoundFontCatalog.first.id, 'generaluser_gs');
+    final ids = kSoundFontCatalog.map((s) => s.id);
+    expect(ids, containsAll(['fluidr3mono', 'musescore_general']));
+    expect(ids, isNot(contains('fluidr3_gm')));
+    // Every catalog license passes the gate (MIT or the GeneralUser license).
+    final desc = SoundFontStore(cacheDirOverride: tmp.path).describeCatalog();
     expect(desc, contains('generaluser_gs'));
-    expect(desc, contains('fluidr3_gm'));
+    expect(desc, contains('needs GLINT_LIB')); // the .sf3 note
   });
 
   test('GeneralUser GS (a verified non-SPDX license) is allowlisted', () async {
@@ -128,5 +134,36 @@ void main() {
     final p = await s.resolve('generaluser_gs');
     expect(p, endsWith('generaluser_gs.sf2'));
     expect(File(p).existsSync(), isTrue);
+  });
+
+  test('a .sf3 source caches with the .sf3 extension', () async {
+    // FluidR3Mono is a .sf3; the cached file must keep that extension.
+    final s = SoundFontStore(
+      cacheDirOverride: tmp.path,
+      log: (_) {},
+      fetch: (_) async => _fakeBytes(),
+    );
+    final p = await s.resolve('fluidr3mono');
+    expect(p, endsWith('fluidr3mono.sf3'));
+  });
+
+  test('a self-hosted mirror rewrites the download URL to <mirror>/<id><ext>',
+      () async {
+    Uri? fetched;
+    final s = SoundFontStore(
+      cacheDirOverride: tmp.path,
+      mirrorBaseOverride: 'https://ourhost.example/sf',
+      log: (_) {},
+      fetch: (u) async {
+        fetched = u;
+        return _fakeBytes();
+      },
+    );
+    expect(
+      s.urlFor(kFluidR3Mono),
+      'https://ourhost.example/sf/fluidr3mono.sf3',
+    );
+    await s.resolve('generaluser_gs');
+    expect(fetched.toString(), 'https://ourhost.example/sf/generaluser_gs.sf2');
   });
 }
