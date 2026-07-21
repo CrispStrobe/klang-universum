@@ -25,8 +25,15 @@
 //                              --backend crispasr (or env CRISPASR_BIN /
 //                              CRISPASR_SEP_MODEL)
 //   --a4 440                   reference pitch
+//   --out tab.gp                (tab task) also write the frettings as a real
+//                              GuitarPro file — so a rendered `.mp3`/`.wav`
+//                              round-trips gp→audio→gp in two commands
+//   --bpm 120                  (tab --out) tempo the tab is quantised against
 //   --f0-dump                  print the raw pitch track instead of notes
 //   --json                     machine-readable output
+//
+// Input is WAV (PCM16) or MP3 (pure-Dart decoder) — a `rendersong … out.mp3`
+// render feeds straight back in.
 //
 // Each neural model auto-downloads on first use through its own *_model_store
 // (MIT weights on the onnx_runtime_dart models-v1 release; crepe GGUF via
@@ -41,6 +48,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/mp3/mp3_decoder.dart' show mp3Decode;
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/transcription/basic_pitch.dart';
 import 'package:comet_beat/core/audio/transcription/basic_pitch_model_store.dart';
@@ -63,6 +71,7 @@ import 'package:comet_beat/features/games/composition/tab_emission_decoder.dart'
     show collapseTabFrames, kTabStrings;
 import 'package:comet_beat/features/games/composition/tabcnn_emitter.dart'
     show audioToTab;
+import 'package:crisp_notation_core/crisp_notation_core.dart';
 
 const _names = [
   'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', //
@@ -90,6 +99,8 @@ Future<void> main(List<String> args) async {
     '--sep-bin',
     '--sep-model',
     '--a4',
+    '--out',
+    '--bpm',
   };
   final positional = <String>[];
   for (var i = 0; i < args.length; i++) {
@@ -105,7 +116,7 @@ Future<void> main(List<String> args) async {
       'usage: dart run bin/transcribe.dart audio.wav '
       '[--task notes|poly|chords|tab|stems] [--backend auto|dart|onnx|crispasr] '
       '[--f0 pyin|dio|crepe|rmvpe] [--f0-viterbi] [--sep-bin B] [--sep-model M] '
-      '[--a4 440] [--f0-dump] [--json]',
+      '[--a4 440] [--out tab.gp] [--bpm 120] [--f0-dump] [--json]',
     );
     exit(64);
   }
@@ -123,11 +134,35 @@ Future<void> main(List<String> args) async {
   // overriding the per-model COMET_*_VITERBI env gates. No effect on pyin/dio.
   if (args.contains('--f0-viterbi')) F0DecodeOptions.viterbi = true;
 
-  final wav = readWavPcm16(File(path).readAsBytesSync());
-  final mono = wavToMonoFloat(wav);
+  // Accept WAV (PCM16) or MP3 (pure-Dart decoder) — so a `rendersong … .mp3`
+  // render round-trips straight back through transcribe without a separate
+  // decode step.
+  final bytes = File(path).readAsBytesSync();
+  final Float64List mono;
+  final int sampleRate;
+  final int channels;
+  if (path.toLowerCase().endsWith('.mp3')) {
+    final pcm = mp3Decode(bytes);
+    sampleRate = pcm.sampleRate;
+    channels = pcm.channels < 1 ? 1 : pcm.channels;
+    final frames = pcm.samples.length ~/ channels;
+    mono = Float64List(frames);
+    for (var i = 0; i < frames; i++) {
+      var sum = 0.0;
+      for (var c = 0; c < channels; c++) {
+        sum += pcm.samples[i * channels + c];
+      }
+      mono[i] = sum / channels;
+    }
+  } else {
+    final wav = readWavPcm16(bytes);
+    sampleRate = wav.sampleRate;
+    channels = wav.channels;
+    mono = wavToMonoFloat(wav);
+  }
   stderr.writeln(
-    'loaded $path — ${wav.sampleRate} Hz, ${wav.channels}ch, '
-    '${(mono.length / wav.sampleRate).toStringAsFixed(2)} s',
+    'loaded $path — $sampleRate Hz, ${channels}ch, '
+    '${(mono.length / sampleRate).toStringAsFixed(2)} s',
   );
   final sw = Stopwatch()..start();
 
@@ -135,7 +170,7 @@ Future<void> main(List<String> args) async {
     case 'poly':
       final model = await BasicPitchModelStore().load();
       final notes =
-          basicPitchTranscribe(model: model, mono, sampleRate: wav.sampleRate);
+          basicPitchTranscribe(model: model, mono, sampleRate: sampleRate);
       sw.stop();
       _printNotes(notes, sw, json);
     case 'chords':
@@ -144,7 +179,7 @@ Future<void> main(List<String> args) async {
         mono,
         model: bundle.model,
         cqt: bundle.cqt,
-        sampleRate: wav.sampleRate,
+        sampleRate: sampleRate,
       );
       sw.stop();
       _printChords(chords, sw, json);
@@ -159,9 +194,9 @@ Future<void> main(List<String> args) async {
         );
         exit(69);
       }
-      final stems = await sep(mono, wav.sampleRate);
+      final stems = await sep(mono, sampleRate);
       sw.stop();
-      final written = _writeStems(path, stems, wav.sampleRate);
+      final written = _writeStems(path, stems, sampleRate);
       if (json) {
         stdout.writeln(jsonEncode(written));
       } else {
@@ -176,15 +211,15 @@ Future<void> main(List<String> args) async {
       final f0 = await _resolveF0(backend, _optS(args, '--f0', ''));
       if (args.contains('--f0-dump')) {
         final track = f0 == null
-            ? pyinF0(mono, sampleRate: wav.sampleRate)
-            : await f0(mono, wav.sampleRate);
+            ? pyinF0(mono, sampleRate: sampleRate)
+            : await f0(mono, sampleRate);
         sw.stop();
         _printTrack(track, sw, json);
         return;
       }
       final notes = await transcribeMonophonic(
         mono,
-        sampleRate: wav.sampleRate,
+        sampleRate: sampleRate,
         a4: a4,
         f0: f0,
       );
@@ -194,7 +229,7 @@ Future<void> main(List<String> args) async {
       // Audio → guitar tab via the TabCNN emitter (prefers gpfx) + the
       // per-string Viterbi decoder. Needs the model (auto-downloads, or point
       // COMET_TABCNN_DIR at a prebuilt tabcnn-gpfx.onnx + tabcnn-cqt.bin).
-      final perFrame = await audioToTab(mono, wav.sampleRate);
+      final perFrame = await audioToTab(mono, sampleRate);
       sw.stop();
       if (perFrame == null) {
         stderr.writeln(
@@ -203,6 +238,12 @@ Future<void> main(List<String> args) async {
           'tabcnn-gpfx.onnx + tabcnn-cqt.bin.',
         );
         exit(69);
+      }
+      final tabOut = _optS(args, '--out', '');
+      if (tabOut.isNotEmpty) {
+        final bpm = _optD(args, '--bpm', 120).round();
+        File(tabOut).writeAsBytesSync(_framesToGp(perFrame, bpm: bpm));
+        stderr.writeln('wrote $tabOut (GuitarPro, bpm $bpm)');
       }
       _printTab(perFrame, sw, json);
     default:
@@ -348,6 +389,91 @@ void _printNotes(List<NoteEvent> events, Stopwatch sw, bool json) {
 
 /// Renders the per-frame frettings as an ASCII guitar tab: collapse identical
 /// runs, drop sub-46 ms flickers, one column per surviving fretted event.
+/// Quantise the per-frame frettings into a GuitarPro (.gp) byte blob so an
+/// audio recording round-trips back to editable tab: collapse frame runs into
+/// columns, snap each run's length to the nearest tab note value at [bpm], place
+/// notes on the model's predicted strings, and serialise via GPIF. Standard
+/// guitar tuning (string 0 = high e). Flutter-free (crisp_notation_core only),
+/// mirroring `TabDocument.toScore` so it can live on the CLI path.
+Uint8List _framesToGp(List<Map<int, int>> perFrame, {int bpm = 120}) {
+  const hop = 512 / 22050;
+  const durTable = <(NoteDuration, int)>[
+    (NoteDuration.whole, 8),
+    (NoteDuration(DurationBase.half, dots: 1), 6),
+    (NoteDuration.half, 4),
+    (NoteDuration(DurationBase.quarter, dots: 1), 3),
+    (NoteDuration.quarter, 2),
+    (NoteDuration.eighth, 1),
+  ];
+  NoteDuration nearest(int steps) {
+    var best = durTable.last.$1;
+    var bestDiff = 1 << 30;
+    for (final (nd, s) in durTable) {
+      final d = (s - steps).abs();
+      if (d < bestDiff) {
+        bestDiff = d;
+        best = nd;
+      }
+    }
+    return best;
+  }
+
+  int stepsOf(NoteDuration d) {
+    for (final (dur, s) in durTable) {
+      if (dur == d) return s;
+    }
+    return 1;
+  }
+
+  final tuning = Tuning.standardGuitar;
+  final measures = <Measure>[];
+  final voicings = <TabVoicing>[];
+  var bar = <MusicElement>[];
+  var barSteps = 0;
+  var idc = 0;
+  for (final (frets, frames) in collapseTabFrames(perFrame)) {
+    if (frames < 2) continue; // drop sub-46 ms flicker
+    final beats = frames * hop * bpm / 60;
+    final eighthSteps = (beats * 2).round().clamp(1, 8);
+    final dur = nearest(eighthSteps);
+    final steps = stepsOf(dur);
+    if (barSteps > 0 && barSteps + steps > 8) {
+      measures.add(Measure(bar));
+      bar = <MusicElement>[];
+      barSteps = 0;
+    }
+    if (frets.isEmpty) {
+      bar.add(RestElement(dur));
+    } else {
+      final entries = frets.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      final id = 't${idc++}';
+      bar.add(
+        NoteElement(
+          pitches: [
+            for (final e in entries)
+              Pitch.fromMidi(tuning.strings[e.key].midiNumber + e.value),
+          ],
+          duration: dur,
+          id: id,
+        ),
+      );
+      voicings.add(TabVoicing(id, [for (final e in entries) e.key]));
+    }
+    barSteps += steps;
+  }
+  if (bar.isNotEmpty) measures.add(Measure(bar));
+  if (measures.isEmpty) {
+    measures.add(const Measure([RestElement(NoteDuration.whole)]));
+  }
+  final score = Score(
+    clef: Clef.treble,
+    measures: measures,
+    tabVoicings: voicings,
+  );
+  return writeGpFromGpif(scoreToGpif(score, tuning: tuning));
+}
+
 void _printTab(List<Map<int, int>> perFrame, Stopwatch sw, bool json) {
   const hop = 512 / 22050; // TabCNN frame hop (s)
   const minFrames = 2; // ignore < ~46 ms noise
