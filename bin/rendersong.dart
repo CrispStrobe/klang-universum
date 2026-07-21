@@ -14,8 +14,9 @@
 //   # pick a preset + tempo + bitrate; render a GPIF tab to WAV
 //   dart run bin/rendersong.dart song.gp3 out.wav --sf2 gm.sf2 --preset 24 --bpm 96
 //
-//   # no SoundFont → a built-in additive piano
+//   # no SoundFont → a built-in voice (default piano); --voice picks another
 //   dart run bin/rendersong.dart score.musicxml out.mp3
+//   dart run bin/rendersong.dart song.gp5 out.mp3 --voice guitar  # Karplus pluck
 //
 // A multi-track MIDI + a SoundFont voices EACH part with its own General-MIDI
 // instrument (piano, bass, strings…) and the channel-10 track with a drum kit —
@@ -58,6 +59,7 @@ void main(List<String> args) {
   var preset = 0;
   var presetSet = false;
   var single = false;
+  String? voiceName; // built-in voice name (no --sf2): piano/guitar/cello/…
   var notation = false; // force the quantized notation path for MIDI
   var bpm = 120;
   var bitrate = 192;
@@ -77,6 +79,8 @@ void main(List<String> args) {
         play = true;
       case '--single':
         single = true;
+      case '--voice':
+        voiceName = _next(args, ++i, a).toLowerCase();
       case '--notation':
         notation = true;
       case '--preset':
@@ -188,8 +192,9 @@ void main(List<String> args) {
     if (sf2 != null) {
       voice = _soundFontVoice(sf2, preset);
     } else {
-      voice = const AdditiveInstrument('piano', Instrument.piano);
-      stderr.writeln('no --sf2 given → built-in additive piano');
+      voice = _builtinVoice(voiceName);
+      stderr
+          .writeln("no --sf2 given → built-in voice '${voiceName ?? 'piano'}'");
     }
     mono = loaded is MultiPartScore
         ? renderMultiPartWithInstrument(loaded, voice, quarterMs: qms)
@@ -383,6 +388,37 @@ LoadedSoundFont _loadFont(String sf2Path) {
     }
   }
   return loadSoundFont(f.readAsBytesSync(), vorbis: _tryVorbis());
+}
+
+/// The built-in (no-SoundFont) voice for [name]. Plucked-string voices
+/// (guitar/pluck/harp/bass) use Karplus-Strong — a far better fit for guitar
+/// than an additive tone, and the right timbre to render for audio→tab. The
+/// sustained/struck voices map to the additive [Instrument] set. Defaults to
+/// piano (unchanged behaviour when --voice is omitted).
+TrackerInstrument _builtinVoice(String? name) {
+  switch (name) {
+    case null:
+    case 'piano':
+      return const AdditiveInstrument('piano', Instrument.piano);
+    case 'cello':
+      return const AdditiveInstrument('cello', Instrument.cello);
+    case 'flute':
+      return const AdditiveInstrument('flute', Instrument.flute);
+    case 'musicbox':
+    case 'music-box':
+      return const AdditiveInstrument('musicBox', Instrument.musicBox);
+    case 'guitar':
+    case 'pluck':
+      return const KarplusInstrument('guitar');
+    case 'harp':
+      return const KarplusInstrument('harp', damping: 0.9985);
+    case 'bass':
+    case 'pluckbass':
+      return const KarplusInstrument('pluckBass', damping: 0.992);
+    default:
+      _fail('--voice must be one of: piano, guitar, cello, flute, musicbox, '
+          'harp, bass');
+  }
 }
 
 TrackerInstrument _soundFontVoice(String sf2Path, int preset) {
@@ -615,6 +651,10 @@ Render a song through a SoundFont to WAV/MP3.
 
 Options:
   --sf2 <file>     SoundFont (.sf2 / .sf3) or SFZ instrument (.sfz) to voice with
+  --voice <name>   built-in voice when no --sf2: piano (default), guitar, cello,
+                   flute, musicbox, harp, bass. guitar/harp/bass are Karplus-
+                   Strong plucked strings — the right timbre to render for
+                   audio→tab (a guitar render round-trips far better than piano)
   --preset <N>     force ONE preset (index) for the whole song
   --single         force a single voice (preset 0) — disables GM per-part
   --notation       MIDI: force the quantized notation path (default is the
