@@ -182,6 +182,28 @@ split into three groups, none of which is dense string/fret gold:
   tier as IDMT (CC BY-NC-ND). Cleaner than IDMT on axis 2 (PD classical vs
   original recordings), richer labels than ASCII. Keep the primary ship gate on
   GuitarSet player 05; use REDACTED `.gpx` + IDMT as secondary OOD checks.
+
+  **★ IMSLP CC0 guitar tablature — the first TRAINING-clean tab source found.**
+  Unlike everything above, some IMSLP contributors typeset **guitar-arrangement
+  tablature and dedicate it CC0** — clean on BOTH axes (CC0 encoding + long-PD
+  work), so usable to **train the shipped model**, not just eval. Example:
+  `Courante_(Adriaenssen,_Emanuel)` — "Complete Score (tablature)", CC0, guitar
+  arr (EADGBE) of a ~1592 lute work, by arranger **Marieh**. **Marieh alone has
+  237+ CC0 guitar-tab PDFs** (Viñas, Campion, Alais, …), CC0 verified across
+  samples. **Findable automatically via the IMSLP MediaWiki API** — note the
+  licence is per-FILE, NOT a category, so: (a) enumerate an arranger's uploads
+  `api.php?action=query&list=usercontribs&ucuser=Marieh&ucnamespace=6&uclimit=500`
+  (or `Category:For guitar (arr)` / `Category:<Arranger>/Arranger`), (b) filter
+  filenames containing `tab`, (c) verify CC0 on each work page (`prop=categories`
+  has no licence tag — fetch the page and read the file's licence field).
+  **The one barrier: format = typeset PDF** (not GPX/MusicXML), so it needs
+  **tab-OMR** to recover machine-readable (string,fret). But typeset tab is a
+  clean digit-grid (no staff-notation / circle-vs-fingering ambiguity — the
+  *tractable* OMR case), and the payoff is real string/fret **training** labels
+  with impeccable licence. **This is the highest-value tab lead: pursue the
+  IMSLP-CC0-tab crawl + a tab-OMR pass.** (Aside: even raw 6-course renaissance
+  lute tab is fret-geometrically guitar-compatible — same P4-P4-M3-P4-P4 relative
+  tuning as EADGBE — but here it's already explicit guitar arrangements, so moot.)
 - **MIDI archives** (pitch only — no string/fret; and NOT clean):
   **REDACTED.com** — 5,641 MIDIs, but *"Copyright François Faucher
   1998–2025,"* **no licence**, and includes still-in-copyright composers
