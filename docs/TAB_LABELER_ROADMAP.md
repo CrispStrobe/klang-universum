@@ -148,11 +148,50 @@ augmentation (a shape moved to an equivalent string set where pitches allow) to
 fill fretboard/inversion coverage — idiomatic transforms only.
 
 **Bottom line on data:** dense clean symbolic fingering is basically GuitarSet +
-EGSet12. Because the well is shallow, the **biomechanical-aware training (§2) and
-augmentation matter more than usual** — they are how you generalize from few
-players rather than collect more. Val is a held-out PLAYER and the gap is
-generalization, not fit (train 82.6 / val 80.8), so squeezing generalization out
-of limited dense data is the game.
+EGSet12 (+ Guitar-TECHS, roundtrip-verified). Because the well is shallow, the
+**biomechanical-aware training (§2) and augmentation matter more than usual** —
+they are how you generalize from few players rather than collect more. Val is a
+held-out PLAYER and the gap is generalization, not fit (train 82.6 / val 80.8),
+so squeezing generalization out of limited dense data is the game.
+
+### REDACTED's credited sources — traced (REDACTED.org/credits.htm, 2026-07-21)
+
+Traced every music link on REDACTED's credits page to see if a clean *symbolic*
+(string,fret) source hides among its provenance. **It does not** — the sources
+split into three groups, none of which is dense string/fret gold:
+
+- **Other hobbyist TAB archives** (same contested profile as REDACTED —
+  amateur transcriptions of PD works, no explicit licence): REDACTED.com,
+  delcamp.net, REDACTED.net (On-Line Guitar Archive), REDACTED.org, REDACTED.com,
+  REDACTED.com, REDACTED.de, REDACTED.com/CGCL, REDACTED.org,
+  REDACTED (archived). ASCII tab → has (string,fret), but the same
+  §3-Schöpfungshöhe / §44b-TDM question as REDACTED, and same noisy-amateur
+  caveat. Not cleaner than REDACTED itself.
+- **MIDI archives** (pitch only — no string/fret; and NOT clean):
+  **REDACTED.com** — 5,641 MIDIs, but *"Copyright François Faucher
+  1998–2025,"* **no licence**, and includes still-in-copyright composers
+  (Villa-Lobos d.1959, Piazzolla d.1992). midiworld.com, kunstderfuge.com
+  (largely subscription/restricted), guitarist.com. Pitch pseudo-labels at best,
+  with a sequencer copyright claim on top.
+- **Institutional PD facsimile collections** (cleanest on *both* axes — genuinely
+  PD works, PD scans — but **PDF images of STAFF notation**, so pitch-only after
+  OMR, NO string/fret): **Ophee Collection** (Appalachian State — 500+ PD first
+  editions of Sor/Giuliani/Carcassi, *"digitized files of public domain music,"*
+  credit requested); **Boije** (Swedish Music & Theatre Library, ~early-19thc.
+  guitar); **Rischel & Birket-Smith** (Danish Royal Library); **IMSLP**;
+  **Mutopia** (already assessed — CC BY-SA/BY/PD, `.ly`). These are the clean
+  route, but only via OMR → pitch → arranger pseudo-labels, never direct
+  string/fret.
+- (Non-sources on the page: dolmetsch / musictheory.org.uk / vt.edu = theory
+  references; google-groups / reddit / facebook / vk / gametabs = forums.)
+
+**Conclusion:** tracing REDACTED's provenance confirms §3 above — there is **no
+clean dense (string,fret) symbolic source** in the classical-guitar web. The
+tab archives all carry REDACTED's contested profile; the genuinely-PD material
+is staff-notation facsimiles (pitch-only, OMR-gated) or copyright-claimed MIDI.
+So the clean dense data really is GuitarSet + EGSet12 + Guitar-TECHS, and the
+classical-guitar web is a **pseudo-label / weak-supervision** tier at best —
+reinforcing the generate-and-augment strategy over sourcing.
 
 ## TL;DR
 - Keep 7859 + 8270 both on HF; fix the stale card; recommend `cost.move≈2.0`.
