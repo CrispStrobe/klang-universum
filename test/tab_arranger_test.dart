@@ -130,6 +130,22 @@ void main() {
     expect(_sounding(a, guitar), [64]); // still the requested pitch
   });
 
+  test('arrangeTab consults the TabArranger.shared global when no model given',
+      () {
+    addTearDown(() => TabArranger.shared = null);
+    // Wire the same fake via the global (what the app does with TabLabeler) —
+    // no explicit `model` arg, yet the global biases the choice.
+    TabArranger.shared = _FavourModel((1, 5));
+    final a = arrangeTab(
+      [
+        [64],
+      ],
+      guitar,
+    );
+    expect(a.single[1], 5); // the global model drove it
+    expect(_sounding(a, guitar), [64]);
+  });
+
   test('a hand-span cap keeps an impossible stretch out of the candidates', () {
     // Regression: found by benchmarking 337 Mutopia guitar works. `move` (1.0
     // per fret) outbids `span` (0.6 per fret), so before the cap the Viterbi

@@ -20,6 +20,7 @@ import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tab_arranger.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
+import 'package:comet_beat/features/games/composition/tab_labeler.dart';
 import 'package:comet_beat/features/games/composition/tab_mic_capture.dart';
 import 'package:comet_beat/features/games/composition/tab_patterns.dart';
 import 'package:comet_beat/features/games/composition/tabcnn_to_document.dart'
@@ -342,6 +343,14 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       TabTrack('Guitar', TabDocument.fromScore(score, Tuning.standardGuitar)),
     ];
     _ticker = createTicker(_onTick);
+    // Load the symbolic labeler once (background); once ready, every score→tab
+    // path (imports, the MelodyBridge pull) fingers like the human model via the
+    // TabArranger global. Null-on-offline → the heuristic stays the fallback.
+    if (TabArranger.shared == null) {
+      TabLabeler.load().then((m) {
+        if (m != null) TabArranger.shared = m;
+      });
+    }
   }
 
   @override

@@ -50,6 +50,18 @@ abstract interface class TabPositionModel {
   });
 }
 
+/// Process-wide symbolic labeler that [arrangeTab] consults when no explicit
+/// `model` is passed — so EVERY score→tab path (`TabDocument.fromScore`, file
+/// imports, the GP plan, the MelodyBridge tab pull) fingers like the human-
+/// trained model once it's loaded, without threading it through each caller. The
+/// app sets it from `TabLabeler.load()` (null-on-offline); tests leave it null,
+/// so the heuristic is the default + guaranteed fallback.
+class TabArranger {
+  TabArranger._();
+
+  static TabPositionModel? shared;
+}
+
 /// The weights of the arranger's cost function. Defaults are tuned so hand
 /// movement dominates (keep the hand in one place), chord span matters, and a
 /// tiny height term breaks ties toward the low neck.
@@ -254,10 +266,12 @@ List<Fretting> arrangeTab(
       ),
   ];
 
-  // When a model is supplied, its per-position scores replace the heuristic
-  // LOCAL term (transition/hand-movement stays ours). A missing score for a
-  // candidate's position falls back to the heuristic, so partial models work.
-  final scores = model?.score(columns, tuning, capo: capo, maxFret: maxFret);
+  // When a model is supplied (explicitly or via the app-loaded [TabArranger]
+  // global), its per-position scores replace the heuristic LOCAL term
+  // (transition/hand-movement stays ours). A missing score for a candidate's
+  // position falls back to the heuristic, so partial models work.
+  final m = model ?? TabArranger.shared;
+  final scores = m?.score(columns, tuning, capo: capo, maxFret: maxFret);
   double local(int i, Fretting f) {
     final col = (scores != null && i < scores.length) ? scores[i] : null;
     if (col != null && f.isNotEmpty) {
