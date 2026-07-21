@@ -4952,6 +4952,24 @@ abstract class AppLocalizations {
   /// **'Couldn\'t open that file'**
   String get tabImportFailed;
 
+  /// No description provided for @tabOpenRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording → tab'**
+  String get tabOpenRecording;
+
+  /// No description provided for @tabRecordingLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned the recording into tab'**
+  String get tabRecordingLoaded;
+
+  /// No description provided for @tabNoAudioModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab model unavailable (needs a connection the first time)'**
+  String get tabNoAudioModel;
+
   /// No description provided for @libraryTitle.
   ///
   /// In en, this message translates to:

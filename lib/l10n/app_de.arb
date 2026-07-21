@@ -961,6 +961,9 @@
     "placeholders": { "path": { "type": "String" } }
   },
   "tabImportFailed": "Datei konnte nicht geöffnet werden",
+  "tabOpenRecording": "Aufnahme → Tab",
+  "tabRecordingLoaded": "Aufnahme in Tabulatur umgewandelt",
+  "tabNoAudioModel": "Tab-Modell nicht verfügbar (beim ersten Mal ist eine Verbindung nötig)",
   "libraryTitle": "Freie Musik-Bibliotheken",
   "librarySaveToMy": "In Meine Samples speichern",
   "librarySavedToMy": "„{name}“ in Meine Samples gespeichert",

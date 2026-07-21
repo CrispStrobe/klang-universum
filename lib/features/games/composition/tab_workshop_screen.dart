@@ -12,6 +12,8 @@ import 'package:comet_beat/core/audio/score_instrument_render.dart'
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
+import 'package:comet_beat/core/audio/wav_io.dart'
+    show readWavPcm16, wavToMonoFloat;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
@@ -20,6 +22,8 @@ import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_mic_capture.dart';
 import 'package:comet_beat/features/games/composition/tab_patterns.dart';
+import 'package:comet_beat/features/games/composition/tabcnn_to_document.dart'
+    show audioToTabDocument;
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
     show showMyInstrumentsSheet;
@@ -97,6 +101,11 @@ Score parseTabFile(String fileName, Uint8List bytes) {
 /// injected bytes, and reads back what's shown, without the platform picker.
 abstract class TabWorkshopTester {
   Future<void> openScoreFile({String? pickedName, Uint8List? pickedBytes});
+
+  /// Transcribe a mono WAV recording into editable tab on the active track (via
+  /// the TabCNN audio→tab model). [pickedBytes] injects the file in tests.
+  Future<void> openAudioRecording({String? pickedName, Uint8List? pickedBytes});
+  bool get isTranscribingAudio;
   String? get sourceName;
   Tuning get tuning;
   int get capo;
@@ -212,7 +221,20 @@ class TabWorkshopScreen extends StatefulWidget {
   /// a built-in demo riff is shown.
   final Score? initialScore;
 
-  const TabWorkshopScreen({super.key, this.initialScore});
+  /// Test seam: overrides the audio→tab transcription (default
+  /// [audioToTabDocument], which downloads + runs the TabCNN model). Tests inject
+  /// a fake so `openAudioRecording` is exercised without the model / network.
+  final Future<TabDocument?> Function(
+    Float64List mono,
+    int sampleRate,
+    Tuning tuning,
+  )? debugAudioToTab;
+
+  const TabWorkshopScreen({
+    super.key,
+    this.initialScore,
+    this.debugAudioToTab,
+  });
 
   @override
   State<TabWorkshopScreen> createState() => _TabWorkshopScreenState();
@@ -880,6 +902,68 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
     }
   }
 
+  bool _transcribing = false;
+  @override
+  bool get isTranscribingAudio => _transcribing;
+
+  @override
+  Future<void> openAudioRecording({
+    String? pickedName,
+    Uint8List? pickedBytes,
+  }) async {
+    if (_transcribing) return;
+    // Capture context-bound objects before any await (picker / model I/O).
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    Uint8List bytes;
+    String name;
+    if (pickedBytes != null && pickedName != null) {
+      bytes = pickedBytes;
+      name = pickedName;
+    } else {
+      final file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'Audio (WAV)', extensions: ['wav']),
+        ],
+      );
+      if (file == null) return;
+      bytes = await file.readAsBytes();
+      name = file.name;
+    }
+    setState(() => _transcribing = true);
+    TabDocument? doc;
+    try {
+      final wav = readWavPcm16(bytes);
+      final mono = wavToMonoFloat(wav);
+      final tuning = _doc.tuning;
+      doc = await (widget.debugAudioToTab ??
+          (m, sr, t) => audioToTabDocument(m, sr, tuning: t))(
+        mono,
+        wav.sampleRate,
+        tuning,
+      );
+    } catch (_) {
+      doc = null;
+    }
+    if (!mounted) return;
+    setState(() {
+      _transcribing = false;
+      if (doc != null) {
+        _tracks[_active].doc = doc;
+        _sourceName = name;
+        _selCol = 0;
+        _selString = 0;
+        _clearHistory();
+      }
+    });
+    messenger.showSnackBar(
+      SnackBar(
+        content:
+            Text(doc != null ? l10n.tabRecordingLoaded : l10n.tabNoAudioModel),
+      ),
+    );
+  }
+
   @override
   void openSongMusicXml(String title, String musicXml) {
     try {
@@ -1251,6 +1335,17 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
             icon: const Icon(Icons.folder_open),
             tooltip: l10n.tabImport,
             onPressed: openScoreFile,
+          ),
+          IconButton(
+            icon: _transcribing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.graphic_eq),
+            tooltip: l10n.tabOpenRecording,
+            onPressed: _transcribing ? null : openAudioRecording,
           ),
           IconButton(
             icon: const Icon(Icons.library_music_outlined),

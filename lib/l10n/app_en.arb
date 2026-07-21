@@ -1034,6 +1034,9 @@
     "placeholders": { "path": { "type": "String" } }
   },
   "tabImportFailed": "Couldn't open that file",
+  "tabOpenRecording": "Recording → tab",
+  "tabRecordingLoaded": "Turned the recording into tab",
+  "tabNoAudioModel": "Tab model unavailable (needs a connection the first time)",
   "libraryTitle": "Free music libraries",
   "librarySaveToMy": "Save to My Samples",
   "librarySavedToMy": "Saved “{name}” to My Samples",

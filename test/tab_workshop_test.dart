@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/loop_engine.dart' show PatternCell;
 import 'package:comet_beat/core/audio/pitch_analysis.dart';
+import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show SampleInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
@@ -36,6 +37,48 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     MelodyBridge.instance.clear();
+  });
+
+  testWidgets('opens a recording as tab (injected transcriber)',
+      (tester) async {
+    // Fake audio→tab: ignores the audio, returns a canned one-note tab.
+    const frets = {0: 7};
+    final canned = TabDocument(
+      tuning: Tuning.standardGuitar,
+      columns: const [TabColumn(frets: frets)],
+    );
+    await pumpGame(
+      tester,
+      TabWorkshopScreen(debugAudioToTab: (mono, sr, tuning) async => canned),
+    );
+    final tab = _tab(tester);
+    expect(tab.isTranscribingAudio, isFalse);
+
+    // A valid (silent) mono WAV — readWavPcm16 must parse it; the fake ignores it.
+    final wav = wavBytes(Int16List(2205), sampleRate: 22050);
+    await tab.openAudioRecording(pickedName: 'riff.wav', pickedBytes: wav);
+    await tester.pumpAndSettle();
+
+    expect(tab.columnCount, 1);
+    expect(tab.fretAt(0, 0), 7);
+    expect(tab.isTranscribingAudio, isFalse);
+  });
+
+  testWidgets('recording → tab degrades gracefully when the model is absent',
+      (tester) async {
+    await pumpGame(
+      tester,
+      TabWorkshopScreen(debugAudioToTab: (mono, sr, tuning) async => null),
+    );
+    final tab = _tab(tester);
+    final before = tab.columnCount;
+
+    final wav = wavBytes(Int16List(2205), sampleRate: 22050);
+    await tab.openAudioRecording(pickedName: 'r.wav', pickedBytes: wav);
+    await tester.pumpAndSettle();
+
+    expect(tab.columnCount, before); // unchanged
+    expect(tester.takeException(), isNull); // a snackbar, no crash
   });
 
   testWidgets('shares the tab melody out and loads a shared tune in as frets',

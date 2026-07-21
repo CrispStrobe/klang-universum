@@ -2641,6 +2641,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabImportFailed => 'Couldn\'t open that file';
 
   @override
+  String get tabOpenRecording => 'Recording → tab';
+
+  @override
+  String get tabRecordingLoaded => 'Turned the recording into tab';
+
+  @override
+  String get tabNoAudioModel =>
+      'Tab model unavailable (needs a connection the first time)';
+
+  @override
   String get libraryTitle => 'Free music libraries';
 
   @override
