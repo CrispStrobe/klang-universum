@@ -262,6 +262,44 @@ the card, and confirm which weights are actually live on HF (there's a local
 - **Guitar-TECHS / AG-PT-set (CC BY)** — for the *audio*→tab TabCNN, not this
   symbolic labeler.
 
+### Movement is a TUNABLE knob, not a model property — measured Pareto frontier
+
+The `8270` model raised human-fingering agreement to 82.70% but at **+6.8% hand
+movement** vs the heuristic (the `7859` model was +25→+21.6 pts at +3.4%). That
+extra movement is NOT baked into the weights: `arrangeTab` is already a Viterbi
+DP whose transition term penalises hand travel (`|Δfret|·cost.move`, default
+1.0) — the model only replaces the *local* term, so its idiomatic-position
+preference just outvotes `cost.move`. Raising that one weight claws movement
+back, measured on the 60-song / 8,715-position benchmark (8270 model):
+
+| `cost.move` | agreement | movement | vs heuristic mvmt |
+|---|---|---|---|
+| heuristic (no model) | 56.98% | 4095 | — |
+| 1.0 (shipped) | **82.70%** | 4372 | +6.8% |
+| 1.5 | 81.66% | 4251 | +3.8% |
+| **2.0 (knee)** | **80.38%** | **4147** | **+1.3%** |
+| 3.0 | 79.00% | 4086 | −0.2% |
+| 6.0 | 77.06% | 4078 | −0.4% |
+
+**`move≈2.0` keeps 80.4% agreement at near-heuristic movement**, and
+**8270@move-2.0 (80.4% / +1.3%) dominates 7859@move-1.0 (78.6% / +3.4%) on both
+axes** — so ship 8270 with a higher `cost.move`, archive 7859 as a dominated
+fallback. This is a bog-standard result: string-instrument fingering as a
+min-cost path over hand-position states is the **Sayegh (1989) "optimum path
+paradigm"**, extended by Radicioni & Lombardo, Radisavljevic & Driessen (2004,
+learned costs), Barbancho et al. (2012, HMM w/ fingering-difficulty transitions),
+and Heijink & Meulenbroek (2002, biomechanical cost). Our emission-model + DP-
+transition stack is exactly that family; the model supplies local idiomaticity,
+the DP enforces low movement/span globally.
+
+**One caveat — span vs movement differ.** Raising `cost.move` fixes *movement*
+(a transition cost). It does NOT bias toward smaller *spans*, because the model
+**replaces** the local term where `cost.span` lived — so within the hard span cap
+(`kHandSpan=5`) the model picks the shape. To also prefer *narrower* shapes, the
+one code change worth making is to keep `cost.span`/`cost.height` in the local
+cost **additively** even when the model is present (`local = −modelScore·w +
+_localCost(f)`), rather than replacing it. Small, in `arrangeTab`'s `local()`.
+
 ## Still unverified
 
 - **RISM open data** — the layer *under* PrIMuS; a possible MEI unlock if its
