@@ -137,6 +137,22 @@ All licences below read verbatim from the source's own LICENSE file / legal page
     `extract`/`convert`/`validate`/`all`). MIDIs derived from CC0 source →
     redistributable; still self-attested on axis-2, so a dup/plagiarism pass is wise
     before shipping.
+  - **In-app Dart importer** (2026-07-21): `crisp_notation_core`'s
+    `musicrender_reader.dart` reads muspy/PDMX JSON into the notation model —
+    `musicRenderToMidi` (note-exact JSON→SMF, the Dart twin of muspy's write_midi),
+    `multiPartScoreFromMusicRender`, `scoreFromMusicRender`. Surfaced via
+    `bin/musicrenderconv.dart` (CLI) and the Song Book import screen (`.json`).
+    Cross-validated on the corpus: Dart `musicRenderToMidi` = the Python converter
+    **100%**, = muspy **99.9997%** (residual = muspy's note-drops). This doubles as a
+    pipeline oracle (muspy JSON → our importer → our MIDI/MXL vs PDMX's own MID/MXL).
+  - **Full Zenodo release cached** (`zenodo.15571083`, 2026-07-21) on the VPS at
+    `/mnt/volume1/pdmx-cc0-midi/zenodo/`: `mid.tar.gz` (254,035 official MIDIs),
+    `mxl.tar.gz` (MusicXML), `pdf.tar.gz` (9 GB sheet-music PDFs), full `PDMX.csv`
+    (215 MB, with mid/mxl/pdf path columns), `subset_paths.tar.gz`. Their `.mid`/
+    `.mxl`/`.pdf` use the same `Qm…`-hash basenames. The **7,547 clean subset** is
+    extracted per-format under `zenodo/{mid_official,mxl,pdf}/`. NB their official
+    `.mid` are muspy-written → carry the same same-pitch-overlap note-drops; our
+    built MIDIs are more faithful.
 - **Mutopia** — all three licences permit commercial use. Native guitar `.ly`
   files are mixed: e.g. Aguado Op. 11 No. 6 (`Mutopia-2016/01/15-2097`, CC BY-SA
   4.0, plate-backed to S. Richault 6713.R.) carries sparse editor cues (one
