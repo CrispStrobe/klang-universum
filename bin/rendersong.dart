@@ -11,12 +11,19 @@
 //   # a General-MIDI SoundFont voice (piano = preset 0) → MP3
 //   dart run bin/rendersong.dart tune.abc out.mp3 --sf2 FluidR3Mono_GM.sf3
 //
+//   # AUTO-DOWNLOAD a catalog SoundFont by id (cached after the first run)
+//   dart run bin/rendersong.dart song.gp5 out.mp3 --sf2 fluidr3_gm
+//   dart run bin/rendersong.dart --list-soundfonts   # see the catalog
+//
 //   # pick a preset + tempo + bitrate; render a GPIF tab to WAV
 //   dart run bin/rendersong.dart song.gp3 out.wav --sf2 gm.sf2 --preset 24 --bpm 96
 //
 //   # no SoundFont → a built-in voice (default piano); --voice picks another
 //   dart run bin/rendersong.dart score.musicxml out.mp3
 //   dart run bin/rendersong.dart song.gp5 out.mp3 --voice guitar  # Karplus pluck
+//
+// --sf2 accepts either a FILE PATH or a catalog id; a catalog id is downloaded
+// (permissively-licensed only) to ~/.cache/comet_beat/soundfonts/ on first use.
 //
 // A multi-track MIDI + a SoundFont voices EACH part with its own General-MIDI
 // instrument (piano, bass, strings…) and the channel-10 track with a drum kit —
@@ -44,6 +51,7 @@ import 'package:comet_beat/core/audio/score_instrument_render.dart';
 import 'package:comet_beat/core/audio/sf2/sf2.dart' show VorbisDecode;
 import 'package:comet_beat/core/audio/sf2/sfz.dart' show loadSfz;
 import 'package:comet_beat/core/audio/sf2/soundfont_loader.dart';
+import 'package:comet_beat/core/audio/sf2/soundfont_store.dart';
 import 'package:comet_beat/core/audio/sf2/vorbis_glint_ffi.dart';
 import 'package:comet_beat/core/audio/synth.dart' show Instrument, kSampleRate;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
@@ -52,7 +60,7 @@ import 'package:comet_beat/core/audio/tracker_engine.dart';
 // ignore: depend_on_referenced_packages
 import 'package:crisp_notation_core/crisp_notation_core.dart';
 
-void main(List<String> args) {
+Future<void> main(List<String> args) async {
   final pos = <String>[];
   String? sf2;
   String? from;
@@ -75,6 +83,9 @@ void main(List<String> args) {
     switch (a) {
       case '--sf2':
         sf2 = _next(args, ++i, a);
+      case '--list-soundfonts':
+        stdout.write(SoundFontStore().describeCatalog());
+        exit(0);
       case '--play':
         play = true;
       case '--single':
@@ -119,6 +130,17 @@ void main(List<String> args) {
   // With --play, the output file is optional — synthesize to a temp WAV, play
   // it, and remove it. Otherwise <in> <out> are both required.
   if (pos.isEmpty || (pos.length < 2 && !play)) _usage(exitCode: 2);
+
+  // Resolve --sf2: a file path is used as-is; a catalog id (e.g. fluidr3_gm) is
+  // downloaded + cached on first use. `--list-soundfonts` shows the catalog.
+  if (sf2 != null && !File(sf2).existsSync()) {
+    try {
+      sf2 = await SoundFontStore().resolve(sf2);
+    } catch (e) {
+      _fail(e is ArgumentError ? '${e.message}' : '$e');
+    }
+  }
+
   final inPath = pos[0];
   final playTemp = play && pos.length < 2;
   final outPath = playTemp
@@ -650,7 +672,9 @@ Render a song through a SoundFont to WAV/MP3.
   dart run bin/rendersong.dart <in> <out.wav|.mp3> [options]
 
 Options:
-  --sf2 <file>     SoundFont (.sf2 / .sf3) or SFZ instrument (.sfz) to voice with
+  --sf2 <file|id>  SoundFont (.sf2 / .sf3) or SFZ (.sfz) file, OR a catalog id
+                   (e.g. fluidr3_gm) to auto-download + cache on first use
+  --list-soundfonts  list the auto-downloadable SoundFont catalog and exit
   --voice <name>   built-in voice when no --sf2: piano (default), guitar, cello,
                    flute, musicbox, harp, bass. guitar/harp/bass are Karplus-
                    Strong plucked strings — the right timbre to render for

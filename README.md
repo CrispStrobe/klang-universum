@@ -122,7 +122,9 @@ One dispatcher, **`mus`**, fronts the suite — `dart run bin/mus.dart <cmd> …
 | `fx` | apply a crisp_dsp effect to a WAV offline |
 
 Standalone bins (not under `mus`): `rendersong` (a score / MIDI / MusicXML …
-through a SoundFont → WAV/MP3, per-part General-MIDI voicing), `tabconv` (any
+through a SoundFont → WAV/MP3, per-part General-MIDI voicing; `--sf2` takes a
+file **or a catalog id** like `fluidr3_gm` that auto-downloads + caches a
+permissively-licensed SoundFont — `--list-soundfonts`), `tabconv` (any
 notation format — ABC / MIDI / MusicXML / MuseScore / MEI / kern / GPIF /
 JAMS melody — → a **GPIF `.gp`**, running the cost-based tab arranger so
 the frets are playable; `--tuning`/`--capo`/`--no-arrange`, multi-part → one GP
