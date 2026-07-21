@@ -561,8 +561,20 @@ void main() {
       expect(harteToChordName('Bb'), 'Bb');
     });
 
-    test('a file of shorthand yields no chords rather than wrong ones', () {
-      expect(jamsHasChords(jamsWith('chord_weimar', ['C-7', 'F-7'])), isFalse);
+    test('weimar jazz shorthand is now parsed in its own dialect', () {
+      // Was: "yields no chords rather than wrong ones". The dialect is now
+      // implemented, so these read correctly instead of being skipped.
+      expect(jamsHasChords(jamsWith('chord_weimar', ['C-7', 'F-7'])), isTrue);
+      expect(
+        jamsToChordPro(jamsWith('chord_weimar', ['C-7', 'F-7'])),
+        allOf(contains('[Cm7]'), contains('[Fm7]')),
+      );
+    });
+
+    test('an unrecognised quality is still skipped, not degraded', () {
+      // The dialects widen what we understand; they do NOT weaken the rule
+      // that an unknown quality must never fall back to a bare major triad.
+      expect(jamsHasChords(jamsWith('chord_weimar', ['Cqqq', 'Fzz'])), isFalse);
     });
 
     test('malformed weimar key_mode ("Bb-maj") parses', () {
@@ -581,6 +593,233 @@ void main() {
       // The well-formed spelling is unaffected.
       expect(jamsKey(keyJams('Eb:minor')), 'Eb minor');
       expect(jamsKey(keyJams('C:major')), 'C major');
+    });
+  });
+
+  group('non-finite JSON literals (Python interop)', () {
+    // Python's json.dump writes bare NaN/Infinity by default. Dart rejects
+    // those per RFC 8259, so 2 of ChoCo's 17,797 files failed to open at all
+    // with a message that blamed the file for being "not valid JSON".
+    String jamsWithLiteral(String literal) => '''
+{
+  "file_metadata": {"title": "x", "duration": $literal},
+  "annotations": [
+    {"namespace": "chord",
+     "data": [{"time": 0.0, "duration": 1.0, "value": "C:maj",
+               "confidence": $literal}]}
+  ]
+}''';
+
+    for (final literal in ['NaN', 'Infinity', '-Infinity']) {
+      test('a bare $literal no longer fails the whole file', () {
+        final json = jamsWithLiteral(literal);
+        expect(jamsHasChords(json), isTrue);
+        expect(jamsToChordPro(json), contains('[C]'));
+        expect(jamsTitle(json), 'x');
+      });
+    }
+
+    test('"Infinity" as a STRING value is left intact', () {
+      // ChoCo's weimar_302 has "release": "Infinity" — an album name. Nulling
+      // that would corrupt the metadata, so only bare literals are patched.
+      const json = '{"file_metadata": {"title": "Infinity"}, '
+          '"annotations": [{"namespace": "chord", "data": '
+          '[{"time": 0.0, "duration": 1.0, "value": "C:maj"}]}]}';
+      expect(jamsTitle(json), 'Infinity');
+      expect(jamsHasChords(json), isTrue);
+    });
+
+    test('an escaped quote before a literal does not desync the scanner', () {
+      const json = r'{"file_metadata": {"title": "say \"NaN\" twice"}, '
+          '"annotations": [{"namespace": "chord", "data": '
+          '[{"time": 0.0, "duration": 1.0, "value": "C:maj"}]}]}';
+      expect(jamsTitle(json), r'say "NaN" twice');
+      expect(jamsHasChords(json), isTrue);
+    });
+
+    test('genuinely broken JSON still throws', () {
+      expect(() => jamsToChordPro('{not json'), throwsFormatException);
+    });
+  });
+
+  group('shorthand dialects (music21 vs jazz)', () {
+    test('THE conflict: `-` is a flat in music21, a minor in jazz', () {
+      // Same three characters, different chords. Reading either file with the
+      // other dialect's parser silently produces a wrong chord — which is why
+      // the namespace, not the label, selects the parser.
+      expect(music21ChordToName('B-'), 'Bb'); // B FLAT major
+      expect(jazzChordToName('B-'), 'Bm'); // B MINOR
+      expect(music21ChordToName('B-7'), 'Bb7');
+      expect(jazzChordToName('B-7'), 'Bm7');
+    });
+
+    test('music21 spellings (wikifonia, nottingham)', () {
+      expect(music21ChordToName('C'), 'C');
+      expect(music21ChordToName('E-'), 'Eb');
+      expect(music21ChordToName('Am'), 'Am');
+      expect(music21ChordToName('Dm7'), 'Dm7');
+      expect(music21ChordToName('F#m'), 'F#m');
+      expect(music21ChordToName('G7'), 'G7');
+      expect(music21ChordToName('Cmaj7'), 'Cmaj7');
+      expect(music21ChordToName('C/E'), 'C'); // slash bass dropped
+    });
+
+    test('jazz spellings (weimar, jazz-corpus)', () {
+      expect(jazzChordToName('Bb7'), 'Bb7');
+      expect(jazzChordToName('C-7'), 'Cm7');
+      expect(jazzChordToName('Ebj7'), 'Ebmaj7'); // j = major 7th
+      expect(jazzChordToName('CM7'), 'Cmaj7'); // M = major 7th
+      expect(jazzChordToName('Co7'), 'Cdim7');
+      expect(jazzChordToName('C+'), 'Caug');
+      expect(jazzChordToName('Cø'), 'Cm7b5');
+      expect(jazzChordToName('Csus'), 'Csus4');
+    });
+
+    test('longest-prefix wins, so m7b5 never reads as m7 or m', () {
+      expect(jazzChordToName('Cm7b5'), 'Cm7b5');
+      expect(jazzChordToName('Cm7'), 'Cm7');
+      expect(jazzChordToName('Cm'), 'Cm');
+      expect(jazzChordToName('CmMaj7'), 'CmMaj7');
+    });
+
+    test('alterations reduce to the base quality, as Harte extensions do', () {
+      expect(jazzChordToName('C7(b9)'), 'C7');
+      expect(jazzChordToName('C13'), 'C7');
+      expect(music21ChordToName('C11'), 'C7');
+    });
+
+    test('a Harte label is read as Harte in any dialect', () {
+      // ChoCo mixes true Harte labels into the parser-named partitions; `:` is
+      // unambiguous, so it always wins over the dialect.
+      expect(music21ChordToName('C:maj'), 'C');
+      expect(jazzChordToName('A:min7'), 'Am7');
+    });
+
+    test('no-chord markers and unknown qualities yield null', () {
+      expect(music21ChordToName('N'), isNull);
+      expect(jazzChordToName('X'), isNull);
+      expect(jazzChordToName('NC'), isNull); // weimar's no-chord spelling
+      expect(jazzChordToName('Cqqq'), isNull);
+      expect(music21ChordToName('Hm'), isNull);
+      expect(jazzChordToName(42), isNull);
+    });
+
+    test('a raw pitch list is not mistaken for a chord', () {
+      // 54 wikifonia files carry note collections (`B4,G4,E4`) instead of
+      // chord symbols; those must read as nothing, not as B major.
+      expect(music21ChordToName('B4,G4,E4'), isNull);
+      expect(music21ChordToName('B-3,D5'), isNull);
+    });
+
+    test('functional degrees resolve against their key', () {
+      expect(functionalChordToName('C major:Ton'), 'C');
+      expect(functionalChordToName('C major:Sub'), 'F');
+      expect(functionalChordToName('C major:Dom'), 'G');
+      expect(functionalChordToName('Bb major:Dom'), 'F');
+      // A non-functional value in this namespace is ordinary Harte.
+      expect(functionalChordToName('C:maj'), 'C');
+      expect(functionalChordToName('N'), isNull);
+    });
+  });
+
+  group('chord_roman (rock-corpus / when-in-rome / mozart)', () {
+    test('reads a key-relative numeral against a major key', () {
+      expect(romanChordToName('C:I'), 'C');
+      expect(romanChordToName('C:ii'), 'Dm');
+      expect(romanChordToName('C:V'), 'G');
+      expect(romanChordToName('C:vi'), 'Am');
+    });
+
+    test('the key transposes the numeral', () {
+      expect(romanChordToName('Bb major:ii65'), 'Cm');
+      expect(romanChordToName('Bb major:vi64'), 'Gm');
+      expect(romanChordToName('F:I64'), 'F');
+      expect(romanChordToName('F:V11'), 'C');
+    });
+
+    test('a minor key reads its degrees off the natural-minor scale', () {
+      // III is Eb in C minor but E in C major — the offset table must follow
+      // the KEY, not the numeral's case.
+      expect(romanChordToName('C minor:III'), 'Eb');
+      expect(romanChordToName('C major:III'), 'E');
+      expect(romanChordToName('C minor:i'), 'Cm');
+      expect(romanChordToName('C minor:VI'), 'Ab');
+    });
+
+    test('accidentals shift the degree, and spell flat', () {
+      expect(romanChordToName('C:bIII'), 'Eb');
+      expect(romanChordToName('C:bVII'), 'Bb');
+      expect(romanChordToName('C:#iv'), 'F#m');
+    });
+
+    test('quality marks beat the numeral case', () {
+      expect(romanChordToName('C:viio'), 'Bdim');
+      expect(romanChordToName('C:viiø7'), 'Bm7b5');
+      expect(romanChordToName('C:V+'), 'Gaug');
+    });
+
+    test('figures are dropped — a triad, never a guessed seventh', () {
+      // V7 is dominant, IV7 is major, ii7 is minor: resolving the figure needs
+      // diatonic context, so we deliberately keep the triad.
+      expect(romanChordToName('C:V7'), 'G');
+      expect(romanChordToName('C:I64'), 'C');
+      expect(romanChordToName('C:ii43'), 'Dm');
+    });
+
+    test('the stock JAMS struct shape is read too', () {
+      expect(romanChordToName({'tonic': 'C', 'chord': 'V'}), 'G');
+      expect(romanChordToName({'tonic': 'Bb', 'chord': 'ii'}), 'Cm');
+    });
+
+    test('unresolvable or no-chord labels yield null', () {
+      expect(romanChordToName('N'), isNull);
+      expect(romanChordToName('X'), isNull);
+      expect(romanChordToName('I'), isNull, reason: 'no key — unresolvable');
+      expect(romanChordToName('C:xyz'), isNull);
+      expect(romanChordToName('H:I'), isNull);
+      expect(romanChordToName(42), isNull);
+    });
+
+    test('a chord_roman file converts to a chord sheet', () {
+      final json = jsonEncode({
+        'file_metadata': {'title': 'roman'},
+        'annotations': [
+          {
+            'namespace': 'chord_roman',
+            'data': [
+              for (final (i, v)
+                  in ['C:I', 'C:I', 'C:IV', 'C:V', 'N', 'C:I'].indexed)
+                {'time': i * 1.0, 'duration': 1.0, 'value': v},
+            ],
+          },
+        ],
+      });
+      expect(jamsHasChords(json), isTrue);
+      final cp = jamsToChordPro(json);
+      // Repeats collapse; the rest breaks the run so the final C returns.
+      expect(cp, allOf(contains('[C]'), contains('[F]'), contains('[G]')));
+      expect('[C]'.allMatches(cp).length, 2);
+    });
+
+    test('Harte wins when a file carries both', () {
+      final json = jsonEncode({
+        'annotations': [
+          {
+            'namespace': 'chord',
+            'data': [
+              {'time': 0.0, 'duration': 1.0, 'value': 'A:min'},
+            ],
+          },
+          {
+            'namespace': 'chord_roman',
+            'data': [
+              {'time': 0.0, 'duration': 1.0, 'value': 'C:V'},
+            ],
+          },
+        ],
+      });
+      expect(jamsToChordPro(json), contains('[Am]'));
+      expect(jamsToChordPro(json), isNot(contains('[G]')));
     });
   });
 }

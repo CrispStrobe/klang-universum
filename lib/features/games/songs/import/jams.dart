@@ -7,11 +7,12 @@
 // confidence}, …]}, …]}`.
 //
 // This file reads two musical annotations into the app's existing pipelines:
-//   • chord annotations → a ChordPro chord sheet (Harte labels → triads). The
-//     namespaces read are [kChordNamespaces] + [kChordNamespacePrefixes]: the
-//     JAMS standard `chord`/`chord_harte` plus ChoCo's parser-named partitions.
-//     Labels must be Harte; shorthand is rejected, not guessed (see
-//     [harteToChordName]).
+//   • chord annotations → a ChordPro chord sheet. Each namespace is written in
+//     a known label DIALECT, and the namespace selects the parser: Harte
+//     ([harteToChordName]), music21 ([music21ChordToName]), jazz shorthand
+//     ([jazzChordToName]), functional degrees ([functionalChordToName]) and
+//     key-relative roman numerals ([romanChordToName]). Within a dialect an
+//     unrecognised quality is skipped, never guessed at.
 //   • `note_midi`             → a melody, rendered to a minimal SMF and fed to
 //     the existing MIDI importer. `tempo` sets the SMF tempo (so the rhythm
 //     quantizes correctly), `beat` positions infer the time signature, and
@@ -34,16 +35,70 @@ import 'package:crisp_notation_core/crisp_notation_core.dart'
 
 /// Decodes [json] into a JAMS object, or throws [FormatException].
 Map<String, dynamic> _decodeJams(String json) {
-  final Object? root;
+  Object? root;
   try {
     root = jsonDecode(json);
   } catch (_) {
-    throw const FormatException('Not valid JSON — expected a JAMS file.');
+    // Python's `json.dump` emits bare NaN/Infinity by default — non-standard
+    // JSON, which Dart rightly rejects (RFC 8259). But Python IS the JAMS
+    // toolchain, so real corpus files carry them (2 of ChoCo's 17,797). Retry
+    // once with those literals nulled out rather than failing the whole file.
+    final patched = _nullifyNonFiniteLiterals(json);
+    try {
+      root = patched == null ? null : jsonDecode(patched);
+    } catch (_) {
+      root = null;
+    }
+    if (root == null) {
+      throw const FormatException('Not valid JSON — expected a JAMS file.');
+    }
   }
   if (root is! Map<String, dynamic>) {
     throw const FormatException('Not a JAMS object.');
   }
   return root;
+}
+
+/// Replaces bare `NaN` / `Infinity` / `-Infinity` literals with `null`, leaving
+/// string CONTENTS untouched — an album really can be called "Infinity"
+/// (ChoCo's `weimar_302`), and rewriting that would corrupt the metadata.
+/// Returns null when there was nothing to patch, so we don't re-parse for free.
+String? _nullifyNonFiniteLiterals(String json) {
+  final out = StringBuffer();
+  var changed = false;
+  var inString = false;
+  var escaped = false;
+  for (var i = 0; i < json.length; i++) {
+    final c = json[i];
+    if (inString) {
+      out.write(c);
+      if (escaped) {
+        escaped = false;
+      } else if (c == r'\') {
+        escaped = true;
+      } else if (c == '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (c == '"') {
+      inString = true;
+      out.write(c);
+      continue;
+    }
+    const tokens = ['-Infinity', 'Infinity', 'NaN'];
+    var matched = false;
+    for (final t in tokens) {
+      if (json.startsWith(t, i)) {
+        out.write('null');
+        i += t.length - 1;
+        changed = matched = true;
+        break;
+      }
+    }
+    if (!matched) out.write(c);
+  }
+  return changed ? out.toString() : null;
 }
 
 /// The observations of the first annotation in [root] whose namespace is in
@@ -109,25 +164,41 @@ String? jamsTitle(String json) {
 
 // ───────────────────────────────── chords ───────────────────────────────────
 
-/// Chord namespaces we read. `chord`/`chord_harte` are the JAMS standard; the
-/// rest are ChoCo's, named after the parser that produced each partition —
-/// together roughly doubling the ChoCo chord files we can open.
-///
-/// ⚠ A namespace name says which parser made the file, NOT which label
-/// vocabulary it uses. [harteToChordName] rejects anything that isn't Harte
-/// (`root[:quality][/bass]`), so a partition written in jazz/music21 shorthand
-/// yields no chords rather than wrong ones. If a partition here turns out to
-/// need shorthand, teach the parser that dialect — do not loosen the check.
-const Set<String> kChordNamespaces = {
-  'chord',
-  'chord_harte',
+// A namespace name says which PARSER produced the file, and therefore which
+// label dialect it is written in. That is the only safe disambiguator, because
+// the dialects genuinely conflict:
+//
+//   ⚠ `-` means FLAT in music21 (`B-` = B♭, 12,021 uses in ChoCo's wikifonia)
+//     but MINOR in jazz shorthand (`C-7` = Cm7, 1,143 uses in weimar).
+//
+// The same three characters mean different chords depending on the partition,
+// so each dialect gets its OWN parser and they are never mixed. A label
+// containing `:` is unambiguously Harte and is read as Harte in any dialect.
+
+/// The JAMS standard chord namespaces (Harte labels).
+const Set<String> kChordNamespaces = {'chord', 'chord_harte'};
+
+/// music21-spelled leadsheet partitions — wikifonia, nottingham. `-` = flat.
+const Set<String> kMusic21ChordNamespaces = {
   'chord_m21_leadsheet',
   'chord_m21_abc',
-  'chord_weimar',
 };
+
+/// Jazz-shorthand partitions — weimar, jazz-corpus. `-` = minor, `j` = maj7.
+const Set<String> kJazzChordNamespaces = {
+  'chord_weimar',
+  'chord_jparser_harte',
+};
+
+/// Functional-degree partitions — jazz-corpus's `<key>:Ton|Sub|Dom`.
+const Set<String> kFunctionalChordNamespaces = {'chord_jparser_functional'};
 
 /// Namespace prefixes matched loosely — ChoCo's `chord_jparser_*` family.
 const Set<String> kChordNamespacePrefixes = {'chord_jparser'};
+
+/// Roman-numeral chord namespaces. These carry no Harte labels at all, so they
+/// are read only as a FALLBACK — a file with both keeps its Harte reading.
+const Set<String> kRomanChordNamespaces = {'chord_roman'};
 
 /// Whether [json] has a chord annotation with at least one real chord.
 bool jamsHasChords(String json) {
@@ -138,26 +209,55 @@ bool jamsHasChords(String json) {
   }
 }
 
+/// One label dialect: the namespaces written in it, and how to read a label.
+typedef _ChordDialect = ({
+  Set<String> namespaces,
+  String? Function(Object? value) parse,
+});
+
+/// Tried in order; the first dialect that yields any chord wins. Harte leads so
+/// a file carrying both a standard and a derived annotation keeps the standard.
+final List<_ChordDialect> _chordDialects = [
+  (
+    namespaces: kChordNamespaces,
+    parse: (v) => v is String ? harteToChordName(v) : null,
+  ),
+  (namespaces: kMusic21ChordNamespaces, parse: music21ChordToName),
+  (namespaces: kJazzChordNamespaces, parse: jazzChordToName),
+  (namespaces: kFunctionalChordNamespaces, parse: functionalChordToName),
+  (namespaces: kRomanChordNamespaces, parse: romanChordToName),
+];
+
 /// Distinct-run chord names from the first chord annotation (repeats collapsed,
 /// a no-chord `N`/`X` breaking the run).
 List<String> _chordNames(Map<String, dynamic> root) {
+  for (final dialect in _chordDialects) {
+    final names = _collapseRuns(
+      _observations(root, dialect.namespaces),
+      dialect.parse,
+    );
+    if (names.isNotEmpty) return names;
+  }
+  return const [];
+}
+
+/// Maps each observation through [name] and collapses consecutive repeats; a
+/// null (no-chord / unparseable) breaks the run.
+List<String> _collapseRuns(
+  List<Map<String, dynamic>> observations,
+  String? Function(Object? value) name,
+) {
   final out = <String>[];
   String? last;
-  for (final o in _observations(
-    root,
-    kChordNamespaces,
-    prefixes: kChordNamespacePrefixes,
-  )) {
-    final v = o['value'];
-    if (v is! String) continue;
-    final name = harteToChordName(v);
-    if (name == null) {
+  for (final o in observations) {
+    final n = name(o['value']);
+    if (n == null) {
       last = null;
       continue;
     }
-    if (name == last) continue;
-    out.add(name);
-    last = name;
+    if (n == last) continue;
+    out.add(n);
+    last = n;
   }
   return out;
 }
@@ -210,6 +310,257 @@ String? harteToChordName(String label) {
     quality = quality.trim();
   }
   return '$root${suffixForHarteQuality(quality)}';
+}
+
+// ──────────────────────────── shorthand dialects ────────────────────────────
+// music21 and jazz lead-sheet spellings. Both are `root + quality [/bass]`;
+// they differ ONLY in how the root is spelled (see the `-` warning above), so
+// the quality vocabulary below is shared.
+
+/// Shorthand quality → the app's display suffix. Matched longest-prefix-first,
+/// so `m7b5` wins over `m7` wins over `m`. An unrecognised quality yields null
+/// (the chord is skipped) rather than silently degrading to the bare root.
+const Map<String, String> _shorthandQualities = {
+  // sevenths and their major/minor variants
+  'minmaj7': 'mMaj7', 'mMaj7': 'mMaj7', 'mM7': 'mMaj7', '-j7': 'mMaj7',
+  'min7b5': 'm7b5', 'm7b5': 'm7b5', '-7b5': 'm7b5', 'hdim7': 'm7b5',
+  'ø7': 'm7b5', 'ø': 'm7b5',
+  'maj7': 'maj7', 'Maj7': 'maj7', 'M7': 'maj7', 'j7': 'maj7', 'Δ7': 'maj7',
+  'Δ': 'maj7', '^7': 'maj7',
+  'min7': 'm7', 'm7': 'm7', '-7': 'm7',
+  'dim7': 'dim7', 'o7': 'dim7', '°7': 'dim7',
+  // triads
+  'dim': 'dim', 'o': 'dim', '°': 'dim',
+  'aug': 'aug', '+': 'aug', '#5': 'aug', '+5': 'aug',
+  'sus2': 'sus2', 'sus4': 'sus4', 'sus': 'sus4',
+  // sixths, ninths, adds
+  'maj9': 'maj9', 'M9': 'maj9', 'j9': 'maj9',
+  'min9': 'm9', 'm9': 'm9', '-9': 'm9',
+  'min6': 'm6', 'm6': 'm6', '-6': 'm6',
+  'add9': 'add9',
+  '6': '6', '9': '9', '7': '7',
+  // plain triads, and dominant extensions that reduce to their base
+  'maj': '', 'major': '', 'M': '',
+  'min': 'm', 'minor': 'm', 'm': 'm', '-': 'm',
+  '11': '7', '13': '7',
+};
+
+/// Keys longest-first, so a prefix match never shadows a longer quality.
+final List<String> _shorthandQualityKeys = _shorthandQualities.keys.toList()
+  ..sort((a, b) => b.length.compareTo(a.length));
+
+/// The display suffix for a shorthand [quality], or null if unrecognised.
+String? _suffixForShorthand(String quality) {
+  final q = quality.trim();
+  if (q.isEmpty) return ''; // bare root = major
+  for (final k in _shorthandQualityKeys) {
+    // A recognised prefix fixes the base quality; trailing alterations
+    // (`7(b9)`, `13#11`) reduce to it, exactly as Harte extensions do.
+    if (q.startsWith(k)) return _shorthandQualities[k];
+  }
+  return null;
+}
+
+/// Strips a slash-bass and any parenthesised alteration from a shorthand label.
+String _stripShorthandTail(String s) {
+  var out = s;
+  final slash = out.indexOf('/');
+  if (slash >= 0) out = out.substring(0, slash);
+  final paren = out.indexOf('(');
+  if (paren >= 0) out = out.substring(0, paren);
+  return out.trim();
+}
+
+/// Reads a **music21**-spelled label (`C`, `B-`, `B-7`, `Dm7`, `F#m`, `C/E`).
+/// ⚠ `-` is a FLAT here, never a minor.
+String? music21ChordToName(Object? value) {
+  if (value is! String) return null;
+  final s = value.trim();
+  if (s.isEmpty || s == 'N' || s == 'X' || s == 'NC') return null;
+  if (s.contains(':')) return harteToChordName(s); // unambiguously Harte
+  final m = RegExp(r'^([A-G][#\-b]*)').firstMatch(s);
+  if (m == null) return null;
+  final rawRoot = m.group(1)!;
+  final root = rawRoot.replaceAll('-', 'b'); // music21 flat → our spelling
+  final suffix = _suffixForShorthand(
+    _stripShorthandTail(s.substring(rawRoot.length)),
+  );
+  return suffix == null ? null : '$root$suffix';
+}
+
+/// Reads a **jazz**-shorthand label (`C-7`, `Bb7`, `Ebj7`, `CM7`, `Co7`).
+/// ⚠ `-` is a MINOR here, never a flat; flats are spelled `b`.
+String? jazzChordToName(Object? value) {
+  if (value is! String) return null;
+  final s = value.trim();
+  // `NC` is Weimar's no-chord marker (its unaccompanied solos).
+  if (s.isEmpty || s == 'N' || s == 'X' || s == 'NC') return null;
+  if (s.contains(':')) return harteToChordName(s); // unambiguously Harte
+  final m = RegExp(r'^([A-G][#b]*)').firstMatch(s);
+  if (m == null) return null;
+  final root = m.group(1)!;
+  final suffix = _suffixForShorthand(
+    _stripShorthandTail(s.substring(root.length)),
+  );
+  return suffix == null ? null : '$root$suffix';
+}
+
+/// Reads a functional-degree label (`F major:Dom` → C). Tonic/subdominant/
+/// dominant are the I/IV/V of the stated key, so this reuses the roman reader.
+const Map<String, String> _functionalDegrees = {
+  'ton': 'I',
+  'sub': 'IV',
+  'dom': 'V',
+};
+
+String? functionalChordToName(Object? value) {
+  if (value is! String) return null;
+  final s = value.trim();
+  if (s.isEmpty || s == 'N' || s == 'X') return null;
+  final colon = s.indexOf(':');
+  if (colon < 0) return null;
+  final numeral =
+      _functionalDegrees[s.substring(colon + 1).trim().toLowerCase()];
+  // `<key>:<function>` is this namespace's own dialect; anything else after the
+  // colon is an ordinary Harte quality (`C:maj`), which ChoCo also emits here.
+  if (numeral == null) return harteToChordName(s);
+  return _romanToName(s.substring(0, colon).trim(), numeral);
+}
+
+// ────────────────────────── roman-numeral chords ────────────────────────────
+// `chord_roman` is key-relative: the label only means something once you know
+// the tonic, so each observation carries its own key. ChoCo writes it as the
+// STRING `"<key>:<numeral>"` (`"F:I64"`, `"Bb major:ii65"`, `"C:I"`); stock
+// JAMS uses a struct with `tonic`/`chord` keys. Both are read.
+//
+// ⚠ TRIADS ONLY, by design. A figure (`64`, `7`, `65`, `11`) marks inversion
+// and extension, and turning it into a seventh needs the diatonic context —
+// `V7` is dominant, `IV7` is major, `ii7` is minor, and a chromatic alteration
+// changes all three. Guessing would produce confident-looking wrong chords, so
+// figures are dropped and only the triad quality is kept. That matches
+// [harteToChordName]'s rule: reject rather than guess.
+
+/// Scale-degree semitone offsets — the numeral is read against the KEY's own
+/// scale, so `III` is E in C major but Eb in C minor.
+const List<int> _majorDegreeOffsets = [0, 2, 4, 5, 7, 9, 11];
+const List<int> _minorDegreeOffsets = [0, 2, 3, 5, 7, 8, 10];
+
+const Map<String, int> _romanDegrees = {
+  'i': 1,
+  'ii': 2,
+  'iii': 3,
+  'iv': 4,
+  'v': 5,
+  'vi': 6,
+  'vii': 7,
+};
+
+const List<String> _sharpSpelling = [
+  'C', 'C#', 'D', 'D#', 'E', 'F', //
+  'F#', 'G', 'G#', 'A', 'A#', 'B',
+];
+const List<String> _flatSpelling = [
+  'C', 'Db', 'D', 'Eb', 'E', 'F', //
+  'Gb', 'G', 'Ab', 'A', 'Bb', 'B',
+];
+const Map<String, int> _naturalPitchClasses = {
+  'C': 0,
+  'D': 2,
+  'E': 4,
+  'F': 5,
+  'G': 7,
+  'A': 9,
+  'B': 11,
+};
+
+/// Converts one `chord_roman` [value] to a chord symbol (`F`, `Cm`, `Bdim`), or
+/// null for a no-chord / unparseable label.
+String? romanChordToName(Object? value) {
+  final String key;
+  final String numeral;
+  if (value is Map) {
+    final t = value['tonic'];
+    final c = value['chord'];
+    if (t is! String || c is! String) return null;
+    key = t;
+    numeral = c;
+  } else if (value is String) {
+    final s = value.trim();
+    if (s.isEmpty || s == 'N' || s == 'X') return null;
+    final colon = s.indexOf(':');
+    if (colon < 0) return null; // key-less numeral is unresolvable
+    key = s.substring(0, colon);
+    numeral = s.substring(colon + 1);
+  } else {
+    return null;
+  }
+  return _romanToName(key.trim(), numeral.trim());
+}
+
+String? _romanToName(String key, String numeral) {
+  // Key: a root letter with accidentals, optionally followed by a mode word.
+  final k = RegExp(r'^([A-G])([#b♯♭]*)\s*(.*)$').firstMatch(key);
+  if (k == null) return null;
+  var tonicPc = _naturalPitchClasses[k.group(1)!]!;
+  final tonicAccidentals = k.group(2)!;
+  tonicPc += _accidentalShift(tonicAccidentals);
+  final mode = k.group(3)!.toLowerCase();
+  // Minor-ish modes read their degrees off the natural-minor scale.
+  final minorKey = mode.startsWith('min') ||
+      mode == 'm' ||
+      mode.startsWith('aeolian') ||
+      mode.startsWith('dorian') ||
+      mode.startsWith('phrygian') ||
+      mode.startsWith('locrian');
+
+  // Numeral: [accidentals][roman][quality marks][figures].
+  final n = RegExp(r'^([#b♯♭]*)([ivIV]+)(.*)$').firstMatch(numeral);
+  if (n == null) return null;
+  final degree = _romanDegrees[n.group(2)!.toLowerCase()];
+  if (degree == null) return null;
+  final tail = n.group(3)!;
+
+  final offsets = minorKey ? _minorDegreeOffsets : _majorDegreeOffsets;
+  final rootPc =
+      (tonicPc + offsets[degree - 1] + _accidentalShift(n.group(1)!)) % 12;
+
+  // Quality: explicit marks win, else the numeral's case.
+  final upper = n.group(2)![0] == n.group(2)![0].toUpperCase();
+  final String harteQuality;
+  if (tail.startsWith('ø')) {
+    harteQuality = 'hdim7';
+  } else if (tail.startsWith('o') || tail.startsWith('°')) {
+    harteQuality = 'dim';
+  } else if (tail.startsWith('+')) {
+    harteQuality = 'aug';
+  } else {
+    harteQuality = upper ? 'maj' : 'min';
+  }
+
+  // Spelling is approximate: we know the pitch class, not the intended letter.
+  // A flattened degree (`bIII`) and flat/minor keys spell flat — which is right
+  // far more often than not (`bIII` in C is Eb, not D#).
+  final numeralAccidentals = n.group(1)!;
+  final sharpened =
+      numeralAccidentals.contains('#') || numeralAccidentals.contains('♯');
+  final flats = numeralAccidentals.contains('b') ||
+      numeralAccidentals.contains('♭') ||
+      (!sharpened &&
+          (tonicAccidentals.contains('b') ||
+              tonicAccidentals.contains('♭') ||
+              k.group(1) == 'F' ||
+              minorKey));
+  final rootName = (flats ? _flatSpelling : _sharpSpelling)[(rootPc + 12) % 12];
+  return '$rootName${suffixForHarteQuality(harteQuality)}';
+}
+
+int _accidentalShift(String accidentals) {
+  var shift = 0;
+  for (final c in accidentals.split('')) {
+    if (c == '#' || c == '♯') shift++;
+    if (c == 'b' || c == '♭') shift--;
+  }
+  return shift;
 }
 
 // ───────────────────────────────── melody ───────────────────────────────────
