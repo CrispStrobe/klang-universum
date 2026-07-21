@@ -145,6 +145,20 @@ All licences below read verbatim from the source's own LICENSE file / legal page
     Cross-validated on the corpus: Dart `musicRenderToMidi` = the Python converter
     **100%**, = muspy **99.9997%** (residual = muspy's note-drops). This doubles as a
     pipeline oracle (muspy JSON → our importer → our MIDI/MXL vs PDMX's own MID/MXL).
+  - **Integrated into the music DB** (`/mnt/volume1/music-db/`, 2026-07-21): the
+    7,547 clean MIDIs are a new **`PDMX`** source in `db.json` (now 9,531 items:
+    Mutopia 510 + OpenScore Lieder 1,352 + String Quartets 122 + **PDMX 7,547**),
+    ingested via `tool/pdmx_ingest_music_db.py` (→ `bin/ingest_pdmx.py` on the VPS)
+    and merged with `bin/merge_db.py`. Files at `music-db/pdmx/ship/midi/<hash>.mid`;
+    metadata (title, uploader, GM-program-derived instruments) from `PDMX.csv`.
+    Each entry is `rights_status: CC0` but `rights_method` marks it **self-attested,
+    UNVERIFIED** and kept as a distinct `source` so it never mixes with the
+    hand-verified core, adds **0** attribution obligations. ⚠ **Axis-2 caveat is
+    real and large:** `is_original` is unreliable — **55.3% (4,174/7,547) name a
+    third-party composer ≠ the uploader** (e.g. "Crimson Peak – Edith's Theme" /
+    Fernando Velázquez, Bert Appermont, "Arranged by…"). That count over-estimates
+    (some are same-person username mismatches or PD composers like Satie), but a
+    proper dedup/originality pass is warranted before treating PDMX as clean-original.
   - **Full Zenodo release cached** (`zenodo.15571083`, 2026-07-21) on the VPS at
     `/mnt/volume1/pdmx-cc0-midi/zenodo/`: `mid.tar.gz` (254,035 official MIDIs),
     `mxl.tar.gz` (MusicXML), `pdf.tar.gz` (9 GB sheet-music PDFs), full `PDMX.csv`
