@@ -80,7 +80,26 @@ String _optS(List<String> a, String f, String d) {
 }
 
 Future<void> main(List<String> args) async {
-  final positional = args.where((a) => !a.startsWith('--')).toList();
+  // Positionals = args that aren't a `--flag` nor the value consumed by a
+  // value-taking flag — so `--task tab file.wav` doesn't mistake `tab` for the
+  // file. Boolean flags (`--json`, `--f0-viterbi`, `--f0-dump`) take no value.
+  const valueFlags = {
+    '--task',
+    '--backend',
+    '--f0',
+    '--sep-bin',
+    '--sep-model',
+    '--a4',
+  };
+  final positional = <String>[];
+  for (var i = 0; i < args.length; i++) {
+    final a = args[i];
+    if (a.startsWith('--')) {
+      if (valueFlags.contains(a)) i++; // skip its value
+      continue;
+    }
+    positional.add(a);
+  }
   if (positional.isEmpty) {
     stderr.writeln(
       'usage: dart run bin/transcribe.dart audio.wav '
