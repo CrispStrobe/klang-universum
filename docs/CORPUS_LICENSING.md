@@ -3,6 +3,88 @@
 Working notes for sourcing bundle-able ("Tier A") song/score data for CometBeat,
 a COMMERCIAL children's music app shipping in **Germany**. NOT legal advice.
 
+---
+
+# SCOPING (2026-07-21) — sources × our import reach
+
+Scoped against what we can actually ingest. Three findings reframe the hunt:
+
+**A. We import almost every symbolic format — so "reachable" is rarely the
+constraint; LICENCE is.** App import filters (verified in code):
+
+| Format | ext | into |
+|---|---|---|
+| MusicXML (+zip) | musicxml / xml / mxl | full Score |
+| MIDI | mid / midi | full Score |
+| ABC | abc | full Score |
+| MEI | mei | full Score |
+| **Humdrum kern** | krn | full Score (rare in consumer apps — our edge) |
+| MuseScore | mscx / mscz | full Score |
+| Guitar Pro (GPIF) | gp / gpx | full Score + **tab** |
+| ChordPro | cho / pro | chord sheet |
+| JAMS | jams | chords + melody |
+| ASCII tab | (text) | tab Score |
+
+In-library but **not yet wired to the UI**: `scoreFromSemantic` (PrIMuS-style
+"semantic" encoding) and `scoreFromLilyNotes`. These are the cheapest new
+"filters" — the parser already exists, only UI wiring is missing.
+
+**B. TABS: don't source them — generate them.** Every large Guitar-Pro corpus is
+a scrape of in-copyright songs. DadaGP (the biggest, ~26k) is **research-access-
+only** and sourced from Ultimate Guitar — both axes dirty. BUT we already own
+`arrangeTab` + `gpFretPlanFor` + `scoreToGpif` + the `tabconv` CLI, i.e. we
+**manufacture playable tab from any score**. So the tab corpus == the clean score
+corpus, run through our own arranger. Zero third-party tab licensing needed.
+
+**C. The academic classical corpora are a NonCommercial trap.** Verified verbatim
+across 6 repos: craigsapp **bach-370-chorales**, **mozart-piano-sonatas**,
+**joplin**, and DCMLab **ABC**, **mozart_piano_sonatas**, **beethoven_piano_
+sonatas** are all **CC BY-NC-SA 4.0**. Axis-2 clean (all long-dead composers),
+axis-1 FAIL for a commercial app. Reachable (kern/ABC/MuseScore) but dev/test
+only. The "obvious" symbolic-classical route is closed for shipping.
+
+## Ranked shippable candidates (both axes, format-reachable)
+
+1. **OpenScore Lieder** — **CC0** (verbatim confirmed), 1,200+ 19th-c. art songs,
+   MusicXML → already reachable. Multi-part + lyrics. Axis-2: 19th-c. composers +
+   poets; run the OpenEWLD composer-AND-poet death-date filter (a sampled 8 poets
+   all pre-1948). **Top pick: biggest clean, real-repertoire growth, no new code.**
+2. **PDMX is_original slice** — **CC0**, 7,549 files clean on both axes (quantified
+   offline: cc-zero ∧ no-conflict ∧ is_original). Original amateur compositions,
+   MusicXML. Self-attested originality → wants a dup/plagiarism pass.
+3. **OpenScore String Quartets** — CC0 (same project), MusicXML. Chamber, PD
+   composers. Smaller; same clean profile.
+4. **Mutopia** — no NC files found; per-piece PD / CC BY / CC BY-SA mix (BY-SA =
+   copyleft on a bundle). Native `.ly` (a new filter) or the generated MIDI
+   (reachable now). Needs per-piece licence + modern-editor-rights filter.
+5. **GregoBase** — CC0 Gregorian chant. Niche for kids; needs a GABC→model
+   converter (or its MusicXML export). 100% clean.
+
+## Cheapest "add a filter" unlocks (the user's hint)
+
+- **Wire `scoreFromSemantic` to the import UI → PrIMuS** (~87k real music
+  incipits). Parser already exists; only UI + a format probe needed. ⚠ LICENCE
+  UNVERIFIED — PrIMuS is RISM-derived; confirm CC BY/CC0 before relying on it.
+- **EsAC → kern/model converter → Essen Folksong Collection** (~20k European folk
+  melodies, incl. German — high pedagogical fit). ⚠ Essen licence was flagged
+  uncertain earlier; and folk = modern-arrangement (§3) risk. Verify first.
+- **`.ly` importer → Mutopia native** (bigger lift; MIDI path already works, so
+  low priority).
+
+## Verified-rejected this scoping pass
+
+- **DadaGP** and all Guitar-Pro tab archives — research-only / UG scrapes of
+  in-copyright songs. (Generate tabs instead — finding B.)
+- **craigsapp kern + DCML corpora** — CC BY-NC-SA (finding C). Dev/test only.
+
+## Still to verify (have web budget; agents were rate-limited, direct fetch works)
+
+PrIMuS licence · Essen/EsAC licence · Mutopia per-piece breakdown · RISM/MEI
+incipit corpora (possible MEI unlock) · OpenScore Lieder full composer+poet
+death-date sweep.
+
+---
+
 ## The test every candidate must pass — TWO axes
 
 A dataset qualifies for shipping only if BOTH are clean:
