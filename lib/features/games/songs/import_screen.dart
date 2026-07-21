@@ -22,6 +22,7 @@ import 'package:crisp_notation/crisp_notation.dart'
         multiPartScoreFromAbc,
         multiPartScoreFromKern,
         multiPartScoreFromMei,
+        multiPartScoreFromMusicRender,
         multiPartScoreFromMusicXml,
         multiPartToMusicXml,
         readMusicXmlFromMxl,
@@ -113,6 +114,7 @@ class _ImportScreenState extends State<ImportScreen> {
               'krn',
               'mid',
               'midi',
+              'json',
             ],
           ),
         ],
@@ -127,6 +129,8 @@ class _ImportScreenState extends State<ImportScreen> {
         'mei' => multiPartScoreFromMei(utf8.decode(bytes)),
         'krn' => multiPartScoreFromKern(utf8.decode(bytes)),
         'mxl' => multiPartScoreFromMusicXml(readMusicXmlFromMxl(bytes)),
+        // muspy / PDMX "MusicRender" JSON (MuseScore's own JSON export).
+        'json' => multiPartScoreFromMusicRender(utf8.decode(bytes)),
         _ => multiPartScoreFromMusicXml(utf8.decode(bytes)),
       };
       final base = file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
