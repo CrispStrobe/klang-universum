@@ -7,7 +7,11 @@
 // confidence}, …]}, …]}`.
 //
 // This file reads two musical annotations into the app's existing pipelines:
-//   • `chord` / `chord_harte` → a ChordPro chord sheet (Harte labels → triads).
+//   • chord annotations → a ChordPro chord sheet (Harte labels → triads). The
+//     namespaces read are [kChordNamespaces] + [kChordNamespacePrefixes]: the
+//     JAMS standard `chord`/`chord_harte` plus ChoCo's parser-named partitions.
+//     Labels must be Harte; shorthand is rejected, not guessed (see
+//     [harteToChordName]).
 //   • `note_midi`             → a melody, rendered to a minimal SMF and fed to
 //     the existing MIDI importer. `tempo` sets the SMF tempo (so the rhythm
 //     quantizes correctly), `beat` positions infer the time signature, and
@@ -47,13 +51,17 @@ Map<String, dynamic> _decodeJams(String json) {
 /// modern list-of-observations and the legacy dict-of-parallel-arrays shapes.
 List<Map<String, dynamic>> _observations(
   Map<String, dynamic> root,
-  Set<String> namespaces,
-) {
+  Set<String> namespaces, {
+  Set<String> prefixes = const {},
+}) {
   final annotations = root['annotations'];
   if (annotations is! List) return const [];
   for (final a in annotations) {
     if (a is! Map) continue;
-    if (!namespaces.contains(a['namespace'])) continue;
+    final ns = a['namespace'];
+    final hit = namespaces.contains(ns) ||
+        (ns is String && prefixes.any(ns.startsWith));
+    if (!hit) continue;
     final data = a['data'];
     if (data is List) {
       return [
@@ -101,6 +109,26 @@ String? jamsTitle(String json) {
 
 // ───────────────────────────────── chords ───────────────────────────────────
 
+/// Chord namespaces we read. `chord`/`chord_harte` are the JAMS standard; the
+/// rest are ChoCo's, named after the parser that produced each partition —
+/// together roughly doubling the ChoCo chord files we can open.
+///
+/// ⚠ A namespace name says which parser made the file, NOT which label
+/// vocabulary it uses. [harteToChordName] rejects anything that isn't Harte
+/// (`root[:quality][/bass]`), so a partition written in jazz/music21 shorthand
+/// yields no chords rather than wrong ones. If a partition here turns out to
+/// need shorthand, teach the parser that dialect — do not loosen the check.
+const Set<String> kChordNamespaces = {
+  'chord',
+  'chord_harte',
+  'chord_m21_leadsheet',
+  'chord_m21_abc',
+  'chord_weimar',
+};
+
+/// Namespace prefixes matched loosely — ChoCo's `chord_jparser_*` family.
+const Set<String> kChordNamespacePrefixes = {'chord_jparser'};
+
 /// Whether [json] has a chord annotation with at least one real chord.
 bool jamsHasChords(String json) {
   try {
@@ -115,7 +143,11 @@ bool jamsHasChords(String json) {
 List<String> _chordNames(Map<String, dynamic> root) {
   final out = <String>[];
   String? last;
-  for (final o in _observations(root, const {'chord', 'chord_harte'})) {
+  for (final o in _observations(
+    root,
+    kChordNamespaces,
+    prefixes: kChordNamespacePrefixes,
+  )) {
     final v = o['value'];
     if (v is! String) continue;
     final name = harteToChordName(v);
@@ -158,6 +190,17 @@ String? harteToChordName(String label) {
   final m = RegExp(r'^([A-G][#b]*)').firstMatch(s);
   if (m == null) return null;
   final root = m.group(1)!;
+
+  // Harte is `root[:quality][/bass]`. Anything else after the root — jazz or
+  // music21 shorthand like `C-7`, `Cmaj7`, `C#m` — is NOT Harte, and must be
+  // rejected rather than parsed. Silently keeping just the root turned `C-7`
+  // into C major and `C#m` into C#: a wrong chord that looks like a successful
+  // import. Callers skip a null, which is the honest outcome.
+  final rest = s.substring(root.length);
+  if (rest.isNotEmpty && !rest.startsWith(':') && !rest.startsWith('/')) {
+    return null;
+  }
+
   final colon = s.indexOf(':');
   var quality = '';
   if (colon >= 0) {
@@ -262,11 +305,19 @@ String? jamsKey(String json) {
       if (v is! String) continue;
       final s = v.trim();
       if (s.isEmpty || s == 'N') continue;
-      // Split "TONIC:MODE" (or "TONIC MODE"); default mode = major.
-      final sep = s.contains(':') ? ':' : ' ';
+      // Split "TONIC:MODE". ChoCo's weimar partition emits a malformed
+      // "Bb-maj" instead of "Bb:major", so accept '-' and ' ' as separators
+      // too — otherwise the whole string became the tonic ("Bb-maj major").
+      final sep = s.contains(':')
+          ? ':'
+          : s.contains('-')
+              ? '-'
+              : ' ';
       final parts = s.split(sep);
       final tonic = parts.first.trim();
-      final mode = parts.length > 1 ? parts[1].trim().toLowerCase() : 'major';
+      var mode = parts.length > 1 ? parts[1].trim().toLowerCase() : 'major';
+      // Those same sources abbreviate the mode.
+      mode = const {'maj': 'major', 'min': 'minor'}[mode] ?? mode;
       if (tonic.isEmpty) continue;
       return '$tonic ${mode.isEmpty ? 'major' : mode}';
     }

@@ -514,4 +514,73 @@ void main() {
       expect(notes.map((n) => n.midi), [60, 67]);
     });
   });
+
+  group('ChoCo compatibility', () {
+    String jamsWith(String ns, List<String> labels) => jsonEncode({
+          'file_metadata': {'title': 'x'},
+          'annotations': [
+            {
+              'namespace': ns,
+              'data': [
+                for (var i = 0; i < labels.length; i++)
+                  {'time': i * 1.0, 'duration': 1.0, 'value': labels[i]},
+              ],
+            },
+          ],
+        });
+
+    for (final ns in [
+      'chord_m21_leadsheet',
+      'chord_m21_abc',
+      'chord_weimar',
+      'chord_jparser_functional',
+    ]) {
+      test('reads the $ns namespace', () {
+        expect(jamsHasChords(jamsWith(ns, ['C:maj', 'A:min7'])), isTrue);
+        expect(
+          jamsToChordPro(jamsWith(ns, ['C:maj', 'A:min7'])),
+          allOf(contains('[C]'), contains('[Am7]')),
+        );
+      });
+    }
+
+    test('non-Harte shorthand is rejected, never degraded to a wrong chord',
+        () {
+      // Regression: these used to silently become the bare root, so a minor
+      // chord imported as MAJOR and sevenths vanished — a wrong import that
+      // looked successful.
+      for (final bad in ['C-7', 'C#m', 'Cmaj7', 'C7', 'Bbm']) {
+        expect(harteToChordName(bad), isNull, reason: '$bad is not Harte');
+      }
+      // Real Harte still parses, with quality preserved.
+      expect(harteToChordName('C:maj'), 'C');
+      expect(harteToChordName('A:min7'), 'Am7');
+      expect(harteToChordName('G:7/3'), 'G7');
+      // A bare root IS valid Harte (= major).
+      expect(harteToChordName('C'), 'C');
+      expect(harteToChordName('Bb'), 'Bb');
+    });
+
+    test('a file of shorthand yields no chords rather than wrong ones', () {
+      expect(jamsHasChords(jamsWith('chord_weimar', ['C-7', 'F-7'])), isFalse);
+    });
+
+    test('malformed weimar key_mode ("Bb-maj") parses', () {
+      String keyJams(String v) => jsonEncode({
+            'annotations': [
+              {
+                'namespace': 'key_mode',
+                'data': [
+                  {'time': 0.0, 'duration': 0.0, 'value': v},
+                ],
+              },
+            ],
+          });
+      expect(jamsKey(keyJams('Bb-maj')), 'Bb major');
+      expect(jamsKey(keyJams('A-min')), 'A minor');
+      // The well-formed spelling is unaffected.
+      expect(jamsKey(keyJams('Eb:minor')), 'Eb minor');
+      expect(jamsKey(keyJams('C:major')), 'C major');
+    });
+  });
 }
