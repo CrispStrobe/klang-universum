@@ -254,11 +254,12 @@ the card, and confirm which weights are actually live on HF (there's a local
   beyond GuitarSet's 6 players. Tiny, but adds a 7th player/style at zero licence
   cost. Fold into `extract.py`'s GuitarSet glob.
 - **Mutopia `.ly`, `non-sa/` only** — the 47 string-labeled files (`tool/
-  mutopia_guitar_scan.py`) are extra symbolic supervision, BUT the **CC BY-SA
-  subset is copyleft** — training a CC-BY model on it risks forcing share-alike.
-  The `sa/` vs `non-sa/` split exists for exactly this: **only `non-sa/` (CC BY /
-  PD) may feed the shipped CC-BY model**; `sa/` files are eval-only unless the
-  model itself goes BY-SA.
+  mutopia_guitar_scan.py`) are **sparse PARTIAL string PINS, not dense per-note
+  labels** (guitar staff notation can't carry full string/fret — string marks on
+  <½ the notes even at densest). Role: `Score.tabVoicings` pins + arranger
+  pseudo-labels, NOT a GuitarSet-grade training set. And the **CC BY-SA subset is
+  copyleft** — only `non-sa/` (CC BY / PD) may feed a CC-BY model. See
+  `docs/TAB_LABELER_ROADMAP.md` §3 for the dense-vs-sparse data picture.
 - **Guitar-TECHS / AG-PT-set (CC BY)** — for the *audio*→tab TabCNN, not this
   symbolic labeler.
 
