@@ -116,10 +116,18 @@ void main() {
 
     expect(find.text('English'), findsOneWidget);
     expect(find.text('Deutsch'), findsOneWidget);
-    expect(find.text('1'), findsWidgets); // tracked/learning stats
 
+    // Language tiles sit at the top; tap while they're on screen.
     await tester.tap(find.text('Deutsch'));
     await tester.pump();
     expect(settings.locale, const Locale('de'));
+
+    // Stats live at the bottom of the (lazy) ListView — scroll them in first.
+    final ones = find.text('1');
+    for (var i = 0; i < 12 && ones.evaluate().isEmpty; i++) {
+      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.pump();
+    }
+    expect(ones, findsWidgets); // tracked/learning stats
   });
 }

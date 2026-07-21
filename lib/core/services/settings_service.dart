@@ -19,6 +19,7 @@ class SettingsService with ChangeNotifier {
   static const _scoreFontKey = 'score_font';
   static const _soundOnKey = 'sound_on';
   static const _showNoteNamesKey = 'show_note_names';
+  static const _smartTabFingeringKey = 'smart_tab_fingering';
 
   Locale? _locale;
   NoteNaming _noteNaming = NoteNaming.auto;
@@ -27,6 +28,7 @@ class SettingsService with ChangeNotifier {
   ScoreFont _scoreFont = ScoreFont.bravura;
   bool _soundOn = true;
   bool _showNoteNames = false;
+  bool _smartTabFingering = true;
   Instrument _instrument = Instrument.piano;
 
   /// Master sound switch. When off, all synthesized playback (notes, chords,
@@ -69,6 +71,12 @@ class SettingsService with ChangeNotifier {
   /// Petaluma face. True iff Petaluma is selected.
   bool get handwrittenNotes => _scoreFont == ScoreFont.petaluma;
 
+  /// Whether the Tab Workshop uses the small on-device AI model to finger a
+  /// score→tab conversion more like a human (a ~1 MB download on first use).
+  /// On by default; when OFF, tab conversion runs purely on the built-in
+  /// heuristic arranger — no model download, no ONNX inference.
+  bool get smartTabFingering => _smartTabFingering;
+
   void _applyScoreFont() => appScoreFont = musicFontFor(_scoreFont);
 
   Future<void> load() async {
@@ -88,6 +96,7 @@ class SettingsService with ChangeNotifier {
             : ScoreFont.bravura);
     _soundOn = prefs.getBool(_soundOnKey) ?? true;
     _showNoteNames = prefs.getBool(_showNoteNamesKey) ?? false;
+    _smartTabFingering = prefs.getBool(_smartTabFingeringKey) ?? true;
     _applyScoreFont();
     _instrument =
         Instrument.values.asNameMap()[prefs.getString(_instrumentKey)] ??
@@ -114,6 +123,13 @@ class SettingsService with ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_showTimerKey, value);
+  }
+
+  Future<void> setSmartTabFingering(bool value) async {
+    _smartTabFingering = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_smartTabFingeringKey, value);
   }
 
   Future<void> setColorScaffold(bool value) async {

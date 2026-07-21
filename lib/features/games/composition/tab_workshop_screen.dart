@@ -16,6 +16,7 @@ import 'package:comet_beat/core/audio/wav_io.dart'
     show readWavPcm16, wavToMonoFloat;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
+import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/games/composition/music_inspect.dart';
 import 'package:comet_beat/features/games/composition/tab_arranger.dart';
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
@@ -343,10 +344,19 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
       TabTrack('Guitar', TabDocument.fromScore(score, Tuning.standardGuitar)),
     ];
     _ticker = createTicker(_onTick);
-    // Load the symbolic labeler once (background); once ready, every score→tab
-    // path (imports, the MelodyBridge pull) fingers like the human model via the
-    // TabArranger global. Null-on-offline → the heuristic stays the fallback.
-    if (TabArranger.shared == null) {
+    // Smart-fingering opt-in (Settings, on by default): load the symbolic labeler
+    // once (background) so every score→tab path (imports, the MelodyBridge pull)
+    // fingers like the human model via the TabArranger global. When the user has
+    // turned it off, force the pure heuristic — no model download, no ONNX.
+    bool smart;
+    try {
+      smart = context.read<SettingsService>().smartTabFingering;
+    } on ProviderNotFoundException {
+      smart = true;
+    }
+    if (!smart) {
+      TabArranger.shared = null;
+    } else if (TabArranger.shared == null) {
       TabLabeler.load().then((m) {
         if (m != null) TabArranger.shared = m;
       });

@@ -10574,6 +10574,18 @@ abstract class AppLocalizations {
   /// **'Print each note\'s letter as a reading aid — hidden in games where naming the note is the challenge'**
   String get showNoteNamesSubtitle;
 
+  /// No description provided for @smartTabFingeringLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart tab fingering'**
+  String get smartTabFingeringLabel;
+
+  /// No description provided for @smartTabFingeringSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a small on-device AI model to finger a score as tab more like a human (a one-time download). Off = the built-in heuristic only, no model'**
+  String get smartTabFingeringSubtitle;
+
   /// No description provided for @debugModeEnabled.
   ///
   /// In en, this message translates to:

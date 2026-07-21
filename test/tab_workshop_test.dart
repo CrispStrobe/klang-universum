@@ -14,6 +14,9 @@ import 'package:comet_beat/core/audio/tracker_engine.dart'
     show SampleInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/melody_bridge.dart';
+import 'package:comet_beat/core/services/settings_service.dart';
+import 'package:comet_beat/features/games/composition/tab_arranger.dart'
+    show TabArranger, TabPositionModel;
 import 'package:comet_beat/features/games/composition/tab_chords.dart';
 import 'package:comet_beat/features/games/composition/tab_document.dart';
 import 'package:comet_beat/features/games/composition/tab_patterns.dart';
@@ -37,6 +40,26 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     MelodyBridge.instance.clear();
+  });
+
+  testWidgets('Smart-tab-fingering OFF forces the heuristic (clears the model)',
+      (tester) async {
+    addTearDown(() => TabArranger.shared = null);
+    TabArranger.shared = _StubModel(); // pretend a model was loaded earlier
+    final off = SettingsService();
+    await off.setSmartTabFingering(false);
+
+    await pumpGame(
+      tester,
+      const TabWorkshopScreen(),
+      extraProviders: [
+        ChangeNotifierProvider<SettingsService>.value(value: off),
+      ],
+    );
+
+    expect(off.smartTabFingering, isFalse);
+    // initState saw the setting off and dropped the model → pure heuristic.
+    expect(TabArranger.shared, isNull);
   });
 
   testWidgets('opens a recording as tab (injected transcriber)',
@@ -734,4 +757,17 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     expect(tab.isPlaying, isFalse);
   });
+}
+
+/// A do-nothing [TabPositionModel] — stands in for a loaded labeler so the test
+/// can prove the OFF toggle clears it.
+class _StubModel implements TabPositionModel {
+  @override
+  List<Map<(int, int), double>?>? score(
+    List<List<int>> columns,
+    Tuning tuning, {
+    int capo = 0,
+    int maxFret = 20,
+  }) =>
+      null;
 }

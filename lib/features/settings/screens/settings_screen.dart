@@ -12,6 +12,8 @@ import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/core/services/tts_service.dart';
+import 'package:comet_beat/features/games/composition/tab_arranger.dart'
+    show TabArranger;
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/settings/screens/about_screen.dart';
@@ -228,6 +230,17 @@ class SettingsScreen extends StatelessWidget {
                   subtitle: Text(l10n.showNoteNamesSubtitle),
                   value: settings.showNoteNames,
                   onChanged: settings.setShowNoteNames,
+                ),
+                const Divider(height: 0),
+                SwitchListTile(
+                  title: Text(l10n.smartTabFingeringLabel),
+                  subtitle: Text(l10n.smartTabFingeringSubtitle),
+                  value: settings.smartTabFingering,
+                  onChanged: (v) {
+                    settings.setSmartTabFingering(v);
+                    // Off → drop the loaded model now so it takes effect at once.
+                    if (!v) TabArranger.shared = null;
+                  },
                 ),
               ],
             ),

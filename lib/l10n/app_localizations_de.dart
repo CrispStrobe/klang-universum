@@ -5819,6 +5819,13 @@ class AppLocalizationsDe extends AppLocalizations {
       'Den Buchstaben jeder Note als Lesehilfe anzeigen — versteckt in Spielen, in denen das Benennen die Aufgabe ist';
 
   @override
+  String get smartTabFingeringLabel => 'Smarte Tab-Fingersätze';
+
+  @override
+  String get smartTabFingeringSubtitle =>
+      'Ein kleines KI-Modell auf dem Gerät setzt Fingersätze menschlicher (einmaliger Download). Aus = nur die eingebaute Heuristik, kein Modell';
+
+  @override
   String get debugModeEnabled => 'Debug-Einstellungen freigeschaltet!';
 
   @override

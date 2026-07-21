@@ -2273,6 +2273,8 @@
   "scoreFontLeipzig": "Leipzig",
   "showNoteNamesLabel": "Note names under the staff",
   "showNoteNamesSubtitle": "Print each note's letter as a reading aid — hidden in games where naming the note is the challenge",
+  "smartTabFingeringLabel": "Smart tab fingering",
+  "smartTabFingeringSubtitle": "Use a small on-device AI model to finger a score as tab more like a human (a one-time download). Off = the built-in heuristic only, no model",
   "debugModeEnabled": "Debug settings unlocked!",
   "debugSectionTitle": "Debug",
   "debugUnlockLabel": "Unlock all games",

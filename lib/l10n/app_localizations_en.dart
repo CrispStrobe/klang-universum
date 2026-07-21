@@ -5796,6 +5796,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Print each note\'s letter as a reading aid — hidden in games where naming the note is the challenge';
 
   @override
+  String get smartTabFingeringLabel => 'Smart tab fingering';
+
+  @override
+  String get smartTabFingeringSubtitle =>
+      'Use a small on-device AI model to finger a score as tab more like a human (a one-time download). Off = the built-in heuristic only, no model';
+
+  @override
   String get debugModeEnabled => 'Debug settings unlocked!';
 
   @override

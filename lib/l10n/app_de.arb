@@ -1967,6 +1967,8 @@
   "scoreFontLeipzig": "Leipzig",
   "showNoteNamesLabel": "Notennamen unter dem System",
   "showNoteNamesSubtitle": "Den Buchstaben jeder Note als Lesehilfe anzeigen — versteckt in Spielen, in denen das Benennen die Aufgabe ist",
+  "smartTabFingeringLabel": "Smarte Tab-Fingersätze",
+  "smartTabFingeringSubtitle": "Ein kleines KI-Modell auf dem Gerät setzt Fingersätze menschlicher (einmaliger Download). Aus = nur die eingebaute Heuristik, kein Modell",
   "debugModeEnabled": "Debug-Einstellungen freigeschaltet!",
   "debugSectionTitle": "Debug",
   "debugUnlockLabel": "Alle Spiele freischalten",
