@@ -251,6 +251,11 @@ List<Fretting> arrangeTab(
   TabArrangeCost cost = const TabArrangeCost(),
   TabPositionModel? model,
   int? maxSpan = kHandSpan,
+  // When >0 AND a model is supplied, re-adds a span penalty on TOP of the model
+  // emission (which otherwise replaces the local cost, dropping span). Lets the
+  // arranger prefer the compact shape among the model's high-scoring options —
+  // pulls arranged span toward the human's without retraining. 0 = unchanged.
+  double modelSpanCost = 0,
 }) {
   if (columns.isEmpty) return [];
   final cands = [
@@ -284,7 +289,10 @@ List<Fretting> arrangeTab(
           any = true;
         }
       }
-      if (any) return -sum; // higher model score → lower cost
+      if (any) {
+        // higher model score → lower cost; + optional span penalty (default 0)
+        return -sum + (modelSpanCost > 0 ? _spanOf(f) * modelSpanCost : 0);
+      }
     }
     return _localCost(f, cost);
   }
