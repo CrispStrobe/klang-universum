@@ -104,20 +104,24 @@ All licences below read verbatim from the source's own LICENSE file / legal page
   4.0, plate-backed to S. Richault 6713.R.) carries sparse editor cues (one
   explicit LilyPond string event `\2`, some left-hand fingerings) and its
   `TabStaff` is commented out ("tabs are not completely developed"). Treat as
-  clean score material + sparse fingering cues, not full tab gold.
+  clean score material + sparse string cues, not full tab gold. For our tab
+  labeler, LilyPond string-number events (`\1`..`\6`) are the useful labels:
+  fret is derivable from note pitch + string. Left-hand finger numbers are only
+  auxiliary context.
   Automated scan: `tool/mutopia_guitar_scan.py` against local
   `/Users/christianstrobele/code/mutopia-guitar/manifest.json` downloaded 361
   primary `.ly` sources from 388 guitar entries; 27 derived source URLs were 404.
-  Classification: 6 `dense_string_labels`, 77 `weak_fingering_labels`, 84
-  `tabstaff_score_only`, 194 `score_only`, 27 `unscanned`. Strongest direct
+  Classification: 6 `dense_string_labels`, 20 `weak_string_labels`, 21
+  `sparse_string_labels`, 36 `fingering_only`, 84 `tabstaff_score_only`, 194
+  `score_only`, 27 `unscanned`. Strongest direct
   string-label candidates are `capricho-arabe` (229 string events),
   `moonlight-guitar-duo` (90), `sym5-1-guitar-duo` (79),
   `wtk1-prelude1-guitar-duo` (73), `claro-de-luna` (69), and
   `sorf_op35_no22` (65). Reports:
   `/Users/christianstrobele/code/mutopia-guitar/reports/mutopia_guitar_ly_scan.{json,csv}`.
   Conclusion: useful, but not GuitarSet-scale gold. Use dense files as direct
-  string supervision, weak files as auxiliary fingering/string pressure, and
-  score-only pieces for arranger-generated pseudo-label pretraining before
+  string/fret supervision, weak/sparse string files as lower-weight supervision,
+  and score-only pieces for arranger-generated pseudo-label pretraining before
   GuitarSet fine-tuning.
 
 Tabs for **every** row above come free via our own `arrangeTab` — see the tab
@@ -162,7 +166,8 @@ not just use" the arranger currently lacks (it has a cost model, no ground truth
 
 | Dataset | Zenodo | Licence | Use for |
 |---|---|---|---|
-| **GuitarSet** | 3371780 | **CC BY 4.0** | GOLD. note+string+fret ground truth → arranger benchmark AND audio→tab train. Have it. |
+| **GuitarSet** | 3371780 | **CC BY 4.0** | GOLD. `.jams` w/ note+string+fret ground truth → arranger benchmark AND audio→tab train. Have it. |
+| **EGSet12** | 11406378 | **CC BY 4.0** | **`.gp` + `.jams`**, 12 solo electric pieces, **original — composed by the author** (axis-2 clean). Tiny (~6 min) but BOTH-axes clean, both formats we import, real string/fret. ✅ shippable + trainable |
 | **Guitar-TECHS** | 14963133 | **CC BY 4.0** (4.1 GB) | electric; techniques + excerpts + chords + scales, diverse hardware. audio→tab + technique. ✅ trainable |
 | **AG-PT-set** | 10159492 | **CC BY 4.0** (6.7 GB) | acoustic; 12 playing techniques, onset-labeled (10h). technique detection. ✅ trainable |
 | **EGDB (rendered)** | 12674910 | **CC BY 4.0** (1 GB) | 240 electric tracks; tone/effect robustness (FX-removal variant). ✅ trainable |
@@ -182,6 +187,41 @@ shipped model on GAPS or IDMT-SMT-Guitar** (NC) — use them only to evaluate.
 CC-BY explicit-fingering guitar corpus surfaced this pass — flag as a data gap if
 the arranger is to output finger numbers, not just frets.
 
+### String/fret ground-truth by FORMAT (the user's question, answered)
+
+Where clean (both-axes) explicit string/fret supervision actually lives, per
+format we import. The useful label is **string number** — given pitch + string,
+fret is deterministic; left-hand fingering is only auxiliary.
+
+- **`.jams`** — **GuitarSet** (large, CC BY, string+fret) + **EGSet12** (12,
+  CC BY, string/fret via its paired `.gp`). That is essentially the entire
+  clean JAMS-with-string/fret universe — JAMS guitar annotation is rare, and
+  everything else that surfaced was effects/tone (GUITAR-FX, EGFxSet) with no
+  fret data, or NC (IDMT).
+- **`.gp` (Guitar Pro)** — `.gp` encodes string+fret inherently, but every large
+  archive is a UG scrape of in-copyright songs (DadaGP, research-only). The ONLY
+  both-axes-clean `.gp` found is **EGSet12** (12 original pieces). So clean `.gp`
+  data = EGSet12 + whatever **we generate ourselves** via `scoreToGpif`.
+- **`.ly` (LilyPond)** — **Mutopia**, scanned by `tool/mutopia_guitar_scan.py`:
+  **47 files with explicit LilyPond string events (`\1`..`\6`), 1,117 events
+  total** (6 dense / 20 weak / 21 sparse); densest `capricho-arabe` (229),
+  `moonlight-guitar-duo` (90). The 36 `fingering_only` files are NOT string/fret
+  labels. This is the main `.ly` string-label source; useful but not
+  GuitarSet-scale — dense files as direct supervision, weak/sparse as
+  lower-weight, score-only as arranger-pseudo-label pretraining.
+- **`.mei`** — **GAP.** MEI's `<tabGrp>` module encodes string+fret+finger
+  natively and historical lute/guitar tab is long-PD, but **no accessible CC0/
+  CC-BY MEI-tablature *data* corpus surfaced** (the TabMEI org is empty; the lute
+  repos found are editors/converters, e.g. ECOLM's `ecolmeditor` (GPL code), not
+  licensed encoded corpora). Historical lute tab is also 6-course, non-guitar
+  tuning — marginal for a guitar app even if a corpus turned up. Treat `.mei`
+  string/fret as not-currently-available rather than promising.
+
+**Net:** the clean string/fret world is small and concentrated — GuitarSet
+(`.jams`, the anchor) + EGSet12 (`.gp`+`.jams`) + Mutopia's 47 `.ly` files. This
+is *exactly* why the "generate tabs from clean scores via `arrangeTab`" strategy
+matters: sourced ground truth alone won't scale a fret/fingering model.
+
 ## Still unverified
 
 - **RISM open data** — the layer *under* PrIMuS; a possible MEI unlock if its
@@ -190,7 +230,10 @@ the arranger is to output finger numbers, not just frets.
   open-data pages 404. Widely *reputed* CC0, but unconfirmed — do NOT rely on
   memory. **Low priority** anyway: incipits are short fragments, less useful
   than full scores, and the PrIMuS route is licence-blocked regardless.
-- **Meertens Tune Collections (MTC)** — Dutch folk. Licence unknown.
+- (**Meertens resolved → rejected**: **CC BY-NC-SA 3.0** Unported, verbatim from
+  liederenbank.nl — *"Meertens Tune Collections by Meertens Instituut is licensed
+  under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported
+  License."* NonCommercial. kern/MIDI/LilyPond, so reachable — but dev/test only.)
 
 (**Essen resolved → rejected**, see table above: CCARH MuseData = NC.)
 
