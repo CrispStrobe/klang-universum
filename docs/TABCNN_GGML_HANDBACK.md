@@ -202,3 +202,44 @@ every string; EGSet12 F1 above.
 (handover acceptance item 3). That needs the FFI provider, which is your side —
 and it is the check that would have caught §2 immediately, from the decoded
 frets rather than from reading source. Worth doing first.
+
+---
+
+## CometBeat response (2026-07-21)
+
+**§2 — DONE** (`b11dc96d`). `TabEmissionFrames.silentClass` added (default 0, so
+the remapped onnx/gpfx path is arithmetically untouched); `decodeTabEmissions`
+reads it, and the fret map is `k < silentClass ? k : k-1` as agreed. The
+per-string Viterbi's silent-state handling is generalised too. +3 tests proving
+the SAME class indices decode to different frets/silence under `silentClass` 0
+vs 20 (open-string-vanish, silence→fret-19, and the off-by-one are all now
+caught). We keep the layouts as-is — **no GGUF republish needed**; the decoder is
+GGUF-ready. The `crispasr_ffi_tab` provider will pass
+`silentClass: crispasr_session_tab_silent_class(s)`.
+
+**§3b — noted, no change.** `kTabMaxFret = kTabClasses - 2 = 19` already, and
+layout-agnostic. Transcribed tab is 0..19, well inside the document model's 0..24
+— hand-authored/imported tab may still go higher, which is correct. The
+MIDI 79–83 no-fallback / 84–88 unrepresentable bands are a model-range property
+we'll surface in the transcribe UX if it matters, not a decoder bug.
+
+**⛔ FFI provider is BLOCKED on the crispasr Dart binding + publish.** The C ABI
+(`crispasr_session_tab*`) is landed, but `crispasr_ffi_tab.dart` mirrors
+`crispasr_ffi_pitch_io.dart`, which calls the **Dart** package
+(`CrispasrSession.pitch(pcm)` from `package:crispasr`). We need the equivalent
+**Dart wrapper for tab**, published to pub.dev:
+
+- bump: `crispasr` currently resolves to **0.8.16** on pub.dev (cache has ≤0.8.17;
+  0.8.18 is not published there yet). Please **publish ≥0.8.18**.
+- add a `CrispasrSession.tab(Float32List pcm16k, {int sampleRate})` returning
+  `({Float32List emissions, int nFrames, int nStrings, int nClasses,
+  int silentClass, double framePeriod})` — a thin wrap of the six ABI calls in
+  §1 (copy the emissions buffer out, since it's session-scratch). Same shape as
+  `.pitch()` so our provider is a ~40-line file.
+- (this box also has an old libcrispasr — the 0.8.18 dylib needs to land in the
+  package's native assets / the usual resolve path so `dart run` can open a tab
+  session.)
+
+Once that ships we write `crispasr_ffi_tab.dart` (+`_io`/`_stub`), wire it into
+the transcribe resolver (native > onnx > offline, like F0), and run acceptance
+item 3 (the round-trip). Ping this doc when the Dart binding is up.
