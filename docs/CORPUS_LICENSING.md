@@ -85,7 +85,7 @@ All licences below read verbatim from the source's own LICENSE file / legal page
 |---|---|---|---|
 | **OpenScore Lieder** | MusicXML | **CC0** (LICENSE.txt) | 1,200+ 19th-c. art songs, multi-part + lyrics. **Top pick.** Needs composer+poet death-filter (below). |
 | **OpenScore String Quartets** | MusicXML | **CC0** (LICENSE.txt) | Chamber, PD composers. Smaller, same clean profile. |
-| **PDMX** (is_original slice) | MusicXML | **CC0**, 7,549 (metadata, offline) | Original amateur compositions. Self-attested → wants a dup pass. |
+| **PDMX** (is_original slice) | MusicXML→**MIDI built** | **CC0**, 7,547 MIDIs ✅ | Original amateur compositions. Self-attested → wants a dup pass. MIDIs converted + roundtrip-verified (see below). |
 | **Mutopia** | .ly / MIDI | **CC BY-SA / CC BY / PD — all commercial-OK** (legal.html) | Per-piece licence + editor-rights filter; BY-SA copyleft on a bundle. |
 | **CPDL / ChoralWiki** | MusicXML/MXL where offered | **CPDL License = commercial + share-alike** (copyleft); editions also CC / PD | Choral/vocal — strong for a SINGING app. Per-edition filter; §3 engraving + US-PD cautions. |
 | **GregoBase** | GABC (needs converter) or its MusicXML export | **CC0** | Gregorian chant; axis-2 trivially clear. Niche for kids. |
@@ -99,6 +99,17 @@ All licences below read verbatim from the source's own LICENSE file / legal page
   "Crimson Peak – Edith's Theme" (in-copyright songs, axis-2 fail). The
   `is_original` flag is the axis-2 filter → **CC0 ∧ no-conflict ∧ is_original =
   7,549** clean on both axes. Self-attested, so "defensible", not "cleared".
+  **PDMX ships JSON-only** (the tarball has 508k `.json`, 0 `.mid`/`.mxl`; the
+  CSV's `mid/`/`mxl/` paths are phantom). **7,547 CC0 MIDIs built + roundtrip-
+  verified at `/mnt/volume1/pdmx-cc0-midi/mid/`** (2026-07-21). The list had
+  7,549 rows / 7,548 unique basenames, one of which is a null `NA` row → 7,547
+  real scores, all converted (0 skipped). Roundtrip (MIDI parsed back vs source
+  JSON note-ons): **7,547/7,547 perfect files, 9,778,989/9,778,989 notes = 100%**;
+  independently cross-checked on a 30-file sample with `mido` (also 100%). Only 1
+  out-of-range pitch clamped across 9.78M notes. Converter + validator:
+  `tool/pdmx_json_to_midi.py` (stdlib-only, `extract`/`convert`/`validate`/`all`).
+  MIDIs are derived from CC0 source → redistributable; still self-attested on
+  axis-2, so a dup/plagiarism pass is wise before shipping.
 - **Mutopia** — all three licences permit commercial use. Native guitar `.ly`
   files are mixed: e.g. Aguado Op. 11 No. 6 (`Mutopia-2016/01/15-2097`, CC BY-SA
   4.0, plate-backed to S. Richault 6713.R.) carries sparse editor cues (one
