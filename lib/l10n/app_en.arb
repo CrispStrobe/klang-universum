@@ -2745,6 +2745,9 @@
   "transcriptionBackendAuto": "Auto",
   "transcriptionBackendDart": "On-device",
   "transcriptionBackendNeural": "Neural",
+  "transcriptionBackendOnnx": "ONNX",
+  "transcriptionBackendOnnxFfi": "ONNX (native)",
+  "transcriptionBackendCrispasr": "GGUF (native)",
   "transcriptionF0ViterbiLabel": "Smooth pitch tracking",
   "transcriptionF0ViterbiSubtitle": "Steadier notes, no octave jumps — a little slower (neural pitch only)"
 }

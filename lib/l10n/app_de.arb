@@ -2432,6 +2432,9 @@
   "transcriptionBackendAuto": "Auto",
   "transcriptionBackendDart": "Auf dem Gerät",
   "transcriptionBackendNeural": "Neuronal",
+  "transcriptionBackendOnnx": "ONNX",
+  "transcriptionBackendOnnxFfi": "ONNX (nativ)",
+  "transcriptionBackendCrispasr": "GGUF (nativ)",
   "transcriptionF0ViterbiLabel": "Tonhöhe glätten",
   "transcriptionF0ViterbiSubtitle": "Ruhigere Töne, keine Oktavsprünge – etwas langsamer (nur neuronale Tonhöhe)"
 }

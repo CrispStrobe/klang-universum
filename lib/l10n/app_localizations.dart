@@ -13154,6 +13154,24 @@ abstract class AppLocalizations {
   /// **'Neural'**
   String get transcriptionBackendNeural;
 
+  /// No description provided for @transcriptionBackendOnnx.
+  ///
+  /// In en, this message translates to:
+  /// **'ONNX'**
+  String get transcriptionBackendOnnx;
+
+  /// No description provided for @transcriptionBackendOnnxFfi.
+  ///
+  /// In en, this message translates to:
+  /// **'ONNX (native)'**
+  String get transcriptionBackendOnnxFfi;
+
+  /// No description provided for @transcriptionBackendCrispasr.
+  ///
+  /// In en, this message translates to:
+  /// **'GGUF (native)'**
+  String get transcriptionBackendCrispasr;
+
   /// No description provided for @transcriptionF0ViterbiLabel.
   ///
   /// In en, this message translates to:

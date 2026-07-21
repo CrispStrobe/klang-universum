@@ -2,6 +2,7 @@ import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/core/services/debug_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
+import 'package:comet_beat/core/services/transcription_config_service.dart';
 import 'package:comet_beat/features/progress/screens/progress_screen.dart';
 import 'package:comet_beat/features/settings/screens/settings_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -129,5 +130,49 @@ void main() {
       await tester.pump();
     }
     expect(ones, findsWidgets); // tracked/learning stats
+  });
+
+  testWidgets(
+      'Advanced transcription pickers expose the distinct neural '
+      'backends (no longer collapsed to "Neural")', (tester) async {
+    // Tall surface so the whole ListView builds and the expander is tappable.
+    await tester.binding.setSurfaceSize(const Size(800, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final settings = SettingsService();
+    await settings.load();
+    final cfg = TranscriptionConfigService();
+    await cfg.load();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SettingsService>.value(value: settings),
+          ChangeNotifierProvider<SriService>.value(value: SriService()),
+          ChangeNotifierProvider(create: (_) => DebugService()),
+          ChangeNotifierProvider<TranscriptionConfigService>.value(value: cfg),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [Locale('en'), Locale('de')],
+          home: SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Open the Advanced expander that holds the per-step backend pickers.
+    await tester.ensureVisible(find.byType(ExpansionTile).first);
+    await tester.tap(find.byType(ExpansionTile).first);
+    await tester.pumpAndSettle();
+
+    // Each neural runtime now has its own chip label; previously all three
+    // (onnx/onnxFfi/crispasr) rendered as a single "Neural".
+    expect(find.text('GGUF (native)'), findsWidgets);
+    expect(find.text('ONNX (native)'), findsWidgets);
   });
 }

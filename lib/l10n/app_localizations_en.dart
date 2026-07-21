@@ -7217,6 +7217,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transcriptionBackendNeural => 'Neural';
 
   @override
+  String get transcriptionBackendOnnx => 'ONNX';
+
+  @override
+  String get transcriptionBackendOnnxFfi => 'ONNX (native)';
+
+  @override
+  String get transcriptionBackendCrispasr => 'GGUF (native)';
+
+  @override
   String get transcriptionF0ViterbiLabel => 'Smooth pitch tracking';
 
   @override

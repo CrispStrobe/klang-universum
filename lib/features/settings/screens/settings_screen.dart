@@ -20,6 +20,7 @@ import 'package:comet_beat/features/settings/screens/about_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart' show ScoreFont;
 import 'package:crisp_notation/crisp_notation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 // Material's Stepper also exports a `Step`; crisp_notation's wins here.
 import 'package:flutter/material.dart' hide Step;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -493,35 +494,56 @@ class _TranscriptionEngineSection extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   children: [
+                    // Each list is the set of backends actually wired for that
+                    // step. FFI runtimes (onnxFfi/crispasr) are filtered out on
+                    // web by [_stepPicker]; picking one that isn't present at
+                    // runtime degrades gracefully to on-device (see
+                    // TranscriptionEngineConfig.resolve).
                     _stepPicker(
                       context,
                       svc,
                       l10n.transcriptionStepF0,
                       TranscriptionStep.f0,
-                      // ONNX CREPE is the shipped neural F0 (works on web too);
-                      // CrispASR ggml CREPE joins once its package ships.
-                      const [Backend.auto, Backend.pureDart, Backend.onnx],
+                      const [
+                        Backend.auto,
+                        Backend.pureDart,
+                        Backend.onnx,
+                        Backend.onnxFfi,
+                        Backend.crispasr,
+                      ],
                     ),
                     _stepPicker(
                       context,
                       svc,
                       l10n.transcriptionStepPoly,
                       TranscriptionStep.polyphonic,
-                      const [Backend.auto, Backend.onnx],
+                      const [
+                        Backend.auto,
+                        Backend.onnx,
+                        Backend.onnxFfi,
+                        Backend.crispasr,
+                      ],
                     ),
                     _stepPicker(
                       context,
                       svc,
                       l10n.transcriptionStepSep,
                       TranscriptionStep.separation,
-                      const [Backend.auto, Backend.crispasr],
+                      // No native-ORT separator; UMX (onnx) + ggml htdemucs.
+                      const [Backend.auto, Backend.onnx, Backend.crispasr],
                     ),
                     _stepPicker(
                       context,
                       svc,
                       l10n.transcriptionStepChords,
                       TranscriptionStep.chords,
-                      const [Backend.auto, Backend.pureDart, Backend.onnx],
+                      // No ggml chord model; chroma (pureDart) + BTC onnx/ffi.
+                      const [
+                        Backend.auto,
+                        Backend.pureDart,
+                        Backend.onnx,
+                        Backend.onnxFfi,
+                      ],
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
@@ -549,6 +571,9 @@ class _TranscriptionEngineSection extends StatelessWidget {
   ) {
     final l10n = AppLocalizations.of(context)!;
     final cur = svc.config.backendFor(step);
+    // The FFI runtimes can't run on web — don't offer them there.
+    final shown =
+        kIsWeb ? offered.where((b) => !backendNeedsFfi(b)).toList() : offered;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
@@ -558,7 +583,7 @@ class _TranscriptionEngineSection extends StatelessWidget {
           Wrap(
             spacing: 8,
             children: [
-              for (final b in offered)
+              for (final b in shown)
                 ChoiceChip(
                   label: Text(_backendName(l10n, b)),
                   selected: cur == b,
@@ -581,8 +606,7 @@ String _qualityName(AppLocalizations l10n, ModelQuality q) => switch (q) {
 String _backendName(AppLocalizations l10n, Backend b) => switch (b) {
       Backend.auto => l10n.transcriptionBackendAuto,
       Backend.pureDart => l10n.transcriptionBackendDart,
-      Backend.onnx ||
-      Backend.onnxFfi ||
-      Backend.crispasr =>
-        l10n.transcriptionBackendNeural,
+      Backend.onnx => l10n.transcriptionBackendOnnx,
+      Backend.onnxFfi => l10n.transcriptionBackendOnnxFfi,
+      Backend.crispasr => l10n.transcriptionBackendCrispasr,
     };
