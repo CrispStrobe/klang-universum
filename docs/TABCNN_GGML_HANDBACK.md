@@ -223,23 +223,28 @@ layout-agnostic. Transcribed tab is 0..19, well inside the document model's 0..2
 MIDI 79–83 no-fallback / 84–88 unrepresentable bands are a model-range property
 we'll surface in the transcribe UX if it matters, not a decoder bug.
 
-**⛔ FFI provider is BLOCKED on the crispasr Dart binding + publish.** The C ABI
-(`crispasr_session_tab*`) is landed, but `crispasr_ffi_tab.dart` mirrors
-`crispasr_ffi_pitch_io.dart`, which calls the **Dart** package
-(`CrispasrSession.pitch(pcm)` from `package:crispasr`). We need the equivalent
-**Dart wrapper for tab**, published to pub.dev:
+**✅ FFI provider SHIPPED + acceptance item 3 VERIFIED** (`320e46c8`). We did
+NOT need the Dart `.tab()` wrapper — the 0.8.18 `libcrispasr-macos-arm64` on the
+CrispASR GH release has the `crispasr_session_tab*` symbols, so
+`crispasr_ffi_tab_io.dart` binds them with **raw `dart:ffi`** directly (open a
+`"tabcnn"` session, run, read emissions + `silent_class` + `frame_period`, close;
+GGUF `cstr/tabcnn-GGUF` f16 downloaded/cached). Defensive null on any failure →
+falls back to the onnx path; `audioToTab` now prefers native. **Round-trip run on
+the real GGUF (Metal): G3 pluck → 65 frames, `silentClass 20`, decodes to G-string
+fret 5 — the SAME fret the onnx/gpfx path gives, so §2 is confirmed correct.**
++gated test (skips without `COMET_CRISPASR_LIB`).
 
-- bump: `crispasr` currently resolves to **0.8.16** on pub.dev (cache has ≤0.8.17;
-  0.8.18 is not published there yet). Please **publish ≥0.8.18**.
-- add a `CrispasrSession.tab(Float32List pcm16k, {int sampleRate})` returning
-  `({Float32List emissions, int nFrames, int nStrings, int nClasses,
-  int silentClass, double framePeriod})` — a thin wrap of the six ABI calls in
-  §1 (copy the emissions buffer out, since it's session-scratch). Same shape as
-  `.pitch()` so our provider is a ~40-line file.
-- (this box also has an old libcrispasr — the 0.8.18 dylib needs to land in the
-  package's native assets / the usual resolve path so `dart run` can open a tab
-  session.)
+**⚠ Two dylib-delivery issues for CrispASR to fix** (packaging, not the ABI —
+which is perfect):
+1. **`@rpath` points at the CI build path** — `otool -l` shows
+   `LC_RPATH = /Users/runner/work/CrispASR/CrispASR/build-libs/ggml/src`, so a
+   downloaded `libcrispasr.0.8.18.dylib` can't find `@rpath/libggml.0.dylib` and
+   `DynamicLibrary.open` fails. Dev workaround: flatten all dylibs into one dir,
+   `install_name_tool -add_rpath @loader_path` on each, `codesign -s -`. **Ship
+   with `@loader_path`-relative rpaths** (or bundle the ggml libs beside
+   libcrispasr with matching install names) so it loads as delivered.
+2. The tar lays the libs across `src/` + `ggml/src/` — a single flat lib dir
+   (like the pitch delivery) would drop cleanly into the app's Frameworks.
 
-Once that ships we write `crispasr_ffi_tab.dart` (+`_io`/`_stub`), wire it into
-the transcribe resolver (native > onnx > offline, like F0), and run acceptance
-item 3 (the round-trip). Ping this doc when the Dart binding is up.
+Nice-to-have but optional: a `CrispasrSession.tab()` in the pub package would let
+us drop the raw FFI, but it's not needed — the provider works as-is.
