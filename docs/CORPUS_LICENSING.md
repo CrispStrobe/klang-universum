@@ -137,6 +137,7 @@ finding. So the shippable *tab* corpus is exactly this shippable *score* corpus.
 | DadaGP + all GP tab archives | gp | research-access-only, UG scrape of in-copyright songs |
 | **thesession.org** (+ folk-rnn, folk-rnn-webapp, themachinefolksession) | ABC | dump is **ODbL + anti-LLM clause** (2025-10, tightened 2026-06). folk-rnn's MIT is code-only; it scraped thesession ~2015 when the dump had **no licence at all**. ODbL on a bundle → share-alike (§4.4) + source-offer (§4.6) + attribution (§4.3); §2.4 disclaims rights in the transcriptions, which vest in each **transcriber**. |
 | German folk-song sites (4) | — | volksliederarchiv.de (private/non-commercial, notation walled off in robots.txt); lieder-archiv.de (copyright on its Notensätze; commercial/DB/republish forbidden — but offers a PAID licence); liederlexikon.de (all-rights-reserved, NOT CC, named living engraver + in-copyright 20th-c. works); ZPKM Freiburg (catalogues only). |
+| **Essen Folksong Collection** (ccarh/essen-folksong-collection) | krn ✅ | **CCARH MuseData licence** (license.txt, verbatim): *"this license does not authorize the use of the enclosed MuseData files in the production of derivative editions intended for commercial distribution, nor for public performance (including broadcast), nor for sound recording."* NC + no-recording → dev/test only. ~20k folk melodies, German-relevant, but blocked. |
 
 ---
 
@@ -181,14 +182,17 @@ shipped model on GAPS or IDMT-SMT-Guitar** (NC) — use them only to evaluate.
 CC-BY explicit-fingering guitar corpus surfaced this pass — flag as a data gap if
 the arranger is to output finger numbers, not just frets.
 
-## Still unverified (web budget exhausted this session)
+## Still unverified
 
-- **Essen Folksong / EsAC** — Schaffrath research data; historically "free for
-  research" (NOT a clean commercial grant). ~20k melodies, German-relevant.
-  Would want an EsAC→kern/model converter. Verify licence first.
-- **RISM open data** — the layer *under* PrIMuS. If RISM incipits carry a clean
-  CC licence, a re-export could be an MEI unlock. Verify.
+- **RISM open data** — the layer *under* PrIMuS; a possible MEI unlock if its
+  incipits carry a clean CC licence. Could NOT verify: rism.online is a JS SPA
+  that returns an empty shell to fetchers and hangs on curl; the static
+  open-data pages 404. Widely *reputed* CC0, but unconfirmed — do NOT rely on
+  memory. **Low priority** anyway: incipits are short fragments, less useful
+  than full scores, and the PrIMuS route is licence-blocked regardless.
 - **Meertens Tune Collections (MTC)** — Dutch folk. Licence unknown.
+
+(**Essen resolved → rejected**, see table above: CCARH MuseData = NC.)
 
 ## The recurring German-law point (from multiple sources, incl. the sites themselves)
 
@@ -211,7 +215,8 @@ filter that also considers the modern editor.
    *Deutscher Liederhort*, Zuccalmaglio) into our own MusicXML via crisp_notation
    — sidesteps every third-party encoding/DB claim, and is the only clean route
    to the German children's-song repertoire the app actually wants.
-4. Verify the three pending leads (Essen, RISM, Meertens).
+4. Fetch the CC-BY tab-training sets (Guitar-TECHS 14963133, AG-PT-set 10159492)
+   and build the GuitarSet arranger-benchmark (see tab-pipeline section).
 5. rsync the corpus off `/mnt/volume1` (VPS-local, not backed up) to
    `/mnt/storage`.
 
