@@ -119,6 +119,28 @@ void main() {
     expect(find.text('Cello VCSL'), findsNothing);
   });
 
+  testWidgets('initialKind pre-filters the list (Samples rubric)',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: CatalogBrowseSheet(
+            source: _FakeSource(_fixture),
+            store: InstrumentLibraryStore(),
+            initialKind: 'sample',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // only the sample shows; the others are filtered out on open
+    expect(find.text('Snare hit'), findsOneWidget);
+    expect(find.text('FluidR3 GM'), findsNothing);
+    expect(find.text('Chiptune'), findsNothing);
+  });
+
   testWidgets('a sample opens a detail sheet offering "Add to library"',
       (tester) async {
     await tester.pumpWidget(_host(_FakeSource(_fixture)));

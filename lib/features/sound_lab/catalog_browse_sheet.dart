@@ -49,10 +49,13 @@ _Lic _licBucket(String raw) {
 
 /// Opens the capable catalog browser. [source] and [store] are injectable for
 /// tests; [store] receives installed samples (defaults to a fresh store).
+/// [initialKind] pre-selects a kind chip (e.g. 'sample' when opened from the
+/// Samples rubric) — one of soundfont/instrument/sample/module, else all.
 Future<void> showCatalogBrowseSheet(
   BuildContext context, {
   ContentSource? source,
   InstrumentLibraryStore? store,
+  String? initialKind,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -61,6 +64,7 @@ Future<void> showCatalogBrowseSheet(
     builder: (_) => CatalogBrowseSheet(
       source: source ?? CometbeatCatalogSource.all(defaultHttpGet),
       store: store ?? InstrumentLibraryStore(),
+      initialKind: initialKind,
     ),
   );
 }
@@ -70,11 +74,13 @@ class CatalogBrowseSheet extends StatefulWidget {
   const CatalogBrowseSheet({
     required this.source,
     required this.store,
+    this.initialKind,
     super.key,
   });
 
   final ContentSource source;
   final InstrumentLibraryStore store;
+  final String? initialKind;
 
   @override
   State<CatalogBrowseSheet> createState() => _CatalogBrowseSheetState();
@@ -92,6 +98,13 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
   @override
   void initState() {
     super.initState();
+    final k = widget.initialKind;
+    if (k != null) {
+      _kind = _Kind.values.firstWhere(
+        (v) => v.name == k,
+        orElse: () => _Kind.all,
+      );
+    }
     _load();
   }
 

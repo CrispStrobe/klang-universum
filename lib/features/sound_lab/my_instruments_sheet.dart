@@ -213,10 +213,29 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
     );
   }
 
+  /// The catalog kind a library rubric maps to (null category → all kinds),
+  /// or null when the rubric has no catalog counterpart (FX / Drums).
+  static String? _catalogKindFor(String? category) => switch (category) {
+        null => null, // full library → browse everything
+        'Samples' => 'sample',
+        'SoundFonts' => 'soundfont',
+        'Instruments' => 'instrument',
+        _ => 'none', // FX / Drums: no catalog kind → button hidden
+      };
+
+  /// Whether the Browse-catalog button shows for the current rubric.
+  bool get _canBrowseCatalog =>
+      _catalogKindFor(widget.restrictToCategory) != 'none';
+
   /// Browses OUR curated Hugging Face catalog (SoundFonts / instruments /
-  /// samples); a picked SoundFont opens the preset picker to audition + choose.
+  /// samples), pre-filtered to the current rubric; installs land in this store.
   Future<void> _browseCatalog() async {
-    await showCatalogBrowseSheet(context);
+    await showCatalogBrowseSheet(
+      context,
+      store: widget.store,
+      initialKind: _catalogKindFor(widget.restrictToCategory),
+    );
+    if (mounted) await _reload(); // surface anything installed from the catalog
   }
 
   /// Opens the Sample Extractor (lift PCM samples out of a tracker module or a
@@ -265,7 +284,7 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const Spacer(),
-                  if (widget.restrictToCategory == null)
+                  if (_canBrowseCatalog)
                     IconButton(
                       icon: const Icon(Icons.cloud_outlined, size: 20),
                       tooltip: l10n.soundLibraryBrowseCatalog,
@@ -364,9 +383,8 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                           leading: IconButton(
                             icon: const Icon(Icons.play_arrow),
                             tooltip: l10n.myInstrumentsAudition,
-                            onPressed: s.isReference
-                                ? null
-                                : () => _audition(s),
+                            onPressed:
+                                s.isReference ? null : () => _audition(s),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
