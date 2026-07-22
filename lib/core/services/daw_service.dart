@@ -6,7 +6,10 @@
 // you open the arranger, and successive sends accumulate into one project.
 
 import 'package:comet_beat/core/audio/daw_project.dart';
+import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
 import 'package:comet_beat/core/audio/daw_timeline.dart';
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:flutter/foundation.dart';
 
 class DawService extends ChangeNotifier {
@@ -528,6 +531,60 @@ class DawService extends ChangeNotifier {
       t.clips.clear();
     }
     if (merged != null) timeline.tracks[0].clips.add(merged);
+    notifyListeners();
+  }
+
+  // --- Instrument sound (score clips) ---------------------------------------
+  // A clip that wraps engraved music ([ScoreSource]) can be voiced through an
+  // instrument picked from the assets library; baked audio (samples), drum,
+  // groove and tracker clips carry their own sound and are left untouched.
+
+  /// Whether the clip is engraved music that can be re-voiced with an instrument.
+  bool isScoreClip(int track, int index) =>
+      timeline.tracks[track].clips[index].source is ScoreSource;
+
+  /// The instrument a score clip currently plays through (null = default synth,
+  /// or a non-score clip).
+  TrackerInstrument? clipInstrument(int track, int index) {
+    final src = timeline.tracks[track].clips[index].source;
+    return src is ScoreSource ? src.instrument : null;
+  }
+
+  /// Re-source [clip] onto [source], preserving placement/gain/mute/fades/trim.
+  Clip _reSource(Clip clip, ScoreSource source) => Clip(
+        source: source,
+        startMs: clip.startMs,
+        gain: clip.gain,
+        muted: clip.muted,
+        fadeInMs: clip.fadeInMs,
+        fadeOutMs: clip.fadeOutMs,
+        trimStartMs: clip.trimStartMs,
+        trimEndMs: clip.trimEndMs,
+      );
+
+  /// Voice one score clip through [inst] (null = default synth). No-op on a
+  /// non-score clip.
+  void setClipInstrument(int track, int index, TrackerInstrument? inst) {
+    final clips = timeline.tracks[track].clips;
+    final src = clips[index].source;
+    if (src is! ScoreSource) return;
+    _record();
+    clips[index] = _reSource(clips[index], src.withInstrument(inst));
+    notifyListeners();
+  }
+
+  /// Voice EVERY score clip on [track] through [inst] (null = default synth) —
+  /// the track's instrument sound. No-op if the track has no score clips.
+  void setTrackInstrument(int track, TrackerInstrument? inst) {
+    final clips = timeline.tracks[track].clips;
+    if (!clips.any((c) => c.source is ScoreSource)) return;
+    _record();
+    for (var i = 0; i < clips.length; i++) {
+      final src = clips[i].source;
+      if (src is ScoreSource) {
+        clips[i] = _reSource(clips[i], src.withInstrument(inst));
+      }
+    }
     notifyListeners();
   }
 

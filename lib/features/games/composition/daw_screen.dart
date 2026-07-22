@@ -22,9 +22,13 @@ import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart'
     show DrumRowsPattern, LoopTiming, kPatternSteps;
 import 'package:comet_beat/core/audio/synth.dart' show Drum, wavBytes;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/widgets/game_app_bar.dart';
+import 'package:comet_beat/features/sound_lab/my_instruments_sheet.dart'
+    show showMyInstrumentsSheet;
 import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
@@ -102,6 +106,14 @@ abstract interface class DawTester {
 
   /// Reverse the clip's audio (bakes it to a backwards take).
   void reverseClip(int track, int index);
+
+  /// Whether a clip is engraved music that can be voiced with an instrument, and
+  /// the per-clip / per-track instrument assignment (null = default synth). The
+  /// instrument comes from the assets Instruments/Samples library.
+  bool isScoreClip(int track, int index);
+  TrackerInstrument? clipInstrument(int track, int index);
+  void setClipInstrument(int track, int index, TrackerInstrument? inst);
+  void setTrackInstrument(int track, TrackerInstrument? inst);
 
   /// Resample the clip by [factor] — tape-style speed/pitch (2× faster, 0.5×
   /// slower). Bakes to a fixed take.
@@ -273,6 +285,10 @@ class _DawScreenState extends State<DawScreen>
         ),
         actions: [
           TextButton(
+            onPressed: () => Navigator.of(ctx).pop('instrument'),
+            child: Text(l10n.dawTrackInstrument),
+          ),
+          TextButton(
             onPressed: _daw.timeline.tracks.length <= 1
                 ? null
                 : () => Navigator.of(ctx).pop('remove'),
@@ -295,6 +311,8 @@ class _DawScreenState extends State<DawScreen>
       if (name.isNotEmpty) renameTrack(i, name);
     } else if (action == 'remove') {
       removeTrack(i);
+    } else if (action == 'instrument') {
+      await _assignTrackInstrument(i);
     }
   }
 
@@ -407,6 +425,59 @@ class _DawScreenState extends State<DawScreen>
 
   @override
   void reverseClip(int track, int index) => _daw.reverseClip(track, index);
+
+  @override
+  bool isScoreClip(int track, int index) => _daw.isScoreClip(track, index);
+
+  @override
+  TrackerInstrument? clipInstrument(int track, int index) =>
+      _daw.clipInstrument(track, index);
+
+  @override
+  void setClipInstrument(int track, int index, TrackerInstrument? inst) {
+    _daw.setClipInstrument(track, index, inst);
+    if (_playing) play(); // re-bake — the voice changed
+  }
+
+  @override
+  void setTrackInstrument(int track, TrackerInstrument? inst) {
+    _daw.setTrackInstrument(track, inst);
+    if (_playing) play();
+  }
+
+  /// Opens the assets Instruments/Samples library and returns the picked
+  /// instrument SOUND (a `TrackerInstrument`), or null if cancelled / the pick
+  /// still needs its SoundFont resolved (a bare reference has no playable voice).
+  Future<TrackerInstrument?> _pickInstrument() async {
+    final picked = await showMyInstrumentsSheet(context);
+    if (picked == null || !mounted) return null;
+    final inst = picked.instrument;
+    if (inst == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.drumkitSoundUnavailable),
+        ),
+      );
+    }
+    return inst;
+  }
+
+  Future<void> _assignClipInstrument(int track, int index) async {
+    final inst = await _pickInstrument();
+    if (inst == null || !mounted) return;
+    setClipInstrument(track, index, inst);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.dawInstrumentSet(inst.id)),
+      ),
+    );
+  }
+
+  Future<void> _assignTrackInstrument(int track) async {
+    final inst = await _pickInstrument();
+    if (inst == null || !mounted) return;
+    setTrackInstrument(track, inst);
+  }
 
   @override
   void resampleClip(int track, int index, double factor) =>
@@ -741,6 +812,27 @@ class _DawScreenState extends State<DawScreen>
                         icon: const Icon(Icons.control_point_duplicate),
                         label: Text(l10n.dawDuplicate),
                       ),
+                      // Voice an engraved clip through an instrument from the
+                      // assets library (W7). A default reset appears once voiced.
+                      if (_daw.isScoreClip(track, index)) ...[
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(sheetCtx).pop();
+                            _assignClipInstrument(track, index);
+                          },
+                          icon: const Icon(Icons.music_note),
+                          label: Text(l10n.dawInstrument),
+                        ),
+                        if (_daw.clipInstrument(track, index) != null)
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(sheetCtx).pop();
+                              setClipInstrument(track, index, null);
+                            },
+                            icon: const Icon(Icons.music_off),
+                            label: Text(l10n.dawInstrumentDefault),
+                          ),
+                      ],
                       // Split at the playhead — only when it falls inside the clip.
                       TextButton.icon(
                         onPressed: canSplitClip(track, index, playheadMs)

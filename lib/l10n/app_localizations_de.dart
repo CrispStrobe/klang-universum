@@ -1655,7 +1655,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawAddFromCatalog => 'Aus dem Asset-Katalog';
 
   @override
-  String get dawTrackInstrument => 'Spur-Instrument';
+  String get dawTrackInstrument => 'Spur-Instrument…';
+
+  @override
+  String get dawInstrument => 'Instrument';
+
+  @override
+  String get dawInstrumentDefault => 'Standardklang';
+
+  @override
+  String dawInstrumentSet(String name) {
+    return 'Klingt durch $name';
+  }
 
   @override
   String get dawEmpty =>

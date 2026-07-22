@@ -573,7 +573,13 @@
   "dawAddVoice": "Stimme formen (Voice Lab)",
   "dawExtractSample": "Aus Modul / Paket extrahieren",
   "dawAddFromCatalog": "Aus dem Asset-Katalog",
-  "dawTrackInstrument": "Spur-Instrument",
+  "dawTrackInstrument": "Spur-Instrument…",
+  "dawInstrument": "Instrument",
+  "dawInstrumentDefault": "Standardklang",
+  "dawInstrumentSet": "Klingt durch {name}",
+  "@dawInstrumentSet": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "dawEmpty": "Deine Spuren sind bereit — tippe auf „Clip hinzufügen“, um einen Beat, eine Melodie, ein Sample oder einen Effekt einzufügen, dann drücke Play.",
   "dawSend": "Zum Audio-Editor",
   "dawSent": "Zum Audio-Editor hinzugefügt",

@@ -10,8 +10,12 @@ import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/loop_engine.dart';
+import 'package:comet_beat/core/audio/score_instrument_render.dart'
+    show renderMultiPartWithInstrument;
 import 'package:comet_beat/core/audio/synth.dart'
     show Drum, Segment, midiToFrequency, renderSegmentsRaw;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
 import 'package:comet_beat/core/audio/tracker_song.dart' show TrackerSong;
 import 'package:comet_beat/core/audio/wav_io.dart';
 import 'package:crisp_notation/crisp_notation.dart'
@@ -145,28 +149,68 @@ String _scoreCacheKey(MultiPartScore mp, int quarterMs) {
 }
 
 /// Any engraved music — a Song Book song, a Workshop document, a TAB score — as
-/// a clip source. Renders faithfully (chords + rests + all voices/parts) via the
-/// synth. Pass an explicit [key] (e.g. a song id + version) for a cheap cache
-/// identity; otherwise a structural key is derived from the notes.
+/// a clip source. Renders faithfully (chords + rests + all voices/parts). By
+/// default the plain synth timbre is used; pass an [instrument] (e.g. one picked
+/// from the assets library) to voice the score through it instead — this is how
+/// an Audio Editor track/clip gets a real instrument SOUND. Pass an explicit
+/// [key] (e.g. a song id + version) for a cheap cache identity; otherwise a
+/// structural key is derived from the notes (the instrument id is always folded
+/// in, so re-voicing re-renders).
 class ScoreSource implements ClipSource {
-  ScoreSource(this.score, {this.quarterMs = 500, Object? key}) : _key = key;
+  ScoreSource(
+    this.score, {
+    this.quarterMs = 500,
+    this.instrument,
+    Object? key,
+  }) : _key = key;
 
   /// Wrap a single-part [score] as a source.
-  factory ScoreSource.single(Score score, {int quarterMs = 500, Object? key}) =>
-      ScoreSource(MultiPartScore([score]), quarterMs: quarterMs, key: key);
+  factory ScoreSource.single(
+    Score score, {
+    int quarterMs = 500,
+    TrackerInstrument? instrument,
+    Object? key,
+  }) =>
+      ScoreSource(
+        MultiPartScore([score]),
+        quarterMs: quarterMs,
+        instrument: instrument,
+        key: key,
+      );
 
   final MultiPartScore score;
   final int quarterMs;
+
+  /// The voice this score plays through; null = the default synth timbre.
+  final TrackerInstrument? instrument;
   final Object? _key;
 
+  /// A copy voiced through [inst] (null restores the default synth). Keeps the
+  /// same score + explicit key; used by the Audio Editor to (re)assign a clip's
+  /// or track's instrument.
+  ScoreSource withInstrument(TrackerInstrument? inst) => ScoreSource(
+        score,
+        quarterMs: quarterMs,
+        instrument: inst,
+        key: _key,
+      );
+
   // A getter so an edit to [score] invalidates the timeline cache (vector, not
-  // bitmap); an explicit [_key] short-circuits the structural walk.
+  // bitmap); an explicit [_key] short-circuits the structural walk. The
+  // instrument id is always appended so changing the voice re-renders.
   @override
-  Object get cacheKey => _key ?? _scoreCacheKey(score, quarterMs);
+  Object get cacheKey =>
+      '${_key ?? _scoreCacheKey(score, quarterMs)};inst=${instrument?.id ?? 'default'}';
 
   @override
-  Float64List render(int sampleRate) =>
-      renderMultiPartScore(score, quarterMs: quarterMs);
+  Float64List render(int sampleRate) => instrument == null
+      ? renderMultiPartScore(score, quarterMs: quarterMs)
+      : renderMultiPartWithInstrument(
+          score,
+          instrument!,
+          quarterMs: quarterMs,
+          sampleRate: sampleRate,
+        );
 }
 
 // --- Tracker song -----------------------------------------------------------

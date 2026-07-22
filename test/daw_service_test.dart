@@ -3,12 +3,43 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
 import 'package:comet_beat/core/audio/daw_timeline.dart';
+import 'package:comet_beat/core/audio/synth.dart' show Instrument;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show AdditiveInstrument;
 import 'package:comet_beat/core/services/daw_service.dart';
+import 'package:crisp_notation/crisp_notation.dart'
+    show
+        Clef,
+        DurationBase,
+        Measure,
+        NoteDuration,
+        NoteElement,
+        Pitch,
+        Score,
+        Step;
 import 'package:flutter_test/flutter_test.dart';
 
 SampleSource _tone(double level, int samples) =>
     SampleSource(Float64List(samples)..fillRange(0, samples, level));
+
+ScoreSource _scoreClip() => ScoreSource.single(
+      Score(
+        clef: Clef.treble,
+        measures: [
+          Measure([
+            NoteElement.note(
+              const Pitch(Step.c),
+              const NoteDuration(DurationBase.quarter),
+            ),
+          ]),
+        ],
+      ),
+    );
+
+const _piano = AdditiveInstrument('piano', Instrument.piano);
+const _cello = AdditiveInstrument('cello', Instrument.cello);
 
 bool _silent(Iterable<double> pcm) => pcm.every((s) => s == 0);
 
@@ -473,6 +504,51 @@ void main() {
       expect(s.timeline.tracks[0].clips[0].source, isNot(same(src)));
       s.undo();
       expect(s.timeline.tracks[0].clips[0].source, same(src));
+    });
+  });
+
+  group('instrument sound (score clips)', () {
+    test('a score clip is voiceable; a sample clip is not', () {
+      final s = DawService()
+        ..addClip(_scoreClip())
+        ..addClip(_tone(0.3, 100), track: 1);
+      expect(s.isScoreClip(0, 0), isTrue);
+      expect(s.isScoreClip(1, 0), isFalse);
+      expect(s.clipInstrument(0, 0), isNull);
+    });
+
+    test('setClipInstrument re-voices the clip, changing its source + cacheKey',
+        () {
+      final s = DawService()..addClip(_scoreClip());
+      final before = s.timeline.tracks[0].clips[0].source;
+      final beforeKey = before.cacheKey;
+      s.setClipInstrument(0, 0, _piano);
+      final after = s.timeline.tracks[0].clips[0].source;
+      expect(after, isNot(same(before)));
+      expect(after.cacheKey, isNot(beforeKey));
+      expect(s.clipInstrument(0, 0)?.id, 'piano');
+      // Undoable, and re-bakes to audible audio.
+      expect(_silent(s.bake()), isFalse);
+      s.undo();
+      expect(s.clipInstrument(0, 0), isNull);
+    });
+
+    test('setClipInstrument is a no-op on a non-score clip', () {
+      final s = DawService()..addClip(_tone(0.3, 100));
+      final before = s.timeline.tracks[0].clips[0].source;
+      s.setClipInstrument(0, 0, _piano);
+      // The baked audio source is untouched — no re-voicing possible.
+      expect(s.timeline.tracks[0].clips[0].source, same(before));
+      expect(s.clipInstrument(0, 0), isNull);
+    });
+
+    test('setTrackInstrument voices every score clip on the track', () {
+      final s = DawService()
+        ..addClip(_scoreClip())
+        ..addClip(_scoreClip()); // both land on track 0
+      s.setTrackInstrument(0, _cello);
+      expect(s.clipInstrument(0, 0)?.id, 'cello');
+      expect(s.clipInstrument(0, 1)?.id, 'cello');
     });
   });
 }
