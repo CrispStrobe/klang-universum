@@ -10,7 +10,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show SampleInstrument;
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 
 /// One saved clip = a name, its sample rate, and mono float PCM ([-1, 1]).
 class SampleClip {
@@ -120,31 +123,47 @@ List<SampleClip> decodeClips(String? raw) {
   }
 }
 
-/// SharedPreferences-backed persistence of the "My Samples" library.
+/// The "My Samples" API, now a thin FACADE over [InstrumentLibraryStore]: a
+/// sample IS an instrument (`kind == 'sample'`), so both libraries share ONE
+/// backing store. Kept as a class so the ~8 sample callers (Voice Lab, Sample
+/// Extractor, Sound Lab, Perform, …) don't change — a clip round-trips through
+/// the sample-instrument codec (PCM as base64 Float32, inaudibly lossy). Loading
+/// also triggers the store's one-time migration of the legacy samples key.
 class SampleClipStore {
-  static const _key = 'sound_lab_samples';
+  final InstrumentLibraryStore _lib = InstrumentLibraryStore();
 
   Future<List<SampleClip>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    return decodeClips(prefs.getString(_key));
+    return [
+      for (final s in await _lib.load())
+        if (_toClip(s) case final c?) c,
+    ];
   }
 
-  /// Adds [clip]; a save under an existing name overwrites it. Newest last.
+  /// Adds [clip] as a sample instrument; a save under an existing name
+  /// overwrites it. Returns the sample list after the save.
   Future<List<SampleClip>> save(SampleClip clip) async {
-    final list = [...await load()]..removeWhere((c) => c.name == clip.name);
-    list.add(clip);
-    await _write(list);
-    return list;
+    await _lib.save(SavedInstrument.fromSampleClip(clip));
+    return load();
   }
 
   Future<List<SampleClip>> delete(String name) async {
-    final list = [...await load()]..removeWhere((c) => c.name == name);
-    await _write(list);
-    return list;
+    await _lib.delete(name);
+    return load();
   }
+}
 
-  Future<void> _write(List<SampleClip> list) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, encodeClips(list));
-  }
+/// A `kind == 'sample'` library item back as a [SampleClip] (its PCM restored
+/// from the embedded [SampleInstrument]); null for anything that isn't a sample.
+SampleClip? _toClip(SavedInstrument s) {
+  if (s.kind != 'sample') return null;
+  final inst = s.instrument;
+  if (inst is! SampleInstrument) return null;
+  return SampleClip(
+    name: s.name,
+    sampleRate: kSampleRate,
+    pcm: inst.sample,
+    source: s.source,
+    license: s.license,
+    sourceUrl: s.sourceUrl,
+  );
 }
