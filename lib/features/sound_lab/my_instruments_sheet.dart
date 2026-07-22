@@ -17,6 +17,8 @@ import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/features/sound_lab/instrument_play_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
+import 'package:comet_beat/features/sound_lab/sound_lab_screen.dart';
+import 'package:comet_beat/features/sound_lab/voice_lab_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:comet_beat/shared/music_io/audio_import.dart';
@@ -247,6 +249,33 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
     await _reload();
   }
 
+  /// Opens the Sound Lab (design an sfxr sound effect) / Voice Lab (record + shape
+  /// a voice); both save into this library, which refreshes on return. These are
+  /// the standalone entry points now that the Labs live as tools here + as Audio
+  /// Editor modals, rather than as separate top-level Workshop screens.
+  Future<void> _openSoundLab() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const SoundLabScreen()),
+    );
+    await _reload();
+  }
+
+  Future<void> _openVoiceLab() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const VoiceLabScreen()),
+    );
+    await _reload();
+  }
+
+  /// One row of the "create" menu (icon + label).
+  Widget _createRow(IconData icon, String label) => Row(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 12),
+          Text(label),
+        ],
+      );
+
   /// Generates a new sfxr sound effect and, on save, adds it to the library.
   Future<void> _generateFx() async {
     final saved = await showModalBottomSheet<SavedInstrument>(
@@ -291,23 +320,65 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                       onPressed: _browseCatalog,
                     ),
                   if (widget.restrictToCategory == null ||
-                      widget.restrictToCategory == 'Samples') ...[
+                      widget.restrictToCategory == 'Samples')
                     IconButton(
                       icon: const Icon(Icons.file_upload_outlined, size: 20),
                       tooltip: l10n.mySamplesImport,
                       onPressed: _import,
                     ),
+                  // One "create" menu gathers the sound-making tools: the sfxr FX
+                  // generator, the Sound Lab + Voice Lab (which also open as Audio
+                  // Editor modals), and the module/pack Sample Extractor.
+                  if (widget.restrictToCategory == null)
+                    PopupMenuButton<int>(
+                      icon: const Icon(Icons.add, size: 22),
+                      tooltip: l10n.soundLibraryNewFx,
+                      onSelected: (v) {
+                        switch (v) {
+                          case 0:
+                            _generateFx();
+                          case 1:
+                            _openSoundLab();
+                          case 2:
+                            _openVoiceLab();
+                          case 3:
+                            _extractSamples();
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        PopupMenuItem(
+                          value: 0,
+                          child: _createRow(
+                            Icons.auto_awesome,
+                            l10n.soundLibraryNewFx,
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 1,
+                          child:
+                              _createRow(Icons.graphic_eq, l10n.soundLabTitle),
+                        ),
+                        PopupMenuItem(
+                          value: 2,
+                          child: _createRow(
+                            Icons.record_voice_over,
+                            l10n.voiceLabTitle,
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 3,
+                          child: _createRow(
+                            Icons.colorize,
+                            l10n.sampleExtractTitle,
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (widget.restrictToCategory == 'Samples')
                     IconButton(
                       icon: const Icon(Icons.colorize, size: 20),
                       tooltip: l10n.sampleExtractTitle,
                       onPressed: _extractSamples,
-                    ),
-                  ],
-                  if (widget.restrictToCategory == null)
-                    TextButton.icon(
-                      icon: const Icon(Icons.auto_awesome, size: 18),
-                      label: Text(l10n.soundLibraryNewFx),
-                      onPressed: _generateFx,
                     ),
                 ],
               ),
