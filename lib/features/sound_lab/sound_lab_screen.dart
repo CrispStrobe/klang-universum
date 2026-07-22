@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate, wavBytes;
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
+import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
 import 'package:comet_beat/features/sound_lab/sfx_engine.dart';
 import 'package:comet_beat/features/sound_lab/sound_preset_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -85,9 +86,9 @@ class _SoundLabScreenState extends State<SoundLabScreen>
       sfxRender(_params, sampleRate: kSampleRate.toDouble());
 
   void _update(SfxParams p) => setState(() {
-        _params = p;
-        _pcm = _render();
-      });
+    _params = p;
+    _pcm = _render();
+  });
 
   // ── Tester seam ──────────────────────────────────────────────────────────
   @override
@@ -124,13 +125,13 @@ class _SoundLabScreenState extends State<SoundLabScreen>
 
   @override
   Future<void> saveToSamples(String name) => _sampleStore.save(
-        SampleClip(
-          name: name,
-          sampleRate: kSampleRate,
-          pcm: _pcm,
-          source: 'Sound Lab',
-        ),
-      );
+    SampleClip(
+      name: name,
+      sampleRate: kSampleRate,
+      pcm: _pcm,
+      source: 'Sound Lab',
+    ),
+  );
 
   // ── Actions ──────────────────────────────────────────────────────────────
   Uint8List _wav() {
@@ -206,8 +207,10 @@ class _SoundLabScreenState extends State<SoundLabScreen>
   /// instrument — not just a re-editable recipe.
   Future<void> _saveAsSample() async {
     final l10n = AppLocalizations.of(context)!;
-    final name =
-        await _promptName(l10n.soundLabToSamples, l10n.soundLabSfxName);
+    final name = await _promptName(
+      l10n.soundLabToSamples,
+      l10n.soundLabSfxName,
+    );
     if (name == null) return;
     await saveToSamples(name);
     if (!mounted) return;
@@ -226,8 +229,10 @@ class _SoundLabScreenState extends State<SoundLabScreen>
           builder: (ctx, setSheet) => _saved.isEmpty
               ? Padding(
                   padding: const EdgeInsets.all(24),
-                  child:
-                      Text(l10n.soundLabMyEmpty, textAlign: TextAlign.center),
+                  child: Text(
+                    l10n.soundLabMyEmpty,
+                    textAlign: TextAlign.center,
+                  ),
                 )
               : ListView(
                   shrinkWrap: true,
@@ -291,6 +296,15 @@ class _SoundLabScreenState extends State<SoundLabScreen>
             icon: const Icon(Icons.bookmarks_outlined),
             tooltip: l10n.soundLabMyTitle,
             onPressed: _openMySounds,
+          ),
+          IconButton(
+            icon: const Icon(Icons.colorize),
+            tooltip: l10n.sampleExtractTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const SampleExtractorScreen(),
+              ),
+            ),
           ),
         ],
       ),
@@ -418,11 +432,11 @@ class _SoundLabScreenState extends State<SoundLabScreen>
   }
 
   String _waveLabel(AppLocalizations l10n, SfxWave w) => switch (w) {
-        SfxWave.square => l10n.soundLabSquare,
-        SfxWave.sawtooth => l10n.soundLabSaw,
-        SfxWave.sine => l10n.soundLabSine,
-        SfxWave.noise => l10n.soundLabNoise,
-      };
+    SfxWave.square => l10n.soundLabSquare,
+    SfxWave.sawtooth => l10n.soundLabSaw,
+    SfxWave.sine => l10n.soundLabSine,
+    SfxWave.noise => l10n.soundLabNoise,
+  };
 }
 
 /// Paints the rendered PCM as a filled waveform.
