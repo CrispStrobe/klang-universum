@@ -2202,6 +2202,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogNotInstallable => 'Browsable here — install coming soon';
 
   @override
+  String get catalogKindAll => 'All';
+
+  @override
+  String get catalogKindSoundFonts => 'SoundFonts';
+
+  @override
+  String get catalogKindInstruments => 'Instruments';
+
+  @override
+  String get catalogKindSamples => 'Samples';
+
+  @override
+  String get catalogKindModules => 'Modules';
+
+  @override
+  String get catalogLicenseAll => 'All licences';
+
+  @override
+  String get catalogOpenInTracker => 'Open in Tracker';
+
+  @override
+  String get catalogAudition => 'Audition & pick preset';
+
+  @override
+  String get catalogAddToLibrary => 'Add to library';
+
+  @override
+  String get catalogPlay => 'Play';
+
+  @override
+  String get catalogOpenSource => 'Source page';
+
+  @override
+  String get catalogAdded => 'Added to your library';
+
+  @override
+  String catalogItemCount(int n) {
+    return '$n items';
+  }
+
+  @override
   String get soundLibraryTitle => 'Sound Library';
 
   @override

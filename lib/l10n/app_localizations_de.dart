@@ -2210,6 +2210,47 @@ class AppLocalizationsDe extends AppLocalizations {
   String get catalogNotInstallable => 'Hier durchsuchbar – Installation folgt';
 
   @override
+  String get catalogKindAll => 'Alle';
+
+  @override
+  String get catalogKindSoundFonts => 'SoundFonts';
+
+  @override
+  String get catalogKindInstruments => 'Instrumente';
+
+  @override
+  String get catalogKindSamples => 'Samples';
+
+  @override
+  String get catalogKindModules => 'Module';
+
+  @override
+  String get catalogLicenseAll => 'Alle Lizenzen';
+
+  @override
+  String get catalogOpenInTracker => 'Im Tracker öffnen';
+
+  @override
+  String get catalogAudition => 'Anhören & Preset wählen';
+
+  @override
+  String get catalogAddToLibrary => 'Zur Bibliothek';
+
+  @override
+  String get catalogPlay => 'Spielen';
+
+  @override
+  String get catalogOpenSource => 'Quellseite';
+
+  @override
+  String get catalogAdded => 'Zur Bibliothek hinzugefügt';
+
+  @override
+  String catalogItemCount(int n) {
+    return '$n Einträge';
+  }
+
+  @override
   String get soundLibraryTitle => 'Klangbibliothek';
 
   @override

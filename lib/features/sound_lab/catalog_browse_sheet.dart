@@ -1,46 +1,80 @@
-// "Browse catalog" — the Sound Library's window onto OUR curated, rights-verified
-// catalog (music-db → published on Hugging Face, read via CometbeatCatalogSource).
-// Lists every item with its licence + attribution, searches, and — for a
-// SoundFont — downloads its bytes and hands them straight to the existing
-// SoundFont preset picker (showSoundFontSheet, whose file-pick seam we inject),
-// so the user auditions and chooses a preset with the code path that already
-// works. The chosen instrument is returned to the host (e.g. a Tracker slot).
+// "Browse catalog" — a capable browser over OUR curated, rights-verified catalog
+// (music-db → published on Hugging Face, read via CometbeatCatalogSource). Every
+// kind in one modal, with:
+//   • search (name / attribution)
+//   • filters — by kind (SoundFonts / Instruments / Samples / Modules) and by
+//     licence bucket (CC0·PD / CC-BY / MIT)
+//   • paths to the editors — each item routes to the right consumer:
+//       SoundFont → the preset picker (audition) → live keyboard
+//       Sample (WAV) → installed into your library (PCM, no path_provider) → play
+//       Module     → opened in the Tracker
+//       SFZ instrument → its source page (full sample-set install is a follow-up)
 //
-// NB: persisting a downloaded SoundFont preset into the library as a
-// `soundfont_ref` needs a cached font FILE (path_provider) — a small follow-up;
-// today this browses + auditions + returns for immediate use.
+// Licence + attribution are shown per item and repeated in the detail sheet, so
+// nothing is used without its credit visible.
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
+import 'package:comet_beat/core/audio/tracker_song.dart' show TrackerSong;
+import 'package:comet_beat/core/audio/tracker_song_module.dart';
+import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/library/soundfont_sheet.dart';
 import 'package:comet_beat/features/library/source_registry.dart';
+import 'package:comet_beat/features/library/sources/cometbeat_catalog_source.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/instrument_play_screen.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music_io/audio_import.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-/// Opens the catalog browser. Resolves to a chosen [TrackerInstrument] (a
-/// SoundFont preset), or null. [source] is injectable for tests.
-Future<TrackerInstrument?> showCatalogBrowseSheet(
+/// The kind filter (matches LibraryItem.collection = the catalog `kind`).
+enum _Kind { all, soundfont, instrument, sample, module }
+
+/// A coarse licence bucket for filtering (the raw string stays visible).
+enum _Lic { all, cc0, ccby, mit }
+
+_Lic _licBucket(String raw) {
+  final l = raw.toLowerCase();
+  if (l.contains('cc0') || l.contains('public domain')) return _Lic.cc0;
+  if (l.contains('mit')) return _Lic.mit;
+  if (l.contains('cc') && l.contains('by')) return _Lic.ccby;
+  return _Lic.all; // unbucketed → only shows under "all"
+}
+
+/// Opens the capable catalog browser. [source] and [store] are injectable for
+/// tests; [store] receives installed samples (defaults to a fresh store).
+Future<void> showCatalogBrowseSheet(
   BuildContext context, {
   ContentSource? source,
+  InstrumentLibraryStore? store,
 }) {
-  return showModalBottomSheet<TrackerInstrument>(
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => CatalogBrowseSheet(
-      source: source ?? buildCatalogSources().first,
+      source: source ?? CometbeatCatalogSource.all(defaultHttpGet),
+      store: store ?? InstrumentLibraryStore(),
     ),
   );
 }
 
 @visibleForTesting
 class CatalogBrowseSheet extends StatefulWidget {
-  const CatalogBrowseSheet({required this.source, super.key});
+  const CatalogBrowseSheet({
+    required this.source,
+    required this.store,
+    super.key,
+  });
 
   final ContentSource source;
+  final InstrumentLibraryStore store;
 
   @override
   State<CatalogBrowseSheet> createState() => _CatalogBrowseSheetState();
@@ -48,15 +82,17 @@ class CatalogBrowseSheet extends StatefulWidget {
 
 class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
   final _search = TextEditingController();
-  List<LibraryItem> _items = const [];
+  List<LibraryItem> _all = const [];
   bool _loading = true;
   bool _busy = false;
   String? _error;
+  _Kind _kind = _Kind.all;
+  _Lic _lic = _Lic.all;
 
   @override
   void initState() {
     super.initState();
-    _reload();
+    _load();
   }
 
   @override
@@ -65,16 +101,16 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
     super.dispose();
   }
 
-  Future<void> _reload() async {
+  Future<void> _load() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final items = await widget.source.browse(query: _search.text.trim());
+      final items = await widget.source.browse(limit: 1000);
       if (mounted) {
         setState(() {
-          _items = items;
+          _all = items;
           _loading = false;
         });
       }
@@ -88,13 +124,26 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
     }
   }
 
-  /// A SoundFont: download its bytes, then reuse the SoundFont preset picker
-  /// (its file-pick seam fed the downloaded bytes) to audition + choose.
-  Future<void> _openSoundFont(LibraryItem item) async {
+  /// Client-side view: kind chip + licence chip + search text.
+  List<LibraryItem> get _visible {
+    final q = _search.text.trim().toLowerCase();
+    return [
+      for (final i in _all)
+        if ((_kind == _Kind.all || i.collection == _kind.name) &&
+            (_lic == _Lic.all || _licBucket(i.declaredLicense) == _lic) &&
+            (q.isEmpty ||
+                i.title.toLowerCase().contains(q) ||
+                i.composer.toLowerCase().contains(q)))
+          i,
+    ];
+  }
+
+  Future<Uint8List?> _download(LibraryItem item) async {
     setState(() => _busy = true);
-    Uint8List bytes;
     try {
-      bytes = await widget.source.fetch(item);
+      final bytes = await widget.source.fetch(item);
+      if (mounted) setState(() => _busy = false);
+      return bytes;
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -102,33 +151,183 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
           _error = AppLocalizations.of(context)!.libraryImportFailed;
         });
       }
-      return;
+      return null;
     }
-    if (!mounted) return;
-    setState(() => _busy = false);
+  }
+
+  // ── editor paths ──────────────────────────────────────────────────────────
+
+  /// SoundFont → audition + pick a preset, then offer the live keyboard.
+  Future<void> _openSoundFont(LibraryItem item) async {
+    final bytes = await _download(item);
+    if (bytes == null || !mounted) return;
     final inst = await showSoundFontSheet(
       context,
       pick: () async => (bytes: bytes, name: item.title),
     );
-    if (inst != null && mounted) Navigator.of(context).pop(inst);
+    if (inst != null && mounted) _play(inst, item.title);
   }
 
-  void _tap(LibraryItem item) {
+  /// Module → decode + open the (advanced) Tracker on it.
+  Future<void> _openModule(LibraryItem item) async {
+    final bytes = await _download(item);
+    if (bytes == null || !mounted) return;
+    final TrackerSong song;
+    try {
+      song = songFromModuleBytes(bytes);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.libraryImportFailed),
+          ),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop(); // close the browser first
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AdvancedTrackerScreen(initialSong: song),
+        ),
+      ),
+    );
+  }
+
+  /// WAV sample → decode to mono PCM + persist into the library (no file needed).
+  Future<void> _installSample(LibraryItem item) async {
+    final bytes = await _download(item);
+    if (bytes == null || !mounted) return;
     final l10n = AppLocalizations.of(context)!;
-    if (item.format == 'sf2' || item.format == 'sf3') {
-      _openSoundFont(item);
-    } else {
-      // SFZ instruments (their sample tree) + modules install differently —
-      // browsable here, not yet one-tap installable.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.catalogNotInstallable)),
-      );
+    final imported = importAudioMono(bytes);
+    if (imported == null || imported.pcm.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.libraryImportFailed)));
+      return;
+    }
+    await widget.store.save(
+      SavedInstrument.fromSampleClip(
+        SampleClip(
+          name: item.title,
+          sampleRate: imported.sampleRate,
+          pcm: imported.pcm,
+          source: item.sourceName,
+          license: item.declaredLicense,
+          sourceUrl: item.sourceUrl,
+        ),
+      ),
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.catalogAdded)));
     }
   }
+
+  void _play(TrackerInstrument inst, String name) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InstrumentPlayScreen(instrument: inst, name: name),
+      ),
+    );
+  }
+
+  Future<void> _openSource(LibraryItem item) async {
+    final url = item.sourceUrl;
+    if (url == null || url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  /// Per-item detail + actions — the "paths to editors".
+  void _openDetail(LibraryItem item) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+              child: Text(
+                item.title,
+                style: Theme.of(sheetCtx).textTheme.titleMedium,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                [
+                  item.format.toUpperCase(),
+                  item.declaredLicense,
+                  if (item.composer.isNotEmpty) item.composer,
+                ].where((s) => s.isNotEmpty).join(' · '),
+                style: Theme.of(sheetCtx).textTheme.bodySmall,
+              ),
+            ),
+            for (final action in _actionsFor(item, l10n))
+              ListTile(
+                dense: true,
+                leading: Icon(action.icon),
+                title: Text(action.label),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  action.run();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<({IconData icon, String label, VoidCallback run})> _actionsFor(
+    LibraryItem item,
+    AppLocalizations l10n,
+  ) {
+    return [
+      switch (item.collection) {
+        'soundfont' => (
+            icon: Icons.piano,
+            label: l10n.catalogAudition,
+            run: () => _openSoundFont(item),
+          ),
+        'sample' => (
+            icon: Icons.library_add,
+            label: l10n.catalogAddToLibrary,
+            run: () => _installSample(item),
+          ),
+        'module' => (
+            icon: Icons.grid_on,
+            label: l10n.catalogOpenInTracker,
+            run: () => _openModule(item),
+          ),
+        _ => (
+            icon: Icons.info_outline,
+            label: l10n.catalogNotInstallable,
+            run: () {},
+          ),
+      },
+      if (item.sourceUrl != null && item.sourceUrl!.isNotEmpty)
+        (
+          icon: Icons.open_in_new,
+          label: l10n.catalogOpenSource,
+          run: () => _openSource(item),
+        ),
+    ];
+  }
+
+  // ── UI ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final visible = _visible;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -150,13 +349,18 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
+                if (!_loading)
+                  Text(
+                    l10n.catalogItemCount(visible.length),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
               ],
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _search,
               textInputAction: TextInputAction.search,
-              onSubmitted: (_) => _reload(),
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: l10n.librarySearchHint,
                 prefixIcon: const Icon(Icons.search),
@@ -165,15 +369,64 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
               ),
             ),
             const SizedBox(height: 8),
+            _filters(l10n),
+            const SizedBox(height: 4),
             if (_busy) const LinearProgressIndicator(),
-            SizedBox(height: 300, child: _list(l10n)),
+            SizedBox(height: 320, child: _list(l10n, visible)),
           ],
         ),
       ),
     );
   }
 
-  Widget _list(AppLocalizations l10n) {
+  Widget _filters(AppLocalizations l10n) {
+    Widget kindChip(_Kind k, String label) => Padding(
+          padding: const EdgeInsets.only(right: 6),
+          child: ChoiceChip(
+            label: Text(label),
+            selected: _kind == k,
+            onSelected: (_) => setState(() => _kind = k),
+          ),
+        );
+    Widget licChip(_Lic v, String label) => Padding(
+          padding: const EdgeInsets.only(right: 6),
+          child: FilterChip(
+            label: Text(label),
+            selected: _lic == v,
+            onSelected: (_) => setState(() => _lic = _lic == v ? _Lic.all : v),
+          ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              kindChip(_Kind.all, l10n.catalogKindAll),
+              kindChip(_Kind.soundfont, l10n.catalogKindSoundFonts),
+              kindChip(_Kind.instrument, l10n.catalogKindInstruments),
+              kindChip(_Kind.sample, l10n.catalogKindSamples),
+              kindChip(_Kind.module, l10n.catalogKindModules),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              licChip(_Lic.cc0, 'CC0 · PD'),
+              licChip(_Lic.ccby, 'CC-BY'),
+              licChip(_Lic.mit, 'MIT'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _list(AppLocalizations l10n, List<LibraryItem> visible) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
       return Center(
@@ -182,16 +435,16 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
           children: [
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: _reload, child: Text(l10n.libraryRetry)),
+            OutlinedButton(onPressed: _load, child: Text(l10n.libraryRetry)),
           ],
         ),
       );
     }
-    if (_items.isEmpty) return Center(child: Text(l10n.libraryNoResults));
+    if (visible.isEmpty) return Center(child: Text(l10n.libraryNoResults));
     return ListView.builder(
-      itemCount: _items.length,
+      itemCount: visible.length,
       itemBuilder: (context, i) {
-        final item = _items[i];
+        final item = visible[i];
         final detail = [
           item.format.toUpperCase(),
           item.declaredLicense,
@@ -199,16 +452,20 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
         ].where((s) => s.isNotEmpty).join(' · ');
         return ListTile(
           dense: true,
-          leading: Icon(
-            item.format == 'sf2' || item.format == 'sf3'
-                ? Icons.piano
-                : Icons.graphic_eq,
-          ),
+          leading: Icon(_iconFor(item.collection)),
           title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis),
-          onTap: _busy ? null : () => _tap(item),
+          trailing: const Icon(Icons.chevron_right, size: 18),
+          onTap: _busy ? null : () => _openDetail(item),
         );
       },
     );
   }
+
+  IconData _iconFor(String kind) => switch (kind) {
+        'soundfont' => Icons.piano,
+        'module' => Icons.grid_on,
+        'sample' => Icons.graphic_eq,
+        _ => Icons.music_note,
+      };
 }

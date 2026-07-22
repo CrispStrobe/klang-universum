@@ -4154,6 +4154,84 @@ abstract class AppLocalizations {
   /// **'Browsable here — install coming soon'**
   String get catalogNotInstallable;
 
+  /// No description provided for @catalogKindAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get catalogKindAll;
+
+  /// No description provided for @catalogKindSoundFonts.
+  ///
+  /// In en, this message translates to:
+  /// **'SoundFonts'**
+  String get catalogKindSoundFonts;
+
+  /// No description provided for @catalogKindInstruments.
+  ///
+  /// In en, this message translates to:
+  /// **'Instruments'**
+  String get catalogKindInstruments;
+
+  /// No description provided for @catalogKindSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples'**
+  String get catalogKindSamples;
+
+  /// No description provided for @catalogKindModules.
+  ///
+  /// In en, this message translates to:
+  /// **'Modules'**
+  String get catalogKindModules;
+
+  /// No description provided for @catalogLicenseAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All licences'**
+  String get catalogLicenseAll;
+
+  /// No description provided for @catalogOpenInTracker.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Tracker'**
+  String get catalogOpenInTracker;
+
+  /// No description provided for @catalogAudition.
+  ///
+  /// In en, this message translates to:
+  /// **'Audition & pick preset'**
+  String get catalogAudition;
+
+  /// No description provided for @catalogAddToLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to library'**
+  String get catalogAddToLibrary;
+
+  /// No description provided for @catalogPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get catalogPlay;
+
+  /// No description provided for @catalogOpenSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source page'**
+  String get catalogOpenSource;
+
+  /// No description provided for @catalogAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to your library'**
+  String get catalogAdded;
+
+  /// No description provided for @catalogItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} items'**
+  String catalogItemCount(int n);
+
   /// No description provided for @soundLibraryTitle.
   ///
   /// In en, this message translates to:

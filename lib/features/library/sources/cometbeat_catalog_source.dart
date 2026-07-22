@@ -46,6 +46,12 @@ class CometbeatCatalogSource implements ContentSource {
   factory CometbeatCatalogSource.modules(HttpGet http) =>
       CometbeatCatalogSource(http, kinds: const {'module'});
 
+  /// Every kind — the capable browser filters client-side by kind chip.
+  factory CometbeatCatalogSource.all(HttpGet http) => CometbeatCatalogSource(
+        http,
+        kinds: const {'soundfont', 'instrument', 'sample', 'module'},
+      );
+
   final HttpGet _http;
   final Set<String> kinds;
   final String _indexUrl;

@@ -1,17 +1,20 @@
-// The "Browse catalog" sheet renders OUR curated HF catalog: title, licence,
-// and attribution per item, searchable, driven by an injected ContentSource
-// (no network). A SoundFont shows the piano icon (its tap opens the preset
-// picker); non-SoundFonts are browsable but not yet one-tap installable.
+// The capable "Browse catalog" modal over OUR curated HF catalog: renders every
+// kind with licence + attribution, filters by kind chip and by licence bucket,
+// searches, and opens a per-item detail sheet whose action routes to the right
+// editor (a sample offers "Add to library"). Driven by an injected
+// ContentSource + store — no network, no real SharedPreferences backend needed
+// beyond the mock.
 
 import 'dart:typed_data';
 
 import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/sound_lab/catalog_browse_sheet.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// A fake in-memory catalog source.
 class _FakeSource implements ContentSource {
   _FakeSource(this._items);
   final List<LibraryItem> _items;
@@ -26,68 +29,105 @@ class _FakeSource implements ContentSource {
   String get licenseSummary => 'CC0 / CC-BY / PD';
 
   @override
-  Future<List<LibraryItem>> browse({String query = '', int limit = 60}) async {
-    final q = query.trim().toLowerCase();
-    return q.isEmpty
-        ? _items
-        : _items.where((i) => i.title.toLowerCase().contains(q)).toList();
-  }
+  Future<List<LibraryItem>> browse({String query = '', int limit = 60}) async =>
+      _items;
 
   @override
   Future<Uint8List> fetch(LibraryItem item) async => Uint8List(0);
 }
 
-LibraryItem _item(String title, String fmt, String lic, String attr) =>
+LibraryItem _item(String title, String kind, String fmt, String lic) =>
     LibraryItem(
       sourceId: 'fake',
       sourceName: 'CometBeat Library',
       id: title,
       title: title,
-      composer: attr,
-      collection: fmt == 'sf2' ? 'soundfont' : 'instrument',
+      composer: 'Alice',
+      collection: kind,
       declaredLicense: lic,
       downloadUrl: Uri.parse('https://h/$title'),
       format: fmt,
     );
 
+final _fixture = [
+  _item('FluidR3 GM', 'soundfont', 'sf2', 'MIT License'),
+  _item('Cello VCSL', 'instrument', 'sfz', 'CC0 / Public Domain'),
+  _item('Snare hit', 'sample', 'wav', 'CC0 / Public Domain'),
+  _item('Chiptune', 'module', 'xm', 'CC BY 4.0'),
+];
+
 Widget _host(ContentSource src) => MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: CatalogBrowseSheet(source: src)),
+      home: Scaffold(
+        body: CatalogBrowseSheet(source: src, store: InstrumentLibraryStore()),
+      ),
     );
 
 void main() {
-  testWidgets('lists catalog items with licence + attribution', (tester) async {
-    final src = _FakeSource([
-      _item('FluidR3 GM', 'sf2', 'MIT License', 'Frank Wen'),
-      _item('Cello VCSL', 'sfz', 'CC0', 'Versilian'),
-    ]);
-    await tester.pumpWidget(_host(src));
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('lists every kind with licence + attribution + kind icons',
+      (tester) async {
+    await tester.pumpWidget(_host(_FakeSource(_fixture)));
     await tester.pumpAndSettle();
 
     expect(find.text('FluidR3 GM'), findsOneWidget);
     expect(find.text('Cello VCSL'), findsOneWidget);
-    // detail line carries format · licence · attribution
+    expect(find.text('Snare hit'), findsOneWidget);
+    expect(find.text('Chiptune'), findsOneWidget);
     expect(find.textContaining('MIT License'), findsOneWidget);
-    expect(find.textContaining('Frank Wen'), findsOneWidget);
-    // SoundFont gets the piano icon; the SFZ gets the waveform icon
-    expect(find.byIcon(Icons.piano), findsOneWidget);
-    expect(find.byIcon(Icons.graphic_eq), findsOneWidget);
+    expect(find.textContaining('Alice'), findsWidgets); // attribution
+    // per-kind icons in the list
+    expect(find.byIcon(Icons.piano), findsOneWidget); // soundfont
+    expect(find.byIcon(Icons.grid_on), findsOneWidget); // module
+    expect(find.byIcon(Icons.graphic_eq), findsOneWidget); // sample
+  });
+
+  testWidgets('kind chip filters to one kind', (tester) async {
+    await tester.pumpWidget(_host(_FakeSource(_fixture)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Modules'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chiptune'), findsOneWidget);
+    expect(find.text('FluidR3 GM'), findsNothing);
+    expect(find.text('Snare hit'), findsNothing);
+  });
+
+  testWidgets('licence chip filters by bucket', (tester) async {
+    await tester.pumpWidget(_host(_FakeSource(_fixture)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilterChip, 'MIT'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('FluidR3 GM'), findsOneWidget); // MIT
+    expect(find.text('Cello VCSL'), findsNothing); // CC0
+    expect(find.text('Chiptune'), findsNothing); // CC-BY
   });
 
   testWidgets('search narrows the list', (tester) async {
-    final src = _FakeSource([
-      _item('FluidR3 GM', 'sf2', 'MIT License', 'Frank Wen'),
-      _item('Cello VCSL', 'sfz', 'CC0', 'Versilian'),
-    ]);
-    await tester.pumpWidget(_host(src));
+    await tester.pumpWidget(_host(_FakeSource(_fixture)));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'fluid');
-    await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
     expect(find.text('FluidR3 GM'), findsOneWidget);
     expect(find.text('Cello VCSL'), findsNothing);
+  });
+
+  testWidgets('a sample opens a detail sheet offering "Add to library"',
+      (tester) async {
+    await tester.pumpWidget(_host(_FakeSource(_fixture)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Snare hit'));
+    await tester.pumpAndSettle();
+
+    // detail sheet shows the sample's action route
+    expect(find.text('Add to library'), findsOneWidget);
   });
 }
