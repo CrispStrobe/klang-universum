@@ -93,11 +93,6 @@ Every line here is a *licence/coverage* statement; detail per source follows.
   value: (a) real-world PDF **OMR test input**, (b) clean guitar score/tab material.
   A per-work composer death-check stays prudent (as for any PD claim), but this is
   the cleanest guitar-tab-of-PD-works source found.
-- **REDACTED `.gpx` — DEV/TEST CONTROL only, NOT shippable.** ~3.2k classical/Latin
-  guitar works in Guitar Pro form. The site calls them public-domain but states **no
-  licence for its transcriptions** → axis 1 unstated → excluded from the shippable
-  DB. Role: a robustness/regression control for the `.gpx` importer (the tab analogue
-  of the REDACTED ascii-tab control).
 
 ### Safely reachable next — clean, identified, not yet ingested
 

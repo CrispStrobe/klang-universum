@@ -154,81 +154,42 @@ they are how you generalize from few players rather than collect more. Val is a
 held-out PLAYER and the gap is generalization, not fit (train 82.6 / val 80.8),
 so squeezing generalization out of limited dense data is the game.
 
-### REDACTED's credited sources — traced (REDACTED.org/credits.htm, 2026-07-21)
+### Symbolic (string,fret) sources on the classical-guitar web — assessed
 
-Traced every music link on REDACTED's credits page to see if a clean *symbolic*
-(string,fret) source hides among its provenance. **It does not** — the sources
-split into three groups, none of which is dense string/fret gold:
+Surveyed whether a clean, dense (string,fret) *symbolic* source exists on the
+classical-guitar web beyond GuitarSet/EGSet12. **It does not** — the material
+splits into groups, none of which is dense string/fret gold:
 
-- **Other hobbyist TAB archives** (same contested profile as REDACTED —
-  amateur transcriptions of PD works, no explicit licence): REDACTED.com,
-  delcamp.net, REDACTED.net (On-Line Guitar Archive), REDACTED.org, REDACTED.com,
-  REDACTED.com, REDACTED.de, REDACTED.com/CGCL, REDACTED.org,
-  REDACTED (archived). ASCII/tab → has (string,fret), but the same
-  §3-Schöpfungshöhe / §44b-TDM question as REDACTED, and same noisy-amateur
-  caveat. Not cleaner than REDACTED itself — so not a *training* source.
-
-  **⚠ Correction + a REDACTED (eval-only) exception — REDACTED.com.**
-  Earlier filed as "ASCII tab"; it actually publishes **`.gpx` (Guitar Pro)**
-  next to PDF + MIDI — `REDACTED.com/gpx/<name>.gpx`, **229+ pieces** on the
-  index, composers all long-PD (Sor, Bach, Tárrega, Aguado, Coste, Carcassi,
-  Giuliani, Carulli). `.gpx` carries **full explicit (string, fret) per note**,
-  and **we already import it** (`scoreFromGpif`), so each file → (pitch-window →
-  string/fret) columns in the `acceptance.json` schema, exactly like the IDMT NC
-  set. Licence: no explicit grant (about page bot-blocks; hobbyist transcriptions
-  → §3/§44b contested, same as REDACTED). So **NOT for the shipped model's
-  weights** — but for a **REDACTED generalization benchmark** (produces
-  numbers only, never trained on, never shipped) it sits in the same eval-only
-  tier as IDMT (CC BY-NC-ND). Cleaner than IDMT on axis 2 (PD classical vs
-  original recordings), richer labels than ASCII. Keep the primary ship gate on
-  GuitarSet player 05; use REDACTED `.gpx` + IDMT as secondary OOD checks.
-
-  **★ IMSLP CC0 guitar tablature — the first TRAINING-clean tab source found.**
-  Unlike everything above, some IMSLP contributors typeset **guitar-arrangement
-  tablature and dedicate it CC0** — clean on BOTH axes (CC0 encoding + long-PD
-  work), so usable to **train the shipped model**, not just eval. Example:
-  `Courante_(Adriaenssen,_Emanuel)` — "Complete Score (tablature)", CC0, guitar
-  arr (EADGBE) of a ~1592 lute work, by arranger **Marieh**. **Marieh alone has
-  237+ CC0 guitar-tab PDFs** (Viñas, Campion, Alais, …), CC0 verified across
-  samples. **Findable automatically via the IMSLP MediaWiki API** — note the
-  licence is per-FILE, NOT a category, so: (a) enumerate an arranger's uploads
-  `api.php?action=query&list=usercontribs&ucuser=Marieh&ucnamespace=6&uclimit=500`
-  (or `Category:For guitar (arr)` / `Category:<Arranger>/Arranger`), (b) filter
-  filenames containing `tab`, (c) verify CC0 on each work page (`prop=categories`
-  has no licence tag — fetch the page and read the file's licence field).
-  **The one barrier: format = typeset PDF** (not GPX/MusicXML), so it needs
-  **tab-OMR** to recover machine-readable (string,fret). But typeset tab is a
-  clean digit-grid (no staff-notation / circle-vs-fingering ambiguity — the
-  *tractable* OMR case), and the payoff is real string/fret **training** labels
-  with impeccable licence. **This is the highest-value tab lead: pursue the
-  IMSLP-CC0-tab crawl + a tab-OMR pass.** (Aside: even raw 6-course renaissance
-  lute tab is fret-geometrically guitar-compatible — same P4-P4-M3-P4-P4 relative
-  tuning as EADGBE — but here it's already explicit guitar arrangements, so moot.)
-- **MIDI archives** (pitch only — no string/fret; and NOT clean):
-  **REDACTED.com** — 5,641 MIDIs, but *"Copyright François Faucher
-  1998–2025,"* **no licence**, and includes still-in-copyright composers
-  (Villa-Lobos d.1959, Piazzolla d.1992). midiworld.com, kunstderfuge.com
-  (largely subscription/restricted), guitarist.com. Pitch pseudo-labels at best,
-  with a sequencer copyright claim on top.
-- **Institutional PD facsimile collections** (cleanest on *both* axes — genuinely
-  PD works, PD scans — but **PDF images of STAFF notation**, so pitch-only after
-  OMR, NO string/fret): **Ophee Collection** (Appalachian State — 500+ PD first
-  editions of Sor/Giuliani/Carcassi, *"digitized files of public domain music,"*
-  credit requested); **Boije** (Swedish Music & Theatre Library, ~early-19thc.
-  guitar); **Rischel & Birket-Smith** (Danish Royal Library); **IMSLP**;
-  **Mutopia** (already assessed — CC BY-SA/BY/PD, `.ly`). These are the clean
+- **Amateur tab transcriptions** — carry (string,fret), but hobbyist
+  transcriptions of PD works with no clear licence grant (§3-Schöpfungshöhe /
+  §44b-TDM contested) and noisy. Not a clean training source.
+- **MIDI archives** — pitch only (no string/fret), and typically carry a
+  sequencer copyright claim on top plus still-in-copyright composers. Pitch
+  pseudo-labels at best.
+- **Institutional PD facsimile collections** (cleanest on *both* axes —
+  genuinely PD works, PD scans — but **PDF images of STAFF notation**, so
+  pitch-only after OMR, NO string/fret): **Ophee Collection** (Appalachian State
+  — 500+ PD first editions of Sor/Giuliani/Carcassi, "digitized files of public
+  domain music," credit requested); **Boije** (Swedish Music & Theatre Library,
+  early-19thc. guitar); **Rischel & Birket-Smith** (Danish Royal Library);
+  **IMSLP**; **Mutopia** (already assessed — CC BY-SA/BY/PD, `.ly`). The clean
   route, but only via OMR → pitch → arranger pseudo-labels, never direct
   string/fret.
-- (Non-sources on the page: dolmetsch / musictheory.org.uk / vt.edu = theory
-  references; google-groups / reddit / facebook / vk / gametabs = forums.)
 
-**Conclusion:** tracing REDACTED's provenance confirms §3 above — there is **no
-clean dense (string,fret) symbolic source** in the classical-guitar web. The
-tab archives all carry REDACTED's contested profile; the genuinely-PD material
-is staff-notation facsimiles (pitch-only, OMR-gated) or copyright-claimed MIDI.
-So the clean dense data really is GuitarSet + EGSet12 + Guitar-TECHS, and the
-classical-guitar web is a **pseudo-label / weak-supervision** tier at best —
-reinforcing the generate-and-augment strategy over sourcing.
+**One genuinely clean tab lead:** some IMSLP contributors typeset
+guitar-arrangement tablature and dedicate it **CC0** — clean on BOTH axes (CC0
+encoding + long-PD work), so usable to **train** the shipped model, not just
+eval. Format is typeset PDF, so it needs a **tab-OMR** pass to recover
+machine-readable (string,fret); typeset tab is a clean digit-grid (no
+staff-notation / circle-vs-fingering ambiguity — the *tractable* OMR case).
+Highest-value tab lead.
+
+**Conclusion:** there is **no clean dense (string,fret) symbolic source** freely
+available at scale on the classical-guitar web. The genuinely-PD material is
+staff-notation facsimiles (pitch-only, OMR-gated). So the clean dense data really
+is GuitarSet + EGSet12 + Guitar-TECHS, and the rest is a **pseudo-label /
+weak-supervision** tier at best — reinforcing the generate-and-augment strategy
+over sourcing.
 
 ## TL;DR
 - Keep 7859 + 8270 both on HF; fix the stale card; recommend `cost.move≈2.0`.
