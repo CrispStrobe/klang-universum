@@ -458,12 +458,18 @@ corpus already treats its HELD/quarantine rows.
 **Asset-registry scaffolding is LIVE** in the `music-db` (2026-07-22): `db.json`
 rows now carry a `kind` field (existing 16,823 → `score`), `merge_db.py` reads an
 `assets-manifest.json`, and `bin/ingest_assets.py` is the data-driven ingest
-(append to its `ASSETS` list). **First asset ingested: FluidR3 GM/GS (MIT,
-151 MB, `assets/soundfonts/`)** → `db.json` = 16,824, sha256-recorded, licence
-bundled, obligation recorded in `ATTRIBUTION.md`.
-Next: seed the CC0 sample libraries (VCSL / VSCO 2 CE / FreePats-CC0 — a
-granularity call: one row per library vs per instrument), add an OpenGameArt
-Music harvester (CC0 → A / CC BY-family → B).
+(append to its `ASSETS` list). **First assets ingested: (1) **FluidR3 GM/GS**
+(MIT full-GM SoundFont, 151 MB, `assets/soundfonts/`), sha256-recorded, licence
+bundled — licence re-verified as genuinely MIT (Frank Wen's own COPYING + Debian
+*main*; the archive.org download mirror mis-tags CC-BY-ND, ignored). (2) **39
+FreePats CC0 instruments** (`assets/instruments/freepats/`, SFZ + FLAC, 1.5 GB) —
+**per-instrument** rows (`kind:"instrument"`), SPDX read per-repo from the GitHub
+API so only `CC0-1.0` repos are taken (muldjordkit=CC-BY, colomboADK=GPL
+excluded). **db.json = 16,863** (16,823 score + 1 soundfont + 39 instrument).
+FreePats folded in by **append** (`bin/append_freepats.py`), not a full rebuild,
+to avoid re-triggering the Mutopia/Lieder path-truncation defect.
+Next: the big CC0 sample libraries (VCSL / VSCO 2 CE, per-instrument), then an
+OpenGameArt Music harvester (CC0 → A / CC BY-family → B).
 
 ---
 
