@@ -16,6 +16,7 @@ import 'package:comet_beat/features/sound_lab/catalog_browse_sheet.dart';
 import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/features/sound_lab/instrument_play_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
+import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart';
 import 'package:comet_beat/shared/music_io/audio_import.dart';
@@ -45,10 +46,7 @@ Future<SavedInstrument?> showMyInstrumentsSheet(
 
 /// Renders one note ([midi], default middle C) from [inst] for a preview.
 Float64List renderInstrumentNote(TrackerInstrument inst, [int midi = 60]) =>
-    inst.renderChannel(
-      [TrackerCell(midi: midi)],
-      const TrackerTiming(rows: 4),
-    );
+    inst.renderChannel([TrackerCell(midi: midi)], const TrackerTiming(rows: 4));
 
 /// Test seam — drive the sheet without tapping through the UI.
 abstract class MyInstrumentsTester {
@@ -221,6 +219,15 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
     await showCatalogBrowseSheet(context);
   }
 
+  /// Opens the Sample Extractor (lift PCM samples out of a tracker module or a
+  /// sample-pack archive into "My Samples"); refreshes on return.
+  Future<void> _extractSamples() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const SampleExtractorScreen()),
+    );
+    await _reload();
+  }
+
   /// Generates a new sfxr sound effect and, on save, adds it to the library.
   Future<void> _generateFx() async {
     final saved = await showModalBottomSheet<SavedInstrument>(
@@ -265,12 +272,18 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                       onPressed: _browseCatalog,
                     ),
                   if (widget.restrictToCategory == null ||
-                      widget.restrictToCategory == 'Samples')
+                      widget.restrictToCategory == 'Samples') ...[
                     IconButton(
                       icon: const Icon(Icons.file_upload_outlined, size: 20),
                       tooltip: l10n.mySamplesImport,
                       onPressed: _import,
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.colorize, size: 20),
+                      tooltip: l10n.sampleExtractTitle,
+                      onPressed: _extractSamples,
+                    ),
+                  ],
                   if (widget.restrictToCategory == null)
                     TextButton.icon(
                       icon: const Icon(Icons.auto_awesome, size: 18),
@@ -336,8 +349,9 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                                   child: Icon(
                                     Icons.copyright_outlined,
                                     size: 15,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                               ],
@@ -350,8 +364,9 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                           leading: IconButton(
                             icon: const Icon(Icons.play_arrow),
                             tooltip: l10n.myInstrumentsAudition,
-                            onPressed:
-                                s.isReference ? null : () => _audition(s),
+                            onPressed: s.isReference
+                                ? null
+                                : () => _audition(s),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
