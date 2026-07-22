@@ -187,6 +187,8 @@
   "workshopScanImage": "Scan sheet music…",
   "workshopScanning": "Reading the sheet music…",
   "workshopScanUnavailable": "Couldn't read that image (or on-device sheet-music scanning isn't available here).",
+  "workshopTranscribe": "Transcribe a recording…",
+  "workshopTranscribing": "Listening to the recording…",
   "workshopPasteTokens": "Paste notation tokens…",
   "workshopPasteTokensHint": "Paste bekern / kern tokens (e.g. **kern <b> 4 c <b> *-)",
   "workshopPasteTokensLoad": "Load",
