@@ -465,11 +465,16 @@ bundled — licence re-verified as genuinely MIT (Frank Wen's own COPYING + Debi
 FreePats CC0 instruments** (`assets/instruments/freepats/`, SFZ + FLAC, 1.5 GB) —
 **per-instrument** rows (`kind:"instrument"`), SPDX read per-repo from the GitHub
 API so only `CC0-1.0` repos are taken (muldjordkit=CC-BY, colomboADK=GPL
-excluded). **db.json = 16,863** (16,823 score + 1 soundfont + 39 instrument).
-FreePats folded in by **append** (`bin/append_freepats.py`), not a full rebuild,
-to avoid re-triggering the Mutopia/Lieder path-truncation defect.
-Next: the big CC0 sample libraries (VCSL / VSCO 2 CE, per-instrument), then an
-OpenGameArt Music harvester (CC0 → A / CC BY-family → B).
+excluded). (3) **183 VCSL voices** (Versilian Community Sample Library, `assets/instruments/
+vcsl/`, 5.8 GB) — **per-SFZ** rows (`kind:"instrument"`), CC0-1.0 (repo SPDX). Its
+`sfz` branch is self-contained (SFZ + all WAVs), so one download; SFZ reference
+samples relative to their own folder (verified: 22/22 resolve). Families: drums 85
+/ pipe 51 / strings 23 / reed 8 / bass 7 / piano 7 / synth 2.
+**Assets total: 223** (1 soundfont + 222 instruments). Folded in by **append**
+(`bin/append_manifest.py`), not a full rebuild, to avoid the Mutopia/Lieder
+path-truncation defect; append preserves concurrent score additions.
+Next: **VSCO 2 CE** (~3 GB CC0, needs the Versilian direct link) + an OpenGameArt
+Music harvester (CC0 → A / CC BY-family → B).
 
 ---
 
