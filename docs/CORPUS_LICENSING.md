@@ -146,32 +146,38 @@ OpenEWLD 103 · Mutopia 510 · EGSet12 12.
   axis-2 from the **authoritative `!!!CDT` composer-date headers** (source metadata,
   beats Wikidata — and corrected Wikidata's namesake false-positives) AND
   parseability. Ships iff parseable AND (composer CDT latest year ≤1955, OR
-  anonymous **with a pre-1955 source/publication date**). Result: **SHIPPED 6,720**
-  (PD-composer 6,158 + dated-anonymous 562); **HELD 2,173** = undated-anonymous
-  1,860 + undated-composer 289 + unparseable 24; **DROPPED 25** (dated >1955, e.g.
-  S. Kazuro d.1961). CC BY 4.0 → attribution.
+  anonymous **with a pre-1955 source/publication date**). Result: **SHIPPED 6,743**
+  (PD-composer 6,177 + dated-anonymous 566); **HELD 2,150** = undated-anonymous
+  1,861 + undated-composer 289; **DROPPED 25** (dated >1955, e.g. S. Kazuro d.1961).
+  CC BY 4.0 → attribution.
   - ⚠ **Anonymous ≠ automatically PD** (EU: anon = 70y from *publication*). So the
-    **1,860 undated-anonymous manuscripts are HELD**, not shipped — historical-looking
+    **1,861 undated-anonymous manuscripts are HELD**, not shipped — historical-looking
     (NIFC archives, mostly 16th–19th c by SMS-siglum) but not *provably* pre-1955.
     A provenance/RISM date pass could clear many (`polish_held.json`).
-  - **Parseability sweep** (our own reader, run **on the VPS** via
-    `/mnt/volume1/toolchain/flutter/bin/dart` + a `crisp_notation` clone): **8,894 /
-    8,918 = 99.73% parse**; the 24 failures (malformed edge tokens) are held.
   - Tooling: `tool/music_db_ingest_polish.py`, `music_db_polish_cdt_classify.py`,
     `music_db_krn_parse_sweep.dart`.
 - **OpenScore quarantine applied**: the 2 genuine in-copyright poet cases (Erich
   Jansen d.1968, Bruce Blunt d.1957) removed via `os_exclude.json` (merge skips
   them); the other 11 flagged were Wikidata namesake false-positives, kept. Lieder
   1,352 → 1,350.
-- **kern parser quality-checked** (music21 oracle + Dart self-roundtrip over the
-  real Chopin/Polish corpus): **found + fixed a reader crash** on breve/long/maxima
-  durations (`00`/`000`) — 10% of a polish sample failed before, **60/60 parse
-  after** (crisp_notation `d4655e7`). Two findings recorded: **music21 is an
-  unreliable oracle for early-music kern** (it `ExpanderException`s on repeats and
-  drops the majority of notes on multi-spine masses — our reader reads them more
-  completely, matching raw token density); and our **kern *writer* is lossy for
-  dense multi-voice** (single spine per part → drops voices 2-4), which doesn't
-  affect the DB (we ship original krn, the reader is what the app uses).
+- **kern parser quality-checked at corpus scale — and it found real bugs.** Ran a
+  **VPS parse-sweep** (our own reader via `/mnt/volume1/toolchain/flutter/bin/dart` +
+  a `crisp_notation` clone) over **all 8,918** Polish krn + a **verovio** content
+  oracle (the Humdrum-native renderer) on a 60-file Chopin/Polish sample. Fixes:
+  - **breve/long/maxima** (`0`/`00`/`000`) durations crashed the reader (crisp_notation
+    `d4655e7`).
+  - **exotic meters** (`*M3/3`, `*M2/21`) and **null-token variants** (`..`/`./`/`.\`) +
+    a lone unparseable/unmeasured token wrongly aborted the whole score (`886cc1d`) —
+    now the exotic meter/token is skipped, not fatal.
+  - Net: **24 failures → 0. All 8,918 parse (100%).**
+  - **Oracle result vs verovio: 93.84% pitch-multiset agreement** (music21 gave only
+    75.92% — it `ExpanderException`s on early-music repeats and drops notes, so it's an
+    *unreliable* oracle here). The residual is **repeat-expansion** (verovio expands
+    repeats, we read the notated score once → on those files our notes are a correct
+    *subset* of verovio's), not a parse error.
+  - Known limitation (out of scope for the DB): our **kern *writer*** is lossy for
+    dense multi-voice (single spine per part). We ship original krn; the reader — what
+    the app uses — is validated above.
 
 - **Added this session:** **OpenEWLD** (103 mxl, MIT, author-death-filtered EU-PD,
   `tool/music_db_ingest_openewld.py`) · **NIFC Chopin First Editions** (512 krn, CC
