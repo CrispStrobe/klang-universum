@@ -79,6 +79,32 @@ All licences below read verbatim from the source's own LICENSE file / legal page
 | jams-pkg | 7 jams | ISC | synthetic ✅ |
 | OpenEWLD-eu-pd | 87 works / 103 mxl | MIT | author-death filtered to EU-PD ✅ (defensible, not "cleared") |
 
+### music-db integration status (2026-07-22) — 10,082 entries
+
+`/mnt/volume1/music-db/db.json` now indexes **10,082 scores** across 7 sources,
+each with a multi-format `files{}` map. By source: PDMX 7,471 · OpenScore Lieder
+1,352 · NIFC Chopin 512 · OpenScore SQ 122 · **OpenEWLD 103** · Mutopia 510 ·
+**EGSet12 12**. Formats: mxl 8,926 · midi 9,333 · pdf 7,976 · json 7,471 · krn
+512 · mscx 1,474 · mscz 1,352 · ly 442 · gp 12.
+
+- **Added this session:** **OpenEWLD** (103 mxl, MIT, author-death-filtered EU-PD,
+  `tool/music_db_ingest_openewld.py`) · **NIFC Chopin First Editions** (512 krn, CC
+  BY 4.0, Chopin d.1849 = PD + PD first-edition fingering; `music_db_ingest_nifc.py`)
+  · **EGSet12** (12 `.gp`, CC BY 4.0, original by the dataset authors;
+  `music_db_ingest_egset12.py`). CC BY entries carry attribution → `ATTRIBUTION.md`.
+- **OpenScore axis-2 VERIFIED** (was "assumed"): a composer+**poet** life+70 Wikidata
+  check (`tool/music_db_openscore_life70.py`) over 661 unique names → **1,461/1,474
+  CLEAR, 13 BLOCKED** (`os_problematic.json`). Most of the 13 are Wikidata **namesake
+  false-positives** (Glinka d.1857 matched a 1936-2022 person; "John Howard Payne"
+  d.1852 → a 1912-1989 "John Payne"; "A. S." → novelist A.S. Byatt) — only ~2 look
+  genuine, both **poets/lyricists** (Erich Jansen d.1968, Bruce Blunt d.1957). Pending
+  a targeted quarantine of the genuine cases.
+- **HELD (not added):** **humdrum-polish-scores** — turns out to be **8,918 krn**
+  (not a small companion); CC BY on axis-1 but composers not all PD → needs the same
+  life+70 pass before shipping. **GregoBase** — its `download.php` is an HTML page;
+  the GABC bulk export needs a GABC→MusicXML converter we don't have. **CPDL** —
+  copyleft + per-edition axis-2 filter, a separate project.
+
 ### New, verified-clean, format-reachable (no new code needed)
 
 | Source | →reach | Axis 1 | Notes / axis-2 |
