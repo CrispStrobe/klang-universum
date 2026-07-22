@@ -486,9 +486,12 @@ existing 18k-score corpus IS this), plus **tracker modules** (`.xm/.it/.mod` —
 symbolic pattern data + samples). An OpenGameArt CC0 harvest (`bin/oga_harvest.py`)
 pulled 130 finished-audio tracks and was **reverted** under this rule; **finding:**
 OGA's CC0 set is ~all finished ogg/mp3 (0 modules in the top ~170 nodes), so OGA
-is **not** a symbolic-music source. For clean CC0 tracker *modules*, target
-concentrated sources (the itch "Big MOD Music Pack" = per-file CC0/CC-BY `.xm`);
-`bin/oga_harvest.py` is retained but should be run module-only if used at all.
+is **not** a symbolic-music source. Clean CC0/CC-BY tracker **modules** were
+instead sourced from a per-file-licensed community module archive by its explicit
+licence categories (see §Status above — 1,650 shipped). The itch "Big MOD Music
+Pack" (700+ per-file PD/CC0/CC-BY/CC-BY-SA `.xm`, with a `MasterList.txt` licence
+map) is a *curated subset of that same archive*, so going direct to the source's
+licence categories was cleaner (no itch download gate, all tiers).
 
 ---
 
