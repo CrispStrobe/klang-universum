@@ -4367,6 +4367,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get recitalTooltip => 'Ein Vorspiel spielen';
 
   @override
+  String get recitalStart => 'Vorspiel starten';
+
+  @override
+  String get recitalIntro =>
+      'Spiele ein paar Spiele nacheinander als Vorführung und verbeuge dich am Ende.';
+
+  @override
   String recitalProgress(int done, int total) {
     return '$done von $total Stücken gespielt';
   }

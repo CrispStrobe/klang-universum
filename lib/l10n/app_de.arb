@@ -1512,6 +1512,8 @@
   "noteSnakePrompt": "Friss diese Note:",
   "recitalTitle": "Vorspiel",
   "recitalTooltip": "Ein Vorspiel spielen",
+  "recitalStart": "Vorspiel starten",
+  "recitalIntro": "Spiele ein paar Spiele nacheinander als Vorführung und verbeuge dich am Ende.",
   "recitalProgress": "{done} von {total} Stücken gespielt",
   "@recitalProgress": {
     "placeholders": {

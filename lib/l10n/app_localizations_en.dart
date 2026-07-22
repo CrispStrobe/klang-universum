@@ -4346,6 +4346,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recitalTooltip => 'Play a recital';
 
   @override
+  String get recitalStart => 'Start a recital';
+
+  @override
+  String get recitalIntro =>
+      'Play a handful of games in a row as a showcase, then take a bow.';
+
+  @override
   String recitalProgress(int done, int total) {
     return '$done of $total pieces performed';
   }

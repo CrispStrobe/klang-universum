@@ -8132,6 +8132,18 @@ abstract class AppLocalizations {
   /// **'Play a recital'**
   String get recitalTooltip;
 
+  /// No description provided for @recitalStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a recital'**
+  String get recitalStart;
+
+  /// No description provided for @recitalIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a handful of games in a row as a showcase, then take a bow.'**
+  String get recitalIntro;
+
   /// No description provided for @recitalProgress.
   ///
   /// In en, this message translates to:
