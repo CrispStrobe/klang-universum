@@ -121,7 +121,9 @@ void main() {
     await pumpGame(tester, _hosted(MyInstrumentsSheet(store: store)));
     await tester.pumpAndSettle();
 
-    // Open the FX generator, pick a preset (which previews it), then save.
+    // Open the "create" menu, then the FX generator, pick a preset, then save.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.auto_awesome));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ChoiceChip, 'laser'));

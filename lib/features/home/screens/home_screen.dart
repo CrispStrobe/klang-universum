@@ -27,8 +27,6 @@ import 'package:comet_beat/features/games/screens/module_screen.dart';
 import 'package:comet_beat/features/games/transcribe/transcribe_screen.dart';
 import 'package:comet_beat/features/progress/screens/progress_screen.dart';
 import 'package:comet_beat/features/settings/screens/settings_screen.dart';
-import 'package:comet_beat/features/sound_lab/sound_lab_screen.dart';
-import 'package:comet_beat/features/sound_lab/voice_lab_screen.dart';
 import 'package:comet_beat/features/textbook/textbook_screen.dart';
 import 'package:comet_beat/features/workshop/screens/composition_workshop_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -181,8 +179,6 @@ class HomeScreen extends StatelessWidget {
                   2 => const TabWorkshopScreen(),
                   3 => const LoopMixerScreen(),
                   4 => const DrumkitScreen(),
-                  5 => const SoundLabScreen(),
-                  6 => const VoiceLabScreen(),
                   8 => const DawScreen(),
                   9 => const TranscribeScreen(),
                   10 => const PerformScreen(),
@@ -248,26 +244,6 @@ class HomeScreen extends StatelessWidget {
                     const Icon(Icons.album, size: 20),
                     const SizedBox(width: 12),
                     Text(l10n.workshopModeDrums),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 5,
-                child: Row(
-                  children: [
-                    const Icon(Icons.graphic_eq, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.soundLabTitle),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 6,
-                child: Row(
-                  children: [
-                    const Icon(Icons.record_voice_over, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.voiceLabTitle),
                   ],
                 ),
               ),
