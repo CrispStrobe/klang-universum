@@ -5,9 +5,11 @@ CometBeat, a **COMMERCIAL** children's music app shipping in **Germany**.
 **NOT legal advice.** Anything commercial-critical wants a Fachanwalt für
 Urheberrecht sign-off (§3/§4 UrhG exposure + the axis-2 questions below).
 
-Last updated 2026-07-21. Some leads remain unverified — the research sweep hit
-the weekly API limit (resets 07-25) and the VPS holding the downloaded corpus +
-`LICENSES.md` was unreachable. Verified vs. pending is marked throughout.
+Last updated 2026-07-22. Verified vs. pending is marked throughout. A **coverage
+snapshot** — what is in hand vs what is still safely reachable — leads the doc;
+source-by-source detail follows. (This is a *licensing/coverage* doc: it records
+what each source **is** and whether it clears the two axes, not how any of it is
+obtained.)
 
 ## The test every candidate must pass — TWO axes
 
@@ -65,6 +67,65 @@ repos below. Reachable, but dev/test only.
 
 ---
 
+## Coverage snapshot (2026-07-22) — what we hold vs what is still reachable
+
+The direct answer to "what have we covered / what could we still safely add."
+Every line here is a *licence/coverage* statement; detail per source follows.
+
+### Covered now — assessed, licence-cleared, in hand
+
+- **Unified shippable score corpus — 16,800 scores, 8 sources, both axes clean**
+  (`music-db/db.json`): PDMX CC0-original 7,471 · NIFC Polish (life+70-filtered)
+  6,720 · OpenScore Lieder (composer+poet death-checked) 1,350 · NIFC Chopin 512 ·
+  OpenScore String Quartets 122 · OpenEWLD-eu-pd 103 · Mutopia 510 · EGSet12 12.
+  Licences: CC0 / CC BY / MIT / PD (per source), each filtered on axis 2. Held
+  in multiple formats (midi/mxl/pdf/json/mscx/mscz/ly).
+- **Tabs for every one of those scores come free** via our own `arrangeTab` — the
+  shippable *tab* corpus **is** this score corpus, no third-party tab licensing.
+- **JAMS Tier-A** (`jams-corpus/tierA`): GuitarSet 360 (CC BY) · Harmonix 912 (MIT)
+  · jams-pkg 7 (ISC) · OpenEWLD-eu-pd 103 (MIT).
+- **Tab-pipeline data, assessed:** GuitarSet + EGSet12 (both-axes clean, real
+  string/fret) shippable; Guitar-TECHS + AG-PT-set (CC BY) trainable for audio→tab;
+  GAPS / IDMT (NC) eval-only.
+- **IMSLP — "Marieh" CC0 guitar transcriptions: 235 tablature + 259 standard-notation
+  PDFs.** Axis 1 = explicit **CC0** dedication by the arranger; axis 2 = PD 19th-c.
+  composers (Giuliani d.1829, Viñas d.1888, Sor, …) → **both axes clean.** Dual
+  value: (a) real-world PDF **OMR test input**, (b) clean guitar score/tab material.
+  A per-work composer death-check stays prudent (as for any PD claim), but this is
+  the cleanest guitar-tab-of-PD-works source found.
+- **REDACTED `.gpx` — DEV/TEST CONTROL only, NOT shippable.** ~3.2k classical/Latin
+  guitar works in Guitar Pro form. The site calls them public-domain but states **no
+  licence for its transcriptions** → axis 1 unstated → excluded from the shippable
+  DB. Role: a robustness/regression control for the `.gpx` importer (the tab analogue
+  of the REDACTED ascii-tab control).
+
+### Safely reachable next — clean, identified, not yet ingested
+
+- **OpenScore Lieder — the rest of the CC0 set** beyond the 1,350 shipped, as the
+  composer+poet death-filter clears further pairs. Highest-value clean growth.
+- **NIFC Polish — the 1,860 undated-anonymous manuscripts currently HELD**, if a
+  provenance/RISM date pass can establish pre-1955 publication (fail-closed today).
+- **Self-engraved German Kinderlieder** from pre-1900 PD facsimiles (Erk/Böhme
+  *Deutscher Liederhort*, Zuccalmaglio) — the only clean route to the German
+  children's repertoire the app wants; sidesteps every third-party encoding/DB claim.
+- **GregoBase** (CC0 Gregorian chant) — axis 2 trivially clear; needs a GABC→MusicXML
+  step. **CPDL / ChoralWiki** (CPDL License = commercial + share-alike, copyleft) —
+  strong for a singing app; per-edition axis-2 filter.
+- **Fingered layers:** Burgmüller Op.100 (PD, fingered) + NIFC Chopin `**fing`
+  spines (CC BY, PD fingering); and **dead-editor PD scans** via a vision/OMR pass —
+  recovers notes + authentic period fingerings owned outright (guitar/cello solution).
+- **Broader IMSLP CC0** — other CC0-dedicating arrangers beyond "Marieh", same
+  two-axis test applied per work.
+
+### Not reachable (settled — see the rejected tables)
+
+Academic classical kern/ABC (craigsapp, DCML, JRP, Essen, Meertens — NC); all large
+Guitar Pro archives (DadaGP / UG scrapes — research-only + in-copyright); thesession
+(ODbL + anti-LLM); German folk-song sites (private/all-rights-reserved); GOAT / GAPS /
+IDMT tab-training (NC/ND → eval-only). PrIMuS / RISM MEI (unstated licence).
+
+---
+
 ## VERIFIED — shippable (Tier A)
 
 All licences below read verbatim from the source's own LICENSE file / legal page
@@ -79,19 +140,30 @@ All licences below read verbatim from the source's own LICENSE file / legal page
 | jams-pkg | 7 jams | ISC | synthetic ✅ |
 | OpenEWLD-eu-pd | 87 works / 103 mxl | MIT | author-death filtered to EU-PD ✅ (defensible, not "cleared") |
 
-### music-db integration status (2026-07-22) — 17,606 entries
+### music-db integration status (2026-07-22) — 16,800 entries
 
-`/mnt/volume1/music-db/db.json` now indexes **17,606 scores** across 8 sources,
-each with a multi-format `files{}` map. By source: **NIFC Polish Scores 7,526** ·
-PDMX 7,471 · OpenScore Lieder 1,350 · NIFC Chopin 512 · OpenScore SQ 122 ·
+`/mnt/volume1/music-db/db.json` now indexes **16,800 scores** across 8 sources,
+each with a multi-format `files{}` map. By source: PDMX 7,471 · **NIFC Polish
+Scores 6,720** · OpenScore Lieder 1,350 · NIFC Chopin 512 · OpenScore SQ 122 ·
 OpenEWLD 103 · Mutopia 510 · EGSet12 12.
 
-- **NIFC Polish Scores** (2026-07-22): `git clone`d the 8,918-krn repo, ran the
-  **composer life+70** check (`tool/music_db_polish_life70.py`, 441 unique
-  composers) → shipped the **PD-verified subset: 7,526** (PD-composer 5,099 +
-  anonymous 2,427). **HELD** 1,292 (unknown/unresolvable composer — fails closed,
-  `polish_held.json`); **DROPPED** 100 (RECENT/ALIVE composers, still in copyright).
-  CC BY 4.0 → attribution. `tool/music_db_ingest_polish.py`.
+- **NIFC Polish Scores** (2026-07-22): `git clone`d the 8,918-krn repo. Verified
+  axis-2 from the **authoritative `!!!CDT` composer-date headers** (source metadata,
+  beats Wikidata — and corrected Wikidata's namesake false-positives) AND
+  parseability. Ships iff parseable AND (composer CDT latest year ≤1955, OR
+  anonymous **with a pre-1955 source/publication date**). Result: **SHIPPED 6,720**
+  (PD-composer 6,158 + dated-anonymous 562); **HELD 2,173** = undated-anonymous
+  1,860 + undated-composer 289 + unparseable 24; **DROPPED 25** (dated >1955, e.g.
+  S. Kazuro d.1961). CC BY 4.0 → attribution.
+  - ⚠ **Anonymous ≠ automatically PD** (EU: anon = 70y from *publication*). So the
+    **1,860 undated-anonymous manuscripts are HELD**, not shipped — historical-looking
+    (NIFC archives, mostly 16th–19th c by SMS-siglum) but not *provably* pre-1955.
+    A provenance/RISM date pass could clear many (`polish_held.json`).
+  - **Parseability sweep** (our own reader, run **on the VPS** via
+    `/mnt/volume1/toolchain/flutter/bin/dart` + a `crisp_notation` clone): **8,894 /
+    8,918 = 99.73% parse**; the 24 failures (malformed edge tokens) are held.
+  - Tooling: `tool/music_db_ingest_polish.py`, `music_db_polish_cdt_classify.py`,
+    `music_db_krn_parse_sweep.dart`.
 - **OpenScore quarantine applied**: the 2 genuine in-copyright poet cases (Erich
   Jansen d.1968, Bruce Blunt d.1957) removed via `os_exclude.json` (merge skips
   them); the other 11 flagged were Wikidata namesake false-positives, kept. Lieder
@@ -134,6 +206,7 @@ OpenEWLD 103 · Mutopia 510 · EGSet12 12.
 | **Mutopia** | .ly / MIDI | **CC BY-SA / CC BY / PD — all commercial-OK** (legal.html) | Per-piece licence + editor-rights filter; BY-SA copyleft on a bundle. |
 | **CPDL / ChoralWiki** | MusicXML/MXL where offered | **CPDL License = commercial + share-alike** (copyleft); editions also CC / PD | Choral/vocal — strong for a SINGING app. Per-edition filter; §3 engraving + US-PD cautions. |
 | **GregoBase** | GABC (needs converter) or its MusicXML export | **CC0** | Gregorian chant; axis-2 trivially clear. Niche for kids. |
+| **IMSLP "Marieh" guitar transcriptions** | PDF (tab + notation) | **CC0** (arranger's explicit dedication) | 235 tablature + 259 standard-notation PDFs; underlying composers PD 19th-c. (Giuliani d.1829, Viñas d.1888, Sor…) → both axes clean. Dual use: **OMR test input** + clean guitar score/tab. Per-work composer death-check prudent. |
 
 **Detail worth keeping:**
 
