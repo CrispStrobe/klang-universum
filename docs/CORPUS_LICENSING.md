@@ -79,13 +79,32 @@ All licences below read verbatim from the source's own LICENSE file / legal page
 | jams-pkg | 7 jams | ISC | synthetic ✅ |
 | OpenEWLD-eu-pd | 87 works / 103 mxl | MIT | author-death filtered to EU-PD ✅ (defensible, not "cleared") |
 
-### music-db integration status (2026-07-22) — 10,082 entries
+### music-db integration status (2026-07-22) — 17,606 entries
 
-`/mnt/volume1/music-db/db.json` now indexes **10,082 scores** across 7 sources,
-each with a multi-format `files{}` map. By source: PDMX 7,471 · OpenScore Lieder
-1,352 · NIFC Chopin 512 · OpenScore SQ 122 · **OpenEWLD 103** · Mutopia 510 ·
-**EGSet12 12**. Formats: mxl 8,926 · midi 9,333 · pdf 7,976 · json 7,471 · krn
-512 · mscx 1,474 · mscz 1,352 · ly 442 · gp 12.
+`/mnt/volume1/music-db/db.json` now indexes **17,606 scores** across 8 sources,
+each with a multi-format `files{}` map. By source: **NIFC Polish Scores 7,526** ·
+PDMX 7,471 · OpenScore Lieder 1,350 · NIFC Chopin 512 · OpenScore SQ 122 ·
+OpenEWLD 103 · Mutopia 510 · EGSet12 12.
+
+- **NIFC Polish Scores** (2026-07-22): `git clone`d the 8,918-krn repo, ran the
+  **composer life+70** check (`tool/music_db_polish_life70.py`, 441 unique
+  composers) → shipped the **PD-verified subset: 7,526** (PD-composer 5,099 +
+  anonymous 2,427). **HELD** 1,292 (unknown/unresolvable composer — fails closed,
+  `polish_held.json`); **DROPPED** 100 (RECENT/ALIVE composers, still in copyright).
+  CC BY 4.0 → attribution. `tool/music_db_ingest_polish.py`.
+- **OpenScore quarantine applied**: the 2 genuine in-copyright poet cases (Erich
+  Jansen d.1968, Bruce Blunt d.1957) removed via `os_exclude.json` (merge skips
+  them); the other 11 flagged were Wikidata namesake false-positives, kept. Lieder
+  1,352 → 1,350.
+- **kern parser quality-checked** (music21 oracle + Dart self-roundtrip over the
+  real Chopin/Polish corpus): **found + fixed a reader crash** on breve/long/maxima
+  durations (`00`/`000`) — 10% of a polish sample failed before, **60/60 parse
+  after** (crisp_notation `d4655e7`). Two findings recorded: **music21 is an
+  unreliable oracle for early-music kern** (it `ExpanderException`s on repeats and
+  drops the majority of notes on multi-spine masses — our reader reads them more
+  completely, matching raw token density); and our **kern *writer* is lossy for
+  dense multi-voice** (single spine per part → drops voices 2-4), which doesn't
+  affect the DB (we ship original krn, the reader is what the app uses).
 
 - **Added this session:** **OpenEWLD** (103 mxl, MIT, author-death-filtered EU-PD,
   `tool/music_db_ingest_openewld.py`) · **NIFC Chopin First Editions** (512 krn, CC
