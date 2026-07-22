@@ -1742,6 +1742,8 @@
   "noteSnakePrompt": "Eat this note:",
   "recitalTitle": "Recital",
   "recitalTooltip": "Play a recital",
+  "recitalStart": "Start a recital",
+  "recitalIntro": "Play a handful of games in a row as a showcase, then take a bow.",
   "recitalProgress": "{done} of {total} pieces performed",
   "@recitalProgress": {
     "placeholders": {

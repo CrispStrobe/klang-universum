@@ -6,12 +6,86 @@
 import 'package:comet_beat/core/models/learning_module.dart';
 import 'package:comet_beat/core/services/sri_service.dart';
 import 'package:comet_beat/features/progress/sri_item_label.dart';
+import 'package:comet_beat/features/recital/recital_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+/// The learning-progress hub: cumulative stats (Karteikasten + mastery) and the
+/// Recital showcase, united under one screen with two tabs.
 class ProgressScreen extends StatelessWidget {
   const ProgressScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.progressTitle),
+          bottom: TabBar(
+            tabs: [
+              Tab(icon: const Icon(Icons.bar_chart), text: l10n.progressTitle),
+              Tab(
+                icon: const Icon(Icons.theater_comedy),
+                text: l10n.recitalTitle,
+              ),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [_ProgressTab(), _RecitalsTab()],
+        ),
+      ),
+    );
+  }
+}
+
+/// The Recital showcase entry point (its own tab in the Progress hub). A recital
+/// is a focused performance session, so this launches [RecitalScreen] rather
+/// than embedding it.
+class _RecitalsTab extends StatelessWidget {
+  const _RecitalsTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🎭', style: TextStyle(fontSize: 72)),
+            const SizedBox(height: 16),
+            Text(
+              l10n.recitalIntro,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              icon: const Icon(Icons.play_arrow),
+              label: Text(l10n.recitalStart),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      RecitalScreen(program: buildRecitalProgram(context)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Cumulative learning stats: the Karteikasten (Leitner boxes) and per-module
+/// mastery bars.
+class _ProgressTab extends StatelessWidget {
+  const _ProgressTab();
 
   @override
   Widget build(BuildContext context) {
@@ -21,76 +95,73 @@ class ProgressScreen extends StatelessWidget {
     final breakdown = sri.getDetailedBreakdown();
     final tricky = sri.weakestItems();
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.progressTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          l10n.karteikastenTitle,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            child: Row(
+              children: [
+                for (var box = 1; box <= 5; box++)
+                  Expanded(
+                    child: _BoxColumn(
+                      count: boxCounts[box] ?? 0,
+                      label: switch (box) {
+                        1 => l10n.boxNew,
+                        5 => l10n.boxMastered,
+                        _ => 'Box $box',
+                      },
+                      emphasized: box == 5,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (tricky.isNotEmpty) ...[
+          const SizedBox(height: 20),
           Text(
-            l10n.karteikastenTitle,
+            l10n.trickyNotesTitle,
             style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.trickyNotesHint,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-              child: Row(
-                children: [
-                  for (var box = 1; box <= 5; box++)
-                    Expanded(
-                      child: _BoxColumn(
-                        count: boxCounts[box] ?? 0,
-                        label: switch (box) {
-                          1 => l10n.boxNew,
-                          5 => l10n.boxMastered,
-                          _ => 'Box $box',
-                        },
-                        emphasized: box == 5,
-                      ),
-                    ),
-                ],
-              ),
+            child: Column(
+              children: [
+                for (final item in tricky)
+                  _TrickyTile(
+                    module: _moduleForSriId(item.itemId),
+                    label: describeSriItem(l10n, item.itemId),
+                    missed: l10n.trickyMissed(item.failureCount),
+                  ),
+              ],
             ),
           ),
-          if (tricky.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text(
-              l10n.trickyNotesTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.trickyNotesHint,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: Column(
-                children: [
-                  for (final item in tricky)
-                    _TrickyTile(
-                      module: _moduleForSriId(item.itemId),
-                      label: describeSriItem(l10n, item.itemId),
-                      missed: l10n.trickyMissed(item.failureCount),
-                    ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: 20),
-          Text(
-            l10n.moduleProgressTitle,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          for (final module in kLearningModules)
-            _ModuleProgressCard(
-              module: module,
-              skills: breakdown[module.id] ?? const {},
-              l10n: l10n,
-            ),
         ],
-      ),
+        const SizedBox(height: 20),
+        Text(
+          l10n.moduleProgressTitle,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        for (final module in kLearningModules)
+          _ModuleProgressCard(
+            module: module,
+            skills: breakdown[module.id] ?? const {},
+            l10n: l10n,
+          ),
+      ],
     );
   }
 }

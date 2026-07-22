@@ -27,7 +27,6 @@ import 'package:comet_beat/features/games/scales/scale_detective_screen.dart';
 import 'package:comet_beat/features/games/screens/module_screen.dart';
 import 'package:comet_beat/features/games/transcribe/transcribe_screen.dart';
 import 'package:comet_beat/features/progress/screens/progress_screen.dart';
-import 'package:comet_beat/features/recital/recital_screen.dart';
 import 'package:comet_beat/features/settings/screens/settings_screen.dart';
 import 'package:comet_beat/features/sound_lab/sound_lab_screen.dart';
 import 'package:comet_beat/features/sound_lab/voice_lab_screen.dart';
@@ -67,12 +66,10 @@ class HomeScreen extends StatelessWidget {
     final treble = readingIds
         .where((id) => id.startsWith('note_reading.treble.'))
         .toList();
-    final bass = readingIds
-        .where((id) => id.startsWith('note_reading.bass.'))
-        .toList();
-    final tenor = readingIds
-        .where((id) => id.startsWith('note_reading.tenor.'))
-        .toList();
+    final bass =
+        readingIds.where((id) => id.startsWith('note_reading.bass.')).toList();
+    final tenor =
+        readingIds.where((id) => id.startsWith('note_reading.tenor.')).toList();
     List<String> dueOf(String moduleId, String prefix) => sri
         .getItemsForReview(
           limit: 10,
@@ -92,23 +89,23 @@ class HomeScreen extends StatelessWidget {
       (
         treble.length,
         () => NoteReadingQuizScreen(
-          clef: Clef.treble,
-          reviewItemIds: treble.take(10).toList(),
-        ),
+              clef: Clef.treble,
+              reviewItemIds: treble.take(10).toList(),
+            ),
       ),
       (
         bass.length,
         () => NoteReadingQuizScreen(
-          clef: Clef.bass,
-          reviewItemIds: bass.take(10).toList(),
-        ),
+              clef: Clef.bass,
+              reviewItemIds: bass.take(10).toList(),
+            ),
       ),
       (
         tenor.length,
         () => NoteReadingQuizScreen(
-          clef: Clef.tenor,
-          reviewItemIds: tenor.take(10).toList(),
-        ),
+              clef: Clef.tenor,
+              reviewItemIds: tenor.take(10).toList(),
+            ),
       ),
       (
         scaleSpots.length,
@@ -147,13 +144,13 @@ class HomeScreen extends StatelessWidget {
     // Soft engagement gate: a module unlocks once the previous one has
     // kModuleUnlockTracked SRI items (docs/PLAN.md). Debug mode opens all.
     final breakdown = sri.getDetailedBreakdown();
-    int trackedIn(String moduleId) => (breakdown[moduleId] ?? const {}).values
+    int trackedIn(String moduleId) => (breakdown[moduleId] ?? const {})
+        .values
         .fold(0, (sum, s) => sum + s.tracked);
     final unlockedById = <String, bool>{};
     for (var i = 0; i < kLearningModules.length; i++) {
       final module = kLearningModules[i];
-      unlockedById[module.id] =
-          debugUnlockAll ||
+      unlockedById[module.id] = debugUnlockAll ||
           module.initiallyUnlocked ||
           (i > 0 &&
               trackedIn(kLearningModules[i - 1].id) >= kModuleUnlockTracked);
@@ -178,16 +175,6 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const CurriculumScreen())),
-          ),
-          IconButton(
-            icon: const Icon(Icons.theater_comedy),
-            tooltip: l10n.recitalTooltip,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) =>
-                    RecitalScreen(program: buildRecitalProgram(context)),
-              ),
-            ),
           ),
           // Workshop: tap opens the Score editor (default mode); the dropdown
           // also offers the Advanced Tracker (the pattern-editor mode) and the
@@ -376,9 +363,8 @@ class HomeScreen extends StatelessWidget {
                     module: module,
                     l10n: l10n,
                     unlocked: unlockedById[module.id] ?? true,
-                    previousModule: index > 0
-                        ? kLearningModules[index - 1]
-                        : null,
+                    previousModule:
+                        index > 0 ? kLearningModules[index - 1] : null,
                   );
                 },
               ),
@@ -557,9 +543,9 @@ class _ModuleCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: unlocked ? null : Colors.grey,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: unlocked ? null : Colors.grey,
+                    ),
               ),
               const SizedBox(height: 4),
               // Flexible so the subtitle clips instead of overflowing when the
@@ -568,8 +554,8 @@ class _ModuleCard extends StatelessWidget {
                 child: Text(
                   module.subtitle(l10n),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: unlocked ? null : Colors.grey,
-                  ),
+                        color: unlocked ? null : Colors.grey,
+                      ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
