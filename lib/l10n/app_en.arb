@@ -849,6 +849,8 @@
   "instrumentPlayOctaveUp": "Octave up",
   "instrumentPlayHint": "Tap the keys to play your instrument.",
   "myInstrumentsDelete": "Delete",
+  "soundLibraryBrowseCatalog": "Browse catalog",
+  "catalogNotInstallable": "Browsable here — install coming soon",
   "soundLibraryTitle": "Sound Library",
   "soundLibraryAll": "All",
   "soundLibraryCatInstruments": "Instruments",

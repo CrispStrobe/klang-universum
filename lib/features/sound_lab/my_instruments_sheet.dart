@@ -12,6 +12,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/sfxr.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/sound_lab/catalog_browse_sheet.dart';
 import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/features/sound_lab/instrument_play_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
@@ -214,6 +215,12 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
     );
   }
 
+  /// Browses OUR curated Hugging Face catalog (SoundFonts / instruments /
+  /// samples); a picked SoundFont opens the preset picker to audition + choose.
+  Future<void> _browseCatalog() async {
+    await showCatalogBrowseSheet(context);
+  }
+
   /// Generates a new sfxr sound effect and, on save, adds it to the library.
   Future<void> _generateFx() async {
     final saved = await showModalBottomSheet<SavedInstrument>(
@@ -251,6 +258,12 @@ class _MyInstrumentsSheetState extends State<MyInstrumentsSheet>
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const Spacer(),
+                  if (widget.restrictToCategory == null)
+                    IconButton(
+                      icon: const Icon(Icons.cloud_outlined, size: 20),
+                      tooltip: l10n.soundLibraryBrowseCatalog,
+                      onPressed: _browseCatalog,
+                    ),
                   if (widget.restrictToCategory == null ||
                       widget.restrictToCategory == 'Samples')
                     IconButton(

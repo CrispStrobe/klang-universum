@@ -776,6 +776,8 @@
   "instrumentPlayOctaveUp": "Oktave hoch",
   "instrumentPlayHint": "Tippe die Tasten, um dein Instrument zu spielen.",
   "myInstrumentsDelete": "Löschen",
+  "soundLibraryBrowseCatalog": "Katalog durchsuchen",
+  "catalogNotInstallable": "Hier durchsuchbar – Installation folgt",
   "soundLibraryTitle": "Klangbibliothek",
   "soundLibraryAll": "Alle",
   "soundLibraryCatInstruments": "Instrumente",

@@ -4142,6 +4142,18 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get myInstrumentsDelete;
 
+  /// No description provided for @soundLibraryBrowseCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse catalog'**
+  String get soundLibraryBrowseCatalog;
+
+  /// No description provided for @catalogNotInstallable.
+  ///
+  /// In en, this message translates to:
+  /// **'Browsable here — install coming soon'**
+  String get catalogNotInstallable;
+
   /// No description provided for @soundLibraryTitle.
   ///
   /// In en, this message translates to:

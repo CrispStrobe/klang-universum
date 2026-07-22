@@ -2204,6 +2204,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get myInstrumentsDelete => 'Löschen';
 
   @override
+  String get soundLibraryBrowseCatalog => 'Katalog durchsuchen';
+
+  @override
+  String get catalogNotInstallable => 'Hier durchsuchbar – Installation folgt';
+
+  @override
   String get soundLibraryTitle => 'Klangbibliothek';
 
   @override
