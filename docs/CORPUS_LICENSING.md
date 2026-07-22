@@ -106,9 +106,9 @@ Every line here is a *licence/coverage* statement; detail per source follows.
 - **Self-engraved German Kinderlieder** from pre-1900 PD facsimiles (Erk/Böhme
   *Deutscher Liederhort*, Zuccalmaglio) — the only clean route to the German
   children's repertoire the app wants; sidesteps every third-party encoding/DB claim.
-- **GregoBase** (CC0 Gregorian chant) — axis 2 trivially clear; needs a GABC→MusicXML
-  step. **CPDL / ChoralWiki** (CPDL License = commercial + share-alike, copyleft) —
-  strong for a singing app; per-edition axis-2 filter.
+- **CPDL / ChoralWiki** (CPDL License = commercial + share-alike, copyleft) —
+  strong for a singing app; per-edition axis-2 filter. (**GregoBase** moved to
+  *in hand* — 18,711 CC0 chants + a GABC reader; see the shippable table.)
 - **Fingered layers:** Burgmüller Op.100 (PD, fingered) + NIFC Chopin `**fing`
   spines (CC BY, PD fingering); and **dead-editor PD scans** via a vision/OMR pass —
   recovers notes + authentic period fingerings owned outright (guitar/cello solution).
@@ -200,9 +200,9 @@ OpenEWLD 103 · Mutopia 510 · EGSet12 12.
   a targeted quarantine of the genuine cases.
 - **HELD (not added):** **humdrum-polish-scores** — turns out to be **8,918 krn**
   (not a small companion); CC BY on axis-1 but composers not all PD → needs the same
-  life+70 pass before shipping. **GregoBase** — its `download.php` is an HTML page;
-  the GABC bulk export needs a GABC→MusicXML converter we don't have. **CPDL** —
-  copyleft + per-edition axis-2 filter, a separate project.
+  life+70 pass before shipping. **CPDL** — copyleft + per-edition axis-2 filter, a
+  separate project. (**GregoBase** — resolved: the CC0 SQL dump on GitHub + a
+  clean-room GABC reader in crisp_notation; 18,711 chants in hand, see the table above.)
 
 ### New, verified-clean, format-reachable (no new code needed)
 
@@ -213,7 +213,8 @@ OpenEWLD 103 · Mutopia 510 · EGSet12 12.
 | **PDMX** (is_original slice) | MusicXML→**MIDI built** | **CC0**, 7,547 MIDIs ✅ | Original amateur compositions. Self-attested → wants a dup pass. MIDIs converted + roundtrip-verified (see below). |
 | **Mutopia** | .ly / MIDI | **CC BY-SA / CC BY / PD — all commercial-OK** (legal.html) | Per-piece licence + editor-rights filter; BY-SA copyleft on a bundle. |
 | **CPDL / ChoralWiki** | MusicXML/MXL where offered | **CPDL License = commercial + share-alike** (copyleft); editions also CC / PD | Choral/vocal — strong for a SINGING app. Per-edition filter; §3 engraving + US-PD cautions. |
-| **GregoBase** | GABC (needs converter) or its MusicXML export | **CC0** | Gregorian chant; axis-2 trivially clear. Niche for kids. |
+| **GregoBase** ✅ **IN HAND** | GABC → Score (**reader built** — crisp_notation `scoreFromGabc`) | **CC0** (all transcriptions; 33 copyright-flagged rows excluded) | **18,711 chants downloaded** to the VPS (`gabc-corpus/gregobase`, from the CC0 SQL dump); ancient-PD melodies → both axes clean. Clean-room GABC reader (spec-derived, gabctk-oracle-validated 98.9%); **99.7% parse / 0 crash** on a 1.5k sample. |
+| **Library of Plainsong** | GABC | **CC0** (site statement) | Nascent placeholder site — no accessible corpus yet; bookmark. |
 | **IMSLP "Marieh" guitar transcriptions** | PDF (tab + notation) | **CC0** (arranger's explicit dedication) | 235 tablature + 259 standard-notation PDFs; underlying composers PD 19th-c. (Giuliani d.1829, Viñas d.1888, Sor…) → both axes clean. Dual use: **OMR test input** + clean guitar score/tab. Per-work composer death-check prudent. |
 
 **Detail worth keeping:**
