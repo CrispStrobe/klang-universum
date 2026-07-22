@@ -110,14 +110,16 @@ void main() {
     for (var i = 0; i < pcm.length; i++) {
       pcm[i] = 0.3 * math.sin(2 * math.pi * 330 * i / 44100);
     }
-    final s = SavedInstrument.fromSampleClip(SampleClip(
-      name: 'Guitar hit',
-      sampleRate: 44100,
-      pcm: pcm,
-      source: 'Freepats',
-      license: 'CC BY 4.0',
-      sourceUrl: 'https://example/x',
-    ));
+    final s = SavedInstrument.fromSampleClip(
+      SampleClip(
+        name: 'Guitar hit',
+        sampleRate: 44100,
+        pcm: pcm,
+        source: 'Freepats',
+        license: 'CC BY 4.0',
+        sourceUrl: 'https://example/x',
+      ),
+    );
     expect(s.kind, 'sample');
     expect(s.category, 'Samples');
     expect(s.license, 'CC BY 4.0');

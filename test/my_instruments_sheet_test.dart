@@ -137,13 +137,15 @@ void main() {
   testWidgets('rubric tabs filter the list by category', (tester) async {
     final store = InstrumentLibraryStore();
     await store.save(_saved('bell')); // kind sample -> Samples
-    await store.save(SavedInstrument(
-      name: 'blip',
-      json: instrumentToJsonString(
-        SfxrInstrument('blip', kSfxrPresets['blip']!(math.Random(1))),
+    await store.save(
+      SavedInstrument(
+        name: 'blip',
+        json: instrumentToJsonString(
+          SfxrInstrument('blip', kSfxrPresets['blip']!(math.Random(1))),
+        ),
+        source: 'FX',
       ),
-      source: 'FX',
-    ));
+    );
     await pumpGame(tester, _hosted(MyInstrumentsSheet(store: store)));
     await tester.pumpAndSettle();
 
