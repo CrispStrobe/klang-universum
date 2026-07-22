@@ -149,6 +149,8 @@
   "workshopScanImage": "Notenblatt scannen…",
   "workshopScanning": "Notenblatt wird gelesen…",
   "workshopScanUnavailable": "Bild konnte nicht gelesen werden (oder das Scannen von Notenblättern ist hier nicht verfügbar).",
+  "workshopTranscribe": "Aufnahme transkribieren…",
+  "workshopTranscribing": "Aufnahme wird angehört…",
   "workshopPasteTokens": "Noten-Tokens einfügen…",
   "workshopPasteTokensHint": "bekern-/kern-Tokens einfügen (z. B. **kern <b> 4 c <b> *-)",
   "workshopPasteTokensLoad": "Laden",

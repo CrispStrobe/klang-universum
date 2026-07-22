@@ -23,6 +23,8 @@ import 'package:comet_beat/core/audio/score_instrument_render.dart'
 import 'package:comet_beat/core/audio/synth.dart' show wavBytes;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
+import 'package:comet_beat/core/audio/transcription/transcription_service.dart'
+    show transcribeRecording;
 import 'package:comet_beat/core/notation/multi_part_export.dart'
     show multiPartToAbc, multiPartToMidi, multiTrackMidiToMultiPart;
 import 'package:comet_beat/core/note_naming.dart';
@@ -2069,6 +2071,50 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
     }
   }
 
+  /// Transcribe a recording (audio → notes) straight into the editor — the same
+  /// engine as the standalone Transcribe tool, offered here as an in-editor
+  /// function. Picks a PCM16 WAV and runs the pure-Dart monophonic pipeline
+  /// (no model download); the resulting Score loads into the active part, so a
+  /// hummed/played phrase becomes editable notation. On empty/degenerate audio
+  /// the engine returns an empty score rather than throwing.
+  Future<void> _transcribeRecording() async {
+    if (_scanning) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final XFile? file;
+    try {
+      file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'Audio (WAV)', extensions: ['wav']),
+        ],
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importFailed(e.toString()))),
+      );
+      return;
+    }
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() => _scanning = true);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.workshopTranscribing)));
+    try {
+      final result = await transcribeRecording(bytes);
+      if (!mounted) return;
+      setState(() {
+        _scanning = false;
+        _doc.loadScore(result.score);
+      });
+      messenger.showSnackBar(SnackBar(content: Text(l10n.importDone)));
+    } catch (e) {
+      if (mounted) setState(() => _scanning = false);
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importFailed(e.toString()))),
+      );
+    }
+  }
+
   /// The note-property dropdown (articulations · tie · dynamics), anchored at
   /// its own button. Returns null unless a single editable note is selected.
   Widget? _paletteButton(AppLocalizations l10n) {
@@ -3428,6 +3474,8 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                       _pasteTokens();
                     case 'scan':
                       _scanImage();
+                    case 'transcribe':
+                      _transcribeRecording();
                     case 'barnums':
                       setState(() => _barNumbers = !_barNumbers);
                     case 'notenames':
@@ -3493,6 +3541,12 @@ class _CompositionWorkshopScreenState extends State<CompositionWorkshopScreen>
                     'scan',
                     Icons.document_scanner_outlined,
                     l10n.workshopScanImage,
+                    true,
+                  ),
+                  _menuItem(
+                    'transcribe',
+                    Icons.graphic_eq,
+                    l10n.workshopTranscribe,
                     true,
                   ),
                   CheckedPopupMenuItem<String>(

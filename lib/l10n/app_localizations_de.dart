@@ -418,6 +418,12 @@ class AppLocalizationsDe extends AppLocalizations {
       'Bild konnte nicht gelesen werden (oder das Scannen von Notenblättern ist hier nicht verfügbar).';
 
   @override
+  String get workshopTranscribe => 'Aufnahme transkribieren…';
+
+  @override
+  String get workshopTranscribing => 'Aufnahme wird angehört…';
+
+  @override
   String get workshopPasteTokens => 'Noten-Tokens einfügen…';
 
   @override

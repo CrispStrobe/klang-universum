@@ -836,6 +836,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t read that image (or on-device sheet-music scanning isn\'t available here).'**
   String get workshopScanUnavailable;
 
+  /// No description provided for @workshopTranscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe a recording…'**
+  String get workshopTranscribe;
+
+  /// No description provided for @workshopTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening to the recording…'**
+  String get workshopTranscribing;
+
   /// No description provided for @workshopPasteTokens.
   ///
   /// In en, this message translates to:

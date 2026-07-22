@@ -417,6 +417,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t read that image (or on-device sheet-music scanning isn\'t available here).';
 
   @override
+  String get workshopTranscribe => 'Transcribe a recording…';
+
+  @override
+  String get workshopTranscribing => 'Listening to the recording…';
+
+  @override
   String get workshopPasteTokens => 'Paste notation tokens…';
 
   @override
