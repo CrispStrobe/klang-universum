@@ -1,7 +1,10 @@
 # Freely-licensed music corpora — sourcing & licence findings
 
-Working notes for sourcing bundle-able ("Tier A") song/score/tab data for
-CometBeat, a **COMMERCIAL** children's music app shipping in **Germany**.
+Working notes for sourcing bundle-able ("Tier A") song/score/tab data — and,
+from 2026-07-22, playback **assets** (SoundFonts, sampled instruments, one-shots,
+tracker modules) — for CometBeat, a **COMMERCIAL** children's music app shipping
+in **Germany**. The `music-db` is being generalised from a score/tab corpus into
+the app's single **licensed asset registry** (see the *Playback assets* section).
 **NOT legal advice.** Anything commercial-critical wants a Fachanwalt für
 Urheberrecht sign-off (§3/§4 UrhG exposure + the axis-2 questions below).
 
@@ -111,6 +114,10 @@ Every line here is a *licence/coverage* statement; detail per source follows.
   recovers notes + authentic period fingerings owned outright (guitar/cello solution).
 - **Broader IMSLP CC0** — other CC0-dedicating arrangers beyond "Marieh", same
   two-axis test applied per work.
+- **Playback assets (NEW arc)** — Tier A instruments/SoundFonts/samples (VCSL,
+  VSCO 2 CE, FreePats CC0, FluidR3_GM) + OpenGameArt tracker modules. Assessed,
+  not yet ingested (VPS unreachable). Full detail in the *Playback assets*
+  section below.
 
 ### Not reachable (settled — see the rejected tables)
 
@@ -362,6 +369,101 @@ finding. So the shippable *tab* corpus is exactly this shippable *score* corpus.
 | **thesession.org** (+ folk-rnn, folk-rnn-webapp, themachinefolksession) | ABC | dump is **ODbL + anti-LLM clause** (2025-10, tightened 2026-06). folk-rnn's MIT is code-only; it scraped thesession ~2015 when the dump had **no licence at all**. ODbL on a bundle → share-alike (§4.4) + source-offer (§4.6) + attribution (§4.3); §2.4 disclaims rights in the transcriptions, which vest in each **transcriber**. |
 | German folk-song sites (4) | — | volksliederarchiv.de (private/non-commercial, notation walled off in robots.txt); lieder-archiv.de (copyright on its Notensätze; commercial/DB/republish forbidden — but offers a PAID licence); liederlexikon.de (all-rights-reserved, NOT CC, named living engraver + in-copyright 20th-c. works); ZPKM Freiburg (catalogues only). |
 | **Essen Folksong Collection** (ccarh/essen-folksong-collection) | krn ✅ | **CCARH MuseData licence** (license.txt, verbatim): *"this license does not authorize the use of the enclosed MuseData files in the production of derivative editions intended for commercial distribution, nor for public performance (including broadcast), nor for sound recording."* NC + no-recording → dev/test only. ~20k folk melodies, German-relevant, but blocked. |
+| **Battle of the Bits** (battleofthebits.com) | .xm/.it/.mod + rendered | **CC BY-NC-SA** to third parties (BotB CC License, verified) — NC. Original chiptune/tracker compo entries (axis-2 clean), but the NC axis-1 blocks it. Control/eval only. *Corrects an earlier "BotB is clean" note.* |
+
+---
+
+## Playback assets — SoundFonts · instruments · samples · tracker modules (2026-07-22)
+
+New scope: the `music-db` becomes the app's single **licensed asset registry** —
+not just scores/tabs but every bundle-able *sound* asset (SoundFonts, sampled
+instruments, one-shots, tracker modules), each carrying the same licence
+provenance so one ship gate covers everything. Same two axes, with **axis 2
+re-read for audio**:
+
+- **Axis 1** unchanged: CC0 / CC BY / MIT / permissive = ship; CC BY-NC /
+  unstated = not; CC BY-SA / GPL = ship-but-copyleft.
+- **Axis 2 for a *recording*** = who/what is under the sample. A sample
+  **recorded for the library** (a struck snare, a bowed note) has no third-party
+  *work* underneath → trivially clean. The two traps: (a) a SoundFont
+  **assembled from other soundfonts** of unknown origin (provenance inherited),
+  and (b) a tracker module that **samples a copyrighted recording**.
+
+The app is already wired for this: SF2/SFZ/MOD/multi-sample loaders
+(`lib/core/audio/{sf2,mod,multi_sample_instrument.dart}`), a FreePats-aware 7z
+reader (`sevenz_reader.dart`), and it already bundles **VCSL CC0** percussion
+(`assets/sounds/percussion/LICENSE.txt`). Attribution flows via
+`attribution_screen.dart`'s `needsAttribution` — **CC0 lists nothing; CC BY /
+BY-SA carry a credit** (the "save extra" case).
+
+### Tier A — CC0 / public-domain (bundle freely, NO attribution)
+
+| Asset | What | Axis 1 | Axis 2 |
+|---|---|---|---|
+| **VCSL** (Versilian) | 4,000+ orchestral+world multisamples, SFZ+WAV | **CC0-1.0** | recorded for the library ✅ (already our percussion source) |
+| **VSCO 2 Community Edition** | 3 GB chamber orchestra | **CC0** | recorded for the library ✅ |
+| **VCSL Keys** | 10 keyboard instruments, 1,466 samples | **CC0** | ✅ |
+| **FreePats CC0 SFZ** | timpani, tubular bells, ocarina, hang, FM piano 2, e-bass YR, world perc, old piano | **CC0-1.0** (per-repo) | recorded for the set ✅ — ⚠ *per-repo*: MuldjorKit=CC BY, Colombo=GPL → Tier B |
+| **OpenGameArt — CC0 subset** | .xm/.it/.mod/.s3m + ogg game music | **CC0** | original compositions ✅ |
+| **Selekt Audio — CC0/PD catalog** | 100k+ cleared one-shots/loops, per-sample cert | **CC0 + US-PD** | fingerprint-screened; PD tier = pre-1926 US recs + Library-of-Congress field recs ✅ (US-PD ≠ EU-PD — recheck axis 2 for the PD tier) |
+| **freesound (CC0 filter)** | individual sounds | **CC0** (must filter) | per-sample check |
+
+### Tier B — "CA": permissive but attribution / notice required
+
+Non-NC, commercial-OK, but oblige a credit or a bundled licence file →
+`needsAttribution` + drop a `LICENSE.txt` beside the asset (as the percussion
+folder already does).
+
+| Asset | Axis 1 | Obligation |
+|---|---|---|
+| **FluidR3_GM** (Frank Wen) — full GM SoundFont | **MIT** | bundle copyright/README; no per-render credit. **Best full-GM candidate** for `gm_song_render.dart`. |
+| **GeneralUser GS** — low-footprint full GM | permissive (no attribution *required*) | ⚠ author admits some legacy sample origins uncertain (project began 2000). Low practical risk, but FluidR3's clean MIT is the safer ship. |
+| **OpenGameArt — CC BY / BY-SA / OGA-BY / GPL** | CC BY(-SA) / OGA-BY / GPL | attribution (+ SA/GPL copyleft where applicable). |
+| **Big MOD Music Pack** (itch) | mixed CC0 / CC BY / CC BY-SA / PD | per-file — CC0 → Tier A, rest → credit. .xm, handled by the MOD loader. |
+| **JummBox SoundFont fork V11** (stgiga) | **CC BY-SA 4.0** | attribution **+ ShareAlike** (derivative banks stay BY-SA). Base BeepBox/JummBox engine is MIT. |
+| **FreePats MuldjorKit** | CC BY 4.0 | attribution |
+| **FreePats Colombo Drumkit** | GPL-2.0 | GPL notice (awkward to embed; fine standalone) |
+
+**OpenGameArt is the spine for tracker music.** It **structurally forbids NC** —
+every OGA asset is CC0 / CC BY / CC BY-SA / GPL / OGA-BY, all commercial-OK — so
+the licence gate is done for you: filter Music + license checkboxes, split
+CC0 → Tier A / CC BY-family → Tier B. Original compositions → axis-2 clean.
+
+### Excluded — NC or unverifiable provenance
+
+- **Battle of the Bits — NC.** Verified the BotB CC License: every entry is
+  **CC BY-NC-SA** to third parties (+ a CC BY-ND reservation for BotB itself).
+  Despite "original → axis-2 clean," the NC axis-1 kills it → control/eval only,
+  same tier as IDMT/GAPS. *(Corrects an earlier "BotB is clean" assumption.)*
+- **General community module archives** whose licences are **uploader-asserted
+  or absent** — excluded as sources. The licence field is set by the *uploader*,
+  rarely the author; the bulk is unclear/"non-licensed" and much of it samples
+  copyrighted recordings (axis-2 dirty). A specific module is usable only if its
+  CC0/PD grant is **author-verifiable**; otherwise robustness/eval-control at
+  best (cf. the OLGA posture) — never a shippable bulk source.
+
+### DB schema — one registry, one ship gate
+
+Generalising `db.json` means each row answers the same axes. Extend the manifest:
+`kind` (soundfont|instrument|sample|module|score|track|example), `format`
+(sf2|sf3|sfz|wav|xm/it/mod/s3m|mid|musicxml|krn|json), `license` (**SPDX**),
+`tier` (A | B/"CA"), `attribution` (credit + URL; null for Tier A), `axis2`
+(original-recording | long-PD | sampled-risk), `provenance`
+(**author-asserted vs uploader-asserted** — the module-archive trap).
+**Ship gate:** `tier==A ∨ (tier==B ∧ attribution≠null)` **∧** licence≠NC **∧**
+`axis2≠sampled-risk`. Anything failing = control/eval only, exactly as the score
+corpus already treats its HELD/quarantine rows.
+
+### Status
+**Asset-registry scaffolding is LIVE** in the `music-db` (2026-07-22): `db.json`
+rows now carry a `kind` field (existing 16,823 → `score`), `merge_db.py` reads an
+`assets-manifest.json`, and `bin/ingest_assets.py` is the data-driven ingest
+(append to its `ASSETS` list). **First asset ingested: FluidR3 GM/GS (MIT,
+151 MB, `assets/soundfonts/`)** → `db.json` = 16,824, sha256-recorded, licence
+bundled, obligation recorded in `ATTRIBUTION.md`.
+Next: seed the CC0 sample libraries (VCSL / VSCO 2 CE / FreePats-CC0 — a
+granularity call: one row per library vs per instrument), add an OpenGameArt
+Music harvester (CC0 → A / CC BY-family → B).
 
 ---
 

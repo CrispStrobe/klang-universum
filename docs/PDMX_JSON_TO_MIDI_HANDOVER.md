@@ -29,8 +29,8 @@ dup/plagiarism pass is wise before shipping, but not required to build the MIDIs
 
 ## Inputs — all persistent, on the VPS unless noted
 
-**VPS:** host `REDACTED-VPS-IP`, user `root` (already in `~/.ssh/config`; plain
-`ssh REDACTED-VPS-IP` works).
+**VPS:** host/user are in the gitignored `CLAUDE.md` (already wired into
+`~/.ssh/config`; `ssh vps` works — reachable over Tailscale).
 
 | What | Location |
 |---|---|
