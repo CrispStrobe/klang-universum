@@ -1648,7 +1648,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawAddFromCatalog => 'From assets catalog';
 
   @override
-  String get dawTrackInstrument => 'Track instrument';
+  String get dawTrackInstrument => 'Track instrument…';
+
+  @override
+  String get dawInstrument => 'Instrument';
+
+  @override
+  String get dawInstrumentDefault => 'Default sound';
+
+  @override
+  String dawInstrumentSet(String name) {
+    return 'Voiced through $name';
+  }
 
   @override
   String get dawEmpty =>

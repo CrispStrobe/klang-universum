@@ -3107,8 +3107,26 @@ abstract class AppLocalizations {
   /// No description provided for @dawTrackInstrument.
   ///
   /// In en, this message translates to:
-  /// **'Track instrument'**
+  /// **'Track instrument…'**
   String get dawTrackInstrument;
+
+  /// No description provided for @dawInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument'**
+  String get dawInstrument;
+
+  /// No description provided for @dawInstrumentDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default sound'**
+  String get dawInstrumentDefault;
+
+  /// No description provided for @dawInstrumentSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Voiced through {name}'**
+  String dawInstrumentSet(String name);
 
   /// No description provided for @dawEmpty.
   ///
