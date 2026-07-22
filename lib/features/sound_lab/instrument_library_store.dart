@@ -14,17 +14,34 @@
 import 'dart:convert';
 
 import 'package:comet_beat/core/audio/tracker_engine.dart'
-    show TrackerInstrument;
+    show SampleInstrument, TrackerInstrument;
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart'
+    show SampleClip, decodeClips;
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// One saved instrument = a name plus its codec JSON. [source] notes where it
-/// came from (e.g. "Voice Lab") for display.
+/// The rubrics the unified library groups items under, derived from an item's
+/// [SavedInstrument.kind]. Order = tab order.
+const List<String> kLibraryCategories = [
+  'Instruments',
+  'Samples',
+  'FX',
+  'SoundFonts',
+  'Drums',
+];
+
+/// One saved library item = a name plus its codec JSON. Since a recorded sample
+/// is itself a [SampleInstrument] (`kind == 'sample'`), the old "My Samples"
+/// library folds in here: samples are just instruments that play back PCM, so
+/// [license]/[sourceUrl] (needed for CC-BY attribution) ride along on this one
+/// model. [source] notes where it came from (e.g. "Voice Lab") for display.
 class SavedInstrument {
   const SavedInstrument({
     required this.name,
     required this.json,
     this.source,
+    this.license,
+    this.sourceUrl,
   });
 
   final String name;
@@ -33,6 +50,13 @@ class SavedInstrument {
   final String json;
 
   final String? source;
+
+  /// Declared licence of the origin, when known ("CC0", "CC BY 4.0") — kept so
+  /// attribution-required items don't lose provenance. See [needsAttribution].
+  final String? license;
+
+  /// A URL back to the origin, for credits.
+  final String? sourceUrl;
 
   /// The instrument's type tag (e.g. `sample`, `sfxr`, `soundfont_ref`), read
   /// straight from the JSON; `unknown` if it can't be parsed.
@@ -45,6 +69,22 @@ class SavedInstrument {
     } catch (_) {
       return 'unknown';
     }
+  }
+
+  /// The rubric this item sits under (one of [kLibraryCategories]).
+  String get category => switch (kind) {
+        'sample' => 'Samples',
+        'sfxr' => 'FX',
+        'soundfont_ref' => 'SoundFonts',
+        'percussion' => 'Drums',
+        _ => 'Instruments',
+      };
+
+  /// True if the licence obliges crediting the author (CC BY / BY-SA). CC0 /
+  /// public-domain / unknown do not.
+  bool get needsAttribution {
+    final l = license?.toLowerCase() ?? '';
+    return l.contains('by') || l.contains('attribution');
   }
 
   /// True if rebuilding needs the referenced SoundFont file (async), not just
@@ -62,20 +102,35 @@ class SavedInstrument {
     }
   }
 
+  /// A recorded/imported [SampleClip] as a library instrument: its PCM becomes a
+  /// [SampleInstrument] (`kind == 'sample'`) and its provenance is preserved.
+  factory SavedInstrument.fromSampleClip(SampleClip clip) => SavedInstrument(
+        name: clip.name,
+        json: instrumentToJsonString(SampleInstrument(clip.name, clip.pcm)),
+        source: clip.source ?? 'Sample',
+        license: clip.license,
+        sourceUrl: clip.sourceUrl,
+      );
+
   Map<String, dynamic> toJson() => {
         'name': name,
         'json': json,
         if (source != null) 'source': source,
+        if (license != null) 'license': license,
+        if (sourceUrl != null) 'sourceUrl': sourceUrl,
       };
 
   static SavedInstrument? fromJson(Map<String, dynamic> j) {
     final name = j['name'];
     final json = j['json'];
     if (name is! String || json is! String) return null;
+    String? str(Object? v) => v is String ? v : null;
     return SavedInstrument(
       name: name,
       json: json,
-      source: j['source'] is String ? j['source'] as String : null,
+      source: str(j['source']),
+      license: str(j['license']),
+      sourceUrl: str(j['sourceUrl']),
     );
   }
 }
@@ -102,13 +157,33 @@ List<SavedInstrument> decodeInstruments(String? raw) {
   }
 }
 
-/// SharedPreferences-backed persistence of the "My Instruments" library.
+/// SharedPreferences-backed persistence of the unified sound library (the old
+/// "My Instruments" + "My Samples", now one store).
 class InstrumentLibraryStore {
   static const _key = 'sound_lab_instruments';
+  static const _legacySamplesKey = 'sound_lab_samples';
+  static const _migratedKey = 'sound_lab_samples_merged_v1';
 
   Future<List<SavedInstrument>> load() async {
     final prefs = await SharedPreferences.getInstance();
-    return decodeInstruments(prefs.getString(_key));
+    var items = decodeInstruments(prefs.getString(_key));
+    // One-time: fold the old "My Samples" library in as sample instruments, so
+    // both live in a single store. Guarded by a flag; the legacy key is left
+    // intact (a downgrade still finds its samples). Names already present here
+    // win — a re-run can't duplicate.
+    if (!(prefs.getBool(_migratedKey) ?? false)) {
+      final names = {for (final i in items) i.name};
+      final merged = [
+        for (final c in decodeClips(prefs.getString(_legacySamplesKey)))
+          if (!names.contains(c.name)) SavedInstrument.fromSampleClip(c),
+      ];
+      if (merged.isNotEmpty) {
+        items = [...items, ...merged];
+        await prefs.setString(_key, encodeInstruments(items));
+      }
+      await prefs.setBool(_migratedKey, true);
+    }
+    return items;
   }
 
   /// Adds [inst]; a save under an existing name overwrites it. Newest last.

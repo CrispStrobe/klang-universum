@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:comet_beat/core/audio/tracker_engine.dart';
 import 'package:comet_beat/core/audio/tracker_instrument_codec.dart';
 import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -89,5 +90,70 @@ void main() {
     expect(ref.kind, 'soundfont_ref');
     expect(ref.isReference, isTrue);
     expect(ref.instrument, isNull);
+  });
+
+  test('category maps each kind to its rubric', () {
+    String cat(String type) =>
+        SavedInstrument(name: 'x', json: '{"type":"$type"}').category;
+    expect(cat('sample'), 'Samples');
+    expect(cat('sfxr'), 'FX');
+    expect(cat('soundfont_ref'), 'SoundFonts');
+    expect(cat('percussion'), 'Drums');
+    expect(cat('additive'), 'Instruments');
+    expect(cat('fm'), 'Instruments');
+    expect(kLibraryCategories, contains('Samples'));
+  });
+
+  test('fromSampleClip folds a clip in as a playable sample, keeping licence',
+      () {
+    final pcm = Float64List(1024);
+    for (var i = 0; i < pcm.length; i++) {
+      pcm[i] = 0.3 * math.sin(2 * math.pi * 330 * i / 44100);
+    }
+    final s = SavedInstrument.fromSampleClip(SampleClip(
+      name: 'Guitar hit',
+      sampleRate: 44100,
+      pcm: pcm,
+      source: 'Freepats',
+      license: 'CC BY 4.0',
+      sourceUrl: 'https://example/x',
+    ));
+    expect(s.kind, 'sample');
+    expect(s.category, 'Samples');
+    expect(s.license, 'CC BY 4.0');
+    expect(s.sourceUrl, 'https://example/x');
+    expect(s.needsAttribution, isTrue); // CC BY obliges credit
+    expect(s.instrument, isA<SampleInstrument>()); // rebuilds and plays
+    // survives the store's own JSON round-trip
+    final back = decodeInstruments(encodeInstruments([s])).single;
+    expect(back.license, 'CC BY 4.0');
+    expect(back.needsAttribution, isTrue);
+  });
+
+  test('CC0 samples need no attribution', () {
+    const s = SavedInstrument(
+      name: 'x',
+      json: '{"type":"sample"}',
+      license: 'CC0',
+    );
+    expect(s.needsAttribution, isFalse);
+  });
+
+  test('legacy My Samples fold into the unified store once, then are skipped',
+      () async {
+    final pcm = Float64List(512)..[0] = 0.5;
+    // Seed the OLD samples key, empty instruments.
+    SharedPreferences.setMockInitialValues({
+      'sound_lab_samples': encodeClips([
+        SampleClip(name: 'clap', sampleRate: 44100, pcm: pcm, license: 'CC0'),
+      ]),
+    });
+    final store = InstrumentLibraryStore();
+    final first = await store.load();
+    expect(first.map((s) => s.name), contains('clap'));
+    expect(first.firstWhere((s) => s.name == 'clap').category, 'Samples');
+    // Migration flag set → a second load doesn't re-add (idempotent).
+    final again = await store.load();
+    expect(again.where((s) => s.name == 'clap'), hasLength(1));
   });
 }
