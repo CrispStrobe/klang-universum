@@ -26,7 +26,6 @@ const _sampleShard = '{"version":"t","baseUrl":"https://h/","kind":"sample",'
     '"items":[{"id":"s","name":"Ocean Drum","kind":"sample","format":"wav",'
     '"license":"CC0 1.0","attribution":"Versilian Studios (VCSL)",'
     '"path":"assets/instruments/vcsl/Membranophones/Ocean Drum/x.wav","bytes":9}]}';
-
 const _soundfontShard =
     '{"version":"t","baseUrl":"https://h/","kind":"soundfont",'
     '"items":[{"id":"fluid","name":"FluidR3 GM","kind":"soundfont","format":"sf2",'
@@ -126,7 +125,6 @@ void main() {
     expect(items.single.title, 'Kyrie');
     expect(items.single.format, 'gabc');
   });
-
   test('a modules source fetches only the module shard', () async {
     final src = CometbeatCatalogSource(
       _fakeHttp({

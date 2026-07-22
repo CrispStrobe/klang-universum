@@ -59,7 +59,6 @@ class CometbeatCatalogSource implements ContentSource {
   /// (large) score shard.
   factory CometbeatCatalogSource.scores(HttpGet http) =>
       CometbeatCatalogSource(http, kinds: const {'score'});
-
   final HttpGet _http;
   final Set<String> kinds;
   final String _indexUrl;
