@@ -457,6 +457,19 @@ void main() {
     expect(points, hasLength(2));
     expect(points!.first.ms, 250);
     expect(points.last.ms, 750);
+    expect(find.textContaining('Rate Hz automation:'), findsOneWidget);
+
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit Rate Hz automation'), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(service.masterEffects().single.automation['rateHz'], hasLength(2));
+
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    expect(service.masterEffects().single.automation['rateHz'], isNull);
+    expect(find.textContaining('Rate Hz automation:'), findsNothing);
   });
 
   testWidgets('bus dialog routes selected tracks and edits bus FX',

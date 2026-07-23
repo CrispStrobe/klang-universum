@@ -520,6 +520,12 @@ class _DawScreenState extends State<DawScreen>
               });
               if (_playing) play();
             },
+            onSetAutomation: (key, points) async {
+              setDialog(() {
+                _daw.setTrackEffectAutomation(track, fxIndex, key, points);
+              });
+              if (_playing) play();
+            },
           ),
       ],
     );
@@ -630,6 +636,12 @@ class _DawScreenState extends State<DawScreen>
                   key,
                   _projectRangeAutomationPoints(startValue, endValue),
                 );
+              });
+              if (_playing) play();
+            },
+            onSetAutomation: (key, points) async {
+              setDialog(() {
+                _daw.setMasterEffectAutomation(fxIndex, key, points);
               });
               if (_playing) play();
             },
@@ -1017,6 +1029,12 @@ class _DawScreenState extends State<DawScreen>
                     });
                     if (_playing) play();
                   },
+                  onSetAutomation: (key, points) async {
+                    setDialog(() {
+                      _daw.setBusEffectAutomation(bus, fxIndex, key, points);
+                    });
+                    if (_playing) play();
+                  },
                 ),
             ],
           ),
@@ -1357,6 +1375,8 @@ class _DawScreenState extends State<DawScreen>
     required void Function(String key, double value) onParam,
     Future<void> Function(String key, double startValue, double endValue)?
         onAutomate,
+    Future<void> Function(String key, List<DawAutomationPoint> points)?
+        onSetAutomation,
   }) {
     final fx = effects[fxIndex];
     final specs = _clipEffectParams(fx.type);
@@ -1400,7 +1420,7 @@ class _DawScreenState extends State<DawScreen>
             spec.min,
             spec.max,
             spec.step,
-            automatedPoints: fx.automation[spec.key]?.length ?? 0,
+            automation: fx.automation[spec.key] ?? const [],
             (v) => onParam(spec.key, v),
             onAutomate: onAutomate == null || !_hasFxRange
                 ? null
@@ -1424,8 +1444,124 @@ class _DawScreenState extends State<DawScreen>
                       values.endValue,
                     );
                   },
+            onEditAutomation: onSetAutomation == null ||
+                    (fx.automation[spec.key] ?? const []).isEmpty
+                ? null
+                : () async {
+                    final points = fx.automation[spec.key] ?? const [];
+                    final edited = await _fxAutomationPointsDialog(
+                      ctx,
+                      label: spec.label,
+                      min: spec.min,
+                      max: spec.max,
+                      step: spec.step,
+                      points: points,
+                    );
+                    if (edited == null) return;
+                    await onSetAutomation(spec.key, edited);
+                  },
+            onClearAutomation: onSetAutomation == null ||
+                    (fx.automation[spec.key] ?? const []).isEmpty
+                ? null
+                : () async => onSetAutomation(spec.key, const []),
           ),
       ],
+    );
+  }
+
+  Future<List<DawAutomationPoint>?> _fxAutomationPointsDialog(
+    BuildContext ctx, {
+    required String label,
+    required double min,
+    required double max,
+    required double step,
+    required List<DawAutomationPoint> points,
+  }) async {
+    if (points.isEmpty) return null;
+    final sorted = [...points]..sort((a, b) => a.ms.compareTo(b.ms));
+    var startMs = sorted.first.ms;
+    var startValue = sorted.first.value.clamp(min, max).toDouble();
+    var endMs = sorted.last.ms;
+    var endValue = sorted.last.value.clamp(min, max).toDouble();
+    final timeMax = math
+        .max(
+          math.max(startMs, endMs),
+          math.max(_rangeEndMs, 1000),
+        )
+        .toDouble();
+    return showDialog<List<DawAutomationPoint>>(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setDialog) => AlertDialog(
+          title: Text('Edit $label automation'),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${sorted.length} points'),
+                const SizedBox(height: 8),
+                _effectParamSlider(
+                  'Start ms',
+                  startMs,
+                  0,
+                  timeMax,
+                  1,
+                  (value) => setDialog(() => startMs = value),
+                ),
+                _effectParamSlider(
+                  'Start value',
+                  startValue,
+                  min,
+                  max,
+                  step,
+                  (value) => setDialog(() => startValue = value),
+                ),
+                _effectParamSlider(
+                  'End ms',
+                  endMs,
+                  0,
+                  timeMax,
+                  1,
+                  (value) => setDialog(() => endMs = value),
+                ),
+                _effectParamSlider(
+                  'End value',
+                  endValue,
+                  min,
+                  max,
+                  step,
+                  (value) => setDialog(() => endValue = value),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text(AppLocalizations.of(dialogCtx)!.dawCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final from = math.min(startMs, endMs);
+                final to = math.max(startMs, endMs);
+                Navigator.of(dialogCtx).pop([
+                  DawAutomationPoint(
+                    ms: from,
+                    value: startMs <= endMs ? startValue : endValue,
+                  ),
+                  DawAutomationPoint(
+                    ms: to,
+                    value: startMs <= endMs ? endValue : startValue,
+                  ),
+                ]);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1496,11 +1632,15 @@ class _DawScreenState extends State<DawScreen>
     double max,
     double step,
     ValueChanged<double> onChanged, {
-    int automatedPoints = 0,
+    List<DawAutomationPoint> automation = const [],
     VoidCallback? onAutomate,
+    Future<void> Function()? onEditAutomation,
+    Future<void> Function()? onClearAutomation,
   }) {
     String fmt(double v) =>
         step >= 1 ? v.round().toString() : v.toStringAsFixed(2);
+    String fmtMs(double v) => '${v.round()} ms';
+    final automatedPoints = automation.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1529,6 +1669,45 @@ class _DawScreenState extends State<DawScreen>
           label: fmt(value),
           onChanged: onChanged,
         ),
+        if (automation.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$label automation: '
+                        '${fmtMs(automation.first.ms)} ${fmt(automation.first.value)}'
+                        ' → ${fmtMs(automation.last.ms)} ${fmt(automation.last.value)}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: onEditAutomation == null
+                          ? null
+                          : () async => onEditAutomation(),
+                      child: const Text('Edit'),
+                    ),
+                    TextButton(
+                      onPressed: onClearAutomation == null
+                          ? null
+                          : () async => onClearAutomation(),
+                      child: const Text('Clear'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -2694,6 +2873,18 @@ class _DawScreenState extends State<DawScreen>
                             endValue,
                           );
                           if (points.isEmpty) return;
+                          setSheet(() {
+                            _daw.setClipEffectAutomation(
+                              track,
+                              index,
+                              fxIndex,
+                              key,
+                              points,
+                            );
+                          });
+                          if (_playing) play();
+                        },
+                        onSetAutomation: (key, points) async {
                           setSheet(() {
                             _daw.setClipEffectAutomation(
                               track,
