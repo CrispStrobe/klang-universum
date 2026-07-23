@@ -25,6 +25,23 @@ void main() {
     expect(wav.length, 44 + pcm.length * 2);
   });
 
+  test('WAV export supports 8, 24, and 32 bit PCM headers', () {
+    final cases = <(int, int)>[(8, 1), (24, 3), (32, 4)];
+    for (final (depth, bytesPerSample) in cases) {
+      final wav = pcmFloatToWav(pcm, bitDepth: depth);
+      final bd = wav.buffer.asByteData();
+      expect(bd.getUint16(22, Endian.little), 1);
+      expect(bd.getUint32(28, Endian.little), 44100 * bytesPerSample);
+      expect(bd.getUint16(32, Endian.little), bytesPerSample);
+      expect(bd.getUint16(34, Endian.little), depth);
+      expect(wav.length, 44 + pcm.length * bytesPerSample);
+    }
+  });
+
+  test('WAV export rejects unsupported bit depths', () {
+    expect(() => pcmFloatToWav(pcm, bitDepth: 12), throwsArgumentError);
+  });
+
   test('MP3 export starts with an MPEG-1 Layer III frame sync', () {
     final mp3 = pcmFloatToMp3(pcm);
     expect(mp3.length, greaterThan(0));
@@ -53,10 +70,15 @@ void main() {
   });
 
   test('stereo WAV export declares two channels', () {
-    final wav = pcmFloatToWav(pcm, right: _tone(4608, freq: 330));
-    // numChannels @ byte 22, blockAlign @ 32 (ch*2), 4 bytes/frame.
+    final wav = pcmFloatToWav(
+      pcm,
+      right: _tone(4608, freq: 330),
+      bitDepth: 24,
+    );
+    // numChannels @ byte 22, blockAlign @ 32 (ch*3), 6 bytes/frame.
     expect(wav.buffer.asByteData().getUint16(22, Endian.little), 2);
-    expect(wav.length, 44 + pcm.length * 4);
+    expect(wav.buffer.asByteData().getUint16(34, Endian.little), 24);
+    expect(wav.length, 44 + pcm.length * 6);
   });
 
   test('stereo MP3 export decodes back to two channels', () {
