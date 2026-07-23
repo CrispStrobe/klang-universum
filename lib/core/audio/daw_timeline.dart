@@ -220,14 +220,22 @@ DawClipEffect defaultDawClipEffect(DawClipEffectType type) => switch (type) {
           type: DawClipEffectType.gate,
           params: {'thresholdDb': -40, 'ratio': 4, 'rangeDb': -60, 'mix': 1},
         ),
-      DawClipEffectType.voiceChipmunk =>
-        const DawClipEffect(type: DawClipEffectType.voiceChipmunk),
-      DawClipEffectType.voiceDeep =>
-        const DawClipEffect(type: DawClipEffectType.voiceDeep),
-      DawClipEffectType.voiceRobot =>
-        const DawClipEffect(type: DawClipEffectType.voiceRobot),
-      DawClipEffectType.voiceRadio =>
-        const DawClipEffect(type: DawClipEffectType.voiceRadio),
+      DawClipEffectType.voiceChipmunk => const DawClipEffect(
+          type: DawClipEffectType.voiceChipmunk,
+          params: {'mix': 1},
+        ),
+      DawClipEffectType.voiceDeep => const DawClipEffect(
+          type: DawClipEffectType.voiceDeep,
+          params: {'mix': 1},
+        ),
+      DawClipEffectType.voiceRobot => const DawClipEffect(
+          type: DawClipEffectType.voiceRobot,
+          params: {'mix': 1},
+        ),
+      DawClipEffectType.voiceRadio => const DawClipEffect(
+          type: DawClipEffectType.voiceRadio,
+          params: {'mix': 1},
+        ),
     };
 
 List<DawClipEffect> dawClipEffectPresetChain(DawClipEffectPreset preset) =>
@@ -277,7 +285,7 @@ List<DawClipEffect> dawClipEffectPresetChain(DawClipEffectPreset preset) =>
           ),
         ],
       DawClipEffectPreset.robotVoice => [
-          const DawClipEffect(type: DawClipEffectType.voiceRobot),
+          defaultDawClipEffect(DawClipEffectType.voiceRobot),
           defaultDawClipEffect(DawClipEffectType.ringMod).copyWith(
             params: {'carrierHz': 92, 'mix': 0.34},
           ),
@@ -575,27 +583,45 @@ Float64List _applyClipEffect(
         rangeDb: p('rangeDb', -60),
         mix: p('mix', 1),
       ),
-    DawClipEffectType.voiceChipmunk => applyVoiceEffect(
+    DawClipEffectType.voiceChipmunk => _blendWetDry(
         input,
-        VoiceEffect.chipmunk,
-        sampleRate: sampleRate,
+        applyVoiceEffect(input, VoiceEffect.chipmunk, sampleRate: sampleRate),
+        p('mix', 1),
       ),
-    DawClipEffectType.voiceDeep => applyVoiceEffect(
+    DawClipEffectType.voiceDeep => _blendWetDry(
         input,
-        VoiceEffect.deep,
-        sampleRate: sampleRate,
+        applyVoiceEffect(input, VoiceEffect.deep, sampleRate: sampleRate),
+        p('mix', 1),
       ),
-    DawClipEffectType.voiceRobot => applyVoiceEffect(
+    DawClipEffectType.voiceRobot => _blendWetDry(
         input,
-        VoiceEffect.robot,
-        sampleRate: sampleRate,
+        applyVoiceEffect(input, VoiceEffect.robot, sampleRate: sampleRate),
+        p('mix', 1),
       ),
-    DawClipEffectType.voiceRadio => applyVoiceEffect(
+    DawClipEffectType.voiceRadio => _blendWetDry(
         input,
-        VoiceEffect.radio,
-        sampleRate: sampleRate,
+        applyVoiceEffect(input, VoiceEffect.radio, sampleRate: sampleRate),
+        p('mix', 1),
       ),
   };
+}
+
+Float64List _blendWetDry(Float64List dry, Float64List wet, double mix) {
+  final m = mix.clamp(0.0, 1.0);
+  if (m == 0) {
+    final out = Float64List(dry.length);
+    out.setAll(0, dry);
+    return out;
+  }
+  if (m == 1 && wet.length == dry.length) return wet;
+  final n = dry.length > wet.length ? dry.length : wet.length;
+  final out = Float64List(n);
+  for (var i = 0; i < n; i++) {
+    final d = i < dry.length ? dry[i] : 0.0;
+    final w = i < wet.length ? wet[i] : 0.0;
+    out[i] = (1 - m) * d + m * w;
+  }
+  return out;
 }
 
 Float64List _bitCrushFx(

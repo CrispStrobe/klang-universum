@@ -310,6 +310,26 @@ void main() {
     expect(find.textContaining('Drive'), findsOneWidget);
   });
 
+  testWidgets('voice FX modules expose a wet/dry mix slider', (tester) async {
+    await _pumpDaw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+
+    await tester.tap(find.text('Master FX'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add_circle_outline).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Voice: Robot').last);
+    await tester.pumpAndSettle();
+
+    expect(service.masterEffects().single.type, DawClipEffectType.voiceRobot);
+    await tester.tap(find.text('Voice: Robot'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Mix'), findsOneWidget);
+  });
+
   testWidgets('bus dialog routes selected tracks and edits bus FX',
       (tester) async {
     await _pumpDaw(tester);

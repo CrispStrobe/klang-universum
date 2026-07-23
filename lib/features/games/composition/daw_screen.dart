@@ -1672,7 +1672,13 @@ class _DawScreenState extends State<DawScreen>
                 (key: 'rangeDb', label: 'Range dB', min: -80, max: 0, step: 1),
                 (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
               ],
-            _ => const [],
+            DawClipEffectType.voiceChipmunk ||
+            DawClipEffectType.voiceDeep ||
+            DawClipEffectType.voiceRobot ||
+            DawClipEffectType.voiceRadio =>
+              const [
+                (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
+              ],
           };
 
   /// Opens the assets Instruments/Samples library and returns the picked

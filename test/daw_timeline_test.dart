@@ -2,6 +2,7 @@
 // source that renders to PCM on demand + is cached, then are summed at their
 // placement. Pure, headless.
 
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_timeline.dart';
@@ -25,6 +26,11 @@ class _ToneSource implements ClipSource {
 }
 
 const _sr = 1000; // 1 sample per ms — keeps the arithmetic obvious
+
+Float64List _sine(int n, {int sampleRate = 44100}) => Float64List.fromList([
+      for (var i = 0; i < n; i++)
+        0.4 * math.sin(2 * math.pi * 220 * i / sampleRate),
+    ]);
 
 void main() {
   test('a silent timeline renders an empty buffer', () {
@@ -277,6 +283,32 @@ void main() {
     );
     final out = renderTimeline(t, sampleRate: _sr, limit: false);
     expect(out.every((v) => (v - 0.5).abs() < 1e-9), isTrue);
+  });
+
+  test('voice FX honour the shared wet/dry mix parameter', () {
+    final dry = _sine(4410);
+    final bypassed = applyClipEffectChain(
+      dry,
+      [
+        defaultDawClipEffect(DawClipEffectType.voiceRobot).copyWith(
+          params: {'mix': 0},
+        ),
+      ],
+      44100,
+    );
+    final wet = applyClipEffectChain(
+      dry,
+      [
+        defaultDawClipEffect(DawClipEffectType.voiceRobot).copyWith(
+          params: {'mix': 1},
+        ),
+      ],
+      44100,
+    );
+
+    expect(bypassed, equals(dry));
+    expect(wet.length, dry.length);
+    expect(wet, isNot(equals(dry)));
   });
 
   test('master FX process the full mix before limiting', () {
