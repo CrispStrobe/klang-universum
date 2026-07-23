@@ -782,6 +782,43 @@ class _DawScreenState extends State<DawScreen>
     return buses[bus].name.isEmpty ? 'Bus ${bus + 1}' : buses[bus].name;
   }
 
+  Future<void> _renameBusDialog(
+    BuildContext ctx,
+    int bus,
+    StateSetter setDialog,
+  ) async {
+    if (bus < 0 || bus >= _daw.buses().length) return;
+    var draft = _busDisplayName(bus);
+    final name = await showDialog<String>(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Rename bus'),
+        content: TextFormField(
+          initialValue: draft,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Bus name'),
+          onChanged: (value) => draft = value,
+          onFieldSubmitted: (value) => Navigator.of(dialogCtx).pop(value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text(AppLocalizations.of(dialogCtx)!.dawCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(draft),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+    _daw.renameBus(bus, trimmed);
+    setDialog(() {});
+    setState(() {});
+  }
+
   Widget _busEditor(BuildContext ctx, int bus, StateSetter setDialog) {
     final buses = _daw.buses();
     final routeTargets = _explicitSelectedTracks();
@@ -814,6 +851,11 @@ class _DawScreenState extends State<DawScreen>
                   Text(
                     '$routeCount tracks',
                     style: Theme.of(ctx).textTheme.bodySmall,
+                  ),
+                  IconButton(
+                    tooltip: 'Rename bus',
+                    icon: const Icon(Icons.drive_file_rename_outline),
+                    onPressed: () => _renameBusDialog(ctx, bus, setDialog),
                   ),
                   IconButton(
                     tooltip: 'Route selected tracks to this bus',

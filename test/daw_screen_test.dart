@@ -361,6 +361,34 @@ void main() {
     expect(service.trackBus(1), isNull);
   });
 
+  testWidgets('bus dialog renames buses for mixer routes', (tester) async {
+    await _pumpDaw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+
+    await tester.tap(find.text('Buses'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add bus'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Rename bus'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Vocal Plate');
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+
+    expect(service.buses().single.name, 'Vocal Plate');
+    expect(find.text('Vocal Plate'), findsWidgets);
+
+    await tester.tap(find.byKey(const ValueKey('bus-route-0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vocal Plate').last);
+    await tester.pumpAndSettle();
+    expect(service.trackBus(0), 0);
+  });
+
   testWidgets('tapping a clip opens the inspector; gain slider changes gain',
       (tester) async {
     await _pumpDaw(tester);
