@@ -43,6 +43,7 @@ String projectToJson(
           'gain': track.gain,
           'muted': track.muted,
           'soloed': track.soloed,
+          'effect': track.effect.name,
           'clips': [
             for (final clip in track.clips)
               {
@@ -82,6 +83,14 @@ DawTimeline projectFromJson(String json) {
   }
 
   double num_(Object? v) => v is num ? v.toDouble() : 0.0;
+  TrackEffect effect_(Object? v) {
+    if (v is String) {
+      for (final effect in TrackEffect.values) {
+        if (effect.name == v) return effect;
+      }
+    }
+    return TrackEffect.none;
+  }
 
   final tracks = <DawTrack>[];
   for (final t in tracksJson) {
@@ -124,6 +133,7 @@ DawTimeline projectFromJson(String json) {
         gain: t['gain'] is num ? num_(t['gain']) : 1.0,
         muted: t['muted'] == true,
         soloed: t['soloed'] == true,
+        effect: effect_(t['effect']),
         clips: clips,
       ),
     );

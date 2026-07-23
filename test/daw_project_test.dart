@@ -18,6 +18,7 @@ void main() {
         DawTrack(
           name: 'Drums',
           gain: 0.8,
+          effect: TrackEffect.echo,
           clips: [
             Clip(
               source: _tone(0.5, 64),
@@ -50,6 +51,7 @@ void main() {
     expect(back.tracks.length, 2);
     expect(back.tracks[0].name, 'Drums');
     expect(back.tracks[0].gain, closeTo(0.8, 1e-9));
+    expect(back.tracks[0].effect, TrackEffect.echo);
     expect(back.tracks[1].muted, isTrue);
     expect(back.tracks[1].soloed, isTrue);
 
@@ -73,7 +75,10 @@ void main() {
       () {
     final timeline = DawTimeline(
       tracks: [
-        DawTrack(clips: [Clip(source: _tone(0.4, 100), startMs: 20)]),
+        DawTrack(
+          effect: TrackEffect.echo,
+          clips: [Clip(source: _tone(0.4, 100), startMs: 20)],
+        ),
         DawTrack(clips: [Clip(source: _tone(0.2, 100), startMs: 50)]),
       ],
     );

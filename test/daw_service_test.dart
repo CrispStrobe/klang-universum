@@ -321,10 +321,12 @@ void main() {
       ..addClip(_tone(0.5, 200))
       ..addClip(_tone(0.3, 200), track: 1);
     s.setClipTrim(0, 0, trimStartMs: 10, trimEndMs: 90);
+    s.setTrackEffect(0, TrackEffect.echo);
     final json = s.saveProject();
 
     final fresh = DawService()..loadProject(json);
     expect(fresh.clipCount, 2);
+    expect(fresh.trackEffect(0), TrackEffect.echo);
     expect(fresh.clipTrimStartMs(0, 0), 10);
     expect(fresh.clipTrimEndMs(0, 0), 90);
     expect(fresh.isClipFrozen(0, 0), isTrue); // reopened clips are baked takes

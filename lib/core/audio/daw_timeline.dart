@@ -357,9 +357,9 @@ enum TrackEffect {
 /// One DAW track — a lane of clips with its own [gain]/[muted]/[soloed]. An
 /// optional [instrument] is the lane's default voice: engraved (score) clips
 /// added to it adopt it, so the track behaves like an instrument lane. Baked
-/// audio / drum / groove clips ignore it. An [effect] insert (reverb / echo) is
-/// applied to the lane's whole mix. Neither is serialized (saved projects bake
-/// each clip's sound in), so both are live-session conveniences.
+/// audio / drum / groove clips ignore it. An [effect] insert is applied to the
+/// lane's whole mix and survives saved-project reloads; [instrument] is still a
+/// live-session default because saved projects bake each clip's sound in.
 class DawTrack {
   DawTrack({
     this.name = '',
