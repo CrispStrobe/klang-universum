@@ -184,6 +184,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('WAV (uncompressed)'), findsOneWidget);
     expect(find.text('MP3 (smaller)'), findsOneWidget);
+    expect(find.text('MP3 192 kbps'), findsOneWidget);
+    expect(find.text('MP3 320 kbps'), findsOneWidget);
     expect(daw.canExport, isTrue);
   });
 

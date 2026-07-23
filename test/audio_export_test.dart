@@ -40,6 +40,14 @@ void main() {
     expect(pcmFloatToMp3(long).length, lessThan(pcmFloatToWav(long).length));
   });
 
+  test('MP3 export size tracks the chosen bitrate', () {
+    final long = _tone(44100); // 1 s
+    final low = pcmFloatToMp3(long);
+    final high = pcmFloatToMp3(long, bitrate: 320);
+    expect(high.length, greaterThan(low.length));
+    expect(mp3Decode(high).samples.length, greaterThan(0));
+  });
+
   test('a bad sample rate is rejected by the MP3 encoder', () {
     expect(() => pcmFloatToMp3(pcm, sampleRate: 12345), throwsArgumentError);
   });

@@ -88,6 +88,7 @@ extension _Fmt on AudioExportFormat {
     Float64List pcm,
     int sampleRate, {
     Float64List? right,
+    int mp3Bitrate = 128,
     bool shortBlocks = true,
   }) =>
       switch (this) {
@@ -96,6 +97,7 @@ extension _Fmt on AudioExportFormat {
         AudioExportFormat.mp3 => pcmFloatToMp3(
             pcm,
             sampleRate: sampleRate,
+            bitrate: mp3Bitrate,
             right: right,
             shortBlocks: shortBlocks,
           ),
@@ -118,9 +120,11 @@ Future<void> showAudioExportSheet(
     messenger.showSnackBar(SnackBar(content: Text(l10n.audioExportEmpty)));
     return;
   }
-  final choices = <(AudioExportFormat, String)>[
-    (AudioExportFormat.wav, l10n.audioExportWav),
-    (AudioExportFormat.mp3, l10n.audioExportMp3),
+  final choices = <({AudioExportFormat format, String label, int? bitrate})>[
+    (format: AudioExportFormat.wav, label: l10n.audioExportWav, bitrate: null),
+    (format: AudioExportFormat.mp3, label: l10n.audioExportMp3, bitrate: 128),
+    (format: AudioExportFormat.mp3, label: 'MP3 192 kbps', bitrate: 192),
+    (format: AudioExportFormat.mp3, label: 'MP3 320 kbps', bitrate: 320),
   ];
   await showModalBottomSheet<void>(
     context: context,
@@ -141,18 +145,19 @@ Future<void> showAudioExportSheet(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final (fmt, label) in choices)
+                for (final choice in choices)
                   ActionChip(
-                    label: Text(label),
+                    label: Text(choice.label),
                     onPressed: () async {
                       Navigator.of(ctx).pop();
                       await _exportAs(
                         context,
-                        fmt,
+                        choice.format,
                         pcm,
                         baseName,
                         sampleRate,
                         rightPcm,
+                        choice.bitrate,
                         shortBlocks,
                       );
                     },
@@ -173,13 +178,19 @@ Future<void> _exportAs(
   String baseName,
   int sampleRate,
   Float64List? right,
+  int? mp3Bitrate,
   bool shortBlocks,
 ) async {
   final l10n = AppLocalizations.of(context)!;
   final messenger = ScaffoldMessenger.of(context);
   try {
-    final bytes =
-        fmt.build(pcm, sampleRate, right: right, shortBlocks: shortBlocks);
+    final bytes = fmt.build(
+      pcm,
+      sampleRate,
+      right: right,
+      mp3Bitrate: mp3Bitrate ?? 128,
+      shortBlocks: shortBlocks,
+    );
     final suggested = '$baseName.${fmt.ext}';
     final location = await getSaveLocation(
       suggestedName: suggested,
