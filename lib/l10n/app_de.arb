@@ -611,6 +611,8 @@
   "dawEffectVoiceRobot": "Roboter",
   "dawEffectVoiceRadio": "Radio",
   "dawInstrument": "Instrument",
+  "dawOpenInEditor": "Im Editor öffnen",
+  "scoreRouterTitle": "Diese Musik öffnen in…",
   "dawInstrumentDefault": "Standardklang",
   "dawInstrumentSet": "Klingt durch {name}",
   "@dawInstrumentSet": {

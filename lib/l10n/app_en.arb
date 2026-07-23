@@ -684,6 +684,8 @@
   "dawEffectVoiceRobot": "Robot",
   "dawEffectVoiceRadio": "Radio",
   "dawInstrument": "Instrument",
+  "dawOpenInEditor": "Open in editor",
+  "scoreRouterTitle": "Open this music in…",
   "dawInstrumentDefault": "Default sound",
   "dawInstrumentSet": "Voiced through {name}",
   "@dawInstrumentSet": {

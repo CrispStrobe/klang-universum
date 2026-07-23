@@ -1764,6 +1764,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawInstrument => 'Instrument';
 
   @override
+  String get dawOpenInEditor => 'Open in editor';
+
+  @override
+  String get scoreRouterTitle => 'Open this music in…';
+
+  @override
   String get dawInstrumentDefault => 'Default sound';
 
   @override

@@ -34,6 +34,8 @@ import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music/music_picker.dart' show showMusicPicker;
+import 'package:comet_beat/shared/music/score_router.dart'
+    show showScoreDestinations;
 import 'package:comet_beat/shared/music_io/audio_export.dart'
     show showAudioExportSheet;
 import 'package:comet_beat/shared/music_io/audio_import.dart'
@@ -1285,6 +1287,19 @@ class _DawScreenState extends State<DawScreen>
                             icon: const Icon(Icons.music_off),
                             label: Text(l10n.dawInstrumentDefault),
                           ),
+                        // Take this music to a symbolic editor (and back via the
+                        // editor's Send to Audio Editor).
+                        TextButton.icon(
+                          onPressed: () {
+                            final score = _daw.clipScore(track, index);
+                            Navigator.of(sheetCtx).pop();
+                            if (score != null) {
+                              showScoreDestinations(context, score);
+                            }
+                          },
+                          icon: const Icon(Icons.open_in_new),
+                          label: Text(l10n.dawOpenInEditor),
+                        ),
                       ],
                       // Split at the playhead — only when it falls inside the clip.
                       TextButton.icon(

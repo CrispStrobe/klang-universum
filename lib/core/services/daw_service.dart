@@ -12,6 +12,8 @@ import 'package:comet_beat/core/audio/daw_sources.dart' show ScoreSource;
 import 'package:comet_beat/core/audio/daw_timeline.dart';
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
+import 'package:crisp_notation_core/crisp_notation_core.dart'
+    show MultiPartScore;
 import 'package:flutter/foundation.dart';
 
 class DawService extends ChangeNotifier {
@@ -601,6 +603,13 @@ class DawService extends ChangeNotifier {
   TrackerInstrument? clipInstrument(int track, int index) {
     final src = timeline.tracks[track].clips[index].source;
     return src is ScoreSource ? src.instrument : null;
+  }
+
+  /// The engraved music behind a score clip (null on a non-score clip) — so it
+  /// can be opened/edited in the Score or Tab editor and sent back.
+  MultiPartScore? clipScore(int track, int index) {
+    final src = timeline.tracks[track].clips[index].source;
+    return src is ScoreSource ? src.score : null;
   }
 
   /// Re-source [clip] onto [source], preserving placement/gain/mute/fades/trim.
