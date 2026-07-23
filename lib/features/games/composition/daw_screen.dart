@@ -1736,12 +1736,15 @@ class _DawScreenState extends State<DawScreen>
       return;
     }
     var useRange = false;
+    var normalize = false;
     final rangeAvailable = _hasFxRange;
     final action = await showDialog<String>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialog) {
           final selected = useRange ? _exportRangePcm(pcm) : pcm;
+          final exportPcm =
+              normalize ? _normalizeExportPcm(selected) : selected;
           return AlertDialog(
             title: const Text('Export mix'),
             content: SizedBox(
@@ -1780,6 +1783,16 @@ class _DawScreenState extends State<DawScreen>
                     'Duration ${_secondsLabel(selected.length / kDawSampleRate)}',
                   ),
                   Text('Peak ${_peakLabel(selected)}'),
+                  CheckboxListTile(
+                    value: normalize,
+                    onChanged: (value) =>
+                        setDialog(() => normalize = value ?? false),
+                    title: const Text('Normalize peak'),
+                    subtitle: Text(
+                      'Export peak ${_peakLabel(exportPcm)}',
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ],
               ),
             ),
@@ -1801,9 +1814,10 @@ class _DawScreenState extends State<DawScreen>
     );
     if (!mounted || action != 'export') return;
     final selected = useRange ? _exportRangePcm(pcm) : pcm;
+    final exportPcm = normalize ? _normalizeExportPcm(selected) : selected;
     await showAudioExportSheet(
       context,
-      pcm: selected,
+      pcm: exportPcm,
       baseName: _exportBaseName(range: useRange),
     );
   }
@@ -1822,13 +1836,28 @@ class _DawScreenState extends State<DawScreen>
 
   String _secondsLabel(double seconds) => '${seconds.toStringAsFixed(2)} s';
 
-  String _peakLabel(Float64List pcm) {
+  Float64List _normalizeExportPcm(Float64List pcm, {double target = 0.98}) {
+    final peak = _peak(pcm);
+    if (peak <= 0 || peak >= target) return pcm;
+    final out = Float64List(pcm.length);
+    final gain = target / peak;
+    for (var i = 0; i < pcm.length; i++) {
+      out[i] = (pcm[i] * gain).clamp(-1.0, 1.0);
+    }
+    return out;
+  }
+
+  double _peak(Float64List pcm) {
     var peak = 0.0;
     for (final sample in pcm) {
       final abs = sample.abs();
       if (abs > peak) peak = abs;
     }
-    return peak.toStringAsFixed(2);
+    return peak;
+  }
+
+  String _peakLabel(Float64List pcm) {
+    return _peak(pcm).toStringAsFixed(2);
   }
 
   String _exportBaseName({bool range = false}) {

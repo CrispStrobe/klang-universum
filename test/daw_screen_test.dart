@@ -163,6 +163,7 @@ void main() {
       (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester)..addDemoBeat();
+    daw.setTrackGain(0, 0.2);
     await tester.pump();
 
     await tester.tap(find.byTooltip('Export sound'));
@@ -172,6 +173,12 @@ void main() {
     expect(find.text('Marked range'), findsOneWidget);
     expect(find.textContaining('Duration'), findsOneWidget);
     expect(find.textContaining('Peak'), findsOneWidget);
+    expect(find.text('Normalize peak'), findsOneWidget);
+    expect(find.text('Export peak 0.98'), findsNothing);
+
+    await tester.tap(find.text('Normalize peak'));
+    await tester.pumpAndSettle();
+    expect(find.text('Export peak 0.98'), findsOneWidget);
 
     await tester.tap(find.text('Choose format'));
     await tester.pumpAndSettle();
