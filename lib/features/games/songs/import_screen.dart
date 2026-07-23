@@ -14,6 +14,7 @@ import 'package:comet_beat/features/games/songs/import/jams.dart';
 import 'package:comet_beat/features/games/songs/import/omr_import.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/library/library_browser_screen.dart';
+import 'package:comet_beat/features/library/license_policy.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation/crisp_notation.dart'
     show
@@ -361,7 +362,14 @@ class _ImportScreenState extends State<ImportScreen> {
             icon: const Icon(Icons.public),
             tooltip: l10n.libraryTitle,
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LibraryBrowserScreen()),
+              MaterialPageRoute(
+                // Allow CC-BY / CC-BY-SA imports: attribution travels with the
+                // song (ImportedSong.attribution) and shows in "Sources &
+                // credits", so the ~8.8k CC-BY scores (NIFC/PDMX) are usable too.
+                builder: (_) => const LibraryBrowserScreen(
+                  policy: LicensePolicy(allowAttributionLicenses: true),
+                ),
+              ),
             ),
           ),
         ],
