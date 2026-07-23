@@ -222,9 +222,18 @@ abstract class TabWorkshopTester {
 /// engraved staff (with a synced standard staff) previews the [TabDocument];
 /// the same model round-trips to the Score Workshop and Tracker.
 class TabWorkshopScreen extends StatefulWidget {
-  /// Optional score to open as editable tab (e.g. from the Workshop). When null
-  /// a built-in demo riff is shown.
+  /// Optional single score to open as editable tab (e.g. from the Workshop).
+  /// When null (and [initialParts] is null) a built-in demo riff is shown.
   final Score? initialScore;
+
+  /// Optional MULTI-part score — one editable tab track per part, so an
+  /// orchestral / band import opens every instrument (not just the first).
+  /// Takes precedence over [initialScore]. Track names come from [initialNames]
+  /// where given, else "Track N".
+  final MultiPartScore? initialParts;
+
+  /// Optional per-part track names, aligned with [initialParts].parts.
+  final List<String>? initialNames;
 
   /// Test seam: overrides the audio→tab transcription (default
   /// [audioToTabDocument], which downloads + runs the TabCNN model). Tests inject
@@ -238,6 +247,8 @@ class TabWorkshopScreen extends StatefulWidget {
   const TabWorkshopScreen({
     super.key,
     this.initialScore,
+    this.initialParts,
+    this.initialNames,
     this.debugAudioToTab,
   });
 
@@ -342,10 +353,25 @@ class _TabWorkshopScreenState extends State<TabWorkshopScreen>
   @override
   void initState() {
     super.initState();
-    final score = widget.initialScore ?? asciiTabToScore(_demoTab);
-    _tracks = [
-      TabTrack('Guitar', TabDocument.fromScore(score, Tuning.standardGuitar)),
-    ];
+    final parts = widget.initialParts?.parts;
+    if (parts != null && parts.isNotEmpty) {
+      // Multi-instrument import: one editable tab track per part.
+      final names = widget.initialNames;
+      _tracks = [
+        for (var i = 0; i < parts.length; i++)
+          TabTrack(
+            (names != null && i < names.length && names[i].trim().isNotEmpty)
+                ? names[i]
+                : 'Track ${i + 1}',
+            TabDocument.fromScore(parts[i], Tuning.standardGuitar),
+          ),
+      ];
+    } else {
+      final score = widget.initialScore ?? asciiTabToScore(_demoTab);
+      _tracks = [
+        TabTrack('Guitar', TabDocument.fromScore(score, Tuning.standardGuitar)),
+      ];
+    }
     _ticker = createTicker(_onTick);
     // Smart-fingering opt-in (Settings, on by default): load the symbolic labeler
     // once (background) so every score→tab path (imports, the MelodyBridge pull)
