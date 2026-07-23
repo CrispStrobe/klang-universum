@@ -3332,6 +3332,18 @@ abstract class AppLocalizations {
   /// **'Instrument'**
   String get dawInstrument;
 
+  /// No description provided for @dawOpenInEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in editor'**
+  String get dawOpenInEditor;
+
+  /// No description provided for @scoreRouterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this music in…'**
+  String get scoreRouterTitle;
+
   /// No description provided for @dawInstrumentDefault.
   ///
   /// In en, this message translates to:

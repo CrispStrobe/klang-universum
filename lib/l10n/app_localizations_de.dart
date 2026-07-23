@@ -1771,6 +1771,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dawInstrument => 'Instrument';
 
   @override
+  String get dawOpenInEditor => 'Im Editor öffnen';
+
+  @override
+  String get scoreRouterTitle => 'Diese Musik öffnen in…';
+
+  @override
   String get dawInstrumentDefault => 'Standardklang';
 
   @override

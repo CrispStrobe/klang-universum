@@ -540,6 +540,16 @@ void main() {
       expect(s.clipInstrument(0, 0), isNull);
     });
 
+    test('clipScore exposes the engraved music (for opening in an editor)', () {
+      final s = DawService()
+        ..addClip(_scoreClip())
+        ..addClip(_tone(0.3, 100), track: 1);
+      final score = s.clipScore(0, 0);
+      expect(score, isNotNull);
+      expect(score!.parts, isNotEmpty); // round-trips back to a MultiPartScore
+      expect(s.clipScore(1, 0), isNull); // a baked sample has no score
+    });
+
     test('setClipInstrument re-voices the clip, changing its source + cacheKey',
         () {
       final s = DawService()..addClip(_scoreClip());
