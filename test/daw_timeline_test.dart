@@ -489,6 +489,37 @@ void main() {
     expect(vocoder.every((v) => v.isFinite), isTrue);
   });
 
+  test('stereo vocoder uses a phase-offset carrier per channel', () {
+    final source = SampleSource(_sine(2000));
+    final mix = renderTimelineStereo(
+      DawTimeline(
+        tracks: [
+          DawTrack(
+            effects: [
+              defaultDawClipEffect(DawClipEffectType.vocoder).copyWith(
+                params: {
+                  'carrierHz': 120,
+                  'depth': 1,
+                  'mix': 1,
+                },
+              ),
+            ],
+            clips: [Clip(source: source)],
+          ),
+        ],
+      ),
+      sampleRate: _sr,
+      limit: false,
+    );
+    expect(
+      List.generate(
+        mix.left.length,
+        (i) => (mix.left[i] - mix.right[i]).abs(),
+      ).any((difference) => difference > 1e-6),
+      isTrue,
+    );
+  });
+
   test('gain FX scales audio and preserves length', () {
     final dry = Float64List.fromList([0.25, -0.5, 0.75]);
     final bypassed = applyClipEffectChain(

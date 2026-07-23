@@ -711,6 +711,14 @@ Float64List applyClipEffectChain(
           mix: p('mix', 0.35),
           sampleRate: sampleRate,
         ),
+      DawClipEffectType.vocoder => _vocoderFxStereo(
+          outLeft,
+          outRight,
+          sampleRate: sampleRate,
+          carrierHz: p('carrierHz', 110),
+          depth: p('depth', 0.75),
+          mix: p('mix', 0.7),
+        ),
       DawClipEffectType.compressor => compressorFxStereo(
           outLeft,
           outRight,
@@ -1054,6 +1062,52 @@ Float64List _vocoderFx(
     out[i] = input[i] * (1 - m) + wet * m;
   }
   return out;
+}
+
+({Float64List left, Float64List right}) _vocoderFxStereo(
+  Float64List left,
+  Float64List right, {
+  required int sampleRate,
+  double carrierHz = 110,
+  double depth = 0.75,
+  double mix = 0.7,
+}) {
+  final d = depth.clamp(0.0, 1.0);
+  final m = mix.clamp(0.0, 1.0);
+  final outLeft = Float64List(left.length);
+  final outRight = Float64List(right.length);
+  if (m == 0) {
+    outLeft.setAll(0, left);
+    outRight.setAll(0, right);
+    return (left: outLeft, right: outRight);
+  }
+  final hz = carrierHz.clamp(20.0, sampleRate / 2).toDouble();
+  const attack = 0.18;
+  const release = 0.018;
+  var envelopeLeft = 0.0;
+  var envelopeRight = 0.0;
+  final frames = math.min(left.length, right.length);
+  for (var i = 0; i < frames; i++) {
+    final levelLeft = left[i].abs();
+    final levelRight = right[i].abs();
+    envelopeLeft += (levelLeft - envelopeLeft) *
+        (levelLeft > envelopeLeft ? attack : release);
+    envelopeRight += (levelRight - envelopeRight) *
+        (levelRight > envelopeRight ? attack : release);
+    final phase = 2 * math.pi * hz * i / sampleRate;
+    final wetLeft = left[i] * (1 - d) + math.sin(phase) * envelopeLeft * d;
+    final wetRight =
+        right[i] * (1 - d) + math.sin(phase + math.pi / 2) * envelopeRight * d;
+    outLeft[i] = left[i] * (1 - m) + wetLeft * m;
+    outRight[i] = right[i] * (1 - m) + wetRight * m;
+  }
+  for (var i = frames; i < left.length; i++) {
+    outLeft[i] = left[i];
+  }
+  for (var i = frames; i < right.length; i++) {
+    outRight[i] = right[i];
+  }
+  return (left: outLeft, right: outRight);
 }
 
 Float64List _fitLength(Float64List input, int length) {
