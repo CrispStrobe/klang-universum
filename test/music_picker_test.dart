@@ -35,6 +35,21 @@ void main() {
     expect(score.parts, isNotEmpty);
   });
 
+  test('decodes Gregorio chant (.gabc) into a score with notes', () {
+    const gabc = 'name:Test;\n%%\n(c4) Al(f)le(g)lú(h)ia(g.)';
+    final score = decodeMusicFile('chant.gabc', _b(gabc));
+    expect(score.parts, isNotEmpty);
+    final elements = score.parts.first.measures.expand((m) => m.elements);
+    expect(elements.isNotEmpty, isTrue);
+  });
+
+  test('the .kern alias resolves like .krn', () {
+    // A minimal Humdrum **kern spine (one quarter note C).
+    const kern = '**kern\n4c\n*-\n';
+    final score = decodeMusicFile('tune.kern', _b(kern));
+    expect(score.parts, isNotEmpty);
+  });
+
   test('an unsupported extension throws FormatException', () {
     expect(
       () => decodeMusicFile('song.ly', Uint8List(0)),
