@@ -42,6 +42,27 @@ void main() {
     expect(() => pcmFloatToWav(pcm, bitDepth: 12), throwsArgumentError);
   });
 
+  test('WAV export resamples when the output sample rate changes', () {
+    final oneSecond = _tone(44100);
+    final wav48 = pcmFloatToWav(
+      oneSecond,
+      sampleRate: 48000,
+      sourceSampleRate: 44100,
+    );
+    final wav32 = pcmFloatToWav(
+      oneSecond,
+      sampleRate: 32000,
+      sourceSampleRate: 44100,
+      right: _tone(44100, freq: 330),
+    );
+
+    expect(wav48.buffer.asByteData().getUint32(24, Endian.little), 48000);
+    expect(wav48.length, 44 + 48000 * 2);
+    expect(wav32.buffer.asByteData().getUint32(24, Endian.little), 32000);
+    expect(wav32.buffer.asByteData().getUint16(22, Endian.little), 2);
+    expect(wav32.length, 44 + 32000 * 4);
+  });
+
   test('MP3 export starts with an MPEG-1 Layer III frame sync', () {
     final mp3 = pcmFloatToMp3(pcm);
     expect(mp3.length, greaterThan(0));
@@ -63,6 +84,17 @@ void main() {
     final high = pcmFloatToMp3(long, bitrate: 320);
     expect(high.length, greaterThan(low.length));
     expect(mp3Decode(high).samples.length, greaterThan(0));
+  });
+
+  test('MP3 export resamples to a supported chosen rate', () {
+    final mp3 = pcmFloatToMp3(
+      _tone(44100),
+      sampleRate: 48000,
+      sourceSampleRate: 44100,
+    );
+    final decoded = mp3Decode(mp3);
+    expect(decoded.sampleRate, 48000);
+    expect(decoded.samples.length, greaterThanOrEqualTo(48000));
   });
 
   test('a bad sample rate is rejected by the MP3 encoder', () {

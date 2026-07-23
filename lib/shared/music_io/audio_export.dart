@@ -17,6 +17,8 @@
 
 import 'dart:typed_data';
 
+import 'package:comet_beat/core/audio/crisp_dsp/resample.dart'
+    show resampleCubic;
 import 'package:comet_beat/core/audio/mp3/mp3_encoder.dart'
     show mp3EncodeMono, mp3EncodeJointStereo;
 import 'package:comet_beat/core/audio/synth.dart' show kSampleRate;
@@ -25,10 +27,12 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 
 /// Clamps float PCM and wraps it in a WAV container. When [right] is given,
-/// both channels are interleaved into a stereo WAV.
+/// both channels are interleaved into a stereo WAV. If [sourceSampleRate]
+/// differs from [sampleRate], PCM is resampled before encoding.
 Uint8List pcmFloatToWav(
   Float64List pcm, {
   int sampleRate = kSampleRate,
+  int? sourceSampleRate,
   Float64List? right,
   int bitDepth = 16,
 }) {
@@ -39,10 +43,22 @@ Uint8List pcmFloatToWav(
       'must be 8, 16, 24, or 32',
     );
   }
+  final left = _resampleForExport(
+    pcm,
+    sourceSampleRate: sourceSampleRate,
+    exportSampleRate: sampleRate,
+  );
+  final rightAtRate = right == null
+      ? null
+      : _resampleForExport(
+          right,
+          sourceSampleRate: sourceSampleRate,
+          exportSampleRate: sampleRate,
+        );
   final channels = right == null ? 1 : 2;
-  final frames = right == null
-      ? pcm.length
-      : (pcm.length > right.length ? pcm.length : right.length);
+  final frames = rightAtRate == null
+      ? left.length
+      : (left.length > rightAtRate.length ? left.length : rightAtRate.length);
   final bytesPerSample = bitDepth ~/ 8;
   final blockAlign = channels * bytesPerSample;
   final dataSize = frames * blockAlign;
@@ -91,12 +107,36 @@ Uint8List pcmFloatToWav(
   }
 
   for (var i = 0; i < frames; i++) {
-    writeSample(i < pcm.length ? pcm[i] : 0.0);
-    if (right != null) {
-      writeSample(i < right.length ? right[i] : 0.0);
+    writeSample(i < left.length ? left[i] : 0.0);
+    if (rightAtRate != null) {
+      writeSample(i < rightAtRate.length ? rightAtRate[i] : 0.0);
     }
   }
   return bytes;
+}
+
+Float64List _resampleForExport(
+  Float64List pcm, {
+  required int? sourceSampleRate,
+  required int exportSampleRate,
+}) {
+  if (exportSampleRate <= 0) {
+    throw ArgumentError.value(
+      exportSampleRate,
+      'sampleRate',
+      'must be positive',
+    );
+  }
+  final sourceRate = sourceSampleRate ?? exportSampleRate;
+  if (sourceRate <= 0) {
+    throw ArgumentError.value(
+      sourceSampleRate,
+      'sourceSampleRate',
+      'must be positive',
+    );
+  }
+  if (sourceRate == exportSampleRate || pcm.isEmpty) return pcm;
+  return resampleCubic(pcm, sourceRate / exportSampleRate);
 }
 
 /// Encodes float PCM to an MP3 bitstream (constant bitrate, kbps). When [right]
@@ -105,24 +145,38 @@ Uint8List pcmFloatToWav(
 Uint8List pcmFloatToMp3(
   Float64List pcm, {
   int sampleRate = kSampleRate,
+  int? sourceSampleRate,
   int bitrate = 128,
   Float64List? right,
   bool shortBlocks = true,
-}) =>
-    right == null
-        ? mp3EncodeMono(
-            pcm,
-            sampleRate: sampleRate,
-            bitrate: bitrate,
-            shortBlocks: shortBlocks,
-          )
-        : mp3EncodeJointStereo(
-            pcm,
-            right,
-            sampleRate: sampleRate,
-            bitrate: bitrate,
-            shortBlocks: shortBlocks,
-          );
+}) {
+  final left = _resampleForExport(
+    pcm,
+    sourceSampleRate: sourceSampleRate,
+    exportSampleRate: sampleRate,
+  );
+  final rightAtRate = right == null
+      ? null
+      : _resampleForExport(
+          right,
+          sourceSampleRate: sourceSampleRate,
+          exportSampleRate: sampleRate,
+        );
+  return rightAtRate == null
+      ? mp3EncodeMono(
+          left,
+          sampleRate: sampleRate,
+          bitrate: bitrate,
+          shortBlocks: shortBlocks,
+        )
+      : mp3EncodeJointStereo(
+          left,
+          rightAtRate,
+          sampleRate: sampleRate,
+          bitrate: bitrate,
+          shortBlocks: shortBlocks,
+        );
+}
 
 /// One exportable audio format.
 enum AudioExportFormat { wav, mp3 }
@@ -137,25 +191,30 @@ extension _Fmt on AudioExportFormat {
     Float64List pcm,
     int sampleRate, {
     Float64List? right,
+    int? exportSampleRate,
     int wavBitDepth = 16,
     int mp3Bitrate = 128,
     bool shortBlocks = true,
-  }) =>
-      switch (this) {
-        AudioExportFormat.wav => pcmFloatToWav(
-            pcm,
-            sampleRate: sampleRate,
-            right: right,
-            bitDepth: wavBitDepth,
-          ),
-        AudioExportFormat.mp3 => pcmFloatToMp3(
-            pcm,
-            sampleRate: sampleRate,
-            bitrate: mp3Bitrate,
-            right: right,
-            shortBlocks: shortBlocks,
-          ),
-      };
+  }) {
+    final outRate = exportSampleRate ?? sampleRate;
+    return switch (this) {
+      AudioExportFormat.wav => pcmFloatToWav(
+          pcm,
+          sampleRate: outRate,
+          sourceSampleRate: sampleRate,
+          right: right,
+          bitDepth: wavBitDepth,
+        ),
+      AudioExportFormat.mp3 => pcmFloatToMp3(
+          pcm,
+          sampleRate: outRate,
+          sourceSampleRate: sampleRate,
+          bitrate: mp3Bitrate,
+          right: right,
+          shortBlocks: shortBlocks,
+        ),
+    };
+  }
 }
 
 /// Shows the audio-format picker; on pick, builds the bytes and prompts for a
@@ -177,48 +236,84 @@ Future<void> showAudioExportSheet(
   final choices = <({
     AudioExportFormat format,
     String label,
+    int exportSampleRate,
     int? wavBitDepth,
     int? mp3Bitrate,
   })>[
     (
       format: AudioExportFormat.wav,
       label: l10n.audioExportWav,
+      exportSampleRate: sampleRate,
+      wavBitDepth: 16,
+      mp3Bitrate: null,
+    ),
+    (
+      format: AudioExportFormat.wav,
+      label: 'WAV 48 kHz',
+      exportSampleRate: 48000,
+      wavBitDepth: 16,
+      mp3Bitrate: null,
+    ),
+    (
+      format: AudioExportFormat.wav,
+      label: 'WAV 32 kHz',
+      exportSampleRate: 32000,
       wavBitDepth: 16,
       mp3Bitrate: null,
     ),
     (
       format: AudioExportFormat.wav,
       label: 'WAV 8-bit',
+      exportSampleRate: sampleRate,
       wavBitDepth: 8,
       mp3Bitrate: null,
     ),
     (
       format: AudioExportFormat.wav,
       label: 'WAV 24-bit',
+      exportSampleRate: sampleRate,
       wavBitDepth: 24,
       mp3Bitrate: null,
     ),
     (
       format: AudioExportFormat.wav,
       label: 'WAV 32-bit',
+      exportSampleRate: sampleRate,
       wavBitDepth: 32,
       mp3Bitrate: null,
     ),
     (
       format: AudioExportFormat.mp3,
       label: l10n.audioExportMp3,
+      exportSampleRate: sampleRate,
+      wavBitDepth: null,
+      mp3Bitrate: 128,
+    ),
+    (
+      format: AudioExportFormat.mp3,
+      label: 'MP3 48 kHz',
+      exportSampleRate: 48000,
+      wavBitDepth: null,
+      mp3Bitrate: 128,
+    ),
+    (
+      format: AudioExportFormat.mp3,
+      label: 'MP3 32 kHz',
+      exportSampleRate: 32000,
       wavBitDepth: null,
       mp3Bitrate: 128,
     ),
     (
       format: AudioExportFormat.mp3,
       label: 'MP3 192 kbps',
+      exportSampleRate: sampleRate,
       wavBitDepth: null,
       mp3Bitrate: 192,
     ),
     (
       format: AudioExportFormat.mp3,
       label: 'MP3 320 kbps',
+      exportSampleRate: sampleRate,
       wavBitDepth: null,
       mp3Bitrate: 320,
     ),
@@ -254,6 +349,7 @@ Future<void> showAudioExportSheet(
                         baseName,
                         sampleRate,
                         rightPcm,
+                        choice.exportSampleRate,
                         choice.wavBitDepth,
                         choice.mp3Bitrate,
                         shortBlocks,
@@ -276,6 +372,7 @@ Future<void> _exportAs(
   String baseName,
   int sampleRate,
   Float64List? right,
+  int exportSampleRate,
   int? wavBitDepth,
   int? mp3Bitrate,
   bool shortBlocks,
@@ -287,6 +384,7 @@ Future<void> _exportAs(
       pcm,
       sampleRate,
       right: right,
+      exportSampleRate: exportSampleRate,
       wavBitDepth: wavBitDepth ?? 16,
       mp3Bitrate: mp3Bitrate ?? 128,
       shortBlocks: shortBlocks,
