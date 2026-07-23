@@ -541,6 +541,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get instrumentMusicBox => 'Music box';
 
   @override
+  String get voicePickerTitle => 'Instrument sound';
+
+  @override
+  String get voiceSearchHint => 'Search voices';
+
+  @override
+  String get voiceCatAll => 'All';
+
+  @override
+  String get voiceCatTonal => 'Tonal';
+
+  @override
+  String get voiceCatChiptune => 'Chiptune';
+
+  @override
+  String get voiceCatPlucked => 'Plucked';
+
+  @override
+  String get voicePreview => 'Tap to hear · long-press to choose';
+
+  @override
   String get noteNamingLabel => 'Note names';
 
   @override

@@ -543,6 +543,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get instrumentMusicBox => 'Spieluhr';
 
   @override
+  String get voicePickerTitle => 'Instrumentklang';
+
+  @override
+  String get voiceSearchHint => 'Klänge suchen';
+
+  @override
+  String get voiceCatAll => 'Alle';
+
+  @override
+  String get voiceCatTonal => 'Tonal';
+
+  @override
+  String get voiceCatChiptune => 'Chiptune';
+
+  @override
+  String get voiceCatPlucked => 'Gezupft';
+
+  @override
+  String get voicePreview => 'Tippen zum Hören · lang drücken zum Wählen';
+
+  @override
   String get noteNamingLabel => 'Notennamen';
 
   @override

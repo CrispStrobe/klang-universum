@@ -80,7 +80,9 @@ class CometBeatApp extends StatelessWidget {
       child: Consumer<SettingsService>(
         builder: (context, settings, _) {
           // Keep the audio voice + master sound switch in sync with settings.
-          context.read<AudioService>().instrument = settings.instrument;
+          context.read<AudioService>()
+            ..instrument = settings.instrument
+            ..voice = settings.voice;
           context.read<AudioService>().soundOn = settings.soundOn;
           context.read<TtsService>().soundOn = settings.soundOn;
           return MaterialApp(

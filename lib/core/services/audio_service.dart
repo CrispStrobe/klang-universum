@@ -8,14 +8,26 @@ import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:comet_beat/core/audio/synth.dart';
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
+import 'package:comet_beat/core/audio/voice_render.dart';
+import 'package:comet_beat/shared/music_io/audio_export.dart'
+    show pcmFloatToWav;
 import 'package:flutter/foundation.dart';
 
 class AudioService {
   AudioPlayer? _player;
 
-  /// The voice used for pitched notes/chords/sequences (not the retro SFX).
-  /// Wired from the instrument setting in main.dart.
+  /// The additive timbre used for pitched playback when no [voice] override is
+  /// set. Wired from the instrument setting in main.dart.
   Instrument instrument = Instrument.piano;
+
+  /// When set, pitched notes/chords/sequences render through this sound-library
+  /// voice instead of the additive [instrument] timbre — so ANY procedural voice
+  /// (chiptune, plucked, FM, subtractive) or sampled asset can be the app's
+  /// global sound. null = the classic additive path (piano/cello/flute/musicBox),
+  /// byte-for-byte unchanged. Wired from the instrument-sound setting in main.dart.
+  TrackerInstrument? voice;
 
   /// Master sound switch, mirrored from [SettingsService.soundOn] in main.dart.
   /// When false, every `_play` below is a no-op — the whole app goes quiet with
@@ -39,8 +51,15 @@ class AudioService {
     }
   }
 
-  Uint8List _wav(List<Segment> segments) =>
-      renderWav(segments, timbre: timbreFor(instrument));
+  Uint8List _wav(List<Segment> segments, {double gain = 1.0}) {
+    final v = voice;
+    if (v != null) {
+      return pcmFloatToWav(
+        renderSegmentsThroughInstrument(segments, v, gain: gain),
+      );
+    }
+    return renderWav(segments, timbre: timbreFor(instrument), gain: gain);
+  }
 
   Future<void> _play(Uint8List wav) async {
     if (!soundOn) return; // master mute (SettingsService.soundOn)
@@ -99,11 +118,10 @@ class AudioService {
     double gain = 1.0,
   }) =>
       _play(
-        renderWav(
+        _wav(
           [
             for (final m in midis) (freqs: [midiToFrequency(m)], ms: noteMs),
           ],
-          timbre: timbreFor(instrument),
           gain: gain,
         ),
       );
@@ -136,7 +154,8 @@ class AudioService {
   /// list, or all-empty parts, is a silent no-op.
   Future<void> playMixedTimedChords(List<List<(List<int>, int)>> parts) {
     if (!soundOn) return Future.value(); // rendering is wasted while muted
-    final timbre = timbreFor(instrument);
+    final v = voice;
+    final timbre = v == null ? timbreFor(instrument) : null;
     final stems = <MixStem>[];
     var totalSamples = 0;
     for (final events in parts) {
@@ -145,7 +164,9 @@ class AudioService {
           if (ms > 0) (freqs: midis.map(midiToFrequency).toList(), ms: ms),
       ];
       if (segments.isEmpty) continue;
-      final samples = renderSegmentsRaw(segments, timbre: timbre);
+      final samples = v != null
+          ? renderSegmentsThroughInstrument(segments, v)
+          : renderSegmentsRaw(segments, timbre: timbre!);
       if (samples.length > totalSamples) totalSamples = samples.length;
       stems.add((samples: samples, gain: 1.0));
     }

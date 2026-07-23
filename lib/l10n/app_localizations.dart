@@ -1082,6 +1082,48 @@ abstract class AppLocalizations {
   /// **'Music box'**
   String get instrumentMusicBox;
 
+  /// No description provided for @voicePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument sound'**
+  String get voicePickerTitle;
+
+  /// No description provided for @voiceSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search voices'**
+  String get voiceSearchHint;
+
+  /// No description provided for @voiceCatAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get voiceCatAll;
+
+  /// No description provided for @voiceCatTonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonal'**
+  String get voiceCatTonal;
+
+  /// No description provided for @voiceCatChiptune.
+  ///
+  /// In en, this message translates to:
+  /// **'Chiptune'**
+  String get voiceCatChiptune;
+
+  /// No description provided for @voiceCatPlucked.
+  ///
+  /// In en, this message translates to:
+  /// **'Plucked'**
+  String get voiceCatPlucked;
+
+  /// No description provided for @voicePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to hear · long-press to choose'**
+  String get voicePreview;
+
   /// No description provided for @noteNamingLabel.
   ///
   /// In en, this message translates to:

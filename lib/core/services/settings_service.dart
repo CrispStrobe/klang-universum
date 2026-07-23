@@ -4,6 +4,9 @@
 // the system, the default) and the note-naming convention.
 
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
+import 'package:comet_beat/core/audio/tracker_engine.dart'
+    show TrackerInstrument;
+import 'package:comet_beat/core/audio/voice_options.dart';
 import 'package:comet_beat/core/note_naming.dart';
 import 'package:comet_beat/shared/score_theme.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +17,9 @@ class SettingsService with ChangeNotifier {
   static const _noteNamingKey = 'note_naming';
   static const _showTimerKey = 'show_timer';
   static const _colorScaffoldKey = 'color_scaffold';
-  static const _instrumentKey = 'instrument';
+  static const _instrumentKey =
+      'instrument'; // legacy 4-way enum (kept in sync)
+  static const _voiceIdKey = 'voice_id'; // the full-palette voice selection
   static const _handwrittenKey = 'handwritten_notes'; // legacy (pre-multi-font)
   static const _scoreFontKey = 'score_font';
   static const _soundOnKey = 'sound_on';
@@ -30,14 +35,26 @@ class SettingsService with ChangeNotifier {
   bool _showNoteNames = false;
   bool _smartTabFingering = true;
   Instrument _instrument = Instrument.piano;
+  String _voiceId = Instrument.piano.name;
+  TrackerInstrument? _voice;
 
   /// Master sound switch. When off, all synthesized playback (notes, chords,
   /// SFX, ticks, backing) is silenced via [AudioService]; the microphone is
   /// unaffected, so intonation games still work. On by default.
   bool get soundOn => _soundOn;
 
-  /// The voice used for pitched playback across the app.
+  /// The additive timbre for pitched playback (the classic 4-way choice; also
+  /// the fallback when a richer [voice] is selected).
   Instrument get instrument => _instrument;
+
+  /// The selected voice id — an additive id (piano/cello/flute/musicBox), a
+  /// procedural [kTrackerInstruments] id (chiptune/pluck/FM/…), or a library
+  /// ref. Drives AudioService in main.dart.
+  String get voiceId => _voiceId;
+
+  /// The resolved procedural/sampled voice override, or null for the four
+  /// additive voices (which play the classic path). Wired to AudioService.voice.
+  TrackerInstrument? get voice => _voice;
 
   /// Forced app locale; null follows the system locale.
   Locale? get locale => _locale;
@@ -98,9 +115,14 @@ class SettingsService with ChangeNotifier {
     _showNoteNames = prefs.getBool(_showNoteNamesKey) ?? false;
     _smartTabFingering = prefs.getBool(_smartTabFingeringKey) ?? true;
     _applyScoreFont();
-    _instrument =
-        Instrument.values.asNameMap()[prefs.getString(_instrumentKey)] ??
-            Instrument.piano;
+    // Voice: prefer the new full-palette key; migrate from the legacy 4-way
+    // enum key when absent (old installs keep their chosen additive voice).
+    _voiceId = prefs.getString(_voiceIdKey) ??
+        prefs.getString(_instrumentKey) ??
+        Instrument.piano.name;
+    final resolved = resolveVoiceSync(_voiceId);
+    _instrument = resolved.instrument;
+    _voice = resolved.voice;
     notifyListeners();
   }
 
@@ -168,10 +190,29 @@ class SettingsService with ChangeNotifier {
     await prefs.setBool(_soundOnKey, value);
   }
 
-  Future<void> setInstrument(Instrument instrument) async {
-    _instrument = instrument;
+  Future<void> setInstrument(Instrument instrument) =>
+      setVoiceId(instrument.name);
+
+  /// Selects the global playback voice. A built-in id (additive or procedural)
+  /// resolves itself; a library/asset voice passes its already-built
+  /// [resolvedVoice] (and the id is persisted so it can be re-resolved later).
+  Future<void> setVoiceId(
+    String voiceId, {
+    TrackerInstrument? resolvedVoice,
+  }) async {
+    _voiceId = voiceId;
+    if (resolvedVoice != null) {
+      _voice = resolvedVoice;
+      _instrument = Instrument.piano; // fallback timbre; the override plays
+    } else {
+      final r = resolveVoiceSync(voiceId);
+      _instrument = r.instrument;
+      _voice = r.voice;
+    }
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_instrumentKey, instrument.name);
+    await prefs.setString(_voiceIdKey, voiceId);
+    // Keep the legacy enum key sane for any old consumer / downgrade.
+    await prefs.setString(_instrumentKey, _instrument.name);
   }
 }

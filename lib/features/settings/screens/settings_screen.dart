@@ -2,7 +2,8 @@
 //
 // Language override (system/EN/DE) and a compact SRI statistics summary.
 
-import 'package:comet_beat/core/audio/synth.dart' show Instrument;
+import 'dart:async';
+
 import 'package:comet_beat/core/audio/transcription/engine_config.dart';
 import 'package:comet_beat/core/build_info.dart';
 import 'package:comet_beat/core/note_naming.dart';
@@ -17,6 +18,7 @@ import 'package:comet_beat/features/games/composition/tab_arranger.dart'
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/settings/screens/about_screen.dart';
+import 'package:comet_beat/features/settings/screens/voice_picker_sheet.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart' show ScoreFont;
 import 'package:crisp_notation/crisp_notation.dart';
@@ -74,27 +76,25 @@ class SettingsScreen extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final instrument in Instrument.values)
-                    ChoiceChip(
-                      avatar: Icon(_instrumentIcon(instrument)),
-                      label: Text(_instrumentName(l10n, instrument)),
-                      selected: settings.instrument == instrument,
-                      onSelected: (_) {
-                        settings.setInstrument(instrument);
-                        // Preview the voice right away.
-                        context.read<AudioService>()
-                          ..instrument = instrument
-                          ..playMidiNote(67);
-                      },
-                    ),
-                ],
-              ),
+            child: ListTile(
+              leading: const Icon(Icons.music_note),
+              title: Text(voiceLabel(l10n, settings.voiceId)),
+              subtitle: Text(l10n.voicePickerTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                final picked = await showVoicePicker(
+                  context,
+                  currentId: settings.voiceId,
+                );
+                if (picked == null) return;
+                await settings.setVoiceId(picked);
+                if (!context.mounted) return;
+                // Preview through the newly-selected global voice.
+                final audio = context.read<AudioService>()
+                  ..instrument = settings.instrument
+                  ..voice = settings.voice;
+                unawaited(audio.playMidiNote(67));
+              },
             ),
           ),
           const SizedBox(height: 20),
@@ -316,21 +316,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-
-IconData _instrumentIcon(Instrument instrument) => switch (instrument) {
-      Instrument.piano => Icons.piano,
-      Instrument.cello => Icons.music_note,
-      Instrument.flute => Icons.air,
-      Instrument.musicBox => Icons.toys,
-    };
-
-String _instrumentName(AppLocalizations l10n, Instrument instrument) =>
-    switch (instrument) {
-      Instrument.piano => l10n.instrumentPiano,
-      Instrument.cello => l10n.instrumentCello,
-      Instrument.flute => l10n.instrumentFlute,
-      Instrument.musicBox => l10n.instrumentMusicBox,
-    };
 
 String _scoreFontName(AppLocalizations l10n, ScoreFont font) => switch (font) {
       ScoreFont.bravura => l10n.scoreFontBravura,
