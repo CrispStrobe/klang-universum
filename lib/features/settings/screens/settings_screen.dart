@@ -17,6 +17,7 @@ import 'package:comet_beat/features/games/composition/tab_arranger.dart'
     show TabArranger;
 import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
+import 'package:comet_beat/features/library/attribution_screen.dart';
 import 'package:comet_beat/features/settings/screens/about_screen.dart';
 import 'package:comet_beat/features/settings/screens/voice_picker_sheet.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
@@ -298,6 +299,19 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => Navigator.of(
                 context,
               ).push(MaterialPageRoute(builder: (_) => const AboutScreen())),
+            ),
+          ),
+          // Attribution for CC-BY (Tier B) content — imported songs + samples
+          // credit their sources here, so credit is reachable app-wide, not only
+          // from the library browser.
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: Text(l10n.librarySourcesCredits),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => AttributionScreen()),
+              ),
             ),
           ),
           const SizedBox(height: 16),
