@@ -69,6 +69,50 @@ Float64List delayFx(
   return out;
 }
 
+/// Stereo feedback delay with optional cross-channel spread.
+/// [spread] 0 is two independent delay lines; 1 swaps the feedback channels.
+({Float64List left, Float64List right}) delayFxStereo(
+  Float64List left,
+  Float64List right, {
+  double delayMs = 250,
+  double feedback = 0.35,
+  double mix = 0.35,
+  double spread = 0,
+  int sampleRate = kSampleRate,
+}) {
+  final n = math.min(left.length, right.length);
+  final outLeft = Float64List(left.length);
+  final outRight = Float64List(right.length);
+  final m = mix.clamp(0.0, 1.0);
+  if (m == 0) {
+    outLeft.setAll(0, left);
+    outRight.setAll(0, right);
+    return (left: outLeft, right: outRight);
+  }
+  final fb = feedback.clamp(0.0, 0.95);
+  final cross = spread.clamp(0.0, 1.0);
+  final d = (math.max(0.0, delayMs) * sampleRate / 1000).round();
+  final lineLeft = Float64List(n);
+  final lineRight = Float64List(n);
+  for (var i = 0; i < n; i++) {
+    final tapLeft = i >= d ? lineLeft[i - d] : 0.0;
+    final tapRight = i >= d ? lineRight[i - d] : 0.0;
+    lineLeft[i] = left[i] + fb * ((1 - cross) * tapLeft + cross * tapRight);
+    lineRight[i] = right[i] + fb * ((1 - cross) * tapRight + cross * tapLeft);
+    final wetLeft = (1 - cross) * tapLeft + cross * tapRight;
+    final wetRight = (1 - cross) * tapRight + cross * tapLeft;
+    outLeft[i] = (1 - m) * left[i] + m * wetLeft;
+    outRight[i] = (1 - m) * right[i] + m * wetRight;
+  }
+  for (var i = n; i < left.length; i++) {
+    outLeft[i] = left[i];
+  }
+  for (var i = n; i < right.length; i++) {
+    outRight[i] = right[i];
+  }
+  return (left: outLeft, right: outRight);
+}
+
 /// A **chorus**: several detuned voices via an LFO-swept short delay (~[depthMs]
 /// centre, ±[depthMs] sweep at [rateHz]) read with fractional (linear) interp,
 /// blended with the dry signal. Thickens a sample without a strong pitch artifact.

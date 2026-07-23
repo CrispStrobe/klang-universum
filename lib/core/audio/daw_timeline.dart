@@ -23,7 +23,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart'
 import 'package:comet_beat/core/audio/crisp_dsp/dynamics.dart'
     show compressorFx, compressorFxStereo, gateFx, gateFxStereo;
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
-    show chorusFx, delayFx, flangerFx;
+    show chorusFx, delayFx, delayFxStereo, flangerFx;
 import 'package:comet_beat/core/audio/crisp_dsp/pitch_shift.dart'
     show granularPitchShift;
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart'
@@ -228,7 +228,12 @@ DawClipEffect defaultDawClipEffect(DawClipEffectType type) => switch (type) {
         ),
       DawClipEffectType.delay => const DawClipEffect(
           type: DawClipEffectType.delay,
-          params: {'delayMs': 300, 'feedback': 0.35, 'mix': 0.35},
+          params: {
+            'delayMs': 300,
+            'feedback': 0.35,
+            'spread': 0.2,
+            'mix': 0.35,
+          },
         ),
       DawClipEffectType.chorus => const DawClipEffect(
           type: DawClipEffectType.chorus,
@@ -665,6 +670,15 @@ Float64List applyClipEffectChain(
     }
     double p(String key, double fallback) => fx.params[key] ?? fallback;
     final processed = switch (fx.type) {
+      DawClipEffectType.delay => delayFxStereo(
+          outLeft,
+          outRight,
+          delayMs: p('delayMs', 300),
+          feedback: p('feedback', 0.35),
+          spread: p('spread', 0),
+          mix: p('mix', 0.35),
+          sampleRate: sampleRate,
+        ),
       DawClipEffectType.compressor => compressorFxStereo(
           outLeft,
           outRight,

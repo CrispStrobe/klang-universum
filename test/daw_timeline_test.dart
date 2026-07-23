@@ -543,6 +543,34 @@ void main() {
     expect(left.right.first, closeTo(0, 1e-9));
   });
 
+  test('stereo delay spreads a panned echo across channels', () {
+    final source = SampleSource(Float64List.fromList([1, 0, 0, 0, 0]));
+    final mix = renderTimelineStereo(
+      DawTimeline(
+        tracks: [
+          DawTrack(
+            pan: -1,
+            effects: [
+              defaultDawClipEffect(DawClipEffectType.delay).copyWith(
+                params: {
+                  'delayMs': 2,
+                  'feedback': 0,
+                  'spread': 0.5,
+                  'mix': 1,
+                },
+              ),
+            ],
+            clips: [Clip(source: source)],
+          ),
+        ],
+      ),
+      sampleRate: _sr,
+      limit: false,
+    );
+    expect(mix.left.first, closeTo(0, 1e-9));
+    expect(mix.right[2], greaterThan(0.3));
+  });
+
   test('effect parameter automation is rendered over time', () {
     final dry = _sine(220);
     final automated = applyClipEffectChain(

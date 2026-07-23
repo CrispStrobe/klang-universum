@@ -2065,7 +2065,14 @@ class _DawScreenState extends State<DawScreen>
                   label: 'Feedback',
                   min: 0,
                   max: 0.95,
-                  step: 0.01
+                  step: 0.01,
+                ),
+                (
+                  key: 'spread',
+                  label: 'Stereo spread',
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
                 ),
                 (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
               ],
