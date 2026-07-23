@@ -762,6 +762,32 @@ void main() {
       expect(s.clipEffects(0, 0).last.type, DawClipEffectType.reverb);
     });
 
+    test('batch FX operations target several clips', () {
+      final s = DawService()
+        ..addClip(_tone(0.4, 100))
+        ..addClip(_tone(0.2, 100), track: 1);
+
+      s.applyClipEffectPresetToClips(
+        [(track: 0, index: 0), (track: 1, index: 0)],
+        DawClipEffectPreset.vocalPolish,
+      );
+      expect(s.clipEffects(0, 0).first.type, DawClipEffectType.highpass);
+      expect(s.clipEffects(1, 0).first.type, DawClipEffectType.highpass);
+
+      s.addClipEffectToClips(
+        [(track: 1, index: 0)],
+        DawClipEffectType.distortion,
+      );
+      expect(s.clipEffects(0, 0), hasLength(3));
+      expect(s.clipEffects(1, 0).last.type, DawClipEffectType.distortion);
+
+      s
+        ..setClipEffectParam(1, 0, 3, 'drive', 8)
+        ..copyClipEffectsToClips(1, 0, [(track: 0, index: 0)]);
+      expect(s.clipEffects(0, 0), hasLength(4));
+      expect(s.clipEffects(0, 0).last.params['drive'], 8);
+    });
+
     test('moveClipEffect reorders the chain, clamps invalid moves and undoes',
         () {
       final s = DawService()..addClip(_tone(0.4, 100));

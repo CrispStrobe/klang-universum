@@ -16,6 +16,8 @@ import 'package:crisp_notation_core/crisp_notation_core.dart'
     show MultiPartScore;
 import 'package:flutter/foundation.dart';
 
+typedef DawClipTarget = ({int track, int index});
+
 class DawService extends ChangeNotifier {
   /// The arrangement — starts with two empty named lanes.
   final DawTimeline timeline = DawTimeline(
@@ -729,7 +731,7 @@ class DawService extends ChangeNotifier {
       final lane = timeline.tracks[i];
       lane
         ..effect = TrackEffect.none
-        ..effects = [...chain];
+        ..effects = _cloneEffectChain(chain);
     }
     notifyListeners();
   }
@@ -805,6 +807,28 @@ class DawService extends ChangeNotifier {
     return out;
   }
 
+  bool _validClipTarget(int track, int index) =>
+      track >= 0 &&
+      track < timeline.tracks.length &&
+      index >= 0 &&
+      index < timeline.tracks[track].clips.length;
+
+  List<DawClipTarget> _validClipTargets(Iterable<DawClipTarget> targets) {
+    final seen = <String>{};
+    final out = <DawClipTarget>[];
+    for (final target in targets) {
+      final key = '${target.track}:${target.index}';
+      if (_validClipTarget(target.track, target.index) && seen.add(key)) {
+        out.add(target);
+      }
+    }
+    return out;
+  }
+
+  List<DawClipEffect> _cloneEffectChain(List<DawClipEffect> chain) => [
+        for (final fx in chain) fx.copyWith(params: {...fx.params}),
+      ];
+
   bool _sameEffectChain(List<DawClipEffect> a, List<DawClipEffect> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
@@ -817,12 +841,23 @@ class DawService extends ChangeNotifier {
       timeline.tracks[track].clips[index].effects;
 
   void addClipEffect(int track, int index, DawClipEffectType type) {
+    addClipEffectToClips([(track: track, index: index)], type);
+  }
+
+  void addClipEffectToClips(
+    Iterable<DawClipTarget> targets,
+    DawClipEffectType type,
+  ) {
+    final validTargets = _validClipTargets(targets);
+    if (validTargets.isEmpty) return;
     _record();
-    final clips = timeline.tracks[track].clips;
-    final clip = clips[index];
-    clips[index] = clip.copyWith(
-      effects: [...clip.effects, defaultDawClipEffect(type)],
-    );
+    for (final target in validTargets) {
+      final clips = timeline.tracks[target.track].clips;
+      final clip = clips[target.index];
+      clips[target.index] = clip.copyWith(
+        effects: [...clip.effects, defaultDawClipEffect(type)],
+      );
+    }
     _peaks.clear();
     notifyListeners();
   }
@@ -833,13 +868,51 @@ class DawService extends ChangeNotifier {
     DawClipEffectPreset preset, {
     bool append = false,
   }) {
-    _record();
-    final clips = timeline.tracks[track].clips;
-    final clip = clips[index];
-    final chain = dawClipEffectPresetChain(preset);
-    clips[index] = clip.copyWith(
-      effects: append ? [...clip.effects, ...chain] : chain,
+    applyClipEffectPresetToClips(
+      [(track: track, index: index)],
+      preset,
+      append: append,
     );
+  }
+
+  void applyClipEffectPresetToClips(
+    Iterable<DawClipTarget> targets,
+    DawClipEffectPreset preset, {
+    bool append = false,
+  }) {
+    final validTargets = _validClipTargets(targets);
+    if (validTargets.isEmpty) return;
+    _record();
+    final chain = dawClipEffectPresetChain(preset);
+    for (final target in validTargets) {
+      final clips = timeline.tracks[target.track].clips;
+      final clip = clips[target.index];
+      clips[target.index] = clip.copyWith(
+        effects: append
+            ? [...clip.effects, ..._cloneEffectChain(chain)]
+            : _cloneEffectChain(chain),
+      );
+    }
+    _peaks.clear();
+    notifyListeners();
+  }
+
+  void copyClipEffectsToClips(
+    int sourceTrack,
+    int sourceIndex,
+    Iterable<DawClipTarget> targets,
+  ) {
+    if (!_validClipTarget(sourceTrack, sourceIndex)) return;
+    final validTargets = _validClipTargets(targets);
+    if (validTargets.isEmpty) return;
+    _record();
+    final chain = timeline.tracks[sourceTrack].clips[sourceIndex].effects;
+    for (final target in validTargets) {
+      final clips = timeline.tracks[target.track].clips;
+      clips[target.index] = clips[target.index].copyWith(
+        effects: _cloneEffectChain(chain),
+      );
+    }
     _peaks.clear();
     notifyListeners();
   }

@@ -183,6 +183,7 @@ class _DawScreenState extends State<DawScreen>
     implements DawTester {
   bool _playing = false;
   final Set<int> _selectedTracks = <int>{};
+  final Set<DawClipTarget> _selectedClips = <DawClipTarget>{};
 
   // Playhead: driven by the Ticker's own elapsed (NOT wall-clock), so it stays
   // in step with the baked audio AND is deterministic under `tester.pump`.
@@ -514,6 +515,28 @@ class _DawScreenState extends State<DawScreen>
     return targets.isEmpty ? [fallbackTrack] : targets;
   }
 
+  bool _validClipSelection(DawClipTarget target) =>
+      target.track >= 0 &&
+      target.track < _daw.timeline.tracks.length &&
+      target.index >= 0 &&
+      target.index < _daw.timeline.tracks[target.track].clips.length;
+
+  List<DawClipTarget> _selectedClipTargets(
+    int fallbackTrack,
+    int fallbackIndex,
+  ) {
+    final targets = [
+      for (final target in _selectedClips)
+        if (_validClipSelection(target)) target,
+    ]..sort((a, b) {
+        final byTrack = a.track.compareTo(b.track);
+        return byTrack != 0 ? byTrack : a.index.compareTo(b.index);
+      });
+    return targets.isEmpty
+        ? [(track: fallbackTrack, index: fallbackIndex)]
+        : targets;
+  }
+
   Widget _fxTile(
     BuildContext ctx, {
     required List<DawClipEffect> effects,
@@ -722,7 +745,11 @@ class _DawScreenState extends State<DawScreen>
   }
 
   @override
-  void clear() => _daw.clear();
+  void clear() {
+    _selectedTracks.clear();
+    _selectedClips.clear();
+    _daw.clear();
+  }
 
   @override
   void mergeAll() {
@@ -737,7 +764,22 @@ class _DawScreenState extends State<DawScreen>
   bool isClipFrozen(int track, int index) => _daw.isClipFrozen(track, index);
 
   @override
-  void removeClip(int track, int index) => _daw.removeClip(track, index);
+  void removeClip(int track, int index) {
+    final shiftedSelection = <DawClipTarget>{
+      for (final target in _selectedClips)
+        if (target.track != track)
+          target
+        else if (target.index < index)
+          target
+        else if (target.index > index)
+          (track: target.track, index: target.index - 1),
+    };
+    _daw.removeClip(track, index);
+    _selectedClips
+      ..clear()
+      ..addAll(shiftedSelection)
+      ..removeWhere((target) => !_validClipSelection(target));
+  }
 
   @override
   void duplicateClip(int track, int index) => _daw.duplicateClip(track, index);
@@ -1211,6 +1253,9 @@ class _DawScreenState extends State<DawScreen>
             return const SizedBox.shrink();
           }
           final frozen = _daw.isClipFrozen(track, index);
+          final selectedTargets = _selectedClipTargets(track, index);
+          final hasSelectedTargets = _selectedClips.any(_validClipSelection);
+          final effects = _daw.clipEffects(track, index);
           Widget slider(
             String label,
             double value,
@@ -1231,266 +1276,330 @@ class _DawScreenState extends State<DawScreen>
               );
 
           return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // The clip's current voice, for engraved clips.
-                  if (_daw.isScoreClip(track, index))
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.music_note, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            _daw.clipInstrument(track, index)?.id ??
-                                l10n.dawInstrumentDefault,
-                            style: Theme.of(sheetCtx).textTheme.labelLarge,
-                          ),
-                        ],
-                      ),
-                    ),
-                  slider(
-                    l10n.dawGain,
-                    _daw.clipGain(track, index),
-                    1.5,
-                    (v) => '${(v * 100).round()}%',
-                    (v) => setClipGain(track, index, v),
-                  ),
-                  slider(
-                    l10n.dawFadeIn,
-                    _daw.clipFadeInMs(track, index),
-                    2000,
-                    (v) => '${v.round()} ms',
-                    (v) => setClipFades(track, index, fadeInMs: v),
-                  ),
-                  slider(
-                    l10n.dawFadeOut,
-                    _daw.clipFadeOutMs(track, index),
-                    2000,
-                    (v) => '${v.round()} ms',
-                    (v) => setClipFades(track, index, fadeOutMs: v),
-                  ),
-                  // Trim: bound both edges to the untrimmed source length. The
-                  // end slider shows the full length when unset (0 = to end).
-                  ...() {
-                    final srcMs = _daw.clipSourceMs(track, index);
-                    final endMs = _daw.clipTrimEndMs(track, index);
-                    return [
-                      slider(
-                        l10n.dawTrimStart,
-                        _daw.clipTrimStartMs(track, index),
-                        srcMs,
-                        (v) => '${v.round()} ms',
-                        (v) => setClipTrim(track, index, trimStartMs: v),
-                      ),
-                      slider(
-                        l10n.dawTrimEnd,
-                        endMs <= 0 ? srcMs : endMs,
-                        srcMs,
-                        (v) => '${v.round()} ms',
-                        // At or past the full length ⇒ clear the trim (0 = to end).
-                        (v) => setClipTrim(
-                          track,
-                          index,
-                          trimEndMs: v >= srcMs ? 0 : v,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // The clip's current voice, for engraved clips.
+                    if (_daw.isScoreClip(track, index))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.music_note, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              _daw.clipInstrument(track, index)?.id ??
+                                  l10n.dawInstrumentDefault,
+                              style: Theme.of(sheetCtx).textTheme.labelLarge,
+                            ),
+                          ],
                         ),
                       ),
-                    ];
-                  }(),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Text(
-                        'Clip FX',
-                        style: Theme.of(sheetCtx).textTheme.labelLarge,
-                      ),
-                      const Spacer(),
-                      PopupMenuButton<DawClipEffectPreset>(
-                        tooltip: 'Apply preset',
-                        icon: const Icon(Icons.auto_fix_high),
-                        onSelected: (preset) {
-                          _daw.applyClipEffectPreset(track, index, preset);
-                          setSheet(() {});
-                          if (_playing) play();
-                        },
-                        itemBuilder: (_) => [
-                          for (final preset in DawClipEffectPreset.values)
-                            PopupMenuItem(
-                              value: preset,
-                              child: Text(_clipEffectPresetLabel(preset)),
-                            ),
-                        ],
-                      ),
-                      PopupMenuButton<DawClipEffectType>(
-                        tooltip: 'Add effect',
-                        icon: const Icon(Icons.add_circle_outline),
-                        onSelected: (type) {
-                          _daw.addClipEffect(track, index, type);
-                          setSheet(() {});
-                          if (_playing) play();
-                        },
-                        itemBuilder: (_) => [
-                          for (final type in _clipEffectTypes)
-                            PopupMenuItem(
-                              value: type,
-                              child: Text(_clipEffectLabel(type)),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  for (var fxIndex = 0;
-                      fxIndex < _daw.clipEffects(track, index).length;
-                      fxIndex++)
-                    _fxTile(
-                      sheetCtx,
-                      effects: _daw.clipEffects(track, index),
-                      fxIndex: fxIndex,
-                      onToggle: () {
-                        _daw.toggleClipEffect(track, index, fxIndex);
-                        setSheet(() {});
-                        if (_playing) play();
-                      },
-                      onMove: (delta) {
-                        _daw.moveClipEffect(track, index, fxIndex, delta);
-                        setSheet(() {});
-                        if (_playing) play();
-                      },
-                      onRemove: () {
-                        _daw.removeClipEffect(track, index, fxIndex);
-                        setSheet(() {});
-                        if (_playing) play();
-                      },
-                      onParam: (key, value) {
-                        setSheet(() {
-                          _daw.setClipEffectParam(
+                    slider(
+                      l10n.dawGain,
+                      _daw.clipGain(track, index),
+                      1.5,
+                      (v) => '${(v * 100).round()}%',
+                      (v) => setClipGain(track, index, v),
+                    ),
+                    slider(
+                      l10n.dawFadeIn,
+                      _daw.clipFadeInMs(track, index),
+                      2000,
+                      (v) => '${v.round()} ms',
+                      (v) => setClipFades(track, index, fadeInMs: v),
+                    ),
+                    slider(
+                      l10n.dawFadeOut,
+                      _daw.clipFadeOutMs(track, index),
+                      2000,
+                      (v) => '${v.round()} ms',
+                      (v) => setClipFades(track, index, fadeOutMs: v),
+                    ),
+                    // Trim: bound both edges to the untrimmed source length. The
+                    // end slider shows the full length when unset (0 = to end).
+                    ...() {
+                      final srcMs = _daw.clipSourceMs(track, index);
+                      final endMs = _daw.clipTrimEndMs(track, index);
+                      return [
+                        slider(
+                          l10n.dawTrimStart,
+                          _daw.clipTrimStartMs(track, index),
+                          srcMs,
+                          (v) => '${v.round()} ms',
+                          (v) => setClipTrim(track, index, trimStartMs: v),
+                        ),
+                        slider(
+                          l10n.dawTrimEnd,
+                          endMs <= 0 ? srcMs : endMs,
+                          srcMs,
+                          (v) => '${v.round()} ms',
+                          // At or past the full length ⇒ clear the trim (0 = to end).
+                          (v) => setClipTrim(
                             track,
                             index,
-                            fxIndex,
-                            key,
-                            value,
-                          );
-                        });
-                        if (_playing) play();
-                      },
+                            trimEndMs: v >= srcMs ? 0 : v,
+                          ),
+                        ),
+                      ];
+                    }(),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Text(
+                          'Clip FX',
+                          style: Theme.of(sheetCtx).textTheme.labelLarge,
+                        ),
+                        const Spacer(),
+                        Text(
+                          hasSelectedTargets
+                              ? '${selectedTargets.length} selected'
+                              : 'This clip',
+                          style: Theme.of(sheetCtx).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 4,
-                    children: [
-                      TextButton.icon(
-                        onPressed: frozen
-                            ? null
-                            : () {
-                                Navigator.of(sheetCtx).pop();
-                                _freezeWithToast(track, index);
-                              },
-                        icon: Icon(frozen ? Icons.lock : Icons.ac_unit),
-                        label: Text(l10n.dawFreeze),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetCtx).pop();
-                          duplicateClip(track, index);
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 2,
+                      children: [
+                        IconButton(
+                          tooltip: 'Copy FX to selected clips',
+                          icon: const Icon(Icons.checklist),
+                          onPressed: effects.isEmpty || !hasSelectedTargets
+                              ? null
+                              : () {
+                                  _daw.copyClipEffectsToClips(
+                                    track,
+                                    index,
+                                    selectedTargets,
+                                  );
+                                  setSheet(() {});
+                                  if (_playing) play();
+                                },
+                        ),
+                        PopupMenuButton<DawClipEffectPreset>(
+                          tooltip: 'Apply preset to selected clips',
+                          icon: const Icon(Icons.playlist_add_check),
+                          enabled: hasSelectedTargets,
+                          onSelected: (preset) {
+                            _daw.applyClipEffectPresetToClips(
+                              selectedTargets,
+                              preset,
+                            );
+                            setSheet(() {});
+                            if (_playing) play();
+                          },
+                          itemBuilder: (_) => [
+                            for (final preset in DawClipEffectPreset.values)
+                              PopupMenuItem(
+                                value: preset,
+                                child: Text(_clipEffectPresetLabel(preset)),
+                              ),
+                          ],
+                        ),
+                        PopupMenuButton<DawClipEffectType>(
+                          tooltip: 'Add effect to selected clips',
+                          icon: const Icon(Icons.add_task),
+                          enabled: hasSelectedTargets,
+                          onSelected: (type) {
+                            _daw.addClipEffectToClips(selectedTargets, type);
+                            setSheet(() {});
+                            if (_playing) play();
+                          },
+                          itemBuilder: (_) => [
+                            for (final type in _clipEffectTypes)
+                              PopupMenuItem(
+                                value: type,
+                                child: Text(_clipEffectLabel(type)),
+                              ),
+                          ],
+                        ),
+                        PopupMenuButton<DawClipEffectPreset>(
+                          tooltip: 'Apply preset',
+                          icon: const Icon(Icons.auto_fix_high),
+                          onSelected: (preset) {
+                            _daw.applyClipEffectPreset(track, index, preset);
+                            setSheet(() {});
+                            if (_playing) play();
+                          },
+                          itemBuilder: (_) => [
+                            for (final preset in DawClipEffectPreset.values)
+                              PopupMenuItem(
+                                value: preset,
+                                child: Text(_clipEffectPresetLabel(preset)),
+                              ),
+                          ],
+                        ),
+                        PopupMenuButton<DawClipEffectType>(
+                          tooltip: 'Add effect',
+                          icon: const Icon(Icons.add_circle_outline),
+                          onSelected: (type) {
+                            _daw.addClipEffect(track, index, type);
+                            setSheet(() {});
+                            if (_playing) play();
+                          },
+                          itemBuilder: (_) => [
+                            for (final type in _clipEffectTypes)
+                              PopupMenuItem(
+                                value: type,
+                                child: Text(_clipEffectLabel(type)),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    for (var fxIndex = 0; fxIndex < effects.length; fxIndex++)
+                      _fxTile(
+                        sheetCtx,
+                        effects: effects,
+                        fxIndex: fxIndex,
+                        onToggle: () {
+                          _daw.toggleClipEffect(track, index, fxIndex);
+                          setSheet(() {});
+                          if (_playing) play();
                         },
-                        icon: const Icon(Icons.control_point_duplicate),
-                        label: Text(l10n.dawDuplicate),
+                        onMove: (delta) {
+                          _daw.moveClipEffect(track, index, fxIndex, delta);
+                          setSheet(() {});
+                          if (_playing) play();
+                        },
+                        onRemove: () {
+                          _daw.removeClipEffect(track, index, fxIndex);
+                          setSheet(() {});
+                          if (_playing) play();
+                        },
+                        onParam: (key, value) {
+                          setSheet(() {
+                            _daw.setClipEffectParam(
+                              track,
+                              index,
+                              fxIndex,
+                              key,
+                              value,
+                            );
+                          });
+                          if (_playing) play();
+                        },
                       ),
-                      // Voice an engraved clip through an instrument from the
-                      // assets library (W7). A default reset appears once voiced.
-                      if (_daw.isScoreClip(track, index)) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 4,
+                      children: [
+                        TextButton.icon(
+                          onPressed: frozen
+                              ? null
+                              : () {
+                                  Navigator.of(sheetCtx).pop();
+                                  _freezeWithToast(track, index);
+                                },
+                          icon: Icon(frozen ? Icons.lock : Icons.ac_unit),
+                          label: Text(l10n.dawFreeze),
+                        ),
                         TextButton.icon(
                           onPressed: () {
                             Navigator.of(sheetCtx).pop();
-                            _assignClipInstrument(track, index);
+                            duplicateClip(track, index);
                           },
-                          icon: const Icon(Icons.music_note),
-                          label: Text(l10n.dawInstrument),
+                          icon: const Icon(Icons.control_point_duplicate),
+                          label: Text(l10n.dawDuplicate),
                         ),
-                        if (_daw.clipInstrument(track, index) != null)
+                        // Voice an engraved clip through an instrument from the
+                        // assets library (W7). A default reset appears once voiced.
+                        if (_daw.isScoreClip(track, index)) ...[
                           TextButton.icon(
                             onPressed: () {
                               Navigator.of(sheetCtx).pop();
-                              setClipInstrument(track, index, null);
+                              _assignClipInstrument(track, index);
                             },
-                            icon: const Icon(Icons.music_off),
-                            label: Text(l10n.dawInstrumentDefault),
+                            icon: const Icon(Icons.music_note),
+                            label: Text(l10n.dawInstrument),
                           ),
-                        // Take this music to a symbolic editor (and back via the
-                        // editor's Send to Audio Editor).
+                          if (_daw.clipInstrument(track, index) != null)
+                            TextButton.icon(
+                              onPressed: () {
+                                Navigator.of(sheetCtx).pop();
+                                setClipInstrument(track, index, null);
+                              },
+                              icon: const Icon(Icons.music_off),
+                              label: Text(l10n.dawInstrumentDefault),
+                            ),
+                          // Take this music to a symbolic editor (and back via the
+                          // editor's Send to Audio Editor).
+                          TextButton.icon(
+                            onPressed: () {
+                              final score = _daw.clipScore(track, index);
+                              Navigator.of(sheetCtx).pop();
+                              if (score != null) {
+                                showScoreDestinations(context, score);
+                              }
+                            },
+                            icon: const Icon(Icons.open_in_new),
+                            label: Text(l10n.dawOpenInEditor),
+                          ),
+                        ],
+                        // Split at the playhead — only when it falls inside the clip.
+                        TextButton.icon(
+                          onPressed: canSplitClip(track, index, playheadMs)
+                              ? () {
+                                  Navigator.of(sheetCtx).pop();
+                                  splitClip(track, index, playheadMs);
+                                }
+                              : null,
+                          icon: const Icon(Icons.content_cut),
+                          label: Text(l10n.dawSplit),
+                        ),
+                        TextButton.icon(
+                          onPressed: canCrossfadeWithNext(track, index)
+                              ? () {
+                                  Navigator.of(sheetCtx).pop();
+                                  crossfadeWithNext(track, index);
+                                }
+                              : null,
+                          icon: const Icon(Icons.compare_arrows),
+                          label: const Text('Crossfade next'),
+                        ),
                         TextButton.icon(
                           onPressed: () {
-                            final score = _daw.clipScore(track, index);
                             Navigator.of(sheetCtx).pop();
-                            if (score != null) {
-                              showScoreDestinations(context, score);
-                            }
+                            reverseClip(track, index);
                           },
-                          icon: const Icon(Icons.open_in_new),
-                          label: Text(l10n.dawOpenInEditor),
+                          icon: const Icon(Icons.fast_rewind),
+                          label: Text(l10n.dawReverse),
+                        ),
+                        // Tape-style speed: slower (½×) / faster (2×).
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(sheetCtx).pop();
+                            resampleClip(track, index, 0.5);
+                          },
+                          icon: const Icon(Icons.slow_motion_video),
+                          label: Text(l10n.dawSlower),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(sheetCtx).pop();
+                            resampleClip(track, index, 2.0);
+                          },
+                          icon: const Icon(Icons.speed),
+                          label: Text(l10n.dawFaster),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(sheetCtx).pop();
+                            removeClip(track, index);
+                          },
+                          icon: const Icon(Icons.delete_outline),
+                          label: Text(l10n.dawRemoveClip),
                         ),
                       ],
-                      // Split at the playhead — only when it falls inside the clip.
-                      TextButton.icon(
-                        onPressed: canSplitClip(track, index, playheadMs)
-                            ? () {
-                                Navigator.of(sheetCtx).pop();
-                                splitClip(track, index, playheadMs);
-                              }
-                            : null,
-                        icon: const Icon(Icons.content_cut),
-                        label: Text(l10n.dawSplit),
-                      ),
-                      TextButton.icon(
-                        onPressed: canCrossfadeWithNext(track, index)
-                            ? () {
-                                Navigator.of(sheetCtx).pop();
-                                crossfadeWithNext(track, index);
-                              }
-                            : null,
-                        icon: const Icon(Icons.compare_arrows),
-                        label: const Text('Crossfade next'),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetCtx).pop();
-                          reverseClip(track, index);
-                        },
-                        icon: const Icon(Icons.fast_rewind),
-                        label: Text(l10n.dawReverse),
-                      ),
-                      // Tape-style speed: slower (½×) / faster (2×).
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetCtx).pop();
-                          resampleClip(track, index, 0.5);
-                        },
-                        icon: const Icon(Icons.slow_motion_video),
-                        label: Text(l10n.dawSlower),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetCtx).pop();
-                          resampleClip(track, index, 2.0);
-                        },
-                        icon: const Icon(Icons.speed),
-                        label: Text(l10n.dawFaster),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(sheetCtx).pop();
-                          removeClip(track, index);
-                        },
-                        icon: const Icon(Icons.delete_outline),
-                        label: Text(l10n.dawRemoveClip),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -1932,6 +2041,8 @@ class _DawScreenState extends State<DawScreen>
         math.max(30.0, daw.clipDurationMs(i, j) / 1000 * _pxPerSecond);
     final bg = frozen ? scheme.secondaryContainer : scheme.primaryContainer;
     final fg = frozen ? scheme.onSecondaryContainer : scheme.onPrimaryContainer;
+    final target = (track: i, index: j);
+    final selected = _selectedClips.contains(target);
 
     return Positioned(
       left: startPx,
@@ -1952,7 +2063,10 @@ class _DawScreenState extends State<DawScreen>
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: scheme.outline),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outline,
+              width: selected ? 2 : 1,
+            ),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -1968,7 +2082,7 @@ class _DawScreenState extends State<DawScreen>
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.only(left: 28, right: 2),
                   child: Row(
                     children: [
                       if (frozen && widthPx >= 48)
@@ -1991,6 +2105,37 @@ class _DawScreenState extends State<DawScreen>
                           child: Icon(Icons.close, size: 16, color: fg),
                         ),
                     ],
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: IconButton(
+                    tooltip: selected
+                        ? 'Deselect clip for FX'
+                        : 'Select clip for FX',
+                    icon: Icon(
+                      selected
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank,
+                      size: 18,
+                      color: fg,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 26,
+                      height: 26,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      setState(() {
+                        if (selected) {
+                          _selectedClips.remove(target);
+                        } else {
+                          _selectedClips.add(target);
+                        }
+                      });
+                    },
                   ),
                 ),
               ],

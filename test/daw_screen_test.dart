@@ -240,6 +240,47 @@ void main() {
     expect(daw.clipGain(0, 0), lessThan(1.0));
   });
 
+  testWidgets('clip inspector targets selected clips with FX', (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+    daw
+      ..addDemoBeat()
+      ..addDemoTune();
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Select clip for FX').last);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Deselect clip for FX'), findsOneWidget);
+
+    await tester.tap(find.text('🥁'));
+    await tester.pumpAndSettle();
+    expect(find.text('Clip FX'), findsOneWidget);
+    expect(find.text('1 selected'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.add_circle_outline).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Distortion').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Copy FX to selected clips'));
+    await tester.pumpAndSettle();
+    expect(service.clipEffects(1, 0).single.type, DawClipEffectType.distortion);
+
+    await tester.tap(find.byTooltip('Add effect to selected clips'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('High Pass').last);
+    await tester.pumpAndSettle();
+    expect(service.clipEffects(0, 0).single.type, DawClipEffectType.distortion);
+    expect(
+      service.clipEffects(1, 0).map((fx) => fx.type),
+      [DawClipEffectType.distortion, DawClipEffectType.highpass],
+    );
+  });
+
   testWidgets('Split cuts a clip in two at the playhead', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);
