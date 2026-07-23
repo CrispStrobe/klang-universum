@@ -387,6 +387,38 @@ void main() {
     expect(find.textContaining('Speed'), findsOneWidget);
   });
 
+  testWidgets('tremolo and vocoder FX expose voice control sliders',
+      (tester) async {
+    await _pumpDaw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+
+    await tester.tap(find.text('Master FX'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add_circle_outline).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tremolo').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.add_circle_outline).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vocoder').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      service.masterEffects().map((fx) => fx.type),
+      [DawClipEffectType.tremolo, DawClipEffectType.vocoder],
+    );
+    await tester.tap(find.text('Tremolo'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Rate Hz'), findsOneWidget);
+    await tester.tap(find.text('Vocoder'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Carrier Hz'), findsOneWidget);
+    expect(find.textContaining('Depth'), findsWidgets);
+  });
+
   testWidgets('bus dialog routes selected tracks and edits bus FX',
       (tester) async {
     await _pumpDaw(tester);

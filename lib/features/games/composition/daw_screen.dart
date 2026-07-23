@@ -1590,6 +1590,8 @@ class _DawScreenState extends State<DawScreen>
     DawClipEffectType.gate,
     DawClipEffectType.pitchShift,
     DawClipEffectType.timeStretch,
+    DawClipEffectType.tremolo,
+    DawClipEffectType.vocoder,
     DawClipEffectType.voiceShape,
     DawClipEffectType.voiceChipmunk,
     DawClipEffectType.voiceDeep,
@@ -1611,6 +1613,8 @@ class _DawScreenState extends State<DawScreen>
         DawClipEffectType.gate => 'Noise Gate',
         DawClipEffectType.pitchShift => 'Pitch Shift',
         DawClipEffectType.timeStretch => 'Time Stretch',
+        DawClipEffectType.tremolo => 'Tremolo',
+        DawClipEffectType.vocoder => 'Vocoder',
         DawClipEffectType.voiceShape => 'Voice Shape',
         DawClipEffectType.voiceChipmunk => 'Voice: Chipmunk',
         DawClipEffectType.voiceDeep => 'Voice: Deep',
@@ -1751,6 +1755,22 @@ class _DawScreenState extends State<DawScreen>
               ],
             DawClipEffectType.timeStretch => const [
                 (key: 'speed', label: 'Speed', min: 0.5, max: 2, step: 0.05),
+                (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
+              ],
+            DawClipEffectType.tremolo => const [
+                (key: 'rateHz', label: 'Rate Hz', min: 0.1, max: 20, step: 0.1),
+                (key: 'depth', label: 'Depth', min: 0, max: 1, step: 0.01),
+                (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
+              ],
+            DawClipEffectType.vocoder => const [
+                (
+                  key: 'carrierHz',
+                  label: 'Carrier Hz',
+                  min: 20,
+                  max: 1000,
+                  step: 1
+                ),
+                (key: 'depth', label: 'Depth', min: 0, max: 1, step: 0.01),
                 (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
               ],
             DawClipEffectType.voiceShape => const [

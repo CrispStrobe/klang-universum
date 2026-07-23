@@ -428,6 +428,44 @@ void main() {
     expect(out.every((v) => v.isFinite), isTrue);
   });
 
+  test('tremolo and vocoder FX process audio and preserve length', () {
+    final dry = _sine(4410);
+    final tremoloBypassed = applyClipEffectChain(
+      dry,
+      [
+        defaultDawClipEffect(DawClipEffectType.tremolo).copyWith(
+          params: {'rateHz': 5, 'depth': 1, 'mix': 0},
+        ),
+      ],
+      44100,
+    );
+    final tremolo = applyClipEffectChain(
+      dry,
+      [
+        defaultDawClipEffect(DawClipEffectType.tremolo).copyWith(
+          params: {'rateHz': 5, 'depth': 1, 'mix': 1},
+        ),
+      ],
+      44100,
+    );
+    final vocoder = applyClipEffectChain(
+      dry,
+      [
+        defaultDawClipEffect(DawClipEffectType.vocoder).copyWith(
+          params: {'carrierHz': 120, 'depth': 1, 'mix': 1},
+        ),
+      ],
+      44100,
+    );
+
+    expect(tremoloBypassed, equals(dry));
+    expect(tremolo.length, dry.length);
+    expect(vocoder.length, dry.length);
+    expect(tremolo, isNot(equals(dry)));
+    expect(vocoder, isNot(equals(dry)));
+    expect(vocoder.every((v) => v.isFinite), isTrue);
+  });
+
   test('master FX process the full mix before limiting', () {
     final src = _ToneSource(0.4, 100);
     final dryTimeline = DawTimeline(

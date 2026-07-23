@@ -162,6 +162,8 @@ enum DawClipEffectType {
   gate,
   pitchShift,
   timeStretch,
+  tremolo,
+  vocoder,
   voiceShape,
   voiceChipmunk,
   voiceDeep,
@@ -236,6 +238,14 @@ DawClipEffect defaultDawClipEffect(DawClipEffectType type) => switch (type) {
       DawClipEffectType.timeStretch => const DawClipEffect(
           type: DawClipEffectType.timeStretch,
           params: {'speed': 0.75, 'mix': 1},
+        ),
+      DawClipEffectType.tremolo => const DawClipEffect(
+          type: DawClipEffectType.tremolo,
+          params: {'rateHz': 6, 'depth': 0.6, 'mix': 1},
+        ),
+      DawClipEffectType.vocoder => const DawClipEffect(
+          type: DawClipEffectType.vocoder,
+          params: {'carrierHz': 110, 'depth': 0.75, 'mix': 0.7},
         ),
       DawClipEffectType.voiceShape => const DawClipEffect(
           type: DawClipEffectType.voiceShape,
@@ -665,6 +675,20 @@ Float64List _applyClipEffect(
         ),
         p('mix', 1),
       ),
+    DawClipEffectType.tremolo => _tremoloFx(
+        input,
+        sampleRate: sampleRate,
+        rateHz: p('rateHz', 6),
+        depth: p('depth', 0.6),
+        mix: p('mix', 1),
+      ),
+    DawClipEffectType.vocoder => _vocoderFx(
+        input,
+        sampleRate: sampleRate,
+        carrierHz: p('carrierHz', 110),
+        depth: p('depth', 0.75),
+        mix: p('mix', 0.7),
+      ),
     DawClipEffectType.voiceShape => voiceShapeFx(
         input,
         sampleRate: sampleRate,
@@ -714,6 +738,52 @@ Float64List _blendWetDry(Float64List dry, Float64List wet, double mix) {
     final d = i < dry.length ? dry[i] : 0.0;
     final w = i < wet.length ? wet[i] : 0.0;
     out[i] = (1 - m) * d + m * w;
+  }
+  return out;
+}
+
+Float64List _tremoloFx(
+  Float64List input, {
+  required int sampleRate,
+  double rateHz = 6,
+  double depth = 0.6,
+  double mix = 1,
+}) {
+  final d = depth.clamp(0.0, 1.0);
+  final m = mix.clamp(0.0, 1.0);
+  if (m == 0 || input.isEmpty) return Float64List.fromList(input);
+  final hz = rateHz.clamp(0.05, sampleRate / 2).toDouble();
+  final out = Float64List(input.length);
+  for (var i = 0; i < input.length; i++) {
+    final lfo = (1 + math.sin(2 * math.pi * hz * i / sampleRate)) * 0.5;
+    final amp = 1 - d + d * lfo;
+    final wet = input[i] * amp;
+    out[i] = input[i] * (1 - m) + wet * m;
+  }
+  return out;
+}
+
+Float64List _vocoderFx(
+  Float64List input, {
+  required int sampleRate,
+  double carrierHz = 110,
+  double depth = 0.75,
+  double mix = 0.7,
+}) {
+  final d = depth.clamp(0.0, 1.0);
+  final m = mix.clamp(0.0, 1.0);
+  if (m == 0 || input.isEmpty) return Float64List.fromList(input);
+  final hz = carrierHz.clamp(20.0, sampleRate / 2).toDouble();
+  final out = Float64List(input.length);
+  var envelope = 0.0;
+  const attack = 0.18;
+  const release = 0.018;
+  for (var i = 0; i < input.length; i++) {
+    final level = input[i].abs();
+    envelope += (level - envelope) * (level > envelope ? attack : release);
+    final carrier = math.sin(2 * math.pi * hz * i / sampleRate);
+    final wet = input[i] * (1 - d) + carrier * envelope * d;
+    out[i] = input[i] * (1 - m) + wet * m;
   }
   return out;
 }
