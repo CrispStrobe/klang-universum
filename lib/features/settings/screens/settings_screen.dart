@@ -87,7 +87,10 @@ class SettingsScreen extends StatelessWidget {
                   currentId: settings.voiceId,
                 );
                 if (picked == null) return;
-                await settings.setVoiceId(picked);
+                await settings.setVoiceId(
+                  picked.id,
+                  resolvedVoice: picked.resolved,
+                );
                 if (!context.mounted) return;
                 // Preview through the newly-selected global voice.
                 final audio = context.read<AudioService>()

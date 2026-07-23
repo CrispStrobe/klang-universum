@@ -1,28 +1,45 @@
 // The "Instrument sound" voice picker — a searchable, category-filtered browser
-// over the whole sample-free procedural palette (the same voices the Tracker /
-// Sound Library offer: Tonal additive + FM + subtractive, Chiptune sfxr, Plucked
-// Karplus). Tap a voice to hear it; long-press (or the check) to choose it as the
-// app's global playback voice. Returns the chosen voiceId, or null if cancelled.
+// over the whole sound palette: the sample-free procedural voices the Tracker /
+// Sound Library expose (Tonal additive + FM + subtractive, Chiptune sfxr,
+// Plucked Karplus) AND your saved "My Library" instruments (which include
+// installed catalog samples / soundfont voices). Tap a voice to hear it,
+// long-press (or tap the check) to choose it as the app's global playback voice.
+// "Browse catalog" installs more from the curated HF catalog into the library.
 //
-// Library + catalog (sampled) voices are a follow-up — this ships the built-in
-// procedural palette, which is what "Tonal / Chiptune / …" refers to.
+// Returns the chosen voice as a (id, resolved) record: built-in ids resolve
+// themselves (main.dart / SettingsService), a library voice carries its
+// already-built TrackerInstrument so it plays without a store round-trip.
 
-import 'package:comet_beat/core/audio/synth.dart' show Instrument;
 import 'package:comet_beat/core/audio/tracker_engine.dart';
+import 'package:comet_beat/core/audio/voice_options.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
+import 'package:comet_beat/features/sound_lab/catalog_browse_sheet.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/music_io/audio_export.dart'
     show pcmFloatToWav;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// Opens the voice picker. [currentId] marks the current selection.
-Future<String?> showVoicePicker(BuildContext context, {String? currentId}) {
-  return showModalBottomSheet<String>(
+/// A chosen voice: its persisted [id] and, for library voices, the already-built
+/// [resolved] instrument (null for built-ins, which resolve from the id).
+typedef VoiceChoice = ({String id, TrackerInstrument? resolved});
+
+/// Opens the voice picker. [currentId] marks the current selection; [store] is
+/// injectable for tests.
+Future<VoiceChoice?> showVoicePicker(
+  BuildContext context, {
+  String? currentId,
+  InstrumentLibraryStore? store,
+}) {
+  return showModalBottomSheet<VoiceChoice>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => VoicePickerSheet(currentId: currentId),
+    builder: (_) => VoicePickerSheet(
+      currentId: currentId,
+      store: store ?? InstrumentLibraryStore(),
+    ),
   );
 }
 
@@ -38,7 +55,7 @@ String voiceLabel(AppLocalizations l10n, String id) => switch (id) {
       'coin' => l10n.trackerSfxrCoin,
       'bell' => l10n.trackerSfxrBell,
       'explosion' => l10n.trackerSfxrExplosion,
-      _ => _humanize(id),
+      _ => libraryVoiceName(id) ?? _humanize(id),
     };
 
 String _humanize(String id) {
@@ -57,18 +74,27 @@ IconData _categoryIcon(SoundCategory c) => switch (c) {
       SoundCategory.recorded => Icons.graphic_eq,
     };
 
-String _categoryLabel(AppLocalizations l10n, SoundCategory c) => switch (c) {
-      SoundCategory.tonal => l10n.voiceCatTonal,
-      SoundCategory.plucked => l10n.voiceCatPlucked,
-      SoundCategory.chiptune => l10n.voiceCatChiptune,
-      SoundCategory.drum => l10n.soundLibraryCatDrums,
-      SoundCategory.recorded => l10n.soundLibraryCatSamples,
-    };
+/// One selectable row: a built-in procedural voice or a saved library voice.
+class _Voice {
+  _Voice({
+    required this.id,
+    required this.label,
+    required this.icon,
+    required this.build,
+    this.isLibrary = false,
+  });
+  final String id; // 'blip' or 'lib:My Cello'
+  final String label;
+  final IconData icon;
+  final TrackerInstrument? Function() build;
+  final bool isLibrary;
+}
 
 @visibleForTesting
 class VoicePickerSheet extends StatefulWidget {
-  const VoicePickerSheet({this.currentId, super.key});
+  const VoicePickerSheet({required this.store, this.currentId, super.key});
   final String? currentId;
+  final InstrumentLibraryStore store;
 
   @override
   State<VoicePickerSheet> createState() => _VoicePickerSheetState();
@@ -76,7 +102,14 @@ class VoicePickerSheet extends StatefulWidget {
 
 class _VoicePickerSheetState extends State<VoicePickerSheet> {
   final _search = TextEditingController();
-  SoundCategory? _filter; // null = All
+  String _filter = 'all'; // 'all' | SoundCategory.name | 'library'
+  List<SavedInstrument> _library = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLibrary();
+  }
 
   @override
   void dispose() {
@@ -84,7 +117,21 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
     super.dispose();
   }
 
-  /// The categories actually present in the palette, in a stable order.
+  Future<void> _loadLibrary() async {
+    final items = await widget.store.load();
+    if (mounted) {
+      // Only voices we can actually build synchronously (a soundfont_ref needs
+      // async byte loading — skipped here).
+      setState(
+        () => _library = [
+          for (final s in items)
+            if (s.instrument != null) s,
+        ],
+      );
+    }
+  }
+
+  /// The procedural categories present, in a stable order.
   List<SoundCategory> get _categories {
     const order = [
       SoundCategory.tonal,
@@ -100,19 +147,38 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
     ];
   }
 
-  List<InstrumentOption> get _visible {
+  List<_Voice> _allVoices(AppLocalizations l10n) => [
+        if (_filter == 'all' || _filter != 'library')
+          for (final o in kTrackerInstruments)
+            if (_filter == 'all' || o.category.name == _filter)
+              _Voice(
+                id: o.id,
+                label: voiceLabel(l10n, o.id),
+                icon: _categoryIcon(o.category),
+                build: o.build,
+              ),
+        if (_filter == 'all' || _filter == 'library')
+          for (final s in _library)
+            _Voice(
+              id: libraryVoiceId(s.name),
+              label: s.name,
+              icon: Icons.library_music,
+              build: () => s.instrument,
+              isLibrary: true,
+            ),
+      ];
+
+  List<_Voice> _visible(AppLocalizations l10n) {
     final q = _search.text.trim().toLowerCase();
-    final l10n = AppLocalizations.of(context)!;
     return [
-      for (final o in kTrackerInstruments)
-        if ((_filter == null || o.category == _filter) &&
-            (q.isEmpty || voiceLabel(l10n, o.id).toLowerCase().contains(q)))
-          o,
+      for (final v in _allVoices(l10n))
+        if (q.isEmpty || v.label.toLowerCase().contains(q)) v,
     ];
   }
 
-  void _preview(InstrumentOption o) {
-    final inst = o.build();
+  void _preview(_Voice v) {
+    final inst = v.build();
+    if (inst == null) return;
     final pcm = inst.renderChannel(
       [const TrackerCell(midi: 67)],
       const TrackerTiming(rows: 6),
@@ -121,10 +187,34 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
     context.read<AudioService>().playWavBytes(pcmFloatToWav(pcm));
   }
 
+  void _choose(_Voice v) {
+    Navigator.of(context).pop<VoiceChoice>(
+      (id: v.id, resolved: v.isLibrary ? v.build() : null),
+    );
+  }
+
+  Future<void> _browseCatalog() async {
+    await showCatalogBrowseSheet(
+      context,
+      store: widget.store,
+      initialKind: 'instrument',
+    );
+    await _loadLibrary(); // surface anything installed
+  }
+
+  Widget _chip(String key, String label) => Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: _filter == key,
+          onSelected: (_) => setState(() => _filter = key),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final visible = _visible;
+    final visible = _visible(l10n);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -136,11 +226,22 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.voicePickerTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.voicePickerTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.cloud_outlined, size: 18),
+                  label: Text(l10n.soundLibraryBrowseCatalog),
+                  onPressed: _browseCatalog,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             TextField(
               controller: _search,
               onChanged: (_) => setState(() {}),
@@ -156,23 +257,11 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      label: Text(l10n.voiceCatAll),
-                      selected: _filter == null,
-                      onSelected: (_) => setState(() => _filter = null),
-                    ),
-                  ),
+                  _chip('all', l10n.voiceCatAll),
                   for (final c in _categories)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(_categoryLabel(l10n, c)),
-                        selected: _filter == c,
-                        onSelected: (_) => setState(() => _filter = c),
-                      ),
-                    ),
+                    _chip(c.name, _categoryLabelText(l10n, c)),
+                  if (_library.isNotEmpty)
+                    _chip('library', l10n.soundLibraryTitle),
                 ],
               ),
             ),
@@ -189,19 +278,18 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
                   : ListView.builder(
                       itemCount: visible.length,
                       itemBuilder: (context, i) {
-                        final o = visible[i];
-                        final selected = o.id == widget.currentId;
+                        final v = visible[i];
+                        final selected = v.id == widget.currentId;
                         return ListTile(
                           dense: true,
-                          leading: Icon(_categoryIcon(o.category)),
-                          title: Text(voiceLabel(l10n, o.id)),
+                          leading: Icon(v.icon),
+                          title: Text(v.label),
                           trailing: selected
                               ? const Icon(Icons.check, size: 20)
                               : null,
                           selected: selected,
-                          onTap: () => _preview(o), // hear it
-                          onLongPress: () =>
-                              Navigator.of(context).pop(o.id), // choose it
+                          onTap: () => _preview(v), // hear it
+                          onLongPress: () => _choose(v), // choose it
                         );
                       },
                     ),
@@ -213,5 +301,11 @@ class _VoicePickerSheetState extends State<VoicePickerSheet> {
   }
 }
 
-/// Whether [id] is one of the four classic additive voices.
-bool isAdditiveVoice(String id) => Instrument.values.any((e) => e.name == id);
+String _categoryLabelText(AppLocalizations l10n, SoundCategory c) =>
+    switch (c) {
+      SoundCategory.tonal => l10n.voiceCatTonal,
+      SoundCategory.plucked => l10n.voiceCatPlucked,
+      SoundCategory.chiptune => l10n.voiceCatChiptune,
+      SoundCategory.drum => l10n.soundLibraryCatDrums,
+      SoundCategory.recorded => l10n.soundLibraryCatSamples,
+    };

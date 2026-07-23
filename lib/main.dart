@@ -1,4 +1,5 @@
 import 'package:comet_beat/core/audio/tts/tts_neural.dart';
+import 'package:comet_beat/core/audio/voice_options.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/core/services/debug_service.dart';
@@ -11,6 +12,7 @@ import 'package:comet_beat/features/games/game_registry.dart';
 import 'package:comet_beat/features/games/songs/user_songs_service.dart';
 import 'package:comet_beat/features/games/tutorial_gate.dart';
 import 'package:comet_beat/features/home/screens/home_screen.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/theme.dart';
 import 'package:crisp_notation/crisp_notation.dart' show Bravura;
@@ -85,6 +87,7 @@ class CometBeatApp extends StatelessWidget {
             ..voice = settings.voice;
           context.read<AudioService>().soundOn = settings.soundOn;
           context.read<TtsService>().soundOn = settings.soundOn;
+          _ensureLibraryVoiceResolved(settings);
           return MaterialApp(
             onGenerateTitle: (context) =>
                 AppLocalizations.of(context)?.appTitle ?? 'CometBeat',
@@ -104,6 +107,29 @@ class CometBeatApp extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Library voices persist as a `lib:<name>` id that [resolveVoiceSync] can't
+/// build (it needs the InstrumentLibraryStore). On startup, resolve it ONCE per
+/// id: load the store, find the saved instrument, and hand its built voice back
+/// to settings (which pushes it to AudioService on the next rebuild).
+final Set<String> _attemptedLibraryVoices = <String>{};
+
+void _ensureLibraryVoiceResolved(SettingsService settings) {
+  final name = libraryVoiceName(settings.voiceId);
+  if (name == null ||
+      settings.voice != null ||
+      !_attemptedLibraryVoices.add(settings.voiceId)) {
+    return;
+  }
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final items = await InstrumentLibraryStore().load();
+    final matches = items.where((s) => s.name == name);
+    final inst = matches.isEmpty ? null : matches.first.instrument;
+    if (inst != null) {
+      await settings.setVoiceId(settings.voiceId, resolvedVoice: inst);
+    }
+  });
 }
 
 /// Shows the home screen; on web, a `?game=<gameId>` query parameter opens

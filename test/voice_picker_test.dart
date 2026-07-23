@@ -2,11 +2,15 @@
 // persistence + migration from the legacy 4-way enum, and the picker UI (search
 // + category filter + choose-on-long-press).
 
+import 'dart:typed_data';
+
 import 'package:comet_beat/core/audio/synth.dart' show Instrument;
 import 'package:comet_beat/core/audio/voice_options.dart';
 import 'package:comet_beat/core/services/audio_service.dart';
 import 'package:comet_beat/core/services/settings_service.dart';
 import 'package:comet_beat/features/settings/screens/voice_picker_sheet.dart';
+import 'package:comet_beat/features/sound_lab/instrument_library_store.dart';
+import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,12 +75,19 @@ void main() {
   });
 
   group('VoicePickerSheet', () {
-    Widget host() => MultiProvider(
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    Widget host({InstrumentLibraryStore? store}) => MultiProvider(
           providers: [Provider<AudioService>(create: (_) => AudioService())],
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const Scaffold(body: VoicePickerSheet(currentId: 'piano')),
+            home: Scaffold(
+              body: VoicePickerSheet(
+                currentId: 'piano',
+                store: store ?? InstrumentLibraryStore(),
+              ),
+            ),
           ),
         );
 
@@ -107,8 +118,9 @@ void main() {
       expect(find.text('Piano'), findsNothing);
     });
 
-    testWidgets('long-press chooses a voice (pops its id)', (t) async {
-      String? picked;
+    testWidgets('long-press chooses a built-in voice (id, no resolved)',
+        (t) async {
+      VoiceChoice? picked;
       await t.pumpWidget(
         MultiProvider(
           providers: [Provider<AudioService>(create: (_) => AudioService())],
@@ -131,7 +143,73 @@ void main() {
       await t.pumpAndSettle();
       await t.longPress(find.text('Blip').first);
       await t.pumpAndSettle();
-      expect(picked, 'blip');
+      expect(picked?.id, 'blip');
+      expect(picked?.resolved, isNull); // built-in resolves from its id
+    });
+
+    testWidgets('shows a saved library voice + chooses it with a resolved inst',
+        (t) async {
+      final store = InstrumentLibraryStore();
+      await store.save(
+        SavedInstrument.fromSampleClip(
+          SampleClip(
+            name: 'My Clip',
+            sampleRate: 22050,
+            pcm: Float64List.fromList(const [0.0, 0.3, -0.3, 0.0]),
+          ),
+        ),
+      );
+      await t.pumpWidget(host(store: store));
+      await t.pumpAndSettle();
+
+      // a My Library filter chip appears; tapping it surfaces the saved voice
+      // (library items sit below the ~20 procedural voices otherwise).
+      expect(find.widgetWithText(ChoiceChip, 'Sound Library'), findsOneWidget);
+      await t.tap(find.widgetWithText(ChoiceChip, 'Sound Library'));
+      await t.pumpAndSettle();
+      expect(find.text('My Clip'), findsOneWidget);
+      expect(find.text('Piano'), findsNothing); // procedural filtered out
+    });
+
+    testWidgets('a library voice pops (lib:<name>, resolved instrument)',
+        (t) async {
+      final store = InstrumentLibraryStore();
+      await store.save(
+        SavedInstrument.fromSampleClip(
+          SampleClip(
+            name: 'My Clip',
+            sampleRate: 22050,
+            pcm: Float64List.fromList(const [0.0, 0.3, -0.3, 0.0]),
+          ),
+        ),
+      );
+      VoiceChoice? picked;
+      await t.pumpWidget(
+        MultiProvider(
+          providers: [Provider<AudioService>(create: (_) => AudioService())],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () async =>
+                      picked = await showVoicePicker(context, store: store),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      await t.tap(find.widgetWithText(ChoiceChip, 'Sound Library'));
+      await t.pumpAndSettle();
+      await t.longPress(find.text('My Clip'));
+      await t.pumpAndSettle();
+      expect(picked?.id, 'lib:My Clip');
+      expect(picked?.resolved, isNotNull); // carries its built voice
     });
   });
 }

@@ -37,3 +37,18 @@ final Set<String> kAdditiveVoiceIds =
 bool isBuiltInVoiceId(String voiceId) =>
     kAdditiveVoiceIds.contains(voiceId) ||
     kTrackerInstruments.any((o) => o.id == voiceId);
+
+/// Prefix marking a voice id that refers to a saved library instrument (by
+/// name), e.g. `lib:My Cello`. These can't be resolved by [resolveVoiceSync]
+/// (they need the InstrumentLibraryStore) — main.dart resolves them at startup.
+const kLibraryVoicePrefix = 'lib:';
+
+/// Builds a library voice id from a saved instrument [name].
+String libraryVoiceId(String name) => '$kLibraryVoicePrefix$name';
+
+/// The saved-instrument name a [voiceId] refers to, or null if it's not a
+/// library voice.
+String? libraryVoiceName(String voiceId) =>
+    voiceId.startsWith(kLibraryVoicePrefix)
+        ? voiceId.substring(kLibraryVoicePrefix.length)
+        : null;
