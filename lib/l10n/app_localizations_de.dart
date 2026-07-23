@@ -564,6 +564,33 @@ class AppLocalizationsDe extends AppLocalizations {
   String get voicePreview => 'Tippen zum Hören · lang drücken zum Wählen';
 
   @override
+  String get voicePluck => 'Zupfsaite';
+
+  @override
+  String get voiceHarp => 'Harfe';
+
+  @override
+  String get voicePluckBass => 'Zupfbass';
+
+  @override
+  String get voiceEPiano => 'E-Piano';
+
+  @override
+  String get voiceFmBell => 'FM-Glocke';
+
+  @override
+  String get voiceFmBass => 'FM-Bass';
+
+  @override
+  String get voicePad => 'Pad';
+
+  @override
+  String get voiceLead => 'Lead';
+
+  @override
+  String get voiceSynthBass => 'Synth-Bass';
+
+  @override
   String get noteNamingLabel => 'Notennamen';
 
   @override

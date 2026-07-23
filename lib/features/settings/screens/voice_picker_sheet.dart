@@ -55,6 +55,15 @@ String voiceLabel(AppLocalizations l10n, String id) => switch (id) {
       'coin' => l10n.trackerSfxrCoin,
       'bell' => l10n.trackerSfxrBell,
       'explosion' => l10n.trackerSfxrExplosion,
+      'pluck' => l10n.voicePluck,
+      'harp' => l10n.voiceHarp,
+      'pluckBass' => l10n.voicePluckBass,
+      'ePiano' => l10n.voiceEPiano,
+      'fmBell' => l10n.voiceFmBell,
+      'fmBass' => l10n.voiceFmBass,
+      'pad' => l10n.voicePad,
+      'lead' => l10n.voiceLead,
+      'synthBass' => l10n.voiceSynthBass,
       _ => libraryVoiceName(id) ?? _humanize(id),
     };
 

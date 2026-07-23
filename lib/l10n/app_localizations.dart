@@ -1124,6 +1124,60 @@ abstract class AppLocalizations {
   /// **'Tap to hear · long-press to choose'**
   String get voicePreview;
 
+  /// No description provided for @voicePluck.
+  ///
+  /// In en, this message translates to:
+  /// **'Pluck'**
+  String get voicePluck;
+
+  /// No description provided for @voiceHarp.
+  ///
+  /// In en, this message translates to:
+  /// **'Harp'**
+  String get voiceHarp;
+
+  /// No description provided for @voicePluckBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Plucked bass'**
+  String get voicePluckBass;
+
+  /// No description provided for @voiceEPiano.
+  ///
+  /// In en, this message translates to:
+  /// **'Electric piano'**
+  String get voiceEPiano;
+
+  /// No description provided for @voiceFmBell.
+  ///
+  /// In en, this message translates to:
+  /// **'FM bell'**
+  String get voiceFmBell;
+
+  /// No description provided for @voiceFmBass.
+  ///
+  /// In en, this message translates to:
+  /// **'FM bass'**
+  String get voiceFmBass;
+
+  /// No description provided for @voicePad.
+  ///
+  /// In en, this message translates to:
+  /// **'Pad'**
+  String get voicePad;
+
+  /// No description provided for @voiceLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead'**
+  String get voiceLead;
+
+  /// No description provided for @voiceSynthBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Synth bass'**
+  String get voiceSynthBass;
+
   /// No description provided for @noteNamingLabel.
   ///
   /// In en, this message translates to:

@@ -562,6 +562,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voicePreview => 'Tap to hear · long-press to choose';
 
   @override
+  String get voicePluck => 'Pluck';
+
+  @override
+  String get voiceHarp => 'Harp';
+
+  @override
+  String get voicePluckBass => 'Plucked bass';
+
+  @override
+  String get voiceEPiano => 'Electric piano';
+
+  @override
+  String get voiceFmBell => 'FM bell';
+
+  @override
+  String get voiceFmBass => 'FM bass';
+
+  @override
+  String get voicePad => 'Pad';
+
+  @override
+  String get voiceLead => 'Lead';
+
+  @override
+  String get voiceSynthBass => 'Synth bass';
+
+  @override
   String get noteNamingLabel => 'Note names';
 
   @override
