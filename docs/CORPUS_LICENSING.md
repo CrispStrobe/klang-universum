@@ -103,6 +103,16 @@ repos below. Reachable, but dev/test only.
 The direct answer to "what have we covered / what could we still safely add."
 Every line here is a *licence/coverage* statement; detail per source follows.
 
+> **▶ Live DB snapshot (2026-07-23): `db.json` = 37,792 rows** — 37,403 scores +
+> 389 playback assets (222 instruments · 166 modules · 1 soundfont). Scores by
+> source: GregoBase 18,711 · NIFC Polish 8,181 · PDMX 7,471 · OpenScore Lieder
+> 1,350 · NIFC Chopin 512 · Mutopia 510 · **DCML Bach Chorales 361** · OpenScore SQ
+> 122 · OpenEWLD 103 · **Musikpiraten Season Songs 52** · Pete Mac 15 · EGSet12 12 ·
+> **Kinder wollen singen 3**. Assets: VCSL 183 · **ModArchive 166 (post-clearance
+> whitelist)** · FreePats 39 · FluidR3 1. Bold = added since the "16,800" snapshot
+> below (GregoBase chants, DCML Bach CC0, the first self-engraved German Kinderlieder,
+> and the ModArchive corpus trimmed 1,650 → 166 cleared modules).
+
 ### Covered now — assessed, licence-cleared, in hand
 
 - **Unified shippable score corpus — 16,800 scores, 8 sources, both axes clean**
@@ -110,7 +120,8 @@ Every line here is a *licence/coverage* statement; detail per source follows.
   6,720 · OpenScore Lieder (composer+poet death-checked) 1,350 · NIFC Chopin 512 ·
   OpenScore String Quartets 122 · OpenEWLD-eu-pd 103 · Mutopia 510 · EGSet12 12.
   Licences: CC0 / CC BY / MIT / PD (per source), each filtered on axis 2. Held
-  in multiple formats (midi/mxl/pdf/json/mscx/mscz/ly).
+  in multiple formats (midi/mxl/pdf/json/mscx/mscz/ly). *(Superseded by the live
+  snapshot above; kept for the per-axis-2-filter detail.)*
 - **Tabs for every one of those scores come free** via our own `arrangeTab` — the
   shippable *tab* corpus **is** this score corpus, no third-party tab licensing.
 - **JAMS Tier-A** (`jams-corpus/tierA`): GuitarSet 360 (CC BY) · Harmonix 912 (MIT)
@@ -134,6 +145,13 @@ Every line here is a *licence/coverage* statement; detail per source follows.
 - **Self-engraved German Kinderlieder** from pre-1900 PD facsimiles (Erk/Böhme
   *Deutscher Liederhort*, Zuccalmaglio) — the only clean route to the German
   children's repertoire the app wants; sidesteps every third-party encoding/DB claim.
+  **▶ NOW IN PROGRESS:** 55 tunes self-engraved (`german_ly` LilyPond → Score),
+  shipped as **Musikpiraten Season Songs** (52, PD — `github.com/Musikpiraten/
+  public-domain-season-songs`) + **Kinder wollen singen** (3, PD — verified-PD
+  children's-song initiative). Keep extending from the Erk/Böhme facsimiles.
+  Related German-CC0 leads to mine next: **cc0.oer-musik.de / oer-musik.de** (an OER
+  portal of CC0 classical + public-domain music — 403s to a bare fetcher, needs a
+  browser/manual pass) and **autenrieths.de** (free notation index).
 - **CPDL / ChoralWiki** (CPDL License = commercial + share-alike, copyleft) —
   strong for a singing app; per-edition axis-2 filter. (**GregoBase** moved to
   *in hand* — 18,711 CC0 chants + a GABC reader; see the shippable table.)
@@ -142,10 +160,34 @@ Every line here is a *licence/coverage* statement; detail per source follows.
   recovers notes + authentic period fingerings owned outright (guitar/cello solution).
 - **Broader IMSLP CC0** — other CC0-dedicating arrangers beyond "Marieh", same
   two-axis test applied per work.
-- **Playback assets (NEW arc)** — Tier A instruments/SoundFonts/samples (VCSL,
-  VSCO 2 CE, FreePats CC0, FluidR3_GM) + OpenGameArt tracker modules. Assessed,
-  not yet ingested (VPS unreachable). Full detail in the *Playback assets*
-  section below.
+- **Playback assets** — first wave INGESTED (FluidR3_GM · 39 FreePats CC0 · 183
+  VCSL = 223 assets); the **97 VCSL percussion one-shots** are also surfaced as
+  standalone `sample`s. **New CC0 sample/SFX ingest — VERIFIED per source
+  (2026-07-23), because our prior notes were optimistic:**
+  - ✅ **VSCO 2 CE** (`github.com/sgossner/VSCO-2-CE`, **CC0-1.0** confirmed via
+    the repo licence, 2.3 GB open-source orchestral library) — the clean, big
+    CC0 win; Versilian themselves point here. Yields instruments **and** more
+    percussion one-shots (via the emit sample scan). **Ingest target.**
+  - ✅ **Open Music Academy CC0 SFX** (openmusic.academy, film-sample-library-cc0,
+    page states **CC0** + WAV one-shots) — the real SFX-one-shot fit. ⚠ take the
+    SFX, NOT their classical *recordings* (performance copyright). Per-file check.
+  - ⚠ **freesound.org CC0** — genuine one-shots but needs the API + a per-file
+    CC0 filter; deferred.
+  - ❌ **Versilian Miscellania I & II** — NOT CC0. The page (cert expired) calls
+    the samples **"freeware … download and use at your own risk … products
+    without a licence"**; the GPL/MIT on it is the site theme. Versilian's own
+    advice: "Download VSCO 2 / VCSL instead." **Excluded** (corrects the earlier
+    "CC0 SFX/perc" claim).
+  - ❌ **Salamander Drumkit V1** — archive.org metadata = **CC BY-SA 3.0 = Tier C**
+    (share-alike), NOT PD/CC0 as our note claimed → **held** (no SA until the app
+    enforces SA-propagation on export). (Salamander Grand Piano V3 licence still
+    to re-verify per-item; don't trust the "PD" note.)
+  - Other still-to-verify (don't trust the label until checked): **University of
+    Iowa MIS**, **Discord GM SFZ Bank**, **AVL Drumkits** (BY-SA=Tier C),
+    **Flame Studios** (GPLv3+, output exception). Full detail in *Playback assets*.
+  **Lesson (again): verify every sample source's actual licence file — "CC0
+  SFX" claims keep failing (Miscellania freeware, Salamander BY-SA), same as the
+  ABC (thesession ODbL) and module (ModArchive uploader-asserted) dead-ends.**
 
 ### Not reachable (settled — see the rejected tables)
 
@@ -440,6 +482,9 @@ BY-SA carry a credit** (the "save extra" case).
 | **OpenGameArt — CC0 subset** | .xm/.it/.mod/.s3m + ogg game music | **CC0** | original compositions ✅ |
 | **Selekt Audio — CC0/PD catalog** | 100k+ cleared one-shots/loops, per-sample cert | **CC0 + US-PD** | fingerprint-screened; PD tier = pre-1926 US recs + Library-of-Congress field recs ✅ (US-PD ≠ EU-PD — recheck axis 2 for the PD tier) |
 | **freesound (CC0 filter)** | individual sounds | **CC0** (must filter) | per-sample check |
+| **University of Iowa MIS** (Electronic Music Studios) ⭐**NEW** | Steinway piano + strings / winds / brass / percussion, WAV/AIFF | **PD / no-restrictions** — site (L. Fritts, since 1997): *"may be downloaded and used for any projects, without restrictions"* | recorded at the university → nothing underneath ✅. **Top Tier-A acoustic-instrument pick alongside FluidR3**; individual-note samples ideal for a multisample instrument. |
+| **Versilian Miscellania I & II** ⭐**NEW** | SFX + percussion one-shots, WAV | **CC0-1.0** (Versilian) | recorded for the library ✅ (same house as our VCSL) |
+| **Discord GM SFZ Bank** ⭐**NEW** | full General MIDI bank in SFZ (`sfzinstruments/Discord-SFZ-GM-Bank`) | **per-`.sfz` licence** — filter to CC0/CC-BY | assembled per-instrument; check each file. Useful GM fallback for `gm_song_render.dart`. |
 
 ### Tier B — "NA" (Needs Attribution): permissive but attribution / notice required
 
@@ -454,6 +499,7 @@ folder already does). Does NOT include ShareAlike/copyleft licenses.
 | **OpenGameArt — CC BY / OGA-BY** | CC BY / OGA-BY | attribution. |
 | **Big MOD Music Pack** (itch) | mixed CC0 / CC BY / PD | per-file — CC0 → Tier A, rest → credit. .xm, handled by the MOD loader. |
 | **FreePats MuldjorKit** | CC BY 4.0 | attribution |
+| **Salamander Grand Piano V3** (Alexander Holm) ⭐**NEW** ⚠ | **CC BY 3.0** — **NOT public domain** (a widespread misconception; verified against the SFZ repo + Musical-Artifacts page). | attribution. **Best free acoustic grand** (Yamaha C5, 16 velocity layers, SFZ + FLAC). This is a **Tier-B** correction — do NOT ship it as CC0/PD. |
 
 ### Tier C — "SA" (ShareAlike): copyleft, attribution required
 
@@ -465,6 +511,8 @@ Non-NC, commercial-OK, but carries a ShareAlike or GPL copyleft clause.
 | **Big MOD Music Pack** (itch) | CC BY-SA | attribution + SA copyleft. |
 | **JummBox SoundFont fork V11** (stgiga) | **CC BY-SA 4.0** | attribution **+ ShareAlike** (derivative banks stay BY-SA). Base BeepBox/JummBox engine is MIT. |
 | **FreePats Colombo Drumkit** | GPL-2.0 | GPL notice (awkward to embed; fine standalone) |
+| **AVL Drumkits** (Glen MacArthur) ⭐**NEW** | **CC BY-SA 3.0** **+ a music-output exception**: SA binds only if you modify the samples / repackage a sample library — **rendered music using the kit is unrestricted**. | attribution + SA on the *sample payload*; the drum sound in a rendered track is free. SFZ / SF2 / h2. Strong acoustic-drum source (Black Pearl, Red Zeppelin, Blonde Bop). |
+| **Flame Studios GigaSamples** (guitars / bass / banjo) ⭐**NEW** | **GPLv3+** with an output exception (produced audio unrestricted). | GPL notice on the sample payload; output free. SF2 / SFZ. Fills the guitar/bass instrument gap. |
 
 **OpenGameArt is the spine for tracker music.** It **structurally forbids NC** —
 every OGA asset is CC0 / CC BY / CC BY-SA / GPL / OGA-BY, all commercial-OK — so
@@ -477,6 +525,12 @@ CC0 → Tier A / CC BY / OGA-BY → Tier B / CC BY-SA / GPL → Tier C. Original
   **CC BY-NC-SA** to third parties (+ a CC BY-ND reservation for BotB itself).
   Despite "original → axis-2 clean," the NC axis-1 kills it → control/eval only,
   same tier as IDMT/GAPS. *(Corrects an earlier "BotB is clean" assumption.)*
+- **Sonatina Symphonic Orchestra (SSO)** — **CC Sampling Plus 1.0** (retired,
+  non-standard). It lets you *sample the sounds into your own works* commercially,
+  but **restricts redistribution of the sample library itself to non-commercial +
+  "no advertising."** Bundling the whole library into a commercial app is the
+  *restricted* case → **defer / legal-review, NOT clean.** (VSCO 2 CE + University
+  of Iowa MIS cover the same orchestral need on clean Tier-A terms.)
 - **General community module archives** whose licences are **uploader-asserted
   or absent** — excluded as sources. The licence field is set by the *uploader*,
   rarely the author; the bulk is unclear/"non-licensed" and much of it samples
