@@ -347,6 +347,27 @@ void main() {
     expect(s.timeline.tracks[1].clips, hasLength(1));
   });
 
+  test('removeClipTargets removes selected clips across lanes with one undo',
+      () {
+    final s = DawService()
+      ..addClip(_tone(0.5, 44100))
+      ..addClip(_tone(0.3, 44100))
+      ..addClip(_tone(0.4, 44100), track: 1);
+
+    final removed = s.removeClipTargets([
+      (track: 0, index: 0),
+      (track: 1, index: 0),
+      (track: 0, index: 0), // deduped
+    ]);
+
+    expect(removed, 2);
+    expect(s.timeline.tracks[0].clips, hasLength(1));
+    expect(s.timeline.tracks[1].clips, isEmpty);
+    s.undo();
+    expect(s.timeline.tracks[0].clips, hasLength(2));
+    expect(s.timeline.tracks[1].clips, hasLength(1));
+  });
+
   test('crossfadeWithNext overlaps adjacent clips with opposing fades', () {
     final s = DawService()
       ..addClip(_tone(0.5, 44100))

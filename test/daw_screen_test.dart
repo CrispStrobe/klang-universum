@@ -491,6 +491,38 @@ void main() {
     expect(find.byTooltip('Deselect clip for FX'), findsNWidgets(2));
   });
 
+  testWidgets('cut selected clips removes them and keeps paste available',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+    daw
+      ..addDemoBeat()
+      ..addDemoTune();
+    daw.seekTo(9000);
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Select clip for FX').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Select clip for FX').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Cut selected clips'));
+    await tester.pumpAndSettle();
+    expect(service.timeline.tracks[0].clips, isEmpty);
+    expect(service.timeline.tracks[1].clips, isEmpty);
+
+    await tester.tap(find.byTooltip('Paste clips at playhead'));
+    await tester.pumpAndSettle();
+    expect(service.timeline.tracks[0].clips, hasLength(1));
+    expect(service.timeline.tracks[1].clips, hasLength(1));
+    expect(service.clipStartMs(0, 0), closeTo(9000, 0.1));
+    expect(service.clipStartMs(1, 0), closeTo(11000, 0.1));
+  });
+
   testWidgets('range FX splits and effects the marked clip segment',
       (tester) async {
     await _pumpDaw(tester);

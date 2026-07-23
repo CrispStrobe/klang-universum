@@ -206,6 +206,30 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  int removeClipTargets(Iterable<DawClipTarget> targets) {
+    final valid = _validClipTargets(targets);
+    if (valid.isEmpty) return 0;
+    _record();
+    final byTrack = <int, List<int>>{};
+    for (final target in valid) {
+      byTrack.putIfAbsent(target.track, () => <int>[]).add(target.index);
+    }
+    var removed = 0;
+    for (final entry in byTrack.entries) {
+      final clips = timeline.tracks[entry.key].clips;
+      final indices = entry.value.toSet().toList()
+        ..sort((a, b) => b.compareTo(a));
+      for (final index in indices) {
+        if (index < 0 || index >= clips.length) continue;
+        clips.removeAt(index);
+        removed++;
+      }
+    }
+    if (removed == 0) return 0;
+    notifyListeners();
+    return removed;
+  }
+
   /// Duplicate a clip, dropping the copy on the same track right after the
   /// original (same source/gain/fades/trim). Cheap — the copy shares the
   /// source's cache entry.

@@ -1056,6 +1056,23 @@ class _DawScreenState extends State<DawScreen>
     });
   }
 
+  void _deleteSelectedClips({bool copyFirst = false}) {
+    final targets = [
+      for (final target in _selectedClips)
+        if (_validClipSelection(target)) target,
+    ];
+    if (targets.isEmpty) return;
+    if (copyFirst) _copySelectedClips();
+    final removed = _daw.removeClipTargets(targets);
+    if (removed == 0) return;
+    setState(() {
+      _selectedClips
+        ..clear()
+        ..removeWhere((target) => !_validClipSelection(target));
+    });
+    if (_playing) play();
+  }
+
   void _pasteClipClipboard() {
     if (_clipClipboard.isEmpty) return;
     final pasted = _daw.pasteClipCopies(_clipClipboard, playheadMs);
@@ -2524,9 +2541,21 @@ class _DawScreenState extends State<DawScreen>
             onPressed: _hasSelectedClips ? _copySelectedClips : null,
           ),
           IconButton(
+            icon: const Icon(Icons.content_cut),
+            tooltip: 'Cut selected clips',
+            onPressed: _hasSelectedClips
+                ? () => _deleteSelectedClips(copyFirst: true)
+                : null,
+          ),
+          IconButton(
             icon: const Icon(Icons.content_paste),
             tooltip: 'Paste clips at playhead',
             onPressed: _clipClipboard.isEmpty ? null : _pasteClipClipboard,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Delete selected clips',
+            onPressed: _hasSelectedClips ? _deleteSelectedClips : null,
           ),
           IconButton(
             icon: Icon(_playing ? Icons.stop : Icons.play_arrow),
