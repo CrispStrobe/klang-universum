@@ -349,6 +349,20 @@ class _DawScreenState extends State<DawScreen>
           children: [
             Text('Track FX', style: Theme.of(ctx).textTheme.labelLarge),
             const Spacer(),
+            IconButton(
+              tooltip: 'Copy chain to all tracks',
+              icon: const Icon(Icons.copy_all),
+              onPressed: effects.isEmpty || _daw.timeline.tracks.length < 2
+                  ? null
+                  : () {
+                      _daw.copyTrackEffectsToTracks(
+                        track,
+                        Iterable<int>.generate(_daw.timeline.tracks.length),
+                      );
+                      setDialog(() {});
+                      if (_playing) play();
+                    },
+            ),
             PopupMenuButton<DawClipEffectPreset>(
               tooltip: 'Apply preset',
               icon: const Icon(Icons.auto_fix_high),

@@ -719,6 +719,21 @@ class DawService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void copyTrackEffectsToTracks(int sourceTrack, Iterable<int> tracks) {
+    if (sourceTrack < 0 || sourceTrack >= timeline.tracks.length) return;
+    final indices = _validTrackIndices(tracks);
+    if (indices.isEmpty) return;
+    _record();
+    final chain = [...timeline.tracks[sourceTrack].effects];
+    for (final i in indices) {
+      final lane = timeline.tracks[i];
+      lane
+        ..effect = TrackEffect.none
+        ..effects = [...chain];
+    }
+    notifyListeners();
+  }
+
   void removeTrackEffect(int track, int effectIndex) {
     final lane = timeline.tracks[track];
     if (effectIndex < 0 || effectIndex >= lane.effects.length) return;

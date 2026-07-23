@@ -714,6 +714,24 @@ void main() {
         );
       }
     });
+
+    test('copies one track FX chain to several tracks', () {
+      final s = DawService()
+        ..addClip(_tone(0.3, 100))
+        ..addClip(_tone(0.2, 100), track: 1);
+
+      s
+        ..addTrackEffect(0, DawClipEffectType.highpass)
+        ..addTrackEffect(0, DawClipEffectType.distortion)
+        ..setTrackEffectParam(0, 1, 'drive', 7)
+        ..copyTrackEffectsToTracks(0, [1]);
+
+      expect(
+        s.trackEffects(1).map((fx) => fx.type),
+        [DawClipEffectType.highpass, DawClipEffectType.distortion],
+      );
+      expect(s.trackEffects(1)[1].params['drive'], 7);
+    });
   });
 
   group('clip effect chains', () {

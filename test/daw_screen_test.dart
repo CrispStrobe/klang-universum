@@ -196,6 +196,10 @@ void main() {
     await tester.tap(find.text('Distortion'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Drive'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.copy_all));
+    await tester.pumpAndSettle();
+    expect(service.trackEffects(1).single.type, DawClipEffectType.distortion);
   });
 
   testWidgets('tapping a clip opens the inspector; gain slider changes gain',
