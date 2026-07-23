@@ -3176,6 +3176,48 @@ abstract class AppLocalizations {
   /// **'Add tune'**
   String get dawAddTune;
 
+  /// No description provided for @dawAddMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Add music (song / import)'**
+  String get dawAddMusic;
+
+  /// No description provided for @musicPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add music'**
+  String get musicPickerTitle;
+
+  /// No description provided for @musicPickerImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a file (MIDI · MusicXML · ABC · GP · MEI · kern · MuseScore)'**
+  String get musicPickerImport;
+
+  /// No description provided for @musicPickerBuiltin.
+  ///
+  /// In en, this message translates to:
+  /// **'Song Book'**
+  String get musicPickerBuiltin;
+
+  /// No description provided for @musicPickerYours.
+  ///
+  /// In en, this message translates to:
+  /// **'Your songs'**
+  String get musicPickerYours;
+
+  /// No description provided for @musicPickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved songs yet — import a file or add some in the Song Book.'**
+  String get musicPickerEmpty;
+
+  /// No description provided for @musicPickerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read that music file.'**
+  String get musicPickerFailed;
+
   /// No description provided for @dawAddClip.
   ///
   /// In en, this message translates to:

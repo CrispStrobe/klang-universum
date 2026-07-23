@@ -1684,6 +1684,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dawAddTune => 'Add tune';
 
   @override
+  String get dawAddMusic => 'Add music (song / import)';
+
+  @override
+  String get musicPickerTitle => 'Add music';
+
+  @override
+  String get musicPickerImport =>
+      'Import a file (MIDI · MusicXML · ABC · GP · MEI · kern · MuseScore)';
+
+  @override
+  String get musicPickerBuiltin => 'Song Book';
+
+  @override
+  String get musicPickerYours => 'Your songs';
+
+  @override
+  String get musicPickerEmpty =>
+      'No saved songs yet — import a file or add some in the Song Book.';
+
+  @override
+  String get musicPickerFailed => 'Couldn\'t read that music file.';
+
+  @override
   String get dawAddClip => 'Add clip';
 
   @override

@@ -33,6 +33,7 @@ import 'package:comet_beat/features/sound_lab/my_samples_sheet.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
 import 'package:comet_beat/features/sound_lab/sample_extractor_screen.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
+import 'package:comet_beat/shared/music/music_picker.dart' show showMusicPicker;
 import 'package:comet_beat/shared/music_io/audio_export.dart'
     show showAudioExportSheet;
 import 'package:comet_beat/shared/music_io/audio_import.dart'
@@ -479,6 +480,14 @@ class _DawScreenState extends State<DawScreen>
     );
     if (!mounted) return;
     await addSample();
+  }
+
+  /// Pick actual MUSIC from the library (Song Book or a file import) and drop it
+  /// onto a fresh lane as a re-voiceable ScoreSource clip.
+  Future<void> _addMusic() async {
+    final score = await showMusicPicker(context);
+    if (score == null || !mounted) return;
+    _daw.addClip(ScoreSource(score), track: _daw.timeline.tracks.length);
   }
 
   @override
@@ -1450,6 +1459,11 @@ class _DawScreenState extends State<DawScreen>
                         leadingIcon: const Icon(Icons.file_upload_outlined),
                         onPressed: _importAudioFile,
                         child: Text(l10n.dawImportAudioFile),
+                      ),
+                      MenuItemButton(
+                        leadingIcon: const Icon(Icons.library_music_outlined),
+                        onPressed: _addMusic,
+                        child: Text(l10n.dawAddMusic),
                       ),
                       MenuItemButton(
                         leadingIcon: const Icon(Icons.colorize),
