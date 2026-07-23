@@ -14,6 +14,12 @@ import 'package:comet_beat/core/notation/multi_part_export.dart'
 import 'package:comet_beat/features/games/songs/song_book.dart' show kSongs;
 import 'package:comet_beat/features/games/songs/user_songs_service.dart'
     show UserSongsService;
+import 'package:comet_beat/features/library/content_source.dart'
+    show LibraryItem;
+import 'package:comet_beat/features/library/source_registry.dart'
+    show defaultHttpGet;
+import 'package:comet_beat/features/library/sources/cometbeat_catalog_source.dart'
+    show CometbeatCatalogSource;
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation_core/crisp_notation_core.dart'
     show
@@ -111,6 +117,18 @@ class _MusicPickerSheet extends StatelessWidget {
     }
   }
 
+  /// Browse the curated CometBeat catalog's SCORES (CC0/PD kern/ABC/GP), fetch a
+  /// chosen one and decode it — then pop the whole music picker with the score.
+  Future<void> _browseCatalog(BuildContext context) async {
+    final score = await showModalBottomSheet<MultiPartScore>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => const _CatalogScoresSheet(),
+    );
+    if (score != null && context.mounted) Navigator.of(context).pop(score);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -138,6 +156,11 @@ class _MusicPickerSheet extends StatelessWidget {
               leading: const Icon(Icons.file_upload_outlined),
               title: Text(l10n.musicPickerImport),
               onTap: () => _importFile(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_outlined),
+              title: Text(l10n.musicPickerCatalog),
+              onTap: () => _browseCatalog(context),
             ),
             const Divider(),
             _header(context, l10n.musicPickerBuiltin),
@@ -188,4 +211,107 @@ class _MusicPickerSheet extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       );
+}
+
+/// Lists the CometBeat catalog's CC0/PD scores; tapping one fetches + decodes it
+/// and pops with the [MultiPartScore]. Network-backed, so it loads lazily.
+class _CatalogScoresSheet extends StatefulWidget {
+  const _CatalogScoresSheet();
+
+  @override
+  State<_CatalogScoresSheet> createState() => _CatalogScoresSheetState();
+}
+
+class _CatalogScoresSheetState extends State<_CatalogScoresSheet> {
+  final _source = CometbeatCatalogSource.scores(defaultHttpGet);
+  List<LibraryItem>? _items;
+  bool _failed = false;
+  bool _fetching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final items = await _source.browse();
+      if (mounted) setState(() => _items = items);
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  Future<void> _pick(LibraryItem item) async {
+    if (_fetching) return;
+    setState(() => _fetching = true);
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      final bytes = await _source.fetch(item);
+      final score = decodeMusicFile('x.${item.format}', bytes);
+      navigator.pop(score);
+    } catch (_) {
+      if (mounted) setState(() => _fetching = false);
+      messenger.showSnackBar(SnackBar(content: Text(l10n.musicPickerFailed)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final items = _items;
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.musicPickerCatalog,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ],
+              ),
+            ),
+            if (_fetching) const LinearProgressIndicator(),
+            Expanded(
+              child: _failed
+                  ? Center(child: Text(l10n.musicPickerCatalogFailed))
+                  : items == null
+                      ? const Center(child: CircularProgressIndicator())
+                      : items.isEmpty
+                          ? Center(child: Text(l10n.musicPickerCatalogEmpty))
+                          : ListView.builder(
+                              itemCount: items.length,
+                              itemBuilder: (_, i) {
+                                final it = items[i];
+                                return ListTile(
+                                  dense: true,
+                                  leading: const Icon(Icons.music_note),
+                                  title: Text(it.title),
+                                  subtitle: Text(
+                                    [
+                                      if (it.composer.isNotEmpty) it.composer,
+                                      it.declaredLicense,
+                                    ].join(' · '),
+                                  ),
+                                  trailing: Text(it.format.toUpperCase()),
+                                  onTap: () => _pick(it),
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

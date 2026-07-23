@@ -1714,6 +1714,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get musicPickerFailed => 'Musikdatei konnte nicht gelesen werden.';
 
   @override
+  String get musicPickerCatalog => 'Online-Katalog durchsuchen';
+
+  @override
+  String get musicPickerCatalogEmpty => 'Keine Online-Noten gefunden.';
+
+  @override
+  String get musicPickerCatalogFailed => 'Katalog nicht erreichbar.';
+
+  @override
   String get dawAddClip => 'Clip hinzufügen';
 
   @override

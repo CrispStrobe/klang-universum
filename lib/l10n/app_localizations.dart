@@ -3218,6 +3218,24 @@ abstract class AppLocalizations {
   /// **'Couldn\'t read that music file.'**
   String get musicPickerFailed;
 
+  /// No description provided for @musicPickerCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse online catalog'**
+  String get musicPickerCatalog;
+
+  /// No description provided for @musicPickerCatalogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No online scores found.'**
+  String get musicPickerCatalogEmpty;
+
+  /// No description provided for @musicPickerCatalogFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the catalog.'**
+  String get musicPickerCatalogFailed;
+
   /// No description provided for @dawAddClip.
   ///
   /// In en, this message translates to:
