@@ -69,6 +69,65 @@ Float64List compressorFx(
   return out;
 }
 
+/// Stereo compressor with one gain envelope driven by the louder channel.
+/// This keeps a stereo image centred when only one side contains a transient.
+({Float64List left, Float64List right}) compressorFxStereo(
+  Float64List left,
+  Float64List right, {
+  required double sampleRate,
+  double thresholdDb = -18,
+  double ratio = 4,
+  double attackMs = 10,
+  double releaseMs = 120,
+  double kneeDb = 6,
+  double makeupDb = 0,
+  double mix = 1,
+}) {
+  final m = mix.clamp(0.0, 1.0);
+  final outLeft = Float64List(left.length);
+  final outRight = Float64List(right.length);
+  if (m == 0) {
+    outLeft.setAll(0, left);
+    outRight.setAll(0, right);
+    return (left: outLeft, right: outRight);
+  }
+  final r = ratio < 1 ? 1.0 : ratio;
+  final knee = kneeDb < 0 ? 0.0 : kneeDb;
+  final atk = _coef(attackMs, sampleRate);
+  final rel = _coef(releaseMs, sampleRate);
+  final makeup = math.pow(10, makeupDb / 20).toDouble();
+  final slope = 1 / r - 1;
+  var gain = 1.0;
+  final frames = math.min(left.length, right.length);
+  for (var i = 0; i < frames; i++) {
+    final levelDb =
+        20 * _log10(math.max(left[i].abs(), right[i].abs()) + 1e-12);
+    final over = levelDb - thresholdDb;
+    double reductionDb;
+    if (2 * over < -knee) {
+      reductionDb = 0;
+    } else if (knee > 0 && 2 * over <= knee) {
+      final t = over + knee / 2;
+      reductionDb = slope * t * t / (2 * knee);
+    } else {
+      reductionDb = slope * over;
+    }
+    final target = math.pow(10, reductionDb / 20).toDouble();
+    final c = target < gain ? atk : rel;
+    gain = c * gain + (1 - c) * target;
+    final wetGain = gain * makeup;
+    outLeft[i] = (1 - m) * left[i] + m * left[i] * wetGain;
+    outRight[i] = (1 - m) * right[i] + m * right[i] * wetGain;
+  }
+  for (var i = frames; i < left.length; i++) {
+    outLeft[i] = left[i];
+  }
+  for (var i = frames; i < right.length; i++) {
+    outRight[i] = right[i];
+  }
+  return (left: outLeft, right: outRight);
+}
+
 /// A brick-wall-ish limiter — a high-ratio, fast, hard-knee compressor at a
 /// ceiling ([ceilingDb]).
 Float64List limiterFx(
@@ -130,4 +189,53 @@ Float64List gateFx(
     out[i] = (1 - m) * x + m * wet;
   }
   return out;
+}
+
+/// Stereo gate with one gain envelope driven by the louder channel.
+({Float64List left, Float64List right}) gateFxStereo(
+  Float64List left,
+  Float64List right, {
+  required double sampleRate,
+  double thresholdDb = -40,
+  double ratio = 4,
+  double rangeDb = -60,
+  double attackMs = 1,
+  double releaseMs = 100,
+  double mix = 1,
+}) {
+  final m = mix.clamp(0.0, 1.0);
+  final outLeft = Float64List(left.length);
+  final outRight = Float64List(right.length);
+  if (m == 0) {
+    outLeft.setAll(0, left);
+    outRight.setAll(0, right);
+    return (left: outLeft, right: outRight);
+  }
+  final r = ratio < 1 ? 1.0 : ratio;
+  final atk = _coef(attackMs, sampleRate);
+  final rel = _coef(releaseMs, sampleRate);
+  final floor = math.pow(10, rangeDb / 20).toDouble();
+  var gain = 1.0;
+  final frames = math.min(left.length, right.length);
+  for (var i = 0; i < frames; i++) {
+    final levelDb =
+        20 * _log10(math.max(left[i].abs(), right[i].abs()) + 1e-12);
+    final target = levelDb >= thresholdDb
+        ? 1.0
+        : math.max(
+            floor,
+            math.pow(10, ((levelDb - thresholdDb) * (r - 1)) / 20).toDouble(),
+          );
+    final c = target < gain ? rel : atk;
+    gain = c * gain + (1 - c) * target;
+    outLeft[i] = (1 - m) * left[i] + m * left[i] * gain;
+    outRight[i] = (1 - m) * right[i] + m * right[i] * gain;
+  }
+  for (var i = frames; i < left.length; i++) {
+    outLeft[i] = left[i];
+  }
+  for (var i = frames; i < right.length; i++) {
+    outRight[i] = right[i];
+  }
+  return (left: outLeft, right: outRight);
 }

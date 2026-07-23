@@ -21,7 +21,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/biquad.dart'
 import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart'
     show distortionFx;
 import 'package:comet_beat/core/audio/crisp_dsp/dynamics.dart'
-    show compressorFx, gateFx;
+    show compressorFx, compressorFxStereo, gateFx, gateFxStereo;
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
     show chorusFx, delayFx, flangerFx;
 import 'package:comet_beat/core/audio/crisp_dsp/pitch_shift.dart'
@@ -648,6 +648,55 @@ Float64List applyClipEffectChain(
   return out;
 }
 
+({Float64List left, Float64List right}) _applyStereoClipEffectChain(
+  Float64List left,
+  Float64List right,
+  List<DawClipEffect> effects,
+  int sampleRate,
+) {
+  var outLeft = left;
+  var outRight = right;
+  for (final fx in effects) {
+    if (!fx.enabled) continue;
+    if (fx.automation.isNotEmpty) {
+      outLeft = _applyAutomatedClipEffect(outLeft, fx, sampleRate);
+      outRight = _applyAutomatedClipEffect(outRight, fx, sampleRate);
+      continue;
+    }
+    double p(String key, double fallback) => fx.params[key] ?? fallback;
+    final processed = switch (fx.type) {
+      DawClipEffectType.compressor => compressorFxStereo(
+          outLeft,
+          outRight,
+          sampleRate: sampleRate.toDouble(),
+          thresholdDb: p('thresholdDb', -18),
+          ratio: p('ratio', 4),
+          attackMs: p('attackMs', 10),
+          releaseMs: p('releaseMs', 120),
+          kneeDb: p('kneeDb', 6),
+          makeupDb: p('makeupDb', 0),
+          mix: p('mix', 1),
+        ),
+      DawClipEffectType.gate => gateFxStereo(
+          outLeft,
+          outRight,
+          sampleRate: sampleRate.toDouble(),
+          thresholdDb: p('thresholdDb', -40),
+          ratio: p('ratio', 4),
+          rangeDb: p('rangeDb', -60),
+          mix: p('mix', 1),
+        ),
+      _ => (
+          left: _applyClipEffect(outLeft, fx, sampleRate),
+          right: _applyClipEffect(outRight, fx, sampleRate),
+        ),
+    };
+    outLeft = processed.left;
+    outRight = processed.right;
+  }
+  return (left: outLeft, right: outRight);
+}
+
 Float64List _applyClipEffect(
   Float64List input,
   DawClipEffect fx,
@@ -1160,13 +1209,25 @@ DawStereoMix renderTimelineStereo(
     final laneRight = Float64List(totalSamples);
     mix(laneLeft, laneRight, places);
     if (track.effects.isNotEmpty || track.effect != TrackEffect.none) {
-      final process = track.effects.isNotEmpty
-          ? (Float64List input) =>
-              applyClipEffectChain(input, track.effects, sampleRate)
-          : (Float64List input) =>
-              applyTrackEffect(track.effect, input, sampleRate);
-      laneLeft.setAll(0, process(laneLeft));
-      laneRight.setAll(0, process(laneRight));
+      if (track.effects.isNotEmpty) {
+        final processed = _applyStereoClipEffectChain(
+          laneLeft,
+          laneRight,
+          track.effects,
+          sampleRate,
+        );
+        laneLeft.setAll(0, processed.left);
+        laneRight.setAll(0, processed.right);
+      } else {
+        laneLeft.setAll(
+          0,
+          applyTrackEffect(track.effect, laneLeft, sampleRate),
+        );
+        laneRight.setAll(
+          0,
+          applyTrackEffect(track.effect, laneRight, sampleRate),
+        );
+      }
     }
     if (track.gainAutomation.isNotEmpty) {
       _applyTrackGainAutomation(laneLeft, track.gainAutomation, sampleRate);
@@ -1200,22 +1261,28 @@ DawStereoMix renderTimelineStereo(
 
   for (final entry in busBuffers.entries) {
     final bus = timeline.buses[entry.key];
-    final wetLeft = bus.effects.isEmpty
-        ? entry.value.left
-        : applyClipEffectChain(entry.value.left, bus.effects, sampleRate);
-    final wetRight = bus.effects.isEmpty
-        ? entry.value.right
-        : applyClipEffectChain(entry.value.right, bus.effects, sampleRate);
-    addBuffer(left, wetLeft);
-    addBuffer(right, wetRight);
+    final wet = bus.effects.isEmpty
+        ? entry.value
+        : _applyStereoClipEffectChain(
+            entry.value.left,
+            entry.value.right,
+            bus.effects,
+            sampleRate,
+          );
+    addBuffer(left, wet.left);
+    addBuffer(right, wet.right);
   }
 
-  final outLeft = timeline.effects.isEmpty
-      ? left
-      : applyClipEffectChain(left, timeline.effects, sampleRate);
-  final outRight = timeline.effects.isEmpty
-      ? right
-      : applyClipEffectChain(right, timeline.effects, sampleRate);
+  final out = timeline.effects.isEmpty
+      ? (left: left, right: right)
+      : _applyStereoClipEffectChain(
+          left,
+          right,
+          timeline.effects,
+          sampleRate,
+        );
+  final outLeft = out.left;
+  final outRight = out.right;
 
   if (limit) {
     for (var i = 0; i < outLeft.length; i++) {

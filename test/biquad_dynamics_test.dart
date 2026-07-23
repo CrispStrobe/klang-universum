@@ -106,6 +106,21 @@ void main() {
       expect(_peakLateHalf(y), closeTo(0.05, 0.01));
     });
 
+    test('stereo compressor links gain reduction across channels', () {
+      final left = _sine(1.0, 440, 8820);
+      final right = _sine(0.2, 440, 8820);
+      final stereo = compressorFxStereo(
+        left,
+        right,
+        sampleRate: _sr,
+        attackMs: 5,
+      );
+      final leftPeak = _peakLateHalf(stereo.left);
+      final rightPeak = _peakLateHalf(stereo.right);
+      expect(leftPeak, lessThan(0.5));
+      expect(rightPeak / leftPeak, closeTo(0.2, 0.03));
+    });
+
     test('limiter holds the peak near the ceiling', () {
       final loud = _sine(1.0, 440, 8820);
       final y = limiterFx(loud, sampleRate: _sr);
