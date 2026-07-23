@@ -65,6 +65,7 @@ class DawService extends ChangeNotifier {
             DawTrack(
               name: t.name,
               gain: t.gain,
+              pan: t.pan,
               muted: t.muted,
               soloed: t.soloed,
               instrument: t.instrument,
@@ -189,6 +190,13 @@ class DawService extends ChangeNotifier {
   }
 
   double trackGain(int track) => timeline.tracks[track].gain;
+
+  /// Set a track's constant-power pan (-1 left .. +1 right).
+  void setTrackPan(int track, double pan) {
+    _coalesced(('trackPan', track));
+    timeline.tracks[track].pan = pan.clamp(-1.0, 1.0);
+    notifyListeners();
+  }
 
   List<DawAutomationPoint> trackGainAutomation(int track) =>
       List.unmodifiable(timeline.tracks[track].gainAutomation);
@@ -1669,6 +1677,9 @@ class DawService extends ChangeNotifier {
   /// Bake the whole arrangement to one mono PCM buffer (only changed clips
   /// re-render, thanks to the per-source cache).
   Float64List bake() => renderTimeline(timeline, cache: _cache);
+
+  /// Bake the arrangement as separate left/right channels for stereo export.
+  DawStereoMix bakeStereo() => renderTimelineStereo(timeline, cache: _cache);
 
   // --- Project save / load ---------------------------------------------------
 

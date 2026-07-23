@@ -52,6 +52,7 @@ String projectToJson(
         {
           'name': track.name,
           'gain': track.gain,
+          if (track.pan != 0) 'pan': track.pan,
           'muted': track.muted,
           'soloed': track.soloed,
           if (track.busIndex != null) 'busIndex': track.busIndex,
@@ -192,6 +193,7 @@ DawTimeline projectFromJson(String json) {
         return DawTrack(
           name: t['name'] is String ? t['name'] as String : '',
           gain: t['gain'] is num ? num_(t['gain']) : 1.0,
+          pan: t['pan'] is num ? num_(t['pan']).clamp(-1.0, 1.0) : 0.0,
           muted: t['muted'] == true,
           soloed: t['soloed'] == true,
           busIndex:

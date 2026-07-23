@@ -516,6 +516,33 @@ void main() {
     expect(boosted[1], closeTo(-0.5 * math.pow(10, 6 / 20), 1e-9));
   });
 
+  test('stereo timeline applies constant-power track panning', () {
+    final source = SampleSource(Float64List.fromList([1, 1, 1, 1]));
+    final centre = renderTimelineStereo(
+      DawTimeline(
+        tracks: [
+          DawTrack(clips: [Clip(source: source)]),
+        ],
+      ),
+      sampleRate: _sr,
+      limit: false,
+    );
+    expect(centre.left.first, closeTo(1 / math.sqrt2, 1e-9));
+    expect(centre.left.first, closeTo(centre.right.first, 1e-9));
+
+    final left = renderTimelineStereo(
+      DawTimeline(
+        tracks: [
+          DawTrack(pan: -1, clips: [Clip(source: source)]),
+        ],
+      ),
+      sampleRate: _sr,
+      limit: false,
+    );
+    expect(left.left.first, closeTo(1, 1e-9));
+    expect(left.right.first, closeTo(0, 1e-9));
+  });
+
   test('effect parameter automation is rendered over time', () {
     final dry = _sine(220);
     final automated = applyClipEffectChain(

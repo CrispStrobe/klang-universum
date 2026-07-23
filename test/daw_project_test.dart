@@ -33,6 +33,7 @@ void main() {
         DawTrack(
           name: 'Drums',
           gain: 0.8,
+          pan: -0.35,
           effect: TrackEffect.echo,
           busIndex: 0,
           busSends: {0: 0.35},
@@ -89,6 +90,7 @@ void main() {
     expect(back.buses.single.effects.single.params['cutoffHz'], 180);
     expect(back.tracks[0].name, 'Drums');
     expect(back.tracks[0].gain, closeTo(0.8, 1e-9));
+    expect(back.tracks[0].pan, closeTo(-0.35, 1e-9));
     expect(back.tracks[0].busIndex, 0);
     expect(back.tracks[0].busSends[0], closeTo(0.35, 1e-9));
     expect(back.tracks[0].effect, TrackEffect.echo);

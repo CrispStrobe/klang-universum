@@ -2215,7 +2215,7 @@ class _DawScreenState extends State<DawScreen>
                   label: 'Robot Mix',
                   min: 0,
                   max: 1,
-                  step: 0.01
+                  step: 0.01,
                 ),
                 (key: 'grit', label: 'Grit', min: 0, max: 1, step: 0.01),
                 (
@@ -2237,7 +2237,7 @@ class _DawScreenState extends State<DawScreen>
                   label: 'Radio Mix',
                   min: 0,
                   max: 1,
-                  step: 0.01
+                  step: 0.01,
                 ),
                 (key: 'mix', label: 'Mix', min: 0, max: 1, step: 0.01),
               ],
@@ -2457,7 +2457,9 @@ class _DawScreenState extends State<DawScreen>
   // Bake the arrangement, choose the export window, then hand off to the shared
   // WAV/MP3 sheet.
   Future<void> _export() async {
-    final pcm = _bake();
+    final stereo = _daw.bakeStereo();
+    final pcm = stereo.left;
+    final rightPcm = stereo.right;
     if (pcm.isEmpty) {
       await showAudioExportSheet(
         context,
@@ -2545,10 +2547,14 @@ class _DawScreenState extends State<DawScreen>
     );
     if (!mounted || action != 'export') return;
     final selected = useRange ? _exportRangePcm(pcm) : pcm;
+    final selectedRight = useRange ? _exportRangePcm(rightPcm) : rightPcm;
     final exportPcm = normalize ? _normalizeExportPcm(selected) : selected;
+    final exportRight =
+        normalize ? _normalizeExportPcm(selectedRight) : selectedRight;
     await showAudioExportSheet(
       context,
       pcm: exportPcm,
+      rightPcm: exportRight,
       baseName: _exportBaseName(range: useRange),
     );
   }
@@ -3447,7 +3453,7 @@ class _DawScreenState extends State<DawScreen>
   // --- Timeline (to-scale clips, draggable in time) --------------------------
 
   static const double _pxPerSecond = 80;
-  static const double _laneHeight = 60;
+  static const double _laneHeight = 108;
   static const double _gutterWidth = 112;
   static const double _rulerHeight = 20;
 
@@ -3719,6 +3725,24 @@ class _DawScreenState extends State<DawScreen>
               max: 1.5,
               onChanged: (v) => setTrackGain(i, v),
             ),
+          ),
+          Row(
+            children: [
+              const SizedBox(width: 8),
+              const Text('Pan', style: TextStyle(fontSize: 11)),
+              Expanded(
+                child: Slider(
+                  value: track.pan.clamp(-1.0, 1.0),
+                  min: -1,
+                  divisions: 40,
+                  label: track.pan.toStringAsFixed(2),
+                  onChanged: (v) {
+                    _daw.setTrackPan(i, v);
+                    if (_playing) play();
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

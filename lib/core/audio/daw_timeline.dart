@@ -538,6 +538,7 @@ class DawTrack {
   DawTrack({
     this.name = '',
     this.gain = 1.0,
+    this.pan = 0.0,
     this.muted = false,
     this.soloed = false,
     this.instrument,
@@ -554,6 +555,9 @@ class DawTrack {
 
   String name;
   double gain;
+
+  /// Constant-power pan: -1 is left, 0 centre, +1 right.
+  double pan;
   bool muted;
 
   /// When ANY track is soloed, only soloed (and unmuted) tracks are heard.
@@ -588,6 +592,14 @@ class DawBus {
 
   /// Ordered group-bus FX applied after assigned tracks are summed.
   List<DawClipEffect> effects;
+}
+
+/// The two channels produced by [renderTimelineStereo].
+class DawStereoMix {
+  const DawStereoMix(this.left, this.right);
+
+  final Float64List left;
+  final Float64List right;
 }
 
 /// Apply a track's insert [effect] to its (full-length) summed [buf].
@@ -1005,7 +1017,7 @@ class DawTimeline {
 /// true the summed mix is soft-limited (tanh) so overlapping clips can't hard-
 /// clip. Pass a persistent [cache] across renders so an edit re-bakes only the
 /// changed clips. Returns an empty buffer for a silent timeline.
-Float64List renderTimeline(
+DawStereoMix renderTimelineStereo(
   DawTimeline timeline, {
   int sampleRate = kDawSampleRate,
   Map<Object, Float64List>? cache,
@@ -1023,6 +1035,7 @@ Float64List renderTimeline(
           int start,
           Float64List pcm,
           double gain,
+          double pan,
           int fadeIn,
           int fadeOut,
           DawFadeCurve fadeInCurve,
@@ -1040,6 +1053,7 @@ Float64List renderTimeline(
       int start,
       Float64List pcm,
       double gain,
+      double pan,
       int fadeIn,
       int fadeOut,
       DawFadeCurve fadeInCurve,
@@ -1066,6 +1080,7 @@ Float64List renderTimeline(
           start: start,
           pcm: effected,
           gain: clip.gain * track.gain,
+          pan: track.pan.clamp(-1.0, 1.0),
           fadeIn: (clip.fadeInMs * sampleRate / 1000).round(),
           fadeOut: (clip.fadeOutMs * sampleRate / 1000).round(),
           fadeInCurve: clip.fadeInCurve,
@@ -1077,21 +1092,24 @@ Float64List renderTimeline(
     }
     if (places.isNotEmpty) perTrack.add((track, places));
   }
-  if (totalSamples == 0) return Float64List(0);
+  if (totalSamples == 0) {
+    return DawStereoMix(Float64List(0), Float64List(0));
+  }
 
   // Sum each lane's clips (into the master directly when it has no effect, or
   // into a lane buffer that the effect processes over the FULL length — so a
   // reverb/echo tail rings out past the last clip — before adding to master).
   // With no effects this is bit-identical to a single flat sum (addition is
   // associative), so it doesn't change the existing bake.
-  final master = Float64List(totalSamples);
   void mix(
-    Float64List buf,
+    Float64List left,
+    Float64List right,
     List<
             ({
               int start,
               Float64List pcm,
               double gain,
+              double pan,
               int fadeIn,
               int fadeOut,
               DawFadeCurve fadeInCurve,
@@ -1112,7 +1130,10 @@ Float64List renderTimeline(
           final down = _fadeCurveValue((n - i) / p.fadeOut, p.fadeOutCurve);
           if (down < env) env = down;
         }
-        buf[p.start + i] += p.pcm[i] * p.gain * env;
+        final sample = p.pcm[i] * p.gain * env;
+        final angle = (p.pan + 1) * math.pi / 4;
+        left[p.start + i] += sample * math.cos(angle);
+        right[p.start + i] += sample * math.sin(angle);
       }
     }
   }
@@ -1130,65 +1151,121 @@ Float64List renderTimeline(
     }
   }
 
-  final busBuffers = <int, Float64List>{};
+  final left = Float64List(totalSamples);
+  final right = Float64List(totalSamples);
+  final busBuffers = <int, ({Float64List left, Float64List right})>{};
 
   for (final (track, places) in perTrack) {
-    final lane = Float64List(totalSamples);
-    if (track.effects.isEmpty && track.effect == TrackEffect.none) {
-      mix(lane, places);
-    } else {
-      mix(lane, places);
-      final wet = track.effects.isNotEmpty
-          ? applyClipEffectChain(lane, track.effects, sampleRate)
-          : applyTrackEffect(track.effect, lane, sampleRate);
-      lane.setAll(0, wet);
+    final laneLeft = Float64List(totalSamples);
+    final laneRight = Float64List(totalSamples);
+    mix(laneLeft, laneRight, places);
+    if (track.effects.isNotEmpty || track.effect != TrackEffect.none) {
+      final process = track.effects.isNotEmpty
+          ? (Float64List input) =>
+              applyClipEffectChain(input, track.effects, sampleRate)
+          : (Float64List input) =>
+              applyTrackEffect(track.effect, input, sampleRate);
+      laneLeft.setAll(0, process(laneLeft));
+      laneRight.setAll(0, process(laneRight));
     }
     if (track.gainAutomation.isNotEmpty) {
-      _applyTrackGainAutomation(lane, track.gainAutomation, sampleRate);
+      _applyTrackGainAutomation(laneLeft, track.gainAutomation, sampleRate);
+      _applyTrackGainAutomation(laneRight, track.gainAutomation, sampleRate);
     }
     for (final send in track.busSends.entries) {
       final sendBus = send.key;
       if (sendBus < 0 || sendBus >= timeline.buses.length) continue;
-      addScaledBuffer(
-        busBuffers.putIfAbsent(sendBus, () => Float64List(totalSamples)),
-        lane,
-        send.value,
+      final bus = busBuffers.putIfAbsent(
+        sendBus,
+        () =>
+            (left: Float64List(totalSamples), right: Float64List(totalSamples)),
       );
+      addScaledBuffer(bus.left, laneLeft, send.value);
+      addScaledBuffer(bus.right, laneRight, send.value);
     }
     final busIndex = track.busIndex;
     if (busIndex != null && busIndex >= 0 && busIndex < timeline.buses.length) {
-      addBuffer(
-        busBuffers.putIfAbsent(busIndex, () => Float64List(totalSamples)),
-        lane,
+      final bus = busBuffers.putIfAbsent(
+        busIndex,
+        () =>
+            (left: Float64List(totalSamples), right: Float64List(totalSamples)),
       );
+      addBuffer(bus.left, laneLeft);
+      addBuffer(bus.right, laneRight);
     } else {
-      addBuffer(master, lane);
+      addBuffer(left, laneLeft);
+      addBuffer(right, laneRight);
     }
   }
 
   for (final entry in busBuffers.entries) {
     final bus = timeline.buses[entry.key];
-    final wet = bus.effects.isEmpty
-        ? entry.value
-        : applyClipEffectChain(entry.value, bus.effects, sampleRate);
-    addBuffer(master, wet);
+    final wetLeft = bus.effects.isEmpty
+        ? entry.value.left
+        : applyClipEffectChain(entry.value.left, bus.effects, sampleRate);
+    final wetRight = bus.effects.isEmpty
+        ? entry.value.right
+        : applyClipEffectChain(entry.value.right, bus.effects, sampleRate);
+    addBuffer(left, wetLeft);
+    addBuffer(right, wetRight);
   }
 
-  final out = timeline.effects.isEmpty
-      ? master
-      : applyClipEffectChain(master, timeline.effects, sampleRate);
+  final outLeft = timeline.effects.isEmpty
+      ? left
+      : applyClipEffectChain(left, timeline.effects, sampleRate);
+  final outRight = timeline.effects.isEmpty
+      ? right
+      : applyClipEffectChain(right, timeline.effects, sampleRate);
 
   if (limit) {
-    for (var i = 0; i < out.length; i++) {
-      final x = out[i];
+    for (var i = 0; i < outLeft.length; i++) {
+      final x = outLeft[i];
       // Soft-knee: transparent below ~0.6, tanh-limited toward the rails so
       // overlapping clips round off instead of hard-clipping.
       if (x.abs() > 0.6) {
-        out[i] = x.sign * (0.6 + _tanh((x.abs() - 0.6) / 0.4) * 0.4);
+        outLeft[i] = x.sign * (0.6 + _tanh((x.abs() - 0.6) / 0.4) * 0.4);
+      }
+      final r = outRight[i];
+      if (r.abs() > 0.6) {
+        outRight[i] = r.sign * (0.6 + _tanh((r.abs() - 0.6) / 0.4) * 0.4);
       }
     }
   }
-  return out;
+  return DawStereoMix(outLeft, outRight);
+}
+
+/// Backward-compatible mono view of the stereo timeline render.
+Float64List renderTimeline(
+  DawTimeline timeline, {
+  int sampleRate = kDawSampleRate,
+  Map<Object, Float64List>? cache,
+  bool limit = true,
+}) {
+  final stereo = renderTimelineStereo(
+    timeline,
+    sampleRate: sampleRate,
+    cache: cache,
+    // The legacy mono API limited the folded mix, rather than each channel.
+    limit: false,
+  );
+  // Preserve the former centre-mix amplitude for mono playback callers while
+  // folding panned channels with constant-power energy preservation.
+  final mono = Float64List(stereo.left.length);
+  const invSqrt2 = 0.7071067811865476;
+  for (var i = 0; i < mono.length; i++) {
+    mono[i] = (stereo.left[i] + stereo.right[i]) * invSqrt2;
+  }
+  if (limit) _limitMonoBuffer(mono);
+  return mono;
+}
+
+void _limitMonoBuffer(Float64List buffer) {
+  for (var i = 0; i < buffer.length; i++) {
+    final x = buffer[i];
+    if (x.abs() > 0.6) {
+      buffer[i] = x.sign * (0.6 + _tanh((x.abs() - 0.6) / 0.4) * 0.4);
+    }
+  }
 }
 
 double _fadeCurveValue(double value, DawFadeCurve curve) {
