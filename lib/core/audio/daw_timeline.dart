@@ -287,6 +287,9 @@ List<DawClipEffect> dawClipEffectPresetChain(DawClipEffectPreset preset) =>
         ],
     };
 
+/// Fade curve shapes for clip edges, matching CrispAudio's timeline segments.
+enum DawFadeCurve { linear, exponential, sCurve }
+
 /// A placed clip: its [source], where it starts ([startMs]), a linear [gain],
 /// whether it's [muted], and optional fade-in/out ramps ([fadeInMs]/
 /// [fadeOutMs]) applied at render time.
@@ -298,6 +301,8 @@ class Clip {
     this.muted = false,
     this.fadeInMs = 0,
     this.fadeOutMs = 0,
+    this.fadeInCurve = DawFadeCurve.linear,
+    this.fadeOutCurve = DawFadeCurve.linear,
     this.trimStartMs = 0,
     this.trimEndMs = 0,
     this.effects = const [],
@@ -309,6 +314,8 @@ class Clip {
   final bool muted;
   final double fadeInMs;
   final double fadeOutMs;
+  final DawFadeCurve fadeInCurve;
+  final DawFadeCurve fadeOutCurve;
 
   /// Non-destructive trim: play only the window `[trimStartMs, trimEndMs)` of
   /// the source's render. [trimStartMs] 0 = from the top; [trimEndMs] 0 = to
@@ -326,6 +333,8 @@ class Clip {
     bool? muted,
     double? fadeInMs,
     double? fadeOutMs,
+    DawFadeCurve? fadeInCurve,
+    DawFadeCurve? fadeOutCurve,
     double? trimStartMs,
     double? trimEndMs,
     List<DawClipEffect>? effects,
@@ -337,6 +346,8 @@ class Clip {
         muted: muted ?? this.muted,
         fadeInMs: fadeInMs ?? this.fadeInMs,
         fadeOutMs: fadeOutMs ?? this.fadeOutMs,
+        fadeInCurve: fadeInCurve ?? this.fadeInCurve,
+        fadeOutCurve: fadeOutCurve ?? this.fadeOutCurve,
         trimStartMs: trimStartMs ?? this.trimStartMs,
         trimEndMs: trimEndMs ?? this.trimEndMs,
         effects: effects ?? this.effects,
@@ -645,7 +656,16 @@ Float64List renderTimeline(
   // total length across all lanes.
   final perTrack = <(
     DawTrack,
-    List<({int start, Float64List pcm, double gain, int fadeIn, int fadeOut})>
+    List<
+        ({
+          int start,
+          Float64List pcm,
+          double gain,
+          int fadeIn,
+          int fadeOut,
+          DawFadeCurve fadeInCurve,
+          DawFadeCurve fadeOutCurve,
+        })>
   )>[];
   var totalSamples = 0;
   // Solo is timeline-wide: if any track is soloed, non-soloed tracks fall
@@ -659,7 +679,9 @@ Float64List renderTimeline(
       Float64List pcm,
       double gain,
       int fadeIn,
-      int fadeOut
+      int fadeOut,
+      DawFadeCurve fadeInCurve,
+      DawFadeCurve fadeOutCurve,
     })>[];
     for (final clip in track.clips) {
       if (clip.muted) continue;
@@ -684,6 +706,8 @@ Float64List renderTimeline(
           gain: clip.gain * track.gain,
           fadeIn: (clip.fadeInMs * sampleRate / 1000).round(),
           fadeOut: (clip.fadeOutMs * sampleRate / 1000).round(),
+          fadeInCurve: clip.fadeInCurve,
+          fadeOutCurve: clip.fadeOutCurve,
         ),
       );
       final end = start + effected.length;
@@ -701,7 +725,16 @@ Float64List renderTimeline(
   final master = Float64List(totalSamples);
   void mix(
     Float64List buf,
-    List<({int start, Float64List pcm, double gain, int fadeIn, int fadeOut})>
+    List<
+            ({
+              int start,
+              Float64List pcm,
+              double gain,
+              int fadeIn,
+              int fadeOut,
+              DawFadeCurve fadeInCurve,
+              DawFadeCurve fadeOutCurve,
+            })>
         places,
   ) {
     for (final p in places) {
@@ -710,9 +743,11 @@ Float64List renderTimeline(
         // Fade envelope: ramp up over fadeIn, down over fadeOut; if they overlap
         // (a clip shorter than its fades), the smaller ramp wins.
         var env = 1.0;
-        if (p.fadeIn > 0 && i < p.fadeIn) env = i / p.fadeIn;
+        if (p.fadeIn > 0 && i < p.fadeIn) {
+          env = _fadeCurveValue(i / p.fadeIn, p.fadeInCurve);
+        }
         if (p.fadeOut > 0 && i >= n - p.fadeOut) {
-          final down = (n - i) / p.fadeOut;
+          final down = _fadeCurveValue((n - i) / p.fadeOut, p.fadeOutCurve);
           if (down < env) env = down;
         }
         buf[p.start + i] += p.pcm[i] * p.gain * env;
@@ -789,6 +824,15 @@ Float64List renderTimeline(
     }
   }
   return out;
+}
+
+double _fadeCurveValue(double value, DawFadeCurve curve) {
+  final t = value.clamp(0.0, 1.0).toDouble();
+  return switch (curve) {
+    DawFadeCurve.linear => t,
+    DawFadeCurve.exponential => t * t,
+    DawFadeCurve.sCurve => t * t * (3 - 2 * t),
+  };
 }
 
 double _tanh(double x) {

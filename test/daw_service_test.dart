@@ -224,8 +224,49 @@ void main() {
     s.setClipFades(0, 0, fadeOutMs: 250);
     expect(s.clipFadeInMs(0, 0), 100); // still set
     expect(s.clipFadeOutMs(0, 0), 250);
+    s.setClipFades(0, 0, fadeInCurve: DawFadeCurve.exponential);
+    expect(s.clipFadeInCurve(0, 0), DawFadeCurve.exponential);
+    expect(s.clipFadeOutCurve(0, 0), DawFadeCurve.linear);
     s.setClipFades(0, 0, fadeInMs: -5); // clamped
     expect(s.clipFadeInMs(0, 0), 0);
+  });
+
+  test('fade curves change the rendered ramp shape', () {
+    final linear = DawTimeline(
+      tracks: [
+        DawTrack(
+          clips: [
+            Clip(
+              source: SampleSource(Float64List(10)..fillRange(0, 10, 1)),
+              fadeInMs: 1000,
+            ),
+          ],
+        ),
+      ],
+    );
+    final exponential = DawTimeline(
+      tracks: [
+        DawTrack(
+          clips: [
+            Clip(
+              source: SampleSource(Float64List(10)..fillRange(0, 10, 1)),
+              fadeInMs: 1000,
+              fadeInCurve: DawFadeCurve.exponential,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final linearOut = renderTimeline(linear, sampleRate: 10, limit: false);
+    final exponentialOut = renderTimeline(
+      exponential,
+      sampleRate: 10,
+      limit: false,
+    );
+
+    expect(linearOut[5], closeTo(0.5, 1e-9));
+    expect(exponentialOut[5], closeTo(0.25, 1e-9));
   });
 
   test('a gain-slider sweep coalesces into one undo', () {
@@ -997,9 +1038,11 @@ void main() {
       expect(s.clipFadeInMs(0, 0), 0);
       expect(s.clipFadeInMs(0, 1), closeTo(500, 0.1));
       expect(s.clipFadeInMs(0, 2), 0);
+      expect(s.clipFadeInCurve(0, 1), DawFadeCurve.linear);
 
-      s.applyFadeOutToRange([0], 250, 750);
+      s.applyFadeOutToRange([0], 250, 750, DawFadeCurve.sCurve);
       expect(s.clipFadeOutMs(0, 1), closeTo(500, 0.1));
+      expect(s.clipFadeOutCurve(0, 1), DawFadeCurve.sCurve);
 
       s.undo();
       expect(s.clipFadeOutMs(0, 1), 0);

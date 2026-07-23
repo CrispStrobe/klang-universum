@@ -71,6 +71,8 @@ String projectToJson(
                 'muted': clip.muted,
                 'fadeInMs': clip.fadeInMs,
                 'fadeOutMs': clip.fadeOutMs,
+                'fadeInCurve': clip.fadeInCurve.name,
+                'fadeOutCurve': clip.fadeOutCurve.name,
                 'trimStartMs': clip.trimStartMs,
                 'trimEndMs': clip.trimEndMs,
                 if (clip.effects.isNotEmpty)
@@ -109,6 +111,15 @@ DawTimeline projectFromJson(String json) {
       }
     }
     return TrackEffect.none;
+  }
+
+  DawFadeCurve fadeCurve_(Object? v) {
+    if (v is String) {
+      for (final curve in DawFadeCurve.values) {
+        if (curve.name == v) return curve;
+      }
+    }
+    return DawFadeCurve.linear;
   }
 
   final timelineEffects = [
@@ -153,6 +164,8 @@ DawTimeline projectFromJson(String json) {
             muted: c['muted'] == true,
             fadeInMs: num_(c['fadeInMs']),
             fadeOutMs: num_(c['fadeOutMs']),
+            fadeInCurve: fadeCurve_(c['fadeInCurve']),
+            fadeOutCurve: fadeCurve_(c['fadeOutCurve']),
             trimStartMs: num_(c['trimStartMs']),
             trimEndMs: num_(c['trimEndMs']),
             effects: [

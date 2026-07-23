@@ -6,7 +6,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:comet_beat/core/audio/daw_timeline.dart'
-    show DawClipEffectType, kDawSampleRate;
+    show DawClipEffectType, DawFadeCurve, kDawSampleRate;
 import 'package:comet_beat/core/services/daw_service.dart';
 import 'package:comet_beat/features/games/composition/daw_screen.dart';
 import 'package:comet_beat/features/sound_lab/sample_clip_store.dart';
@@ -547,12 +547,13 @@ void main() {
 
     await tester.tap(find.text('Range Fade'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fade In'));
+    await tester.tap(find.text('Fade In Exponential'));
     await tester.pumpAndSettle();
 
     expect(service.timeline.tracks[0].clips, hasLength(3));
     expect(service.clipFadeInMs(0, 0), 0);
     expect(service.clipFadeInMs(0, 1), closeTo(500, 0.1));
+    expect(service.clipFadeInCurve(0, 1), DawFadeCurve.exponential);
     expect(service.clipFadeInMs(0, 2), 0);
   });
 

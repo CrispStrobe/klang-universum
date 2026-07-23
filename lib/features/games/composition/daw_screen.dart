@@ -146,9 +146,13 @@ abstract interface class DawTester {
     int index, {
     double? fadeInMs,
     double? fadeOutMs,
+    DawFadeCurve? fadeInCurve,
+    DawFadeCurve? fadeOutCurve,
   });
   double clipFadeInMs(int track, int index);
   double clipFadeOutMs(int track, int index);
+  DawFadeCurve clipFadeInCurve(int track, int index);
+  DawFadeCurve clipFadeOutCurve(int track, int index);
 
   /// Non-destructive per-clip trim (ms into the source render).
   void setClipTrim(
@@ -1136,19 +1140,30 @@ class _DawScreenState extends State<DawScreen>
     if (_playing) play();
   }
 
-  void _applyRangeFade({required bool fadeIn}) {
+  String _fadeCurveLabel(DawFadeCurve curve) => switch (curve) {
+        DawFadeCurve.linear => 'Linear',
+        DawFadeCurve.exponential => 'Exponential',
+        DawFadeCurve.sCurve => 'S-Curve',
+      };
+
+  void _applyRangeFade({
+    required bool fadeIn,
+    DawFadeCurve curve = DawFadeCurve.linear,
+  }) {
     if (!_hasFxRange) return;
     if (fadeIn) {
       _daw.applyFadeInToRange(
         _rangeTargetTracks(),
         _rangeStartMs,
         _rangeEndMs,
+        curve,
       );
     } else {
       _daw.applyFadeOutToRange(
         _rangeTargetTracks(),
         _rangeStartMs,
         _rangeEndMs,
+        curve,
       );
     }
     if (_playing) play();
@@ -1687,12 +1702,16 @@ class _DawScreenState extends State<DawScreen>
     int index, {
     double? fadeInMs,
     double? fadeOutMs,
+    DawFadeCurve? fadeInCurve,
+    DawFadeCurve? fadeOutCurve,
   }) =>
       _daw.setClipFades(
         track,
         index,
         fadeInMs: fadeInMs,
         fadeOutMs: fadeOutMs,
+        fadeInCurve: fadeInCurve,
+        fadeOutCurve: fadeOutCurve,
       );
 
   @override
@@ -1701,6 +1720,14 @@ class _DawScreenState extends State<DawScreen>
   @override
   double clipFadeOutMs(int track, int index) =>
       _daw.clipFadeOutMs(track, index);
+
+  @override
+  DawFadeCurve clipFadeInCurve(int track, int index) =>
+      _daw.clipFadeInCurve(track, index);
+
+  @override
+  DawFadeCurve clipFadeOutCurve(int track, int index) =>
+      _daw.clipFadeOutCurve(track, index);
 
   @override
   void setClipTrim(
@@ -2049,6 +2076,31 @@ class _DawScreenState extends State<DawScreen>
                   ),
                 ],
               );
+          Widget fadeCurvePicker(
+            String label,
+            DawFadeCurve value,
+            void Function(DawFadeCurve) onChanged,
+          ) =>
+              Row(
+                children: [
+                  Text(label),
+                  const Spacer(),
+                  DropdownButton<DawFadeCurve>(
+                    value: value,
+                    onChanged: (curve) {
+                      if (curve == null) return;
+                      setSheet(() => onChanged(curve));
+                    },
+                    items: [
+                      for (final curve in DawFadeCurve.values)
+                        DropdownMenuItem(
+                          value: curve,
+                          child: Text(_fadeCurveLabel(curve)),
+                        ),
+                    ],
+                  ),
+                ],
+              );
 
           return SafeArea(
             child: SingleChildScrollView(
@@ -2088,12 +2140,23 @@ class _DawScreenState extends State<DawScreen>
                       (v) => '${v.round()} ms',
                       (v) => setClipFades(track, index, fadeInMs: v),
                     ),
+                    fadeCurvePicker(
+                      'Fade In Curve',
+                      _daw.clipFadeInCurve(track, index),
+                      (curve) => setClipFades(track, index, fadeInCurve: curve),
+                    ),
                     slider(
                       l10n.dawFadeOut,
                       _daw.clipFadeOutMs(track, index),
                       2000,
                       (v) => '${v.round()} ms',
                       (v) => setClipFades(track, index, fadeOutMs: v),
+                    ),
+                    fadeCurvePicker(
+                      'Fade Out Curve',
+                      _daw.clipFadeOutCurve(track, index),
+                      (curve) =>
+                          setClipFades(track, index, fadeOutCurve: curve),
                     ),
                     // Trim: bound both edges to the untrimmed source length. The
                     // end slider shows the full length when unset (0 = to end).
@@ -2614,20 +2677,28 @@ class _DawScreenState extends State<DawScreen>
                   ),
                   MenuAnchor(
                     menuChildren: [
-                      MenuItemButton(
-                        onPressed: _hasFxRange
-                            ? () => _applyRangeFade(fadeIn: true)
-                            : null,
-                        leadingIcon: const Icon(Icons.trending_up),
-                        child: const Text('Fade In'),
-                      ),
-                      MenuItemButton(
-                        onPressed: _hasFxRange
-                            ? () => _applyRangeFade(fadeIn: false)
-                            : null,
-                        leadingIcon: const Icon(Icons.trending_down),
-                        child: const Text('Fade Out'),
-                      ),
+                      for (final curve in DawFadeCurve.values)
+                        MenuItemButton(
+                          onPressed: _hasFxRange
+                              ? () => _applyRangeFade(
+                                    fadeIn: true,
+                                    curve: curve,
+                                  )
+                              : null,
+                          leadingIcon: const Icon(Icons.trending_up),
+                          child: Text('Fade In ${_fadeCurveLabel(curve)}'),
+                        ),
+                      for (final curve in DawFadeCurve.values)
+                        MenuItemButton(
+                          onPressed: _hasFxRange
+                              ? () => _applyRangeFade(
+                                    fadeIn: false,
+                                    curve: curve,
+                                  )
+                              : null,
+                          leadingIcon: const Icon(Icons.trending_down),
+                          child: Text('Fade Out ${_fadeCurveLabel(curve)}'),
+                        ),
                     ],
                     builder: (context, controller, _) => OutlinedButton.icon(
                       onPressed: _hasFxRange

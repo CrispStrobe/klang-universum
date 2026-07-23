@@ -321,12 +321,18 @@ class DawService extends ChangeNotifier {
     int index, {
     double? fadeInMs,
     double? fadeOutMs,
+    DawFadeCurve? fadeInCurve,
+    DawFadeCurve? fadeOutCurve,
   }) {
-    _coalesced(('fade', track, index, fadeInMs != null));
+    _coalesced(
+      ('fade', track, index, fadeInMs != null || fadeInCurve != null),
+    );
     final clips = timeline.tracks[track].clips;
     clips[index] = clips[index].copyWith(
       fadeInMs: fadeInMs == null ? null : (fadeInMs < 0 ? 0 : fadeInMs),
       fadeOutMs: fadeOutMs == null ? null : (fadeOutMs < 0 ? 0 : fadeOutMs),
+      fadeInCurve: fadeInCurve,
+      fadeOutCurve: fadeOutCurve,
     );
     notifyListeners();
   }
@@ -406,6 +412,10 @@ class DawService extends ChangeNotifier {
       timeline.tracks[track].clips[index].fadeInMs;
   double clipFadeOutMs(int track, int index) =>
       timeline.tracks[track].clips[index].fadeOutMs;
+  DawFadeCurve clipFadeInCurve(int track, int index) =>
+      timeline.tracks[track].clips[index].fadeInCurve;
+  DawFadeCurve clipFadeOutCurve(int track, int index) =>
+      timeline.tracks[track].clips[index].fadeOutCurve;
 
   /// A clip's start on the timeline, in ms.
   double clipStartMs(int track, int index) =>
@@ -480,6 +490,8 @@ class DawService extends ChangeNotifier {
       muted: clip.muted,
       fadeInMs: clip.fadeInMs,
       fadeOutMs: clip.fadeOutMs,
+      fadeInCurve: clip.fadeInCurve,
+      fadeOutCurve: clip.fadeOutCurve,
       trimStartMs: clip.trimStartMs,
       trimEndMs: clip.trimEndMs,
       effects: clip.effects,
@@ -512,6 +524,8 @@ class DawService extends ChangeNotifier {
       muted: clip.muted,
       fadeInMs: clip.fadeInMs,
       fadeOutMs: clip.fadeOutMs,
+      fadeInCurve: clip.fadeInCurve,
+      fadeOutCurve: clip.fadeOutCurve,
       effects: clip.effects,
     );
     notifyListeners();
@@ -553,6 +567,8 @@ class DawService extends ChangeNotifier {
       muted: clip.muted,
       fadeInMs: clip.fadeInMs,
       fadeOutMs: clip.fadeOutMs,
+      fadeInCurve: clip.fadeInCurve,
+      fadeOutCurve: clip.fadeOutCurve,
       effects: clip.effects,
     );
     notifyListeners();
@@ -663,6 +679,8 @@ class DawService extends ChangeNotifier {
         muted: clip.muted,
         fadeInMs: clip.fadeInMs,
         fadeOutMs: clip.fadeOutMs,
+        fadeInCurve: clip.fadeInCurve,
+        fadeOutCurve: clip.fadeOutCurve,
         trimStartMs: clip.trimStartMs,
         trimEndMs: clip.trimEndMs,
         effects: clip.effects,
@@ -1276,25 +1294,33 @@ class DawService extends ChangeNotifier {
   int applyFadeInToRange(
     Iterable<int> tracks,
     double startMs,
-    double endMs,
-  ) =>
+    double endMs, [
+    DawFadeCurve curve = DawFadeCurve.linear,
+  ]) =>
       _applyClipTransformToRange(
         tracks,
         startMs,
         endMs,
-        (clip, durationMs) => clip.copyWith(fadeInMs: durationMs),
+        (clip, durationMs) => clip.copyWith(
+          fadeInMs: durationMs,
+          fadeInCurve: curve,
+        ),
       );
 
   int applyFadeOutToRange(
     Iterable<int> tracks,
     double startMs,
-    double endMs,
-  ) =>
+    double endMs, [
+    DawFadeCurve curve = DawFadeCurve.linear,
+  ]) =>
       _applyClipTransformToRange(
         tracks,
         startMs,
         endMs,
-        (clip, durationMs) => clip.copyWith(fadeOutMs: durationMs),
+        (clip, durationMs) => clip.copyWith(
+          fadeOutMs: durationMs,
+          fadeOutCurve: curve,
+        ),
       );
 
   int _applyClipEffectsToRange(

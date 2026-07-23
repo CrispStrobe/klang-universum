@@ -43,6 +43,8 @@ void main() {
               gain: 0.7,
               fadeInMs: 40,
               fadeOutMs: 60,
+              fadeInCurve: DawFadeCurve.exponential,
+              fadeOutCurve: DawFadeCurve.sCurve,
               trimStartMs: 10,
               trimEndMs: 30,
               effects: [
@@ -85,6 +87,8 @@ void main() {
     expect(clip.gain, closeTo(0.7, 1e-9));
     expect(clip.fadeInMs, 40);
     expect(clip.fadeOutMs, 60);
+    expect(clip.fadeInCurve, DawFadeCurve.exponential);
+    expect(clip.fadeOutCurve, DawFadeCurve.sCurve);
     expect(clip.trimStartMs, 10);
     expect(clip.trimEndMs, 30);
     expect(clip.effects.single.type, DawClipEffectType.delay);
