@@ -11,6 +11,7 @@ import 'package:comet_beat/features/library/content_source.dart';
 import 'package:comet_beat/features/library/sources/cometbeat_catalog_source.dart';
 import 'package:comet_beat/features/library/sources/commons_source.dart';
 import 'package:comet_beat/features/library/sources/freepats_source.dart';
+import 'package:comet_beat/features/library/sources/github_abc_source.dart';
 import 'package:comet_beat/features/library/sources/gregobase_source.dart';
 import 'package:comet_beat/features/library/sources/openscore_source.dart';
 import 'package:comet_beat/features/library/sources/vcsl_source.dart';
@@ -48,6 +49,9 @@ List<ContentSource> buildSources({HttpGet http = defaultHttpGet}) => [
       // A separate "Gregorian Chant" category so the ~18.7k CC0 GregoBase chants
       // don't swamp the main (children's) repertoire.
       GregoBaseSource(http),
+      // Clean, vetted public domain (CC0) and MIT ABC tunebooks.
+      GithubAbcSource.gubbledenut(http),
+      GithubAbcSource.econrad003(http),
     ];
 
 /// Sources that yield **audio samples** (WAV), not notation — kept out of
