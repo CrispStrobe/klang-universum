@@ -120,6 +120,7 @@ Float64List voiceShapeFx(
   double radioHighHz = 3200,
   double radioMix = 0,
   double mix = 1,
+  double carrierPhaseRadians = 0,
   int sampleRate = kSampleRate,
 }) {
   var wet = Float64List.fromList(sample);
@@ -142,6 +143,7 @@ Float64List voiceShapeFx(
       carrierHz: carrierHz.clamp(1.0, sampleRate / 2).toDouble(),
       mix: cMix,
       sampleRate: sampleRate,
+      phaseRadians: carrierPhaseRadians,
     );
   }
 
@@ -152,6 +154,47 @@ Float64List voiceShapeFx(
 
   return _blendBuffers(sample, wet, mix.clamp(0.0, 1.0).toDouble());
 }
+
+({Float64List left, Float64List right}) voiceShapeFxStereo(
+  Float64List left,
+  Float64List right, {
+  double formant = 0,
+  double carrierHz = 80,
+  double carrierMix = 0,
+  double grit = 0,
+  double radioLowHz = 300,
+  double radioHighHz = 3200,
+  double radioMix = 0,
+  double mix = 1,
+  int sampleRate = kSampleRate,
+}) =>
+    (
+      left: voiceShapeFx(
+        left,
+        formant: formant,
+        carrierHz: carrierHz,
+        carrierMix: carrierMix,
+        grit: grit,
+        radioLowHz: radioLowHz,
+        radioHighHz: radioHighHz,
+        radioMix: radioMix,
+        mix: mix,
+        sampleRate: sampleRate,
+      ),
+      right: voiceShapeFx(
+        right,
+        formant: formant,
+        carrierHz: carrierHz,
+        carrierMix: carrierMix,
+        grit: grit,
+        radioLowHz: radioLowHz,
+        radioHighHz: radioHighHz,
+        radioMix: radioMix,
+        mix: mix,
+        carrierPhaseRadians: pi / 2,
+        sampleRate: sampleRate,
+      ),
+    );
 
 /// A cheap band-pass ([lowHz]..[highHz]) — a 1-pole high-pass into a 1-pole
 /// low-pass. Length-preserving. Used for the "radio" voice.

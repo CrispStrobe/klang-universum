@@ -24,6 +24,7 @@ Float64List ringModFx(
   double carrierHz = 220,
   double mix = 1,
   int sampleRate = kSampleRate,
+  double phaseRadians = 0,
 }) {
   final m = mix.clamp(0.0, 1.0);
   final out = Float64List(input.length);
@@ -35,7 +36,7 @@ Float64List ringModFx(
   final w = 2 * math.pi * carrierHz / sampleRate;
   for (var i = 0; i < input.length; i++) {
     final dry = input[i];
-    final wet = dry * math.sin(w * i);
+    final wet = dry * math.sin(w * i + phaseRadians);
     out[i] = (1 - m) * dry + m * wet;
   }
   return out;

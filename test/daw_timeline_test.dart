@@ -520,6 +520,33 @@ void main() {
     );
   });
 
+  test('stereo voice shape offsets its carrier per channel', () {
+    final source = Float64List.fromList(List<double>.filled(1200, 0.4));
+    final timeline = DawTimeline(
+      tracks: [
+        DawTrack(
+          name: 'Voice',
+          clips: [
+            Clip(
+              source: SampleSource(source),
+              effects: [
+                defaultDawClipEffect(DawClipEffectType.voiceShape).copyWith(
+                  params: const {
+                    'carrierHz': 180,
+                    'carrierMix': 1,
+                    'mix': 1,
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+    final stereo = renderTimelineStereo(timeline, sampleRate: 1000);
+    expect(stereo.left, isNot(equals(stereo.right)));
+  });
+
   test('gain FX scales audio and preserves length', () {
     final dry = Float64List.fromList([0.25, -0.5, 0.75]);
     final bypassed = applyClipEffectChain(

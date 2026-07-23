@@ -40,7 +40,7 @@ import 'package:comet_beat/core/audio/crisp_dsp/ring_mod.dart' show ringModFx;
 import 'package:comet_beat/core/audio/crisp_dsp/time_stretch.dart'
     show timeStretch;
 import 'package:comet_beat/core/audio/crisp_dsp/voice_fx.dart'
-    show VoiceEffect, applyVoiceEffect, voiceShapeFx;
+    show VoiceEffect, applyVoiceEffect, voiceShapeFx, voiceShapeFxStereo;
 import 'package:comet_beat/core/audio/tracker_engine.dart'
     show TrackerInstrument;
 
@@ -718,6 +718,19 @@ Float64List applyClipEffectChain(
           carrierHz: p('carrierHz', 110),
           depth: p('depth', 0.75),
           mix: p('mix', 0.7),
+        ),
+      DawClipEffectType.voiceShape => voiceShapeFxStereo(
+          outLeft,
+          outRight,
+          formant: p('formant', 0),
+          carrierHz: p('carrierHz', 80),
+          carrierMix: p('carrierMix', 0),
+          grit: p('grit', 0),
+          radioLowHz: p('radioLowHz', 300),
+          radioHighHz: p('radioHighHz', 3200),
+          radioMix: p('radioMix', 0),
+          mix: p('mix', 1),
+          sampleRate: sampleRate,
         ),
       DawClipEffectType.compressor => compressorFxStereo(
           outLeft,
