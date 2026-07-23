@@ -1260,6 +1260,19 @@ class DawService extends ChangeNotifier {
     );
   }
 
+  int setClipMutedInRange(
+    Iterable<int> tracks,
+    double startMs,
+    double endMs,
+    bool muted,
+  ) =>
+      _applyClipTransformToRange(
+        tracks,
+        startMs,
+        endMs,
+        (clip, _) => clip.copyWith(muted: muted),
+      );
+
   int applyFadeInToRange(
     Iterable<int> tracks,
     double startMs,

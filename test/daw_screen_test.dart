@@ -556,6 +556,37 @@ void main() {
     expect(service.clipFadeInMs(0, 2), 0);
   });
 
+  testWidgets('range mute silences only the marked clip segment',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+    daw.addDemoBeat();
+    await tester.pump();
+
+    daw.seekTo(250);
+    await tester.pump();
+    await tester.tap(find.text('Mark In'));
+    await tester.pumpAndSettle();
+    daw.seekTo(750);
+    await tester.pump();
+    await tester.tap(find.text('Mark Out'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Range Mute'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mute'));
+    await tester.pumpAndSettle();
+
+    expect(service.timeline.tracks[0].clips, hasLength(3));
+    expect(service.timeline.tracks[0].clips[0].muted, isFalse);
+    expect(service.timeline.tracks[0].clips[1].muted, isTrue);
+    expect(service.timeline.tracks[0].clips[2].muted, isFalse);
+  });
+
   testWidgets('Split cuts a clip in two at the playhead', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);

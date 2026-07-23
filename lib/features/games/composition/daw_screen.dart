@@ -1154,6 +1154,17 @@ class _DawScreenState extends State<DawScreen>
     if (_playing) play();
   }
 
+  void _setRangeMuted(bool muted) {
+    if (!_hasFxRange) return;
+    _daw.setClipMutedInRange(
+      _rangeTargetTracks(),
+      _rangeStartMs,
+      _rangeEndMs,
+      muted,
+    );
+    if (_playing) play();
+  }
+
   Widget _fxTile(
     BuildContext ctx, {
     required List<DawClipEffect> effects,
@@ -2626,6 +2637,31 @@ class _DawScreenState extends State<DawScreen>
                           : null,
                       icon: const Icon(Icons.show_chart),
                       label: const Text('Range Fade'),
+                    ),
+                  ),
+                  MenuAnchor(
+                    menuChildren: [
+                      MenuItemButton(
+                        onPressed:
+                            _hasFxRange ? () => _setRangeMuted(true) : null,
+                        leadingIcon: const Icon(Icons.volume_off),
+                        child: const Text('Mute'),
+                      ),
+                      MenuItemButton(
+                        onPressed:
+                            _hasFxRange ? () => _setRangeMuted(false) : null,
+                        leadingIcon: const Icon(Icons.volume_up),
+                        child: const Text('Unmute'),
+                      ),
+                    ],
+                    builder: (context, controller, _) => OutlinedButton.icon(
+                      onPressed: _hasFxRange
+                          ? () => controller.isOpen
+                              ? controller.close()
+                              : controller.open()
+                          : null,
+                      icon: const Icon(Icons.volume_off),
+                      label: const Text('Range Mute'),
                     ),
                   ),
                   // Project tempo — defines the beat snap grid.

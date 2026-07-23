@@ -964,6 +964,29 @@ void main() {
       expect(s.clipGain(0, 0), closeTo(1, 1e-9));
     });
 
+    test('range mute splits clips and toggles only the marked segment', () {
+      final s = DawService()..addClip(_tone(0.4, kDawSampleRate));
+
+      final changed = s.setClipMutedInRange([0], 250, 750, true);
+
+      expect(changed, 1);
+      expect(s.timeline.tracks[0].clips, hasLength(3));
+      expect(s.timeline.tracks[0].clips[0].muted, isFalse);
+      expect(s.timeline.tracks[0].clips[1].muted, isTrue);
+      expect(s.timeline.tracks[0].clips[2].muted, isFalse);
+      expect(s.clipStartMs(0, 1), closeTo(250, 0.1));
+      expect(s.clipDurationMs(0, 1), closeTo(500, 0.1));
+
+      s.setClipMutedInRange([0], 250, 750, false);
+      expect(s.timeline.tracks[0].clips[1].muted, isFalse);
+
+      s.undo();
+      expect(s.timeline.tracks[0].clips[1].muted, isTrue);
+      s.undo();
+      expect(s.timeline.tracks[0].clips, hasLength(1));
+      expect(s.timeline.tracks[0].clips[0].muted, isFalse);
+    });
+
     test('range fades split clips and affect only the marked segment', () {
       final s = DawService()..addClip(_tone(0.4, kDawSampleRate));
 
