@@ -18,13 +18,16 @@ import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:crisp_notation_core/crisp_notation_core.dart'
     show
         MultiPartScore,
+        StaffSystem,
         multiPartScoreFromAbc,
         multiPartScoreFromKern,
         multiPartScoreFromMei,
         multiPartScoreFromMusicXml,
         readGpifFromGp,
         readGpifFromGpx,
+        readMscxFromMscz,
         readMusicXmlFromMxl,
+        scoreFromGabc,
         scoreFromGpif,
         scoreFromMscx;
 import 'package:file_selector/file_selector.dart';
@@ -33,7 +36,8 @@ import 'package:provider/provider.dart';
 
 /// Decode a notation file into a [MultiPartScore] by extension — every part
 /// kept where a multi-part reader exists (MusicXML/.mxl/ABC/MEI/**kern/MIDI);
-/// MuseScore + GP/GPX wrap their single-part read. Pure; throws on a bad file.
+/// MuseScore (.mscx/.mscz), GP/GPX and Gregorio chant (.gabc) wrap their
+/// single-staff read. Pure; throws on a bad or unsupported file.
 MultiPartScore decodeMusicFile(String fileName, Uint8List bytes) {
   final dot = fileName.lastIndexOf('.');
   final ext = dot < 0 ? '' : fileName.substring(dot + 1).toLowerCase();
@@ -43,11 +47,14 @@ MultiPartScore decodeMusicFile(String fileName, Uint8List bytes) {
     'mxl' => multiPartScoreFromMusicXml(readMusicXmlFromMxl(bytes)),
     'abc' => multiPartScoreFromAbc(text()),
     'mei' => multiPartScoreFromMei(text()),
-    'krn' => multiPartScoreFromKern(text()),
+    'krn' || 'kern' => multiPartScoreFromKern(text()),
     'mid' || 'midi' => multiTrackMidiToMultiPart(bytes),
     'mscx' => MultiPartScore([scoreFromMscx(text())]),
+    'mscz' => MultiPartScore([scoreFromMscx(readMscxFromMscz(bytes))]),
     'gp' => MultiPartScore([scoreFromGpif(readGpifFromGp(bytes))]),
     'gpx' => MultiPartScore([scoreFromGpif(readGpifFromGpx(bytes))]),
+    'gabc' =>
+      MultiPartScore.fromStaffSystem(StaffSystem([scoreFromGabc(text())])),
     _ => throw FormatException('Unsupported music format: .$ext'),
   };
 }
@@ -60,11 +67,14 @@ const _kMusicExtensions = [
   'abc',
   'mei',
   'krn',
+  'kern',
   'mid',
   'midi',
   'mscx',
+  'mscz',
   'gp',
   'gpx',
+  'gabc',
 ];
 
 /// Shows the music picker. Resolves to the chosen music as a [MultiPartScore],
