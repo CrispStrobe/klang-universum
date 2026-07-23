@@ -946,6 +946,24 @@ void main() {
       expect(s.clipEffects(0, 0), isEmpty);
     });
 
+    test('range gain splits clips and scales only the marked segment', () {
+      final s = DawService()..addClip(_tone(0.4, kDawSampleRate));
+
+      final changed = s.multiplyClipGainInRange([0], 250, 750, 0.5);
+
+      expect(changed, 1);
+      expect(s.timeline.tracks[0].clips, hasLength(3));
+      expect(s.clipGain(0, 0), closeTo(1, 1e-9));
+      expect(s.clipGain(0, 1), closeTo(0.5, 1e-9));
+      expect(s.clipGain(0, 2), closeTo(1, 1e-9));
+      expect(s.clipStartMs(0, 1), closeTo(250, 0.1));
+      expect(s.clipDurationMs(0, 1), closeTo(500, 0.1));
+
+      s.undo();
+      expect(s.timeline.tracks[0].clips, hasLength(1));
+      expect(s.clipGain(0, 0), closeTo(1, 1e-9));
+    });
+
     test('moveClipEffect reorders the chain, clamps invalid moves and undoes',
         () {
       final s = DawService()..addClip(_tone(0.4, 100));

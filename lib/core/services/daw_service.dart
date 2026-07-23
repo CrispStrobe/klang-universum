@@ -1245,11 +1245,39 @@ class DawService extends ChangeNotifier {
     );
   }
 
+  int multiplyClipGainInRange(
+    Iterable<int> tracks,
+    double startMs,
+    double endMs,
+    double multiplier,
+  ) {
+    final gain = multiplier < 0 ? 0.0 : multiplier;
+    return _applyClipTransformToRange(
+      tracks,
+      startMs,
+      endMs,
+      (clip) => clip.copyWith(gain: clip.gain * gain),
+    );
+  }
+
   int _applyClipEffectsToRange(
     Iterable<int> tracks,
     double startMs,
     double endMs,
     List<DawClipEffect> Function(Clip clip) effectsFor,
+  ) =>
+      _applyClipTransformToRange(
+        tracks,
+        startMs,
+        endMs,
+        (clip) => clip.copyWith(effects: effectsFor(clip)),
+      );
+
+  int _applyClipTransformToRange(
+    Iterable<int> tracks,
+    double startMs,
+    double endMs,
+    Clip Function(Clip clip) transform,
   ) {
     final indices = _validTrackIndices(tracks);
     final rangeStart = math.min(startMs, endMs);
@@ -1280,7 +1308,7 @@ class DawService extends ChangeNotifier {
           _splitClipAt(track, index, rangeEnd);
         }
         final target = clips[index];
-        clips[index] = target.copyWith(effects: effectsFor(target));
+        clips[index] = transform(target);
         changed++;
         index++;
       }

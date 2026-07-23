@@ -1086,6 +1086,56 @@ class _DawScreenState extends State<DawScreen>
     if (_playing) play();
   }
 
+  Future<void> _rangeGainDialog() async {
+    if (!_hasFxRange) return;
+    var multiplier = 0.5;
+    final applied = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialog) => AlertDialog(
+          title: const Text('Range Gain'),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_rangeLabel()),
+                const SizedBox(height: 8),
+                Slider(
+                  value: multiplier,
+                  max: 2,
+                  divisions: 40,
+                  label: '${(multiplier * 100).round()}%',
+                  onChanged: (value) => setDialog(() => multiplier = value),
+                ),
+                Text('${(multiplier * 100).round()}%'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(AppLocalizations.of(ctx)!.dawCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Apply'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (applied != true) return;
+    _daw.multiplyClipGainInRange(
+      _rangeTargetTracks(),
+      _rangeStartMs,
+      _rangeEndMs,
+      multiplier,
+    );
+    if (_playing) play();
+  }
+
   Widget _fxTile(
     BuildContext ctx, {
     required List<DawClipEffect> effects,
@@ -2527,6 +2577,11 @@ class _DawScreenState extends State<DawScreen>
                       icon: const Icon(Icons.segment),
                       label: Text(_rangeLabel()),
                     ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _hasFxRange ? _rangeGainDialog : null,
+                    icon: const Icon(Icons.tune),
+                    label: const Text('Range Gain'),
                   ),
                   // Project tempo — defines the beat snap grid.
                   Row(

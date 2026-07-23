@@ -493,6 +493,38 @@ void main() {
     expect(service.clipEffects(0, 2), isEmpty);
   });
 
+  testWidgets('range gain splits and scales the marked clip segment',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+    daw.addDemoBeat();
+    await tester.pump();
+
+    daw.seekTo(250);
+    await tester.pump();
+    await tester.tap(find.text('Mark In'));
+    await tester.pumpAndSettle();
+    daw.seekTo(750);
+    await tester.pump();
+    await tester.tap(find.text('Mark Out'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Range Gain'));
+    await tester.pumpAndSettle();
+    expect(find.text('50%'), findsOneWidget);
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    expect(service.timeline.tracks[0].clips, hasLength(3));
+    expect(service.clipGain(0, 0), closeTo(1, 1e-9));
+    expect(service.clipGain(0, 1), closeTo(0.5, 1e-9));
+    expect(service.clipGain(0, 2), closeTo(1, 1e-9));
+  });
+
   testWidgets('Split cuts a clip in two at the playhead', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);
