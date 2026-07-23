@@ -4472,6 +4472,30 @@ abstract class AppLocalizations {
   /// **'Browsable here — install coming soon'**
   String get catalogNotInstallable;
 
+  /// No description provided for @catalogInstallInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Install instrument'**
+  String get catalogInstallInstrument;
+
+  /// No description provided for @catalogInstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading samples…'**
+  String get catalogInstalling;
+
+  /// No description provided for @catalogInstrumentInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed ({n} files)'**
+  String catalogInstrumentInstalled(int n);
+
+  /// No description provided for @catalogInstallUnplayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded, but its samples aren\'t playable yet (FLAC support coming).'**
+  String get catalogInstallUnplayable;
+
   /// No description provided for @catalogKindAll.
   ///
   /// In en, this message translates to:

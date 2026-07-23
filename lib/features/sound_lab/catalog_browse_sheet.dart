@@ -22,6 +22,7 @@ import 'package:comet_beat/core/audio/tracker_song.dart' show TrackerSong;
 import 'package:comet_beat/core/audio/tracker_song_module.dart';
 import 'package:comet_beat/features/games/composition/advanced_tracker_screen.dart';
 import 'package:comet_beat/features/library/content_source.dart';
+import 'package:comet_beat/features/library/instrument_installer.dart';
 import 'package:comet_beat/features/library/soundfont_sheet.dart';
 import 'package:comet_beat/features/library/source_registry.dart';
 import 'package:comet_beat/features/library/sources/cometbeat_catalog_source.dart';
@@ -203,6 +204,55 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
     if (inst != null && mounted) _play(inst, item.title);
   }
 
+  /// SFZ instrument → batch-download the whole sample tree into the on-device
+  /// cache (kept; the Downloads manager surfaces + frees it) and play it. Shows
+  /// live download progress. FLAC-sampled instruments cache but can't play yet.
+  Future<void> _installInstrument(LibraryItem item) async {
+    final l10n = AppLocalizations.of(context)!;
+    final progress = ValueNotifier<double>(0);
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: Text(l10n.catalogInstalling),
+          content: ValueListenableBuilder<double>(
+            valueListenable: progress,
+            builder: (_, v, __) =>
+                LinearProgressIndicator(value: v == 0 ? null : v),
+          ),
+        ),
+      ),
+    );
+    InstalledInstrument? installed;
+    try {
+      installed = await installSfzInstrument(
+        sfzUrl: item.downloadUrl.toString(),
+        name: item.title,
+        http: defaultHttpGet,
+        onProgress: (done, total) =>
+            progress.value = total == 0 ? 0 : done / total,
+      );
+    } catch (_) {
+      installed = null;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop(); // close the progress dialog
+    progress.dispose();
+    if (installed != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.catalogInstrumentInstalled(installed.fileCount)),
+        ),
+      );
+      _play(installed.instrument, item.title);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.catalogInstallUnplayable)),
+      );
+    }
+  }
+
   /// Module → decode + open the (advanced) Tracker on it.
   Future<void> _openModule(LibraryItem item) async {
     final bytes = await _download(item);
@@ -353,6 +403,11 @@ class _CatalogBrowseSheetState extends State<CatalogBrowseSheet> {
             icon: Icons.grid_on,
             label: l10n.catalogOpenInTracker,
             run: () => _openModule(item),
+          ),
+        'instrument' when instrumentInstallSupported => (
+            icon: Icons.download_for_offline_outlined,
+            label: l10n.catalogInstallInstrument,
+            run: () => _installInstrument(item),
           ),
         _ => (
             icon: Icons.info_outline,

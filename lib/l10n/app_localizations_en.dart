@@ -2365,6 +2365,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogNotInstallable => 'Browsable here — install coming soon';
 
   @override
+  String get catalogInstallInstrument => 'Install instrument';
+
+  @override
+  String get catalogInstalling => 'Downloading samples…';
+
+  @override
+  String catalogInstrumentInstalled(int n) {
+    return 'Installed ($n files)';
+  }
+
+  @override
+  String get catalogInstallUnplayable =>
+      'Downloaded, but its samples aren\'t playable yet (FLAC support coming).';
+
+  @override
   String get catalogKindAll => 'All';
 
   @override
