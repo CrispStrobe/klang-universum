@@ -788,6 +788,34 @@ void main() {
       expect(s.clipEffects(0, 0).last.params['drive'], 8);
     });
 
+    test('range FX splits clips and targets only the marked segment', () {
+      final s = DawService()
+        ..addClip(_tone(0.4, kDawSampleRate))
+        ..addClip(_tone(0.2, kDawSampleRate), track: 1);
+      s.moveClip(1, 0, 0);
+
+      final changed = s.addClipEffectToRange(
+        [0, 1],
+        250,
+        750,
+        DawClipEffectType.distortion,
+      );
+
+      expect(changed, 2);
+      expect(s.timeline.tracks[0].clips, hasLength(3));
+      expect(s.timeline.tracks[1].clips, hasLength(3));
+      expect(s.clipEffects(0, 0), isEmpty);
+      expect(s.clipEffects(0, 1).single.type, DawClipEffectType.distortion);
+      expect(s.clipEffects(0, 2), isEmpty);
+      expect(s.clipStartMs(0, 1), closeTo(250, 0.1));
+      expect(s.clipDurationMs(0, 1), closeTo(500, 0.1));
+
+      s.undo();
+      expect(s.timeline.tracks[0].clips, hasLength(1));
+      expect(s.timeline.tracks[1].clips, hasLength(1));
+      expect(s.clipEffects(0, 0), isEmpty);
+    });
+
     test('moveClipEffect reorders the chain, clamps invalid moves and undoes',
         () {
       final s = DawService()..addClip(_tone(0.4, 100));

@@ -281,6 +281,39 @@ void main() {
     );
   });
 
+  testWidgets('range FX splits and effects the marked clip segment',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+    daw.addDemoBeat();
+    await tester.pump();
+
+    daw.seekTo(250);
+    await tester.pump();
+    await tester.tap(find.text('Mark In'));
+    await tester.pumpAndSettle();
+    daw.seekTo(750);
+    await tester.pump();
+    await tester.tap(find.text('Mark Out'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Range 0.25-0.75 s'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Effect'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Distortion').last);
+    await tester.pumpAndSettle();
+
+    expect(service.timeline.tracks[0].clips, hasLength(3));
+    expect(service.clipEffects(0, 0), isEmpty);
+    expect(service.clipEffects(0, 1).single.type, DawClipEffectType.distortion);
+    expect(service.clipEffects(0, 2), isEmpty);
+  });
+
   testWidgets('Split cuts a clip in two at the playhead', (tester) async {
     await _pumpDaw(tester);
     final daw = _daw(tester);

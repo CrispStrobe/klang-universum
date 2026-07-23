@@ -184,6 +184,8 @@ class _DawScreenState extends State<DawScreen>
   bool _playing = false;
   final Set<int> _selectedTracks = <int>{};
   final Set<DawClipTarget> _selectedClips = <DawClipTarget>{};
+  double? _rangeInMs;
+  double? _rangeOutMs;
 
   // Playhead: driven by the Ticker's own elapsed (NOT wall-clock), so it stays
   // in step with the baked audio AND is deterministic under `tester.pump`.
@@ -535,6 +537,60 @@ class _DawScreenState extends State<DawScreen>
     return targets.isEmpty
         ? [(track: fallbackTrack, index: fallbackIndex)]
         : targets;
+  }
+
+  bool get _hasFxRange =>
+      _rangeInMs != null &&
+      _rangeOutMs != null &&
+      (_rangeInMs! - _rangeOutMs!).abs() > 5;
+
+  double get _rangeStartMs => math.min(_rangeInMs ?? 0, _rangeOutMs ?? 0);
+  double get _rangeEndMs => math.max(_rangeInMs ?? 0, _rangeOutMs ?? 0);
+
+  String _rangeLabel() {
+    String seconds(double ms) => (ms / 1000).toStringAsFixed(2);
+    if (!_hasFxRange) {
+      final inText = _rangeInMs == null ? '--' : seconds(_rangeInMs!);
+      final outText = _rangeOutMs == null ? '--' : seconds(_rangeOutMs!);
+      return 'Range $inText-$outText s';
+    }
+    return 'Range ${seconds(_rangeStartMs)}-${seconds(_rangeEndMs)} s';
+  }
+
+  List<int> _rangeTargetTracks() {
+    final selected = [
+      for (final i in _selectedTracks)
+        if (i >= 0 && i < _daw.timeline.tracks.length) i,
+    ]..sort();
+    return selected.isNotEmpty
+        ? selected
+        : Iterable<int>.generate(_daw.timeline.tracks.length).toList();
+  }
+
+  void _markRangeIn() => setState(() => _rangeInMs = playheadMs);
+
+  void _markRangeOut() => setState(() => _rangeOutMs = playheadMs);
+
+  void _addRangeEffect(DawClipEffectType type) {
+    if (!_hasFxRange) return;
+    _daw.addClipEffectToRange(
+      _rangeTargetTracks(),
+      _rangeStartMs,
+      _rangeEndMs,
+      type,
+    );
+    if (_playing) play();
+  }
+
+  void _applyRangePreset(DawClipEffectPreset preset) {
+    if (!_hasFxRange) return;
+    _daw.applyClipEffectPresetToRange(
+      _rangeTargetTracks(),
+      _rangeStartMs,
+      _rangeEndMs,
+      preset,
+    );
+    if (_playing) play();
   }
 
   Widget _fxTile(
@@ -1767,6 +1823,55 @@ class _DawScreenState extends State<DawScreen>
                     icon: const Icon(Icons.add_road),
                     label: Text(l10n.dawAddTrack),
                   ),
+                  OutlinedButton.icon(
+                    onPressed: daw.clipCount == 0 ? null : _markRangeIn,
+                    icon: const Icon(Icons.keyboard_tab),
+                    label: const Text('Mark In'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: daw.clipCount == 0 ? null : _markRangeOut,
+                    icon: const Icon(Icons.keyboard_return),
+                    label: const Text('Mark Out'),
+                  ),
+                  MenuAnchor(
+                    menuChildren: [
+                      SubmenuButton(
+                        leadingIcon: const Icon(Icons.auto_fix_high),
+                        menuChildren: [
+                          for (final preset in DawClipEffectPreset.values)
+                            MenuItemButton(
+                              onPressed: _hasFxRange
+                                  ? () => _applyRangePreset(preset)
+                                  : null,
+                              child: Text(_clipEffectPresetLabel(preset)),
+                            ),
+                        ],
+                        child: const Text('Preset'),
+                      ),
+                      SubmenuButton(
+                        leadingIcon: const Icon(Icons.add_circle_outline),
+                        menuChildren: [
+                          for (final type in _clipEffectTypes)
+                            MenuItemButton(
+                              onPressed: _hasFxRange
+                                  ? () => _addRangeEffect(type)
+                                  : null,
+                              child: Text(_clipEffectLabel(type)),
+                            ),
+                        ],
+                        child: const Text('Effect'),
+                      ),
+                    ],
+                    builder: (context, controller, _) => OutlinedButton.icon(
+                      onPressed: _hasFxRange
+                          ? () => controller.isOpen
+                              ? controller.close()
+                              : controller.open()
+                          : null,
+                      icon: const Icon(Icons.segment),
+                      label: Text(_rangeLabel()),
+                    ),
+                  ),
                   // Project tempo — defines the beat snap grid.
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1851,6 +1956,24 @@ class _DawScreenState extends State<DawScreen>
                           _lane(daw, i, scheme, laneWidth),
                       ],
                     ),
+                    if (_hasFxRange)
+                      Positioned(
+                        left: _rangeStartMs / 1000 * _pxPerSecond,
+                        top: _rulerHeight,
+                        width:
+                            (_rangeEndMs - _rangeStartMs) / 1000 * _pxPerSecond,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: scheme.primary.withValues(alpha: 0.08),
+                              border: Border.symmetric(
+                                vertical: BorderSide(color: scheme.primary),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     // The playhead: a thin line that sweeps across during play.
                     Positioned.fill(
                       child: ValueListenableBuilder<double>(

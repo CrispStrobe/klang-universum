@@ -235,11 +235,16 @@ class DawService extends ChangeNotifier {
   /// No-op when the cut isn't strictly inside the clip ([canSplitClip]).
   void splitClip(int track, int index, double atTimelineMs) {
     if (!canSplitClip(track, index, atTimelineMs)) return;
+    _record();
+    _splitClipAt(track, index, atTimelineMs);
+    notifyListeners();
+  }
+
+  void _splitClipAt(int track, int index, double atTimelineMs) {
     final clips = timeline.tracks[track].clips;
     final clip = clips[index];
     final offset = atTimelineMs - clip.startMs; // ms into the played window
     final cut = clip.trimStartMs + offset; // the split point in source ms
-    _record();
     // Left: [trimStart, cut) — drop the fade-out at the seam.
     clips[index] = clip.copyWith(trimEndMs: cut, fadeOutMs: 0);
     // Right: [cut, original end), placed at the cut — drop the fade-in.
@@ -251,7 +256,6 @@ class DawService extends ChangeNotifier {
         fadeInMs: 0,
       ),
     );
-    notifyListeners();
   }
 
   /// Project tempo — the snap grid is one beat at this tempo, so clips line up
@@ -825,6 +829,24 @@ class DawService extends ChangeNotifier {
     return out;
   }
 
+  bool _canSplitClipWindow(double clipStart, double duration, double atMs) {
+    final offset = atMs - clipStart;
+    return offset > _minSplitMs && offset < duration - _minSplitMs;
+  }
+
+  bool _rangeHitsAnyClip(List<int> tracks, double startMs, double endMs) {
+    for (final track in tracks) {
+      for (var index = 0;
+          index < timeline.tracks[track].clips.length;
+          index++) {
+        final clipStart = clipStartMs(track, index);
+        final clipEnd = clipStart + clipDurationMs(track, index);
+        if (clipEnd > startMs && clipStart < endMs) return true;
+      }
+    }
+    return false;
+  }
+
   List<DawClipEffect> _cloneEffectChain(List<DawClipEffect> chain) => [
         for (final fx in chain) fx.copyWith(params: {...fx.params}),
       ];
@@ -915,6 +937,87 @@ class DawService extends ChangeNotifier {
     }
     _peaks.clear();
     notifyListeners();
+  }
+
+  int addClipEffectToRange(
+    Iterable<int> tracks,
+    double startMs,
+    double endMs,
+    DawClipEffectType type,
+  ) {
+    final effect = defaultDawClipEffect(type);
+    return _applyClipEffectsToRange(
+      tracks,
+      startMs,
+      endMs,
+      (clip) => [
+        ...clip.effects,
+        effect.copyWith(params: {...effect.params}),
+      ],
+    );
+  }
+
+  int applyClipEffectPresetToRange(
+    Iterable<int> tracks,
+    double startMs,
+    double endMs,
+    DawClipEffectPreset preset, {
+    bool append = false,
+  }) {
+    final chain = dawClipEffectPresetChain(preset);
+    return _applyClipEffectsToRange(
+      tracks,
+      startMs,
+      endMs,
+      (clip) => append
+          ? [...clip.effects, ..._cloneEffectChain(chain)]
+          : _cloneEffectChain(chain),
+    );
+  }
+
+  int _applyClipEffectsToRange(
+    Iterable<int> tracks,
+    double startMs,
+    double endMs,
+    List<DawClipEffect> Function(Clip clip) effectsFor,
+  ) {
+    final indices = _validTrackIndices(tracks);
+    final rangeStart = math.min(startMs, endMs);
+    final rangeEnd = math.max(startMs, endMs);
+    if (indices.isEmpty || rangeEnd - rangeStart <= _minSplitMs) return 0;
+    if (!_rangeHitsAnyClip(indices, rangeStart, rangeEnd)) return 0;
+
+    _record();
+    var changed = 0;
+    for (final track in indices) {
+      final clips = timeline.tracks[track].clips;
+      var index = 0;
+      while (index < clips.length) {
+        final clip = clips[index];
+        final duration = clipDurationMs(track, index);
+        final clipStart = clip.startMs;
+        final clipEnd = clipStart + duration;
+        if (clipEnd <= rangeStart || clipStart >= rangeEnd) {
+          index++;
+          continue;
+        }
+        if (_canSplitClipWindow(clipStart, duration, rangeStart)) {
+          _splitClipAt(track, index, rangeStart);
+          index++;
+          continue;
+        }
+        if (_canSplitClipWindow(clipStart, duration, rangeEnd)) {
+          _splitClipAt(track, index, rangeEnd);
+        }
+        final target = clips[index];
+        clips[index] = target.copyWith(effects: effectsFor(target));
+        changed++;
+        index++;
+      }
+    }
+    _peaks.clear();
+    notifyListeners();
+    return changed;
   }
 
   void removeClipEffect(int track, int index, int effectIndex) {
