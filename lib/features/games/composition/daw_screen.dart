@@ -1681,10 +1681,128 @@ class _DawScreenState extends State<DawScreen>
 
   // --- UI --------------------------------------------------------------------
 
-  // Bake the arrangement and offer WAV/MP3 export via the shared sheet.
-  void _export() {
+  // Bake the arrangement, choose the export window, then hand off to the shared
+  // WAV/MP3 sheet.
+  Future<void> _export() async {
     final pcm = _bake();
-    showAudioExportSheet(context, pcm: pcm, baseName: 'multitrack');
+    if (pcm.isEmpty) {
+      await showAudioExportSheet(
+        context,
+        pcm: pcm,
+        baseName: _exportBaseName(),
+      );
+      return;
+    }
+    var useRange = false;
+    final rangeAvailable = _hasFxRange;
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialog) {
+          final selected = useRange ? _exportRangePcm(pcm) : pcm;
+          return AlertDialog(
+            title: const Text('Export mix'),
+            content: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SegmentedButton<bool>(
+                    segments: [
+                      const ButtonSegment(
+                        value: false,
+                        label: Text('Full mix'),
+                        icon: Icon(Icons.multitrack_audio),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        enabled: rangeAvailable,
+                        label: const Text('Marked range'),
+                        icon: const Icon(Icons.segment),
+                      ),
+                    ],
+                    selected: {useRange},
+                    onSelectionChanged: (values) =>
+                        setDialog(() => useRange = values.single),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Full mix: ${_exportSummary(pcm)}'),
+                  Text(
+                    rangeAvailable
+                        ? 'Marked range: ${_exportSummary(_exportRangePcm(pcm))}'
+                        : 'Marked range: Set Mark In and Mark Out first',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Duration ${_secondsLabel(selected.length / kDawSampleRate)}',
+                  ),
+                  Text('Peak ${_peakLabel(selected)}'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(AppLocalizations.of(ctx)!.dawCancel),
+              ),
+              FilledButton(
+                onPressed: selected.isEmpty
+                    ? null
+                    : () => Navigator.of(ctx).pop('export'),
+                child: const Text('Choose format'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (!mounted || action != 'export') return;
+    final selected = useRange ? _exportRangePcm(pcm) : pcm;
+    await showAudioExportSheet(
+      context,
+      pcm: selected,
+      baseName: _exportBaseName(range: useRange),
+    );
+  }
+
+  Float64List _exportRangePcm(Float64List pcm) {
+    if (!_hasFxRange) return pcm;
+    final start =
+        (_rangeStartMs * kDawSampleRate / 1000).round().clamp(0, pcm.length);
+    final end =
+        (_rangeEndMs * kDawSampleRate / 1000).round().clamp(start, pcm.length);
+    return Float64List.sublistView(pcm, start, end);
+  }
+
+  String _exportSummary(Float64List pcm) =>
+      '${_secondsLabel(pcm.length / kDawSampleRate)} · peak ${_peakLabel(pcm)}';
+
+  String _secondsLabel(double seconds) => '${seconds.toStringAsFixed(2)} s';
+
+  String _peakLabel(Float64List pcm) {
+    var peak = 0.0;
+    for (final sample in pcm) {
+      final abs = sample.abs();
+      if (abs > peak) peak = abs;
+    }
+    return peak.toStringAsFixed(2);
+  }
+
+  String _exportBaseName({bool range = false}) {
+    final active = [
+      for (final track in _daw.timeline.tracks)
+        if (track.clips.isNotEmpty) track.name,
+    ];
+    final title = active.isEmpty ? 'audio-editor' : active.take(3).join('-');
+    final slug = title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    return [
+      if (slug.isEmpty) 'audio-editor' else slug,
+      if (range) 'range',
+    ].join('-');
   }
 
   static const _kProjectGroup = XTypeGroup(

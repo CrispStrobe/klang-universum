@@ -159,6 +159,50 @@ void main() {
     expect(daw.canExport, isTrue);
   });
 
+  testWidgets('export dialog previews mix and opens format chooser',
+      (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester)..addDemoBeat();
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Export sound'));
+    await tester.pumpAndSettle();
+    expect(find.text('Export mix'), findsOneWidget);
+    expect(find.text('Full mix'), findsOneWidget);
+    expect(find.text('Marked range'), findsOneWidget);
+    expect(find.textContaining('Duration'), findsOneWidget);
+    expect(find.textContaining('Peak'), findsOneWidget);
+
+    await tester.tap(find.text('Choose format'));
+    await tester.pumpAndSettle();
+    expect(find.text('WAV (uncompressed)'), findsOneWidget);
+    expect(find.text('MP3 (smaller)'), findsOneWidget);
+    expect(daw.canExport, isTrue);
+  });
+
+  testWidgets('export dialog can target the marked range', (tester) async {
+    await _pumpDaw(tester);
+    final daw = _daw(tester)..addDemoBeat();
+    await tester.pump();
+
+    daw.seekTo(250);
+    await tester.pump();
+    await tester.tap(find.text('Mark In'));
+    await tester.pump();
+    daw.seekTo(750);
+    await tester.pump();
+    await tester.tap(find.text('Mark Out'));
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Export sound'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Marked range'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('0.50 s'), findsWidgets);
+    expect(find.text('Choose format'), findsOneWidget);
+  });
+
   testWidgets('Add clip can import an audio file directly', (tester) async {
     FileSelectorPlatform.instance = _FakeFileSelector(
       XFile.fromData(pcmFloatToWav(_tone(4410)), name: 'Direct Loop.wav'),
