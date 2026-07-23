@@ -55,6 +55,11 @@ String projectToJson(
           'muted': track.muted,
           'soloed': track.soloed,
           if (track.busIndex != null) 'busIndex': track.busIndex,
+          if (track.busSends.isNotEmpty)
+            'busSends': {
+              for (final send in track.busSends.entries)
+                if (send.value > 0) '${send.key}': send.value,
+            },
           'effect': track.effect.name,
           if (track.effects.isNotEmpty)
             'effects': [for (final fx in track.effects) fx.toJson()],
@@ -174,6 +179,7 @@ DawTimeline projectFromJson(String json) {
           soloed: t['soloed'] == true,
           busIndex:
               t['busIndex'] is num ? (t['busIndex'] as num).toInt() : null,
+          busSends: _parseBusSends(t['busSends']),
           effect: legacyEffect,
           effects: effects.isNotEmpty
               ? effects
@@ -207,4 +213,18 @@ Float64List _int16ToFloat(Uint8List bytes) {
     out[i] = view.getInt16(i * 2, Endian.little) / 32768.0;
   }
   return out;
+}
+
+Map<int, double> _parseBusSends(Object? value) {
+  final sends = <int, double>{};
+  if (value is Map) {
+    for (final entry in value.entries) {
+      final key = int.tryParse('${entry.key}');
+      final gain = entry.value;
+      if (key != null && gain is num && gain > 0) {
+        sends[key] = gain.toDouble();
+      }
+    }
+  }
+  return sends;
 }

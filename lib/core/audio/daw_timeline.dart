@@ -389,10 +389,12 @@ class DawTrack {
     this.soloed = false,
     this.instrument,
     this.busIndex,
+    Map<int, double>? busSends,
     this.effect = TrackEffect.none,
     List<DawClipEffect>? effects,
     List<Clip>? clips,
-  })  : effects = effects ?? [],
+  })  : busSends = busSends ?? {},
+        effects = effects ?? [],
         clips = clips ?? [];
 
   String name;
@@ -407,6 +409,9 @@ class DawTrack {
 
   /// Optional group bus route. Null means route straight to the master bus.
   int? busIndex;
+
+  /// Parallel send gains into named buses, keyed by bus index.
+  Map<int, double> busSends;
 
   /// The lane's insert effect (applied to its summed audio at bake time).
   TrackEffect effect;
@@ -721,6 +726,13 @@ Float64List renderTimeline(
     }
   }
 
+  void addScaledBuffer(Float64List target, Float64List source, double gain) {
+    if (gain <= 0) return;
+    for (var i = 0; i < target.length; i++) {
+      target[i] += source[i] * gain;
+    }
+  }
+
   final busBuffers = <int, Float64List>{};
 
   for (final (track, places) in perTrack) {
@@ -733,6 +745,15 @@ Float64List renderTimeline(
           ? applyClipEffectChain(lane, track.effects, sampleRate)
           : applyTrackEffect(track.effect, lane, sampleRate);
       lane.setAll(0, wet);
+    }
+    for (final send in track.busSends.entries) {
+      final sendBus = send.key;
+      if (sendBus < 0 || sendBus >= timeline.buses.length) continue;
+      addScaledBuffer(
+        busBuffers.putIfAbsent(sendBus, () => Float64List(totalSamples)),
+        lane,
+        send.value,
+      );
     }
     final busIndex = track.busIndex;
     if (busIndex != null && busIndex >= 0 && busIndex < timeline.buses.length) {

@@ -35,6 +35,7 @@ void main() {
           gain: 0.8,
           effect: TrackEffect.echo,
           busIndex: 0,
+          busSends: {0: 0.35},
           clips: [
             Clip(
               source: _tone(0.5, 64),
@@ -73,6 +74,7 @@ void main() {
     expect(back.tracks[0].name, 'Drums');
     expect(back.tracks[0].gain, closeTo(0.8, 1e-9));
     expect(back.tracks[0].busIndex, 0);
+    expect(back.tracks[0].busSends[0], closeTo(0.35, 1e-9));
     expect(back.tracks[0].effect, TrackEffect.echo);
     expect(back.tracks[0].effects.single.type, DawClipEffectType.delay);
     expect(back.tracks[1].muted, isTrue);

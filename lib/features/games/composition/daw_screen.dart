@@ -773,6 +773,39 @@ class _DawScreenState extends State<DawScreen>
                     style: Theme.of(ctx).textTheme.bodySmall,
                   ),
                 ),
+              if (routeTargets.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      '${routeTargets.length} selected send',
+                      style: Theme.of(ctx).textTheme.bodySmall,
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: _averageTrackSend(routeTargets, bus),
+                        max: 1.5,
+                        divisions: 30,
+                        label: _averageTrackSend(
+                          routeTargets,
+                          bus,
+                        ).toStringAsFixed(2),
+                        onChanged: (value) {
+                          setDialog(() {
+                            _daw.setTrackSendForTracks(
+                              routeTargets,
+                              bus,
+                              value,
+                            );
+                          });
+                          setState(() {});
+                          if (_playing) play();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               for (var fxIndex = 0; fxIndex < effects.length; fxIndex++)
                 _fxTile(
                   ctx,
@@ -805,6 +838,15 @@ class _DawScreenState extends State<DawScreen>
         ),
       ),
     );
+  }
+
+  double _averageTrackSend(List<int> tracks, int bus) {
+    if (tracks.isEmpty) return 0;
+    var sum = 0.0;
+    for (final track in tracks) {
+      sum += _daw.trackSend(track, bus);
+    }
+    return sum / tracks.length;
   }
 
   List<int> _explicitSelectedTracks() {
@@ -2375,6 +2417,13 @@ class _DawScreenState extends State<DawScreen>
             busIndex < daw.timeline.buses.length
         ? daw.timeline.buses[busIndex].name
         : null;
+    final sends = [
+      for (final send in track.busSends.entries)
+        if (send.value > 0 &&
+            send.key >= 0 &&
+            send.key < daw.timeline.buses.length)
+          send,
+    ];
     return SizedBox(
       width: _gutterWidth,
       height: _laneHeight,
@@ -2425,6 +2474,18 @@ class _DawScreenState extends State<DawScreen>
                       Icons.call_merge,
                       size: 12,
                       color: scheme.tertiary,
+                    ),
+                  ),
+                ),
+              if (sends.isNotEmpty)
+                Tooltip(
+                  message: '${sends.length} bus sends',
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: Icon(
+                      Icons.alt_route,
+                      size: 12,
+                      color: scheme.secondary,
                     ),
                   ),
                 ),

@@ -353,4 +353,35 @@ void main() {
     final mix = renderTimeline(t, sampleRate: _sr, limit: false);
     expect(mix[0], closeTo(0.3, 1e-9));
   });
+
+  test('bus sends feed shared FX in parallel with the normal track route', () {
+    final dryTimeline = DawTimeline(
+      tracks: [
+        DawTrack(clips: [Clip(source: _ToneSource(0.2, 100))]),
+      ],
+    );
+    final sentTimeline = DawTimeline(
+      buses: [
+        DawBus(
+          name: 'Parallel crush',
+          effects: [
+            defaultDawClipEffect(DawClipEffectType.distortion).copyWith(
+              params: {'drive': 10, 'mix': 1},
+            ),
+          ],
+        ),
+      ],
+      tracks: [
+        DawTrack(
+          busSends: {0: 1},
+          clips: [Clip(source: _ToneSource(0.2, 100))],
+        ),
+      ],
+    );
+
+    final dry = renderTimeline(dryTimeline, sampleRate: _sr, limit: false);
+    final sent = renderTimeline(sentTimeline, sampleRate: _sr, limit: false);
+    expect(sent.length, dry.length);
+    expect(sent[0], greaterThan(dry[0]));
+  });
 }

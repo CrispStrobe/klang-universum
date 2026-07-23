@@ -68,6 +68,7 @@ class DawService extends ChangeNotifier {
               soloed: t.soloed,
               instrument: t.instrument,
               busIndex: t.busIndex,
+              busSends: {...t.busSends},
               effect: t.effect,
               effects: [...t.effects],
               clips: [...t.clips],
@@ -861,12 +862,12 @@ class DawService extends ChangeNotifier {
     timeline.buses.removeAt(bus);
     for (final track in timeline.tracks) {
       final route = track.busIndex;
-      if (route == null) continue;
       if (route == bus) {
         track.busIndex = null;
-      } else if (route > bus) {
+      } else if (route != null && route > bus) {
         track.busIndex = route - 1;
       }
+      track.busSends = _shiftSendsAfterBusRemoval(track.busSends, bus);
     }
     notifyListeners();
   }
@@ -885,6 +886,32 @@ class DawService extends ChangeNotifier {
     _record();
     for (final i in indices) {
       timeline.tracks[i].busIndex = route;
+    }
+    notifyListeners();
+  }
+
+  double trackSend(int track, int bus) {
+    if (track < 0 || track >= timeline.tracks.length) return 0;
+    return timeline.tracks[track].busSends[bus] ?? 0;
+  }
+
+  void setTrackSend(int track, int bus, double amount) {
+    setTrackSendForTracks([track], bus, amount);
+  }
+
+  void setTrackSendForTracks(Iterable<int> tracks, int bus, double amount) {
+    final indices = _validTrackIndices(tracks);
+    if (indices.isEmpty || bus < 0 || bus >= timeline.buses.length) return;
+    final gain = amount.clamp(0.0, 1.5).toDouble();
+    _coalesced(('trackSend', bus, indices.join(',')));
+    for (final i in indices) {
+      final sends = {...timeline.tracks[i].busSends};
+      if (gain <= 0) {
+        sends.remove(bus);
+      } else {
+        sends[bus] = gain;
+      }
+      timeline.tracks[i].busSends = sends;
     }
     notifyListeners();
   }
@@ -1081,6 +1108,18 @@ class DawService extends ChangeNotifier {
         for (final bus in buses)
           DawBus(name: bus.name, effects: _cloneEffectChain(bus.effects)),
       ];
+
+  Map<int, double> _shiftSendsAfterBusRemoval(
+    Map<int, double> sends,
+    int removedBus,
+  ) {
+    final shifted = <int, double>{};
+    for (final send in sends.entries) {
+      if (send.key == removedBus) continue;
+      shifted[send.key > removedBus ? send.key - 1 : send.key] = send.value;
+    }
+    return shifted;
+  }
 
   bool _sameEffectChain(List<DawClipEffect> a, List<DawClipEffect> b) {
     if (a.length != b.length) return false;

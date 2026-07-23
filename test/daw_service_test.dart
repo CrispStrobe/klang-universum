@@ -836,6 +836,32 @@ void main() {
       expect(s.trackBus(0), isNull);
       expect(s.trackBus(1), isNull);
     });
+
+    test('aux bus sends have amounts, undo and shift with removed buses', () {
+      final s = DawService()
+        ..addClip(_tone(0.4, 1000))
+        ..addBus(name: 'Delay')
+        ..addBus(name: 'Verb');
+
+      s
+        ..setTrackSend(0, 1, 0.6)
+        ..addBusEffect(1, DawClipEffectType.reverb);
+
+      expect(s.trackSend(0, 1), closeTo(0.6, 1e-9));
+      expect(s.timeline.tracks[0].busSends, {1: 0.6});
+
+      s.setTrackSend(0, 1, 0.9);
+      expect(s.trackSend(0, 1), closeTo(0.9, 1e-9));
+      s.undo();
+      expect(s.trackSend(0, 1), closeTo(0.6, 1e-9));
+
+      s.removeBus(0);
+      expect(s.trackSend(0, 0), closeTo(0.6, 1e-9));
+      expect(s.busEffects(0).single.type, DawClipEffectType.reverb);
+
+      s.setTrackSend(0, 0, 0);
+      expect(s.timeline.tracks[0].busSends, isEmpty);
+    });
   });
 
   group('clip effect chains', () {

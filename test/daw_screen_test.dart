@@ -271,6 +271,27 @@ void main() {
     expect(find.textContaining('Drive'), findsOneWidget);
   });
 
+  testWidgets('bus dialog edits selected-track send amount', (tester) async {
+    await _pumpDaw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+
+    await tester.tap(find.byTooltip('Select track for FX').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Buses'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add bus'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 selected send'), findsOneWidget);
+
+    await tester.drag(find.byType(Slider).last, const Offset(160, 0));
+    await tester.pumpAndSettle();
+
+    expect(service.trackSend(1, 0), greaterThan(0));
+  });
+
   testWidgets('tapping a clip opens the inspector; gain slider changes gain',
       (tester) async {
     await _pumpDaw(tester);
