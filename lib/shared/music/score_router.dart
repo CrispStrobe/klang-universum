@@ -30,13 +30,18 @@ void openScoreInWorkshop(
   );
 }
 
-/// Open [score] in the Tab Workshop. A tab is one instrument, so the first part
-/// is used (no-op on an empty score).
-void openScoreInTab(BuildContext context, MultiPartScore score) {
+/// Open [score] in the Tab Workshop — one editable tab track per part, so a
+/// multi-instrument score keeps every instrument (no-op on an empty score).
+void openScoreInTab(
+  BuildContext context,
+  MultiPartScore score, {
+  List<String>? names,
+}) {
   if (score.parts.isEmpty) return;
   Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => TabWorkshopScreen(initialScore: score.parts.first),
+      builder: (_) =>
+          TabWorkshopScreen(initialParts: score, initialNames: names),
     ),
   );
 }
@@ -82,7 +87,7 @@ Future<void> showScoreDestinations(
             title: Text(l10n.workshopModeTab),
             onTap: () {
               Navigator.of(sheetCtx).pop();
-              openScoreInTab(context, score);
+              openScoreInTab(context, score, names: names);
             },
           ),
         ],

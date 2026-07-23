@@ -42,6 +42,21 @@ void main() {
     MelodyBridge.instance.clear();
   });
 
+  testWidgets('a multi-part score opens one tab track per part',
+      (tester) async {
+    final part = parseTabFile('t.abc', utf8.encode(_abc)); // a Score
+    await pumpGame(
+      tester,
+      TabWorkshopScreen(
+        initialParts: MultiPartScore([part, part, part]),
+        initialNames: const ['Lead', 'Rhythm', 'Bass'],
+      ),
+    );
+    await tester.pumpAndSettle();
+    // One editable tab track per part (not just the first).
+    expect(_tab(tester).trackCount, 3);
+  });
+
   testWidgets('Smart-tab-fingering OFF forces the heuristic (clears the model)',
       (tester) async {
     addTearDown(() => TabArranger.shared = null);
