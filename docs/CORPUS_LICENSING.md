@@ -39,6 +39,26 @@ We classify all content strictly according to these definitions:
 - **Tier D** = NC (Non-Commercial). We cannot ship these.
 - **Rest** = Defer totally (Unstated, All Rights Reserved, etc.).
 
+**Ship status (2026-07-23):** the HF catalog (`cstr/cometbeat-assets`) publishes
+**Tier A + Tier B**. Tier C/D/Rest stay LOCAL only (in `db.json`, never emitted).
+- `bin/emit_catalog.py` `_tier()` classifies **licence-text-first** — a
+  restrictive licence string (CC-BY / -SA / -NC) overrides an over-optimistic
+  `rights_status`. This caught **8,790 rows tagged `rights_status:CC0` whose
+  `licence` was actually `Creative Commons Attribution 4.0`** (NIFC/PDMX) — they
+  are Tier B and MUST be attributed, not shipped as free. Every catalog item now
+  carries a `tier` field. Current split: **A ≈ 28.9k · B 8,903** (NIFC Polish
+  8,181 + Chopin first eds 512 + Mutopia-BY 98 + EGSet12 12 + CC-BY modules).
+- **Tier B is shipped only because all four conditions hold** (verified): (1) B
+  is pure CC-BY, no SA/NC leaked; (2) the HF dataset has a **card/README** stating
+  tiers + licences + attribution; (3) attribution is **displayed** in-app
+  ("Sources & credits", reachable from Settings *and* the library browser, listing
+  imported songs + samples); (4) every B row has a non-empty attribution.
+- ⚠️ **Tier C (Share-Alike, incl. ODbL) is NOT shippable until the app enforces
+  SA-propagation** — once SA content enters an Editor (Audio Editor / Tracker /
+  Workshop), export/save/share must affirm SA on the output. Requirement noted;
+  not yet built. (thesession.org is ODbL **+ a no-LLM clause + composer-copyright
+  risk** → excluded entirely; hosting it on HF can't honour "no LLM use".)
+
 ## Our import reach — format is rarely the blocker; LICENCE is
 
 App import filters (verified in code, `import_screen.dart` /
