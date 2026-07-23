@@ -143,6 +143,42 @@ Float64List chorusFx(
   return out;
 }
 
+/// Stereo chorus with opposite LFO phase per channel for natural width.
+({Float64List left, Float64List right}) chorusFxStereo(
+  Float64List left,
+  Float64List right, {
+  double rateHz = 1.5,
+  double depthMs = 6,
+  double mix = 0.5,
+  int sampleRate = kSampleRate,
+}) {
+  final n = math.min(left.length, right.length);
+  final outLeft = Float64List(left.length);
+  final outRight = Float64List(right.length);
+  final m = mix.clamp(0.0, 1.0);
+  if (m == 0) {
+    outLeft.setAll(0, left);
+    outRight.setAll(0, right);
+    return (left: outLeft, right: outRight);
+  }
+  final centreSamp = math.max(0.0, depthMs) * sampleRate / 1000;
+  final w = 2 * math.pi * math.max(0.0, rateHz) / sampleRate;
+  for (var i = 0; i < n; i++) {
+    final phase = math.sin(w * i);
+    final wetLeft = _interp(left, i - centreSamp * (1 + phase));
+    final wetRight = _interp(right, i - centreSamp * (1 - phase));
+    outLeft[i] = (1 - m) * left[i] + m * wetLeft;
+    outRight[i] = (1 - m) * right[i] + m * wetRight;
+  }
+  for (var i = n; i < left.length; i++) {
+    outLeft[i] = left[i];
+  }
+  for (var i = n; i < right.length; i++) {
+    outRight[i] = right[i];
+  }
+  return (left: outLeft, right: outRight);
+}
+
 /// A **flanger**: like [chorusFx] but a shorter swept delay (~[depthMs], a few ms)
 /// WITH [feedback] for the classic metallic "jet" comb sweep. Fractional read,
 /// LFO at [rateHz]. Clamp feedback to [0, 0.95]. mix == 0 → identity.
@@ -175,4 +211,52 @@ Float64List flangerFx(
     out[i] = (1 - m) * input[i] + m * delayed;
   }
   return out;
+}
+
+/// Stereo flanger with opposite LFO phase and independent feedback history.
+({Float64List left, Float64List right}) flangerFxStereo(
+  Float64List left,
+  Float64List right, {
+  double rateHz = 0.3,
+  double depthMs = 3,
+  double feedback = 0.5,
+  double mix = 0.5,
+  int sampleRate = kSampleRate,
+}) {
+  final n = math.min(left.length, right.length);
+  final outLeft = Float64List(left.length);
+  final outRight = Float64List(right.length);
+  final m = mix.clamp(0.0, 1.0);
+  if (m == 0) {
+    outLeft.setAll(0, left);
+    outRight.setAll(0, right);
+    return (left: outLeft, right: outRight);
+  }
+  final fb = feedback.clamp(0.0, 0.95);
+  final centreSamp = math.max(0.0, depthMs) * sampleRate / 1000;
+  final w = 2 * math.pi * math.max(0.0, rateHz) / sampleRate;
+  final historyLeft = Float64List(n);
+  final historyRight = Float64List(n);
+  for (var i = 0; i < n; i++) {
+    final phase = math.sin(w * i);
+    final delayedLeft = _interp(
+      historyLeft,
+      i - centreSamp * (1 + phase),
+    );
+    final delayedRight = _interp(
+      historyRight,
+      i - centreSamp * (1 - phase),
+    );
+    historyLeft[i] = left[i] + fb * delayedLeft;
+    historyRight[i] = right[i] + fb * delayedRight;
+    outLeft[i] = (1 - m) * left[i] + m * delayedLeft;
+    outRight[i] = (1 - m) * right[i] + m * delayedRight;
+  }
+  for (var i = n; i < left.length; i++) {
+    outLeft[i] = left[i];
+  }
+  for (var i = n; i < right.length; i++) {
+    outRight[i] = right[i];
+  }
+  return (left: outLeft, right: outRight);
 }

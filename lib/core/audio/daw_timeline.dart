@@ -23,7 +23,13 @@ import 'package:comet_beat/core/audio/crisp_dsp/distortion.dart'
 import 'package:comet_beat/core/audio/crisp_dsp/dynamics.dart'
     show compressorFx, compressorFxStereo, gateFx, gateFxStereo;
 import 'package:comet_beat/core/audio/crisp_dsp/modulated_delay.dart'
-    show chorusFx, delayFx, delayFxStereo, flangerFx;
+    show
+        chorusFx,
+        chorusFxStereo,
+        delayFx,
+        delayFxStereo,
+        flangerFx,
+        flangerFxStereo;
 import 'package:comet_beat/core/audio/crisp_dsp/pitch_shift.dart'
     show granularPitchShift;
 import 'package:comet_beat/core/audio/crisp_dsp/resample.dart'
@@ -677,6 +683,23 @@ Float64List applyClipEffectChain(
           feedback: p('feedback', 0.35),
           spread: p('spread', 0),
           mix: p('mix', 0.35),
+          sampleRate: sampleRate,
+        ),
+      DawClipEffectType.chorus => chorusFxStereo(
+          outLeft,
+          outRight,
+          rateHz: p('rateHz', 1.5),
+          depthMs: p('depthMs', 6),
+          mix: p('mix', 0.45),
+          sampleRate: sampleRate,
+        ),
+      DawClipEffectType.flanger => flangerFxStereo(
+          outLeft,
+          outRight,
+          rateHz: p('rateHz', 0.35),
+          depthMs: p('depthMs', 3),
+          feedback: p('feedback', 0.5),
+          mix: p('mix', 0.5),
           sampleRate: sampleRate,
         ),
       DawClipEffectType.compressor => compressorFxStereo(

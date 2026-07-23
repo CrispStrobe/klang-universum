@@ -571,6 +571,50 @@ void main() {
     expect(mix.right[2], greaterThan(0.3));
   });
 
+  test('stereo chorus and flanger decorrelate channel modulation', () {
+    final source = SampleSource(_sine(120));
+    for (final type in [
+      DawClipEffectType.chorus,
+      DawClipEffectType.flanger,
+    ]) {
+      final mix = renderTimelineStereo(
+        DawTimeline(
+          tracks: [
+            DawTrack(
+              effects: [
+                defaultDawClipEffect(type).copyWith(
+                  params: type == DawClipEffectType.chorus
+                      ? {
+                          'rateHz': 2,
+                          'depthMs': 6,
+                          'mix': 1,
+                        }
+                      : {
+                          'rateHz': 1,
+                          'depthMs': 3,
+                          'feedback': 0.4,
+                          'mix': 1,
+                        },
+                ),
+              ],
+              clips: [Clip(source: source)],
+            ),
+          ],
+        ),
+        sampleRate: _sr,
+        limit: false,
+      );
+      expect(
+        List.generate(
+          mix.left.length,
+          (i) => (mix.left[i] - mix.right[i]).abs(),
+        ).any((difference) => difference > 1e-6),
+        isTrue,
+        reason: '$type should use decorrelated LFO phases',
+      );
+    }
+  });
+
   test('effect parameter automation is rendered over time', () {
     final dry = _sine(220);
     final automated = applyClipEffectChain(
