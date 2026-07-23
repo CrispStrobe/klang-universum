@@ -40,15 +40,21 @@ donation link, the app-store posture) stays clean *because* the content does.
 
 Full cited licensing report is recorded below and in this branch's commit history.
 
-**Connect first (SAFE — permissive, open bulk access):**
+**Tier A: Connect first (SAFE — CC0/PD/MIT, open bulk access, NO content attribution required):**
 
 | Source | Content | License | Access | Formats |
 |---|---|---|---|---|
 | **OpenScore** (Lieder, String Quartets) | ~1,300 art songs + quartets | **CC0** (confirmed) | GitHub / Zenodo bulk (bypasses musescore.com entirely) | MusicXML, MIDI, `.mscx` |
-| **Mutopia Project** | ~2,100 classical/trad | per-piece PD / CC-BY / CC-BY-SA (all commercial-OK) | GitHub bulk | LilyPond, MIDI, PDF |
-| **Wikimedia Commons** | per-file free/PD scores | per-file CC0/BY/BY-SA/PD | real MediaWiki API | mixed (PDF, MusicXML, MIDI) |
+| **Strictly-vetted ABC Repos** | Specific individual repos | **CC0 / MIT** (confirmed) | Direct from `Gubbledenut/ABC_TuneBooks` (CC0) and `econrad003/music-abc` (MIT) | ABC |
 
-**Connect with a per-item license filter (CONDITIONAL — good value, needs gating):**
+**Tier B: Connect first (SAFE — Permissive, commercial-OK, but requires Attribution like CC-BY):**
+
+| Source | Content | License | Access | Formats |
+|---|---|---|---|---|
+| **Mutopia Project** | ~2,100 classical/trad | per-piece PD / **CC-BY** / CC-BY-SA (all commercial-OK) | GitHub bulk | LilyPond, MIDI, PDF |
+| **Wikimedia Commons** | per-file free/PD scores | per-file **CC0 / BY / BY-SA / PD** | real MediaWiki API | mixed (PDF, MusicXML, MIDI) |
+
+**Tier C: Connect with a per-item license filter (CONDITIONAL — Share-Alike or gating required):**
 
 | Source | Why conditional | Guardrail |
 |---|---|---|
@@ -57,10 +63,11 @@ Full cited licensing report is recorded below and in this branch's commit histor
 | **CPDL / ChoralWiki** | mixed per-edition; editor's engraving can be copyrighted even when the work is PD; US-PD only | import only PD + CPDL-license + CC-BY/BY-SA; MediaWiki API |
 | **IMSLP / Petrucci** | PD vetted **US/CA/EU only** (a work PD in Canada can be under copyright in Germany); wait-timer monetization; per-file PR/NC restrictions | metadata API for browse is fine; **file download filtered to CC0/CC-BY/BY-SA + clearly-PD**, gated by user country |
 
-**Do NOT connect** (all-rights-reserved / no license grant / no sanctioned API /
-active anti-scraping): **general musescore.com uploads**, **Ultimate Guitar**,
-**mySongBook / GPIF tab store**, **abcnotation.com** (as an import backend — a
-discovery tool only), 8notes, Songsterr, Delcamp, FreeMIDI, BitMidi, VGMusic,
+**Tier D: Do NOT connect** (NonCommercial NC) and **Rest: Defer totally** (all-rights-reserved / explicit copyright claims / active anti-scraping):
+**Aggregators with embedded landmines**: `abcnotation.com as a whole` (many sub-collections are copyrighted), `domren.free.fr` (embedded John B. Walsh NC claims, SACEM rights).
+**Mixed-bag sites without bulk waivers**: `GodSongs.net`, `Serpent Publications` (Copyright © 2026).
+**Default All-Rights-Reserved / Missing Licenses**: `ian-hayden/abc-music-files`, `tazfiddler/Taz-Tunes`.
+**Commercial platforms**: **general musescore.com uploads**, **Ultimate Guitar**, **mySongBook / GPIF tab store**, 8notes, Songsterr, Delcamp, FreeMIDI, BitMidi, VGMusic.
 archive.org MIDI dumps, unlicensed KernScores. **Avoid for a donation-funded app
 (NonCommercial clause):** DCML corpora, MAESTRO, Kunst der Fuge.
 

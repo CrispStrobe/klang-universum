@@ -369,7 +369,7 @@ finding. So the shippable *tab* corpus is exactly this shippable *score* corpus.
 | DadaGP + all GP tab archives | gp | research-access-only, UG scrape of in-copyright songs |
 | **thesession.org** (+ folk-rnn, folk-rnn-webapp, themachinefolksession) | ABC | dump is **ODbL + anti-LLM clause** (2025-10, tightened 2026-06). folk-rnn's MIT is code-only; it scraped thesession ~2015 when the dump had **no licence at all**. ODbL on a bundle → share-alike (§4.4) + source-offer (§4.6) + attribution (§4.3); §2.4 disclaims rights in the transcriptions, which vest in each **transcriber**. |
 | German folk-song sites (4) | — | volksliederarchiv.de (private/non-commercial, notation walled off in robots.txt); lieder-archiv.de (copyright on its Notensätze; commercial/DB/republish forbidden — but offers a PAID licence); liederlexikon.de (all-rights-reserved, NOT CC, named living engraver + in-copyright 20th-c. works); ZPKM Freiburg (catalogues only). |
-| **Essen Folksong Collection** (ccarh/essen-folksong-collection) | krn ✅ | **CCARH MuseData licence** (license.txt, verbatim): *"this license does not authorize the use of the enclosed MuseData files in the production of derivative editions intended for commercial distribution, nor for public performance (including broadcast), nor for sound recording."* NC + no-recording → dev/test only. ~20k folk melodies, German-relevant, but blocked. |
+| **Essen Folksong Collection** (ccarh/essen-folksong-collection) | krn ✅ | **CCARH MuseData licence** (license.txt, verbatim): *"this license does not authorize the use... for commercial distribution".* **NC + no-recording → dev/test only.** (Note: Downstream ML datasets on Figshare/Zenodo incorrectly tag this as CC-BY 4.0 via default repo options, but this is "license washing" and does not override CCARH's authoritative NC restriction). |
 | **Battle of the Bits** (battleofthebits.com) | .xm/.it/.mod + rendered | **CC BY-NC-SA** to third parties (BotB CC License, verified) — NC. Original chiptune/tracker compo entries (axis-2 clean), but the NC axis-1 blocks it. Control/eval only. *Corrects an earlier "BotB is clean" note.* |
 
 ---
@@ -397,7 +397,7 @@ reader (`sevenz_reader.dart`), and it already bundles **VCSL CC0** percussion
 `attribution_screen.dart`'s `needsAttribution` — **CC0 lists nothing; CC BY /
 BY-SA carry a credit** (the "save extra" case).
 
-### Tier A — CC0 / public-domain (bundle freely, NO attribution)
+### Tier A — CC0 / public-domain / MIT (bundle freely, NO content attribution required)
 
 | Asset | What | Axis 1 | Axis 2 |
 |---|---|---|---|
@@ -408,8 +408,10 @@ BY-SA carry a credit** (the "save extra" case).
 | **OpenGameArt — CC0 subset** | .xm/.it/.mod/.s3m + ogg game music | **CC0** | original compositions ✅ |
 | **Selekt Audio — CC0/PD catalog** | 100k+ cleared one-shots/loops, per-sample cert | **CC0 + US-PD** | fingerprint-screened; PD tier = pre-1926 US recs + Library-of-Congress field recs ✅ (US-PD ≠ EU-PD — recheck axis 2 for the PD tier) |
 | **freesound (CC0 filter)** | individual sounds | **CC0** (must filter) | per-sample check |
+| **Gubbledenut/ABC_TuneBooks** | 18th/19th c. transcriptions | **CC0-1.0** | explicit CC0 waiver, cleanly transcribed ABCs |
+| **econrad003/music-abc** | Historical transcriptions | **MIT** | include MIT license text (no user-facing content attribution needed) |
 
-### Tier B — "CA": permissive but attribution / notice required
+### Tier B — "CA": permissive but content attribution / notice required (e.g. CC-BY-4)
 
 Non-NC, commercial-OK, but oblige a credit or a bundled licence file →
 `needsAttribution` + drop a `LICENSE.txt` beside the asset (as the percussion
@@ -430,7 +432,11 @@ every OGA asset is CC0 / CC BY / CC BY-SA / GPL / OGA-BY, all commercial-OK — 
 the licence gate is done for you: filter Music + license checkboxes, split
 CC0 → Tier A / CC BY-family → Tier B. Original compositions → axis-2 clean.
 
-### Excluded — NC or unverifiable provenance
+### Tier C — Share-Alike
+
+- **JummBox SoundFont fork V11** (CC BY-SA 4.0)
+
+### Tier D (NC) and Excluded (Defer totally)
 
 - **Battle of the Bits — NC.** Verified the BotB CC License: every entry is
   **CC BY-NC-SA** to third parties (+ a CC BY-ND reservation for BotB itself).
@@ -438,10 +444,13 @@ CC0 → Tier A / CC BY-family → Tier B. Original compositions → axis-2 clean
   same tier as IDMT/GAPS. *(Corrects an earlier "BotB is clean" assumption.)*
 - **General community module archives** whose licences are **uploader-asserted
   or absent** — excluded as sources. The licence field is set by the *uploader*,
-  rarely the author; the bulk is unclear/"non-licensed" and much of it samples
-  copyrighted recordings (axis-2 dirty). A specific module is usable only if its
-  CC0/PD grant is **author-verifiable**; otherwise robustness/eval-control at
-  best (cf. the OLGA posture) — never a shippable bulk source.
+  and in tracker culture "free to download" was the default, but actual rights
+  rarely cleared.
+- **Untracked/Unlicensed ABC Repos & Aggregators**: Sites like `abcnotation.com`, `domren.free.fr`, and repos like `tazfiddler/Taz-Tunes` or `ian-hayden/abc-music-files` carry embedded `N:Copyright` or `S:Copyright` tags, or lack a LICENSE file entirely (defaulting to All Rights Reserved). Do not pull from them.
+- **Mixed-license religious/hymn sites**: e.g., `GodSongs.net`. Some PD, some modern copyright. Cannot bulk-pull.
+- **Explicit modern editions**: `Serpent Publications` claims standard copyright on modern notation transcriptions of early works.
+  
+*(For modules specifically, a module is usable only if its CC0/PD grant is **author-verifiable**; otherwise robustness/eval-control at best — never a shippable bulk source.)*
 
 ### DB schema — one registry, one ship gate
 
@@ -664,7 +673,7 @@ _localCost(f)`), rather than replacing it. Small, in `arrangeTab`'s `local()`.
   under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported
   License."* NonCommercial. kern/MIDI/LilyPond, so reachable — but dev/test only.)
 
-(**Essen resolved → rejected**, see table above: CCARH MuseData = NC.)
+(**Essen resolved → rejected**, see table above: CCARH MuseData = NC. Downstream "CC-BY" tags on ML repos are invalid license washing.)
 
 ## The recurring German-law point (from multiple sources, incl. the sites themselves)
 

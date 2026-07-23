@@ -69,7 +69,7 @@ dependencies:
   # Notation rendering — path dep on the local library workspace, which tracks
   # main ahead of the pub.dev releases (see ../crisp_notation/docs/CONTRACT.md).
   crisp_notation:
-    path: ../crisp_notation/packages/crisp_notation
+    path: ../crisp_notation-soundlib/packages/crisp_notation
   # The pure model + MusicXML writer, imported Flutter-free by the transcription
   # CLI (bin/listen.dart --transcribe) and transcription/transcribe.dart so the
   # whole pipeline runs under `dart run`. Pinned to the path by the override.
@@ -124,7 +124,7 @@ dependencies:
 # resolve to different versions. Drop this once mus depends on pub.dev releases.
 dependency_overrides:
   crisp_notation_core:
-    path: ../crisp_notation/packages/crisp_notation_core
+    path: ../crisp_notation-soundlib/packages/crisp_notation_core
 
 dev_dependencies:
   flutter_test:

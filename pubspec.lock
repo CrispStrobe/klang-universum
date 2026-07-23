@@ -163,14 +163,14 @@ packages:
   crisp_notation:
     dependency: "direct main"
     description:
-      path: "../crisp_notation/packages/crisp_notation"
+      path: "../crisp_notation-soundlib/packages/crisp_notation"
       relative: true
     source: path
     version: "0.4.4"
   crisp_notation_core:
     dependency: "direct main"
     description:
-      path: "../crisp_notation/packages/crisp_notation_core"
+      path: "../crisp_notation-soundlib/packages/crisp_notation_core"
       relative: true
     source: path
     version: "0.4.8"
