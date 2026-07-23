@@ -585,8 +585,8 @@ ModuleDoc msczToModuleDoc(
 /// except [lilypond] (write-only in the library).
 enum TextNotation { abc, kern, mei, musescore, lilypond }
 
-/// True if this format can be parsed back to a Score (everything but LilyPond).
-bool textNotationReadable(TextNotation fmt) => fmt != TextNotation.lilypond;
+/// True if this format can be parsed back to a Score.
+bool textNotationReadable(TextNotation fmt) => true;
 
 /// A single [score] serialized to [fmt] text.
 String scoreToTextNotation(Score score, TextNotation fmt) => switch (fmt) {
@@ -597,14 +597,13 @@ String scoreToTextNotation(Score score, TextNotation fmt) => switch (fmt) {
       TextNotation.lilypond => scoreToLilyPond(score),
     };
 
-/// [text] in [fmt] parsed to a Score; null for a write-only format
-/// ([TextNotation.lilypond]).
+/// [text] in [fmt] parsed to a Score.
 Score? textNotationToScore(String text, TextNotation fmt) => switch (fmt) {
       TextNotation.abc => scoreFromAbc(text),
       TextNotation.kern => scoreFromKern(text),
       TextNotation.mei => scoreFromMei(text),
       TextNotation.musescore => scoreFromMscx(text),
-      TextNotation.lilypond => null, // write-only in the library
+      TextNotation.lilypond => scoreFromLilyPond(text),
     };
 
 /// [doc] serialized to [fmt] text. With no [channel], up to 4 channels are kept
@@ -637,7 +636,7 @@ String moduleToTextNotation(
 }
 
 /// [text] in [fmt] → a playable single-channel [ModuleDoc]. Returns null for a
-/// write-only format ([TextNotation.lilypond]).
+/// Returns null if [fmt] cannot be parsed.
 ModuleDoc? textNotationToModuleDoc(
   String text,
   TextNotation fmt, {

@@ -234,6 +234,7 @@ const _kImportExtensions = [
   'krn', // Humdrum **kern
   'mscx', 'mscz', // MuseScore (+ compressed)
   'gp', 'gpx', // GPIF
+  'ly', // LilyPond
 ];
 
 const _kImportGroups = <XTypeGroup>[
@@ -259,6 +260,7 @@ Score importScore(String fileName, Uint8List bytes) {
     'mscz' => scoreFromMscx(readMscxFromMscz(bytes)),
     'gp' => scoreFromGpif(readGpifFromGp(bytes)),
     'gpx' => scoreFromGpif(readGpifFromGpx(bytes)),
+    'ly' => scoreFromLilyPond(text()),
     _ => throw FormatException('Unsupported file type: .$ext'),
   };
 }
@@ -375,7 +377,7 @@ const kExportFormats = <ExportFormat>[
     ext: 'ly',
     mime: 'text/plain',
     binary: false,
-    multiPart: false,
+    multiPart: true,
   ),
   (
     label: 'Braille music',
