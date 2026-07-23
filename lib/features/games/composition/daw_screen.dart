@@ -1478,15 +1478,15 @@ class _DawScreenState extends State<DawScreen>
     required List<DawAutomationPoint> points,
   }) async {
     if (points.isEmpty) return null;
-    final sorted = [...points]..sort((a, b) => a.ms.compareTo(b.ms));
-    var startMs = sorted.first.ms;
-    var startValue = sorted.first.value.clamp(min, max).toDouble();
-    var endMs = sorted.last.ms;
-    var endValue = sorted.last.value.clamp(min, max).toDouble();
-    var curve = sorted.first.curve;
+    final edited = [...points]..sort((a, b) => a.ms.compareTo(b.ms));
+    for (var i = 0; i < edited.length; i++) {
+      edited[i] = edited[i].copyWith(
+        value: edited[i].value.clamp(min, max).toDouble(),
+      );
+    }
     final timeMax = math
         .max(
-          math.max(startMs, endMs),
+          edited.last.ms,
           math.max(_rangeEndMs, 1000),
         )
         .toDouble();
@@ -1497,60 +1497,57 @@ class _DawScreenState extends State<DawScreen>
           title: Text('Edit $label automation'),
           content: SizedBox(
             width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${sorted.length} points'),
-                const SizedBox(height: 8),
-                _effectParamSlider(
-                  'Start ms',
-                  startMs,
-                  0,
-                  timeMax,
-                  1,
-                  (value) => setDialog(() => startMs = value),
-                ),
-                _effectParamSlider(
-                  'Start value',
-                  startValue,
-                  min,
-                  max,
-                  step,
-                  (value) => setDialog(() => startValue = value),
-                ),
-                _effectParamSlider(
-                  'End ms',
-                  endMs,
-                  0,
-                  timeMax,
-                  1,
-                  (value) => setDialog(() => endMs = value),
-                ),
-                _effectParamSlider(
-                  'End value',
-                  endValue,
-                  min,
-                  max,
-                  step,
-                  (value) => setDialog(() => endValue = value),
-                ),
-                DropdownButtonFormField<DawFadeCurve>(
-                  initialValue: curve,
-                  decoration: const InputDecoration(labelText: 'Curve'),
-                  items: [
-                    for (final curve in DawFadeCurve.values)
-                      DropdownMenuItem(
-                        value: curve,
-                        child: Text(_fadeCurveLabel(curve)),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setDialog(() => curve = value);
-                  },
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${edited.length} points'),
+                  const SizedBox(height: 8),
+                  for (var index = 0; index < edited.length; index++)
+                    _automationPointEditor(
+                      point: edited[index],
+                      index: index,
+                      count: edited.length,
+                      min: min,
+                      max: max,
+                      step: step,
+                      timeMax: timeMax,
+                      onChanged: (point) => setDialog(() {
+                        edited[index] = point;
+                        edited.sort((a, b) => a.ms.compareTo(b.ms));
+                      }),
+                      onRemove: edited.length <= 2
+                          ? null
+                          : () => setDialog(() => edited.removeAt(index)),
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: () => setDialog(() {
+                      var gapIndex = 0;
+                      var gap = -1.0;
+                      for (var i = 0; i < edited.length - 1; i++) {
+                        final candidate = edited[i + 1].ms - edited[i].ms;
+                        if (candidate > gap) {
+                          gap = candidate;
+                          gapIndex = i;
+                        }
+                      }
+                      final left = edited[gapIndex];
+                      final right = edited[gapIndex + 1];
+                      edited.insert(
+                        gapIndex + 1,
+                        DawAutomationPoint(
+                          ms: (left.ms + right.ms) / 2,
+                          value: (left.value + right.value) / 2,
+                          curve: left.curve,
+                        ),
+                      );
+                    }),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add point'),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -1560,25 +1557,85 @@ class _DawScreenState extends State<DawScreen>
             ),
             FilledButton(
               onPressed: () {
-                final from = math.min(startMs, endMs);
-                final to = math.max(startMs, endMs);
-                Navigator.of(dialogCtx).pop([
-                  DawAutomationPoint(
-                    ms: from,
-                    value: startMs <= endMs ? startValue : endValue,
-                    curve: curve,
-                  ),
-                  DawAutomationPoint(
-                    ms: to,
-                    value: startMs <= endMs ? endValue : startValue,
-                  ),
-                ]);
+                edited.sort((a, b) => a.ms.compareTo(b.ms));
+                Navigator.of(dialogCtx).pop(edited);
               },
               child: const Text('Save'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _automationPointEditor({
+    required DawAutomationPoint point,
+    required int index,
+    required int count,
+    required double min,
+    required double max,
+    required double step,
+    required double timeMax,
+    required ValueChanged<DawAutomationPoint> onChanged,
+    required VoidCallback? onRemove,
+  }) {
+    final timeLabel = index == 0
+        ? 'Start ms'
+        : index == count - 1
+            ? 'End ms'
+            : 'Point ${index + 1} ms';
+    final valueLabel = index == 0
+        ? 'Start value'
+        : index == count - 1
+            ? 'End value'
+            : 'Point ${index + 1} value';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text('Point ${index + 1}')),
+            if (onRemove != null)
+              IconButton(
+                tooltip: 'Remove point',
+                onPressed: onRemove,
+                icon: const Icon(Icons.remove_circle_outline),
+              ),
+          ],
+        ),
+        _effectParamSlider(
+          timeLabel,
+          point.ms.clamp(0, timeMax).toDouble(),
+          0,
+          timeMax,
+          1,
+          (value) => onChanged(point.copyWith(ms: value)),
+        ),
+        _effectParamSlider(
+          valueLabel,
+          point.value,
+          min,
+          max,
+          step,
+          (value) => onChanged(point.copyWith(value: value)),
+        ),
+        if (index < count - 1)
+          DropdownButtonFormField<DawFadeCurve>(
+            initialValue: point.curve,
+            decoration: const InputDecoration(labelText: 'Curve'),
+            items: [
+              for (final curve in DawFadeCurve.values)
+                DropdownMenuItem(
+                  value: curve,
+                  child: Text(_fadeCurveLabel(curve)),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) onChanged(point.copyWith(curve: value));
+            },
+          ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 

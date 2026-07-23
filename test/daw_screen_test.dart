@@ -483,13 +483,18 @@ void main() {
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
     expect(find.text('Edit Rate Hz automation'), findsOneWidget);
-    await tester.tap(find.text('Linear').last);
+    await tester.tap(find.text('Add point'));
+    await tester.pumpAndSettle();
+    expect(find.text('3 points'), findsOneWidget);
+    await tester.tap(
+      find.byType(DropdownButtonFormField<DawFadeCurve>).first,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('S-Curve').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    expect(service.masterEffects().single.automation['rateHz'], hasLength(2));
+    expect(service.masterEffects().single.automation['rateHz'], hasLength(3));
     expect(
       service.masterEffects().single.automation['rateHz']!.first.curve,
       DawFadeCurve.sCurve,
