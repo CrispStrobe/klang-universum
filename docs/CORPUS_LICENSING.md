@@ -103,9 +103,9 @@ repos below. Reachable, but dev/test only.
 The direct answer to "what have we covered / what could we still safely add."
 Every line here is a *licence/coverage* statement; detail per source follows.
 
-> **▶ Live DB snapshot (2026-07-23): `db.json` = 37,793 rows** — 37,403 scores +
+> **▶ Live DB snapshot (2026-07-23): `db.json` = 37,768 rows** — 37,378 scores +
 > 390 playback assets (223 instruments · 166 modules · 1 soundfont). Scores by
-> source: GregoBase 18,711 · NIFC Polish 8,181 · PDMX 7,471 · OpenScore Lieder
+> source: GregoBase 18,710 · NIFC Polish 8,181 · PDMX 7,447 · OpenScore Lieder
 > 1,350 · NIFC Chopin 512 · Mutopia 510 · **DCML Bach Chorales 361** · OpenScore SQ
 > 122 · OpenEWLD 103 · **Musikpiraten Season Songs 52** · Pete Mac 15 · EGSet12 12 ·
 > **Kinder wollen singen 3**. Assets: VCSL 183 · **ModArchive 166 (post-clearance
@@ -113,6 +113,24 @@ Every line here is a *licence/coverage* statement; detail per source follows.
 > · FluidR3 1. Bold = added since the "16,800" snapshot below (GregoBase chants,
 > DCML Bach CC0, the first self-engraved German Kinderlieder, the ModArchive corpus
 > trimmed 1,650 → 166 cleared modules, and the Salamander grand piano).
+
+> **⚠ Title-based copyright quarantine (2026-07-23): 25 in-copyright holiday songs
+> removed.** A title scan (the axis-2 trap the PDMX notes warned about — works
+> hiding under a blank/amateur composer field, recognisable only by TITLE) caught
+> **24 PDMX** self-attested `is_original` rows that are in fact copyrighted
+> Christmas/pop songs (*White Christmas*, *Frosty the Snowman*, *Little Saint Nick*,
+> *Feliz Navidad*, *Mary Did You Know*, *Have Yourself a Merry Little Christmas*,
+> *Let It Snow*, *The Christmas Song*, *Santa Claus Is Coming to Town*,
+> *It's Beginning to Look…*, *Mele Kalikimaka*, *Grown-Up Christmas List*, *Rudolf
+> the Red-Nosed Reindeer*) **+ 1 GregoBase** (*Reno erat Rudolphus* = the Latin
+> Rudolph, on the still-copyright Marks 1949 melody). Removed from `db.json`,
+> payloads moved to `quarantine-xmas/`, recorded in `christmas_copyright_
+> quarantine.json` (`bin/quarantine_xmas.py`, idempotent/reproducible). PD namesakes
+> correctly kept (*Jingle Bells* 1857; Lasso's *Rudolph di Lasso* masses).
+> **⚠ HF catalog:** the 24 PDMX MIDIs were in the shipped score shard → the catalog
+> agent must **re-emit + purge those payloads from `cstr/cometbeat-assets`** (row
+> removal stops future emit but uploaded files persist). A broader pop/film
+> title-copyright sweep of PDMX beyond the holiday category is still owed.
 
 ### Covered now — assessed, licence-cleared, in hand
 
