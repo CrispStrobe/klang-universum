@@ -2961,6 +2961,38 @@ class AppLocalizationsDe extends AppLocalizations {
   String get librarySourcesCredits => 'Quellen & Nachweise';
 
   @override
+  String get downloadsTitle => 'Downloads';
+
+  @override
+  String get downloadsSubtitle =>
+      'Heruntergeladene Daten verwalten & Speicher freigeben';
+
+  @override
+  String get downloadsEmpty => 'Noch nichts heruntergeladen.';
+
+  @override
+  String downloadsTotal(String size) {
+    return '$size gesamt';
+  }
+
+  @override
+  String get downloadsRemove => 'Entfernen';
+
+  @override
+  String downloadsFiles(int n) {
+    return '$n Dateien';
+  }
+
+  @override
+  String downloadsRemoveConfirm(String label) {
+    return '$label entfernen? Wird bei Bedarf erneut geladen.';
+  }
+
+  @override
+  String get downloadsWebNote =>
+      'Downloads werden auf dem Gerät verwaltet; im Web wird nichts gespeichert.';
+
+  @override
   String get libraryNoCredits => 'Noch nichts aus einer Bibliothek importiert';
 
   @override

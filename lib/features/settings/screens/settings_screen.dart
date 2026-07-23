@@ -19,6 +19,7 @@ import 'package:comet_beat/features/games/note_reading/note_colors.dart';
 import 'package:comet_beat/features/games/note_reading/note_names.dart';
 import 'package:comet_beat/features/library/attribution_screen.dart';
 import 'package:comet_beat/features/settings/screens/about_screen.dart';
+import 'package:comet_beat/features/settings/screens/downloads_screen.dart';
 import 'package:comet_beat/features/settings/screens/voice_picker_sheet.dart';
 import 'package:comet_beat/l10n/app_localizations.dart';
 import 'package:comet_beat/shared/score_theme.dart' show ScoreFont;
@@ -311,6 +312,19 @@ class SettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => AttributionScreen()),
+              ),
+            ),
+          ),
+          // Downloads manager — see cached models/SoundFonts/samples, their size,
+          // and free space by removing them.
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.download_done_outlined),
+              title: Text(l10n.downloadsTitle),
+              subtitle: Text(l10n.downloadsSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DownloadsScreen()),
               ),
             ),
           ),

@@ -2952,6 +2952,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get librarySourcesCredits => 'Sources & credits';
 
   @override
+  String get downloadsTitle => 'Downloads';
+
+  @override
+  String get downloadsSubtitle => 'Manage downloaded data & free space';
+
+  @override
+  String get downloadsEmpty => 'Nothing downloaded yet.';
+
+  @override
+  String downloadsTotal(String size) {
+    return '$size total';
+  }
+
+  @override
+  String get downloadsRemove => 'Remove';
+
+  @override
+  String downloadsFiles(int n) {
+    return '$n files';
+  }
+
+  @override
+  String downloadsRemoveConfirm(String label) {
+    return 'Remove $label? It re-downloads when next needed.';
+  }
+
+  @override
+  String get downloadsWebNote =>
+      'Downloads are managed on device; nothing is cached on the web.';
+
+  @override
   String get libraryNoCredits => 'Nothing imported from a library yet';
 
   @override

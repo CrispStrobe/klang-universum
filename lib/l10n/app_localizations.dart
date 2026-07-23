@@ -5546,6 +5546,54 @@ abstract class AppLocalizations {
   /// **'Sources & credits'**
   String get librarySourcesCredits;
 
+  /// No description provided for @downloadsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get downloadsTitle;
+
+  /// No description provided for @downloadsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage downloaded data & free space'**
+  String get downloadsSubtitle;
+
+  /// No description provided for @downloadsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing downloaded yet.'**
+  String get downloadsEmpty;
+
+  /// No description provided for @downloadsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} total'**
+  String downloadsTotal(String size);
+
+  /// No description provided for @downloadsRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get downloadsRemove;
+
+  /// No description provided for @downloadsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} files'**
+  String downloadsFiles(int n);
+
+  /// No description provided for @downloadsRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {label}? It re-downloads when next needed.'**
+  String downloadsRemoveConfirm(String label);
+
+  /// No description provided for @downloadsWebNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads are managed on device; nothing is cached on the web.'**
+  String get downloadsWebNote;
+
   /// No description provided for @libraryNoCredits.
   ///
   /// In en, this message translates to:
