@@ -183,9 +183,14 @@ void main() {
       listen: false,
     );
 
+    await tester.tap(find.byTooltip('Select track for FX').last);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Deselect track for FX'), findsOneWidget);
+
     await tester.tap(find.text('A').first);
     await tester.pumpAndSettle();
     expect(find.text('Track FX'), findsOneWidget);
+    expect(find.text('1 selected'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.add_circle_outline).last);
     await tester.pumpAndSettle();
@@ -197,9 +202,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Drive'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.copy_all));
+    await tester.tap(find.byTooltip('Copy chain to selected tracks'));
     await tester.pumpAndSettle();
     expect(service.trackEffects(1).single.type, DawClipEffectType.distortion);
+
+    await tester.tap(find.byTooltip('Add effect to selected tracks'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('High Pass').last);
+    await tester.pumpAndSettle();
+    expect(service.trackEffects(0).single.type, DawClipEffectType.distortion);
+    expect(
+      service.trackEffects(1).map((fx) => fx.type),
+      [DawClipEffectType.distortion, DawClipEffectType.highpass],
+    );
   });
 
   testWidgets('tapping a clip opens the inspector; gain slider changes gain',

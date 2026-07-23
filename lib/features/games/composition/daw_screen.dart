@@ -182,6 +182,7 @@ class _DawScreenState extends State<DawScreen>
     with SingleTickerProviderStateMixin
     implements DawTester {
   bool _playing = false;
+  final Set<int> _selectedTracks = <int>{};
 
   // Playhead: driven by the Ticker's own elapsed (NOT wall-clock), so it stays
   // in step with the baked audio AND is deterministic under `tester.pump`.
@@ -264,7 +265,15 @@ class _DawScreenState extends State<DawScreen>
 
   @override
   void removeTrack(int track) {
+    final shiftedSelection = <int>{
+      for (final i in _selectedTracks)
+        if (i < track) i else if (i > track) i - 1,
+    };
     _daw.removeTrack(track);
+    _selectedTracks
+      ..clear()
+      ..addAll(shiftedSelection)
+      ..removeWhere((i) => i >= _daw.timeline.tracks.length);
     if (_playing) play();
   }
 
@@ -342,6 +351,10 @@ class _DawScreenState extends State<DawScreen>
     StateSetter setDialog,
   ) {
     final effects = _daw.trackEffects(track);
+    final selectedTargets = _selectedTrackTargets(track);
+    final hasSelectedTargets = _selectedTracks.any(
+      (i) => i >= 0 && i < _daw.timeline.tracks.length,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -349,6 +362,29 @@ class _DawScreenState extends State<DawScreen>
           children: [
             Text('Track FX', style: Theme.of(ctx).textTheme.labelLarge),
             const Spacer(),
+            Text(
+              hasSelectedTargets
+                  ? '${selectedTargets.length} selected'
+                  : 'This track',
+              style: Theme.of(ctx).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 2,
+          children: [
+            IconButton(
+              tooltip: 'Copy chain to selected tracks',
+              icon: const Icon(Icons.checklist),
+              onPressed: effects.isEmpty || !hasSelectedTargets
+                  ? null
+                  : () {
+                      _daw.copyTrackEffectsToTracks(track, selectedTargets);
+                      setDialog(() {});
+                      if (_playing) play();
+                    },
+            ),
             IconButton(
               tooltip: 'Copy chain to all tracks',
               icon: const Icon(Icons.copy_all),
@@ -362,6 +398,40 @@ class _DawScreenState extends State<DawScreen>
                       setDialog(() {});
                       if (_playing) play();
                     },
+            ),
+            PopupMenuButton<DawClipEffectPreset>(
+              tooltip: 'Apply preset to selected tracks',
+              icon: const Icon(Icons.playlist_add_check),
+              enabled: hasSelectedTargets,
+              onSelected: (preset) {
+                _daw.applyTrackEffectPresetToTracks(selectedTargets, preset);
+                setDialog(() {});
+                if (_playing) play();
+              },
+              itemBuilder: (_) => [
+                for (final preset in DawClipEffectPreset.values)
+                  PopupMenuItem(
+                    value: preset,
+                    child: Text(_clipEffectPresetLabel(preset)),
+                  ),
+              ],
+            ),
+            PopupMenuButton<DawClipEffectType>(
+              tooltip: 'Add effect to selected tracks',
+              icon: const Icon(Icons.add_task),
+              enabled: hasSelectedTargets,
+              onSelected: (type) {
+                _daw.addTrackEffectToTracks(selectedTargets, type);
+                setDialog(() {});
+                if (_playing) play();
+              },
+              itemBuilder: (_) => [
+                for (final type in _clipEffectTypes)
+                  PopupMenuItem(
+                    value: type,
+                    child: Text(_clipEffectLabel(type)),
+                  ),
+              ],
             ),
             PopupMenuButton<DawClipEffectPreset>(
               tooltip: 'Apply preset',
@@ -434,6 +504,14 @@ class _DawScreenState extends State<DawScreen>
           ),
       ],
     );
+  }
+
+  List<int> _selectedTrackTargets(int fallbackTrack) {
+    final targets = [
+      for (final i in _selectedTracks)
+        if (i >= 0 && i < _daw.timeline.tracks.length) i,
+    ]..sort();
+    return targets.isEmpty ? [fallbackTrack] : targets;
   }
 
   Widget _fxTile(
@@ -1610,7 +1688,7 @@ class _DawScreenState extends State<DawScreen>
 
   static const double _pxPerSecond = 80;
   static const double _laneHeight = 60;
-  static const double _gutterWidth = 84;
+  static const double _gutterWidth = 112;
   static const double _rulerHeight = 20;
 
   // The clip's start when a long-press drag begins (offsets are relative to it).
@@ -1739,6 +1817,7 @@ class _DawScreenState extends State<DawScreen>
 
   Widget _gutterHeader(DawService daw, int i, ColorScheme scheme) {
     final track = daw.timeline.tracks[i];
+    final selected = _selectedTracks.contains(i);
     return SizedBox(
       width: _gutterWidth,
       height: _laneHeight,
@@ -1747,6 +1826,30 @@ class _DawScreenState extends State<DawScreen>
         children: [
           Row(
             children: [
+              IconButton(
+                tooltip:
+                    selected ? 'Deselect track for FX' : 'Select track for FX',
+                icon: Icon(
+                  selected ? Icons.check_box : Icons.check_box_outline_blank,
+                  size: 18,
+                  color: selected ? scheme.primary : scheme.outline,
+                ),
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints.tightFor(
+                  width: 24,
+                  height: 24,
+                ),
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  setState(() {
+                    if (selected) {
+                      _selectedTracks.remove(i);
+                    } else {
+                      _selectedTracks.add(i);
+                    }
+                  });
+                },
+              ),
               // A small badge when the lane has a voice — new clips adopt it.
               if (track.instrument != null)
                 Padding(
