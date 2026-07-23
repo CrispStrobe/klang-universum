@@ -388,6 +388,7 @@ class DawTrack {
     this.muted = false,
     this.soloed = false,
     this.instrument,
+    this.busIndex,
     this.effect = TrackEffect.none,
     List<DawClipEffect>? effects,
     List<Clip>? clips,
@@ -404,6 +405,9 @@ class DawTrack {
   /// The lane's default instrument voice (null = default synth).
   TrackerInstrument? instrument;
 
+  /// Optional group bus route. Null means route straight to the master bus.
+  int? busIndex;
+
   /// The lane's insert effect (applied to its summed audio at bake time).
   TrackEffect effect;
 
@@ -411,6 +415,16 @@ class DawTrack {
   List<DawClipEffect> effects;
 
   final List<Clip> clips;
+}
+
+class DawBus {
+  DawBus({this.name = '', List<DawClipEffect>? effects})
+      : effects = effects ?? [];
+
+  String name;
+
+  /// Ordered group-bus FX applied after assigned tracks are summed.
+  List<DawClipEffect> effects;
 }
 
 /// Apply a track's insert [effect] to its (full-length) summed [buf].
@@ -591,10 +605,17 @@ Float64List _bitCrushFx(
 
 /// A DAW arrangement: an ordered list of tracks.
 class DawTimeline {
-  DawTimeline({List<DawTrack>? tracks, List<DawClipEffect>? effects})
-      : tracks = tracks ?? [],
+  DawTimeline({
+    List<DawTrack>? tracks,
+    List<DawBus>? buses,
+    List<DawClipEffect>? effects,
+  })  : tracks = tracks ?? [],
+        buses = buses ?? [],
         effects = effects ?? [];
   final List<DawTrack> tracks;
+
+  /// Named group buses. Tracks route here via [DawTrack.busIndex].
+  final List<DawBus> buses;
 
   /// Ordered output-bus FX applied to the full mix before final limiting.
   List<DawClipEffect> effects;
@@ -694,19 +715,42 @@ Float64List renderTimeline(
     }
   }
 
+  void addBuffer(Float64List target, Float64List source) {
+    for (var i = 0; i < target.length; i++) {
+      target[i] += source[i];
+    }
+  }
+
+  final busBuffers = <int, Float64List>{};
+
   for (final (track, places) in perTrack) {
+    final lane = Float64List(totalSamples);
     if (track.effects.isEmpty && track.effect == TrackEffect.none) {
-      mix(master, places);
+      mix(lane, places);
     } else {
-      final lane = Float64List(totalSamples);
       mix(lane, places);
       final wet = track.effects.isNotEmpty
           ? applyClipEffectChain(lane, track.effects, sampleRate)
           : applyTrackEffect(track.effect, lane, sampleRate);
-      for (var i = 0; i < totalSamples; i++) {
-        master[i] += wet[i];
-      }
+      lane.setAll(0, wet);
     }
+    final busIndex = track.busIndex;
+    if (busIndex != null && busIndex >= 0 && busIndex < timeline.buses.length) {
+      addBuffer(
+        busBuffers.putIfAbsent(busIndex, () => Float64List(totalSamples)),
+        lane,
+      );
+    } else {
+      addBuffer(master, lane);
+    }
+  }
+
+  for (final entry in busBuffers.entries) {
+    final bus = timeline.buses[entry.key];
+    final wet = bus.effects.isEmpty
+        ? entry.value
+        : applyClipEffectChain(entry.value, bus.effects, sampleRate);
+    addBuffer(master, wet);
   }
 
   final out = timeline.effects.isEmpty

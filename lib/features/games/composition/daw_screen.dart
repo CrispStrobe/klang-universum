@@ -612,11 +612,211 @@ class _DawScreenState extends State<DawScreen>
     );
   }
 
-  List<int> _selectedTrackTargets(int fallbackTrack) {
+  Future<void> _busMenu() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Buses'),
+        content: StatefulBuilder(
+          builder: (ctx, setDialog) => SizedBox(
+            width: 560,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          _daw.addBus();
+                          setDialog(() {});
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add bus'),
+                      ),
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: _explicitSelectedTracks().isEmpty
+                            ? null
+                            : () {
+                                _daw.setTrackBusForTracks(
+                                  _explicitSelectedTracks(),
+                                  null,
+                                );
+                                setDialog(() {});
+                                setState(() {});
+                                if (_playing) play();
+                              },
+                        icon: const Icon(Icons.output),
+                        label: const Text('Route selected to Master'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_daw.buses().isEmpty)
+                    Text(
+                      'No buses',
+                      style: Theme.of(ctx).textTheme.bodySmall,
+                    ),
+                  for (var bus = 0; bus < _daw.buses().length; bus++)
+                    _busEditor(ctx, bus, setDialog),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppLocalizations.of(ctx)!.dawCancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _busEditor(BuildContext ctx, int bus, StateSetter setDialog) {
+    final buses = _daw.buses();
+    final routeTargets = _explicitSelectedTracks();
+    if (bus < 0 || bus >= buses.length) return const SizedBox.shrink();
+    final routeCount =
+        _daw.timeline.tracks.where((track) => track.busIndex == bus).length;
+    final name = buses[bus].name.isEmpty ? 'Bus ${bus + 1}' : buses[bus].name;
+    final effects = _daw.busEffects(bus);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(ctx).colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(ctx).textTheme.labelLarge,
+                    ),
+                  ),
+                  Text(
+                    '$routeCount tracks',
+                    style: Theme.of(ctx).textTheme.bodySmall,
+                  ),
+                  IconButton(
+                    tooltip: 'Route selected tracks to this bus',
+                    icon: const Icon(Icons.call_merge),
+                    onPressed: routeTargets.isEmpty
+                        ? null
+                        : () {
+                            _daw.setTrackBusForTracks(routeTargets, bus);
+                            setDialog(() {});
+                            setState(() {});
+                            if (_playing) play();
+                          },
+                  ),
+                  PopupMenuButton<DawClipEffectPreset>(
+                    tooltip: 'Apply preset',
+                    icon: const Icon(Icons.auto_fix_high),
+                    onSelected: (preset) {
+                      _daw.applyBusEffectPreset(bus, preset);
+                      setDialog(() {});
+                      if (_playing) play();
+                    },
+                    itemBuilder: (_) => [
+                      for (final preset in DawClipEffectPreset.values)
+                        PopupMenuItem(
+                          value: preset,
+                          child: Text(_clipEffectPresetLabel(preset)),
+                        ),
+                    ],
+                  ),
+                  PopupMenuButton<DawClipEffectType>(
+                    tooltip: 'Add effect',
+                    icon: const Icon(Icons.add_circle_outline),
+                    onSelected: (type) {
+                      _daw.addBusEffect(bus, type);
+                      setDialog(() {});
+                      if (_playing) play();
+                    },
+                    itemBuilder: (_) => [
+                      for (final type in _clipEffectTypes)
+                        PopupMenuItem(
+                          value: type,
+                          child: Text(_clipEffectLabel(type)),
+                        ),
+                    ],
+                  ),
+                  IconButton(
+                    tooltip: 'Remove bus',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () {
+                      _daw.removeBus(bus);
+                      setDialog(() {});
+                      setState(() {});
+                      if (_playing) play();
+                    },
+                  ),
+                ],
+              ),
+              if (effects.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'No bus effects',
+                    style: Theme.of(ctx).textTheme.bodySmall,
+                  ),
+                ),
+              for (var fxIndex = 0; fxIndex < effects.length; fxIndex++)
+                _fxTile(
+                  ctx,
+                  effects: effects,
+                  fxIndex: fxIndex,
+                  onToggle: () {
+                    _daw.toggleBusEffect(bus, fxIndex);
+                    setDialog(() {});
+                    if (_playing) play();
+                  },
+                  onMove: (delta) {
+                    _daw.moveBusEffect(bus, fxIndex, delta);
+                    setDialog(() {});
+                    if (_playing) play();
+                  },
+                  onRemove: () {
+                    _daw.removeBusEffect(bus, fxIndex);
+                    setDialog(() {});
+                    if (_playing) play();
+                  },
+                  onParam: (key, value) {
+                    setDialog(
+                      () => _daw.setBusEffectParam(bus, fxIndex, key, value),
+                    );
+                    if (_playing) play();
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<int> _explicitSelectedTracks() {
     final targets = [
       for (final i in _selectedTracks)
         if (i >= 0 && i < _daw.timeline.tracks.length) i,
     ]..sort();
+    return targets;
+  }
+
+  List<int> _selectedTrackTargets(int fallbackTrack) {
+    final targets = _explicitSelectedTracks();
     return targets.isEmpty ? [fallbackTrack] : targets;
   }
 
@@ -1938,6 +2138,11 @@ class _DawScreenState extends State<DawScreen>
                     label: const Text('Master FX'),
                   ),
                   OutlinedButton.icon(
+                    onPressed: _busMenu,
+                    icon: const Icon(Icons.call_merge),
+                    label: const Text('Buses'),
+                  ),
+                  OutlinedButton.icon(
                     onPressed: daw.clipCount == 0 ? null : _markRangeIn,
                     icon: const Icon(Icons.keyboard_tab),
                     label: const Text('Mark In'),
@@ -2164,6 +2369,12 @@ class _DawScreenState extends State<DawScreen>
   Widget _gutterHeader(DawService daw, int i, ColorScheme scheme) {
     final track = daw.timeline.tracks[i];
     final selected = _selectedTracks.contains(i);
+    final busIndex = track.busIndex;
+    final busName = busIndex != null &&
+            busIndex >= 0 &&
+            busIndex < daw.timeline.buses.length
+        ? daw.timeline.buses[busIndex].name
+        : null;
     return SizedBox(
       width: _gutterWidth,
       height: _laneHeight,
@@ -2202,6 +2413,20 @@ class _DawScreenState extends State<DawScreen>
                   padding: const EdgeInsets.only(right: 2),
                   child:
                       Icon(Icons.music_note, size: 12, color: scheme.primary),
+                ),
+              if (busName != null)
+                Tooltip(
+                  message: busName.isEmpty
+                      ? 'Routed to Bus ${busIndex! + 1}'
+                      : 'Routed to $busName',
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: Icon(
+                      Icons.call_merge,
+                      size: 12,
+                      color: scheme.tertiary,
+                    ),
+                  ),
                 ),
               Expanded(
                 child: InkWell(

@@ -19,11 +19,22 @@ void main() {
           params: {'thresholdDb': -18, 'ratio': 3},
         ),
       ],
+      buses: [
+        DawBus(
+          name: 'Drum bus',
+          effects: [
+            defaultDawClipEffect(DawClipEffectType.highpass).copyWith(
+              params: {'cutoffHz': 180},
+            ),
+          ],
+        ),
+      ],
       tracks: [
         DawTrack(
           name: 'Drums',
           gain: 0.8,
           effect: TrackEffect.echo,
+          busIndex: 0,
           clips: [
             Clip(
               source: _tone(0.5, 64),
@@ -56,8 +67,12 @@ void main() {
     expect(back.tracks.length, 2);
     expect(back.effects.single.type, DawClipEffectType.compressor);
     expect(back.effects.single.params['thresholdDb'], -18);
+    expect(back.buses.single.name, 'Drum bus');
+    expect(back.buses.single.effects.single.type, DawClipEffectType.highpass);
+    expect(back.buses.single.effects.single.params['cutoffHz'], 180);
     expect(back.tracks[0].name, 'Drums');
     expect(back.tracks[0].gain, closeTo(0.8, 1e-9));
+    expect(back.tracks[0].busIndex, 0);
     expect(back.tracks[0].effect, TrackEffect.echo);
     expect(back.tracks[0].effects.single.type, DawClipEffectType.delay);
     expect(back.tracks[1].muted, isTrue);

@@ -794,6 +794,48 @@ void main() {
       s.removeMasterEffect(0);
       expect(s.masterEffects().single.type, DawClipEffectType.highpass);
     });
+
+    test('group buses route tracks, edit FX, undo and clean removed routes',
+        () {
+      final s = DawService()
+        ..addClip(_tone(0.4, 1000))
+        ..addClip(_tone(0.2, 1000), track: 1);
+
+      s
+        ..addBus(name: 'Drum bus')
+        ..addBus(name: 'FX bus')
+        ..setTrackBusForTracks([0, 1], 1)
+        ..addBusEffect(1, DawClipEffectType.highpass)
+        ..addBusEffect(1, DawClipEffectType.distortion)
+        ..setBusEffectParam(1, 1, 'drive', 8);
+
+      expect(s.trackBus(0), 1);
+      expect(s.trackBus(1), 1);
+      expect(s.buses()[1].name, 'FX bus');
+      expect(
+        s.busEffects(1).map((fx) => fx.type),
+        [DawClipEffectType.highpass, DawClipEffectType.distortion],
+      );
+      expect(s.busEffects(1)[1].params['drive'], 8);
+
+      s.moveBusEffect(1, 1, -1);
+      expect(
+        s.busEffects(1).map((fx) => fx.type),
+        [DawClipEffectType.distortion, DawClipEffectType.highpass],
+      );
+
+      s.toggleBusEffect(1, 0);
+      expect(s.busEffects(1).first.enabled, isFalse);
+      s.undo();
+      expect(s.busEffects(1).first.enabled, isTrue);
+
+      s.removeBus(0);
+      expect(s.trackBus(0), 0);
+      expect(s.trackBus(1), 0);
+      s.removeBus(0);
+      expect(s.trackBus(0), isNull);
+      expect(s.trackBus(1), isNull);
+    });
   });
 
   group('clip effect chains', () {

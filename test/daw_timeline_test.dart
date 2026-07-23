@@ -302,4 +302,55 @@ void main() {
     expect(wet.length, dry.length);
     expect(wet[0], isNot(closeTo(dry[0], 1e-6)));
   });
+
+  test('group bus FX process routed tracks before the master bus', () {
+    final dryTimeline = DawTimeline(
+      tracks: [
+        DawTrack(clips: [Clip(source: _ToneSource(0.2, 100))]),
+        DawTrack(clips: [Clip(source: _ToneSource(0.2, 100))]),
+      ],
+    );
+    final wetTimeline = DawTimeline(
+      buses: [
+        DawBus(
+          name: 'Drum bus',
+          effects: [
+            defaultDawClipEffect(DawClipEffectType.distortion).copyWith(
+              params: {'drive': 10, 'mix': 1},
+            ),
+          ],
+        ),
+      ],
+      tracks: [
+        DawTrack(
+          busIndex: 0,
+          clips: [Clip(source: _ToneSource(0.2, 100))],
+        ),
+        DawTrack(
+          busIndex: 0,
+          clips: [Clip(source: _ToneSource(0.2, 100))],
+        ),
+      ],
+    );
+
+    final dry = renderTimeline(dryTimeline, sampleRate: _sr, limit: false);
+    final wet = renderTimeline(wetTimeline, sampleRate: _sr, limit: false);
+    expect(wet.length, dry.length);
+    expect(wet[0], isNot(closeTo(dry[0], 1e-6)));
+  });
+
+  test('tracks with an invalid bus route still reach the master bus', () {
+    final t = DawTimeline(
+      buses: [DawBus(name: 'Valid')],
+      tracks: [
+        DawTrack(
+          busIndex: 99,
+          clips: [Clip(source: _ToneSource(0.3, 10))],
+        ),
+      ],
+    );
+
+    final mix = renderTimeline(t, sampleRate: _sr, limit: false);
+    expect(mix[0], closeTo(0.3, 1e-9));
+  });
 }

@@ -58,6 +58,7 @@ class DawService extends ChangeNotifier {
 
   _Snapshot _capture() => _Snapshot(
         effects: _cloneEffectChain(timeline.effects),
+        buses: _cloneBuses(timeline.buses),
         tracks: [
           for (final t in timeline.tracks)
             DawTrack(
@@ -66,6 +67,7 @@ class DawService extends ChangeNotifier {
               muted: t.muted,
               soloed: t.soloed,
               instrument: t.instrument,
+              busIndex: t.busIndex,
               effect: t.effect,
               effects: [...t.effects],
               clips: [...t.clips],
@@ -76,6 +78,9 @@ class DawService extends ChangeNotifier {
 
   void _restore(_Snapshot s) {
     timeline.effects = _cloneEffectChain(s.effects);
+    timeline.buses
+      ..clear()
+      ..addAll(_cloneBuses(s.buses));
     timeline.tracks
       ..clear()
       ..addAll(s.tracks);
@@ -834,6 +839,132 @@ class DawService extends ChangeNotifier {
 
   List<DawClipEffect> masterEffects() => timeline.effects;
 
+  List<DawBus> buses() => timeline.buses;
+
+  void addBus({String? name}) {
+    _record();
+    timeline.buses
+        .add(DawBus(name: name ?? 'Bus ${timeline.buses.length + 1}'));
+    notifyListeners();
+  }
+
+  void renameBus(int bus, String name) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    _record();
+    timeline.buses[bus].name = name;
+    notifyListeners();
+  }
+
+  void removeBus(int bus) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    _record();
+    timeline.buses.removeAt(bus);
+    for (final track in timeline.tracks) {
+      final route = track.busIndex;
+      if (route == null) continue;
+      if (route == bus) {
+        track.busIndex = null;
+      } else if (route > bus) {
+        track.busIndex = route - 1;
+      }
+    }
+    notifyListeners();
+  }
+
+  int? trackBus(int track) => timeline.tracks[track].busIndex;
+
+  void setTrackBus(int track, int? bus) {
+    setTrackBusForTracks([track], bus);
+  }
+
+  void setTrackBusForTracks(Iterable<int> tracks, int? bus) {
+    final indices = _validTrackIndices(tracks);
+    if (indices.isEmpty) return;
+    final route =
+        bus != null && bus >= 0 && bus < timeline.buses.length ? bus : null;
+    _record();
+    for (final i in indices) {
+      timeline.tracks[i].busIndex = route;
+    }
+    notifyListeners();
+  }
+
+  List<DawClipEffect> busEffects(int bus) => timeline.buses[bus].effects;
+
+  void addBusEffect(int bus, DawClipEffectType type) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    _record();
+    timeline.buses[bus].effects.add(defaultDawClipEffect(type));
+    notifyListeners();
+  }
+
+  void applyBusEffectPreset(
+    int bus,
+    DawClipEffectPreset preset, {
+    bool append = false,
+  }) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    _record();
+    final chain = dawClipEffectPresetChain(preset);
+    timeline.buses[bus].effects = append
+        ? [...timeline.buses[bus].effects, ..._cloneEffectChain(chain)]
+        : _cloneEffectChain(chain);
+    notifyListeners();
+  }
+
+  void removeBusEffect(int bus, int effectIndex) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    final effects = timeline.buses[bus].effects;
+    if (effectIndex < 0 || effectIndex >= effects.length) return;
+    _record();
+    timeline.buses[bus].effects = [...effects]..removeAt(effectIndex);
+    notifyListeners();
+  }
+
+  void moveBusEffect(int bus, int effectIndex, int delta) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    final effects = timeline.buses[bus].effects;
+    final to = effectIndex + delta;
+    if (effectIndex < 0 ||
+        effectIndex >= effects.length ||
+        to < 0 ||
+        to >= effects.length ||
+        delta == 0) {
+      return;
+    }
+    _record();
+    final next = [...effects];
+    final fx = next.removeAt(effectIndex);
+    next.insert(to, fx);
+    timeline.buses[bus].effects = next;
+    notifyListeners();
+  }
+
+  void toggleBusEffect(int bus, int effectIndex) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    final effects = timeline.buses[bus].effects;
+    if (effectIndex < 0 || effectIndex >= effects.length) return;
+    _record();
+    final next = [...effects];
+    next[effectIndex] = next[effectIndex].copyWith(
+      enabled: !next[effectIndex].enabled,
+    );
+    timeline.buses[bus].effects = next;
+    notifyListeners();
+  }
+
+  void setBusEffectParam(int bus, int effectIndex, String key, double value) {
+    if (bus < 0 || bus >= timeline.buses.length) return;
+    final effects = timeline.buses[bus].effects;
+    if (effectIndex < 0 || effectIndex >= effects.length) return;
+    _coalesced(('busFxParam', bus, effectIndex, key));
+    final next = [...effects];
+    final fx = next[effectIndex];
+    next[effectIndex] = fx.copyWith(params: {...fx.params, key: value});
+    timeline.buses[bus].effects = next;
+    notifyListeners();
+  }
+
   void addMasterEffect(DawClipEffectType type) {
     _record();
     timeline.effects.add(defaultDawClipEffect(type));
@@ -944,6 +1075,11 @@ class DawService extends ChangeNotifier {
 
   List<DawClipEffect> _cloneEffectChain(List<DawClipEffect> chain) => [
         for (final fx in chain) fx.copyWith(params: {...fx.params}),
+      ];
+
+  List<DawBus> _cloneBuses(List<DawBus> buses) => [
+        for (final bus in buses)
+          DawBus(name: bus.name, effects: _cloneEffectChain(bus.effects)),
       ];
 
   bool _sameEffectChain(List<DawClipEffect> a, List<DawClipEffect> b) {
@@ -1212,6 +1348,9 @@ class DawService extends ChangeNotifier {
   void loadProject(String json) {
     final loaded = projectFromJson(json); // may throw before we mutate anything
     timeline.effects = _cloneEffectChain(loaded.effects);
+    timeline.buses
+      ..clear()
+      ..addAll(_cloneBuses(loaded.buses));
     timeline.tracks
       ..clear()
       ..addAll(loaded.tracks);
@@ -1232,10 +1371,12 @@ class DawService extends ChangeNotifier {
 class _Snapshot {
   _Snapshot({
     required this.effects,
+    required this.buses,
     required this.tracks,
     required this.nextStartMs,
   });
   final List<DawClipEffect> effects;
+  final List<DawBus> buses;
   final List<DawTrack> tracks;
   final double nextStartMs;
 }

@@ -240,6 +240,37 @@ void main() {
     expect(find.textContaining('Drive'), findsOneWidget);
   });
 
+  testWidgets('bus dialog routes selected tracks and edits bus FX',
+      (tester) async {
+    await _pumpDaw(tester);
+    final service = Provider.of<DawService>(
+      tester.element(find.byType(DawScreen)),
+      listen: false,
+    );
+
+    await tester.tap(find.byTooltip('Select track for FX').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Buses'));
+    await tester.pumpAndSettle();
+    expect(find.text('No buses'), findsOneWidget);
+
+    await tester.tap(find.text('Add bus'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Route selected tracks to this bus'));
+    await tester.pumpAndSettle();
+    expect(service.trackBus(1), 0);
+
+    await tester.tap(find.byIcon(Icons.add_circle_outline).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Distortion').last);
+    await tester.pumpAndSettle();
+
+    expect(service.busEffects(0).single.type, DawClipEffectType.distortion);
+    await tester.tap(find.text('Distortion'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Drive'), findsOneWidget);
+  });
+
   testWidgets('tapping a clip opens the inspector; gain slider changes gain',
       (tester) async {
     await _pumpDaw(tester);

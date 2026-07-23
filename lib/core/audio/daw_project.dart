@@ -38,6 +38,15 @@ String projectToJson(
     'sampleRate': sampleRate,
     if (timeline.effects.isNotEmpty)
       'effects': [for (final fx in timeline.effects) fx.toJson()],
+    if (timeline.buses.isNotEmpty)
+      'buses': [
+        for (final bus in timeline.buses)
+          {
+            'name': bus.name,
+            if (bus.effects.isNotEmpty)
+              'effects': [for (final fx in bus.effects) fx.toJson()],
+          },
+      ],
     'tracks': [
       for (final track in timeline.tracks)
         {
@@ -45,6 +54,7 @@ String projectToJson(
           'gain': track.gain,
           'muted': track.muted,
           'soloed': track.soloed,
+          if (track.busIndex != null) 'busIndex': track.busIndex,
           'effect': track.effect.name,
           if (track.effects.isNotEmpty)
             'effects': [for (final fx in track.effects) fx.toJson()],
@@ -101,6 +111,19 @@ DawTimeline projectFromJson(String json) {
       for (final fx in effects)
         if (DawClipEffect.fromJson(fx) case final parsed?) parsed,
   ];
+  final buses = [
+    if (decoded['buses'] case final busesJson? when busesJson is List)
+      for (final b in busesJson)
+        if (b is Map)
+          DawBus(
+            name: b['name'] is String ? b['name'] as String : '',
+            effects: [
+              if (b['effects'] case final effects? when effects is List)
+                for (final fx in effects)
+                  if (DawClipEffect.fromJson(fx) case final parsed?) parsed,
+            ],
+          ),
+  ];
   final tracks = <DawTrack>[];
   for (final t in tracksJson) {
     if (t is! Map) continue;
@@ -149,6 +172,8 @@ DawTimeline projectFromJson(String json) {
           gain: t['gain'] is num ? num_(t['gain']) : 1.0,
           muted: t['muted'] == true,
           soloed: t['soloed'] == true,
+          busIndex:
+              t['busIndex'] is num ? (t['busIndex'] as num).toInt() : null,
           effect: legacyEffect,
           effects: effects.isNotEmpty
               ? effects
@@ -158,7 +183,7 @@ DawTimeline projectFromJson(String json) {
       }(),
     );
   }
-  return DawTimeline(tracks: tracks, effects: timelineEffects);
+  return DawTimeline(tracks: tracks, buses: buses, effects: timelineEffects);
 }
 
 Uint8List _floatToInt16(Float64List pcm) {
